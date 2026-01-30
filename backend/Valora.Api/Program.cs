@@ -1,8 +1,10 @@
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.EntityFrameworkCore;
 using Valora.Application;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Jobs;
+using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -31,8 +33,28 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Apply database migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+    try
+    {
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // Log error or handle it (e.g., if database is not ready yet)
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
+
 app.UseCors();
-app.UseHttpsRedirection();
+
+if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirection"] == "true")
+{
+    app.UseHttpsRedirection();
+}
 
 // Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire");
