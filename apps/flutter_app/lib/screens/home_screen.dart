@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../core/theme/valora_spacing.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
+import '../widgets/valora_widgets.dart';
+import '../widgets/valora_listing_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,11 +48,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Valora'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(
+          'Valora',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ValoraLoadingIndicator(message: 'Connecting...')
           : _buildContent(),
       floatingActionButton: FloatingActionButton(
         onPressed: _checkConnection,
@@ -60,53 +67,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContent() {
     if (!_isConnected) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            const Text('Backend not connected'),
-            const SizedBox(height: 8),
-            Text(
-              'Start the API: dotnet run --project Valora.Api',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-          ],
+      return ValoraEmptyState(
+        icon: Icons.cloud_off_outlined,
+        title: 'Backend not connected',
+        subtitle: 'Start the API: dotnet run --project Valora.Api',
+        action: ValoraButton(
+          label: 'Retry',
+          variant: ValoraButtonVariant.primary,
+          icon: Icons.refresh,
+          onPressed: _checkConnection,
         ),
       );
     }
 
     if (_listings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.home_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            const Text('No listings yet'),
-            const SizedBox(height: 8),
-            Text(
-              'Scraper functionality coming soon',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
+      return const ValoraEmptyState(
+        icon: Icons.home_outlined,
+        title: 'No listings yet',
+        subtitle: 'Properties will appear here once scraped',
       );
     }
 
-    return ListView.builder(
-      itemCount: _listings.length,
-      itemBuilder: (context, index) {
-        final listing = _listings[index];
-        return ListTile(
-          title: Text(listing.address),
-          subtitle: Text('${listing.city ?? ''} ${listing.postalCode ?? ''}'),
-          trailing: listing.price != null
-              ? Text('€${listing.price!.toStringAsFixed(0)}')
-              : null,
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _loadListings,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
+        itemCount: _listings.length,
+        separatorBuilder: (context, index) => const SizedBox(
+          height: ValoraSpacing.listItemGap,
+        ),
+        itemBuilder: (context, index) {
+          final listing = _listings[index];
+          return ValoraListingCard(
+            listing: listing,
+            onTap: () {
+              // TODO: Navigate to detail screen
+            },
+          );
+        },
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/theme/valora_theme.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -12,10 +13,9 @@ class ValoraApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Valora',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: ValoraTheme.light,
+      darkTheme: ValoraTheme.dark,
+      themeMode: ThemeMode.system,
       home: const HomeScreen(),
       debugShowCheckedModeBanner: false,
     );
