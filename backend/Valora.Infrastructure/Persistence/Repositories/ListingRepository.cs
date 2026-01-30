@@ -30,7 +30,6 @@ public class ListingRepository : IListingRepository
     public async Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default)
     {
         return await _context.Listings
-            .Include(l => l.PriceHistory)
             .FirstOrDefaultAsync(l => l.FundaId == fundaId, cancellationToken);
     }
 
