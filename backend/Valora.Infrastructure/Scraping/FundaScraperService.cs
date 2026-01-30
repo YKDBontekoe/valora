@@ -16,6 +16,7 @@ public class FundaScraperService : IFundaScraperService
     private readonly FundaHtmlParser _parser;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
+    private readonly IScraperNotificationService _notificationService;
     private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy;
 
     public FundaScraperService(
@@ -23,7 +24,8 @@ public class FundaScraperService : IFundaScraperService
         IListingRepository listingRepository,
         IPriceHistoryRepository priceHistoryRepository,
         IOptions<ScraperOptions> options,
-        ILogger<FundaScraperService> logger)
+        ILogger<FundaScraperService> logger,
+        IScraperNotificationService notificationService)
     {
         _httpClient = httpClient;
         _listingRepository = listingRepository;
@@ -31,6 +33,7 @@ public class FundaScraperService : IFundaScraperService
         _parser = new FundaHtmlParser();
         _options = options.Value;
         _logger = logger;
+        _notificationService = notificationService;
 
         // Configure retry policy with exponential backoff
         _retryPolicy = Policy<HttpResponseMessage>
@@ -62,7 +65,7 @@ public class FundaScraperService : IFundaScraperService
         {
             try
             {
-                await ScrapeSearchUrlAsync(searchUrl, cancellationToken);
+                await ScrapeSearchUrlAsync(searchUrl, null, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -73,27 +76,68 @@ public class FundaScraperService : IFundaScraperService
         _logger.LogInformation("Funda.nl scrape job completed");
     }
 
-    private async Task ScrapeSearchUrlAsync(string searchUrl, CancellationToken cancellationToken)
+    public async Task ScrapeLimitedAsync(string region, int limit, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Starting limited scrape for region: {Region}", region);
+        await _notificationService.NotifyProgressAsync($"Starting search for {region}...");
+
+        try
+        {
+            // Construct basic search URL for the region
+            var searchUrl = $"https://www.funda.nl/koop/{region}/";
+            await ScrapeSearchUrlAsync(searchUrl, limit, cancellationToken);
+
+            await _notificationService.NotifyCompleteAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed limited scrape for region: {Region}", region);
+            await _notificationService.NotifyErrorAsync(ex.Message);
+            throw;
+        }
+    }
+
+    private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Scraping search URL: {Url}", searchUrl);
+        bool shouldNotify = limit.HasValue;
+
+        if (shouldNotify)
+        {
+            await _notificationService.NotifyProgressAsync("Fetching search results...");
+        }
 
         // Fetch search results page
         var searchHtml = await FetchPageAsync(searchUrl, cancellationToken);
         if (string.IsNullOrEmpty(searchHtml))
         {
             _logger.LogWarning("Empty response from search URL: {Url}", searchUrl);
+            if (shouldNotify)
+            {
+                await _notificationService.NotifyErrorAsync("No results found or failed to fetch page.");
+            }
             return;
         }
 
         // Parse listing cards
         var listingCards = _parser.ParseSearchResults(searchHtml).ToList();
+
+        if (limit.HasValue)
+        {
+            listingCards = listingCards.Take(limit.Value).ToList();
+        }
+
         _logger.LogInformation("Found {Count} listings on search page", listingCards.Count);
+        if (shouldNotify)
+        {
+            await _notificationService.NotifyProgressAsync($"Found {listingCards.Count} listings. Processing...");
+        }
 
         foreach (var card in listingCards)
         {
             try
             {
-                await ProcessListingAsync(card, cancellationToken);
+                await ProcessListingAsync(card, shouldNotify, cancellationToken);
                 
                 // Rate limiting delay
                 await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
@@ -109,7 +153,7 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
-    private async Task ProcessListingAsync(FundaListingCard card, CancellationToken cancellationToken)
+    private async Task ProcessListingAsync(FundaListingCard card, bool shouldNotify, CancellationToken cancellationToken)
     {
         // Check if listing already exists
         var existingListing = await _listingRepository.GetByFundaIdAsync(card.FundaId, cancellationToken);
@@ -135,6 +179,10 @@ public class FundaScraperService : IFundaScraperService
             // New listing - add it
             await _listingRepository.AddAsync(listing, cancellationToken);
             _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
+            if (shouldNotify)
+            {
+                try { await _notificationService.NotifyListingFoundAsync(listing.Address); } catch { /* Ignore notification failures */ }
+            }
 
             // Record initial price
             if (listing.Price.HasValue)
@@ -174,6 +222,11 @@ public class FundaScraperService : IFundaScraperService
 
             await _listingRepository.UpdateAsync(existingListing, cancellationToken);
             _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
+
+            if (shouldNotify)
+            {
+                try { await _notificationService.NotifyListingFoundAsync($"{listing.Address} (Updated)"); } catch { /* Ignore notification failures */ }
+            }
         }
     }
 

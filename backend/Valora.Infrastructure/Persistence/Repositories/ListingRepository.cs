@@ -56,4 +56,9 @@ public class ListingRepository : IListingRepository
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Listings.CountAsync(cancellationToken);
+    }
 }

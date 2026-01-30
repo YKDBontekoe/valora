@@ -10,4 +10,5 @@ public interface IListingRepository
     Task<Listing> AddAsync(Listing listing, CancellationToken cancellationToken = default);
     Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 }
