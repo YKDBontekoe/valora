@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/valora_theme.dart';
-import 'screens/home_screen.dart';
+import 'screens/startup_screen.dart';
 
 void main() {
   runApp(const ValoraApp());
@@ -16,7 +16,7 @@ class ValoraApp extends StatelessWidget {
       theme: ValoraTheme.light,
       darkTheme: ValoraTheme.dark,
       themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      home: const StartupScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
