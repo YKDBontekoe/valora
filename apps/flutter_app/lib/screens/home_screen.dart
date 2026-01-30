@@ -26,22 +26,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkConnection() async {
+    setState(() => _isLoading = true);
     final connected = await _apiService.healthCheck();
     setState(() {
       _isConnected = connected;
-      _isLoading = false;
     });
     if (connected) {
       _loadListings();
+    } else {
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _loadListings() async {
+    setState(() => _isLoading = true);
     try {
       final listings = await _apiService.getListings();
       setState(() => _listings = listings);
     } catch (e) {
-      debugPrint('Failed to load listings: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _loadListings,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
