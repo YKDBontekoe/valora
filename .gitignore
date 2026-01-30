@@ -1,48 +1,41 @@
 # .gitignore for Valora (C# & Flutter)
 
 ## [C# / .NET]
-[Bb]in/
-[Oo]bj/
+**/[Bb]in/
+**/[Oo]bj/
 *.user
 *.userosscache
 *.sln.docstates
 .vs/
 .vscode/
-# User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
+
 # Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Aa]rm/
-[Aa]rm64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
+**/[Dd]ebug/
+**/[Dd]ebugPublic/
+**/[Rr]elease/
+**/[Rr]eleases/
+**/x64/
+**/x86/
+**/[Aa]rm/
+**/[Aa]rm64/
+**/bld/
+**/[Ll]og/
+**/[Ll]ogs/
 
 ## [Flutter / Dart]
-.dart_tool/
-.packages
-.pub-cache/
-.pub/
-build/
+**/.dart_tool/
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/build/
 # Flutter web
-.flutter-plugins
-.flutter-plugins-dependencies
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
 # Flutter windows
-flutter_export_environment.sh
+**/flutter_export_environment.sh
 # Flutter android
-.gradle/
-local.properties
+**/.gradle/
+**/local.properties
 **/android/**/generated/
 **/android/app/src/main/res/values/strings.xml
 # Flutter ios
@@ -58,6 +51,10 @@ local.properties
 **/ios/DerivedData/
 **/*.flutter-plugins
 **/*.flutter-plugins-dependencies
+**/ios/Podfile
+**/ios/Podfile.lock
+**/macos/Podfile
+**/macos/Podfile.lock
 
 ## [Mobile Specific]
 # Android
