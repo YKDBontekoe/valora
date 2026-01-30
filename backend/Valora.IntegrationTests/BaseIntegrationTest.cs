@@ -20,7 +20,13 @@ public class BaseIntegrationTest : IAsyncLifetime
         DbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
     }
 
-    public virtual Task InitializeAsync() => Task.CompletedTask;
+    public virtual async Task InitializeAsync()
+    {
+        // Simple cleanup of Listings table before each test
+        // In a real scenario, Respawn is better, but this avoids adding a package dependency now.
+        DbContext.Listings.RemoveRange(DbContext.Listings);
+        await DbContext.SaveChangesAsync();
+    }
 
     public virtual Task DisposeAsync()
     {
