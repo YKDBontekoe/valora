@@ -1,5 +1,8 @@
+using Hangfire;
+using Hangfire.PostgreSql;
 using Valora.Application;
 using Valora.Infrastructure;
+using Valora.Infrastructure.Jobs;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -8,6 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Add Hangfire with PostgreSQL storage
+builder.Services.AddHangfire(config =>
+    config.UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+builder.Services.AddHangfireServer();
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -24,6 +33,15 @@ var app = builder.Build();
 
 app.UseCors();
 app.UseHttpsRedirection();
+
+// Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire");
+
+// Configure recurring job for scraping
+RecurringJob.AddOrUpdate<FundaScraperJob>(
+    "funda-scraper",
+    job => job.ExecuteAsync(CancellationToken.None),
+    builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
 
 // API Endpoints
 var api = app.MapGroup("/api");
@@ -54,4 +72,13 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     return Results.Ok(dto);
 });
 
+// Manual trigger endpoint for scraping
+api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
+{
+    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
+    return Results.Ok(new { message = "Scraper job queued" });
+});
+
 app.Run();
+
+public partial class Program { }
