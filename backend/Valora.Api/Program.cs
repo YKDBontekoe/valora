@@ -55,6 +55,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
+
 app.UseCors();
 
 if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirection"] == "true")

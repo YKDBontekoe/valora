@@ -8,14 +8,16 @@ import '../widgets/valora_listing_card.dart';
 import 'listing_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ApiService? apiService;
+
+  const HomeScreen({super.key, this.apiService});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ApiService _apiService = ApiService();
+  late final ApiService _apiService;
   bool _isConnected = false;
   List<Listing> _listings = [];
   bool _isLoading = true;
@@ -23,27 +25,51 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? ApiService();
     _checkConnection();
   }
 
   Future<void> _checkConnection() async {
     setState(() => _isLoading = true);
     final connected = await _apiService.healthCheck();
-    setState(() {
-      _isConnected = connected;
-      _isLoading = false;
-    });
-    if (connected) {
-      _loadListings();
+    if (mounted) {
+      setState(() {
+        _isConnected = connected;
+      });
+      if (connected) {
+        _loadListings();
+      } else {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _loadListings() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
     try {
       final listings = await _apiService.getListings();
-      setState(() => _listings = listings);
+      if (mounted) {
+        setState(() => _listings = listings);
+      }
     } catch (e) {
-      debugPrint('Failed to load listings: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _loadListings,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

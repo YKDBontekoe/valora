@@ -1,8 +1,26 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'core/theme/valora_theme.dart';
 import 'screens/startup_screen.dart';
 
 void main() {
+  // Ensure binding is initialized before using PlatformDispatcher
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Catch Flutter framework errors
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('Flutter Error: ${details.exception}');
+    // TODO: Send to crash reporting service
+  };
+
+  // Catch asynchronous errors
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Async Error: $error');
+    // TODO: Send to crash reporting service
+    return true; // Prevent app from crashing
+  };
+
   runApp(const ValoraApp());
 }
 
@@ -18,6 +36,37 @@ class ValoraApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: const StartupScreen(),
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        // Global error widget for build errors
+        ErrorWidget.builder = (FlutterErrorDetails details) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Something went wrong!',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      details.exception.toString(),
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        };
+        return child!;
+      },
     );
   }
 }
