@@ -104,20 +104,32 @@ class ValoraListingCard extends StatelessWidget {
   }
 
   Widget _buildImage(bool isDark) {
-    return AspectRatio(
-      aspectRatio: 16 / 10,
-      child: listing.imageUrl != null
-          ? Image.network(
-              listing.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  _buildPlaceholder(isDark),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return _buildPlaceholder(isDark, isLoading: true);
-              },
-            )
-          : _buildPlaceholder(isDark),
+    return Hero(
+      tag: listing.id,
+      child: AspectRatio(
+        aspectRatio: 16 / 10,
+        child: listing.imageUrl != null
+            ? Image.network(
+                listing.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    _buildPlaceholder(isDark),
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded) return child;
+                  return AnimatedOpacity(
+                    opacity: frame == null ? 0 : 1,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOut,
+                    child: child,
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return _buildPlaceholder(isDark, isLoading: true);
+                },
+              )
+            : _buildPlaceholder(isDark),
+      ),
     );
   }
 
@@ -134,7 +146,8 @@ class ValoraListingCard extends StatelessWidget {
             : Icon(
                 Icons.home_outlined,
                 size: ValoraSpacing.iconSizeXl,
-                color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+                color:
+                    isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
               ),
       ),
     );
@@ -149,10 +162,17 @@ class ValoraListingCard extends StatelessWidget {
         customBorder: const CircleBorder(),
         child: Padding(
           padding: const EdgeInsets.all(ValoraSpacing.sm),
-          child: Icon(
-            isFavorite ? Icons.favorite : Icons.favorite_border,
-            size: ValoraSpacing.iconSizeMd,
-            color: isFavorite ? ValoraColors.error : ValoraColors.neutral600,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) {
+              return ScaleTransition(scale: animation, child: child);
+            },
+            child: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              key: ValueKey(isFavorite),
+              size: ValoraSpacing.iconSizeMd,
+              color: isFavorite ? ValoraColors.error : ValoraColors.neutral600,
+            ),
           ),
         ),
       ),

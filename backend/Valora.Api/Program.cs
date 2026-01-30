@@ -7,12 +7,18 @@ using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Api.Hubs;
+using Valora.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Add SignalR
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
 builder.Services.AddHangfire(config =>
@@ -49,6 +55,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
+
 app.UseCors();
 
 if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirection"] == "true")
@@ -58,6 +66,9 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
 
 // Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire");
+
+// Map Hubs
+app.MapHub<ScraperHub>("/hubs/scraper");
 
 // Configure recurring job for scraping
 RecurringJob.AddOrUpdate<FundaScraperJob>(
@@ -99,6 +110,25 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 {
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
+});
+
+// Seed endpoint
+api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(region))
+    {
+        return Results.BadRequest("Region is required");
+    }
+
+    var count = await repo.CountAsync(ct);
+    if (count > 0)
+    {
+        // "skip" if data exists as per requirements
+        return Results.Ok(new { message = "Data already exists, skipping seed", skipped = true });
+    }
+
+    BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
+    return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
 });
 
 app.Run();

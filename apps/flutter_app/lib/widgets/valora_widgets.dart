@@ -3,6 +3,59 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 
+/// A wrapper that adds a subtle scale animation on press.
+class _ValoraScaleWrapper extends StatefulWidget {
+  const _ValoraScaleWrapper({
+    required this.child,
+    this.enabled = true,
+  });
+
+  final Widget child;
+  final bool enabled;
+
+  @override
+  State<_ValoraScaleWrapper> createState() => _ValoraScaleWrapperState();
+}
+
+class _ValoraScaleWrapperState extends State<_ValoraScaleWrapper>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+
+    return Listener(
+      onPointerDown: (_) => _controller.forward(),
+      onPointerUp: (_) => _controller.reverse(),
+      onPointerCancel: (_) => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 /// A versatile card component with consistent styling.
 ///
 /// Use for content containers like listings, info panels, etc.
@@ -66,7 +119,7 @@ class ValoraCard extends StatelessWidget {
       );
     }
 
-    return Container(
+    final card = Container(
       margin: margin,
       decoration: BoxDecoration(
         color: gradient == null
@@ -84,6 +137,12 @@ class ValoraCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: cardContent,
     );
+
+    if (onTap != null) {
+      return _ValoraScaleWrapper(child: card);
+    }
+
+    return card;
   }
 }
 
@@ -234,36 +293,42 @@ class ValoraButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Row(
-      mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (isLoading)
-          SizedBox(
-            width: ValoraSpacing.iconSizeSm,
-            height: ValoraSpacing.iconSizeSm,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation(
-                variant == ValoraButtonVariant.primary
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.primary,
+    Widget child = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: isLoading
+          ? SizedBox(
+              key: const ValueKey('loading'),
+              width: ValoraSpacing.iconSizeSm,
+              height: ValoraSpacing.iconSizeSm,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(
+                  variant == ValoraButtonVariant.primary
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.primary,
+                ),
               ),
+            )
+          : Row(
+              key: const ValueKey('content'),
+              mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: ValoraSpacing.iconSizeSm + 2),
+                  const SizedBox(width: ValoraSpacing.sm),
+                ],
+                Text(label),
+              ],
             ),
-          )
-        else if (icon != null)
-          Icon(icon, size: ValoraSpacing.iconSizeSm + 2),
-        if (icon != null || isLoading)
-          const SizedBox(width: ValoraSpacing.sm),
-        Text(label),
-      ],
     );
 
     final effectiveOnPressed = isLoading ? null : onPressed;
 
+    Widget button;
     switch (variant) {
       case ValoraButtonVariant.primary:
-        return ElevatedButton(
+        button = ElevatedButton(
           onPressed: effectiveOnPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: ValoraColors.primary,
@@ -271,22 +336,31 @@ class ValoraButton extends StatelessWidget {
           ),
           child: child,
         );
+        break;
       case ValoraButtonVariant.secondary:
-        return ElevatedButton(
+        button = ElevatedButton(
           onPressed: effectiveOnPressed,
           child: child,
         );
+        break;
       case ValoraButtonVariant.outline:
-        return OutlinedButton(
+        button = OutlinedButton(
           onPressed: effectiveOnPressed,
           child: child,
         );
+        break;
       case ValoraButtonVariant.ghost:
-        return TextButton(
+        button = TextButton(
           onPressed: effectiveOnPressed,
           child: child,
         );
+        break;
     }
+
+    return _ValoraScaleWrapper(
+      enabled: onPressed != null && !isLoading,
+      child: button,
+    );
   }
 }
 
@@ -366,6 +440,13 @@ class ValoraBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
