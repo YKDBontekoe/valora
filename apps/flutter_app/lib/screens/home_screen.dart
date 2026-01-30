@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return ValoraEmptyState(
         icon: Icons.cloud_off_outlined,
         title: 'Backend not connected',
-        subtitle: 'Start the API: dotnet run --project Valora.Api',
+        subtitle: 'Unable to connect to Valora Server. Please ensure the backend is running.',
         action: ValoraButton(
           label: 'Retry',
           variant: ValoraButtonVariant.primary,

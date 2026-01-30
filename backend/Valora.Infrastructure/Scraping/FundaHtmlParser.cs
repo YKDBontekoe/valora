@@ -90,7 +90,7 @@ public partial class FundaHtmlParser
 
         // Extract first image
         var imageNode = doc.DocumentNode.SelectSingleNode("//img[contains(@src, 'cloud.funda.nl')]");
-        var imageUrl = imageNode?.GetAttributeValue("src", null);
+        var imageUrl = imageNode?.GetAttributeValue("src", "");
 
         return new Listing
         {

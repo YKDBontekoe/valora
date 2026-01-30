@@ -17,6 +17,11 @@ valora/
 └── docker/               # Docker Compose
 ```
 
+## Documentation
+
+- [User Guide](docs/user-guide.md): How to use Valora.
+- [Developer Guide](docs/developer-guide.md): Architecture, API, and implementation details.
+
 ## Getting Started
 
 ### Backend
