@@ -99,7 +99,7 @@ Formatted price display.
 ```dart
 ValoraPrice(
   price: 450000,
-  size: VloraPriceSize.medium,
+  size: ValoraPriceSize.medium,
 )
 // Output: € 450.000
 ```

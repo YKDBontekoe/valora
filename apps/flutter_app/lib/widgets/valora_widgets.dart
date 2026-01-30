@@ -295,14 +295,14 @@ class ValoraPrice extends StatelessWidget {
   const ValoraPrice({
     super.key,
     required this.price,
-    this.size = VloraPriceSize.medium,
+    this.size = ValoraPriceSize.medium,
   });
 
   /// Price value in euros
   final double price;
 
   /// Size variant
-  final VloraPriceSize size;
+  final ValoraPriceSize size;
 
   @override
   Widget build(BuildContext context) {
@@ -316,13 +316,13 @@ class ValoraPrice extends StatelessWidget {
 
     TextStyle style;
     switch (size) {
-      case VloraPriceSize.small:
+      case ValoraPriceSize.small:
         style = ValoraTypography.titleMedium;
         break;
-      case VloraPriceSize.medium:
+      case ValoraPriceSize.medium:
         style = ValoraTypography.priceDisplay;
         break;
-      case VloraPriceSize.large:
+      case ValoraPriceSize.large:
         style = ValoraTypography.headlineLarge;
         break;
     }
@@ -334,7 +334,7 @@ class ValoraPrice extends StatelessWidget {
   }
 }
 
-enum VloraPriceSize { small, medium, large }
+enum ValoraPriceSize { small, medium, large }
 
 /// Badge component for status indicators.
 class ValoraBadge extends StatelessWidget {
