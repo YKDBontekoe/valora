@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_listing_card.dart';
+import 'listing_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -101,7 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
           return ValoraListingCard(
             listing: listing,
             onTap: () {
-              // TODO: Navigate to detail screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ListingDetailScreen(listing: listing),
+                ),
+              );
             },
           );
         },
