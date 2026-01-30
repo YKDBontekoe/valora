@@ -4,4 +4,5 @@
   <Project Path="Valora.Domain/Valora.Domain.csproj" />
   <Project Path="Valora.Infrastructure/Valora.Infrastructure.csproj" />
   <Project Path="Valora.IntegrationTests/Valora.IntegrationTests.csproj" />
+  <Project Path="Valora.UnitTests/Valora.UnitTests.csproj" />
 </Solution>

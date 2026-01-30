@@ -90,7 +90,8 @@ public partial class FundaHtmlParser
 
         // Extract first image
         var imageNode = doc.DocumentNode.SelectSingleNode("//img[contains(@src, 'cloud.funda.nl')]");
-        var imageUrl = imageNode?.GetAttributeValue("src", null);
+        var imageUrl = imageNode?.GetAttributeValue("src", string.Empty);
+        if (string.IsNullOrEmpty(imageUrl)) imageUrl = null;
 
         return new Listing
         {
@@ -100,7 +101,7 @@ public partial class FundaHtmlParser
             PostalCode = postalCode,
             Price = price,
             Bedrooms = bedrooms,
-            Bathrooms = null!, // Funda doesn't consistently show this
+            Bathrooms = null, // Funda doesn't consistently show this
             LivingAreaM2 = livingArea,
             PlotAreaM2 = plotArea,
             PropertyType = propertyType,
