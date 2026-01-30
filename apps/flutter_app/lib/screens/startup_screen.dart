@@ -51,7 +51,17 @@ class _StartupScreenState extends State<StartupScreen>
       ),
     );
 
-    _controller.forward().then((_) => _navigateToHome());
+    _startAnimation();
+  }
+
+  Future<void> _startAnimation() async {
+    try {
+      await _controller.forward().orCancel;
+      if (!mounted) return;
+      _navigateToHome();
+    } on TickerCanceled {
+      // Animation canceled because the widget was disposed.
+    }
   }
 
   void _navigateToHome() {
