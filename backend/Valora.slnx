@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Valora.Api/Valora.Api.csproj" />
+  <Project Path="Valora.Application/Valora.Application.csproj" />
+  <Project Path="Valora.Domain/Valora.Domain.csproj" />
+  <Project Path="Valora.Infrastructure/Valora.Infrastructure.csproj" />
+</Solution>

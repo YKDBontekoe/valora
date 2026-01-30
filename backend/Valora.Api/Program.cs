@@ -1,0 +1,57 @@
+using Valora.Application;
+using Valora.Infrastructure;
+using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// Add CORS for Flutter
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+var app = builder.Build();
+
+app.UseCors();
+app.UseHttpsRedirection();
+
+// API Endpoints
+var api = app.MapGroup("/api");
+
+api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+api.MapGet("/listings", async (IListingRepository repo, CancellationToken ct) =>
+{
+    var listings = await repo.GetAllAsync(ct);
+    var dtos = listings.Select(l => new ListingDto(
+        l.Id, l.FundaId, l.Address, l.City, l.PostalCode, l.Price,
+        l.Bedrooms, l.Bathrooms, l.LivingAreaM2, l.PlotAreaM2,
+        l.PropertyType, l.Status, l.Url, l.ImageUrl, l.ListedDate, l.CreatedAt
+    ));
+    return Results.Ok(dtos);
+});
+
+api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
+{
+    var listing = await repo.GetByIdAsync(id, ct);
+    if (listing is null) return Results.NotFound();
+    
+    var dto = new ListingDto(
+        listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
+        listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,
+        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt
+    );
+    return Results.Ok(dto);
+});
+
+app.Run();
