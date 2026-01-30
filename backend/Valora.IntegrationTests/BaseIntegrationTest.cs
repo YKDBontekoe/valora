@@ -27,4 +27,9 @@ public class BaseIntegrationTest : IAsyncLifetime
         _scope?.Dispose();
         return Task.CompletedTask;
     }
+
+    protected T GetRequiredService<T>() where T : notnull
+    {
+        return _scope.ServiceProvider.GetRequiredService<T>();
+    }
 }
