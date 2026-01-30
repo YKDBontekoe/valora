@@ -8,9 +8,13 @@ class ApiService {
   static const String baseUrl = 'http://localhost:5000/api';
   static const Duration timeoutDuration = Duration(seconds: 10);
 
+  final http.Client _client;
+
+  ApiService({http.Client? client}) : _client = client ?? http.Client();
+
   Future<bool> healthCheck() async {
     try {
-      final response = await http
+      final response = await _client
           .get(Uri.parse('$baseUrl/health'))
           .timeout(timeoutDuration);
       return response.statusCode == 200;
@@ -21,7 +25,7 @@ class ApiService {
 
   Future<List<Listing>> getListings() async {
     try {
-      final response = await http
+      final response = await _client
           .get(Uri.parse('$baseUrl/listings'))
           .timeout(timeoutDuration);
 
@@ -41,7 +45,7 @@ class ApiService {
 
   Future<Listing?> getListing(String id) async {
     try {
-      final response = await http
+      final response = await _client
           .get(Uri.parse('$baseUrl/listings/$id'))
           .timeout(timeoutDuration);
 
