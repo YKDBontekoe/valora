@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkConnection() async {
+    setState(() => _isLoading = true);
     final connected = await _apiService.healthCheck();
     setState(() {
       _isConnected = connected;
@@ -53,15 +55,27 @@ class _HomeScreenState extends State<HomeScreen> {
           'Valora',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
               ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {},
+          ),
+          const SizedBox(width: ValoraSpacing.sm),
+        ],
       ),
       body: _isLoading
           ? const ValoraLoadingIndicator(message: 'Connecting...')
           : _buildContent(),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _checkConnection,
-        child: const Icon(Icons.refresh),
+        backgroundColor: ValoraColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.refresh),
+        label: const Text('Refresh'),
+        elevation: ValoraSpacing.elevationLg,
       ),
     );
   }
@@ -91,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadListings,
+      color: ValoraColors.primary,
       child: ListView.separated(
         padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
         itemCount: _listings.length,
@@ -99,18 +114,93 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         itemBuilder: (context, index) {
           final listing = _listings[index];
-          return ValoraListingCard(
-            listing: listing,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ListingDetailScreen(listing: listing),
-                ),
-              );
-            },
+          // Stagger animation for the first few items
+          final int delay = index < 5 ? index * 100 : 0;
+
+          return _SlideInItem(
+            delay: Duration(milliseconds: delay),
+            child: ValoraListingCard(
+              listing: listing,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ListingDetailScreen(listing: listing),
+                  ),
+                );
+              },
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _SlideInItem extends StatefulWidget {
+  const _SlideInItem({
+    required this.child,
+    this.delay = Duration.zero,
+  });
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  State<_SlideInItem> createState() => _SlideInItemState();
+}
+
+class _SlideInItemState extends State<_SlideInItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) {
+          _controller.forward();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: widget.child,
       ),
     );
   }
