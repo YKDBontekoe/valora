@@ -22,10 +22,15 @@ builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationServi
 
 // Add Hangfire with PostgreSQL storage
 var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddHangfire(config =>
-    config.UsePostgreSqlStorage(options =>
-        options.UseNpgsqlConnection(connectionString)));
-builder.Services.AddHangfireServer();
+var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled");
+
+if (hangfireEnabled)
+{
+    builder.Services.AddHangfire(config =>
+        config.UsePostgreSqlStorage(options =>
+            options.UseNpgsqlConnection(connectionString)));
+    builder.Services.AddHangfireServer();
+}
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -65,17 +70,21 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
     app.UseHttpsRedirection();
 }
 
-// Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire");
-
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper");
 
-// Configure recurring job for scraping
-RecurringJob.AddOrUpdate<FundaScraperJob>(
-    "funda-scraper",
-    job => job.ExecuteAsync(CancellationToken.None),
-    builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+// Re-check configuration from built app to ensure test overrides are respected
+if (app.Configuration.GetValue<bool>("Hangfire:Enabled"))
+{
+    // Hangfire Dashboard
+    app.UseHangfireDashboard("/hangfire");
+
+    // Configure recurring job for scraping
+    RecurringJob.AddOrUpdate<FundaScraperJob>(
+        "funda-scraper",
+        job => job.ExecuteAsync(CancellationToken.None),
+        builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+}
 
 // API Endpoints
 var api = app.MapGroup("/api");
@@ -118,6 +127,7 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
 // Manual trigger endpoint for scraping
 api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 {
+    if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
 });
@@ -129,6 +139,8 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
     {
         return Results.BadRequest("Region is required");
     }
+
+    if (!hangfireEnabled) return Results.StatusCode(503);
 
     var count = await repo.CountAsync(ct);
     if (count > 0)
