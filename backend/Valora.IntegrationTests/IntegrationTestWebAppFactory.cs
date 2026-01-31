@@ -31,13 +31,49 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll(typeof(DbContextOptions<ValoraDbContext>));
-            services.AddDbContext<ValoraDbContext>(options =>
-                options.UseNpgsql(_connectionString));
+            // Remove existing DbContext registrations
+            services.RemoveAll<DbContextOptions<ValoraDbContext>>();
+            services.RemoveAll<DbContextOptions>();
+            services.RemoveAll<ValoraDbContext>();
 
-            // Remove Hangfire hosted services to prevent them from starting
-            // This is necessary because Program.cs might register them before
-            // the configuration override is picked up.
+            // Remove implicit configuration that might hold the old delegate
+            // This is likely why Npgsql was still sticking around!
+            var configType = Type.GetType("Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration`1, Microsoft.EntityFrameworkCore");
+            if (configType != null)
+            {
+                 var genericConfigType = configType.MakeGenericType(typeof(ValoraDbContext));
+                 services.RemoveAll(genericConfigType);
+            }
+
+            // Also try to find it via interface matching if reflection fails or assembly issues
+            var configServices = services.Where(d => d.ServiceType.Name.Contains("IDbContextOptionsConfiguration") &&
+                                                     d.ServiceType.IsGenericType &&
+                                                     d.ServiceType.GetGenericArguments()[0] == typeof(ValoraDbContext)).ToList();
+            foreach (var s in configServices) services.Remove(s);
+
+
+            // Nuclear cleanup of Npgsql if present
+            var npgsqlServices = services.Where(d =>
+                d.ServiceType.FullName?.Contains("Npgsql") == true ||
+                d.ImplementationType?.FullName?.Contains("Npgsql") == true).ToList();
+
+            foreach (var s in npgsqlServices)
+            {
+                services.Remove(s);
+            }
+
+            if (_connectionString == "InMemory")
+            {
+                services.AddDbContext<ValoraDbContext>(options =>
+                    options.UseInMemoryDatabase("ValoraIntegrationTestDb"));
+            }
+            else
+            {
+                services.AddDbContext<ValoraDbContext>(options =>
+                    options.UseNpgsql(_connectionString));
+            }
+
+            // Remove Hangfire hosted services
             var hostedServices = services.Where(d =>
                 d.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService) &&
                 d.ImplementationType?.FullName?.Contains("Hangfire") == true)
