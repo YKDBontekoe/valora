@@ -2,5 +2,30 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "platformAutomerge": true,
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": [
+        "^Microsoft\\.",
+        "^System\\."
+      ],
+      "groupName": "dotnet-dependencies"
+    },
+    {
+      "matchPackagePatterns": [
+        "^flutter",
+        "^dart"
+      ],
+      "groupName": "flutter-dependencies"
+    }
   ]
 }

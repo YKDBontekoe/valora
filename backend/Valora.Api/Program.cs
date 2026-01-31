@@ -21,6 +21,7 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
+var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddHangfire(config =>
     config.UsePostgreSqlStorage(options =>
         options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
@@ -88,15 +89,24 @@ var api = app.MapGroup("/api");
 
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-api.MapGet("/listings", async (IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
-    var listings = await repo.GetAllAsync(ct);
-    var dtos = listings.Select(l => new ListingDto(
+    var paginatedList = await repo.GetAllAsync(filter, ct);
+    var dtos = paginatedList.Items.Select(l => new ListingDto(
         l.Id, l.FundaId, l.Address, l.City, l.PostalCode, l.Price,
         l.Bedrooms, l.Bathrooms, l.LivingAreaM2, l.PlotAreaM2,
         l.PropertyType, l.Status, l.Url, l.ImageUrl, l.ListedDate, l.CreatedAt
     ));
-    return Results.Ok(dtos);
+
+    return Results.Ok(new
+    {
+        Items = dtos,
+        paginatedList.PageIndex,
+        paginatedList.TotalPages,
+        paginatedList.TotalCount,
+        paginatedList.HasNextPage,
+        paginatedList.HasPreviousPage
+    });
 });
 
 api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
