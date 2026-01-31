@@ -34,6 +34,19 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             services.RemoveAll(typeof(DbContextOptions<ValoraDbContext>));
             services.AddDbContext<ValoraDbContext>(options =>
                 options.UseNpgsql(_connectionString));
+
+            // Remove Hangfire hosted services to prevent them from starting
+            // This is necessary because Program.cs might register them before
+            // the configuration override is picked up.
+            var hostedServices = services.Where(d =>
+                d.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService) &&
+                d.ImplementationType?.FullName?.Contains("Hangfire") == true)
+                .ToList();
+
+            foreach (var descriptor in hostedServices)
+            {
+                services.Remove(descriptor);
+            }
         });
     }
 }
