@@ -48,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
 
+  static const String _defaultScrapeRegion = 'amsterdam';
+
   @override
   void initState() {
     super.initState();
@@ -200,6 +202,40 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _triggerScrape() async {
+    setState(() => _isLoading = true);
+    try {
+      // Trigger a limited scrape for 10 items in Amsterdam
+      await _apiService.triggerLimitedScrape(_defaultScrapeRegion, 10);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scraping started... Please wait a moment.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Wait a bit to allow the background job to start and maybe finish some items
+      await Future.delayed(const Duration(seconds: 3));
+
+      if (mounted) {
+        _loadListings(refresh: true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to trigger scrape: ${e is AppException ? e.message : e}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -309,6 +345,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_listings.isEmpty) {
+      final bool hasFilters = _minPrice != null ||
+          _maxPrice != null ||
+          _city != null ||
+          _searchTerm.isNotEmpty;
+
+      if (!hasFilters) {
+        return ValoraEmptyState(
+          icon: Icons.home_work_outlined,
+          title: 'No listings yet',
+          subtitle: 'Get started by scraping some listings.',
+          action: ValoraButton(
+            label: 'Scrape 10 Items',
+            variant: ValoraButtonVariant.primary,
+            icon: Icons.cloud_download,
+            onPressed: _triggerScrape,
+          ),
+        );
+      }
+
       return ValoraEmptyState(
         icon: Icons.search_off,
         title: 'No listings found',
