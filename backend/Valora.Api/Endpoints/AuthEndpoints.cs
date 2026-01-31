@@ -19,6 +19,11 @@ public static class AuthEndpoints
             [FromBody] RegisterDto registerDto,
             UserManager<ApplicationUser> userManager) =>
         {
+            if (registerDto.Password != registerDto.ConfirmPassword)
+            {
+                return Results.BadRequest(new { error = "Passwords do not match" });
+            }
+
             var user = new ApplicationUser { UserName = registerDto.Email, Email = registerDto.Email };
             var result = await userManager.CreateAsync(user, registerDto.Password);
 
@@ -58,7 +63,7 @@ public static class AuthEndpoints
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
-                expires: DateTime.Now.AddMinutes(double.Parse(jwtSettings["ExpiryMinutes"] ?? "60")),
+                expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpiryMinutes"] ?? "60")),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
