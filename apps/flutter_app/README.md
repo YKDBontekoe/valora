@@ -24,17 +24,6 @@ Multi-platform client for valora (iOS, Android, Web, Desktop).
 
 ## API Configuration
 
-The backend API defaults to `http://localhost:5000/api`.
+The backend API runs at `http://localhost:5000/api`.
 
-You can configure the API URL in two ways:
-
-1.  **Using a `.env` file (Recommended for local dev):**
-    Create a `.env` file in the root of the flutter app (copy from `.env.example`) and set your URL:
-    ```
-    API_BASE_URL=https://valora-ylpr.onrender.com/api
-    ```
-
-2.  **Using `--dart-define` (Recommended for CI/CD):**
-    ```bash
-    flutter run --dart-define=API_BASE_URL=https://valora-ylpr.onrender.com/api
-    ```
+Update `lib/config.dart` with your API base URL for different environments.
