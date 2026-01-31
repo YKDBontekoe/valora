@@ -82,6 +82,25 @@ class ApiService {
     }
   }
 
+  Future<void> triggerLimitedScrape(String region, int limit) async {
+    try {
+      final queryParams = <String, String>{
+        'region': region,
+        'limit': limit.toString(),
+      };
+
+      final uri = Uri.parse('$baseUrl/scraper/trigger-limited').replace(queryParameters: queryParams);
+
+      final response = await _client
+          .post(uri)
+          .timeout(timeoutDuration);
+
+      _handleResponse(response, (_) => null);
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);

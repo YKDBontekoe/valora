@@ -219,7 +219,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 600)); // Wait for debounce
     });
 
-    testWidgets('Clears filters via empty state action', (WidgetTester tester) async {
+    testWidgets('Shows scrape button when no listings and no filters', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
         if (request.url.toString().contains('health')) return http.Response('OK', 200);
         // Return empty list
@@ -236,12 +236,48 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify empty state
+      expect(find.text('No listings yet'), findsOneWidget);
+      expect(find.text('Scrape 10 Items'), findsOneWidget);
+    });
+
+    testWidgets('Clears filters via empty state action', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        // Return empty list
+        return http.Response(
+            '''
+            {
+              "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
+            }
+            ''', 200);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpAndSettle();
+
+      // NEW: Apply a filter to trigger the "No listings found" state
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+
+      final minField = find.descendant(
+          of: find.widgetWithText(ValoraTextField, 'Min Price'),
+          matching: find.byType(TextField));
+      await tester.enterText(minField, '100000');
+
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      // Verify empty state
       expect(find.text('No listings found'), findsOneWidget);
       expect(find.text('Clear Filters'), findsOneWidget);
 
       // Tap clear
       await tester.tap(find.text('Clear Filters'));
       await tester.pumpAndSettle();
+
+      // Verify filters cleared (back to initial state)
+      expect(find.text('No listings yet'), findsOneWidget);
     });
   });
 }

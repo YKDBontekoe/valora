@@ -34,4 +34,20 @@ public class FundaScraperJob
             throw; // Re-throw to let Hangfire handle retries
         }
     }
+
+    public async Task ExecuteLimitedAsync(string region, int limit, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("FundaScraperJob limited starting at {Time} for {Region}", DateTime.UtcNow, region);
+
+        try
+        {
+            await _scraperService.ScrapeLimitedAsync(region, limit, cancellationToken);
+            _logger.LogInformation("FundaScraperJob limited completed successfully at {Time}", DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "FundaScraperJob limited failed");
+            throw; // Re-throw to let Hangfire handle retries
+        }
+    }
 }
