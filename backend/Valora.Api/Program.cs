@@ -114,7 +114,8 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingService service, Cance
 // Manual trigger endpoint for scraping
 api.MapPost("/scraper/trigger", async (IJobScheduler scheduler, CancellationToken ct) =>
 {
-    await scheduler.EnqueueScraperJobAsync(ct);
+    if (!hangfireEnabled) return Results.StatusCode(503);
+    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
 });
 
@@ -125,6 +126,8 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, IJob
     {
         return Results.BadRequest("Region is required");
     }
+
+    if (!hangfireEnabled) return Results.StatusCode(503);
 
     var count = await repo.CountAsync(ct);
     if (count > 0)
