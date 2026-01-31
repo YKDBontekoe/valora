@@ -21,7 +21,8 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
-var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
+var rawConnectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled");
 
 if (hangfireEnabled)

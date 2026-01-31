@@ -14,7 +14,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
+        var rawConnectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
+        var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 
         services.AddDbContext<ValoraDbContext>(options =>
             options.UseNpgsql(
