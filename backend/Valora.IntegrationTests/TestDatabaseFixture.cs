@@ -19,6 +19,11 @@ public class TestDatabaseFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        // Disable Hangfire for tests by setting the environment variable.
+        // This is necessary because Program.cs reads configuration before WebApplicationFactory
+        // can inject in-memory overrides for top-level service registration.
+        Environment.SetEnvironmentVariable("Hangfire__Enabled", "false");
+
         await DbContainer.StartAsync();
         Factory = new IntegrationTestWebAppFactory(DbContainer.GetConnectionString());
         
@@ -44,6 +49,8 @@ public class TestDatabaseFixture : IAsyncLifetime
     {
         if (Factory != null) await Factory.DisposeAsync();
         await DbContainer.StopAsync();
+
+        Environment.SetEnvironmentVariable("Hangfire__Enabled", null);
     }
 }
 
