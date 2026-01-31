@@ -141,7 +141,7 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
 }
 
 // Map Auth Endpoints
-app.MapAuthEndpoints(builder.Configuration);
+app.MapAuthEndpoints();
 
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();

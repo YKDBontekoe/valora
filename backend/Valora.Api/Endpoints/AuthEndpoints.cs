@@ -11,7 +11,7 @@ namespace Valora.Api.Endpoints;
 
 public static class AuthEndpoints
 {
-    public static void MapAuthEndpoints(this IEndpointRouteBuilder app, IConfiguration configuration)
+    public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/auth");
 
@@ -37,7 +37,8 @@ public static class AuthEndpoints
 
         group.MapPost("/login", async (
             [FromBody] LoginDto loginDto,
-            UserManager<ApplicationUser> userManager) =>
+            UserManager<ApplicationUser> userManager,
+            IConfiguration configuration) =>
         {
             var user = await userManager.FindByEmailAsync(loginDto.Email);
             if (user == null || !await userManager.CheckPasswordAsync(user, loginDto.Password))
