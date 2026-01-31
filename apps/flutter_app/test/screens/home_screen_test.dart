@@ -31,7 +31,16 @@ void main() {
         }
         if (request.url.toString().contains('listings')) {
            return http.Response(
-              '[{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}]',
+              '''
+              {
+                "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
+                "pageIndex": 1,
+                "totalPages": 1,
+                "totalCount": 1,
+                "hasNextPage": false,
+                "hasPreviousPage": false
+              }
+              ''',
               200);
         }
         return http.Response('Not Found', 404);

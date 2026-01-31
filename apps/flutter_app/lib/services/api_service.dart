@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/listing.dart';
+import '../models/listing_response.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:5000/api';
@@ -23,15 +24,37 @@ class ApiService {
     }
   }
 
-  Future<List<Listing>> getListings() async {
+  Future<ListingResponse> getListings({
+    int page = 1,
+    int pageSize = 10,
+    String? searchTerm,
+    double? minPrice,
+    double? maxPrice,
+    String? city,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
     try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (searchTerm != null && searchTerm.isNotEmpty) queryParams['searchTerm'] = searchTerm;
+      if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
+      if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
+      if (city != null && city.isNotEmpty) queryParams['city'] = city;
+      if (sortBy != null && sortBy.isNotEmpty) queryParams['sortBy'] = sortBy;
+      if (sortOrder != null && sortOrder.isNotEmpty) queryParams['sortOrder'] = sortOrder;
+
+      final uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
+
       final response = await _client
-          .get(Uri.parse('$baseUrl/listings'))
+          .get(uri)
           .timeout(timeoutDuration);
 
       return _handleResponse(response, (body) {
-        final List<dynamic> data = json.decode(body);
-        return data.map((json) => Listing.fromJson(json)).toList();
+        return ListingResponse.fromJson(json.decode(body));
       });
     } on SocketException {
       throw Exception('No internet connection or server unreachable.');

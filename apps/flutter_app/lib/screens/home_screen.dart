@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
@@ -5,6 +6,7 @@ import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_listing_card.dart';
+import '../widgets/valora_filter_dialog.dart';
 import 'listing_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,15 +20,53 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final ApiService _apiService;
+  late final ScrollController _scrollController;
+
   bool _isConnected = false;
   List<Listing> _listings = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+
+  // Pagination
+  int _currentPage = 1;
+  static const int _pageSize = 10;
+  bool _hasNextPage = true;
+
+  // Filters
+  String _searchTerm = '';
+  double? _minPrice;
+  double? _maxPrice;
+  String? _city;
+  String? _sortBy;
+  String? _sortOrder;
+
+  // Search
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _apiService = widget.apiService ?? ApiService();
+    _scrollController = ScrollController()..addListener(_onScroll);
     _checkConnection();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _hasNextPage) {
+      _loadMoreListings();
+    }
   }
 
   Future<void> _checkConnection() async {
@@ -37,20 +77,46 @@ class _HomeScreenState extends State<HomeScreen> {
         _isConnected = connected;
       });
       if (connected) {
-        _loadListings();
+        _loadListings(refresh: true);
       } else {
         setState(() => _isLoading = false);
       }
     }
   }
 
-  Future<void> _loadListings() async {
+  Future<void> _loadListings({bool refresh = false}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+
+    if (refresh) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 1;
+        _listings = [];
+        _hasNextPage = true;
+      });
+    }
+
     try {
-      final listings = await _apiService.getListings();
+      final response = await _apiService.getListings(
+        page: _currentPage,
+        pageSize: _pageSize,
+        searchTerm: _searchTerm,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        city: _city,
+        sortBy: _sortBy,
+        sortOrder: _sortOrder,
+      );
+
       if (mounted) {
-        setState(() => _listings = listings);
+        setState(() {
+          if (refresh) {
+            _listings = response.items;
+          } else {
+            _listings.addAll(response.items);
+          }
+          _hasNextPage = response.hasNextPage;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -61,15 +127,59 @@ class _HomeScreenState extends State<HomeScreen> {
             action: SnackBarAction(
               label: 'Retry',
               textColor: Colors.white,
-              onPressed: _loadListings,
+              onPressed: () => _loadListings(refresh: refresh),
             ),
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
       }
+    }
+  }
+
+  Future<void> _loadMoreListings() async {
+    if (_isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+    _currentPage++;
+    await _loadListings();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchTerm = query;
+      });
+      _loadListings(refresh: true);
+    });
+  }
+
+  Future<void> _openFilterDialog() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => ValoraFilterDialog(
+        initialMinPrice: _minPrice,
+        initialMaxPrice: _maxPrice,
+        initialCity: _city,
+        initialSortBy: _sortBy,
+        initialSortOrder: _sortOrder,
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _minPrice = result['minPrice'];
+        _maxPrice = result['maxPrice'];
+        _city = result['city'];
+        _sortBy = result['sortBy'];
+        _sortOrder = result['sortOrder'];
+      });
+      _loadListings(refresh: true);
     }
   }
 
@@ -77,32 +187,77 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Valora',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search address, city...',
+                  border: InputBorder.none,
+                ),
+                onChanged: _onSearchChanged,
+              )
+            : Text(
+                'Valora',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
-        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchController.clear();
+                  _searchTerm = '';
+                  _loadListings(refresh: true);
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.filter_list),
+                if (_minPrice != null || _maxPrice != null || _city != null)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 8,
+                        minHeight: 8,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: _openFilterDialog,
           ),
           const SizedBox(width: ValoraSpacing.sm),
         ],
       ),
       body: _isLoading
-          ? const ValoraLoadingIndicator(message: 'Connecting...')
+          ? const ValoraLoadingIndicator(message: 'Loading listings...')
           : _buildContent(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _checkConnection,
+      floatingActionButton: _isConnected && _listings.isEmpty ? FloatingActionButton.extended(
+        onPressed: () => _loadListings(refresh: true),
         backgroundColor: ValoraColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.refresh),
         label: const Text('Refresh'),
         elevation: ValoraSpacing.elevationLg,
-      ),
+      ) : null,
     );
   }
 
@@ -122,26 +277,51 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_listings.isEmpty) {
-      return const ValoraEmptyState(
-        icon: Icons.home_outlined,
-        title: 'No listings yet',
-        subtitle: 'Properties will appear here once scraped',
+      return ValoraEmptyState(
+        icon: Icons.search_off,
+        title: 'No listings found',
+        subtitle: 'Try adjusting your filters or search term.',
+        action: ValoraButton(
+          label: 'Clear Filters',
+          variant: ValoraButtonVariant.outline,
+          onPressed: () {
+            setState(() {
+              _minPrice = null;
+              _maxPrice = null;
+              _city = null;
+              _searchTerm = '';
+              _searchController.clear();
+              _isSearching = false;
+            });
+            _loadListings(refresh: true);
+          },
+        ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: _loadListings,
+      onRefresh: () => _loadListings(refresh: true),
       color: ValoraColors.primary,
       child: ListView.separated(
+        controller: _scrollController,
         padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
-        itemCount: _listings.length,
+        itemCount: _listings.length + (_hasNextPage ? 1 : 0),
         separatorBuilder: (context, index) => const SizedBox(
           height: ValoraSpacing.listItemGap,
         ),
         itemBuilder: (context, index) {
+          if (index == _listings.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: ValoraSpacing.md),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
           final listing = _listings[index];
-          // Stagger animation for the first few items
-          final int delay = index < 5 ? index * 100 : 0;
+          // Only animate first page
+          final int delay = (index < _pageSize && _currentPage == 1) ? index * 100 : 0;
 
           return _SlideInItem(
             delay: Duration(milliseconds: delay),
