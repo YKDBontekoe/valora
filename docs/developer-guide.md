@@ -11,6 +11,8 @@ Valora follows a **Clean Architecture** approach with the following layers:
 - **Valora.Infrastructure**: Implementation of interfaces (EF Core, Hangfire, Scraping).
 - **Valora.Api**: Entry point, Minimal APIs, and Dependency Injection configuration.
 
+For visual diagrams of the system architecture and scraping flow, please refer to the [README.md](../README.md#architecture).
+
 ## API Documentation
 
 The backend exposes a REST API via Minimal APIs in `Valora.Api`.
@@ -23,6 +25,7 @@ The backend exposes a REST API via Minimal APIs in `Valora.Api`.
 
 - `GET /api/listings`
   - Returns a list of scraped listings.
+  - Supports filtering via query parameters (bound via `[AsParameters]`).
   - Response: `ListingDto[]`
 
 - `GET /api/listings/{id}`
@@ -69,18 +72,23 @@ The scraper is configured via the `Scraper` section in `appsettings.json`:
 
 ## Testing
 
-### Backend
+Valora uses a comprehensive testing strategy involving both Unit and Integration tests.
 
-Uses xUnit and Testcontainers for integration testing.
+### Backend Testing
 
-```bash
-cd backend
-dotnet test
-```
+1.  **Unit Tests (`Valora.UnitTests`)**:
+    *   Tests individual components in isolation.
+    *   Uses `Moq` for mocking dependencies.
+    *   Uses `Microsoft.EntityFrameworkCore.InMemory` for testing database-related logic without a real DB.
+    *   To run: `dotnet test --filter "Category=Unit"`
 
-**Note**: Docker must be running for integration tests to pass.
+2.  **Integration Tests (`Valora.IntegrationTests`)**:
+    *   Tests the entire pipeline including the database.
+    *   Uses **Testcontainers** to spin up a real PostgreSQL instance in Docker.
+    *   **Note**: Docker must be running.
+    *   To run: `dotnet test --filter "Category=Integration"`
 
-### Frontend
+### Frontend Testing
 
 Uses Flutter test.
 

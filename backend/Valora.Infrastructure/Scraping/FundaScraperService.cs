@@ -9,6 +9,10 @@ using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
+/// <summary>
+/// Service responsible for scraping real estate listings from funda.nl.
+/// Handles HTML parsing, rate limiting, retries, and data persistence.
+/// </summary>
 public class FundaScraperService : IFundaScraperService
 {
     private readonly HttpClient _httpClient;
@@ -40,6 +44,10 @@ public class FundaScraperService : IFundaScraperService
         ConfigureHttpClient();
     }
 
+    /// <summary>
+    /// Configures the HTTP client with headers to mimic a real browser.
+    /// This is crucial to avoid 403 Forbidden responses from Funda's anti-bot protection.
+    /// </summary>
     private void ConfigureHttpClient()
     {
         // Set headers to appear as a regular browser
@@ -50,6 +58,10 @@ public class FundaScraperService : IFundaScraperService
         _httpClient.DefaultRequestHeaders.Add("Accept-Language", "nl-NL,nl;q=0.9,en;q=0.8");
     }
 
+    /// <summary>
+    /// Creates a Polly retry policy with exponential backoff.
+    /// Handles transient network errors and HTTP error codes.
+    /// </summary>
     private AsyncRetryPolicy<HttpResponseMessage> CreateRetryPolicy()
     {
         // Configure retry policy with exponential backoff
@@ -107,6 +119,10 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Orchestrates the scraping process for a single search URL.
+    /// Fetches the search results page, parses listing cards, and processes each listing individually.
+    /// </summary>
     private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Scraping search URL: {Url}", searchUrl);
@@ -163,6 +179,10 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Processes a single listing: fetches details, parses them, and updates the database.
+    /// Handles deduplication by checking if the listing already exists.
+    /// </summary>
     private async Task ProcessListingAsync(ListingPreview card, bool shouldNotify, CancellationToken cancellationToken)
     {
         // Check if listing already exists

@@ -25,6 +25,8 @@ var rawConnectionString = builder.Configuration["DATABASE_URL"] ?? builder.Confi
 var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled");
 
+// Conditional registration of Hangfire allows the application to run in contexts
+// where a background job server is not needed or supported (e.g., Integration Tests).
 if (hangfireEnabled)
 {
     builder.Services.AddHangfire(config =>
@@ -92,6 +94,7 @@ var api = app.MapGroup("/api");
 
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
+// [AsParameters] binds query parameters (e.g., ?page=1&minPrice=200000) directly to the properties of ListingFilterDto.
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
     var paginatedList = await repo.GetAllAsync(filter, ct);

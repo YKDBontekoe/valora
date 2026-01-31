@@ -44,6 +44,20 @@ The frontend is the user interface.
 ## Troubleshooting
 
 ### "Backend not connected"
-If you see this message, it means the frontend cannot talk to the backend.
+If you see this message in the frontend:
 - Ensure the backend server is running (Step 1).
 - Check if `http://localhost:5000/api/health` works in your browser.
+- Verify that no firewall is blocking the connection.
+
+### Scraping not working
+If listings are not appearing:
+1. Access the Hangfire Dashboard at `http://localhost:5000/hangfire`.
+2. Check the "Jobs" tab for failed jobs.
+3. If you see repeated failures, check the backend console logs.
+4. Common issue: Funda might be blocking requests. Ensure the `User-Agent` header is correctly configured in the backend (handled automatically by `FundaScraperService`).
+
+### Database Connection Errors
+If the backend fails to start with database errors:
+- Ensure Docker Desktop is running.
+- Verify the `postgres` container is up: `docker ps`.
+- Check that the connection string in `appsettings.json` matches the docker configuration.
