@@ -20,7 +20,18 @@ public class ValoraDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.FundaId).IsUnique();
-            entity.Property(e => e.Address).IsRequired();
+
+            entity.Property(e => e.Address)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            entity.Property(e => e.PropertyType).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Url).HasMaxLength(2048);
+            entity.Property(e => e.ImageUrl).HasMaxLength(2048);
+
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
         });
 

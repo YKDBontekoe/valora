@@ -30,9 +30,15 @@ builder.Services.AddHangfireServer();
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+    if (allowedOrigins is null || allowedOrigins.Length == 0)
+    {
+        allowedOrigins = new[] { "http://localhost:3000" };
+    }
+
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -66,7 +72,15 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
 }
 
 // Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire");
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/hangfire"), appBuilder =>
+{
+    appBuilder.UseMiddleware<Valora.Api.Middleware.HangfireBasicAuthMiddleware>();
+});
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new Valora.Api.Filters.HangfireAuthorizationFilter() }
+});
 
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper");
@@ -84,6 +98,11 @@ api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
+    if (!filter.Validate(out var validationError))
+    {
+        return Results.BadRequest(validationError);
+    }
+
     var paginatedList = await repo.GetAllAsync(filter, ct);
     var dtos = paginatedList.Items.Select(l => new ListingDto(
         l.Id, l.FundaId, l.Address, l.City, l.PostalCode, l.Price,
@@ -120,7 +139,8 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 {
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
-});
+})
+.AddEndpointFilter<Valora.Api.Filters.ApiKeyEndpointFilter>();
 
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
@@ -139,7 +159,8 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
 
     BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
-});
+})
+.AddEndpointFilter<Valora.Api.Filters.ApiKeyEndpointFilter>();
 
 app.Run();
 
