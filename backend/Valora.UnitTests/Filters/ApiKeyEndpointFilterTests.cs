@@ -18,7 +18,7 @@ public class ApiKeyEndpointFilterTests
     {
         _mockConfig = new Mock<IConfiguration>();
         _context = new DefaultHttpContext();
-        _filterContext = TestEndpointFilterInvocationContext.Create(_context);
+        _filterContext = TestEndpointFilterInvocationContext.CreateContext(_context);
         _next = (context) =>
         {
             _nextCalled = true;
@@ -101,9 +101,9 @@ public class TestEndpointFilterInvocationContext : EndpointFilterInvocationConte
 
     public override HttpContext HttpContext => _httpContext;
     public override IList<object?> Arguments => new List<object?>();
-    public override object? GetArgument<T>(int index) => null;
+    public override T GetArgument<T>(int index) => default!;
 
-    public static EndpointFilterInvocationContext Create(HttpContext httpContext)
+    public static EndpointFilterInvocationContext CreateContext(HttpContext httpContext)
     {
         return new TestEndpointFilterInvocationContext(httpContext);
     }
