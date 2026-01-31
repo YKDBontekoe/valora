@@ -22,6 +22,12 @@
 **/[Ll]og/
 **/[Ll]ogs/
 
+## [Node.js]
+**/node_modules/
+**/npm-debug.log
+**/playwright-report/
+**/test-results/
+
 ## [Flutter / Dart]
 **/.dart_tool/
 **/.packages

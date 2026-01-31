@@ -1,0 +1,14 @@
+{
+  "name": "valora-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end visual tests for Valora",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:update": "playwright test --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "http-server": "^14.1.1"
+  }
+}

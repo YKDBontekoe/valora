@@ -138,6 +138,16 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
 });
 
+// Deterministic seed for testing (Only available in Development/Testing)
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    api.MapPost("/scraper/seed-test", async (ITestSeedService seedService, CancellationToken ct) =>
+    {
+        await seedService.SeedAsync(ct);
+        return Results.Ok(new { message = "Test data seeded successfully" });
+    });
+}
+
 app.Run();
 
 public partial class Program { }

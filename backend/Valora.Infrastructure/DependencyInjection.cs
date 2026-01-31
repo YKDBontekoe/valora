@@ -7,6 +7,7 @@ using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Scraping;
+using Valora.Infrastructure.Services;
 
 namespace Valora.Infrastructure;
 
@@ -32,6 +33,9 @@ public static class DependencyInjection
         // Scraper services
         services.AddHttpClient<IFundaScraperService, FundaScraperService>();
         services.AddScoped<FundaScraperJob>();
+
+        // Test services
+        services.AddScoped<ITestSeedService, TestSeedService>();
 
         return services;
     }

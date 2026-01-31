@@ -1,0 +1,122 @@
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'apps/flutter_app/**'
+      - 'backend/**'
+      - 'e2e/**'
+      - '.github/workflows/visual-tests.yml'
+
+jobs:
+  visual-tests:
+    name: Visual Tests (Web & Mobile Emulation)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: valora
+          POSTGRES_PASSWORD: valora_dev
+          POSTGRES_DB: valora
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- BACKEND SETUP ---
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build Backend
+        run: dotnet build backend/Valora.Api/Valora.Api.csproj -c Release
+
+      - name: Start Backend
+        env:
+            ASPNETCORE_ENVIRONMENT: Testing
+        run: |
+          dotnet run --project backend/Valora.Api/Valora.Api.csproj -c Release --urls "http://localhost:5000" > backend.log 2>&1 &
+          echo "Backend started in background"
+
+      - name: Wait for Backend Health
+        run: |
+          echo "Waiting for backend health check..."
+          for i in {1..30}; do
+            if curl -s http://localhost:5000/api/health | grep "healthy"; then
+              echo "Backend is healthy!"
+              break
+            fi
+            echo "Waiting..."
+            sleep 2
+          done
+
+      - name: Check Backend Log (if failed)
+        if: failure()
+        run: cat backend.log
+
+      - name: Seed Test Data
+        run: |
+          curl -X POST http://localhost:5000/api/scraper/seed-test
+          echo "Seeding completed"
+
+      # --- FRONTEND SETUP ---
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Deps
+        working-directory: apps/flutter_app
+        run: flutter pub get
+
+      - name: Build Flutter Web
+        working-directory: apps/flutter_app
+        run: flutter build web --release --web-renderer canvaskit
+
+      # --- PLAYWRIGHT SETUP ---
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps
+
+      - name: Serve App & Run Tests
+        working-directory: e2e
+        env:
+          BASE_URL: http://localhost:8080
+        run: |
+          # Start http-server in background
+          npx http-server ../apps/flutter_app/build/web -p 8080 --cors -c-1 &
+
+          # Wait a moment for server
+          sleep 2
+
+          # Run tests
+          npx playwright test
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 30
