@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_typography.dart';
+import 'valora_widgets.dart';
 
 class ValoraFilterDialog extends StatefulWidget {
   final double? initialMinPrice;
@@ -52,7 +53,8 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
   void _apply() {
     final minPrice = double.tryParse(_minPriceController.text);
     final maxPrice = double.tryParse(_maxPriceController.text);
-    final city = _cityController.text.trim().isEmpty ? null : _cityController.text.trim();
+    final city =
+        _cityController.text.trim().isEmpty ? null : _cityController.text.trim();
 
     Navigator.pop(context, {
       'minPrice': minPrice,
@@ -73,129 +75,93 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     });
   }
 
+  void _updateSort(String by, String order) {
+    setState(() {
+      _sortBy = by;
+      _sortOrder = order;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(ValoraSpacing.md),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ValoraDialog(
+      title: 'Filter & Sort',
+      actions: [
+        ValoraButton(
+          label: 'Clear All',
+          variant: ValoraButtonVariant.ghost,
+          onPressed: _clear,
+        ),
+        ValoraButton(
+          label: 'Apply',
+          variant: ValoraButtonVariant.primary,
+          onPressed: _apply,
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Price Range', style: ValoraTypography.titleMedium),
+          const SizedBox(height: ValoraSpacing.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Filter & Sort',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: ValoraSpacing.md),
-              Text('Price Range', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: ValoraSpacing.xs),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _minPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Min',
-                        prefixText: '€ ',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: ValoraSpacing.sm),
-                  Expanded(
-                    child: TextField(
-                      controller: _maxPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Max',
-                        prefixText: '€ ',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ValoraSpacing.md),
-              Text('City', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: ValoraSpacing.xs),
-              TextField(
-                controller: _cityController,
-                decoration: const InputDecoration(
-                  labelText: 'City',
-                  hintText: 'e.g. Amsterdam',
-                  border: OutlineInputBorder(),
+              Expanded(
+                child: ValoraTextField(
+                  controller: _minPriceController,
+                  label: 'Min Price',
+                  prefixText: '€ ',
+                  keyboardType: TextInputType.number,
                 ),
               ),
-              const SizedBox(height: ValoraSpacing.md),
-              Text('Sort By', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: ValoraSpacing.xs),
-              Wrap(
-                spacing: ValoraSpacing.sm,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Newest'),
-                    selected: _sortBy == 'date' && _sortOrder == 'desc',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _sortBy = 'date';
-                          _sortOrder = 'desc';
-                        });
-                      }
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Price: Low to High'),
-                    selected: _sortBy == 'price' && _sortOrder == 'asc',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _sortBy = 'price';
-                          _sortOrder = 'asc';
-                        });
-                      }
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Price: High to Low'),
-                    selected: _sortBy == 'price' && _sortOrder == 'desc',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _sortBy = 'price';
-                          _sortOrder = 'desc';
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: ValoraSpacing.lg),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: _clear,
-                    child: const Text('Clear All'),
-                  ),
-                  const SizedBox(width: ValoraSpacing.sm),
-                  ElevatedButton(
-                    onPressed: _apply,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ValoraColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Apply'),
-                  ),
-                ],
+              const SizedBox(width: ValoraSpacing.md),
+              Expanded(
+                child: ValoraTextField(
+                  controller: _maxPriceController,
+                  label: 'Max Price',
+                  prefixText: '€ ',
+                  keyboardType: TextInputType.number,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: ValoraSpacing.lg),
+          ValoraTextField(
+            controller: _cityController,
+            label: 'City',
+            hint: 'e.g. Amsterdam',
+          ),
+          const SizedBox(height: ValoraSpacing.lg),
+          Text('Sort By', style: ValoraTypography.titleMedium),
+          const SizedBox(height: ValoraSpacing.sm),
+          Wrap(
+            spacing: ValoraSpacing.sm,
+            runSpacing: ValoraSpacing.xs,
+            children: [
+              ValoraChip(
+                label: 'Newest',
+                isSelected: _sortBy == 'date' && _sortOrder == 'desc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('date', 'desc');
+                },
+              ),
+              ValoraChip(
+                label: 'Price: Low to High',
+                isSelected: _sortBy == 'price' && _sortOrder == 'asc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('price', 'asc');
+                },
+              ),
+              ValoraChip(
+                label: 'Price: High to Low',
+                isSelected: _sortBy == 'price' && _sortOrder == 'desc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('price', 'desc');
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

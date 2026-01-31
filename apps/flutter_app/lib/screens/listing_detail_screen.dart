@@ -69,11 +69,16 @@ class ListingDetailScreen extends StatelessWidget {
                   _buildSpecsGrid(context, colorScheme),
                   const SizedBox(height: ValoraSpacing.xl),
                   if (listing.url != null)
-                    ValoraButton(
-                      label: 'View on Funda',
-                      icon: Icons.open_in_new,
-                      isFullWidth: true,
-                      onPressed: () => _openExternalLink(context),
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
+                        child: ValoraButton(
+                          label: 'View on Funda',
+                          icon: Icons.open_in_new,
+                          isFullWidth: true,
+                          onPressed: () => _openExternalLink(context),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -115,21 +120,21 @@ class ListingDetailScreen extends StatelessWidget {
   }
 
   Widget _buildPlaceholder(bool isDark, {bool isLoading = false}) {
+    if (isLoading) {
+      return const ValoraShimmer(
+        width: double.infinity,
+        height: double.infinity,
+        borderRadius: 0,
+      );
+    }
     return Container(
       color: isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100,
       child: Center(
-        child: isLoading
-            ? const SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(strokeWidth: 3),
-              )
-            : Icon(
-                Icons.home_outlined,
-                size: ValoraSpacing.iconSizeXl * 1.5,
-                color:
-                    isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
-              ),
+        child: Icon(
+          Icons.home_outlined,
+          size: ValoraSpacing.iconSizeXl * 1.5,
+          color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+        ),
       ),
     );
   }

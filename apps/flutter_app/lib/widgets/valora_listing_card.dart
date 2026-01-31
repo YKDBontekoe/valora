@@ -126,21 +126,22 @@ class ValoraListingCard extends StatelessWidget {
   }
 
   Widget _buildPlaceholder(bool isDark, {bool isLoading = false}) {
+    if (isLoading) {
+      return const ValoraShimmer(
+        width: double.infinity,
+        height: double.infinity,
+        borderRadius: 0,
+      );
+    }
+
     return Container(
       color: isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100,
       child: Center(
-        child: isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Icon(
-                Icons.home_outlined,
-                size: ValoraSpacing.iconSizeXl,
-                color:
-                    isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
-              ),
+        child: Icon(
+          Icons.home_outlined,
+          size: ValoraSpacing.iconSizeXl,
+          color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+        ),
       ),
     );
   }

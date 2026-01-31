@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/widgets/valora_filter_dialog.dart';
+import 'package:valora_app/widgets/valora_widgets.dart';
 
 void main() {
   group('ValoraFilterDialog', () {
@@ -17,11 +18,16 @@ void main() {
         ),
       ));
 
-      expect(find.widgetWithText(TextField, '1000'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '2000'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Amsterdam'), findsOneWidget);
+      // Check text fields contain the values
+      expect(find.text('1000'), findsOneWidget);
+      expect(find.text('2000'), findsOneWidget);
+      expect(find.text('Amsterdam'), findsOneWidget);
 
-      final priceAscChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Price: Low to High'));
+      // Check chip selection
+      // ValoraChip wraps FilterChip
+      final chipFinder = find.widgetWithText(FilterChip, 'Price: Low to High');
+      expect(chipFinder, findsOneWidget);
+      final priceAscChip = tester.widget<FilterChip>(chipFinder);
       expect(priceAscChip.selected, isTrue);
     });
 
@@ -38,11 +44,14 @@ void main() {
       await tester.tap(find.text('Clear All'));
       await tester.pump();
 
-      expect(find.widgetWithText(TextField, '1000'), findsNothing);
-      expect(find.widgetWithText(TextField, 'Amsterdam'), findsNothing);
+      // Values should be cleared (gone)
+      expect(find.text('1000'), findsNothing);
+      expect(find.text('Amsterdam'), findsNothing);
 
-      final newestChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Newest'));
-      expect(newestChip.selected, isTrue); // Defaults back to date desc
+      // Newest should be selected (default)
+      final chipFinder = find.widgetWithText(FilterChip, 'Newest');
+      final newestChip = tester.widget<FilterChip>(chipFinder);
+      expect(newestChip.selected, isTrue);
     });
 
     testWidgets('Updates sort selection', (WidgetTester tester) async {
@@ -50,10 +59,12 @@ void main() {
         home: Scaffold(body: ValoraFilterDialog()),
       ));
 
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Price: High to Low'));
+      // Tap "Price: High to Low"
+      await tester.tap(find.widgetWithText(FilterChip, 'Price: High to Low'));
       await tester.pump();
 
-      final chip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Price: High to Low'));
+      final chipFinder = find.widgetWithText(FilterChip, 'Price: High to Low');
+      final chip = tester.widget<FilterChip>(chipFinder);
       expect(chip.selected, isTrue);
     });
 
@@ -79,8 +90,21 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextField, 'Min'), '500');
-      await tester.enterText(find.widgetWithText(TextField, 'City'), 'TestCity');
+      // Find TextField by label 'Min Price'
+      // ValoraTextField uses a Column with Text(label) and TextField
+      // find.widgetWithText(ValoraTextField, 'Min Price') should work to find the container
+      // Then find TextField descendant
+      final minPriceField = find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'Min Price'),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(minPriceField, '500');
+
+      final cityField = find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'City'),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(cityField, 'TestCity');
 
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
