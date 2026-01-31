@@ -137,6 +137,18 @@ public class ListingTests : BaseIntegrationTest
         Assert.Equal(5, result2!.Items.Count);
         Assert.False(result2.HasNextPage);
     }
+
+    [Fact]
+    public async Task Get_Listings_WithInvalidParams_ReturnsBadRequest()
+    {
+        // Act
+        var response = await Client.GetAsync("/api/listings?page=0&pageSize=101");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Page must be greater than 0", content);
+    }
 }
 
 public class ListingResponseDto
