@@ -24,7 +24,11 @@ builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationServi
 builder.Services.AddHangfire(config =>
     config.UsePostgreSqlStorage(options =>
         options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
-builder.Services.AddHangfireServer();
+
+if (builder.Configuration.GetValue<bool>("Hangfire:Enabled", true))
+{
+    builder.Services.AddHangfireServer();
+}
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -71,10 +75,13 @@ app.UseHangfireDashboard("/hangfire");
 app.MapHub<ScraperHub>("/hubs/scraper");
 
 // Configure recurring job for scraping
-RecurringJob.AddOrUpdate<FundaScraperJob>(
-    "funda-scraper",
-    job => job.ExecuteAsync(CancellationToken.None),
-    builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+if (builder.Configuration.GetValue<bool>("Hangfire:Enabled", true))
+{
+    RecurringJob.AddOrUpdate<FundaScraperJob>(
+        "funda-scraper",
+        job => job.ExecuteAsync(CancellationToken.None),
+        builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+}
 
 // API Endpoints
 var api = app.MapGroup("/api");
