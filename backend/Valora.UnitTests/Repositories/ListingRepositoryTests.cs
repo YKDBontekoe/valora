@@ -24,21 +24,28 @@ public class ListingRepositoryTests
         // Arrange
         using var context = new ValoraDbContext(_options);
         context.Listings.AddRange(
-            new Listing { FundaId = "1", Address = "Main Street", City = "Amsterdam", CreatedAt = DateTime.UtcNow },
-            new Listing { FundaId = "2", Address = "Side Street", City = "Rotterdam", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "1", Address = "Main Street", City = "Amsterdam", PostalCode = "1000AA", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "Side Street", City = "Rotterdam", PostalCode = "2000BB", CreatedAt = DateTime.UtcNow },
             new Listing { FundaId = "3", Address = "Back Alley", City = "Utrecht", PostalCode = "1234AB", CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var repository = new ListingRepository(context);
-        var filter = new ListingFilterDto { SearchTerm = "Street" };
 
-        // Act
-        var result = await repository.GetAllAsync(filter);
+        // Act & Assert 1: Address match
+        var result1 = await repository.GetAllAsync(new ListingFilterDto { SearchTerm = "Main" });
+        Assert.Single(result1.Items);
+        Assert.Equal("Main Street", result1.Items[0].Address);
 
-        // Assert
-        Assert.Equal(2, result.TotalCount);
-        Assert.All(result.Items, l => Assert.Contains("Street", l.Address));
+        // Act & Assert 2: City match
+        var result2 = await repository.GetAllAsync(new ListingFilterDto { SearchTerm = "Rotterdam" });
+        Assert.Single(result2.Items);
+        Assert.Equal("Side Street", result2.Items[0].Address);
+
+        // Act & Assert 3: PostalCode match
+        var result3 = await repository.GetAllAsync(new ListingFilterDto { SearchTerm = "1234" });
+        Assert.Single(result3.Items);
+        Assert.Equal("Back Alley", result3.Items[0].Address);
     }
 
     [Fact]
@@ -54,43 +61,43 @@ public class ListingRepositoryTests
         await context.SaveChangesAsync();
 
         var repository = new ListingRepository(context);
-        var filter = new ListingFilterDto { MinPrice = 150000, MaxPrice = 250000 };
 
-        // Act
-        var result = await repository.GetAllAsync(filter);
+        // Min only
+        var resultMin = await repository.GetAllAsync(new ListingFilterDto { MinPrice = 250000 });
+        Assert.Single(resultMin.Items);
+        Assert.Equal(300000, resultMin.Items[0].Price);
 
-        // Assert
-        Assert.Single(result.Items);
-        Assert.Equal(200000, result.Items[0].Price);
+        // Max only
+        var resultMax = await repository.GetAllAsync(new ListingFilterDto { MaxPrice = 150000 });
+        Assert.Single(resultMax.Items);
+        Assert.Equal(100000, resultMax.Items[0].Price);
+
+        // Range
+        var resultRange = await repository.GetAllAsync(new ListingFilterDto { MinPrice = 150000, MaxPrice = 250000 });
+        Assert.Single(resultRange.Items);
+        Assert.Equal(200000, resultRange.Items[0].Price);
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldSortByPrice()
+    public async Task GetAllAsync_ShouldFilterByCity()
     {
         // Arrange
         using var context = new ValoraDbContext(_options);
         context.Listings.AddRange(
-            new Listing { FundaId = "1", Address = "A", Price = 300000, CreatedAt = DateTime.UtcNow },
-            new Listing { FundaId = "2", Address = "B", Price = 100000, CreatedAt = DateTime.UtcNow },
-            new Listing { FundaId = "3", Address = "C", Price = 200000, CreatedAt = DateTime.UtcNow }
+            new Listing { FundaId = "1", Address = "A", City = "Amsterdam", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "B", City = "Rotterdam", CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var repository = new ListingRepository(context);
-        var filterAsc = new ListingFilterDto { SortBy = "price", SortOrder = "asc" };
-        var filterDesc = new ListingFilterDto { SortBy = "price", SortOrder = "desc" };
 
-        // Act
-        var resultAsc = await repository.GetAllAsync(filterAsc);
-        var resultDesc = await repository.GetAllAsync(filterDesc);
-
-        // Assert
-        Assert.Equal(100000, resultAsc.Items[0].Price);
-        Assert.Equal(300000, resultDesc.Items[0].Price);
+        var result = await repository.GetAllAsync(new ListingFilterDto { City = "amsterdam" }); // Case insensitive check
+        Assert.Single(result.Items);
+        Assert.Equal("A", result.Items[0].Address);
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldSortByDate()
+    public async Task GetAllAsync_ShouldSortCorrectly()
     {
         // Arrange
         var date1 = DateTime.UtcNow.AddDays(-2);
@@ -99,22 +106,32 @@ public class ListingRepositoryTests
 
         using var context = new ValoraDbContext(_options);
         context.Listings.AddRange(
-            new Listing { FundaId = "1", Address = "A", ListedDate = date1, CreatedAt = DateTime.UtcNow },
-            new Listing { FundaId = "2", Address = "B", ListedDate = date2, CreatedAt = DateTime.UtcNow },
-            new Listing { FundaId = "3", Address = "C", ListedDate = date3, CreatedAt = DateTime.UtcNow }
+            new Listing { FundaId = "1", Address = "A", Price = 300000, ListedDate = date1, CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "B", Price = 100000, ListedDate = date2, CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "3", Address = "C", Price = 200000, ListedDate = date3, CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var repository = new ListingRepository(context);
-        var filterAsc = new ListingFilterDto { SortBy = "date", SortOrder = "asc" };
-        var filterDesc = new ListingFilterDto { SortBy = "date", SortOrder = "desc" };
 
-        // Act
-        var resultAsc = await repository.GetAllAsync(filterAsc);
-        var resultDesc = await repository.GetAllAsync(filterDesc);
+        // Price Asc
+        var resPriceAsc = await repository.GetAllAsync(new ListingFilterDto { SortBy = "price", SortOrder = "asc" });
+        Assert.Equal(100000, resPriceAsc.Items[0].Price);
 
-        // Assert
-        Assert.Equal("A", resultAsc.Items[0].Address); // Oldest first
-        Assert.Equal("C", resultDesc.Items[0].Address); // Newest first
+        // Price Desc
+        var resPriceDesc = await repository.GetAllAsync(new ListingFilterDto { SortBy = "price", SortOrder = "desc" });
+        Assert.Equal(300000, resPriceDesc.Items[0].Price);
+
+        // Date Asc
+        var resDateAsc = await repository.GetAllAsync(new ListingFilterDto { SortBy = "date", SortOrder = "asc" });
+        Assert.Equal("A", resDateAsc.Items[0].Address);
+
+        // Date Desc (Default)
+        var resDateDesc = await repository.GetAllAsync(new ListingFilterDto { SortBy = "date", SortOrder = "desc" });
+        Assert.Equal("C", resDateDesc.Items[0].Address);
+
+        // Default (Null sort)
+        var resDefault = await repository.GetAllAsync(new ListingFilterDto());
+        Assert.Equal("C", resDefault.Items[0].Address);
     }
 }

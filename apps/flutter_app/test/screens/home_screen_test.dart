@@ -129,5 +129,57 @@ void main() {
 
       expect(find.byType(ValoraFilterDialog), findsNothing);
     });
+
+    testWidgets('Search bar interaction', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        return http.Response(
+            '''
+            {
+              "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
+            }
+            ''', 200);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpAndSettle();
+
+      // Tap search icon
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pump();
+
+      // Verify search field appears
+      expect(find.byType(TextField), findsOneWidget);
+
+      // Type in search
+      await tester.enterText(find.byType(TextField), 'Amsterdam');
+      await tester.pump(const Duration(milliseconds: 600)); // Wait for debounce
+    });
+
+    testWidgets('Clears filters via empty state action', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        // Return empty list
+        return http.Response(
+            '''
+            {
+              "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
+            }
+            ''', 200);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpAndSettle();
+
+      // Verify empty state
+      expect(find.text('No listings found'), findsOneWidget);
+      expect(find.text('Clear Filters'), findsOneWidget);
+
+      // Tap clear
+      await tester.tap(find.text('Clear Filters'));
+      await tester.pumpAndSettle();
+    });
   });
 }
