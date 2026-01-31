@@ -18,12 +18,21 @@ public static class DependencyInjection
         var connectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<ValoraDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorCodesToAdd: null)));
+        {
+            if (configuration.GetValue<bool>("UseInMemoryDatabase"))
+            {
+                options.UseInMemoryDatabase("ValoraDb");
+            }
+            else
+            {
+                options.UseNpgsql(
+                    connectionString,
+                    npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorCodesToAdd: null));
+            }
+        });
 
         // Repositories
         services.AddScoped<IListingRepository, ListingRepository>();

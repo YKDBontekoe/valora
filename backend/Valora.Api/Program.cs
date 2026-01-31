@@ -119,7 +119,7 @@ api.MapPost("/scraper/trigger", async (IJobScheduler scheduler, CancellationToke
 });
 
 // Seed endpoint
-api.MapPost("/scraper/seed", async (string region, IListingRepository repo, IJobScheduler scheduler, CancellationToken ct) =>
+api.MapPost("/scraper/seed", async (string? region, IListingRepository repo, IJobScheduler scheduler, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(region))
     {
