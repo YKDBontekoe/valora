@@ -140,7 +140,7 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
     app.UseHttpsRedirection();
 }
 
-// Map Auth Endpoints
+// Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
 
 // Map Hubs
