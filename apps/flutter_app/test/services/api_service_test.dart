@@ -169,5 +169,30 @@ void main() {
         throwsA(isA<ServerException>()),
       );
     });
+
+    test('triggerLimitedScrape makes correct request', () async {
+      final client = MockClient((request) async {
+        expect(request.url.path, '/api/scraper/trigger-limited');
+        expect(request.url.queryParameters['region'], 'amsterdam');
+        expect(request.url.queryParameters['limit'], '10');
+        expect(request.method, 'POST');
+        return http.Response(json.encode({'message': 'Queued'}), 200);
+      });
+
+      final apiService = ApiService(client: client);
+      await apiService.triggerLimitedScrape('amsterdam', 10);
+    });
+
+    test('triggerLimitedScrape throws ServerException on failure', () async {
+      final client = MockClient((request) async {
+        return http.Response('Error', 500);
+      });
+
+      final apiService = ApiService(client: client);
+      expect(
+        () => apiService.triggerLimitedScrape('amsterdam', 10),
+        throwsA(isA<ServerException>()),
+      );
+    });
   });
 }
