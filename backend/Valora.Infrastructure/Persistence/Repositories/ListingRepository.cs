@@ -25,11 +25,12 @@ public class ListingRepository : IListingRepository
         {
             if (isPostgres)
             {
-                var search = $"%{filter.SearchTerm}%";
+                var escapedTerm = EscapeLikePattern(filter.SearchTerm);
+                var search = $"%{escapedTerm}%";
                 query = query.Where(l =>
-                    EF.Functions.ILike(l.Address, search) ||
-                    (l.City != null && EF.Functions.ILike(l.City, search)) ||
-                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search)));
+                    EF.Functions.ILike(l.Address, search, @"\") ||
+                    (l.City != null && EF.Functions.ILike(l.City, search, @"\")) ||
+                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search, @"\")));
             }
             else
             {
@@ -55,7 +56,8 @@ public class ListingRepository : IListingRepository
         {
             if (isPostgres)
             {
-                query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, filter.City));
+                var escapedCity = EscapeLikePattern(filter.City);
+                query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, escapedCity, @"\"));
             }
             else
             {
@@ -135,5 +137,13 @@ public class ListingRepository : IListingRepository
     public async Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Listings.CountAsync(cancellationToken);
+    }
+
+    private static string EscapeLikePattern(string pattern)
+    {
+        return pattern
+            .Replace(@"\", @"\\")
+            .Replace("%", @"\%")
+            .Replace("_", @"\_");
     }
 }
