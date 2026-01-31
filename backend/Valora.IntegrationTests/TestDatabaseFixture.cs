@@ -19,6 +19,9 @@ public class TestDatabaseFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        // Disable Hangfire server/dashboard during integration tests to prevent connection errors
+        Environment.SetEnvironmentVariable("Hangfire:Enabled", "false");
+
         await DbContainer.StartAsync();
         Factory = new IntegrationTestWebAppFactory(DbContainer.GetConnectionString());
         
@@ -42,6 +45,7 @@ public class TestDatabaseFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        Environment.SetEnvironmentVariable("Hangfire:Enabled", null);
         if (Factory != null) await Factory.DisposeAsync();
         await DbContainer.StopAsync();
     }

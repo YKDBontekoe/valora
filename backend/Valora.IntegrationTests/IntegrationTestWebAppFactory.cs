@@ -24,8 +24,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                { "ConnectionStrings:DefaultConnection", _connectionString },
-                { "Hangfire:Enabled", "false" }
+                { "ConnectionStrings:DefaultConnection", _connectionString }
             });
         });
 
