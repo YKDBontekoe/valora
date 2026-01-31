@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../services/api_service.dart';
@@ -7,6 +8,7 @@ import '../models/listing.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_listing_card.dart';
 import '../widgets/valora_filter_dialog.dart';
+import '../widgets/valora_error_state.dart';
 import 'listing_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Listing> _listings = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
+  Object? _error;
 
   // Pagination
   int _currentPage = 1;
@@ -64,13 +67,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
         !_isLoadingMore &&
-        _hasNextPage) {
+        _hasNextPage &&
+        _error == null) {
       _loadMoreListings();
     }
   }
 
   Future<void> _checkConnection() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     final connected = await _apiService.healthCheck();
     if (mounted) {
       setState(() {
@@ -90,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (refresh) {
       setState(() {
         _isLoading = true;
+        _error = null;
         _currentPage = 1;
         _listings = [];
         _hasNextPage = true;
@@ -116,21 +124,30 @@ class _HomeScreenState extends State<HomeScreen> {
             _listings.addAll(response.items);
           }
           _hasNextPage = response.hasNextPage;
+          _error = null;
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _loadListings(refresh: refresh),
+        setState(() {
+          _error = e;
+        });
+
+        // Show snackbar only if we have data (pagination error)
+        if (_listings.isNotEmpty) {
+           String message = e is AppException ? e.message : e.toString().replaceAll('Exception: ', '');
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () => _loadListings(refresh: refresh),
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -247,10 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: ValoraSpacing.sm),
         ],
       ),
-      body: _isLoading
-          ? const ValoraLoadingIndicator(message: 'Loading listings...')
-          : _buildContent(),
-      floatingActionButton: _isConnected && _listings.isEmpty ? FloatingActionButton.extended(
+      body: _buildContent(),
+      floatingActionButton: _isConnected && _listings.isEmpty && _error == null ? FloatingActionButton.extended(
         onPressed: () => _loadListings(refresh: true),
         backgroundColor: ValoraColors.primary,
         foregroundColor: Colors.white,
@@ -262,6 +277,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildContent() {
+    if (_isLoading) {
+       return const ValoraLoadingIndicator(message: 'Loading listings...');
+    }
+
     if (!_isConnected) {
       return ValoraEmptyState(
         icon: Icons.cloud_off_outlined,
@@ -273,6 +292,13 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.refresh,
           onPressed: _checkConnection,
         ),
+      );
+    }
+
+    if (_listings.isEmpty && _error != null) {
+      return ValoraErrorState(
+        error: _error!,
+        onRetry: () => _loadListings(refresh: true),
       );
     }
 

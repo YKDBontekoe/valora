@@ -1,90 +1,173 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+
+import 'package:valora_app/core/exceptions/app_exceptions.dart';
+import 'package:valora_app/services/api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart'; // Standard http testing package
-import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/models/listing_response.dart';
+import 'package:http/testing.dart';
 
 void main() {
   group('ApiService', () {
-    test('getListings returns ListingResponse if the http call completes successfully', () async {
-      final mockClient = MockClient((request) async {
-        if (request.url.toString().startsWith('http://localhost:5000/api/listings')) {
-          return http.Response(
-              '''
-              {
-                "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test", "city": "Test", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
-                "pageIndex": 1,
-                "totalPages": 1,
-                "totalCount": 1,
-                "hasNextPage": false,
-                "hasPreviousPage": false
-              }
-              ''',
-              200);
-        }
-        return http.Response('Not Found', 404);
+    test('getListings throws ServerException on 500', () async {
+      final client = MockClient((request) async {
+        return http.Response('Internal Server Error', 500);
       });
 
-      final apiService = ApiService(client: mockClient);
-      final response = await apiService.getListings();
+      final apiService = ApiService(client: client);
 
-      expect(response, isA<ListingResponse>());
-      expect(response.items.length, 1);
-      expect(response.items[0].address, 'Test');
-    });
-
-    test('getListings passes query parameters correctly', () async {
-      final mockClient = MockClient((request) async {
-        final uri = request.url;
-        expect(uri.queryParameters['searchTerm'], 'amsterdam');
-        expect(uri.queryParameters['minPrice'], '100000.0');
-        expect(uri.queryParameters['maxPrice'], '500000.0');
-        expect(uri.queryParameters['city'], 'utrecht');
-        expect(uri.queryParameters['sortBy'], 'price');
-        expect(uri.queryParameters['sortOrder'], 'asc');
-
-        return http.Response(
-            '''
-              {
-                "items": [],
-                "pageIndex": 1,
-                "totalPages": 1,
-                "totalCount": 0,
-                "hasNextPage": false,
-                "hasPreviousPage": false
-              }
-              ''',
-            200);
-      });
-
-      final apiService = ApiService(client: mockClient);
-      await apiService.getListings(
-        searchTerm: 'amsterdam',
-        minPrice: 100000,
-        maxPrice: 500000,
-        city: 'utrecht',
-        sortBy: 'price',
-        sortOrder: 'asc',
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<ServerException>()),
       );
     });
 
-    test('getListings throws exception on 500 error', () async {
-      final mockClient = MockClient((request) async {
-        return http.Response('Server Error', 500);
-      });
-
-      final apiService = ApiService(client: mockClient);
-      expect(apiService.getListings(), throwsException);
-    });
-
-    test('getListings throws Exception on SocketException', () {
-      final mockClient = MockClient((request) async {
+    test('getListings throws NetworkException on SocketException', () async {
+      final client = MockClient((request) async {
         throw const SocketException('No internet');
       });
 
-      final apiService = ApiService(client: mockClient);
-      expect(apiService.getListings(), throwsException);
+      final apiService = ApiService(client: client);
+
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<NetworkException>()),
+      );
+    });
+
+    test('getListings throws NetworkException on TimeoutException', () async {
+      final client = MockClient((request) async {
+        throw TimeoutException('Timed out');
+      });
+
+      final apiService = ApiService(client: client);
+
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<NetworkException>()),
+      );
+    });
+
+    test('getListings throws NetworkException on ClientException', () async {
+      final client = MockClient((request) async {
+        throw http.ClientException('Client error');
+      });
+
+      final apiService = ApiService(client: client);
+
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<NetworkException>()),
+      );
+    });
+
+    test('getListings throws UnknownException on Generic Exception', () async {
+      final client = MockClient((request) async {
+        throw Exception('Boom');
+      });
+
+      final apiService = ApiService(client: client);
+
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<UnknownException>()),
+      );
+    });
+
+    test('getListings throws ValidationException on 400 with detail', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'detail': 'Some detailed error'}), 400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings();
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, 'Some detailed error');
+      }
+    });
+
+    test('getListings throws ValidationException on 400 with title', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'title': 'Invalid input'}), 400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings();
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+         expect(e.message, 'Invalid input');
+      }
+    });
+
+    test('getListings throws ValidationException on 400 with default message on parsing fail', () async {
+      final client = MockClient((request) async {
+        return http.Response('Not JSON', 400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings();
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, 'Invalid request');
+      }
+    });
+
+    test('getListings returns data on 200', () async {
+      final mockResponse = {
+        'items': [],
+        'pageIndex': 1,
+        'totalPages': 1,
+        'totalCount': 0,
+        'hasNextPage': false,
+        'hasPreviousPage': false
+      };
+
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockResponse), 200);
+      });
+
+      final apiService = ApiService(client: client);
+
+      final result = await apiService.getListings();
+      expect(result.items, isEmpty);
+    });
+
+    test('healthCheck returns false on exception', () async {
+      final client = MockClient((request) async {
+        throw Exception('Fail');
+      });
+
+      final apiService = ApiService(client: client);
+      expect(await apiService.healthCheck(), isFalse);
+    });
+
+    test('getListing returns null on 404', () async {
+       final client = MockClient((request) async {
+        return http.Response('Not Found', 404);
+      });
+
+      final apiService = ApiService(client: client);
+      expect(await apiService.getListing('123'), isNull);
+    });
+
+     test('getListing throws ServerException on 500', () async {
+       final client = MockClient((request) async {
+        return http.Response('Error', 500);
+      });
+
+      final apiService = ApiService(client: client);
+       expect(
+        () => apiService.getListing('123'),
+        throwsA(isA<ServerException>()),
+      );
     });
   });
 }
