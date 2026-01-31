@@ -20,6 +20,10 @@ public class ValoraDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.FundaId).IsUnique();
+            entity.HasIndex(e => e.Price);
+            entity.HasIndex(e => e.ListedDate);
+            entity.HasIndex(e => e.City);
+            entity.HasIndex(e => e.PostalCode);
             entity.Property(e => e.Address).IsRequired();
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
         });

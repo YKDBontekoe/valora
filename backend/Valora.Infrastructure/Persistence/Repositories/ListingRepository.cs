@@ -18,15 +18,27 @@ public class ListingRepository : IListingRepository
     public async Task<PaginatedList<Listing>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Listings.AsNoTracking().AsQueryable();
+        var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
         // Filtering
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
         {
-            var search = filter.SearchTerm.ToLower();
-            query = query.Where(l =>
-                l.Address.ToLower().Contains(search) ||
-                l.City.ToLower().Contains(search) ||
-                l.PostalCode.ToLower().Contains(search));
+            if (isPostgres)
+            {
+                var search = $"%{filter.SearchTerm}%";
+                query = query.Where(l =>
+                    EF.Functions.ILike(l.Address, search) ||
+                    (l.City != null && EF.Functions.ILike(l.City, search)) ||
+                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search)));
+            }
+            else
+            {
+                var search = filter.SearchTerm.ToLower();
+                query = query.Where(l =>
+                    l.Address.ToLower().Contains(search) ||
+                    (l.City != null && l.City.ToLower().Contains(search)) ||
+                    (l.PostalCode != null && l.PostalCode.ToLower().Contains(search)));
+            }
         }
 
         if (filter.MinPrice.HasValue)
@@ -41,7 +53,14 @@ public class ListingRepository : IListingRepository
 
         if (!string.IsNullOrWhiteSpace(filter.City))
         {
-            query = query.Where(l => l.City.ToLower() == filter.City.ToLower());
+            if (isPostgres)
+            {
+                query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, filter.City));
+            }
+            else
+            {
+                query = query.Where(l => l.City != null && l.City.ToLower() == filter.City.ToLower());
+            }
         }
 
         // Sorting

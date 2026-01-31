@@ -323,18 +323,20 @@ class _HomeScreenState extends State<HomeScreen> {
           // Only animate first page
           final int delay = (index < _pageSize && _currentPage == 1) ? index * 100 : 0;
 
-          return _SlideInItem(
-            delay: Duration(milliseconds: delay),
-            child: ValoraListingCard(
-              listing: listing,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ListingDetailScreen(listing: listing),
-                  ),
-                );
-              },
+          return RepaintBoundary(
+            child: _SlideInItem(
+              delay: Duration(milliseconds: delay),
+              child: ValoraListingCard(
+                listing: listing,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ListingDetailScreen(listing: listing),
+                    ),
+                  );
+                },
+              ),
             ),
           );
         },
