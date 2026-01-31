@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -35,17 +36,88 @@ void main() {
       );
     });
 
-    test('getListings throws ValidationException on 400', () async {
+    test('getListings throws NetworkException on TimeoutException', () async {
       final client = MockClient((request) async {
-        return http.Response(json.encode({'title': 'Invalid input'}), 400);
+        throw TimeoutException('Timed out');
       });
 
       final apiService = ApiService(client: client);
 
       expect(
         () => apiService.getListings(),
-        throwsA(isA<ValidationException>()),
+        throwsA(isA<NetworkException>()),
       );
+    });
+
+    test('getListings throws NetworkException on ClientException', () async {
+      final client = MockClient((request) async {
+        throw http.ClientException('Client error');
+      });
+
+      final apiService = ApiService(client: client);
+
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<NetworkException>()),
+      );
+    });
+
+    test('getListings throws UnknownException on Generic Exception', () async {
+      final client = MockClient((request) async {
+        throw Exception('Boom');
+      });
+
+      final apiService = ApiService(client: client);
+
+      expect(
+        () => apiService.getListings(),
+        throwsA(isA<UnknownException>()),
+      );
+    });
+
+    test('getListings throws ValidationException on 400 with detail', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'detail': 'Some detailed error'}), 400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings();
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, 'Some detailed error');
+      }
+    });
+
+    test('getListings throws ValidationException on 400 with title', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'title': 'Invalid input'}), 400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings();
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+         expect(e.message, 'Invalid input');
+      }
+    });
+
+    test('getListings throws ValidationException on 400 with default message on parsing fail', () async {
+      final client = MockClient((request) async {
+        return http.Response('Not JSON', 400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings();
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, 'Invalid request');
+      }
     });
 
     test('getListings returns data on 200', () async {
@@ -66,6 +138,36 @@ void main() {
 
       final result = await apiService.getListings();
       expect(result.items, isEmpty);
+    });
+
+    test('healthCheck returns false on exception', () async {
+      final client = MockClient((request) async {
+        throw Exception('Fail');
+      });
+
+      final apiService = ApiService(client: client);
+      expect(await apiService.healthCheck(), isFalse);
+    });
+
+    test('getListing returns null on 404', () async {
+       final client = MockClient((request) async {
+        return http.Response('Not Found', 404);
+      });
+
+      final apiService = ApiService(client: client);
+      expect(await apiService.getListing('123'), isNull);
+    });
+
+     test('getListing throws ServerException on 500', () async {
+       final client = MockClient((request) async {
+        return http.Response('Error', 500);
+      });
+
+      final apiService = ApiService(client: client);
+       expect(
+        () => apiService.getListing('123'),
+        throwsA(isA<ServerException>()),
+      );
     });
   });
 }
