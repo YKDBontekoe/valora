@@ -21,11 +21,15 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
-var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddHangfire(config =>
-    config.UsePostgreSqlStorage(options =>
-        options.UseNpgsqlConnection(connectionString)));
-builder.Services.AddHangfireServer();
+var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", true);
+if (hangfireEnabled)
+{
+    var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddHangfire(config =>
+        config.UsePostgreSqlStorage(options =>
+            options.UseNpgsqlConnection(connectionString)));
+    builder.Services.AddHangfireServer();
+}
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -72,24 +76,27 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
 }
 
 // Hangfire Dashboard
-app.UseWhen(context => context.Request.Path.StartsWithSegments("/hangfire"), appBuilder =>
+if (hangfireEnabled)
 {
-    appBuilder.UseMiddleware<Valora.Api.Middleware.HangfireBasicAuthMiddleware>();
-});
+    app.UseWhen(context => context.Request.Path.StartsWithSegments("/hangfire"), appBuilder =>
+    {
+        appBuilder.UseMiddleware<Valora.Api.Middleware.HangfireBasicAuthMiddleware>();
+    });
 
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = new[] { new Valora.Api.Filters.HangfireAuthorizationFilter() }
-});
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new Valora.Api.Filters.HangfireAuthorizationFilter() }
+    });
+
+    // Configure recurring job for scraping
+    RecurringJob.AddOrUpdate<FundaScraperJob>(
+        "funda-scraper",
+        job => job.ExecuteAsync(CancellationToken.None),
+        builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+}
 
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper");
-
-// Configure recurring job for scraping
-RecurringJob.AddOrUpdate<FundaScraperJob>(
-    "funda-scraper",
-    job => job.ExecuteAsync(CancellationToken.None),
-    builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
 
 // API Endpoints
 var api = app.MapGroup("/api");
@@ -137,6 +144,7 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
 // Manual trigger endpoint for scraping
 api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 {
+    if (!hangfireEnabled) return Results.StatusCode(503); // Service Unavailable
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
 })
@@ -145,6 +153,8 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
 {
+    if (!hangfireEnabled) return Results.StatusCode(503);
+
     if (string.IsNullOrWhiteSpace(region))
     {
         return Results.BadRequest("Region is required");
