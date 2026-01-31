@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Valora.Application.Common.Exceptions;
 
 namespace Valora.Api.Middleware;
 
@@ -28,8 +29,8 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred processing {Method} {Path}",
-                context.Request.Method, context.Request.Path);
+            _logger.LogError(ex, "An unhandled exception occurred processing {Method} {Path}. RequestId: {RequestId}",
+                context.Request.Method, context.Request.Path, context.TraceIdentifier);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -38,13 +39,29 @@ public class ExceptionHandlingMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        // Default to 500 Internal Server Error
         var statusCode = (int)HttpStatusCode.InternalServerError;
         var title = "An internal error occurred";
         var detail = exception.Message;
+        IDictionary<string, string[]>? errors = null;
 
-        // Custom mappings could go here, e.g.:
-        // if (exception is KeyNotFoundException) { statusCode = 404; title = "Not Found"; }
+        switch (exception)
+        {
+            case ValidationException validationEx:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                title = "Validation Error";
+                errors = validationEx.Errors;
+                break;
+            case NotFoundException:
+                statusCode = (int)HttpStatusCode.NotFound;
+                title = "Not Found";
+                break;
+            case TaskCanceledException:
+            case OperationCanceledException:
+                statusCode = 499; // Client Closed Request
+                title = "Request Cancelled";
+                detail = "The request was cancelled.";
+                break;
+        }
 
         context.Response.StatusCode = statusCode;
 
@@ -52,13 +69,19 @@ public class ExceptionHandlingMiddleware
         {
             Status = statusCode,
             Title = title,
-            Detail = _env.IsDevelopment() ? detail : "An error occurred while processing your request.",
+            Detail = _env.IsDevelopment() ? detail : (statusCode == 500 ? "An error occurred while processing your request." : detail),
             Instance = context.Request.Path
         };
 
+        problemDetails.Extensions["traceId"] = context.TraceIdentifier;
+
+        if (errors != null)
+        {
+            problemDetails.Extensions["errors"] = errors;
+        }
+
         if (_env.IsDevelopment())
         {
-            problemDetails.Extensions["traceId"] = context.TraceIdentifier;
             problemDetails.Extensions["stackTrace"] = exception.StackTrace;
         }
 

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../core/exceptions/app_exceptions.dart';
 import '../models/listing.dart';
 import '../models/listing_response.dart';
 
@@ -20,6 +22,7 @@ class ApiService {
           .timeout(timeoutDuration);
       return response.statusCode == 200;
     } catch (e) {
+      developer.log('Health check failed: $e', name: 'ApiService');
       return false;
     }
   }
@@ -56,13 +59,8 @@ class ApiService {
       return _handleResponse(response, (body) {
         return ListingResponse.fromJson(json.decode(body));
       });
-    } on SocketException {
-      throw Exception('No internet connection or server unreachable.');
-    } on TimeoutException {
-      throw Exception('Server request timed out.');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Unexpected error: $e');
+      throw _handleException(e);
     }
   }
 
@@ -79,23 +77,61 @@ class ApiService {
       return _handleResponse(response, (body) {
         return Listing.fromJson(json.decode(body));
       });
-    } on SocketException {
-      throw Exception('No internet connection or server unreachable.');
-    } on TimeoutException {
-      throw Exception('Server request timed out.');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Unexpected error: $e');
+      throw _handleException(e);
     }
   }
 
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);
-    } else if (response.statusCode >= 500) {
-      throw Exception('Server error (500). Please try again later.');
-    } else {
-      throw Exception('Request failed with status: ${response.statusCode}');
     }
+
+    developer.log(
+      'API Error: ${response.statusCode} - ${response.body}',
+      name: 'ApiService',
+    );
+
+    switch (response.statusCode) {
+      case 400:
+        throw ValidationException(_parseErrorMessage(response.body) ?? 'Invalid request');
+      case 404:
+        throw NotFoundException('Resource not found');
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        throw ServerException('Server error (${response.statusCode}). Please try again later.');
+      default:
+        throw UnknownException('Request failed with status: ${response.statusCode}');
+    }
+  }
+
+  Exception _handleException(dynamic error) {
+    if (error is AppException) return error;
+
+    developer.log('Network Error: $error', name: 'ApiService');
+
+    if (error is SocketException) {
+      return NetworkException('No internet connection or server unreachable.');
+    } else if (error is TimeoutException) {
+      return NetworkException('Server request timed out.');
+    } else if (error is http.ClientException) {
+      return NetworkException('Connection failed. Please check your network.');
+    }
+
+    return UnknownException('Unexpected error: $error');
+  }
+
+  String? _parseErrorMessage(String body) {
+    try {
+      final jsonBody = json.decode(body);
+      if (jsonBody is Map<String, dynamic>) {
+        return jsonBody['detail'] as String? ?? jsonBody['title'] as String?;
+      }
+    } catch (_) {
+      // Ignore parsing errors
+    }
+    return null;
   }
 }
