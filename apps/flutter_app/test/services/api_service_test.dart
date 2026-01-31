@@ -2,10 +2,19 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart'; // Standard http testing package
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/models/listing_response.dart';
 
 void main() {
+  setUpAll(() async {
+    // Load .env file (even if empty/dummy) to satisfy dotenv.env access
+    // Or simpler: verify dotenv is initialized.
+    // In test environment, we can manually mock the internal map if needed,
+    // or just ensure load is called.
+    await dotenv.load(fileName: ".env");
+  });
+
   group('ApiService', () {
     test('getListings returns ListingResponse if the http call completes successfully', () async {
       final mockClient = MockClient((request) async {

@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/valora_filter_dialog.dart';
 
 void main() {
+  setUpAll(() async {
+    await dotenv.load(fileName: ".env");
+  });
+
   group('HomeScreen', () {
     testWidgets('Shows offline state when health check fails', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
