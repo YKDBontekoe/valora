@@ -234,6 +234,94 @@ public class FundaScraperServiceTests
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.IsAny<string>()), Times.Once);
     }
 
+    [Fact]
+    public async Task ProcessListingAsync_ShouldContinue_WhenParsingFails()
+    {
+        // Arrange
+        var searchHtml = "<html><a href='/detail/koop/city/huis-1-street/'>1</a></html>";
+        // Invalid detail HTML that fails parsing (no h1)
+        var detailHtml = "<html><body>No address here</body></html>";
+
+        SetupHttpMock("https://www.funda.nl/koop/amsterdam/", searchHtml);
+        SetupHttpMock("https://www.funda.nl/detail/koop/city/huis-1-street/", detailHtml);
+
+        // Act
+        await _service.ScrapeLimitedAsync("amsterdam", 1);
+
+        // Assert
+        // ParseListingDetail should return null, causing ProcessListingAsync to return early
+        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Never);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to parse listing")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateExistingListingAsync_ShouldNotAddPriceHistory_WhenPriceIsSame()
+    {
+        // Arrange
+        var searchHtml = "<html><a href='/detail/koop/city/huis-1-street/'>€ 500.000</a></html>";
+        var detailHtml = "<html><h1>Addr1</h1><span>€ 500.000</span></html>";
+
+        SetupHttpMock("https://www.funda.nl/koop/amsterdam/", searchHtml);
+        SetupHttpMock("https://www.funda.nl/detail/koop/city/huis-1-street/", detailHtml);
+
+        var existingListing = new Listing
+        {
+            Id = Guid.NewGuid(),
+            FundaId = "1",
+            Price = 500000,
+            Address = "Addr1"
+        };
+
+        _listingRepoMock.Setup(x => x.GetByFundaIdAsync("1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingListing);
+
+        // Act
+        await _service.ScrapeLimitedAsync("amsterdam", 1);
+
+        // Assert
+        // Update called
+        _listingRepoMock.Verify(x => x.UpdateAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+        // Price history NOT added
+        _priceHistoryRepoMock.Verify(x => x.AddAsync(It.IsAny<PriceHistory>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddNewListingAsync_ShouldSwallowNotificationException()
+    {
+        // Arrange
+        var searchHtml = "<html><a href='/detail/koop/city/huis-1-street/'>1</a></html>";
+        var detailHtml = "<html><h1>Addr1</h1></html>";
+
+        SetupHttpMock("https://www.funda.nl/koop/amsterdam/", searchHtml);
+        SetupHttpMock("https://www.funda.nl/detail/koop/city/huis-1-street/", detailHtml);
+
+        _notificationServiceMock.Setup(x => x.NotifyListingFoundAsync(It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Notification failed"));
+
+        // Act
+        // Should not throw
+        await _service.ScrapeLimitedAsync("amsterdam", 1);
+
+        // Assert
+        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+        // Verify we logged the warning
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to send notification")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
     private void SetupHttpMock(string url, string responseHtml)
     {
         _httpMessageHandlerMock.Protected()
