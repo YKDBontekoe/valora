@@ -99,6 +99,95 @@ public class FundaScraperServiceTests
     }
 
     [Fact]
+    public async Task ScrapeAndStoreAsync_ShouldProcessAllUrls()
+    {
+        // Arrange
+        // Re-create service with multiple URLs
+        var options = Options.Create(new ScraperOptions
+        {
+            SearchUrls = ["http://url1", "http://url2"],
+            DelayBetweenRequestsMs = 0
+        });
+
+        var service = new FundaScraperService(
+            new HttpClient(_httpMessageHandlerMock.Object),
+            _listingRepoMock.Object,
+            _priceHistoryRepoMock.Object,
+            options,
+            _loggerMock.Object,
+            _notificationServiceMock.Object
+        );
+
+        SetupHttpMock("http://url1/", "<html><a href='/detail/koop/city/huis-1-street/'>Link 1</a></html>");
+        SetupHttpMock("http://url2/", "<html><a href='/detail/koop/city/huis-2-street/'>Link 2</a></html>");
+        SetupHttpMock("https://www.funda.nl/detail/koop/city/huis-1-street/", "<html><h1>Addr1</h1></html>");
+        SetupHttpMock("https://www.funda.nl/detail/koop/city/huis-2-street/", "<html><h1>Addr2</h1></html>");
+
+        // Mock GetByFundaIdAsync to return null (new listings)
+        _listingRepoMock.Setup(x => x.GetByFundaIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Listing?)null);
+
+        // Act
+        await service.ScrapeAndStoreAsync();
+
+        // Assert
+        // Should verify AddAsync called 2 times (once per URL finding 1 listing)
+        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task ScrapeAndStoreAsync_ShouldUpdateExistingListings()
+    {
+        // Arrange
+        var searchHtml = "<html><a href='/detail/koop/city/huis-1-street/'>€ 600.000</a></html>";
+        var detailHtml = "<html><h1>Addr1</h1><span>€ 600.000</span></html>";
+
+        SetupHttpMock("https://www.funda.nl/koop/amsterdam/", searchHtml);
+        SetupHttpMock("https://www.funda.nl/detail/koop/city/huis-1-street/", detailHtml);
+
+        var existingListing = new Listing
+        {
+            Id = Guid.NewGuid(),
+            FundaId = "1",
+            Price = 500000, // Old price
+            Address = "Addr1"
+        };
+
+        _listingRepoMock.Setup(x => x.GetByFundaIdAsync("1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingListing);
+
+        // Options need a URL
+        var options = Options.Create(new ScraperOptions
+        {
+            SearchUrls = ["https://www.funda.nl/koop/amsterdam/"],
+            DelayBetweenRequestsMs = 0
+        });
+
+        // Ensure parser finds the correct URL and mock is ready for it
+        // The parser logic: href -> startsWith http ? href : "https://www.funda.nl" + href
+        // href is /detail/koop/city/1/ -> fullUrl is https://www.funda.nl/detail/koop/city/1/
+
+        var service = new FundaScraperService(
+            new HttpClient(_httpMessageHandlerMock.Object),
+            _listingRepoMock.Object,
+            _priceHistoryRepoMock.Object,
+            options,
+            _loggerMock.Object,
+            _notificationServiceMock.Object
+        );
+
+        // Act
+        await service.ScrapeAndStoreAsync();
+
+        // Assert
+        // Should update listing
+        _listingRepoMock.Verify(x => x.UpdateAsync(It.Is<Listing>(l => l.Price == 600000), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Should add price history
+        _priceHistoryRepoMock.Verify(x => x.AddAsync(It.Is<PriceHistory>(ph => ph.Price == 600000 && ph.ListingId == existingListing.Id), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task ScrapeLimitedAsync_ShouldEnforceLimit()
     {
         // Arrange
@@ -150,7 +239,7 @@ public class FundaScraperServiceTests
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString() == url),
+                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.AbsoluteUri == url),
                 ItExpr.IsAny<CancellationToken>()
             )
             .ReturnsAsync(new HttpResponseMessage
