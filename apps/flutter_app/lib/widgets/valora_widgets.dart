@@ -467,3 +467,267 @@ class ValoraBadge extends StatelessWidget {
     );
   }
 }
+
+/// A shimmer effect widget for loading states.
+class ValoraShimmer extends StatefulWidget {
+  const ValoraShimmer({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius,
+  });
+
+  final double width;
+  final double height;
+  final double? borderRadius;
+
+  @override
+  State<ValoraShimmer> createState() => _ValoraShimmerState();
+}
+
+class _ValoraShimmerState extends State<ValoraShimmer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.linear),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor =
+        isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100;
+    final highlightColor =
+        isDark ? ValoraColors.neutral700 : ValoraColors.neutral50;
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              widget.borderRadius ?? ValoraSpacing.radiusMd,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [baseColor, highlightColor, baseColor],
+              stops: [
+                0.0,
+                0.5,
+                1.0,
+              ],
+              transform: _SlidingGradientTransform(_animation.value),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  const _SlidingGradientTransform(this.slidePercent);
+
+  final double slidePercent;
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
+  }
+}
+
+/// A premium text field with consistent styling.
+class ValoraTextField extends StatefulWidget {
+  const ValoraTextField({
+    super.key,
+    this.controller,
+    required this.label,
+    this.hint,
+    this.keyboardType,
+    this.prefixIcon,
+    this.prefixText,
+    this.onChanged,
+  });
+
+  final TextEditingController? controller;
+  final String label;
+  final String? hint;
+  final TextInputType? keyboardType;
+  final IconData? prefixIcon;
+  final String? prefixText;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  State<ValoraTextField> createState() => _ValoraTextFieldState();
+}
+
+class _ValoraTextFieldState extends State<ValoraTextField> {
+  late FocusNode _focusNode;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.label,
+          style: ValoraTypography.labelMedium.copyWith(
+            color: _isFocused
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: ValoraSpacing.xs),
+        TextField(
+          controller: widget.controller,
+          focusNode: _focusNode,
+          keyboardType: widget.keyboardType,
+          onChanged: widget.onChanged,
+          style: ValoraTypography.bodyMedium,
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            prefixIcon: widget.prefixIcon != null
+                ? Icon(widget.prefixIcon, size: ValoraSpacing.iconSizeSm)
+                : null,
+            prefixText: widget.prefixText,
+            prefixStyle: ValoraTypography.bodyMedium,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A premium choice chip with selection animations.
+class ValoraChip extends StatelessWidget {
+  const ValoraChip({
+    super.key,
+    required this.label,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool isSelected;
+  final ValueChanged<bool> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: onSelected,
+        checkmarkColor: isSelected ? Colors.white : null,
+        labelStyle: ValoraTypography.labelMedium.copyWith(
+          color: isSelected
+              ? Colors.white
+              : Theme.of(context).colorScheme.onSurface,
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedColor: ValoraColors.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          side: BorderSide(
+            color: isSelected
+                ? Colors.transparent
+                : Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        showCheckmark: false,
+        padding: const EdgeInsets.symmetric(
+          horizontal: ValoraSpacing.sm,
+          vertical: ValoraSpacing.xs,
+        ),
+      ),
+    );
+  }
+}
+
+/// A styled dialog container using `ValoraCard` styling.
+class ValoraDialog extends StatelessWidget {
+  const ValoraDialog({
+    super.key,
+    required this.title,
+    required this.child,
+    required this.actions,
+  });
+
+  final String title;
+  final Widget child;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.all(ValoraSpacing.md),
+      child: ValoraCard(
+        padding: const EdgeInsets.all(ValoraSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              title,
+              style: ValoraTypography.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: ValoraSpacing.lg),
+            child,
+            const SizedBox(height: ValoraSpacing.xl),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: actions.map((action) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: ValoraSpacing.sm),
+                  child: action,
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/valora_filter_dialog.dart';
+import 'package:valora_app/widgets/valora_widgets.dart';
 
 void main() {
   group('HomeScreen', () {
@@ -120,8 +121,16 @@ void main() {
       expect(find.byType(ValoraFilterDialog), findsOneWidget);
 
       // Enter price
-      await tester.enterText(find.widgetWithText(TextField, 'Min'), '100000');
-      await tester.enterText(find.widgetWithText(TextField, 'Max'), '500000');
+      // Find ValoraTextField by label text, then finding the inner TextField
+      final minField = find.descendant(
+          of: find.widgetWithText(ValoraTextField, 'Min Price'),
+          matching: find.byType(TextField));
+      await tester.enterText(minField, '100000');
+
+      final maxField = find.descendant(
+          of: find.widgetWithText(ValoraTextField, 'Max Price'),
+          matching: find.byType(TextField));
+      await tester.enterText(maxField, '500000');
 
       // Apply
       await tester.tap(find.text('Apply'));

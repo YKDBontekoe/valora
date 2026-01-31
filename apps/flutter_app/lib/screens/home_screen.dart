@@ -191,9 +191,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
+                style: Theme.of(context).textTheme.bodyLarge,
+                decoration: InputDecoration(
                   hintText: 'Search address, city...',
+                  hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                 ),
                 onChanged: _onSearchChanged,
               )
@@ -231,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: const BoxDecoration(
-                        color: Colors.red,
+                        color: ValoraColors.error,
                         shape: BoxShape.circle,
                       ),
                       constraints: const BoxConstraints(
