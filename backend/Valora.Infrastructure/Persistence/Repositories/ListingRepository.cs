@@ -54,7 +54,7 @@ public class ListingRepository : IListingRepository
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
 
-        return await PaginatedList<Listing>.CreateAsync(query, filter.Page, filter.PageSize);
+        return await PaginatedList<Listing>.CreateAsync(query, filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

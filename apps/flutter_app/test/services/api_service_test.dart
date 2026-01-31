@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart'; // Standard http testing package
 import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/models/listing_response.dart';
 
 void main() {
