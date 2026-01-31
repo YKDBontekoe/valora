@@ -25,11 +25,18 @@ public class ListingRepository : IListingRepository
         {
             if (isPostgres)
             {
-                var search = $"%{filter.SearchTerm}%";
-                query = query.Where(l =>
-                    EF.Functions.ILike(l.Address, search) ||
-                    (l.City != null && EF.Functions.ILike(l.City, search)) ||
-                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search)));
+                if (isPostgres)
+                {
+                    var escapedTerm = filter.SearchTerm
+                        .Replace("\\", "\\\\")
+                        .Replace("%", "\\%")
+                        .Replace("_", "\\_");
+                    var search = $"%{escapedTerm}%";
+                    query = query.Where(l =>
+                        EF.Functions.ILike(l.Address, search) ||
+                        (l.City != null && EF.Functions.ILike(l.City, search)) ||
+                        (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search)));
+                }
             }
             else
             {
