@@ -1,7 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
+import 'providers/auth_provider.dart';
 import 'screens/startup_screen.dart';
+import 'services/api_service.dart';
+import 'services/auth_service.dart';
 
 void main() {
   // Ensure binding is initialized before using PlatformDispatcher
@@ -21,7 +25,23 @@ void main() {
     return true; // Prevent app from crashing
   };
 
-  runApp(const ValoraApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<AuthService>(
+          create: (_) => AuthService(),
+        ),
+        ChangeNotifierProxyProvider<AuthService, AuthProvider>(
+          create: (context) => AuthProvider(authService: context.read<AuthService>()),
+          update: (context, authService, previous) => previous ?? AuthProvider(authService: authService),
+        ),
+        ProxyProvider<AuthProvider, ApiService>(
+          update: (context, auth, _) => ApiService(authToken: auth.token),
+        ),
+      ],
+      child: const ValoraApp(),
+    ),
+  );
 }
 
 class ValoraApp extends StatelessWidget {

@@ -12,13 +12,21 @@ class ApiService {
   static const Duration timeoutDuration = Duration(seconds: 10);
 
   final http.Client _client;
+  final String? _authToken;
 
-  ApiService({http.Client? client}) : _client = client ?? http.Client();
+  ApiService({http.Client? client, String? authToken})
+      : _client = client ?? http.Client(),
+        _authToken = authToken;
+
+  Map<String, String> get _headers => {
+    if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+    'Content-Type': 'application/json',
+  };
 
   Future<bool> healthCheck() async {
     try {
       final response = await _client
-          .get(Uri.parse('$baseUrl/health'))
+          .get(Uri.parse('$baseUrl/health'), headers: _headers)
           .timeout(timeoutDuration);
       return response.statusCode == 200;
     } catch (e) {
@@ -53,7 +61,7 @@ class ApiService {
       final uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
 
       final response = await _client
-          .get(uri)
+          .get(uri, headers: _headers)
           .timeout(timeoutDuration);
 
       return _handleResponse(response, (body) {
@@ -67,7 +75,7 @@ class ApiService {
   Future<Listing?> getListing(String id) async {
     try {
       final response = await _client
-          .get(Uri.parse('$baseUrl/listings/$id'))
+          .get(Uri.parse('$baseUrl/listings/$id'), headers: _headers)
           .timeout(timeoutDuration);
 
       if (response.statusCode == 404) {

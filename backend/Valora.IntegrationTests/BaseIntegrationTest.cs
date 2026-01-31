@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Infrastructure.Persistence;
 using Xunit;
@@ -25,7 +26,35 @@ public class BaseIntegrationTest : IAsyncLifetime
         // Simple cleanup of Listings table before each test
         // In a real scenario, Respawn is better, but this avoids adding a package dependency now.
         DbContext.Listings.RemoveRange(DbContext.Listings);
+        if (DbContext.Users.Any())
+        {
+            DbContext.Users.RemoveRange(DbContext.Users);
+        }
         await DbContext.SaveChangesAsync();
+    }
+
+    protected async Task AuthenticateAsync()
+    {
+        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new
+        {
+            Email = "test@example.com",
+            Password = "Password123!",
+            ConfirmPassword = "Password123!"
+        });
+        registerResponse.EnsureSuccessStatusCode();
+
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Email = "test@example.com",
+            Password = "Password123!"
+        });
+        loginResponse.EnsureSuccessStatusCode();
+
+        var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
+        if (authResponse != null)
+        {
+            Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+        }
     }
 
     public virtual Task DisposeAsync()

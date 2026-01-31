@@ -12,6 +12,12 @@ public class ListingTests : BaseIntegrationTest
     {
     }
 
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        await AuthenticateAsync();
+    }
+
     [Fact]
     public async Task Get_Listings_ReturnsListings()
     {
@@ -135,14 +141,16 @@ public class ListingTests : BaseIntegrationTest
         var responseMin = await Client.GetAsync("/api/listings?minPrice=200000");
         responseMin.EnsureSuccessStatusCode();
         var resultMin = await responseMin.Content.ReadFromJsonAsync<ListingResponseDto>();
-        Assert.Single(resultMin!.Items);
+        Assert.NotNull(resultMin);
+        Assert.Single(resultMin.Items);
         Assert.Equal("Expensive", resultMin.Items[0].Address);
 
         // Act - Max Price
         var responseMax = await Client.GetAsync("/api/listings?maxPrice=200000");
         responseMax.EnsureSuccessStatusCode();
         var resultMax = await responseMax.Content.ReadFromJsonAsync<ListingResponseDto>();
-        Assert.Single(resultMax!.Items);
+        Assert.NotNull(resultMax);
+        Assert.Single(resultMax.Items);
         Assert.Equal("Cheap", resultMax.Items[0].Address);
     }
 
@@ -158,17 +166,20 @@ public class ListingTests : BaseIntegrationTest
         // Act - Price Desc
         var responsePriceDesc = await Client.GetAsync("/api/listings?sortBy=price&sortOrder=desc");
         var resultPriceDesc = await responsePriceDesc.Content.ReadFromJsonAsync<ListingResponseDto>();
-        Assert.Equal(200000, resultPriceDesc!.Items[0].Price);
+        Assert.NotNull(resultPriceDesc);
+        Assert.Equal(200000, resultPriceDesc.Items[0].Price);
 
         // Act - Price Asc
         var responsePriceAsc = await Client.GetAsync("/api/listings?sortBy=price&sortOrder=asc");
         var resultPriceAsc = await responsePriceAsc.Content.ReadFromJsonAsync<ListingResponseDto>();
-        Assert.Equal(100000, resultPriceAsc!.Items[0].Price);
+        Assert.NotNull(resultPriceAsc);
+        Assert.Equal(100000, resultPriceAsc.Items[0].Price);
 
         // Act - Date Asc
         var responseDateAsc = await Client.GetAsync("/api/listings?sortBy=date&sortOrder=asc");
         var resultDateAsc = await responseDateAsc.Content.ReadFromJsonAsync<ListingResponseDto>();
-        Assert.Equal("A", resultDateAsc!.Items[0].Address);
+        Assert.NotNull(resultDateAsc);
+        Assert.Equal("A", resultDateAsc.Items[0].Address);
     }
 
     [Fact]
