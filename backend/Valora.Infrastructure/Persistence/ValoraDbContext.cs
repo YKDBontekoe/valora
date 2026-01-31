@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence;
 
-public class ValoraDbContext : DbContext
+public class ValoraDbContext : IdentityDbContext<ApplicationUser>
 {
     public ValoraDbContext(DbContextOptions<ValoraDbContext> options) : base(options)
     {

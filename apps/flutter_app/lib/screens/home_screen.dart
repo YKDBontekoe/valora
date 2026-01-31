@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
@@ -21,8 +23,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final ApiService _apiService;
+  late ApiService _apiService;
   late final ScrollController _scrollController;
+  bool _isInit = false;
 
   bool _isConnected = false;
   List<Listing> _listings = [];
@@ -51,9 +54,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _apiService = widget.apiService ?? ApiService();
     _scrollController = ScrollController()..addListener(_onScroll);
-    _checkConnection();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInit) {
+      _apiService = widget.apiService ?? Provider.of<ApiService>(context, listen: false);
+      _checkConnection();
+      _isInit = true;
+    }
   }
 
   @override
@@ -228,6 +239,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
               ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => context.read<AuthProvider>().logout(),
+            tooltip: 'Logout',
+          ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {

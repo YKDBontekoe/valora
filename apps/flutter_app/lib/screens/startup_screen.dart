@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'auth_wrapper.dart';
 
 class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});
@@ -51,6 +53,11 @@ class _StartupScreenState extends State<StartupScreen>
       ),
     );
 
+    // Start auth check in background
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().checkAuth();
+    });
+
     _startAnimation();
   }
 
@@ -68,7 +75,7 @@ class _StartupScreenState extends State<StartupScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const HomeScreen(),
+            const AuthWrapper(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: animation,

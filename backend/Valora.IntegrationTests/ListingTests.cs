@@ -12,6 +12,12 @@ public class ListingTests : BaseIntegrationTest
     {
     }
 
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        await AuthenticateAsync();
+    }
+
     [Fact]
     public async Task Get_Listings_ReturnsListings()
     {

@@ -1,20 +1,68 @@
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Valora.Application;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Api.Endpoints;
 using Valora.Api.Hubs;
 using Valora.Api.Services;
+using Valora.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Add Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ValoraDbContext>()
+    .AddDefaultTokenProviders();
+
+// Add Authentication & JWT
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["Secret"];
+if (string.IsNullOrEmpty(secretKey))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        secretKey = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
+        Console.WriteLine("WARNING: JWT Secret is not configured. Using temporary development key.");
+    }
+    else
+    {
+        throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
+    }
+}
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Add SignalR
 builder.Services.AddSignalR();
@@ -66,13 +114,19 @@ app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
 
 app.UseCors();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirection"] == "true")
 {
     app.UseHttpsRedirection();
 }
 
+// Map Auth Endpoints
+app.MapAuthEndpoints(builder.Configuration);
+
 // Map Hubs
-app.MapHub<ScraperHub>("/hubs/scraper");
+app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 
 // Re-check configuration from built app to ensure test overrides are respected
 if (app.Configuration.GetValue<bool>("Hangfire:Enabled"))
@@ -105,7 +159,7 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
         paginatedList.HasNextPage,
         paginatedList.HasPreviousPage
     });
-});
+}).RequireAuthorization();
 
 api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
 {
@@ -118,7 +172,7 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
         listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt
     );
     return Results.Ok(dto);
-});
+}).RequireAuthorization();
 
 // Manual trigger endpoint for scraping
 api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
@@ -126,7 +180,7 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
-});
+}).RequireAuthorization();
 
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
@@ -147,7 +201,7 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
 
     BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
-});
+}).RequireAuthorization();
 
 app.Run();
 
