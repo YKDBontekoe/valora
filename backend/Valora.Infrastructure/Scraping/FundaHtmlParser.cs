@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using System.Web;
 using HtmlAgilityPack;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
@@ -11,7 +10,7 @@ public partial class FundaHtmlParser
     /// <summary>
     /// Parses listing cards from a funda.nl search results page.
     /// </summary>
-    public IEnumerable<ListingPreview> ParseSearchResults(string html)
+    public IEnumerable<FundaListingCard> ParseSearchResults(string html)
     {
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
@@ -43,7 +42,7 @@ public partial class FundaHtmlParser
             var cardText = link.InnerText;
             var priceMatch = PriceRegex().Match(cardText);
 
-            yield return new ListingPreview
+            yield return new FundaListingCard
             {
                 FundaId = fundaId,
                 Url = fullUrl,
@@ -55,7 +54,7 @@ public partial class FundaHtmlParser
     /// <summary>
     /// Parses a funda.nl listing detail page.
     /// </summary>
-    public Listing? ParseListingDetail(string html, string fundaId, string url)
+    public Listing? ParseDetailPage(string html, string fundaId, string url)
     {
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
@@ -193,15 +192,9 @@ public partial class FundaHtmlParser
         {
             var postalCode = postalMatch.Value;
             var parts = address.Split(postalCode);
-
-            // Expected: parts[0] is street, parts[1] is city
-            // But verify we have enough parts
-            if (parts.Length > 1)
-            {
-                var street = parts[0].Trim();
-                var city = parts[1].Trim();
-                return (street, postalCode, city);
-            }
+            var street = parts.Length > 0 ? parts[0].Trim() : null;
+            var city = parts.Length > 1 ? parts[1].Trim() : null;
+            return (street, postalCode, city);
         }
 
         return (address, null, null);
@@ -227,4 +220,11 @@ public partial class FundaHtmlParser
 
     [GeneratedRegex(@"\d{4}\s*[A-Z]{2}")]
     private static partial Regex PostalCodeRegex();
+}
+
+public class FundaListingCard
+{
+    public required string FundaId { get; init; }
+    public required string Url { get; init; }
+    public decimal? Price { get; init; }
 }

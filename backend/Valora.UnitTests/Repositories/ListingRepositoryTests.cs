@@ -134,4 +134,32 @@ public class ListingRepositoryTests
         var resDefault = await repository.GetAllAsync(new ListingFilterDto());
         Assert.Equal("C", resDefault.Items[0].Address);
     }
+
+    [Fact]
+    public async Task GetAllAsync_ShouldHandleNullFields_WhenFiltering()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        context.Listings.AddRange(
+            new Listing { FundaId = "1", Address = "Null City", City = null, PostalCode = null, CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "Null Postal", City = "Amsterdam", PostalCode = null, CreatedAt = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Act 1: Search term that usually checks City/PostalCode
+        // Should not throw and should find by address
+        var result1 = await repository.GetAllAsync(new ListingFilterDto { SearchTerm = "Null" });
+        Assert.Equal(2, result1.Items.Count);
+
+        // Act 2: Search term that matches nothing but would check null fields
+        var result2 = await repository.GetAllAsync(new ListingFilterDto { SearchTerm = "NonExistent" });
+        Assert.Empty(result2.Items);
+
+        // Act 3: Filter by specific City (should filter out nulls)
+        var result3 = await repository.GetAllAsync(new ListingFilterDto { City = "Amsterdam" });
+        Assert.Single(result3.Items);
+        Assert.Equal("Null Postal", result3.Items[0].Address);
+    }
 }

@@ -5,7 +5,6 @@ using Polly.Retry;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
@@ -36,24 +35,8 @@ public class FundaScraperService : IFundaScraperService
         _logger = logger;
         _notificationService = notificationService;
 
-        _retryPolicy = CreateRetryPolicy();
-        ConfigureHttpClient();
-    }
-
-    private void ConfigureHttpClient()
-    {
-        // Set headers to appear as a regular browser
-        _httpClient.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        _httpClient.DefaultRequestHeaders.Add("Accept",
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        _httpClient.DefaultRequestHeaders.Add("Accept-Language", "nl-NL,nl;q=0.9,en;q=0.8");
-    }
-
-    private AsyncRetryPolicy<HttpResponseMessage> CreateRetryPolicy()
-    {
         // Configure retry policy with exponential backoff
-        return Policy<HttpResponseMessage>
+        _retryPolicy = Policy<HttpResponseMessage>
             .Handle<HttpRequestException>()
             .OrResult(r => !r.IsSuccessStatusCode)
             .WaitAndRetryAsync(
@@ -65,6 +48,13 @@ public class FundaScraperService : IFundaScraperService
                         "Request failed. Waiting {Delay}s before retry {RetryCount}/{MaxRetries}",
                         timespan.TotalSeconds, retryCount, _options.MaxRetries);
                 });
+
+        // Set headers to appear as a regular browser
+        _httpClient.DefaultRequestHeaders.Add("User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        _httpClient.DefaultRequestHeaders.Add("Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        _httpClient.DefaultRequestHeaders.Add("Accept-Language", "nl-NL,nl;q=0.9,en;q=0.8");
     }
 
     public async Task ScrapeAndStoreAsync(CancellationToken cancellationToken = default)
@@ -102,7 +92,7 @@ public class FundaScraperService : IFundaScraperService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed limited scrape for region: {Region}", region);
-            await NotifyScrapingErrorAsync(ex.Message);
+            await _notificationService.NotifyErrorAsync(ex.Message);
             throw;
         }
     }
@@ -124,7 +114,7 @@ public class FundaScraperService : IFundaScraperService
             _logger.LogWarning("Empty response from search URL: {Url}", searchUrl);
             if (shouldNotify)
             {
-                await NotifyScrapingErrorAsync("No results found or failed to fetch page.");
+                await _notificationService.NotifyErrorAsync("No results found or failed to fetch page.");
             }
             return;
         }
@@ -163,7 +153,7 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
-    private async Task ProcessListingAsync(ListingPreview card, bool shouldNotify, CancellationToken cancellationToken)
+    private async Task ProcessListingAsync(FundaListingCard card, bool shouldNotify, CancellationToken cancellationToken)
     {
         // Check if listing already exists
         var existingListing = await _listingRepository.GetByFundaIdAsync(card.FundaId, cancellationToken);
@@ -177,7 +167,7 @@ public class FundaScraperService : IFundaScraperService
         }
 
         // Parse detail page
-        var listing = _parser.ParseListingDetail(detailHtml, card.FundaId, card.Url);
+        var listing = _parser.ParseDetailPage(detailHtml, card.FundaId, card.Url);
         if (listing == null)
         {
             _logger.LogWarning("Failed to parse listing: {FundaId}", card.FundaId);
@@ -186,92 +176,57 @@ public class FundaScraperService : IFundaScraperService
 
         if (existingListing == null)
         {
-            await AddNewListingAsync(listing, shouldNotify, cancellationToken);
+            // New listing - add it
+            await _listingRepository.AddAsync(listing, cancellationToken);
+            _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
+            if (shouldNotify)
+            {
+                try { await _notificationService.NotifyListingFoundAsync(listing.Address); } catch { /* Ignore notification failures */ }
+            }
+
+            // Record initial price
+            if (listing.Price.HasValue)
+            {
+                await _priceHistoryRepository.AddAsync(new PriceHistory
+                {
+                    ListingId = listing.Id,
+                    Price = listing.Price.Value
+                }, cancellationToken);
+            }
         }
         else
         {
-            await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
-        }
-    }
+            // Existing listing - check for price changes
+            var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
 
-    private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // New listing - add it
-        await _listingRepository.AddAsync(listing, cancellationToken);
-        _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync(listing.Address);
-        }
-
-        // Record initial price
-        if (listing.Price.HasValue)
-        {
-            await _priceHistoryRepository.AddAsync(new PriceHistory
+            if (priceChanged)
             {
-                ListingId = listing.Id,
-                Price = listing.Price.Value
-            }, cancellationToken);
-        }
-    }
+                _logger.LogInformation(
+                    "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
+                    listing.FundaId, existingListing.Price, listing.Price);
 
-    private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // Existing listing - check for price changes
-        var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
+                await _priceHistoryRepository.AddAsync(new PriceHistory
+                {
+                    ListingId = existingListing.Id,
+                    Price = listing.Price!.Value
+                }, cancellationToken);
+            }
 
-        if (priceChanged)
-        {
-            _logger.LogInformation(
-                "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
-                listing.FundaId, existingListing.Price, listing.Price);
+            // Update listing
+            existingListing.Price = listing.Price;
+            existingListing.Bedrooms = listing.Bedrooms;
+            existingListing.LivingAreaM2 = listing.LivingAreaM2;
+            existingListing.PlotAreaM2 = listing.PlotAreaM2;
+            existingListing.Status = listing.Status;
+            existingListing.ImageUrl = listing.ImageUrl;
 
-            await _priceHistoryRepository.AddAsync(new PriceHistory
+            await _listingRepository.UpdateAsync(existingListing, cancellationToken);
+            _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
+
+            if (shouldNotify)
             {
-                ListingId = existingListing.Id,
-                Price = listing.Price!.Value
-            }, cancellationToken);
-        }
-
-        // Update listing
-        existingListing.Price = listing.Price;
-        existingListing.Bedrooms = listing.Bedrooms;
-        existingListing.LivingAreaM2 = listing.LivingAreaM2;
-        existingListing.PlotAreaM2 = listing.PlotAreaM2;
-        existingListing.Status = listing.Status;
-        existingListing.ImageUrl = listing.ImageUrl;
-
-        await _listingRepository.UpdateAsync(existingListing, cancellationToken);
-        _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
-        }
-    }
-
-    private async Task NotifyMatchFoundAsync(string address)
-    {
-        try
-        {
-            await _notificationService.NotifyListingFoundAsync(address);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to send notification for listing: {Address}", address);
-        }
-    }
-
-    private async Task NotifyScrapingErrorAsync(string message)
-    {
-        try
-        {
-            await _notificationService.NotifyErrorAsync(message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to send error notification: {Message}", message);
+                try { await _notificationService.NotifyListingFoundAsync($"{listing.Address} (Updated)"); } catch { /* Ignore notification failures */ }
+            }
         }
     }
 
