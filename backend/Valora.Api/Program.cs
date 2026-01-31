@@ -73,7 +73,8 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper");
 
-if (hangfireEnabled)
+// Re-check configuration from built app to ensure test overrides are respected
+if (app.Configuration.GetValue<bool>("Hangfire:Enabled"))
 {
     // Hangfire Dashboard
     app.UseHangfireDashboard("/hangfire");
