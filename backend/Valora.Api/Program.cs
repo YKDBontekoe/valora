@@ -28,57 +28,62 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddDefaultTokenProviders();
 
 // Add Authentication & JWT
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"];
-if (string.IsNullOrEmpty(secretKey))
-{
-    if (builder.Environment.IsDevelopment())
-    {
-        secretKey = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-        Console.WriteLine("WARNING: JWT Secret is not configured. Using temporary development key.");
-    }
-    else
-    {
-        throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
-    }
-}
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+.AddJwtBearer();
+
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IConfiguration, IWebHostEnvironment>((options, configuration, env) =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
-    };
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
+        var settings = configuration.GetSection("JwtSettings");
+        var secret = settings["Secret"];
+
+        if (string.IsNullOrEmpty(secret))
         {
-            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine($"Token validated for: {context.Principal?.Identity?.Name}");
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            Console.WriteLine($"OnChallenge: {context.Error}, {context.ErrorDescription}");
-            return Task.CompletedTask;
+            if (env.IsDevelopment())
+            {
+                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
+                Console.WriteLine("WARNING: JWT Secret is not configured. Using temporary development key.");
+            }
+            else
+            {
+                throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
+            }
         }
-    };
-});
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = settings["Issuer"],
+            ValidAudience = settings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine($"Token validated for: {context.Principal?.Identity?.Name}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"OnChallenge: {context.Error}, {context.ErrorDescription}");
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 builder.Services.AddAuthorization();
 
