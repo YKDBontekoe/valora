@@ -4,6 +4,7 @@ import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/widgets/valora_filter_dialog.dart';
 
 void main() {
   group('HomeScreen', () {
@@ -31,7 +32,16 @@ void main() {
         }
         if (request.url.toString().contains('listings')) {
            return http.Response(
-              '[{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}]',
+              '''
+              {
+                "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
+                "pageIndex": 1,
+                "totalPages": 1,
+                "totalCount": 1,
+                "hasNextPage": false,
+                "hasPreviousPage": false
+              }
+              ''',
               200);
         }
         return http.Response('Not Found', 404);
@@ -72,6 +82,104 @@ void main() {
 
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('Server error (500). Please try again later.'), findsOneWidget);
+    });
+
+    testWidgets('Filter dialog interactions', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) {
+          return http.Response('OK', 200);
+        }
+        if (request.url.toString().contains('listings')) {
+           return http.Response(
+              '''
+              {
+                "items": [],
+                "pageIndex": 1,
+                "totalPages": 1,
+                "totalCount": 0,
+                "hasNextPage": false,
+                "hasPreviousPage": false
+              }
+              ''',
+              200);
+        }
+        return http.Response('Not Found', 404);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(
+        home: HomeScreen(apiService: apiService),
+      ));
+
+      await tester.pumpAndSettle();
+
+      // Open filter dialog
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ValoraFilterDialog), findsOneWidget);
+
+      // Enter price
+      await tester.enterText(find.widgetWithText(TextField, 'Min'), '100000');
+      await tester.enterText(find.widgetWithText(TextField, 'Max'), '500000');
+
+      // Apply
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ValoraFilterDialog), findsNothing);
+    });
+
+    testWidgets('Search bar interaction', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        return http.Response(
+            '''
+            {
+              "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
+            }
+            ''', 200);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpAndSettle();
+
+      // Tap search icon
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pump();
+
+      // Verify search field appears
+      expect(find.byType(TextField), findsOneWidget);
+
+      // Type in search
+      await tester.enterText(find.byType(TextField), 'Amsterdam');
+      await tester.pump(const Duration(milliseconds: 600)); // Wait for debounce
+    });
+
+    testWidgets('Clears filters via empty state action', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        // Return empty list
+        return http.Response(
+            '''
+            {
+              "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
+            }
+            ''', 200);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpAndSettle();
+
+      // Verify empty state
+      expect(find.text('No listings found'), findsOneWidget);
+      expect(find.text('Clear Filters'), findsOneWidget);
+
+      // Tap clear
+      await tester.tap(find.text('Clear Filters'));
+      await tester.pumpAndSettle();
     });
   });
 }

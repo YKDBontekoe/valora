@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Models;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
@@ -13,11 +15,46 @@ public class ListingRepository : IListingRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Listing>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedList<Listing>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
-        return await _context.Listings
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var query = _context.Listings.AsNoTracking().AsQueryable();
+
+        // Filtering
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+        {
+            var search = filter.SearchTerm.ToLower();
+            query = query.Where(l =>
+                l.Address.ToLower().Contains(search) ||
+                l.City.ToLower().Contains(search) ||
+                l.PostalCode.ToLower().Contains(search));
+        }
+
+        if (filter.MinPrice.HasValue)
+        {
+            query = query.Where(l => l.Price >= filter.MinPrice.Value);
+        }
+
+        if (filter.MaxPrice.HasValue)
+        {
+            query = query.Where(l => l.Price <= filter.MaxPrice.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.City))
+        {
+            query = query.Where(l => l.City.ToLower() == filter.City.ToLower());
+        }
+
+        // Sorting
+        query = (filter.SortBy?.ToLower(), filter.SortOrder?.ToLower()) switch
+        {
+            ("price", "desc") => query.OrderByDescending(l => l.Price),
+            ("price", "asc") => query.OrderBy(l => l.Price),
+            ("date", "asc") => query.OrderBy(l => l.ListedDate),
+            ("date", "desc") => query.OrderByDescending(l => l.ListedDate),
+            _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
+        };
+
+        return await PaginatedList<Listing>.CreateAsync(query, filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
