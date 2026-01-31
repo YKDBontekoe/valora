@@ -82,18 +82,12 @@ var api = app.MapGroup("/api");
 
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingService service, CancellationToken ct) =>
 {
-    var paginatedList = await repo.GetAllAsync(filter, ct);
-    var dtos = paginatedList.Items.Select(l => new ListingDto(
-        l.Id, l.FundaId, l.Address, l.City, l.PostalCode, l.Price,
-        l.Bedrooms, l.Bathrooms, l.LivingAreaM2, l.PlotAreaM2,
-        l.PropertyType, l.Status, l.Url, l.ImageUrl, l.ListedDate, l.CreatedAt
-    ));
-
+    var paginatedList = await service.GetListingsAsync(filter, ct);
     return Results.Ok(new
     {
-        Items = dtos,
+        paginatedList.Items,
         paginatedList.PageIndex,
         paginatedList.TotalPages,
         paginatedList.TotalCount,
@@ -102,28 +96,21 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
     });
 });
 
-api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings/{id:guid}", async (Guid id, IListingService service, CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
-    
-    var dto = new ListingDto(
-        listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
-        listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,
-        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt
-    );
-    return Results.Ok(dto);
+    var dto = await service.GetListingByIdAsync(id, ct);
+    return dto is null ? Results.NotFound() : Results.Ok(dto);
 });
 
 // Manual trigger endpoint for scraping
-api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
+api.MapPost("/scraper/trigger", (IJobScheduler scheduler, CancellationToken ct) =>
 {
-    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
+    scheduler.EnqueueScraperJobAsync(ct);
     return Results.Ok(new { message = "Scraper job queued" });
 });
 
 // Seed endpoint
-api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
+api.MapPost("/scraper/seed", async (string region, IListingRepository repo, IJobScheduler scheduler, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(region))
     {
@@ -137,7 +124,7 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
         return Results.Ok(new { message = "Data already exists, skipping seed", skipped = true });
     }
 
-    BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
+    scheduler.EnqueueSeedJobAsync(region, ct);
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
 });
 
