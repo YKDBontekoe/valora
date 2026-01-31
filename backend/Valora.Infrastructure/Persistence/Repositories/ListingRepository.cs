@@ -15,7 +15,7 @@ public class ListingRepository : IListingRepository
         _context = context;
     }
 
-    public async Task<PaginatedList<Listing>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
+    public async Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
@@ -25,18 +25,11 @@ public class ListingRepository : IListingRepository
         {
             if (isPostgres)
             {
-                if (isPostgres)
-                {
-                    var escapedTerm = filter.SearchTerm
-                        .Replace("\\", "\\\\")
-                        .Replace("%", "\\%")
-                        .Replace("_", "\\_");
-                    var search = $"%{escapedTerm}%";
-                    query = query.Where(l =>
-                        EF.Functions.ILike(l.Address, search) ||
-                        (l.City != null && EF.Functions.ILike(l.City, search)) ||
-                        (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search)));
-                }
+                var search = $"%{filter.SearchTerm}%";
+                query = query.Where(l =>
+                    EF.Functions.ILike(l.Address, search) ||
+                    (l.City != null && EF.Functions.ILike(l.City, search)) ||
+                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search)));
             }
             else
             {
@@ -80,7 +73,26 @@ public class ListingRepository : IListingRepository
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
 
-        return await PaginatedList<Listing>.CreateAsync(query, filter.Page ?? 1, filter.PageSize ?? 10);
+        var dtoQuery = query.Select(l => new ListingDto(
+            l.Id,
+            l.FundaId,
+            l.Address,
+            l.City,
+            l.PostalCode,
+            l.Price,
+            l.Bedrooms,
+            l.Bathrooms,
+            l.LivingAreaM2,
+            l.PlotAreaM2,
+            l.PropertyType,
+            l.Status,
+            l.Url,
+            l.ImageUrl,
+            l.ListedDate,
+            l.CreatedAt
+        ));
+
+        return await PaginatedList<ListingDto>.CreateAsync(dtoQuery, filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

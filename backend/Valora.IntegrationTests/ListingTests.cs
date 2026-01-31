@@ -103,6 +103,26 @@ public class ListingTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Get_Listings_WithSearchTerm_ReturnsCorrectListings()
+    {
+        // Arrange
+        var listing1 = new Listing { FundaId = "Search1", Address = "UniqueSearchTerm Street", City = "CityA" };
+        var listing2 = new Listing { FundaId = "Search2", Address = "Another Road", City = "CityB" };
+        DbContext.Listings.AddRange(listing1, listing2);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/listings?searchTerm=unique");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal("UniqueSearchTerm Street", result.Items.First().Address);
+    }
+
+    [Fact]
     public async Task Get_Listings_Pagination_ReturnsCorrectPage()
     {
         // Arrange
