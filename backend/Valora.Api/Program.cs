@@ -21,9 +21,10 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
+var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddHangfire(config =>
     config.UsePostgreSqlStorage(options =>
-        options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+        options.UseNpgsqlConnection(connectionString)));
 builder.Services.AddHangfireServer();
 
 // Add CORS for Flutter
