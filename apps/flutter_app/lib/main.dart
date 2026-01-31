@@ -1,11 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/valora_theme.dart';
 import 'screens/startup_screen.dart';
 
-void main() {
+Future<void> main() async {
   // Ensure binding is initialized before using PlatformDispatcher
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await dotenv.load(fileName: ".env");
 
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
