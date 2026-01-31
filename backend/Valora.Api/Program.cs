@@ -22,10 +22,16 @@ builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationServi
 
 // Add Hangfire with PostgreSQL storage
 var connectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
+var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", true);
+
 builder.Services.AddHangfire(config =>
     config.UsePostgreSqlStorage(options =>
         options.UseNpgsqlConnection(connectionString)));
-builder.Services.AddHangfireServer();
+
+if (hangfireEnabled)
+{
+    builder.Services.AddHangfireServer();
+}
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -66,16 +72,19 @@ if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirect
 }
 
 // Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire");
+if (hangfireEnabled)
+{
+    app.UseHangfireDashboard("/hangfire");
+
+    // Configure recurring job for scraping
+    RecurringJob.AddOrUpdate<FundaScraperJob>(
+        "funda-scraper",
+        job => job.ExecuteAsync(CancellationToken.None),
+        builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+}
 
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper");
-
-// Configure recurring job for scraping
-RecurringJob.AddOrUpdate<FundaScraperJob>(
-    "funda-scraper",
-    job => job.ExecuteAsync(CancellationToken.None),
-    builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
 
 // API Endpoints
 var api = app.MapGroup("/api");
@@ -103,9 +112,9 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingService service, Cance
 });
 
 // Manual trigger endpoint for scraping
-api.MapPost("/scraper/trigger", (IJobScheduler scheduler, CancellationToken ct) =>
+api.MapPost("/scraper/trigger", async (IJobScheduler scheduler, CancellationToken ct) =>
 {
-    scheduler.EnqueueScraperJobAsync(ct);
+    await scheduler.EnqueueScraperJobAsync(ct);
     return Results.Ok(new { message = "Scraper job queued" });
 });
 
@@ -124,7 +133,7 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, IJob
         return Results.Ok(new { message = "Data already exists, skipping seed", skipped = true });
     }
 
-    scheduler.EnqueueSeedJobAsync(region, ct);
+    await scheduler.EnqueueSeedJobAsync(region, ct);
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
 });
 

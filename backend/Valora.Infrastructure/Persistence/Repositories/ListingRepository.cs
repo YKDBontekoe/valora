@@ -25,8 +25,8 @@ public class ListingRepository : IListingRepository
             var search = filter.SearchTerm.ToLower();
             query = query.Where(l =>
                 l.Address.ToLower().Contains(search) ||
-                l.City.ToLower().Contains(search) ||
-                l.PostalCode.ToLower().Contains(search));
+                (l.City != null && l.City.ToLower().Contains(search)) ||
+                (l.PostalCode != null && l.PostalCode.ToLower().Contains(search)));
         }
 
         if (filter.MinPrice.HasValue)
@@ -41,7 +41,7 @@ public class ListingRepository : IListingRepository
 
         if (!string.IsNullOrWhiteSpace(filter.City))
         {
-            query = query.Where(l => l.City.ToLower() == filter.City.ToLower());
+            query = query.Where(l => l.City != null && l.City.ToLower() == filter.City!.ToLower());
         }
 
         // Sorting
