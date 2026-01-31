@@ -4,6 +4,7 @@ import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/widgets/valora_filter_dialog.dart';
 
 void main() {
   group('HomeScreen', () {
@@ -81,6 +82,52 @@ void main() {
 
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('Server error (500). Please try again later.'), findsOneWidget);
+    });
+
+    testWidgets('Filter dialog interactions', (WidgetTester tester) async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('health')) {
+          return http.Response('OK', 200);
+        }
+        if (request.url.toString().contains('listings')) {
+           return http.Response(
+              '''
+              {
+                "items": [],
+                "pageIndex": 1,
+                "totalPages": 1,
+                "totalCount": 0,
+                "hasNextPage": false,
+                "hasPreviousPage": false
+              }
+              ''',
+              200);
+        }
+        return http.Response('Not Found', 404);
+      });
+      final apiService = ApiService(client: mockClient);
+
+      await tester.pumpWidget(MaterialApp(
+        home: HomeScreen(apiService: apiService),
+      ));
+
+      await tester.pumpAndSettle();
+
+      // Open filter dialog
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ValoraFilterDialog), findsOneWidget);
+
+      // Enter price
+      await tester.enterText(find.widgetWithText(TextField, 'Min'), '100000');
+      await tester.enterText(find.widgetWithText(TextField, 'Max'), '500000');
+
+      // Apply
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ValoraFilterDialog), findsNothing);
     });
   });
 }

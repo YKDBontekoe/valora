@@ -34,6 +34,41 @@ void main() {
       expect(response.items[0].address, 'Test');
     });
 
+    test('getListings passes query parameters correctly', () async {
+      final mockClient = MockClient((request) async {
+        final uri = request.url;
+        expect(uri.queryParameters['searchTerm'], 'amsterdam');
+        expect(uri.queryParameters['minPrice'], '100000.0');
+        expect(uri.queryParameters['maxPrice'], '500000.0');
+        expect(uri.queryParameters['city'], 'utrecht');
+        expect(uri.queryParameters['sortBy'], 'price');
+        expect(uri.queryParameters['sortOrder'], 'asc');
+
+        return http.Response(
+            '''
+              {
+                "items": [],
+                "pageIndex": 1,
+                "totalPages": 1,
+                "totalCount": 0,
+                "hasNextPage": false,
+                "hasPreviousPage": false
+              }
+              ''',
+            200);
+      });
+
+      final apiService = ApiService(client: mockClient);
+      await apiService.getListings(
+        searchTerm: 'amsterdam',
+        minPrice: 100000,
+        maxPrice: 500000,
+        city: 'utrecht',
+        sortBy: 'price',
+        sortOrder: 'asc',
+      );
+    });
+
     test('getListings throws exception on 500 error', () async {
       final mockClient = MockClient((request) async {
         return http.Response('Server Error', 500);
