@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create .env
+        run: cp .env.example .env
+
       - name: Build Android APK (Debug)
         run: flutter build apk --debug
 
@@ -53,6 +56,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create .env
+        run: cp .env.example .env
+
       - name: Build iOS (No Code Sign)
         run: flutter build ios --release --no-codesign
 
@@ -73,6 +79,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Create .env
+        run: cp .env.example .env
 
       - name: Build Web
         run: flutter build web

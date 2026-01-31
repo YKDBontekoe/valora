@@ -20,6 +20,10 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Force Hangfire disabled via environment variable to ensure it's picked up
+        // by Program.cs early configuration
+        Environment.SetEnvironmentVariable("Hangfire:Enabled", "false");
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -35,12 +39,11 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             services.AddDbContext<ValoraDbContext>(options =>
                 options.UseNpgsql(_connectionString));
 
-            // Remove Hangfire hosted services to prevent them from starting
-            // This is necessary because Program.cs might register them before
-            // the configuration override is picked up.
+            // Remove Hangfire hosted services as a safety net
             var hostedServices = services.Where(d =>
                 d.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService) &&
-                d.ImplementationType?.FullName?.Contains("Hangfire") == true)
+                (d.ImplementationType?.FullName?.Contains("Hangfire") == true ||
+                 d.ImplementationType?.Name.Contains("BackgroundJobServerHostedService") == true))
                 .ToList();
 
             foreach (var descriptor in hostedServices)
