@@ -95,15 +95,10 @@ api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
     var paginatedList = await repo.GetAllAsync(filter, ct);
-    var dtos = paginatedList.Items.Select(l => new ListingDto(
-        l.Id, l.FundaId, l.Address, l.City, l.PostalCode, l.Price,
-        l.Bedrooms, l.Bathrooms, l.LivingAreaM2, l.PlotAreaM2,
-        l.PropertyType, l.Status, l.Url, l.ImageUrl, l.ListedDate, l.CreatedAt
-    ));
 
     return Results.Ok(new
     {
-        Items = dtos,
+        paginatedList.Items,
         paginatedList.PageIndex,
         paginatedList.TotalPages,
         paginatedList.TotalCount,

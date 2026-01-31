@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
@@ -109,24 +110,15 @@ class ValoraListingCard extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 16 / 10,
         child: listing.imageUrl != null
-            ? Image.network(
-                listing.imageUrl!,
+            ? CachedNetworkImage(
+                imageUrl: listing.imageUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
+                placeholder: (context, url) =>
+                    _buildPlaceholder(isDark, isLoading: true),
+                errorWidget: (context, url, error) =>
                     _buildPlaceholder(isDark),
-                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (wasSynchronouslyLoaded) return child;
-                  return AnimatedOpacity(
-                    opacity: frame == null ? 0 : 1,
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeOut,
-                    child: child,
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return _buildPlaceholder(isDark, isLoading: true);
-                },
+                fadeInDuration: const Duration(milliseconds: 500),
+                fadeInCurve: Curves.easeOut,
               )
             : _buildPlaceholder(isDark),
       ),

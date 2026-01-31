@@ -15,18 +15,31 @@ public class ListingRepository : IListingRepository
         _context = context;
     }
 
-    public async Task<PaginatedList<Listing>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
+    public async Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Listings.AsNoTracking().AsQueryable();
+        var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
         // Filtering
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
         {
-            var search = filter.SearchTerm.ToLower();
-            query = query.Where(l =>
-                l.Address.ToLower().Contains(search) ||
-                l.City.ToLower().Contains(search) ||
-                l.PostalCode.ToLower().Contains(search));
+            if (isPostgres)
+            {
+                var escapedTerm = EscapeLikePattern(filter.SearchTerm);
+                var search = $"%{escapedTerm}%";
+                query = query.Where(l =>
+                    EF.Functions.ILike(l.Address, search, @"\") ||
+                    (l.City != null && EF.Functions.ILike(l.City, search, @"\")) ||
+                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search, @"\")));
+            }
+            else
+            {
+                var search = filter.SearchTerm.ToLower();
+                query = query.Where(l =>
+                    l.Address.ToLower().Contains(search) ||
+                    (l.City != null && l.City.ToLower().Contains(search)) ||
+                    (l.PostalCode != null && l.PostalCode.ToLower().Contains(search)));
+            }
         }
 
         if (filter.MinPrice.HasValue)
@@ -41,7 +54,15 @@ public class ListingRepository : IListingRepository
 
         if (!string.IsNullOrWhiteSpace(filter.City))
         {
-            query = query.Where(l => l.City.ToLower() == filter.City.ToLower());
+            if (isPostgres)
+            {
+                var escapedCity = EscapeLikePattern(filter.City);
+                query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, escapedCity, @"\"));
+            }
+            else
+            {
+                query = query.Where(l => l.City != null && l.City.ToLower() == filter.City.ToLower());
+            }
         }
 
         // Sorting
@@ -54,7 +75,26 @@ public class ListingRepository : IListingRepository
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
 
-        return await PaginatedList<Listing>.CreateAsync(query, filter.Page ?? 1, filter.PageSize ?? 10);
+        var dtoQuery = query.Select(l => new ListingDto(
+            l.Id,
+            l.FundaId,
+            l.Address,
+            l.City,
+            l.PostalCode,
+            l.Price,
+            l.Bedrooms,
+            l.Bathrooms,
+            l.LivingAreaM2,
+            l.PlotAreaM2,
+            l.PropertyType,
+            l.Status,
+            l.Url,
+            l.ImageUrl,
+            l.ListedDate,
+            l.CreatedAt
+        ));
+
+        return await PaginatedList<ListingDto>.CreateAsync(dtoQuery, filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -97,5 +137,13 @@ public class ListingRepository : IListingRepository
     public async Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Listings.CountAsync(cancellationToken);
+    }
+
+    private static string EscapeLikePattern(string pattern)
+    {
+        return pattern
+            .Replace(@"\", @"\\")
+            .Replace("%", @"\%")
+            .Replace("_", @"\_");
     }
 }

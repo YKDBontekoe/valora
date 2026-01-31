@@ -103,6 +103,75 @@ public class ListingTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Get_Listings_WithSearchTerm_ReturnsCorrectListings()
+    {
+        // Arrange
+        var listing1 = new Listing { FundaId = "Search1", Address = "UniqueSearchTerm Street", City = "CityA" };
+        var listing2 = new Listing { FundaId = "Search2", Address = "Another Road", City = "CityB" };
+        DbContext.Listings.AddRange(listing1, listing2);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/listings?searchTerm=unique");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal("UniqueSearchTerm Street", result.Items.First().Address);
+    }
+
+    [Fact]
+    public async Task Get_Listings_WithPriceRange_ReturnsCorrectListings()
+    {
+        // Arrange
+        var listing1 = new Listing { FundaId = "Price1", Address = "Cheap", Price = 100000, ListedDate = DateTime.UtcNow };
+        var listing2 = new Listing { FundaId = "Price2", Address = "Expensive", Price = 500000, ListedDate = DateTime.UtcNow };
+        DbContext.Listings.AddRange(listing1, listing2);
+        await DbContext.SaveChangesAsync();
+
+        // Act - Min Price
+        var responseMin = await Client.GetAsync("/api/listings?minPrice=200000");
+        responseMin.EnsureSuccessStatusCode();
+        var resultMin = await responseMin.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.Single(resultMin!.Items);
+        Assert.Equal("Expensive", resultMin.Items[0].Address);
+
+        // Act - Max Price
+        var responseMax = await Client.GetAsync("/api/listings?maxPrice=200000");
+        responseMax.EnsureSuccessStatusCode();
+        var resultMax = await responseMax.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.Single(resultMax!.Items);
+        Assert.Equal("Cheap", resultMax.Items[0].Address);
+    }
+
+    [Fact]
+    public async Task Get_Listings_WithSorting_ReturnsCorrectOrder()
+    {
+        // Arrange
+        var listing1 = new Listing { FundaId = "Sort1", Address = "A", Price = 100000, ListedDate = DateTime.UtcNow.AddDays(-1) };
+        var listing2 = new Listing { FundaId = "Sort2", Address = "B", Price = 200000, ListedDate = DateTime.UtcNow };
+        DbContext.Listings.AddRange(listing1, listing2);
+        await DbContext.SaveChangesAsync();
+
+        // Act - Price Desc
+        var responsePriceDesc = await Client.GetAsync("/api/listings?sortBy=price&sortOrder=desc");
+        var resultPriceDesc = await responsePriceDesc.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.Equal(200000, resultPriceDesc!.Items[0].Price);
+
+        // Act - Price Asc
+        var responsePriceAsc = await Client.GetAsync("/api/listings?sortBy=price&sortOrder=asc");
+        var resultPriceAsc = await responsePriceAsc.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.Equal(100000, resultPriceAsc!.Items[0].Price);
+
+        // Act - Date Asc
+        var responseDateAsc = await Client.GetAsync("/api/listings?sortBy=date&sortOrder=asc");
+        var resultDateAsc = await responseDateAsc.Content.ReadFromJsonAsync<ListingResponseDto>();
+        Assert.Equal("A", resultDateAsc!.Items[0].Address);
+    }
+
+    [Fact]
     public async Task Get_Listings_Pagination_ReturnsCorrectPage()
     {
         // Arrange

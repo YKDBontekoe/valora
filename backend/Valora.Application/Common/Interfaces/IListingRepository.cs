@@ -6,7 +6,7 @@ namespace Valora.Application.Common.Interfaces;
 
 public interface IListingRepository
 {
-    Task<PaginatedList<Listing>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default);
+    Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default);
     Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default);
     Task<Listing> AddAsync(Listing listing, CancellationToken cancellationToken = default);
