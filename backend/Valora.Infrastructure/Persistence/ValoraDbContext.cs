@@ -25,6 +25,8 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.ListedDate);
             entity.HasIndex(e => e.City);
             entity.HasIndex(e => e.PostalCode);
+            entity.HasIndex(e => e.Bedrooms);
+            entity.HasIndex(e => e.LivingAreaM2);
             entity.Property(e => e.Address).IsRequired();
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
         });
