@@ -233,8 +233,8 @@ class SettingsScreen extends StatelessWidget {
                       foregroundColor: subtextColor,
                       textStyle: const TextStyle(fontWeight: FontWeight.w600),
                     ).copyWith(
-                      foregroundColor: MaterialStateProperty.resolveWith((states) {
-                        if (states.contains(MaterialState.hovered)) {
+                      foregroundColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.hovered)) {
                           return ValoraColors.error;
                         }
                         return subtextColor;
