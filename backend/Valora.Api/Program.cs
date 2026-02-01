@@ -38,8 +38,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
     .Configure<IConfiguration, IWebHostEnvironment>((options, configuration, env) =>
     {
-        var settings = configuration.GetSection("JwtSettings");
-        var secret = settings["Secret"];
+        var secret = configuration["JWT_SECRET"];
 
         if (string.IsNullOrEmpty(secret))
         {
@@ -60,8 +59,8 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = settings["Issuer"],
-            ValidAudience = settings["Audience"],
+            ValidIssuer = configuration["JWT_ISSUER"],
+            ValidAudience = configuration["JWT_AUDIENCE"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
         };
 
@@ -94,7 +93,7 @@ builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationServi
 // Add Hangfire with PostgreSQL storage
 var rawConnectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
 var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
-var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled");
+var hangfireEnabled = builder.Configuration.GetValue<bool>("HANGFIRE_ENABLED");
 
 if (hangfireEnabled)
 {
@@ -140,7 +139,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsProduction() || builder.Configuration["EnableHttpsRedirection"] == "true")
+if (app.Environment.IsProduction() || builder.Configuration["ENABLE_HTTPS_REDIRECTION"] == "true")
 {
     app.UseHttpsRedirection();
 }
@@ -152,7 +151,7 @@ app.MapAuthEndpoints();
 app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 
 // Re-check configuration from built app to ensure test overrides are respected
-if (app.Configuration.GetValue<bool>("Hangfire:Enabled"))
+if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
     app.UseHangfireDashboard("/hangfire");
@@ -161,7 +160,7 @@ if (app.Configuration.GetValue<bool>("Hangfire:Enabled"))
     RecurringJob.AddOrUpdate<FundaScraperJob>(
         "funda-scraper",
         job => job.ExecuteAsync(CancellationToken.None),
-        builder.Configuration["Scraper:CronExpression"] ?? "0 */6 * * *"); // Default: every 6 hours
+        builder.Configuration["SCRAPER_CRON"] ?? "0 */6 * * *"); // Default: every 6 hours
 }
 
 // API Endpoints

@@ -30,7 +30,30 @@ public static class DependencyInjection
         services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
 
         // Scraper configuration
-        services.Configure<ScraperOptions>(configuration.GetSection(ScraperOptions.SectionName));
+        services.Configure<ScraperOptions>(options =>
+        {
+            var searchUrls = configuration["SCRAPER_SEARCH_URLS"];
+            if (!string.IsNullOrEmpty(searchUrls))
+            {
+                options.SearchUrls = searchUrls.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+            }
+
+            if (int.TryParse(configuration["SCRAPER_DELAY_MS"], out var delay))
+            {
+                options.DelayBetweenRequestsMs = delay;
+            }
+
+            if (int.TryParse(configuration["SCRAPER_MAX_RETRIES"], out var retries))
+            {
+                options.MaxRetries = retries;
+            }
+
+            var cron = configuration["SCRAPER_CRON"];
+            if (!string.IsNullOrEmpty(cron))
+            {
+                options.CronExpression = cron;
+            }
+        });
 
         // Scraper services
         services.AddHttpClient<IFundaScraperService, FundaScraperService>();
