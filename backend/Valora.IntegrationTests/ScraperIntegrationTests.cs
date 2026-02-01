@@ -27,54 +27,34 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         var fundaId = "12345678";
         var address = "Test Street 1";
         var city = "Amsterdam";
-        var postalCode = "1234 AB";
         var price = 500000;
 
-        var searchUrlPath = "/koop/amsterdam/";
-        var detailUrlPath = $"/detail/koop/amsterdam/huis-{fundaId}-test-street-1/";
+        // Mock API Response (FundaApiClient uses POST to /v2.0/search)
+        var apiResponseJson = $@"
+        {{
+            ""listings"": [
+                {{
+                    ""globalId"": {fundaId},
+                    ""price"": ""€ {price:N0} k.k."",
+                    ""isSinglePrice"": true,
+                    ""listingUrl"": ""/koop/amsterdam/huis-{fundaId}-test-street-1/"",
+                    ""image"": {{
+                        ""default"": ""https://cloud.funda.nl/test.jpg""
+                    }},
+                    ""address"": {{
+                        ""listingAddress"": ""{address}"",
+                        ""city"": ""{city}""
+                    }},
+                    ""isProject"": false
+                }}
+            ]
+        }}";
 
-        // Mock Search Page
-        var searchHtml = $@"
-            <html>
-                <body>
-                    <div class=""search-result"">
-                        <a href=""{detailUrlPath}"" class=""search-result__header-title-col"">
-                            <span class=""search-result__header-title"">Test Listing</span>
-                            <span class=""search-result__price"">€ {price:N0} k.k.</span>
-                        </a>
-                    </div>
-                </body>
-            </html>";
-
-        _server.Given(Request.Create().UsingGet().WithPath(searchUrlPath))
-               .RespondWith(Response.Create().WithStatusCode(200).WithBody(searchHtml));
-
-        // Mock Detail Page
-        var detailHtml = $@"
-            <html>
-                <body>
-                    <h1>{address} {postalCode} {city}</h1>
-                    <span class=""price"">€ {price:N0} k.k.</span>
-
-                    <dl>
-                        <dt>Wonen</dt>
-                        <dd>120 m²</dd>
-                        <dt>Perceel</dt>
-                        <dd>200 m²</dd>
-                        <dt>Aantal kamers</dt>
-                        <dd>5 kamers (4 slaapkamers)</dd>
-                        <dt>Soort woonhuis</dt>
-                        <dd>Eengezinswoning</dd>
-                        <dt>Status</dt>
-                        <dd>Beschikbaar</dd>
-                    </dl>
-
-                    <img src=""https://cloud.funda.nl/test.jpg"" alt=""Test Image"">
-                </body>
-            </html>";
-
-        _server.Given(Request.Create().UsingGet().WithPath(detailUrlPath))
-               .RespondWith(Response.Create().WithStatusCode(200).WithBody(detailHtml));
+        _server.Given(Request.Create().UsingPost().WithPath("/v2.0/search"))
+               .RespondWith(Response.Create()
+                   .WithStatusCode(200)
+                   .WithHeader("Content-Type", "application/json")
+                   .WithBody(apiResponseJson));
 
         // Act
         // Create a custom scope where we replace the HttpClient logic
@@ -82,8 +62,8 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         {
             builder.ConfigureTestServices(services =>
             {
-                // Intercept HttpClient for IFundaScraperService
-                services.AddHttpClient<IFundaScraperService, FundaScraperService>()
+                // Intercept HttpClient for FundaApiClient
+                services.AddHttpClient<FundaApiClient>()
                         .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
             });
         });
@@ -102,10 +82,13 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         Assert.Equal(address, listing.Address);
         Assert.Equal(city, listing.City);
         Assert.Equal(price, listing.Price);
-        Assert.Equal(120, listing.LivingAreaM2);
-        Assert.Equal(200, listing.PlotAreaM2);
-        Assert.Equal(4, listing.Bedrooms);
-        Assert.Equal("Eengezinswoning", listing.PropertyType);
+        
+        // API-only scraping provides limited details compared to HTML scraping
+        Assert.Null(listing.LivingAreaM2);
+        Assert.Null(listing.PlotAreaM2);
+        Assert.Null(listing.Bedrooms);
+        
+        Assert.Equal("Woonhuis", listing.PropertyType); // Default for non-project
         Assert.Equal("Beschikbaar", listing.Status);
 
         var priceHistoryRepository = scope.ServiceProvider.GetRequiredService<IPriceHistoryRepository>();

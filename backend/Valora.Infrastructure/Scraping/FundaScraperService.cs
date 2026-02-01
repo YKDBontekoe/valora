@@ -1,7 +1,6 @@
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
-using Polly.Retry;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
 using Valora.Domain.Entities;
@@ -11,71 +10,32 @@ namespace Valora.Infrastructure.Scraping;
 
 public class FundaScraperService : IFundaScraperService
 {
-    private readonly HttpClient _httpClient;
     private readonly IListingRepository _listingRepository;
     private readonly IPriceHistoryRepository _priceHistoryRepository;
-    private readonly FundaHtmlParser _parser;
+    private readonly FundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
     private readonly IScraperNotificationService _notificationService;
-    private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy;
 
     public FundaScraperService(
-        HttpClient httpClient,
         IListingRepository listingRepository,
         IPriceHistoryRepository priceHistoryRepository,
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
-        IScraperNotificationService notificationService)
+        IScraperNotificationService notificationService,
+        FundaApiClient apiClient)
     {
-        _httpClient = httpClient;
         _listingRepository = listingRepository;
         _priceHistoryRepository = priceHistoryRepository;
-        _parser = new FundaHtmlParser();
+        _apiClient = apiClient;
         _options = options.Value;
         _logger = logger;
         _notificationService = notificationService;
-
-        _retryPolicy = CreateRetryPolicy();
-        ConfigureHttpClient();
-    }
-
-    private void ConfigureHttpClient()
-    {
-        // Set headers to appear as a regular browser.
-        // Funda.nl has strict anti-bot measures. We mimic a standard Chrome on macOS user agent
-        // to avoid immediate blocking (403 Forbidden).
-        // We also set Accept and Accept-Language headers to match typical browser behavior.
-        _httpClient.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        _httpClient.DefaultRequestHeaders.Add("Accept",
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        _httpClient.DefaultRequestHeaders.Add("Accept-Language", "nl-NL,nl;q=0.9,en;q=0.8");
-    }
-
-    private AsyncRetryPolicy<HttpResponseMessage> CreateRetryPolicy()
-    {
-        // Configure retry policy with exponential backoff.
-        // Network requests to Funda can fail transiently (e.g. rate limiting or timeouts).
-        // Exponential backoff (2^n) ensures we don't hammer the server if it's struggling,
-        // giving it time to recover before the next attempt.
-        return Policy<HttpResponseMessage>
-            .Handle<HttpRequestException>()
-            .OrResult(r => !r.IsSuccessStatusCode)
-            .WaitAndRetryAsync(
-                _options.MaxRetries,
-                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                (outcome, timespan, retryCount, _) =>
-                {
-                    _logger.LogWarning(
-                        "Request failed. Waiting {Delay}s before retry {RetryCount}/{MaxRetries}",
-                        timespan.TotalSeconds, retryCount, _options.MaxRetries);
-                });
     }
 
     public async Task ScrapeAndStoreAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting funda.nl scrape job");
+        _logger.LogInformation("Starting funda.nl scrape job (API only)");
 
         foreach (var searchUrl in _options.SearchUrls)
         {
@@ -123,37 +83,39 @@ public class FundaScraperService : IFundaScraperService
             await _notificationService.NotifyProgressAsync("Fetching search results...");
         }
 
-        // Fetch search results page
-        var searchHtml = await FetchPageAsync(searchUrl, cancellationToken);
-        if (string.IsNullOrEmpty(searchHtml))
+        // Try to extract region from URL for API-based search
+        var region = ExtractRegionFromUrl(searchUrl);
+        
+        if (string.IsNullOrEmpty(region))
         {
-            _logger.LogWarning("Empty response from search URL: {Url}", searchUrl);
+            _logger.LogWarning("Could not extract region from URL: {Url}", searchUrl);
+            return;
+        }
+
+        _logger.LogDebug("Searching API for region: {Region}", region);
+        var apiListings = await TryFetchFromApiAsync(region, limit, cancellationToken);
+
+        if (apiListings.Count == 0)
+        {
+            _logger.LogWarning("No listings found from API for: {Region}", region);
             if (shouldNotify)
             {
-                await NotifyScrapingErrorAsync("No results found or failed to fetch page.");
+                await NotifyScrapingErrorAsync("No results found.");
             }
             return;
         }
 
-        // Parse listing cards
-        var listingCards = _parser.ParseSearchResults(searchHtml).ToList();
-
-        if (limit.HasValue)
-        {
-            listingCards = listingCards.Take(limit.Value).ToList();
-        }
-
-        _logger.LogInformation("Found {Count} listings on search page", listingCards.Count);
+        _logger.LogInformation("Found {Count} listings via API", apiListings.Count);
         if (shouldNotify)
         {
-            await _notificationService.NotifyProgressAsync($"Found {listingCards.Count} listings. Processing...");
+            await _notificationService.NotifyProgressAsync($"Found {apiListings.Count} listings. Processing...");
         }
 
-        foreach (var card in listingCards)
+        foreach (var apiListing in apiListings)
         {
             try
             {
-                await ProcessListingAsync(card, shouldNotify, cancellationToken);
+                await ProcessListingAsync(apiListing, shouldNotify, cancellationToken);
                 
                 // Rate limiting delay
                 await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
@@ -164,31 +126,98 @@ public class FundaScraperService : IFundaScraperService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to process listing: {FundaId}", card.FundaId);
+                _logger.LogError(ex, "Failed to process listing: {GlobalId}", apiListing.GlobalId);
             }
         }
     }
-
-    private async Task ProcessListingAsync(ListingPreview card, bool shouldNotify, CancellationToken cancellationToken)
+    
+    private async Task<List<FundaApiListing>> TryFetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
     {
+        try
+        {
+            var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
+            var apiListings = await _apiClient.SearchAllBuyPagesAsync(region, maxPages, cancellationToken: cancellationToken);
+            
+            // Filter valid listings
+            var validListings = apiListings
+                .Where(l => !string.IsNullOrEmpty(l.ListingUrl) && l.GlobalId > 0)
+                .ToList();
+            
+            if (limit.HasValue)
+            {
+                validListings = validListings.Take(limit.Value).ToList();
+            }
+            
+            return validListings;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch from Funda API");
+            return [];
+        }
+    }
+    
+    private static string? ExtractRegionFromUrl(string url)
+    {
+        // URL format: https://www.funda.nl/koop/amsterdam/ or https://www.funda.nl/zoeken/koop?selected_area=...
+        var match = Regex.Match(url, @"funda\.nl/(?:koop|huur)/([^/]+)", RegexOptions.IgnoreCase);
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        
+        // Try to extract from query string
+        match = Regex.Match(url, @"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase);
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        
+        return null;
+    }
+    
+    private static decimal? ParsePriceFromApi(string? priceText)
+    {
+        if (string.IsNullOrEmpty(priceText)) return null;
+        
+        // Remove currency symbol, periods (thousands separator), and suffixes like "k.k."
+        var cleaned = Regex.Replace(priceText, @"[^\d]", "");
+        if (decimal.TryParse(cleaned, out var price) && price > 0)
+        {
+            return price;
+        }
+        return null;
+    }
+
+    private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
+    {
+        var fundaId = apiListing.GlobalId.ToString();
+        var fullUrl = apiListing.ListingUrl!.StartsWith("http") ? apiListing.ListingUrl : $"https://www.funda.nl{apiListing.ListingUrl}";
+
         // Check if listing already exists
-        var existingListing = await _listingRepository.GetByFundaIdAsync(card.FundaId, cancellationToken);
+        var existingListing = await _listingRepository.GetByFundaIdAsync(fundaId, cancellationToken);
 
-        // Fetch detail page
-        var detailHtml = await FetchPageAsync(card.Url, cancellationToken);
-        if (string.IsNullOrEmpty(detailHtml))
+        // Map API model to Domain entity
+        // Note: API provides limited details compared to HTML scraping.
+        // Missing: Bedrooms, LivingAreaM2, PlotAreaM2, PropertyType, Status (exact)
+        var price = ParsePriceFromApi(apiListing.Price);
+        
+        var listing = new Listing
         {
-            _logger.LogWarning("Empty response from detail page: {Url}", card.Url);
-            return;
-        }
-
-        // Parse detail page
-        var listing = _parser.ParseListingDetail(detailHtml, card.FundaId, card.Url);
-        if (listing == null)
-        {
-            _logger.LogWarning("Failed to parse listing: {FundaId}", card.FundaId);
-            return;
-        }
+            FundaId = fundaId,
+            Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
+            City = apiListing.Address?.City,
+            PostalCode = null, // Not provided by API
+            Price = price,
+            Bedrooms = null, // Not provided by API
+            Bathrooms = null,
+            LivingAreaM2 = null, // Not provided by API
+            PlotAreaM2 = null, // Not provided by API
+            PropertyType = apiListing.IsProject ? "Nieuwbouwproject" : "Woonhuis", // Best guess
+            Status = "Beschikbaar", // API usually returns available listings
+            Url = fullUrl,
+            ImageUrl = apiListing.Image?.Default
+        };
 
         if (existingListing == null)
         {
@@ -225,8 +254,6 @@ public class FundaScraperService : IFundaScraperService
     private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
         // Existing listing - check for price changes
-        // We only track price history if the price has actually changed and the new price is valid.
-        // This avoids cluttering the history table with duplicate entries.
         var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
 
         if (priceChanged)
@@ -242,14 +269,15 @@ public class FundaScraperService : IFundaScraperService
             }, cancellationToken);
         }
 
-        // Update listing properties with the latest data from the crawl.
-        // Even if the price hasn't changed, other fields like Status (e.g., "Verkocht") or ImageUrl might have.
+        // Update listing properties
         existingListing.Price = listing.Price;
-        existingListing.Bedrooms = listing.Bedrooms;
-        existingListing.LivingAreaM2 = listing.LivingAreaM2;
-        existingListing.PlotAreaM2 = listing.PlotAreaM2;
-        existingListing.Status = listing.Status;
         existingListing.ImageUrl = listing.ImageUrl;
+        
+        // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
+        if (listing.Bedrooms.HasValue) existingListing.Bedrooms = listing.Bedrooms;
+        if (listing.LivingAreaM2.HasValue) existingListing.LivingAreaM2 = listing.LivingAreaM2;
+        if (listing.PlotAreaM2.HasValue) existingListing.PlotAreaM2 = listing.PlotAreaM2;
+        if (!string.IsNullOrEmpty(listing.Status)) existingListing.Status = listing.Status;
 
         await _listingRepository.UpdateAsync(existingListing, cancellationToken);
         _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
@@ -281,28 +309,6 @@ public class FundaScraperService : IFundaScraperService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to send error notification: {Message}", message);
-        }
-    }
-
-    private async Task<string?> FetchPageAsync(string url, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var response = await _retryPolicy.ExecuteAsync(async () =>
-                await _httpClient.GetAsync(url, cancellationToken));
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Failed to fetch {Url}: {StatusCode}", url, response.StatusCode);
-                return null;
-            }
-
-            return await response.Content.ReadAsStringAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching {Url}", url);
-            return null;
         }
     }
 }

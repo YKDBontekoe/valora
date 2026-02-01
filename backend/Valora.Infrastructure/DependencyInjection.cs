@@ -40,7 +40,9 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
 
         // Scraper services
-        services.AddHttpClient<IFundaScraperService, FundaScraperService>();
+        // FundaApiClient uses Funda's Topposition API for more reliable listing discovery
+        services.AddHttpClient<FundaApiClient>();
+        services.AddScoped<IFundaScraperService, FundaScraperService>();
         services.AddScoped<FundaScraperJob>();
 
         return services;
