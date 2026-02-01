@@ -43,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _minPrice;
   double? _maxPrice;
   String? _city;
+  int? _minBedrooms;
+  int? _minLivingArea;
+  int? _maxLivingArea;
   String? _sortBy;
   String? _sortOrder;
 
@@ -125,6 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
         minPrice: _minPrice,
         maxPrice: _maxPrice,
         city: _city,
+        minBedrooms: _minBedrooms,
+        minLivingArea: _minLivingArea,
+        maxLivingArea: _maxLivingArea,
         sortBy: _sortBy,
         sortOrder: _sortOrder,
       );
@@ -196,6 +202,9 @@ class _HomeScreenState extends State<HomeScreen> {
         initialMinPrice: _minPrice,
         initialMaxPrice: _maxPrice,
         initialCity: _city,
+        initialMinBedrooms: _minBedrooms,
+        initialMinLivingArea: _minLivingArea,
+        initialMaxLivingArea: _maxLivingArea,
         initialSortBy: _sortBy,
         initialSortOrder: _sortOrder,
       ),
@@ -206,6 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _minPrice = result['minPrice'];
         _maxPrice = result['maxPrice'];
         _city = result['city'];
+        _minBedrooms = result['minBedrooms'];
+        _minLivingArea = result['minLivingArea'];
+        _maxLivingArea = result['maxLivingArea'];
         _sortBy = result['sortBy'];
         _sortOrder = result['sortOrder'];
       });
@@ -277,7 +289,31 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthProvider>().logout(),
+            onPressed: () {
+              final parentContext = context;
+              showDialog(
+                context: context,
+                builder: (dialogContext) => ValoraDialog(
+                  title: 'Logout',
+                  actions: [
+                    ValoraButton(
+                      label: 'Cancel',
+                      variant: ValoraButtonVariant.ghost,
+                      onPressed: () => Navigator.pop(dialogContext),
+                    ),
+                    ValoraButton(
+                      label: 'Logout',
+                      variant: ValoraButtonVariant.primary,
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        parentContext.read<AuthProvider>().logout();
+                      },
+                    ),
+                  ],
+                  child: const Text('Are you sure you want to logout?'),
+                ),
+              );
+            },
             tooltip: 'Logout',
           ),
           IconButton(
@@ -299,7 +335,12 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Stack(
               children: [
                 const Icon(Icons.filter_list),
-                if (_minPrice != null || _maxPrice != null || _city != null)
+                if (_minPrice != null ||
+                    _maxPrice != null ||
+                    _city != null ||
+                    _minBedrooms != null ||
+                    _minLivingArea != null ||
+                    _maxLivingArea != null)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -318,6 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             onPressed: _openFilterDialog,
+            tooltip: 'Filter',
           ),
           const SizedBox(width: ValoraSpacing.sm),
         ],
@@ -364,6 +406,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final bool hasFilters = _minPrice != null ||
           _maxPrice != null ||
           _city != null ||
+          _minBedrooms != null ||
+          _minLivingArea != null ||
+          _maxLivingArea != null ||
           _searchTerm.isNotEmpty;
 
       if (!hasFilters) {
@@ -392,6 +437,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _minPrice = null;
               _maxPrice = null;
               _city = null;
+              _minBedrooms = null;
+              _minLivingArea = null;
+              _maxLivingArea = null;
               _searchTerm = '';
               _searchController.clear();
               _isSearching = false;

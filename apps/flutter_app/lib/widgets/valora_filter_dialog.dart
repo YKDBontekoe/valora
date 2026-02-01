@@ -7,6 +7,9 @@ class ValoraFilterDialog extends StatefulWidget {
   final double? initialMinPrice;
   final double? initialMaxPrice;
   final String? initialCity;
+  final int? initialMinBedrooms;
+  final int? initialMinLivingArea;
+  final int? initialMaxLivingArea;
   final String? initialSortBy;
   final String? initialSortOrder;
 
@@ -15,6 +18,9 @@ class ValoraFilterDialog extends StatefulWidget {
     this.initialMinPrice,
     this.initialMaxPrice,
     this.initialCity,
+    this.initialMinBedrooms,
+    this.initialMinLivingArea,
+    this.initialMaxLivingArea,
     this.initialSortBy,
     this.initialSortOrder,
   });
@@ -27,6 +33,9 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
   late TextEditingController _minPriceController;
   late TextEditingController _maxPriceController;
   late TextEditingController _cityController;
+  late TextEditingController _minBedroomsController;
+  late TextEditingController _minLivingAreaController;
+  late TextEditingController _maxLivingAreaController;
   String? _sortBy;
   String? _sortOrder;
 
@@ -38,6 +47,12 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     _maxPriceController = TextEditingController(
         text: widget.initialMaxPrice?.toStringAsFixed(0) ?? '');
     _cityController = TextEditingController(text: widget.initialCity ?? '');
+    _minBedroomsController = TextEditingController(
+        text: widget.initialMinBedrooms?.toString() ?? '');
+    _minLivingAreaController = TextEditingController(
+        text: widget.initialMinLivingArea?.toString() ?? '');
+    _maxLivingAreaController = TextEditingController(
+        text: widget.initialMaxLivingArea?.toString() ?? '');
     _sortBy = widget.initialSortBy ?? 'date';
     _sortOrder = widget.initialSortOrder ?? 'desc';
   }
@@ -47,6 +62,9 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     _minPriceController.dispose();
     _maxPriceController.dispose();
     _cityController.dispose();
+    _minBedroomsController.dispose();
+    _minLivingAreaController.dispose();
+    _maxLivingAreaController.dispose();
     super.dispose();
   }
 
@@ -55,11 +73,17 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     final maxPrice = double.tryParse(_maxPriceController.text);
     final city =
         _cityController.text.trim().isEmpty ? null : _cityController.text.trim();
+    final minBedrooms = int.tryParse(_minBedroomsController.text);
+    final minLivingArea = int.tryParse(_minLivingAreaController.text);
+    final maxLivingArea = int.tryParse(_maxLivingAreaController.text);
 
     Navigator.pop(context, {
       'minPrice': minPrice,
       'maxPrice': maxPrice,
       'city': city,
+      'minBedrooms': minBedrooms,
+      'minLivingArea': minLivingArea,
+      'maxLivingArea': maxLivingArea,
       'sortBy': _sortBy,
       'sortOrder': _sortOrder,
     });
@@ -70,6 +94,9 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
       _minPriceController.clear();
       _maxPriceController.clear();
       _cityController.clear();
+      _minBedroomsController.clear();
+      _minLivingAreaController.clear();
+      _maxLivingAreaController.clear();
       _sortBy = 'date';
       _sortOrder = 'desc';
     });
@@ -132,6 +159,36 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
             hint: 'e.g. Amsterdam',
           ),
           const SizedBox(height: ValoraSpacing.lg),
+          ValoraTextField(
+            controller: _minBedroomsController,
+            label: 'Min Bedrooms',
+            keyboardType: TextInputType.number,
+            prefixIcon: Icons.bed_outlined,
+          ),
+          const SizedBox(height: ValoraSpacing.lg),
+          Text('Living Area (m²)', style: ValoraTypography.titleMedium),
+          const SizedBox(height: ValoraSpacing.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ValoraTextField(
+                  controller: _minLivingAreaController,
+                  label: 'Min',
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: ValoraSpacing.md),
+              Expanded(
+                child: ValoraTextField(
+                  controller: _maxLivingAreaController,
+                  label: 'Max',
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: ValoraSpacing.lg),
           Text('Sort By', style: ValoraTypography.titleMedium),
           const SizedBox(height: ValoraSpacing.sm),
           Wrap(
@@ -157,6 +214,20 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                 isSelected: _sortBy == 'price' && _sortOrder == 'desc',
                 onSelected: (selected) {
                   if (selected) _updateSort('price', 'desc');
+                },
+              ),
+              ValoraChip(
+                label: 'Area: Small to Large',
+                isSelected: _sortBy == 'livingarea' && _sortOrder == 'asc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('livingarea', 'asc');
+                },
+              ),
+              ValoraChip(
+                label: 'Area: Large to Small',
+                isSelected: _sortBy == 'livingarea' && _sortOrder == 'desc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('livingarea', 'desc');
                 },
               ),
             ],

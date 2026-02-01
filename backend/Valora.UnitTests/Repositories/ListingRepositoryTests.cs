@@ -134,4 +134,40 @@ public class ListingRepositoryTests
         var resDefault = await repository.GetAllAsync(new ListingFilterDto());
         Assert.Equal("C", resDefault.Items[0].Address);
     }
+
+    [Fact]
+    public async Task GetAllAsync_ShouldFilterByDetails()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        context.Listings.AddRange(
+            new Listing { FundaId = "1", Address = "Small", Bedrooms = 1, LivingAreaM2 = 50, CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "Medium", Bedrooms = 2, LivingAreaM2 = 100, CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "3", Address = "Large", Bedrooms = 4, LivingAreaM2 = 200, CreatedAt = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Filter by Bedrooms
+        var resBedrooms = await repository.GetAllAsync(new ListingFilterDto { MinBedrooms = 2 });
+        Assert.Equal(2, resBedrooms.TotalCount);
+        Assert.Contains(resBedrooms.Items, l => l.Address == "Medium");
+        Assert.Contains(resBedrooms.Items, l => l.Address == "Large");
+
+        // Filter by Min Living Area
+        var resMinArea = await repository.GetAllAsync(new ListingFilterDto { MinLivingArea = 150 });
+        Assert.Single(resMinArea.Items);
+        Assert.Equal("Large", resMinArea.Items[0].Address);
+
+        // Filter by Max Living Area
+        var resMaxArea = await repository.GetAllAsync(new ListingFilterDto { MaxLivingArea = 80 });
+        Assert.Single(resMaxArea.Items);
+        Assert.Equal("Small", resMaxArea.Items[0].Address);
+
+        // Filter by Living Area Range
+        var resAreaRange = await repository.GetAllAsync(new ListingFilterDto { MinLivingArea = 80, MaxLivingArea = 120 });
+        Assert.Single(resAreaRange.Items);
+        Assert.Equal("Medium", resAreaRange.Items[0].Address);
+    }
 }

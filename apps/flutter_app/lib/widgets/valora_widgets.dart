@@ -714,7 +714,11 @@ class ValoraDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: ValoraSpacing.lg),
-            child,
+            Flexible(
+              child: SingleChildScrollView(
+                child: child,
+              ),
+            ),
             const SizedBox(height: ValoraSpacing.xl),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

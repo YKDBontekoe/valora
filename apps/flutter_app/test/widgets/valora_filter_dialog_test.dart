@@ -59,11 +59,14 @@ void main() {
         home: Scaffold(body: ValoraFilterDialog()),
       ));
 
-      // Tap "Price: High to Low"
-      await tester.tap(find.widgetWithText(FilterChip, 'Price: High to Low'));
-      await tester.pump();
-
+      // Scroll to "Price: High to Low"
       final chipFinder = find.widgetWithText(FilterChip, 'Price: High to Low');
+      await tester.ensureVisible(chipFinder);
+      await tester.pumpAndSettle();
+
+      // Tap "Price: High to Low"
+      await tester.tap(chipFinder);
+      await tester.pump();
       final chip = tester.widget<FilterChip>(chipFinder);
       expect(chip.selected, isTrue);
     });
