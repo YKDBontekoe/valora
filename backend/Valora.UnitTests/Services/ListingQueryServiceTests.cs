@@ -83,16 +83,32 @@ public class ListingQueryServiceTests
     }
 
     [Fact]
-    public async Task GetListingsAsync_ReturnsPaginatedListings()
+    public async Task GetListingsAsync_ReturnsMappedPaginatedListings()
     {
         // Arrange
         var filter = new ListingFilterDto { Page = 1, PageSize = 10 };
-        var listings = new List<ListingDto>
+        var listings = new List<Listing>
         {
-            new(Guid.NewGuid(), "f1", "Address 1", "Amsterdam", null, 100000, null, null, null, null, null, null, null, null, null, DateTime.UtcNow),
-            new(Guid.NewGuid(), "f2", "Address 2", "Rotterdam", null, 200000, null, null, null, null, null, null, null, null, null, DateTime.UtcNow)
+            new()
+            {
+                Id = Guid.NewGuid(),
+                FundaId = "f1",
+                Address = "Address 1",
+                City = "Amsterdam",
+                Price = 100000,
+                CreatedAt = DateTime.UtcNow
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                FundaId = "f2",
+                Address = "Address 2",
+                City = "Rotterdam",
+                Price = 200000,
+                CreatedAt = DateTime.UtcNow
+            }
         };
-        var paginatedList = new PaginatedList<ListingDto>(listings, listings.Count, 1, 10);
+        var paginatedList = new PaginatedList<Listing>(listings, listings.Count, 1, 10);
 
         var repository = new Mock<IListingRepository>();
         repository.Setup(repo => repo.GetAllAsync(filter, It.IsAny<CancellationToken>()))
@@ -104,8 +120,10 @@ public class ListingQueryServiceTests
         var result = await service.GetListingsAsync(filter);
 
         // Assert
-        Assert.Equal(paginatedList, result);
+        Assert.Equal(paginatedList.TotalCount, result.TotalCount);
         Assert.Equal(2, result.Items.Count);
         Assert.Equal(1, result.PageIndex);
+        Assert.Equal("f1", result.Items[0].FundaId);
+        Assert.Equal("Address 2", result.Items[1].Address);
     }
 }

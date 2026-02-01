@@ -16,7 +16,7 @@ public class ListingQueryService : IListingQueryService
 
     public Task<PaginatedList<ListingDto>> GetListingsAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
-        return _listingRepository.GetAllAsync(filter, cancellationToken);
+        return GetListingsInternalAsync(filter, cancellationToken);
     }
 
     public async Task<ListingDto?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -45,5 +45,15 @@ public class ListingQueryService : IListingQueryService
             listing.ListedDate,
             listing.CreatedAt
         );
+    }
+
+    private async Task<PaginatedList<ListingDto>> GetListingsInternalAsync(ListingFilterDto filter, CancellationToken cancellationToken)
+    {
+        var paginatedList = await _listingRepository.GetAllAsync(filter, cancellationToken);
+        var items = paginatedList.Items.Select(MapToDto).ToList();
+        var pageIndex = filter.Page ?? 1;
+        var pageSize = filter.PageSize ?? 10;
+
+        return new PaginatedList<ListingDto>(items, paginatedList.TotalCount, pageIndex, pageSize);
     }
 }
