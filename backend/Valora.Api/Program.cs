@@ -258,4 +258,5 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
 
 app.Run();
 
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public partial class Program { }

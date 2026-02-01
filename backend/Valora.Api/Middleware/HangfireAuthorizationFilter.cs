@@ -31,7 +31,16 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
             var credentialBytes = Convert.FromBase64String(authHeader.Parameter!);
             var credentials = System.Text.Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
 
-            if (credentials.Length != 2 || !FixedTimeEquals(credentials[0], _username) || !FixedTimeEquals(credentials[1], _password))
+            if (credentials.Length != 2)
+            {
+                SetChallenge(httpContext);
+                return false;
+            }
+
+            var usernameValid = FixedTimeEquals(credentials[0], _username);
+            var passwordValid = FixedTimeEquals(credentials[1], _password);
+
+            if (!usernameValid || !passwordValid)
             {
                 SetChallenge(httpContext);
                 return false;
