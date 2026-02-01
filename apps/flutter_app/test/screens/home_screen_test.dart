@@ -208,8 +208,9 @@ void main() {
 
     testWidgets('Search bar interaction', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health'))
+        if (request.url.toString().contains('health')) {
           return http.Response('OK', 200);
+        }
         return http.Response(
             '''
             {
@@ -235,8 +236,9 @@ void main() {
 
     testWidgets('Shows scrape button when no listings and no filters', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health'))
+        if (request.url.toString().contains('health')) {
           return http.Response('OK', 200);
+        }
         // Return empty list
         return http.Response(
             '''
@@ -260,8 +262,9 @@ void main() {
 
     testWidgets('Clears filters via empty state action', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health'))
+        if (request.url.toString().contains('health')) {
           return http.Response('OK', 200);
+        }
         // Return empty list
         return http.Response(
             '''
