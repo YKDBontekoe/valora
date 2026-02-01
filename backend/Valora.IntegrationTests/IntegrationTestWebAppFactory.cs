@@ -24,12 +24,12 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                { "ConnectionStrings:DefaultConnection", _connectionString },
-                { "Hangfire:Enabled", "false" },
-                { "JwtSettings:Secret", "TestSecretKeyForIntegrationTestingOnly123!" },
-                { "JwtSettings:Issuer", "ValoraTest" },
-                { "JwtSettings:Audience", "ValoraTest" },
-                { "JwtSettings:ExpiryMinutes", "60" }
+                { "DATABASE_URL", _connectionString },
+                { "HANGFIRE_ENABLED", "false" },
+                { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
+                { "JWT_ISSUER", "ValoraTest" },
+                { "JWT_AUDIENCE", "ValoraTest" },
+                { "JWT_EXPIRY_MINUTES", "60" }
             });
         });
 
