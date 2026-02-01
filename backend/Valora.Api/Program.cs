@@ -10,7 +10,6 @@ using Valora.Infrastructure;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.DTOs;
 using Valora.Api.Endpoints;
 using Valora.Api.Hubs;
 using Valora.Api.Services;
@@ -177,9 +176,9 @@ var api = app.MapGroup("/api");
 
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingQueryService listingQueryService, CancellationToken ct) =>
 {
-    var paginatedList = await repo.GetAllAsync(filter, ct);
+    var paginatedList = await listingQueryService.GetListingsAsync(filter, ct);
 
     return Results.Ok(new
     {
@@ -192,17 +191,10 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
     });
 }).RequireAuthorization();
 
-api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings/{id:guid}", async (Guid id, IListingQueryService listingQueryService, CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
-    
-    var dto = new ListingDto(
-        listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
-        listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,
-        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt
-    );
-    return Results.Ok(dto);
+    var listing = await listingQueryService.GetListingByIdAsync(id, ct);
+    return listing is null ? Results.NotFound() : Results.Ok(listing);
 }).RequireAuthorization();
 
 // Manual trigger endpoint for scraping
