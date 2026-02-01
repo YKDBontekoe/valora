@@ -106,3 +106,4 @@ docker/data/
 .env.*
 !.env.example
 test_output.txt
+backend/Valora.Api/Properties/Resources.resx

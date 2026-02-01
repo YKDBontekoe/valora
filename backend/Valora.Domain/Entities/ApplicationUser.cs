@@ -4,5 +4,5 @@ namespace Valora.Domain.Entities;
 
 public class ApplicationUser : IdentityUser
 {
-    // Add additional properties here if needed in the future
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

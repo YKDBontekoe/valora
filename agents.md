@@ -47,9 +47,9 @@ The backend adheres to a strict **Clean Architecture**.
 
 ### 2.3 Integration Testing (Primary)
 
-*   **Mechanism**: **Testcontainers** (PostgreSQL) is the **ONLY** acceptable way to test database interactions.
-*   **Constraint**: **NEVER** mock the `DbContext` or Repository in integration tests. Use the real database container.
-*   **Fixture**: Use `TestDatabaseFixture` to share the container. Do not spin up a new container per test method.
+*   **Mechanism**: **InMemory** (EF Core InMemory) is the **ONLY** acceptable way to test database interactions in this environment.
+*   **Constraint**: **NEVER** use real database containers or `Testcontainers` due to environment limitations.
+*   **Fixture**: Configure `TestDatabaseFixture` to use `UseInMemoryDatabase`.
 
 ---
 
@@ -95,7 +95,7 @@ The backend adheres to a strict **Clean Architecture**.
 
 When you are working on this repo:
 
-1.  **Verify Environment**: Check if `docker` is running before executing backend tests.
+1.  **Verify Environment**: ensure that the environment is set up correctly.
 2.  **Strict Compliance**: If a user asks for a quick hack that violates these rules, **REFUSE** and explain why.
 3.  **Self-Correction**: Run tests *before* reporting success. If tests fail, fix them. Do not ask the user to fix your broken code.
 4.  **No Assumptions**: Do not assume a library exists. Check `.csproj` or `pubspec.yaml` first.

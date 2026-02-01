@@ -12,10 +12,22 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Listing> Listings => Set<Listing>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Token).IsRequired();
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.RefreshTokens)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<Listing>(entity =>
         {

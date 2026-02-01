@@ -42,8 +42,11 @@ Future<void> main() async {
           create: (context) => AuthProvider(authService: context.read<AuthService>()),
           update: (context, authService, previous) => previous ?? AuthProvider(authService: authService),
         ),
-        ProxyProvider<AuthProvider, ApiService>(
-          update: (context, auth, _) => ApiService(authToken: auth.token),
+        ProxyProvider2<AuthService, AuthProvider, ApiService>(
+          update: (context, authService, authProvider, _) => ApiService(
+            authToken: authProvider.token,
+            refreshTokenCallback: authService.refreshToken,
+          ),
         ),
       ],
       child: const ValoraApp(),
