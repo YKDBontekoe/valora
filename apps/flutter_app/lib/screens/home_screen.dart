@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_typography.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
@@ -399,14 +400,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Featured for You',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: ValoraTypography.titleLarge.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Curated by Valora AI based on your taste',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: ValoraTypography.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -414,10 +415,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Text(
                   'See All',
-                  style: TextStyle(
+                  style: ValoraTypography.labelSmall.copyWith(
                     color: ValoraColors.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
                   ),
                 ),
               ],
@@ -449,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
             child: Text(
               'Nearby Listings',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: ValoraTypography.titleLarge.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -509,9 +509,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             'Valora',
-            style: TextStyle(
+            style: ValoraTypography.headlineMedium.copyWith(
               color: ValoraColors.primary,
-              fontSize: 24,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
             ),
@@ -529,7 +528,6 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 36,
                 height: 36,
-                padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const LinearGradient(
@@ -537,14 +535,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     begin: Alignment.bottomLeft,
                     end: Alignment.topRight,
                   ),
+                  border: Border.all(
+                      color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
+                      width: 2),
                 ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight, width: 2),
-                    image: const DecorationImage(
-                      image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuBgta9igmUaU4f9scjv5zYvC4oimdZfsuePhkK8PtbYL8Ube0KrtuEtDUNDihIHQMRc3sQoDscXoEFdB0TQjwPdf9pV6PnMTopIu-_ji1GYIIe8ggeV3iJSyrrOQA6stBRmoUewACTMYP9hDZvc8Lv71rnwO1xWfjHc7Ko3JgtGY6A0ls0gEXVXzq1Hsj6WXfhvU7OyrHv7klFxE_ZazM5Lo8tglub6SVUlpFWPNfKFJh5C8a0Qx4wO2Y2wRkdfbEVjQWnGkbYmxYk'),
-                      fit: BoxFit.cover,
+                child: const Center(
+                  child: Text(
+                    'JD',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
                   ),
                 ),
