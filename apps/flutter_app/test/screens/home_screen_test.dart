@@ -133,7 +133,7 @@ void main() {
       expect(find.text('Test Street 1'), findsOneWidget);
 
       // Scroll to bottom
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
       await tester.pump(); // Start loading more
       await tester.pump(); // Trigger load
       await tester.pump(); // Finish load (error)

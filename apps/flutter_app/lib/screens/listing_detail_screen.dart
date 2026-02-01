@@ -5,6 +5,7 @@ import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_glass_container.dart';
 
 class ListingDetailScreen extends StatelessWidget {
   const ListingDetailScreen({
@@ -47,16 +48,16 @@ class ListingDetailScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Details'),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildImage(isDark),
-            Padding(
-              padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
+      extendBodyBehindAppBar: true,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverAppBar(context, isDark),
+          SliverToBoxAdapter(
+            child: ValoraGlassContainer(
+              margin: const EdgeInsets.all(ValoraSpacing.md),
+              padding: const EdgeInsets.all(ValoraSpacing.lg),
+              borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -64,14 +65,16 @@ class ListingDetailScreen extends StatelessWidget {
                   const SizedBox(height: ValoraSpacing.lg),
                   _buildAddressSection(colorScheme),
                   const SizedBox(height: ValoraSpacing.lg),
-                  const Divider(),
+                  Divider(color: colorScheme.outlineVariant),
                   const SizedBox(height: ValoraSpacing.lg),
                   _buildSpecsGrid(context, colorScheme),
                   const SizedBox(height: ValoraSpacing.xl),
                   if (listing.url != null)
                     SafeArea(
+                      top: false,
                       child: Padding(
-                        padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
+                        padding:
+                            const EdgeInsets.only(bottom: ValoraSpacing.md),
                         child: ValoraButton(
                           label: 'View on Funda',
                           icon: Icons.open_in_new,
@@ -83,38 +86,54 @@ class ListingDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          // Add extra padding at bottom to ensure scrollability
+          const SliverToBoxAdapter(child: SizedBox(height: ValoraSpacing.xxl)),
+        ],
       ),
     );
   }
 
-  Widget _buildImage(bool isDark) {
-    return Hero(
-      tag: listing.id,
-      child: AspectRatio(
-        aspectRatio: 16 / 10,
-        child: listing.imageUrl != null
-            ? Image.network(
-                listing.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _buildPlaceholder(isDark),
-                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (wasSynchronouslyLoaded) return child;
-                  return AnimatedOpacity(
-                    opacity: frame == null ? 0 : 1,
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeOut,
-                    child: child,
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return _buildPlaceholder(isDark, isLoading: true);
-                },
-              )
-            : _buildPlaceholder(isDark),
+  Widget _buildSliverAppBar(BuildContext context, bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 400,
+      pinned: true,
+      stretch: true,
+      backgroundColor: Colors.transparent,
+      iconTheme: const IconThemeData(color: Colors.white),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Hero(
+          tag: listing.id,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              listing.imageUrl != null
+                  ? Image.network(
+                      listing.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildPlaceholder(isDark),
+                    )
+                  : _buildPlaceholder(isDark),
+              // Gradient overlay for text readability if we put text on image
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black45,
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black54,
+                    ],
+                    stops: [0.0, 0.2, 0.6, 1.0],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

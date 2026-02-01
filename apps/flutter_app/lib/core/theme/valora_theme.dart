@@ -74,8 +74,8 @@ abstract final class ValoraTheme {
     onSurfaceVariant: ValoraColors.onSurfaceVariantLight,
     outline: ValoraColors.neutral300,
     outlineVariant: ValoraColors.neutral200,
-    shadow: Colors.black,
-    scrim: Colors.black,
+    shadow: Colors.black12,
+    scrim: Colors.black26,
   );
 
   static const ColorScheme _darkColorScheme = ColorScheme.dark(
@@ -98,7 +98,7 @@ abstract final class ValoraTheme {
     onSurfaceVariant: ValoraColors.onSurfaceVariantDark,
     outline: ValoraColors.neutral600,
     outlineVariant: ValoraColors.neutral700,
-    shadow: Colors.black,
+    shadow: Colors.black54,
     scrim: Colors.black,
   );
 
@@ -130,9 +130,9 @@ abstract final class ValoraTheme {
 
   static const AppBarTheme _lightAppBarTheme = AppBarTheme(
     elevation: 0,
-    scrolledUnderElevation: 1,
+    scrolledUnderElevation: 0, // Disable color change on scroll for cleaner look
     centerTitle: false,
-    backgroundColor: ValoraColors.surfaceLight,
+    backgroundColor: Colors.transparent, // Transparent by default for glass effect
     foregroundColor: ValoraColors.onSurfaceLight,
     surfaceTintColor: Colors.transparent,
     titleTextStyle: ValoraTypography.titleLarge,
@@ -141,9 +141,9 @@ abstract final class ValoraTheme {
 
   static const AppBarTheme _darkAppBarTheme = AppBarTheme(
     elevation: 0,
-    scrolledUnderElevation: 1,
+    scrolledUnderElevation: 0,
     centerTitle: false,
-    backgroundColor: ValoraColors.surfaceDark,
+    backgroundColor: Colors.transparent,
     foregroundColor: ValoraColors.onSurfaceDark,
     surfaceTintColor: Colors.transparent,
     titleTextStyle: ValoraTypography.titleLarge,
@@ -155,9 +155,10 @@ abstract final class ValoraTheme {
   // ============================================
 
   static CardThemeData get _lightCardTheme => CardThemeData(
-        elevation: ValoraSpacing.elevationSm,
+        elevation: 0, // Minimal elevation
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+          side: const BorderSide(color: ValoraColors.neutral200, width: 1),
         ),
         color: ValoraColors.surfaceLight,
         surfaceTintColor: Colors.transparent,
@@ -166,9 +167,10 @@ abstract final class ValoraTheme {
       );
 
   static CardThemeData get _darkCardTheme => CardThemeData(
-        elevation: ValoraSpacing.elevationSm,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+          side: const BorderSide(color: ValoraColors.neutral800, width: 1),
         ),
         color: ValoraColors.surfaceDark,
         surfaceTintColor: Colors.transparent,
@@ -183,13 +185,13 @@ abstract final class ValoraTheme {
   static ElevatedButtonThemeData get _elevatedButtonTheme =>
       ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: ValoraSpacing.elevationSm,
+          elevation: 0,
           padding: const EdgeInsets.symmetric(
             horizontal: ValoraSpacing.lg,
             vertical: ValoraSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull), // More rounded
           ),
           textStyle: ValoraTypography.labelLarge,
           minimumSize: const Size(0, ValoraSpacing.buttonHeightMd),
@@ -204,7 +206,7 @@ abstract final class ValoraTheme {
             vertical: ValoraSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           ),
           textStyle: ValoraTypography.labelLarge,
           minimumSize: const Size(0, ValoraSpacing.buttonHeightMd),
@@ -218,7 +220,7 @@ abstract final class ValoraTheme {
             vertical: ValoraSpacing.sm,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           ),
           textStyle: ValoraTypography.labelLarge,
         ),
@@ -254,77 +256,71 @@ abstract final class ValoraTheme {
 
   static InputDecorationTheme get _lightInputTheme => InputDecorationTheme(
         filled: true,
-        fillColor: ValoraColors.surfaceVariantLight,
+        fillColor: ValoraColors.glassWhite, // Glass effect base
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: ValoraSpacing.md,
+          horizontal: ValoraSpacing.lg, // More breathing room
           vertical: ValoraSpacing.md,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull), // Pill shape
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+          borderSide: const BorderSide(color: ValoraColors.neutral200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide: const BorderSide(color: ValoraColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide: const BorderSide(color: ValoraColors.error, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide: const BorderSide(color: ValoraColors.error, width: 2),
         ),
         hintStyle: ValoraTypography.bodyMedium.copyWith(
-          color: ValoraColors.onSurfaceVariantLight,
+          color: ValoraColors.neutral400,
         ),
         labelStyle: ValoraTypography.bodyMedium,
-        errorStyle: ValoraTypography.bodySmall.copyWith(
-          color: ValoraColors.error,
-        ),
       );
 
   static InputDecorationTheme get _darkInputTheme => InputDecorationTheme(
         filled: true,
-        fillColor: ValoraColors.surfaceVariantDark,
+        fillColor: ValoraColors.glassBlack, // Glass effect base
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: ValoraSpacing.md,
+          horizontal: ValoraSpacing.lg,
           vertical: ValoraSpacing.md,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+          borderSide: const BorderSide(color: ValoraColors.neutral700),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide:
               const BorderSide(color: ValoraColors.primaryLight, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide:
               const BorderSide(color: ValoraColors.errorLight, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
           borderSide:
               const BorderSide(color: ValoraColors.errorLight, width: 2),
         ),
         hintStyle: ValoraTypography.bodyMedium.copyWith(
-          color: ValoraColors.onSurfaceVariantDark,
+          color: ValoraColors.neutral500,
         ),
         labelStyle: ValoraTypography.bodyMedium,
-        errorStyle: ValoraTypography.bodySmall.copyWith(
-          color: ValoraColors.errorLight,
-        ),
       );
 
   // ============================================
@@ -352,7 +348,7 @@ abstract final class ValoraTheme {
   );
 
   static const DividerThemeData _darkDividerTheme = DividerThemeData(
-    color: ValoraColors.neutral700,
+    color: ValoraColors.neutral800,
     thickness: 1,
     space: ValoraSpacing.md,
   );

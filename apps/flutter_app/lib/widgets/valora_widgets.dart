@@ -567,6 +567,11 @@ class ValoraTextField extends StatefulWidget {
     this.prefixIcon,
     this.prefixText,
     this.onChanged,
+    this.validator,
+    this.obscureText = false,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.autofillHints,
   });
 
   final TextEditingController? controller;
@@ -576,6 +581,11 @@ class ValoraTextField extends StatefulWidget {
   final IconData? prefixIcon;
   final String? prefixText;
   final ValueChanged<String>? onChanged;
+  final FormFieldValidator<String>? validator;
+  final bool obscureText;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
+  final Iterable<String>? autofillHints;
 
   @override
   State<ValoraTextField> createState() => _ValoraTextFieldState();
@@ -616,11 +626,16 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
           ),
         ),
         const SizedBox(height: ValoraSpacing.xs),
-        TextField(
+        TextFormField(
           controller: widget.controller,
           focusNode: _focusNode,
           keyboardType: widget.keyboardType,
           onChanged: widget.onChanged,
+          validator: widget.validator,
+          obscureText: widget.obscureText,
+          textInputAction: widget.textInputAction,
+          onFieldSubmitted: widget.onFieldSubmitted,
+          autofillHints: widget.autofillHints,
           style: ValoraTypography.bodyMedium,
           decoration: InputDecoration(
             hintText: widget.hint,
