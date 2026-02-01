@@ -15,6 +15,23 @@ void main() {
   });
 
   group('ApiService', () {
+    test('baseUrl uses dotenv', () {
+      expect(ApiService.baseUrl, 'http://localhost:5000/api');
+    });
+
+    test('baseUrl falls back to default if dotenv missing', () {
+      // Backup
+      final backup = Map<String, String>.from(dotenv.env);
+      dotenv.env.clear();
+
+      try {
+        expect(ApiService.baseUrl, 'http://localhost:5000/api');
+      } finally {
+        // Restore
+        dotenv.env.addAll(backup);
+      }
+    });
+
     test('getListings throws ServerException on 500', () async {
       final client = MockClient((request) async {
         return http.Response('Internal Server Error', 500);
