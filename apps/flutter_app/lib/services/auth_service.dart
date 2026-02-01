@@ -8,6 +8,7 @@ class AuthService {
   final FlutterSecureStorage _storage;
   final http.Client _client;
   static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
 
   String get baseUrl => ApiService.baseUrl;
 
@@ -25,6 +26,32 @@ class AuthService {
 
   Future<void> deleteToken() async {
     await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+  }
+
+  Future<String?> refreshToken() async {
+    final refreshToken = await _storage.read(key: _refreshTokenKey);
+    if (refreshToken == null) return null;
+
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      ).timeout(ApiService.timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final newToken = data['token'];
+        if (newToken != null) {
+          await saveToken(newToken);
+          return newToken;
+        }
+      }
+    } catch (_) {
+      // Ignore refresh errors
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -39,6 +66,9 @@ class AuthService {
         final data = jsonDecode(response.body);
         if (data['token'] != null) {
           await saveToken(data['token']);
+        }
+        if (data['refreshToken'] != null) {
+          await _storage.write(key: _refreshTokenKey, value: data['refreshToken']);
         }
         return data;
       } else {

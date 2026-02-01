@@ -29,7 +29,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                 { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
                 { "JWT_ISSUER", "ValoraTest" },
                 { "JWT_AUDIENCE", "ValoraTest" },
-                { "JWT_EXPIRY_MINUTES", "60" }
+                { "JWT_EXPIRY_MINUTES", "15" }
             });
         });
 
