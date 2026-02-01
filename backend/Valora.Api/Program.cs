@@ -154,7 +154,27 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
+    var hangfireUser = app.Configuration["HANGFIRE_USERNAME"];
+    var hangfirePass = app.Configuration["HANGFIRE_PASSWORD"];
+
+    if (string.IsNullOrEmpty(hangfireUser) || string.IsNullOrEmpty(hangfirePass))
+    {
+        if (app.Environment.IsDevelopment())
+        {
+             hangfireUser = "admin";
+             hangfirePass = "valora";
+             Console.WriteLine("WARNING: Hangfire credentials are not configured. Using defaults.");
+        }
+        else
+        {
+             throw new InvalidOperationException("Hangfire credentials are missing in Production configuration.");
+        }
+    }
+
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new Valora.Api.Middleware.HangfireAuthorizationFilter(hangfireUser, hangfirePass) }
+    });
 
     // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(
@@ -207,10 +227,13 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 // Limited trigger endpoint
 api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJob job, CancellationToken ct) =>
 {
+    if (string.IsNullOrWhiteSpace(region)) return Results.BadRequest("Region is required");
+    if (limit <= 0) return Results.BadRequest("Limit must be greater than 0");
+
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
     return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
-});
+}).RequireAuthorization();
 
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>

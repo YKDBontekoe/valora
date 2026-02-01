@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
@@ -14,11 +15,13 @@ public static class AuthEndpoints
 
         group.MapPost("/register", async (
             [FromBody] RegisterDto registerDto,
-            UserManager<ApplicationUser> userManager) =>
+            UserManager<ApplicationUser> userManager,
+            FluentValidation.IValidator<RegisterDto> validator) =>
         {
-            if (registerDto.Password != registerDto.ConfirmPassword)
+            var validationResult = await validator.ValidateAsync(registerDto);
+            if (!validationResult.IsValid)
             {
-                return Results.BadRequest(new { error = "Passwords do not match" });
+                return Results.ValidationProblem(validationResult.ToDictionary());
             }
 
             var user = new ApplicationUser { UserName = registerDto.Email, Email = registerDto.Email };
@@ -35,8 +38,15 @@ public static class AuthEndpoints
         group.MapPost("/login", async (
             [FromBody] LoginDto loginDto,
             UserManager<ApplicationUser> userManager,
-            ITokenService tokenService) =>
+            ITokenService tokenService,
+            FluentValidation.IValidator<LoginDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(loginDto);
+            if (!validationResult.IsValid)
+            {
+                return Results.ValidationProblem(validationResult.ToDictionary());
+            }
+
             var user = await userManager.FindByEmailAsync(loginDto.Email);
             if (user == null || !await userManager.CheckPasswordAsync(user, loginDto.Password))
             {
