@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
@@ -11,6 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() {
   setUpAll(() async {
     await dotenv.load(fileName: ".env.example");
+    HttpOverrides.global = MockHttpOverrides();
   });
 
   group('HomeScreen', () {
@@ -62,7 +65,7 @@ void main() {
       await tester.pump(); // Finish connection check and start loading listings
       await tester.pump(); // Finish loading listings
 
-      expect(find.text('Test Street 1'), findsOneWidget);
+      expect(find.text('Test City'), findsOneWidget);
     });
 
     testWidgets('Shows error state on listing load error', (WidgetTester tester) async {
@@ -130,7 +133,7 @@ void main() {
       await tester.pump(); // Finish connection check and start loading listings
       await tester.pump(const Duration(seconds: 1)); // Wait for animations (SlideInItem)
 
-      expect(find.text('Test Street 1'), findsOneWidget);
+      expect(find.text('Test City'), findsOneWidget);
 
       // Scroll to bottom
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
@@ -173,7 +176,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Open filter dialog
-      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.tap(find.byIcon(Icons.tune_rounded));
       await tester.pumpAndSettle();
 
       expect(find.byType(ValoraFilterDialog), findsOneWidget);
@@ -212,11 +215,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
       await tester.pumpAndSettle();
 
-      // Tap search icon
-      await tester.tap(find.byIcon(Icons.search));
-      await tester.pump();
-
-      // Verify search field appears
+      // Verify search field is always visible
       expect(find.byType(TextField), findsOneWidget);
 
       // Type in search
@@ -262,7 +261,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // NEW: Apply a filter to trigger the "No listings found" state
-      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.tap(find.byIcon(Icons.tune_rounded));
       await tester.pumpAndSettle();
 
       final minField = find.descendant(
@@ -286,3 +285,52 @@ void main() {
     });
   });
 }
+
+class MockHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return MockHttpClient();
+  }
+}
+
+class MockHttpClient extends Fake implements HttpClient {
+  @override
+  bool autoUncompress = true;
+
+  @override
+  Future<HttpClientRequest> getUrl(Uri url) async {
+    return MockHttpClientRequest();
+  }
+}
+
+class MockHttpClientRequest extends Fake implements HttpClientRequest {
+  @override
+  Future<HttpClientResponse> close() async {
+    return MockHttpClientResponse();
+  }
+}
+
+class MockHttpClientResponse extends Fake implements HttpClientResponse {
+  @override
+  int get statusCode => 200;
+
+  @override
+  int get contentLength => kTransparentImage.length;
+
+  @override
+  HttpClientResponseCompressionState get compressionState => HttpClientResponseCompressionState.notCompressed;
+
+  @override
+  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData, {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+    return Stream.value(kTransparentImage).listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+  }
+}
+
+const List<int> kTransparentImage = <int>[
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49,
+  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
+  0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44,
+  0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D,
+  0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42,
+  0x60, 0x82,
+];

@@ -10,9 +10,9 @@ import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../widgets/valora_widgets.dart';
-import '../widgets/valora_listing_card.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_error_state.dart';
+import '../widgets/home_components.dart';
 import 'listing_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -52,11 +52,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _sortOrder;
 
   // Search
-  bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
 
   static const String _defaultScrapeRegion = 'amsterdam';
+
+  // Navigation
+  int _currentNavIndex = 0;
 
   @override
   void initState() {
@@ -156,7 +158,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _error = e;
         });
 
-        // Show snackbar only if we have data (pagination error)
         if (_listings.isNotEmpty) {
            String message = e is AppException ? e.message : e.toString().replaceAll('Exception: ', '');
            ScaffoldMessenger.of(context).showSnackBar(
@@ -232,7 +233,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _triggerScrape() async {
     setState(() => _isLoading = true);
     try {
-      // Trigger a limited scrape for 10 items in Amsterdam
       await _apiService.triggerLimitedScrape(_defaultScrapeRegion, 10);
 
       if (!mounted) return;
@@ -244,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
 
-      // Wait a bit to allow the background job to start and maybe finish some items
       await Future.delayed(const Duration(seconds: 3));
 
       if (mounted) {
@@ -263,40 +262,70 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true, // Allow body to scroll behind glass app bar
-      body: _buildContent(),
-      floatingActionButton: _isConnected && _listings.isEmpty && _error == null
-          ? FloatingActionButton.extended(
-              onPressed: () => _loadListings(refresh: true),
-              backgroundColor: ValoraColors.primary,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh'),
-              elevation: ValoraSpacing.elevationLg,
-            )
-          : null,
+  void _onListingTap(Listing listing) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ListingDetailScreen(listing: listing),
+      ),
     );
   }
 
-  Widget _buildContent() {
-    Widget contentSliver;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBody: true, // Allow body to extend behind bottom nav if needed, but we have a custom one
+      // The design has a fixed bottom nav. Scaffold.bottomNavigationBar works well.
+      bottomNavigationBar: HomeBottomNavBar(
+        currentIndex: _currentNavIndex,
+        onTap: (index) => setState(() => _currentNavIndex = index),
+      ),
+      body: _buildBody(),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0), // Adjust for bottom nav
+        child: FloatingActionButton.extended(
+          onPressed: _triggerScrape,
+          backgroundColor: ValoraColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 8,
+          icon: const Icon(Icons.auto_awesome_rounded),
+          label: Row(
+            children: const [
+              Text('Compare with AI'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (_isLoading) {
-      contentSliver = const SliverFillRemaining(
-        child: ValoraLoadingIndicator(message: 'Loading listings...'),
-      );
+  Widget _buildBody() {
+    int activeFilters = 0;
+    if (_minPrice != null) activeFilters++;
+    if (_maxPrice != null) activeFilters++;
+    if (_city != null) activeFilters++;
+    if (_minBedrooms != null) activeFilters++;
+    if (_minLivingArea != null) activeFilters++;
+    if (_maxLivingArea != null) activeFilters++;
+
+    final bool hasFilters = activeFilters > 0 || _searchTerm.isNotEmpty;
+
+    List<Widget> slivers = [
+      _buildSliverAppBar(activeFilters),
+    ];
+
+    if (_isLoading && _listings.isEmpty) {
+      slivers.add(const SliverFillRemaining(
+        child: Center(child: ValoraLoadingIndicator(message: 'Loading listings...')),
+      ));
     } else if (!_isConnected) {
-      contentSliver = SliverFillRemaining(
+      slivers.add(SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
           child: ValoraEmptyState(
             icon: Icons.cloud_off_outlined,
             title: 'Backend not connected',
-            subtitle:
-                'Unable to connect to Valora Server. Please ensure the backend is running.',
+            subtitle: 'Unable to connect to Valora Server.',
             action: ValoraButton(
               label: 'Retry',
               variant: ValoraButtonVariant.primary,
@@ -305,9 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-      );
+      ));
     } else if (_listings.isEmpty && _error != null) {
-      contentSliver = SliverFillRemaining(
+      slivers.add(SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
           child: ValoraErrorState(
@@ -315,311 +344,226 @@ class _HomeScreenState extends State<HomeScreen> {
             onRetry: () => _loadListings(refresh: true),
           ),
         ),
-      );
+      ));
     } else if (_listings.isEmpty) {
-      final bool hasFilters = _minPrice != null ||
-          _maxPrice != null ||
-          _city != null ||
-          _minBedrooms != null ||
-          _minLivingArea != null ||
-          _maxLivingArea != null ||
-          _searchTerm.isNotEmpty;
-
-      contentSliver = SliverFillRemaining(
+      slivers.add(SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
-          child: !hasFilters
-              ? ValoraEmptyState(
-                  icon: Icons.home_work_outlined,
-                  title: 'No listings yet',
-                  subtitle: 'Get started by scraping some listings.',
-                  action: ValoraButton(
-                    label: 'Scrape 10 Items',
-                    variant: ValoraButtonVariant.primary,
-                    icon: Icons.cloud_download,
-                    onPressed: _triggerScrape,
-                  ),
-                )
-              : ValoraEmptyState(
-                  icon: Icons.search_off,
-                  title: 'No listings found',
-                  subtitle: 'Try adjusting your filters or search term.',
-                  action: ValoraButton(
-                    label: 'Clear Filters',
-                    variant: ValoraButtonVariant.outline,
-                    onPressed: () {
-                      setState(() {
-                        _minPrice = null;
-                        _maxPrice = null;
-                        _city = null;
-                        _minBedrooms = null;
-                        _minLivingArea = null;
-                        _maxLivingArea = null;
-                        _searchTerm = '';
-                        _searchController.clear();
-                        _isSearching = false;
-                      });
-                      _loadListings(refresh: true);
-                    },
-                  ),
-                ),
-        ),
-      );
-    } else {
-      contentSliver = SliverPadding(
-        padding: const EdgeInsets.fromLTRB(
-          ValoraSpacing.screenPadding,
-          ValoraSpacing.screenPadding,
-          ValoraSpacing.screenPadding,
-          ValoraSpacing.xxl, // Bottom padding
-        ),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index == _listings.length) {
-                if (_hasNextPage) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: ValoraSpacing.md),
-                    child: Center(
-                      child: CircularProgressIndicator(),
+            child: !hasFilters
+                ? ValoraEmptyState(
+                    icon: Icons.home_work_outlined,
+                    title: 'No listings yet',
+                    subtitle: 'Get started by scraping some listings.',
+                    action: ValoraButton(
+                      label: 'Scrape 10 Items',
+                      variant: ValoraButtonVariant.primary,
+                      icon: Icons.cloud_download,
+                      onPressed: _triggerScrape,
                     ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }
-
-              final listing = _listings[index];
-              // Only animate first page
-              final int delay =
-                  (index < _pageSize && _currentPage == 1) ? index * 100 : 0;
-
-              return Padding(
-                padding:
-                    const EdgeInsets.only(bottom: ValoraSpacing.listItemGap),
-                child: RepaintBoundary(
-                  child: _SlideInItem(
-                    delay: Duration(milliseconds: delay),
-                    child: ValoraListingCard(
-                      listing: listing,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ListingDetailScreen(listing: listing),
-                          ),
-                        );
+                  )
+                : ValoraEmptyState(
+                    icon: Icons.search_off,
+                    title: 'No listings found',
+                    subtitle: 'Try adjusting your filters or search term.',
+                    action: ValoraButton(
+                      label: 'Clear Filters',
+                      variant: ValoraButtonVariant.outline,
+                      onPressed: () {
+                        setState(() {
+                          _minPrice = null;
+                          _maxPrice = null;
+                          _city = null;
+                          _minBedrooms = null;
+                          _minLivingArea = null;
+                          _maxLivingArea = null;
+                          _searchTerm = '';
+                          _searchController.clear();
+                        });
+                        _loadListings(refresh: true);
                       },
                     ),
                   ),
-                ),
-              );
-            },
-            childCount: _listings.length + (_hasNextPage ? 1 : 0),
-          ),
         ),
-      );
+      ));
+    } else {
+      final featuredListings = _listings.take(5).toList();
+      final nearbyListings = _listings.skip(5).toList();
+
+      if (featuredListings.isNotEmpty) {
+        slivers.add(SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Featured for You',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Curated by Valora AI based on your taste',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'See All',
+                  style: TextStyle(
+                    color: ValoraColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
+
+        slivers.add(SliverToBoxAdapter(
+          child: SizedBox(
+            height: 320,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              scrollDirection: Axis.horizontal,
+              itemCount: featuredListings.length,
+              itemBuilder: (context, index) {
+                return FeaturedListingCard(
+                  listing: featuredListings[index],
+                  onTap: () => _onListingTap(featuredListings[index]),
+                );
+              },
+            ),
+          ),
+        ));
+      }
+
+      if (nearbyListings.isNotEmpty || _hasNextPage) {
+        slivers.add(SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+            child: Text(
+              'Nearby Listings',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ));
+
+        slivers.add(SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == nearbyListings.length) {
+                  if (_hasNextPage) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return const SizedBox(height: 80);
+                }
+
+                final listing = nearbyListings[index];
+                return NearbyListingCard(
+                  listing: listing,
+                  onTap: () => _onListingTap(listing),
+                );
+              },
+              childCount: nearbyListings.length + (_hasNextPage ? 1 : 0),
+            ),
+          ),
+        ));
+      }
     }
 
     return RefreshIndicator(
       onRefresh: () => _loadListings(refresh: true),
       color: ValoraColors.primary,
-      edgeOffset: 100, // Offset for glass app bar
+      edgeOffset: 120,
       child: CustomScrollView(
         controller: _scrollController,
-        slivers: [
-          _buildSliverAppBar(floating: true),
-          contentSliver,
-        ],
+        slivers: slivers,
       ),
     );
   }
 
-  Widget _buildSliverAppBar({bool floating = false}) {
+  Widget _buildSliverAppBar(int activeFilters) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SliverAppBar(
       pinned: true,
-      floating: floating,
-      backgroundColor: Colors.transparent,
+      backgroundColor: isDark ? ValoraColors.backgroundDark.withOpacity(0.95) : ValoraColors.backgroundLight.withOpacity(0.95),
       surfaceTintColor: Colors.transparent,
-      flexibleSpace: ClipRRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? ValoraColors.glassBlack
-                : ValoraColors.glassWhite,
-          ),
-        ),
-      ),
-      title: _isSearching
-          ? TextField(
-              controller: _searchController,
-              autofocus: true,
-              style: Theme.of(context).textTheme.bodyLarge,
-              decoration: InputDecoration(
-                hintText: 'Search address, city...',
-                hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-              ),
-              onChanged: _onSearchChanged,
-            )
-          : Text(
-              'Valora',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+      titleSpacing: 24,
+      toolbarHeight: 70, // Height for the top row (Title + Profile)
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Valora',
+            style: TextStyle(
+              color: ValoraColors.primary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
             ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () {
-            final parentContext = context;
-            showDialog(
-              context: context,
-              builder: (dialogContext) => ValoraDialog(
-                title: 'Logout',
-                actions: [
-                  ValoraButton(
-                    label: 'Cancel',
-                    variant: ValoraButtonVariant.ghost,
-                    onPressed: () => Navigator.pop(dialogContext),
-                  ),
-                  ValoraButton(
-                    label: 'Logout',
-                    variant: ValoraButtonVariant.primary,
-                    onPressed: () {
-                      Navigator.pop(dialogContext);
-                      parentContext.read<AuthProvider>().logout();
-                    },
-                  ),
-                ],
-                child: const Text('Are you sure you want to logout?'),
-              ),
-            );
-          },
-          tooltip: 'Logout',
-        ),
-        IconButton(
-          icon: Icon(_isSearching ? Icons.close : Icons.search),
-          onPressed: () {
-            setState(() {
-              if (_isSearching) {
-                _isSearching = false;
-                _searchController.clear();
-                _searchTerm = '';
-                _loadListings(refresh: true);
-              } else {
-                _isSearching = true;
-              }
-            });
-          },
-        ),
-        IconButton(
-          icon: Stack(
+          ),
+          Row(
             children: [
-              const Icon(Icons.filter_list),
-              if (_minPrice != null ||
-                  _maxPrice != null ||
-                  _city != null ||
-                  _minBedrooms != null ||
-                  _minLivingArea != null ||
-                  _maxLivingArea != null)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: ValoraColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 8,
-                      minHeight: 8,
+              IconButton(
+                onPressed: () {},
+                icon: Icon(
+                  Icons.notifications_none_rounded,
+                  color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 36,
+                height: 36,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [ValoraColors.primary, ValoraColors.primaryLight],
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                  ),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight, width: 2),
+                    image: const DecorationImage(
+                      image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuBgta9igmUaU4f9scjv5zYvC4oimdZfsuePhkK8PtbYL8Ube0KrtuEtDUNDihIHQMRc3sQoDscXoEFdB0TQjwPdf9pV6PnMTopIu-_ji1GYIIe8ggeV3iJSyrrOQA6stBRmoUewACTMYP9hDZvc8Lv71rnwO1xWfjHc7Ko3JgtGY6A0ls0gEXVXzq1Hsj6WXfhvU7OyrHv7klFxE_ZazM5Lo8tglub6SVUlpFWPNfKFJh5C8a0Qx4wO2Y2wRkdfbEVjQWnGkbYmxYk'),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
+              ),
             ],
           ),
-          onPressed: _openFilterDialog,
-          tooltip: 'Filter',
+        ],
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(140),
+        child: HomeHeader(
+          searchController: _searchController,
+          onSearchChanged: _onSearchChanged,
+          onFilterPressed: _openFilterDialog,
+          activeFilterCount: activeFilters,
         ),
-        const SizedBox(width: ValoraSpacing.sm),
-      ],
-    );
-  }
-}
-
-class _SlideInItem extends StatefulWidget {
-  const _SlideInItem({
-    required this.child,
-    this.delay = Duration.zero,
-  });
-
-  final Widget child;
-  final Duration delay;
-
-  @override
-  State<_SlideInItem> createState() => _SlideInItemState();
-}
-
-class _SlideInItemState extends State<_SlideInItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-
-    if (widget.delay == Duration.zero) {
-      _controller.forward();
-    } else {
-      Future.delayed(widget.delay, () {
-        if (mounted) {
-          _controller.forward();
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: widget.child,
       ),
     );
   }
