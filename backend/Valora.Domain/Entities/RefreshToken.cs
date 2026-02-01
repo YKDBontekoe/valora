@@ -4,7 +4,8 @@ namespace Valora.Domain.Entities;
 
 public class RefreshToken : BaseEntity
 {
-    public string Token { get; set; } = string.Empty;
+    public string TokenHash { get; set; } = string.Empty;
+    public string RawToken { get; set; } = string.Empty;
     public DateTime Expires { get; set; }
     public DateTime? Revoked { get; set; }
     public bool IsExpired => DateTime.UtcNow >= Expires;

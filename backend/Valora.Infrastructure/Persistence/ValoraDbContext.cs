@@ -21,8 +21,9 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Token).IsRequired();
-            entity.HasIndex(e => e.Token).IsUnique();
+            entity.Property(e => e.TokenHash).IsRequired();
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.Ignore(e => e.RawToken);
             entity.HasOne(e => e.User)
                   .WithMany(u => u.RefreshTokens)
                   .HasForeignKey(e => e.UserId)
