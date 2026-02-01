@@ -213,7 +213,8 @@ public class ListingTests : BaseIntegrationTest
         var response2 = await Client.GetAsync("/api/listings?page=2&pageSize=10");
         var result2 = await response2.Content.ReadFromJsonAsync<ListingResponseDto>();
 
-        Assert.Equal(5, result2.Items.Count);
+        Assert.NotNull(result2);
+        Assert.Equal(5, result2!.Items.Count);
         Assert.False(result2.HasNextPage);
     }
 }
