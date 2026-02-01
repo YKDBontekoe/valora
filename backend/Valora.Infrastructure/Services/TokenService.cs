@@ -77,4 +77,14 @@ public class TokenService : ITokenService
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Token == token);
     }
+
+    public async Task RevokeRefreshTokenAsync(string token)
+    {
+        var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token);
+        if (existingToken != null)
+        {
+            existingToken.Revoked = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+    }
 }
