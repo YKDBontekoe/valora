@@ -65,6 +65,21 @@ public class ListingRepository : IListingRepository
             }
         }
 
+        if (filter.MinBedrooms.HasValue)
+        {
+            query = query.Where(l => l.Bedrooms >= filter.MinBedrooms.Value);
+        }
+
+        if (filter.MinLivingArea.HasValue)
+        {
+            query = query.Where(l => l.LivingAreaM2 >= filter.MinLivingArea.Value);
+        }
+
+        if (filter.MaxLivingArea.HasValue)
+        {
+            query = query.Where(l => l.LivingAreaM2 <= filter.MaxLivingArea.Value);
+        }
+
         // Sorting
         query = (filter.SortBy?.ToLower(), filter.SortOrder?.ToLower()) switch
         {
@@ -72,6 +87,8 @@ public class ListingRepository : IListingRepository
             ("price", "asc") => query.OrderBy(l => l.Price),
             ("date", "asc") => query.OrderBy(l => l.ListedDate),
             ("date", "desc") => query.OrderByDescending(l => l.ListedDate),
+            ("livingarea", "asc") => query.OrderBy(l => l.LivingAreaM2),
+            ("livingarea", "desc") => query.OrderByDescending(l => l.LivingAreaM2),
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
 

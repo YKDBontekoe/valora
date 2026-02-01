@@ -42,6 +42,9 @@ class ApiService {
     double? minPrice,
     double? maxPrice,
     String? city,
+    int? minBedrooms,
+    int? minLivingArea,
+    int? maxLivingArea,
     String? sortBy,
     String? sortOrder,
   }) async {
@@ -55,6 +58,9 @@ class ApiService {
       if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
       if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
       if (city != null && city.isNotEmpty) queryParams['city'] = city;
+      if (minBedrooms != null) queryParams['minBedrooms'] = minBedrooms.toString();
+      if (minLivingArea != null) queryParams['minLivingArea'] = minLivingArea.toString();
+      if (maxLivingArea != null) queryParams['maxLivingArea'] = maxLivingArea.toString();
       if (sortBy != null && sortBy.isNotEmpty) queryParams['sortBy'] = sortBy;
       if (sortOrder != null && sortOrder.isNotEmpty) queryParams['sortOrder'] = sortOrder;
 
