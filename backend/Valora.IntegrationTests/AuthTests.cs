@@ -1,5 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Valora.Application.DTOs;
 using Xunit;
 
@@ -87,6 +90,35 @@ public class AuthTests : BaseIntegrationTest
         Assert.False(string.IsNullOrEmpty(result.Token));
         Assert.False(string.IsNullOrEmpty(result.RefreshToken));
         Assert.Equal(email, result.Email);
+    }
+
+    [Fact]
+    public async Task Login_PersistsHashedRefreshToken()
+    {
+        // Arrange
+        var email = "hashedrefresh@example.com";
+        var password = "Password123!";
+        await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = email,
+            Password = password,
+            ConfirmPassword = password
+        });
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/login", new LoginDto(email, password));
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        Assert.NotNull(result);
+
+        var storedToken = await DbContext.RefreshTokens.SingleAsync();
+        var expectedHash = Convert.ToBase64String(
+            SHA256.HashData(Encoding.UTF8.GetBytes(result.RefreshToken)));
+
+        Assert.Equal(expectedHash, storedToken.TokenHash);
+        Assert.NotEqual(result.RefreshToken, storedToken.TokenHash);
     }
 
     [Fact]

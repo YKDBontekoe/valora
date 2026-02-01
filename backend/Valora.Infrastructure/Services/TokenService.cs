@@ -55,10 +55,12 @@ public class TokenService : ITokenService
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
+        var rawToken = Convert.ToBase64String(randomNumber);
 
         return new RefreshToken
         {
-            Token = Convert.ToBase64String(randomNumber),
+            RawToken = rawToken,
+            TokenHash = HashRefreshToken(rawToken),
             Expires = DateTime.UtcNow.AddDays(30),
             CreatedAt = DateTime.UtcNow,
             UserId = userId
@@ -67,24 +69,43 @@ public class TokenService : ITokenService
 
     public async Task SaveRefreshTokenAsync(RefreshToken token)
     {
+        if (string.IsNullOrWhiteSpace(token.TokenHash))
+        {
+            if (string.IsNullOrWhiteSpace(token.RawToken))
+            {
+                throw new InvalidOperationException("Refresh token value is required.");
+            }
+
+            token.TokenHash = HashRefreshToken(token.RawToken);
+        }
+
         _context.RefreshTokens.Add(token);
         await _context.SaveChangesAsync();
     }
 
     public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
     {
+        var tokenHash = HashRefreshToken(token);
         return await _context.RefreshTokens
             .Include(r => r.User)
-            .FirstOrDefaultAsync(r => r.Token == token);
+            .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
     }
 
     public async Task RevokeRefreshTokenAsync(string token)
     {
-        var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token);
+        var tokenHash = HashRefreshToken(token);
+        var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
         if (existingToken != null)
         {
             existingToken.Revoked = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+    }
+
+    private static string HashRefreshToken(string token)
+    {
+        var bytes = Encoding.UTF8.GetBytes(token);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hash);
     }
 }

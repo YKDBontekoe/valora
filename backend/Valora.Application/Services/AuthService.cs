@@ -47,7 +47,7 @@ public class AuthService : IAuthService
 
         return new AuthResponseDto(
             token,
-            refreshToken.Token,
+            refreshToken.RawToken,
             user.Email!,
             user.Id
         );
@@ -63,7 +63,7 @@ public class AuthService : IAuthService
         }
 
         // Rotate Refresh Token
-        await _tokenService.RevokeRefreshTokenAsync(existingToken.Token);
+        await _tokenService.RevokeRefreshTokenAsync(refreshToken);
         var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
         await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
 
@@ -71,7 +71,7 @@ public class AuthService : IAuthService
 
         return new AuthResponseDto(
             newAccessToken,
-            newRefreshToken.Token,
+            newRefreshToken.RawToken,
             existingToken.User.Email!,
             existingToken.User.Id
         );
