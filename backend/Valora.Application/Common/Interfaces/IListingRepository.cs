@@ -1,4 +1,5 @@
 using Valora.Application.Common.Models;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Common.Interfaces;
