@@ -38,6 +38,10 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
     .Configure<IConfiguration, IWebHostEnvironment>((options, configuration, env) =>
     {
+        // JWT Secret configuration is critical.
+        // In Production, we enforce providing a strong secret via environment variables.
+        // In Development, we allow a fallback to a hardcoded secret to simplify onboarding,
+        // but we log a warning to ensure developers are aware of this.
         var secret = configuration["JWT_SECRET"];
 
         if (string.IsNullOrEmpty(secret))
@@ -91,12 +95,17 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
+// We manually parse the connection string because we might receive a raw URL (postgres://...)
+// from cloud providers (e.g., Heroku, Fly.io) or a standard ADO.NET connection string.
+// ConnectionStringParser handles this normalization.
 var rawConnectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
 var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 var hangfireEnabled = builder.Configuration.GetValue<bool>("HANGFIRE_ENABLED");
 
 if (hangfireEnabled)
 {
+    // Configure Hangfire to use PostgreSQL for job storage.
+    // This allows jobs to persist across restarts.
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
             options.UseNpgsqlConnection(connectionString)));

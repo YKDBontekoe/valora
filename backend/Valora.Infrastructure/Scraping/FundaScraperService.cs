@@ -42,7 +42,10 @@ public class FundaScraperService : IFundaScraperService
 
     private void ConfigureHttpClient()
     {
-        // Set headers to appear as a regular browser
+        // Set headers to appear as a regular browser.
+        // Funda.nl has strict anti-bot measures. We mimic a standard Chrome on macOS user agent
+        // to avoid immediate blocking (403 Forbidden).
+        // We also set Accept and Accept-Language headers to match typical browser behavior.
         _httpClient.DefaultRequestHeaders.Add("User-Agent",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         _httpClient.DefaultRequestHeaders.Add("Accept",
@@ -52,7 +55,10 @@ public class FundaScraperService : IFundaScraperService
 
     private AsyncRetryPolicy<HttpResponseMessage> CreateRetryPolicy()
     {
-        // Configure retry policy with exponential backoff
+        // Configure retry policy with exponential backoff.
+        // Network requests to Funda can fail transiently (e.g. rate limiting or timeouts).
+        // Exponential backoff (2^n) ensures we don't hammer the server if it's struggling,
+        // giving it time to recover before the next attempt.
         return Policy<HttpResponseMessage>
             .Handle<HttpRequestException>()
             .OrResult(r => !r.IsSuccessStatusCode)
@@ -219,6 +225,8 @@ public class FundaScraperService : IFundaScraperService
     private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
         // Existing listing - check for price changes
+        // We only track price history if the price has actually changed and the new price is valid.
+        // This avoids cluttering the history table with duplicate entries.
         var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
 
         if (priceChanged)
@@ -234,7 +242,8 @@ public class FundaScraperService : IFundaScraperService
             }, cancellationToken);
         }
 
-        // Update listing
+        // Update listing properties with the latest data from the crawl.
+        // Even if the price hasn't changed, other fields like Status (e.g., "Verkocht") or ImageUrl might have.
         existingListing.Price = listing.Price;
         existingListing.Bedrooms = listing.Bedrooms;
         existingListing.LivingAreaM2 = listing.LivingAreaM2;
