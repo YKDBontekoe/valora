@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
+import 'package:http/http.dart' as http;
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/startup_screen.dart';
@@ -41,19 +42,26 @@ Future<void> main() async {
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider(),
         ),
+        Provider<http.Client>(
+          create: (_) => http.Client(),
+          dispose: (_, client) => client.close(),
+        ),
         Provider<AuthService>(
-          create: (_) => AuthService(),
+          create: (context) => AuthService(client: context.read<http.Client>()),
+          dispose: (_, authService) => authService.dispose(),
         ),
         ChangeNotifierProxyProvider<AuthService, AuthProvider>(
           create: (context) => AuthProvider(authService: context.read<AuthService>()),
           update: (context, authService, previous) =>
               previous ?? AuthProvider(authService: authService),
         ),
-        ProxyProvider2<AuthService, AuthProvider, ApiService>(
-          update: (context, authService, authProvider, _) => ApiService(
+        ProxyProvider3<http.Client, AuthService, AuthProvider, ApiService>(
+          update: (context, client, authService, authProvider, _) => ApiService(
+            client: client,
             authToken: authProvider.token,
             refreshTokenCallback: authService.refreshToken,
           ),
+          dispose: (_, apiService) => apiService.dispose(),
         ),
       ],
       child: const ValoraApp(),

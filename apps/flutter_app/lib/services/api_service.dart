@@ -15,20 +15,33 @@ class ApiService {
   static const Duration timeoutDuration = Duration(seconds: 10);
 
   final http.Client _client;
+  final bool _ownsClient;
   String? _authToken;
   final Future<String?> Function()? _refreshTokenCallback;
   final RetryOptions _retryOptions;
 
   ApiService({
     http.Client? client,
+    bool? ownsClient,
     String? authToken,
     Future<String?> Function()? refreshTokenCallback,
     RetryOptions? retryOptions,
-  })  : _client = client ?? http.Client(),
+  })  : assert(
+          client != null || ownsClient != false,
+          'ownsClient cannot be false when no client is provided.',
+        ),
+        _client = client ?? http.Client(),
+        _ownsClient = ownsClient ?? client == null,
         _authToken = authToken,
         _refreshTokenCallback = refreshTokenCallback,
         _retryOptions = retryOptions ??
             const RetryOptions(maxAttempts: 3, delayFactor: Duration(seconds: 1));
+
+  void dispose() {
+    if (_ownsClient) {
+      _client.close();
+    }
+  }
 
   Map<String, String> get _headers => {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',

@@ -12,6 +12,21 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 @GenerateMocks([FlutterSecureStorage, http.Client])
 import 'auth_service_test.mocks.dart';
 
+class TrackingClient extends http.BaseClient {
+  bool closed = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    throw UnimplementedError('TrackingClient is for dispose tests only.');
+  }
+
+  @override
+  void close() {
+    closed = true;
+    super.close();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -188,6 +203,33 @@ void main() {
 
       verify(mockStorage.delete(key: 'auth_token')).called(1);
       verify(mockStorage.delete(key: 'refresh_token')).called(1);
+    });
+
+    test('dispose closes owned client', () {
+      final trackingClient = TrackingClient();
+
+      final ownedService = AuthService(
+        storage: mockStorage,
+        client: trackingClient,
+        ownsClient: true,
+      );
+
+      ownedService.dispose();
+
+      expect(trackingClient.closed, isTrue);
+    });
+
+    test('dispose does not close shared client', () {
+      final trackingClient = TrackingClient();
+
+      final sharedService = AuthService(
+        storage: mockStorage,
+        client: trackingClient,
+      );
+
+      sharedService.dispose();
+
+      expect(trackingClient.closed, isFalse);
     });
   });
 }

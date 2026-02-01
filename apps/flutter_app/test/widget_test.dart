@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'package:valora_app/main.dart';
 import 'package:valora_app/providers/auth_provider.dart';
@@ -12,6 +14,8 @@ import 'package:valora_app/services/auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MockAuthService extends AuthService {
+  MockAuthService({http.Client? client}) : super(client: client);
+
   @override
   Future<String?> getToken() async => "fake_token";
 
@@ -35,10 +39,25 @@ void main() {
         MultiProvider(
           providers: [
             ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-            Provider<AuthService>(create: (_) => MockAuthService()),
-            ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider(authService: MockAuthService())),
-            ProxyProvider<AuthProvider, ApiService>(
-              update: (context, auth, _) => ApiService(authToken: auth.token),
+            Provider<http.Client>(
+              create: (_) => MockClient((_) async => http.Response('{}', 200)),
+              dispose: (_, client) => client.close(),
+            ),
+            Provider<AuthService>(
+              create: (context) => MockAuthService(client: context.read<http.Client>()),
+              dispose: (_, authService) => authService.dispose(),
+            ),
+            ChangeNotifierProvider<AuthProvider>(
+              create: (context) => AuthProvider(
+                authService: MockAuthService(client: context.read<http.Client>()),
+              ),
+            ),
+            ProxyProvider2<http.Client, AuthProvider, ApiService>(
+              update: (context, client, auth, _) => ApiService(
+                client: client,
+                authToken: auth.token,
+              ),
+              dispose: (_, apiService) => apiService.dispose(),
             ),
           ],
           child: const ValoraApp(),

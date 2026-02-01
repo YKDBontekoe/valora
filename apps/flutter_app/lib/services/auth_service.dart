@@ -7,14 +7,29 @@ import 'api_service.dart';
 class AuthService {
   final FlutterSecureStorage _storage;
   final http.Client _client;
+  final bool _ownsClient;
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
 
   String get baseUrl => ApiService.baseUrl;
 
-  AuthService({FlutterSecureStorage? storage, http.Client? client})
-      : _storage = storage ?? const FlutterSecureStorage(),
-        _client = client ?? http.Client();
+  AuthService({
+    FlutterSecureStorage? storage,
+    http.Client? client,
+    bool? ownsClient,
+  })  : assert(
+          client != null || ownsClient != false,
+          'ownsClient cannot be false when no client is provided.',
+        ),
+        _storage = storage ?? const FlutterSecureStorage(),
+        _client = client ?? http.Client(),
+        _ownsClient = ownsClient ?? client == null;
+
+  void dispose() {
+    if (_ownsClient) {
+      _client.close();
+    }
+  }
 
   Future<String?> getToken() async {
     return await _storage.read(key: _tokenKey);

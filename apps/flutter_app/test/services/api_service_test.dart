@@ -11,6 +11,21 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:retry/retry.dart';
 
+class TrackingClient extends http.BaseClient {
+  bool closed = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    throw UnimplementedError('TrackingClient is for dispose tests only.');
+  }
+
+  @override
+  void close() {
+    closed = true;
+    super.close();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -301,6 +316,29 @@ void main() {
         () => apiService.getListings(const ListingFilter()),
         throwsA(isA<UnknownException>()),
       );
+    });
+
+    test('dispose closes owned client', () {
+      final trackingClient = TrackingClient();
+
+      final apiService = ApiService(
+        client: trackingClient,
+        ownsClient: true,
+      );
+
+      apiService.dispose();
+
+      expect(trackingClient.closed, isTrue);
+    });
+
+    test('dispose does not close shared client', () {
+      final trackingClient = TrackingClient();
+
+      final apiService = ApiService(client: trackingClient);
+
+      apiService.dispose();
+
+      expect(trackingClient.closed, isFalse);
     });
   });
 }
