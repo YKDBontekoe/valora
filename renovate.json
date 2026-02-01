@@ -14,18 +14,18 @@
       "automerge": true
     },
     {
-      "matchPackagePatterns": [
-        "^Microsoft\\.",
-        "^System\\."
-      ],
-      "groupName": "dotnet-dependencies"
+      "groupName": "dotnet-dependencies",
+      "matchPackageNames": [
+        "/^Microsoft\\./",
+        "/^System\\./"
+      ]
     },
     {
-      "matchPackagePatterns": [
-        "^flutter",
-        "^dart"
-      ],
-      "groupName": "flutter-dependencies"
+      "groupName": "flutter-dependencies",
+      "matchPackageNames": [
+        "/^flutter/",
+        "/^dart/"
+      ]
     }
   ]
 }
