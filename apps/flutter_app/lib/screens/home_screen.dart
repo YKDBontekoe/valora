@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
@@ -503,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return SliverAppBar(
       pinned: true,
-      backgroundColor: isDark ? ValoraColors.backgroundDark.withOpacity(0.95) : ValoraColors.backgroundLight.withOpacity(0.95),
+      backgroundColor: isDark ? ValoraColors.backgroundDark.withValues(alpha: 0.95) : ValoraColors.backgroundLight.withValues(alpha: 0.95),
       surfaceTintColor: Colors.transparent,
       titleSpacing: 24,
       toolbarHeight: 70, // Height for the top row (Title + Profile)

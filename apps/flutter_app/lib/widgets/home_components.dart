@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
 import '../models/listing.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -23,7 +22,7 @@ class HomeHeader extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-      color: isDark ? ValoraColors.backgroundDark.withOpacity(0.95) : ValoraColors.backgroundLight.withOpacity(0.95),
+      color: isDark ? ValoraColors.backgroundDark.withValues(alpha: 0.95) : ValoraColors.backgroundLight.withValues(alpha: 0.95),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -42,7 +41,7 @@ class HomeHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 12,
                         offset: const Offset(0, 2),
                       ),
@@ -75,7 +74,7 @@ class HomeHeader extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: ValoraColors.primary.withOpacity(0.1),
+                    color: ValoraColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Stack(
@@ -155,14 +154,14 @@ class HomeHeader extends StatelessWidget {
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: ValoraColors.primary.withOpacity(0.2),
+                  color: ValoraColors.primary.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )
               ]
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 )
@@ -213,7 +212,7 @@ class FeaturedListingCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: ValoraColors.primary.withOpacity(0.08),
+              color: ValoraColors.primary.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -249,9 +248,9 @@ class FeaturedListingCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
+                      color: Colors.black.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -283,7 +282,7 @@ class FeaturedListingCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (isDark ? Colors.black : Colors.white).withOpacity(0.9),
+                      color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -317,7 +316,7 @@ class FeaturedListingCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${listing.city ?? listing.address}',
+                            listing.city ?? listing.address,
                             style: TextStyle(
                               color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
                               fontSize: 12,
@@ -328,7 +327,7 @@ class FeaturedListingCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: ValoraColors.primary.withOpacity(0.1),
+                          color: ValoraColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -411,7 +410,7 @@ class NearbyListingCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 12,
               offset: const Offset(0, 2),
             ),
@@ -463,7 +462,7 @@ class NearbyListingCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: ValoraColors.success.withOpacity(0.1),
+                          color: ValoraColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
