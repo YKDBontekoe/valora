@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
 import '../models/listing.dart';
 
@@ -230,15 +229,12 @@ class FeaturedListingCard extends StatelessWidget {
                   height: 180,
                   color: ValoraColors.neutral200,
                   child: listing.imageUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: listing.imageUrl!,
+                      ? Image.network(
+                          listing.imageUrl!,
                           width: double.infinity,
                           height: 180,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Center(
-                            child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
-                          ),
-                          errorWidget: (context, url, error) => Center(
+                          errorBuilder: (context, error, stackTrace) => Center(
                             child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                           ),
                         )
@@ -432,13 +428,10 @@ class NearbyListingCard extends StatelessWidget {
               ),
               clipBehavior: Clip.antiAlias,
               child: listing.imageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: listing.imageUrl!,
+                  ? Image.network(
+                      listing.imageUrl!,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Center(
-                        child: Icon(Icons.home, color: ValoraColors.neutral400),
-                      ),
-                      errorWidget: (context, url, error) => Center(
+                      errorBuilder: (context, error, stackTrace) => Center(
                         child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                       ),
                     )

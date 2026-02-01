@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
 
@@ -12,44 +14,72 @@ public static class AuthEndpoints
 
         group.MapPost("/register", async (
             [FromBody] RegisterDto registerDto,
-            IAuthService authService) =>
+            UserManager<ApplicationUser> userManager) =>
         {
-            var result = await authService.RegisterAsync(registerDto);
+            if (registerDto.Password != registerDto.ConfirmPassword)
+            {
+                return Results.BadRequest(new { error = "Passwords do not match" });
+            }
+
+            var user = new ApplicationUser { UserName = registerDto.Email, Email = registerDto.Email };
+            var result = await userManager.CreateAsync(user, registerDto.Password);
 
             if (result.Succeeded)
             {
                 return Results.Ok(new { message = "User created successfully" });
             }
 
-            return Results.BadRequest(result.Errors.Select(e => new { description = e }));
+            return Results.BadRequest(result.Errors);
         });
 
         group.MapPost("/login", async (
             [FromBody] LoginDto loginDto,
-            IAuthService authService) =>
+            UserManager<ApplicationUser> userManager,
+            ITokenService tokenService) =>
         {
-            var response = await authService.LoginAsync(loginDto);
-
-            if (response == null)
+            var user = await userManager.FindByEmailAsync(loginDto.Email);
+            if (user == null || !await userManager.CheckPasswordAsync(user, loginDto.Password))
             {
                 return Results.Unauthorized();
             }
 
-            return Results.Ok(response);
+            var token = tokenService.GenerateToken(user);
+            var refreshToken = tokenService.GenerateRefreshToken(user.Id);
+
+            await tokenService.SaveRefreshTokenAsync(refreshToken);
+
+            return Results.Ok(new AuthResponseDto(
+                token,
+                refreshToken.Token,
+                user.Email!,
+                user.Id
+            ));
         });
 
         group.MapPost("/refresh", async (
             [FromBody] RefreshTokenRequestDto request,
-            IAuthService authService) =>
+            ITokenService tokenService) =>
         {
-            var response = await authService.RefreshTokenAsync(request.RefreshToken);
+            var existingToken = await tokenService.GetRefreshTokenAsync(request.RefreshToken);
 
-            if (response == null)
+            if (existingToken == null || !existingToken.IsActive || existingToken.User == null)
             {
                 return Results.Unauthorized();
             }
 
-            return Results.Ok(response);
+            // Rotate Refresh Token
+            await tokenService.RevokeRefreshTokenAsync(existingToken.Token);
+            var newRefreshToken = tokenService.GenerateRefreshToken(existingToken.UserId);
+            await tokenService.SaveRefreshTokenAsync(newRefreshToken);
+
+            var newAccessToken = tokenService.GenerateToken(existingToken.User);
+
+            return Results.Ok(new AuthResponseDto(
+                newAccessToken,
+                newRefreshToken.Token,
+                existingToken.User.Email!,
+                existingToken.User.Id
+            ));
         });
     }
 }

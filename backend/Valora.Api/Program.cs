@@ -36,12 +36,8 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer();
 
 builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-    .Configure<IConfiguration, IWebHostEnvironment, ILogger<Program>>((options, configuration, env, logger) =>
+    .Configure<IConfiguration, IWebHostEnvironment>((options, configuration, env) =>
     {
-        // JWT Secret configuration is critical.
-        // In Production, we enforce providing a strong secret via environment variables.
-        // In Development, we allow a fallback to a hardcoded secret to simplify onboarding,
-        // but we log a warning to ensure developers are aware of this.
         var secret = configuration["JWT_SECRET"];
 
         if (string.IsNullOrEmpty(secret))
@@ -49,7 +45,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             if (env.IsDevelopment())
             {
                 secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-                logger.LogWarning("WARNING: JWT Secret is not configured. Using temporary development key.");
+                Console.WriteLine("WARNING: JWT Secret is not configured. Using temporary development key.");
             }
             else
             {
@@ -72,17 +68,17 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         {
             OnAuthenticationFailed = context =>
             {
-                logger.LogError(context.Exception, "Authentication failed");
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
+                Console.WriteLine($"Token validated for: {context.Principal?.Identity?.Name}");
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
-                logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
+                Console.WriteLine($"OnChallenge: {context.Error}, {context.ErrorDescription}");
                 return Task.CompletedTask;
             }
         };
@@ -95,17 +91,12 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
 
 // Add Hangfire with PostgreSQL storage
-// We manually parse the connection string because we might receive a raw URL (postgres://...)
-// from cloud providers (e.g., Heroku, Fly.io) or a standard ADO.NET connection string.
-// ConnectionStringParser handles this normalization.
 var rawConnectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
 var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 var hangfireEnabled = builder.Configuration.GetValue<bool>("HANGFIRE_ENABLED");
 
 if (hangfireEnabled)
 {
-    // Configure Hangfire to use PostgreSQL for job storage.
-    // This allows jobs to persist across restarts.
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
             options.UseNpgsqlConnection(connectionString)));

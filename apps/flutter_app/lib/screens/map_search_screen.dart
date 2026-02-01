@@ -165,7 +165,7 @@ class _MapSearchScreenState extends State<MapSearchScreen> with TickerProviderSt
               initialZoom: _initialZoom,
               minZoom: 5,
               maxZoom: 18,
-              onTap: (_, __) {
+              onTap: (tapPosition, point) {
                  if (_selectedIndex != -1) {
                    setState(() => _selectedIndex = -1);
                  }

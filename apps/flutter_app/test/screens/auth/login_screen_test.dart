@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/screens/auth/login_screen.dart';
+import 'package:valora_app/widgets/valora_widgets.dart';
 
 class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
@@ -44,19 +45,21 @@ void main() {
     expect(find.byType(AutofillGroup), findsOneWidget);
 
     // Verify Email field hints
-    final emailFieldFinder = find.byWidgetPredicate(
-      (widget) => widget is TextField &&
-                  widget.autofillHints != null &&
-                  widget.autofillHints!.contains(AutofillHints.email)
+    final emailFieldFinder = find.descendant(
+      of: find.widgetWithText(ValoraTextField, 'Email'),
+      matching: find.byType(TextField),
     );
     expect(emailFieldFinder, findsOneWidget);
+    final emailTextField = tester.widget<TextField>(emailFieldFinder);
+    expect(emailTextField.autofillHints, contains(AutofillHints.email));
 
     // Verify Password field hints
-    final passwordFieldFinder = find.byWidgetPredicate(
-      (widget) => widget is TextField &&
-                  widget.autofillHints != null &&
-                  widget.autofillHints!.contains(AutofillHints.password)
+    final passwordFieldFinder = find.descendant(
+      of: find.widgetWithText(ValoraTextField, 'Password'),
+      matching: find.byType(TextField),
     );
     expect(passwordFieldFinder, findsOneWidget);
+    final passwordTextField = tester.widget<TextField>(passwordFieldFinder);
+    expect(passwordTextField.autofillHints, contains(AutofillHints.password));
   });
 }

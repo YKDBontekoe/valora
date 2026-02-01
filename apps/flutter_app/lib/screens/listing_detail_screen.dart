@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
@@ -109,12 +108,10 @@ class ListingDetailScreen extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               listing.imageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: listing.imageUrl!,
+                  ? Image.network(
+                      listing.imageUrl!,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          _buildPlaceholder(isDark, isLoading: true),
-                      errorWidget: (context, url, error) =>
+                      errorBuilder: (context, error, stackTrace) =>
                           _buildPlaceholder(isDark),
                     )
                   : _buildPlaceholder(isDark),

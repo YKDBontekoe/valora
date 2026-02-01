@@ -8,10 +8,9 @@ namespace Valora.IntegrationTests;
 
 public class TestDatabaseFixture : IAsyncLifetime
 {
-    // Testcontainers is disabled due to environment limitations (OverlayFS mount error)
+    // Testcontainers is disabled due to environment limitations
     /*
-    public PostgreSqlContainer DbContainer { get; } = new PostgreSqlBuilder()
-        .WithImage("postgres:latest")
+    public PostgreSqlContainer DbContainer { get; } = new PostgreSqlBuilder("postgres:latest")
         .WithDatabase("valora_test")
         .WithUsername("postgres")
         .WithPassword("postgres")

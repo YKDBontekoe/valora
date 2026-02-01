@@ -7,7 +7,6 @@ import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
-import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
 Future<void> main() async {
@@ -71,7 +70,31 @@ class ValoraApp extends StatelessWidget {
       builder: (context, child) {
         // Global error widget for build errors
         ErrorWidget.builder = (FlutterErrorDetails details) {
-          return GlobalErrorWidget(details: details);
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Something went wrong!',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      details.exception.toString(),
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         };
         return child!;
       },

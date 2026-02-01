@@ -33,7 +33,6 @@ public static class DependencyInjection
 
         // Services
         services.AddScoped<ITokenService, TokenService>();
-        services.AddScoped<IIdentityService, IdentityService>();
 
         // Configuration
         services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
