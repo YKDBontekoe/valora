@@ -167,7 +167,7 @@ public class ListingTests : BaseIntegrationTest
         var responsePriceDesc = await Client.GetAsync("/api/listings?sortBy=price&sortOrder=desc");
         var resultPriceDesc = await responsePriceDesc.Content.ReadFromJsonAsync<ListingResponseDto>();
         Assert.NotNull(resultPriceDesc);
-        Assert.Equal(200000, resultPriceDesc.Items[0].Price);
+        Assert.Equal(200000, resultPriceDesc!.Items[0].Price);
 
         // Act - Price Asc
         var responsePriceAsc = await Client.GetAsync("/api/listings?sortBy=price&sortOrder=asc");
@@ -213,7 +213,8 @@ public class ListingTests : BaseIntegrationTest
         var response2 = await Client.GetAsync("/api/listings?page=2&pageSize=10");
         var result2 = await response2.Content.ReadFromJsonAsync<ListingResponseDto>();
 
-        Assert.Equal(5, result2.Items.Count);
+        Assert.NotNull(result2);
+        Assert.Equal(5, result2!.Items.Count);
         Assert.False(result2.HasNextPage);
     }
 }

@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Options;
 using Moq;
+using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Valora.Application.Common.Models;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Services;
+using Valora.Infrastructure.Persistence;
 
 namespace Valora.UnitTests.Services;
 
@@ -31,7 +33,7 @@ public class TokenServiceTests
 
         _mockOptions.Setup(x => x.Value).Returns(jwtOptions);
 
-        var tokenService = new TokenService(_mockOptions.Object);
+        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object);
 
         var user = new ApplicationUser
         {
@@ -76,7 +78,7 @@ public class TokenServiceTests
 
         _mockOptions.Setup(x => x.Value).Returns(jwtOptions);
 
-        var tokenService = new TokenService(_mockOptions.Object);
+        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object);
 
         var user = new ApplicationUser { Id = "1", UserName = "test" };
 

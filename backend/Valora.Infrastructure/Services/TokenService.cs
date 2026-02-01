@@ -1,21 +1,26 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence;
 
 namespace Valora.Infrastructure.Services;
 
 public class TokenService : ITokenService
 {
     private readonly JwtOptions _options;
+    private readonly ValoraDbContext _context;
 
-    public TokenService(IOptions<JwtOptions> options)
+    public TokenService(IOptions<JwtOptions> options, ValoraDbContext context)
     {
         _options = options.Value;
+        _context = context;
     }
 
     public string GenerateToken(ApplicationUser user)
@@ -43,5 +48,43 @@ public class TokenService : ITokenService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public RefreshToken GenerateRefreshToken(string userId)
+    {
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+
+        return new RefreshToken
+        {
+            Token = Convert.ToBase64String(randomNumber),
+            Expires = DateTime.UtcNow.AddDays(30),
+            CreatedAt = DateTime.UtcNow,
+            UserId = userId
+        };
+    }
+
+    public async Task SaveRefreshTokenAsync(RefreshToken token)
+    {
+        _context.RefreshTokens.Add(token);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
+    {
+        return await _context.RefreshTokens
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.Token == token);
+    }
+
+    public async Task RevokeRefreshTokenAsync(string token)
+    {
+        var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token);
+        if (existingToken != null)
+        {
+            existingToken.Revoked = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 }

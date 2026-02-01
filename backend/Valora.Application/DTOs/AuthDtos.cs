@@ -24,6 +24,11 @@ public record RegisterDto
 
 public record AuthResponseDto(
     string Token,
+    string RefreshToken,
     string Email,
     string UserId
+);
+
+public record RefreshTokenRequestDto(
+    string RefreshToken
 );
