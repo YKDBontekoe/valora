@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:retry/retry.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +67,10 @@ void main() {
         throw TimeoutException('Timed out');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(
+        client: client,
+        retryOptions: const RetryOptions(maxAttempts: 1),
+      );
 
       expect(
         () => apiService.getListings(const ListingFilter()),
@@ -79,7 +83,10 @@ void main() {
         throw http.ClientException('Client error');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(
+        client: client,
+        retryOptions: const RetryOptions(maxAttempts: 1),
+      );
 
       expect(
         () => apiService.getListings(const ListingFilter()),
@@ -112,6 +119,30 @@ void main() {
         fail('Should have thrown');
       } on ValidationException catch (e) {
         expect(e.message, 'Some detailed error');
+      }
+    });
+
+    test('getListings throws ValidationException on 400 with errors dictionary',
+        () async {
+      final client = MockClient((request) async {
+        return http.Response(
+            json.encode({
+              'errors': {
+                'Field1': ['Error 1', 'Error 2'],
+                'Field2': 'Error 3'
+              }
+            }),
+            400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings(const ListingFilter());
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Error 1, Error 2'));
+        expect(e.message, contains('Error 3'));
       }
     });
 

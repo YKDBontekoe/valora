@@ -108,14 +108,32 @@ class AuthService {
         final body = jsonDecode(response.body);
         // Identity errors are often array of objects with Code and Description
         if (body is List) {
-           return ValidationException(body.map((e) => e['description']).join('\n'));
+          return ValidationException(
+              body.map((e) => e['description'] ?? e.toString()).join('\n'));
         }
+
+        // Validation dictionary: { "errors": { "Email": ["Required"] } }
+        if (body is Map && body.containsKey('errors')) {
+          final errors = body['errors'];
+          if (errors is Map) {
+            return ValidationException(errors.values
+                .map((v) => (v is List) ? v.join(', ') : v.toString())
+                .join('\n'));
+          }
+        }
+
+        // Generic problem details
+        if (body is Map &&
+            (body.containsKey('detail') || body.containsKey('title'))) {
+          return ValidationException(body['detail'] ?? body['title']);
+        }
+
         return ValidationException('Invalid input');
-      } catch(_) {
+      } catch (_) {
         return ValidationException('Invalid input');
       }
     } else if (response.statusCode == 401) {
-       return ValidationException('Invalid email or password');
+      return ValidationException('Invalid email or password');
     }
     return ServerException('Auth failed: ${response.statusCode}');
   }

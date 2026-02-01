@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -49,9 +50,83 @@ void main() {
 
       final result = await authService.login('test@test.com', 'password');
 
-      verify(mockStorage.write(key: 'auth_token', value: 'access_token')).called(1);
-      verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token')).called(1);
+      verify(mockStorage.write(key: 'auth_token', value: 'access_token'))
+          .called(1);
+      verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token'))
+          .called(1);
       expect(result['token'], 'access_token');
+    });
+
+    test('login failure parses error', () async {
+      when(mockClient.post(
+        any,
+        headers: anyNamed('headers'),
+        body: anyNamed('body'),
+      )).thenAnswer(
+          (_) async => http.Response(jsonEncode({'detail': 'Failed'}), 400));
+
+      expect(() => authService.login('test@test.com', 'password'),
+          throwsA(isA<ValidationException>()));
+    });
+
+    test('login failure with errors dictionary parses error', () async {
+      when(mockClient.post(
+        any,
+        headers: anyNamed('headers'),
+        body: anyNamed('body'),
+      )).thenAnswer((_) async => http.Response(
+          jsonEncode({
+            'errors': {'Field': 'Invalid'}
+          }),
+          400));
+
+      try {
+        await authService.login('test@test.com', 'password');
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Invalid'));
+      }
+    });
+
+    test('login failure with errors list parses error', () async {
+      when(mockClient.post(
+        any,
+        headers: anyNamed('headers'),
+        body: anyNamed('body'),
+      )).thenAnswer((_) async => http.Response(
+          jsonEncode([
+            {'description': 'Error 1'}
+          ]),
+          400));
+
+      try {
+        await authService.login('test@test.com', 'password');
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Error 1'));
+      }
+    });
+
+    test('register success', () async {
+      when(mockClient.post(
+        any,
+        headers: anyNamed('headers'),
+        body: anyNamed('body'),
+      )).thenAnswer((_) async => http.Response('', 200));
+
+      await authService.register('test@test.com', 'password', 'password');
+    });
+
+    test('register throws exception on failure', () async {
+      when(mockClient.post(
+        any,
+        headers: anyNamed('headers'),
+        body: anyNamed('body'),
+      )).thenAnswer((_) async => http.Response('Server Error', 500));
+
+      expect(
+          () => authService.register('test@test.com', 'password', 'password'),
+          throwsA(isA<ServerException>()));
     });
 
     test('refreshToken returns new token on success', () async {

@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -74,6 +75,44 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal(499, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_DbUpdateConcurrencyException_ReturnsConflict()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new DbUpdateConcurrencyException("Concurrency conflict"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_DbUpdateException_ReturnsConflict()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new DbUpdateException("Database error"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
     }
 
     [Fact]

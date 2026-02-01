@@ -4,68 +4,170 @@ This guide explains the technical architecture and implementation details of Val
 
 ## Architecture Overview
 
-Valora follows a **Clean Architecture** approach with the following layers:
+Valora follows a **Clean Architecture** approach. This ensures separation of concerns, testability, and independence from external frameworks.
 
-- **Valora.Domain**: Enterprise business logic and entities. No external dependencies.
-- **Valora.Application**: Application logic, interfaces, and DTOs.
-- **Valora.Infrastructure**: Implementation of interfaces (EF Core, Hangfire, Scraping).
-- **Valora.Api**: Entry point, Minimal APIs, and Dependency Injection configuration.
+### Layers
+
+1.  **Valora.Domain**
+    *   **Responsibility**: Defines the core business entities and logic.
+    *   **Dependencies**: None.
+    *   **Key Classes**: `Listing`, `PriceHistory`, `ApplicationUser`.
+
+2.  **Valora.Application**
+    *   **Responsibility**: Defines application use cases, interfaces, and DTOs.
+    *   **Dependencies**: `Valora.Domain`.
+    *   **Key Interfaces**: `IListingRepository`, `IFundaScraperService`, `IAuthService`.
+
+3.  **Valora.Infrastructure**
+    *   **Responsibility**: Implements interfaces defined in the Application layer. interacting with external systems (Database, Funda.nl, Hangfire).
+    *   **Dependencies**: `Valora.Application`, `Valora.Domain`.
+    *   **Key Components**: `ValoraDbContext` (EF Core), `FundaScraperService`, `TokenService`.
+
+4.  **Valora.Api**
+    *   **Responsibility**: The entry point of the application. Handles HTTP requests, dependency injection, and configuration.
+    *   **Dependencies**: `Valora.Application`, `Valora.Infrastructure`.
+    *   **Key Components**: `Program.cs` (Minimal APIs), `AuthEndpoints`.
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class Listing {
+        +Guid Id
+        +string FundaId
+        +string Address
+        +decimal? Price
+        +List~PriceHistory~ PriceHistories
+    }
+
+    class IListingRepository {
+        <<interface>>
+        +GetByIdAsync(id)
+        +GetAllAsync(filter)
+    }
+
+    class ListingRepository {
+        -ValoraDbContext _context
+        +GetByIdAsync(id)
+        +GetAllAsync(filter)
+    }
+
+    class FundaScraperService {
+        -IListingRepository _repo
+        -HttpClient _http
+        +ScrapeAndStoreAsync()
+    }
+
+    ListingRepository ..|> IListingRepository
+    FundaScraperService --> IListingRepository
+    ListingRepository --> Listing
+```
+
+## Onboarding: Data Flow
+
+Understanding how a request travels through the system is crucial for new developers.
+
+### Request Lifecycle: `GET /api/listings`
+
+1.  **API Layer (`Program.cs`)**
+    *   The Minimal API endpoint receives the request.
+    *   `[AsParameters] ListingFilterDto filter` is bound from query parameters.
+    *   `IListingRepository` is injected via DI.
+
+2.  **Infrastructure Layer (`ListingRepository`)**
+    *   `GetAllAsync` is called with the filter.
+    *   The repository constructs an EF Core query based on the filter (e.g., filtering by city, price range).
+    *   The query is executed against the PostgreSQL database.
+    *   Results are mapped to a `PaginatedList<Listing>`.
+
+3.  **Response**
+    *   The API layer wraps the result in an anonymous object (Items, TotalCount, etc.).
+    *   Returns `200 OK` with JSON.
+
+### Scraping Workflow
+
+```mermaid
+sequenceDiagram
+    participant Job as FundaScraperJob
+    participant Service as FundaScraperService
+    participant Parser as FundaHtmlParser
+    participant Funda as Funda.nl
+    participant DB as Database
+
+    Job->>Service: ScrapeAndStoreAsync()
+    loop For each SearchUrl
+        Service->>Funda: GET Search Page
+        Funda-->>Service: HTML
+        Service->>Parser: ParseSearchResults(HTML)
+        Parser-->>Service: List<ListingPreview>
+
+        loop For each Listing
+            Service->>Funda: GET Detail Page
+            Funda-->>Service: HTML
+            Service->>Parser: ParseListingDetail(HTML)
+            Parser-->>Service: Listing Entity
+
+            alt New Listing
+                Service->>DB: Add Listing
+                Service->>DB: Add PriceHistory
+            else Existing Listing
+                Service->>DB: Update Listing
+                opt Price Changed
+                    Service->>DB: Add PriceHistory
+                end
+            end
+        end
+    end
+```
 
 ## API Documentation
 
 The backend exposes a REST API via Minimal APIs in `Valora.Api`.
 
-### Endpoints
+### Authentication
 
-- `GET /api/health`
-  - Returns the health status of the API.
-  - Response: `{ "status": "healthy", "timestamp": "..." }`
+*   **Register**
+    *   `POST /api/auth/register`
+    *   Body: `{ "email": "user@example.com", "password": "Password123!" }`
+    *   Response: `200 OK`
 
-- `GET /api/listings`
-  - Returns a list of scraped listings.
-  - Response: `ListingDto[]`
+*   **Login**
+    *   `POST /api/auth/login`
+    *   Body: `{ "email": "user@example.com", "password": "Password123!" }`
+    *   Response: `{ "accessToken": "...", "refreshToken": "...", "expiresIn": 3600 }`
 
-- `GET /api/listings/{id}`
-  - Returns details for a specific listing.
-  - Response: `ListingDto`
+*   **Refresh Token**
+    *   `POST /api/auth/refresh`
+    *   Body: `{ "refreshToken": "..." }`
+    *   Response: `{ "accessToken": "...", "refreshToken": "..." }`
 
-- `POST /api/scraper/trigger`
-  - Manually triggers the scraping job.
-  - Response: `{ "message": "Scraper job queued" }`
+### Listings
 
-- `GET /hangfire`
-  - Hangfire Dashboard for monitoring background jobs.
+*   `GET /api/listings`
+    *   Headers: `Authorization: Bearer <token>`
+    *   Query Params: `pageIndex`, `pageSize`, `minPrice`, `maxPrice`, `city`
+    *   Response: Paged list of listings.
 
-## Scraping Logic
+*   `GET /api/listings/{id}`
+    *   Headers: `Authorization: Bearer <token>`
+    *   Response: Detailed listing DTO.
 
-The scraping logic is implemented in `Valora.Infrastructure.Scraping.FundaScraperService`.
+### Scraper
 
-### Key Components
+*   `POST /api/scraper/trigger`
+    *   Headers: `Authorization: Bearer <token>`
+    *   Triggers the `FundaScraperJob` immediately via Hangfire.
 
-- **FundaScraperService**: The main service that coordinates scraping. It iterates through configured search URLs, parses results, and updates the database.
-- **FundaHtmlParser**: Parses HTML content to extract listing details.
-- **Retry Policy**: Uses **Polly** to handle transient failures (HTTP errors) with exponential backoff.
-- **Hangfire**: Schedules and executes the `FundaScraperJob` in the background.
+## Configuration
 
-### Configuration (`appsettings.json`)
+Configuration is managed entirely via **Environment Variables**. There is no `appsettings.json`.
 
-The scraper is configured via the `Scraper` section in `appsettings.json`:
-
-```json
-"Scraper": {
-  "SearchUrls": [
-    "https://www.funda.nl/zoeken/koop?selected_area=%5B%22amsterdam%22%5D"
-  ],
-  "DelayBetweenRequestsMs": 2000,
-  "MaxRetries": 3,
-  "CronExpression": "0 */6 * * *"
-}
-```
-
-- `SearchUrls`: List of Funda search result URLs to scrape.
-- `DelayBetweenRequestsMs`: Delay between HTTP requests to avoid rate limiting.
-- `MaxRetries`: Number of retries for failed requests.
-- `CronExpression`: Schedule for the background job (Default: every 6 hours).
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `Host=localhost;Database=valora;Username=postgres;Password=postgres` |
+| `JWT_SECRET` | Secret for signing tokens | `SuperSecretKeyForDevelopmentOnly123!` |
+| `SCRAPER_SEARCH_URLS` | Semicolon-separated Funda URLs | `https://www.funda.nl/koop/amsterdam/` |
+| `HANGFIRE_ENABLED` | Enable background jobs | `true` |
 
 ## Testing
 
@@ -80,11 +182,10 @@ dotnet test
 
 **Note**: Docker must be running for integration tests to pass.
 
-### Frontend
+### Manual Verification
 
-Uses Flutter test.
-
-```bash
-cd apps/flutter_app
-flutter test
-```
+To manually verify the scraper:
+1.  Ensure Backend and Database are running.
+2.  Login via Postman or the Frontend to get a token.
+3.  Call `POST /api/scraper/trigger` with the token.
+4.  Check the logs or `http://localhost:5000/hangfire` to see the job processing.

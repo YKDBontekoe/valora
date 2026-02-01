@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
+import 'valora_widgets.dart';
+import 'valora_glass_container.dart';
 
 class HomeHeader extends StatelessWidget {
   final TextEditingController searchController;
@@ -20,16 +26,12 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return ValoraGlassContainer(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(ValoraSpacing.radiusXl)),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-      color: isDark ? ValoraColors.backgroundDark.withValues(alpha: 0.95) : ValoraColors.backgroundLight.withValues(alpha: 0.95),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Title Row is handled by SliverAppBar title usually, but if we put everything in bottom, we need it here.
-          // However, standard pattern is Title in flexibleSpace or title, and Search in bottom.
-          // Let's assume this widget is the `bottom` of SliverAppBar.
-
           // Search Bar
           Row(
             children: [
@@ -38,24 +40,28 @@ class HomeHeader extends StatelessWidget {
                   height: 52,
                   decoration: BoxDecoration(
                     color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 2),
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
                     ],
+                    border: Border.all(
+                      color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+                    ),
                   ),
                   child: TextField(
                     controller: searchController,
                     onChanged: onSearchChanged,
+                    style: ValoraTypography.bodyMedium.copyWith(
+                       color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search city, zip, or address...',
-                      hintStyle: TextStyle(
+                      hintStyle: ValoraTypography.bodyMedium.copyWith(
                         color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
                       ),
                       prefixIcon: Icon(
                         Icons.search_rounded,
@@ -68,42 +74,56 @@ class HomeHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              GestureDetector(
-                onTap: onFilterPressed,
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: ValoraColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      const Icon(
-                        Icons.tune_rounded,
-                        color: ValoraColors.primary,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onFilterPressed();
+                  },
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: ValoraColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                      border: Border.all(
+                        color: ValoraColors.primary.withValues(alpha: 0.2),
                       ),
-                      if (activeFilterCount > 0)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: ValoraColors.error,
-                              shape: BoxShape.circle,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(
+                          Icons.tune_rounded,
+                          color: ValoraColors.primary,
+                        ),
+                        if (activeFilterCount > 0)
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: ValoraColors.error,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
+                                  width: 1.5,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: ValoraSpacing.md),
           // Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -145,44 +165,51 @@ class HomeHeader extends StatelessWidget {
     final text = textColor ?? (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
     final border = isActive ? Colors.transparent : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: bg,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => HapticFeedback.selectionClick(),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: border),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: ValoraColors.primary.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                )
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                )
-              ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: text),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              color: text,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: border),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: ValoraColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    )
+                  ],
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: text),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: ValoraTypography.labelSmall.copyWith(
+                  color: text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -202,23 +229,14 @@ class FeaturedListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: ValoraColors.primary.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.only(right: 20),
+      child: ValoraCard(
+        padding: EdgeInsets.zero,
+        onTap: onTap,
+        borderRadius: ValoraSpacing.radiusXl,
+        elevation: ValoraSpacing.elevationMd,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -229,12 +247,15 @@ class FeaturedListingCard extends StatelessWidget {
                   height: 180,
                   color: ValoraColors.neutral200,
                   child: listing.imageUrl != null
-                      ? Image.network(
-                          listing.imageUrl!,
+                      ? CachedNetworkImage(
+                          imageUrl: listing.imageUrl!,
                           width: double.infinity,
                           height: 180,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Center(
+                          placeholder: (context, url) => Center(
+                            child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
+                          ),
+                          errorWidget: (context, url, error) => Center(
                             child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                           ),
                         )
@@ -242,16 +263,30 @@ class FeaturedListingCard extends StatelessWidget {
                           child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
                         ),
                 ),
+                // Gradient Overlay
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.transparent,
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.4, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
                 Positioned(
                   top: 12,
                   left: 12,
-                  child: Container(
+                  child: ValoraGlassContainer(
+                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                    ),
+                    color: ValoraColors.glassBlack.withValues(alpha: 0.6),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -308,18 +343,16 @@ class FeaturedListingCard extends StatelessWidget {
                         children: [
                           Text(
                             listing.price != null ? '\$${listing.price!.toStringAsFixed(0)}' : 'Price on request',
-                            style: TextStyle(
+                            style: ValoraTypography.titleLarge.copyWith(
                               color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
-                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             listing.city ?? listing.address,
-                            style: TextStyle(
+                            style: ValoraTypography.bodySmall.copyWith(
                               color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -376,9 +409,8 @@ class FeaturedListingCard extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
+          style: ValoraTypography.labelSmall.copyWith(
             color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-            fontSize: 11,
           ),
         ),
       ],
@@ -400,22 +432,12 @@ class NearbyListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ValoraCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(ValoraSpacing.sm),
+        borderRadius: ValoraSpacing.radiusLg,
         child: Row(
           children: [
             // Image
@@ -423,15 +445,18 @@ class NearbyListingCard extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
                 color: ValoraColors.neutral200,
               ),
               clipBehavior: Clip.antiAlias,
               child: listing.imageUrl != null
-                  ? Image.network(
-                      listing.imageUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: listing.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Center(
+                      placeholder: (context, url) => Center(
+                        child: Icon(Icons.home, color: ValoraColors.neutral400),
+                      ),
+                      errorWidget: (context, url, error) => Center(
                         child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                       ),
                     )
@@ -442,61 +467,62 @@ class NearbyListingCard extends StatelessWidget {
             const SizedBox(width: 16),
             // Info
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          listing.price != null ? '\$${listing.price!.toStringAsFixed(0)}' : 'Price on request',
-                          style: TextStyle(
-                            color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: ValoraColors.success.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Active',
-                          style: TextStyle(
-                            color: ValoraColors.success,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            listing.price != null ? '\$${listing.price!.toStringAsFixed(0)}' : 'Price on request',
+                            style: ValoraTypography.titleMedium.copyWith(
+                              color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    listing.address,
-                    style: TextStyle(
-                      color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-                      fontSize: 12,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: ValoraColors.success.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'Active',
+                            style: TextStyle(
+                              color: ValoraColors.success,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildFeature(context, Icons.bed_rounded, '${listing.bedrooms ?? 0}'),
-                      const SizedBox(width: 8),
-                      _buildFeature(context, Icons.shower_rounded, '${listing.bathrooms ?? 0}'),
-                      const SizedBox(width: 8),
-                      _buildFeature(context, Icons.square_foot_rounded, '${listing.livingAreaM2 ?? 0}'),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      listing.address,
+                      style: ValoraTypography.bodySmall.copyWith(
+                        color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildFeature(context, Icons.bed_rounded, '${listing.bedrooms ?? 0}'),
+                        const SizedBox(width: 8),
+                        _buildFeature(context, Icons.shower_rounded, '${listing.bathrooms ?? 0}'),
+                        const SizedBox(width: 8),
+                        _buildFeature(context, Icons.square_foot_rounded, '${listing.livingAreaM2 ?? 0}'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -513,9 +539,8 @@ class NearbyListingCard extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
+          style: ValoraTypography.labelSmall.copyWith(
             color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-            fontSize: 11,
           ),
         ),
       ],
@@ -540,6 +565,13 @@ class HomeBottomNavBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
         border: Border(
           top: BorderSide(
             color: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100,
@@ -571,19 +603,32 @@ class HomeBottomNavBar extends StatelessWidget {
         : (Theme.of(context).brightness == Brightness.dark ? ValoraColors.neutral400 : ValoraColors.neutral500);
 
     return GestureDetector(
-      onTap: () => onTap(index),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap(index);
+      },
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 4,
+            width: isSelected ? 20 : 0,
+            margin: const EdgeInsets.only(bottom: 4),
+            decoration: BoxDecoration(
+              color: ValoraColors.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
+            style: ValoraTypography.labelSmall.copyWith(
               color: color,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 10,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
