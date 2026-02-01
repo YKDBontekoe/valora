@@ -4,12 +4,19 @@ import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'screens/startup_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 
-void main() {
+// coverage:ignore-start
+Future<void> main() async {
   // Ensure binding is initialized before using PlatformDispatcher
   WidgetsFlutterBinding.ensureInitialized();
+  // Load environment variables. In production/CI, we often rely on build arguments or
+  // the .env.example file being bundled if a specific .env isn't provided.
+  // Since .env is gitignored and not guaranteed to exist in CI, we load .env.example
+  // which is safe to commit.
+  await dotenv.load(fileName: ".env.example");
 
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -43,6 +50,7 @@ void main() {
     ),
   );
 }
+// coverage:ignore-end
 
 class ValoraApp extends StatelessWidget {
   const ValoraApp({super.key});

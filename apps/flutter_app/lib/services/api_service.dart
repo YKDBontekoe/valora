@@ -4,11 +4,12 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../core/exceptions/app_exceptions.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/listing.dart';
 import '../models/listing_response.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static String get baseUrl => dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
   static const Duration timeoutDuration = Duration(seconds: 10);
 
   final http.Client _client;

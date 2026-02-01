@@ -6,6 +6,7 @@ import 'package:valora_app/main.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MockAuthService extends AuthService {
   @override
@@ -16,6 +17,11 @@ class MockAuthService extends AuthService {
 }
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await dotenv.load(fileName: ".env.example");
+  });
+
   testWidgets('App renders home screen', (WidgetTester tester) async {
     // Save the original builder
     final originalBuilder = ErrorWidget.builder;

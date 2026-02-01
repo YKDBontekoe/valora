@@ -5,11 +5,35 @@ import 'dart:io';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await dotenv.load(fileName: ".env.example");
+  });
+
   group('ApiService', () {
+    test('baseUrl uses dotenv', () {
+      expect(ApiService.baseUrl, 'http://localhost:5000/api');
+    });
+
+    test('baseUrl falls back to default if dotenv missing', () {
+      // Backup
+      final backup = Map<String, String>.from(dotenv.env);
+      dotenv.env.clear();
+
+      try {
+        expect(ApiService.baseUrl, 'http://localhost:5000/api');
+      } finally {
+        // Restore
+        dotenv.env.addAll(backup);
+      }
+    });
+
     test('getListings throws ServerException on 500', () async {
       final client = MockClient((request) async {
         return http.Response('Internal Server Error', 500);
