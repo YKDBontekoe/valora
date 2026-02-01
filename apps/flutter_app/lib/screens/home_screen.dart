@@ -11,6 +11,7 @@ import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_error_state.dart';
 import '../widgets/home_components.dart';
 import 'listing_detail_screen.dart';
+import 'map_search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ApiService? apiService;
@@ -277,26 +278,30 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _currentNavIndex,
         onTap: (index) => setState(() => _currentNavIndex = index),
       ),
-      body: _buildBody(),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0), // Adjust for bottom nav
-        child: FloatingActionButton.extended(
-          onPressed: _triggerScrape,
-          backgroundColor: ValoraColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 8,
-          icon: const Icon(Icons.auto_awesome_rounded),
-          label: Row(
-            children: const [
-              Text('Compare with AI'),
-            ],
-          ),
-        ),
-      ),
+      body: _currentNavIndex == 1
+          ? MapSearchScreen(apiService: _apiService)
+          : _buildHomeFeed(),
+      floatingActionButton: _currentNavIndex == 0
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Adjust for bottom nav
+              child: FloatingActionButton.extended(
+                onPressed: _triggerScrape,
+                backgroundColor: ValoraColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 8,
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: Row(
+                  children: const [
+                    Text('Compare with AI'),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildHomeFeed() {
     int activeFilters = 0;
     if (_minPrice != null) activeFilters++;
     if (_maxPrice != null) activeFilters++;
