@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
-import 'valora_widgets.dart';
+import '../providers/home_provider.dart';
+import 'valora_filter_chip_group.dart';
 import 'valora_glass_container.dart';
+import 'valora_widgets.dart';
 
 class HomeHeader extends StatelessWidget {
   final TextEditingController searchController;
@@ -125,91 +128,15 @@ class HomeHeader extends StatelessWidget {
           ),
           const SizedBox(height: ValoraSpacing.md),
           // Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            child: Row(
-              children: [
-                _buildFilterChip(
-                  context,
-                  icon: Icons.auto_awesome,
-                  label: 'AI Pick',
-                  isActive: true,
-                  backgroundColor: ValoraColors.primary,
-                  textColor: Colors.white,
-                ),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, label: 'Under \$500k'),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, label: '3+ Beds'),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, label: 'Near Schools'),
-              ],
-            ),
+          Consumer<HomeProvider>(
+            builder: (context, homeProvider, _) {
+              return ValoraFilterChipGroup(
+                chips: homeProvider.quickFilterChips,
+                onTap: (chip) => homeProvider.toggleQuickFilter(chip.filter),
+              );
+            },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(
-    BuildContext context, {
-    IconData? icon,
-    required String label,
-    bool isActive = false,
-    Color? backgroundColor,
-    Color? textColor,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = backgroundColor ?? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
-    final text = textColor ?? (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
-    final border = isActive ? Colors.transparent : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => HapticFeedback.selectionClick(),
-        borderRadius: BorderRadius.circular(100),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: border),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: ValoraColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    )
-                  ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 16, color: text),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: ValoraTypography.labelSmall.copyWith(
-                  color: text,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

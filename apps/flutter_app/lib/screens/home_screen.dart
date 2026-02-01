@@ -7,6 +7,7 @@ import '../core/theme/valora_typography.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
+import '../providers/home_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_error_state.dart';
@@ -26,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late ApiService _apiService;
   late final ScrollController _scrollController;
+  late HomeProvider _homeProvider;
   bool _isInit = false;
 
   bool _isConnected = false;
@@ -70,6 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
     if (!_isInit) {
       _apiService = widget.apiService ?? Provider.of<ApiService>(context, listen: false);
+      _homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      _homeProvider.addListener(_onQuickFiltersUpdated);
       _checkConnection();
       _isInit = true;
     }
@@ -80,6 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
+    if (_isInit) {
+      _homeProvider.removeListener(_onQuickFiltersUpdated);
+    }
     super.dispose();
   }
 
@@ -124,20 +131,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
+      final baseFilter = ListingFilter(
+        page: _currentPage,
+        pageSize: _pageSize,
+        searchTerm: _searchTerm,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        city: _city,
+        minBedrooms: _minBedrooms,
+        minLivingArea: _minLivingArea,
+        maxLivingArea: _maxLivingArea,
+        sortBy: _sortBy,
+        sortOrder: _sortOrder,
+      );
       final response = await _apiService.getListings(
-        ListingFilter(
-          page: _currentPage,
-          pageSize: _pageSize,
-          searchTerm: _searchTerm,
-          minPrice: _minPrice,
-          maxPrice: _maxPrice,
-          city: _city,
-          minBedrooms: _minBedrooms,
-          minLivingArea: _minLivingArea,
-          maxLivingArea: _maxLivingArea,
-          sortBy: _sortBy,
-          sortOrder: _sortOrder,
-        )
+        _homeProvider.applyQuickFilters(baseFilter),
       );
 
       if (mounted) {
@@ -197,6 +205,10 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       _loadListings(refresh: true);
     });
+  }
+
+  void _onQuickFiltersUpdated() {
+    _loadListings(refresh: true);
   }
 
   Future<void> _openFilterDialog() async {

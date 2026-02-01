@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/home_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -40,6 +41,9 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider(),
+        ),
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
         ),
         Provider<AuthService>(
           create: (_) => AuthService(),

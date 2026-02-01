@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/providers/home_provider.dart';
 import 'package:valora_app/widgets/valora_filter_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -25,9 +27,14 @@ void main() {
       final apiService = ApiService(
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(
-        home: HomeScreen(apiService: apiService),
-      ));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
 
       // Initial pump
       await tester.pump(); // Start connection check
@@ -60,9 +67,14 @@ void main() {
       final apiService = ApiService(
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(
-        home: HomeScreen(apiService: apiService),
-      ));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
 
       await tester.pump(); // Start connection check
       await tester.pump(); // Finish connection check and start loading listings
@@ -84,9 +96,14 @@ void main() {
       final apiService = ApiService(
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(
-        home: HomeScreen(apiService: apiService),
-      ));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
 
       await tester.pump(); // Start connection check
       await tester.pump(); // Finish connection check and start loading listings
@@ -129,9 +146,14 @@ void main() {
       final apiService = ApiService(
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(
-        home: HomeScreen(apiService: apiService),
-      ));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
 
       // Use pump with duration instead of pumpAndSettle because CircularProgressIndicator is visible (hasNextPage=true)
       await tester.pump(); // Start connection check
@@ -175,9 +197,14 @@ void main() {
       final apiService = ApiService(
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(
-        home: HomeScreen(apiService: apiService),
-      ));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
 
       await tester.pumpAndSettle();
 
@@ -223,7 +250,13 @@ void main() {
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(
-          MaterialApp(home: HomeScreen(apiService: apiService)));
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Verify search field is always visible
@@ -252,7 +285,13 @@ void main() {
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(
-          MaterialApp(home: HomeScreen(apiService: apiService)));
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Verify empty state
@@ -278,7 +317,13 @@ void main() {
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(
-          MaterialApp(home: HomeScreen(apiService: apiService)));
+        ChangeNotifierProvider<HomeProvider>(
+          create: (_) => HomeProvider(),
+          child: MaterialApp(
+            home: HomeScreen(apiService: apiService),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // NEW: Apply a filter to trigger the "No listings found" state
