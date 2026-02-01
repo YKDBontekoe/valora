@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
@@ -35,6 +36,9 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider<ThemeProvider>(
+          create: (_) => ThemeProvider(),
+        ),
         Provider<AuthService>(
           create: (_) => AuthService(),
         ),
@@ -60,43 +64,47 @@ class ValoraApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Valora',
-      theme: ValoraTheme.light,
-      darkTheme: ValoraTheme.dark,
-      themeMode: ThemeMode.system,
-      home: const StartupScreen(),
-      debugShowCheckedModeBanner: false,
-      builder: (context, child) {
-        // Global error widget for build errors
-        ErrorWidget.builder = (FlutterErrorDetails details) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Something went wrong!',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Valora',
+          theme: ValoraTheme.light,
+          darkTheme: ValoraTheme.dark,
+          themeMode: themeProvider.themeMode,
+          home: const StartupScreen(),
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            // Global error widget for build errors
+            ErrorWidget.builder = (FlutterErrorDetails details) {
+              return Scaffold(
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Something went wrong!',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          details.exception.toString(),
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      details.exception.toString(),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          );
-        };
-        return child!;
+              );
+            };
+            return child!;
+          },
+        );
       },
     );
   }

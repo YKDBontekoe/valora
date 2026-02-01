@@ -11,6 +11,7 @@ import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_error_state.dart';
 import '../widgets/home_components.dart';
 import 'listing_detail_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ApiService? apiService;
@@ -278,25 +279,42 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) => setState(() => _currentNavIndex = index),
       ),
       body: _buildBody(),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0), // Adjust for bottom nav
-        child: FloatingActionButton.extended(
-          onPressed: _triggerScrape,
-          backgroundColor: ValoraColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 8,
-          icon: const Icon(Icons.auto_awesome_rounded),
-          label: Row(
-            children: const [
-              Text('Compare with AI'),
-            ],
-          ),
-        ),
-      ),
+      floatingActionButton: _currentNavIndex == 0
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Adjust for bottom nav
+              child: FloatingActionButton.extended(
+                onPressed: _triggerScrape,
+                backgroundColor: ValoraColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 8,
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: Row(
+                  children: const [
+                    Text('Compare with AI'),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 
   Widget _buildBody() {
+    switch (_currentNavIndex) {
+      case 0:
+        return _buildHomeView();
+      case 1:
+        return const Center(child: Text('Search View Placeholder'));
+      case 2:
+        return const Center(child: Text('Saved Listings Placeholder'));
+      case 3:
+        return const SettingsScreen();
+      default:
+        return _buildHomeView();
+    }
+  }
+
+  Widget _buildHomeView() {
     int activeFilters = 0;
     if (_minPrice != null) activeFilters++;
     if (_maxPrice != null) activeFilters++;
