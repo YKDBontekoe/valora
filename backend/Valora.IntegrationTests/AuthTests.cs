@@ -144,4 +144,14 @@ public class AuthTests : BaseIntegrationTest
         Assert.NotNull(result);
         Assert.False(string.IsNullOrEmpty(result.Token));
     }
+
+    [Fact]
+    public async Task Refresh_WithInvalidToken_ReturnsUnauthorized()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequestDto("InvalidTokenString"));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
