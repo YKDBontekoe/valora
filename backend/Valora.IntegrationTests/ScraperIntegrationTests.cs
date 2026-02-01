@@ -82,6 +82,10 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         {
             builder.ConfigureTestServices(services =>
             {
+                // Intercept HttpClient for FundaApiClient (will return 404 forcing HTML fallback)
+                services.AddHttpClient<FundaApiClient>()
+                        .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
+                
                 // Intercept HttpClient for IFundaScraperService
                 services.AddHttpClient<IFundaScraperService, FundaScraperService>()
                         .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
