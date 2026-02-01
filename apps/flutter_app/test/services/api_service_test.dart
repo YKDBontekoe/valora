@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/models/listing_filter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -42,7 +43,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       expect(
-        () => apiService.getListings(),
+        () => apiService.getListings(const ListingFilter()),
         throwsA(isA<ServerException>()),
       );
     });
@@ -55,7 +56,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       expect(
-        () => apiService.getListings(),
+        () => apiService.getListings(const ListingFilter()),
         throwsA(isA<NetworkException>()),
       );
     });
@@ -68,7 +69,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       expect(
-        () => apiService.getListings(),
+        () => apiService.getListings(const ListingFilter()),
         throwsA(isA<NetworkException>()),
       );
     });
@@ -81,7 +82,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       expect(
-        () => apiService.getListings(),
+        () => apiService.getListings(const ListingFilter()),
         throwsA(isA<NetworkException>()),
       );
     });
@@ -94,7 +95,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       expect(
-        () => apiService.getListings(),
+        () => apiService.getListings(const ListingFilter()),
         throwsA(isA<UnknownException>()),
       );
     });
@@ -107,7 +108,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       try {
-        await apiService.getListings();
+        await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
       } on ValidationException catch (e) {
         expect(e.message, 'Some detailed error');
@@ -122,7 +123,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       try {
-        await apiService.getListings();
+        await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
       } on ValidationException catch (e) {
          expect(e.message, 'Invalid input');
@@ -137,7 +138,7 @@ void main() {
       final apiService = ApiService(client: client);
 
       try {
-        await apiService.getListings();
+        await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
       } on ValidationException catch (e) {
         expect(e.message, 'Invalid request');
@@ -160,7 +161,7 @@ void main() {
 
       final apiService = ApiService(client: client);
 
-      final result = await apiService.getListings();
+      final result = await apiService.getListings(const ListingFilter());
       expect(result.items, isEmpty);
     });
 

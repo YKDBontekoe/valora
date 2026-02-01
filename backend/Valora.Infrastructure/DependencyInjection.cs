@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Models;
 using Valora.Application.Scraping;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Scraping;
+using Valora.Infrastructure.Services;
 
 namespace Valora.Infrastructure;
 
@@ -29,36 +31,54 @@ public static class DependencyInjection
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
 
-        // Scraper configuration
-        services.Configure<ScraperOptions>(options =>
-        {
-            var searchUrls = configuration["SCRAPER_SEARCH_URLS"];
-            if (!string.IsNullOrEmpty(searchUrls))
-            {
-                options.SearchUrls = searchUrls.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
-            }
+        // Services
+        services.AddScoped<ITokenService, TokenService>();
 
-            if (int.TryParse(configuration["SCRAPER_DELAY_MS"], out var delay))
-            {
-                options.DelayBetweenRequestsMs = delay;
-            }
-
-            if (int.TryParse(configuration["SCRAPER_MAX_RETRIES"], out var retries))
-            {
-                options.MaxRetries = retries;
-            }
-
-            var cron = configuration["SCRAPER_CRON"];
-            if (!string.IsNullOrEmpty(cron))
-            {
-                options.CronExpression = cron;
-            }
-        });
+        // Configuration
+        services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
+        services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
 
         // Scraper services
         services.AddHttpClient<IFundaScraperService, FundaScraperService>();
         services.AddScoped<FundaScraperJob>();
 
         return services;
+    }
+
+    private static void BindScraperOptions(ScraperOptions options, IConfiguration configuration)
+    {
+        var searchUrls = configuration["SCRAPER_SEARCH_URLS"];
+        if (!string.IsNullOrEmpty(searchUrls))
+        {
+            options.SearchUrls = searchUrls.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
+
+        if (int.TryParse(configuration["SCRAPER_DELAY_MS"], out var delay))
+        {
+            options.DelayBetweenRequestsMs = delay;
+        }
+
+        if (int.TryParse(configuration["SCRAPER_MAX_RETRIES"], out var retries))
+        {
+            options.MaxRetries = retries;
+        }
+
+        var cron = configuration["SCRAPER_CRON"];
+        if (!string.IsNullOrEmpty(cron))
+        {
+            options.CronExpression = cron;
+        }
+    }
+
+    private static void BindJwtOptions(JwtOptions options, IConfiguration configuration)
+    {
+        options.Secret = configuration["JWT_SECRET"] ?? string.Empty;
+        options.Issuer = configuration["JWT_ISSUER"];
+        options.Audience = configuration["JWT_AUDIENCE"];
+
+        if (double.TryParse(configuration["JWT_EXPIRY_MINUTES"], out var expiry))
+        {
+            options.ExpiryMinutes = expiry;
+        }
     }
 }
