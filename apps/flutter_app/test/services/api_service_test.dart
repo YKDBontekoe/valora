@@ -219,5 +219,57 @@ void main() {
         throwsA(isA<ServerException>()),
       );
     });
+
+    test('getListings retries on 401 if refresh callback succeeds', () async {
+      int callCount = 0;
+      final mockResponse = {
+        'items': [],
+        'pageIndex': 1,
+        'totalPages': 1,
+        'totalCount': 0,
+        'hasNextPage': false,
+        'hasPreviousPage': false
+      };
+
+      final client = MockClient((request) async {
+        callCount++;
+        if (callCount == 1) {
+          // First call fails
+          return http.Response('Unauthorized', 401);
+        }
+        // Second call (after refresh) succeeds and uses new token
+        if (request.headers['Authorization'] == 'Bearer new_token') {
+          return http.Response(json.encode(mockResponse), 200);
+        }
+        return http.Response('Unauthorized', 401);
+      });
+
+      final apiService = ApiService(
+        client: client,
+        authToken: 'old_token',
+        refreshTokenCallback: () async => 'new_token',
+      );
+
+      final result = await apiService.getListings(const ListingFilter());
+      expect(result.items, isEmpty);
+      expect(callCount, 2);
+    });
+
+    test('getListings fails on 401 if refresh callback returns null', () async {
+      final client = MockClient((request) async {
+        return http.Response('Unauthorized', 401);
+      });
+
+      final apiService = ApiService(
+        client: client,
+        authToken: 'old_token',
+        refreshTokenCallback: () async => null,
+      );
+
+      expect(
+        () => apiService.getListings(const ListingFilter()),
+        throwsA(isA<UnknownException>()),
+      );
+    });
   });
 }

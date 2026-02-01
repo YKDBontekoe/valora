@@ -65,7 +65,7 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task Login_WithValidCredentials_ReturnsToken()
+    public async Task Login_WithValidCredentials_ReturnsRefreshAndAccessToken()
     {
         // Arrange
         var email = "loginuser@example.com";
@@ -85,6 +85,7 @@ public class AuthTests : BaseIntegrationTest
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         Assert.NotNull(result);
         Assert.False(string.IsNullOrEmpty(result.Token));
+        Assert.False(string.IsNullOrEmpty(result.RefreshToken));
         Assert.Equal(email, result.Email);
     }
 
@@ -116,5 +117,31 @@ public class AuthTests : BaseIntegrationTest
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Refresh_WithValidToken_ReturnsNewAccessToken()
+    {
+        // Arrange
+        var email = "refreshflow@example.com";
+        var password = "Password123!";
+        await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = email,
+            Password = password,
+            ConfirmPassword = password
+        });
+
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new LoginDto(email, password));
+        var authData = await loginResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequestDto(authData!.RefreshToken));
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrEmpty(result.Token));
     }
 }

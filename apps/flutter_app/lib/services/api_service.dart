@@ -14,16 +14,35 @@ class ApiService {
   static const Duration timeoutDuration = Duration(seconds: 10);
 
   final http.Client _client;
-  final String? _authToken;
+  String? _authToken;
+  final Future<String?> Function()? _refreshTokenCallback;
 
-  ApiService({http.Client? client, String? authToken})
-      : _client = client ?? http.Client(),
-        _authToken = authToken;
+  ApiService({
+    http.Client? client,
+    String? authToken,
+    Future<String?> Function()? refreshTokenCallback,
+  })  : _client = client ?? http.Client(),
+        _authToken = authToken,
+        _refreshTokenCallback = refreshTokenCallback;
 
   Map<String, String> get _headers => {
-    if (_authToken != null) 'Authorization': 'Bearer $_authToken',
-    'Content-Type': 'application/json',
-  };
+        if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+        'Content-Type': 'application/json',
+      };
+
+  Future<http.Response> _authenticatedRequest(
+      Future<http.Response> Function(Map<String, String> headers) request) async {
+    var response = await request(_headers);
+
+    if (response.statusCode == 401 && _refreshTokenCallback != null) {
+      final newToken = await _refreshTokenCallback!();
+      if (newToken != null) {
+        _authToken = newToken;
+        response = await request(_headers);
+      }
+    }
+    return response;
+  }
 
   Future<bool> healthCheck() async {
     try {
@@ -41,9 +60,8 @@ class ApiService {
     try {
       final uri = Uri.parse('$baseUrl/listings').replace(queryParameters: filter.toQueryParameters());
 
-      final response = await _client
-          .get(uri, headers: _headers)
-          .timeout(timeoutDuration);
+      final response = await _authenticatedRequest((headers) =>
+          _client.get(uri, headers: headers).timeout(timeoutDuration));
 
       return _handleResponse(response, (body) {
         return ListingResponse.fromJson(json.decode(body));
@@ -55,9 +73,8 @@ class ApiService {
 
   Future<Listing?> getListing(String id) async {
     try {
-      final response = await _client
-          .get(Uri.parse('$baseUrl/listings/$id'), headers: _headers)
-          .timeout(timeoutDuration);
+      final response = await _authenticatedRequest((headers) =>
+          _client.get(Uri.parse('$baseUrl/listings/$id'), headers: headers).timeout(timeoutDuration));
 
       if (response.statusCode == 404) {
         return null;
@@ -80,9 +97,8 @@ class ApiService {
 
       final uri = Uri.parse('$baseUrl/scraper/trigger-limited').replace(queryParameters: queryParams);
 
-      final response = await _client
-          .post(uri)
-          .timeout(timeoutDuration);
+      final response = await _authenticatedRequest((headers) =>
+          _client.post(uri, headers: headers).timeout(timeoutDuration));
 
       _handleResponse(response, (_) => null);
     } catch (e) {

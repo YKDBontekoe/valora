@@ -44,11 +44,36 @@ public static class AuthEndpoints
             }
 
             var token = tokenService.GenerateToken(user);
+            var refreshToken = tokenService.GenerateRefreshToken(user.Id);
+
+            await tokenService.SaveRefreshTokenAsync(refreshToken);
 
             return Results.Ok(new AuthResponseDto(
                 token,
+                refreshToken.Token,
                 user.Email!,
                 user.Id
+            ));
+        });
+
+        group.MapPost("/refresh", async (
+            [FromBody] RefreshTokenRequestDto request,
+            ITokenService tokenService) =>
+        {
+            var existingToken = await tokenService.GetRefreshTokenAsync(request.RefreshToken);
+
+            if (existingToken == null || !existingToken.IsActive)
+            {
+                return Results.Unauthorized();
+            }
+
+            var newAccessToken = tokenService.GenerateToken(existingToken.User!);
+
+            return Results.Ok(new AuthResponseDto(
+                newAccessToken,
+                existingToken.Token,
+                existingToken.User!.Email!,
+                existingToken.User.Id
             ));
         });
     }
