@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Valora.Infrastructure.Persistence;
+using System.Diagnostics.CodeAnalysis;
 
 #nullable disable
 
