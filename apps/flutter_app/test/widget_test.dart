@@ -18,6 +18,7 @@ class MockAuthService extends AuthService {
 
 void main() {
   setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
     await dotenv.load(fileName: ".env.example");
   });
 
