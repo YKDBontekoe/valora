@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 
+// coverage:ignore-start
 Future<void> main() async {
   // Ensure binding is initialized before using PlatformDispatcher
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,7 @@ Future<void> main() async {
     ),
   );
 }
+// coverage:ignore-end
 
 class ValoraApp extends StatelessWidget {
   const ValoraApp({super.key});
