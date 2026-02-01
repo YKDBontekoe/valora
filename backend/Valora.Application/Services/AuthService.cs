@@ -42,11 +42,38 @@ public class AuthService : IAuthService
         }
 
         var token = _tokenService.GenerateToken(user);
+        var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
+        await _tokenService.SaveRefreshTokenAsync(refreshToken);
 
         return new AuthResponseDto(
             token,
+            refreshToken.Token,
             user.Email!,
             user.Id
+        );
+    }
+
+    public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
+    {
+        var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
+
+        if (existingToken == null || !existingToken.IsActive || existingToken.User == null)
+        {
+            return null;
+        }
+
+        // Rotate Refresh Token
+        await _tokenService.RevokeRefreshTokenAsync(existingToken.Token);
+        var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
+        await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
+
+        var newAccessToken = _tokenService.GenerateToken(existingToken.User);
+
+        return new AuthResponseDto(
+            newAccessToken,
+            newRefreshToken.Token,
+            existingToken.User.Email!,
+            existingToken.User.Id
         );
     }
 }
