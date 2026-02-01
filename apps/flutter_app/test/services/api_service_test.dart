@@ -5,10 +5,15 @@ import 'dart:io';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  setUpAll(() async {
+    await dotenv.load(fileName: ".env");
+  });
+
   group('ApiService', () {
     test('getListings throws ServerException on 500', () async {
       final client = MockClient((request) async {

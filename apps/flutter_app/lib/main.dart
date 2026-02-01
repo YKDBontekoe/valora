@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'screens/startup_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 
-void main() {
+Future<void> main() async {
   // Ensure binding is initialized before using PlatformDispatcher
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
