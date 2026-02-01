@@ -19,7 +19,7 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
         var httpContext = GetHttpContext(context);
         var header = httpContext.Request.Headers["Authorization"].ToString();
 
-        if (string.IsNullOrWhiteSpace(header) || !header.StartsWith("Basic "))
+        if (string.IsNullOrWhiteSpace(header) || !header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
         {
             SetChallenge(httpContext);
             return false;
