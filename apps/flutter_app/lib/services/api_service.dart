@@ -35,7 +35,7 @@ class ApiService {
     var response = await request(_headers);
 
     if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback!();
+      final newToken = await _refreshTokenCallback();
       if (newToken != null) {
         _authToken = newToken;
         response = await request(_headers);
