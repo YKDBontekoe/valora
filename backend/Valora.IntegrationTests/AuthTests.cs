@@ -120,7 +120,7 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task Refresh_WithValidToken_ReturnsNewAccessToken()
+    public async Task Refresh_WithValidToken_ReturnsNewAccessAndRefreshToken()
     {
         // Arrange
         var email = "refreshflow@example.com";
@@ -143,6 +143,8 @@ public class AuthTests : BaseIntegrationTest
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         Assert.NotNull(result);
         Assert.False(string.IsNullOrEmpty(result.Token));
+        Assert.False(string.IsNullOrEmpty(result.RefreshToken));
+        Assert.NotEqual(authData.RefreshToken, result.RefreshToken); // Ensure Rotation
     }
 
     [Fact]
