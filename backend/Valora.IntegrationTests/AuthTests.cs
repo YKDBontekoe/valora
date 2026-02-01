@@ -65,6 +65,36 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Register_WithInvalidEmail_ReturnsBadRequest()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = "invalid-email",
+            Password = "Password123!",
+            ConfirmPassword = "Password123!"
+        });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Register_WithWeakPassword_ReturnsBadRequest()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = "weakpass@example.com",
+            Password = "weak",
+            ConfirmPassword = "weak"
+        });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Login_WithValidCredentials_ReturnsToken()
     {
         // Arrange

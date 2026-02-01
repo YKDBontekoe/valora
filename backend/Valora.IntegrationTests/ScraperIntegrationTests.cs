@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,52 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
     public ScraperIntegrationTests(TestDatabaseFixture fixture) : base(fixture)
     {
         _server = WireMockServer.Start();
+    }
+
+    [Fact]
+    public async Task TriggerLimited_WithoutAuth_ReturnsUnauthorized()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/scraper/trigger-limited?region=amsterdam&limit=1", new { });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task TriggerLimited_WithInvalidLimit_ReturnsBadRequest()
+    {
+        // Arrange
+        await AuthenticateAsync();
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/scraper/trigger-limited?region=amsterdam&limit=0", new { });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task TriggerLimited_WithMissingRegion_ReturnsBadRequest()
+    {
+        // Arrange
+        await AuthenticateAsync();
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/scraper/trigger-limited?region=&limit=1", new { });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Seed_WithoutAuth_ReturnsUnauthorized()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/scraper/seed?region=amsterdam", new { });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

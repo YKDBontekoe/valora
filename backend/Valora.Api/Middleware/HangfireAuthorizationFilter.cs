@@ -15,7 +15,7 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
 
     public bool Authorize(DashboardContext context)
     {
-        var httpContext = context.GetHttpContext();
+        var httpContext = GetHttpContext(context);
         var header = httpContext.Request.Headers["Authorization"].ToString();
 
         if (string.IsNullOrWhiteSpace(header) || !header.StartsWith("Basic "))
@@ -61,6 +61,11 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
         }
 
         return accum == 0;
+    }
+
+    protected virtual HttpContext GetHttpContext(DashboardContext context)
+    {
+        return context.GetHttpContext();
     }
 
     private void SetChallenge(HttpContext httpContext)
