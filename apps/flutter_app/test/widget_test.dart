@@ -18,7 +18,7 @@ class MockAuthService extends AuthService {
 
 void main() {
   setUpAll(() async {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: ".env.example");
   });
 
   testWidgets('App renders home screen', (WidgetTester tester) async {

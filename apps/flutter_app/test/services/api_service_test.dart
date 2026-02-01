@@ -11,7 +11,7 @@ import 'package:http/testing.dart';
 
 void main() {
   setUpAll(() async {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: ".env.example");
   });
 
   group('ApiService', () {

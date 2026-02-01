@@ -10,7 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
   setUpAll(() async {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: ".env.example");
   });
 
   group('HomeScreen', () {

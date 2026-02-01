@@ -11,7 +11,11 @@ import 'services/auth_service.dart';
 Future<void> main() async {
   // Ensure binding is initialized before using PlatformDispatcher
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  // Load environment variables. In production/CI, we often rely on build arguments or
+  // the .env.example file being bundled if a specific .env isn't provided.
+  // Since .env is gitignored and not guaranteed to exist in CI, we load .env.example
+  // which is safe to commit.
+  await dotenv.load(fileName: ".env.example");
 
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
