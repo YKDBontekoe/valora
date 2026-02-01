@@ -36,7 +36,7 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer();
 
 builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-    .Configure<IConfiguration, IWebHostEnvironment>((options, configuration, env) =>
+    .Configure<IConfiguration, IWebHostEnvironment, ILogger<Program>>((options, configuration, env, logger) =>
     {
         // JWT Secret configuration is critical.
         // In Production, we enforce providing a strong secret via environment variables.
@@ -49,7 +49,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             if (env.IsDevelopment())
             {
                 secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-                Console.WriteLine("WARNING: JWT Secret is not configured. Using temporary development key.");
+                logger.LogWarning("WARNING: JWT Secret is not configured. Using temporary development key.");
             }
             else
             {
@@ -72,17 +72,17 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         {
             OnAuthenticationFailed = context =>
             {
-                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                logger.LogError(context.Exception, "Authentication failed");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                Console.WriteLine($"Token validated for: {context.Principal?.Identity?.Name}");
+                logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
-                Console.WriteLine($"OnChallenge: {context.Error}, {context.ErrorDescription}");
+                logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
                 return Task.CompletedTask;
             }
         };
