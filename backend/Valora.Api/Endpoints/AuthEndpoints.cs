@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
 
@@ -14,42 +12,30 @@ public static class AuthEndpoints
 
         group.MapPost("/register", async (
             [FromBody] RegisterDto registerDto,
-            UserManager<ApplicationUser> userManager) =>
+            IAuthService authService) =>
         {
-            if (registerDto.Password != registerDto.ConfirmPassword)
-            {
-                return Results.BadRequest(new { error = "Passwords do not match" });
-            }
-
-            var user = new ApplicationUser { UserName = registerDto.Email, Email = registerDto.Email };
-            var result = await userManager.CreateAsync(user, registerDto.Password);
+            var result = await authService.RegisterAsync(registerDto);
 
             if (result.Succeeded)
             {
                 return Results.Ok(new { message = "User created successfully" });
             }
 
-            return Results.BadRequest(result.Errors);
+            return Results.BadRequest(result.Errors.Select(e => new { description = e }));
         });
 
         group.MapPost("/login", async (
             [FromBody] LoginDto loginDto,
-            UserManager<ApplicationUser> userManager,
-            ITokenService tokenService) =>
+            IAuthService authService) =>
         {
-            var user = await userManager.FindByEmailAsync(loginDto.Email);
-            if (user == null || !await userManager.CheckPasswordAsync(user, loginDto.Password))
+            var response = await authService.LoginAsync(loginDto);
+
+            if (response == null)
             {
                 return Results.Unauthorized();
             }
 
-            var token = tokenService.GenerateToken(user);
-
-            return Results.Ok(new AuthResponseDto(
-                token,
-                user.Email!,
-                user.Id
-            ));
+            return Results.Ok(response);
         });
     }
 }

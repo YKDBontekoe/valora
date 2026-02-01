@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Valora.Application.Common.Interfaces;
+using Valora.Application.Services;
 
 namespace Valora.Application;
 
@@ -6,7 +8,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Add application services here (e.g., MediatR, FluentValidation)
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 }
