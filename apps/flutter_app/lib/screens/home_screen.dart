@@ -290,22 +290,23 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              final parentContext = context;
               showDialog(
                 context: context,
-                builder: (context) => ValoraDialog(
+                builder: (dialogContext) => ValoraDialog(
                   title: 'Logout',
                   actions: [
                     ValoraButton(
                       label: 'Cancel',
                       variant: ValoraButtonVariant.ghost,
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                     ),
                     ValoraButton(
                       label: 'Logout',
                       variant: ValoraButtonVariant.primary,
                       onPressed: () {
-                        Navigator.pop(context);
-                        context.read<AuthProvider>().logout();
+                        Navigator.pop(dialogContext);
+                        parentContext.read<AuthProvider>().logout();
                       },
                     ),
                   ],
