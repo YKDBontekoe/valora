@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:valora_app/main.dart';
 import 'package:valora_app/providers/auth_provider.dart';
+import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -33,6 +34,7 @@ void main() {
       await tester.pumpWidget(
         MultiProvider(
           providers: [
+            ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
             Provider<AuthService>(create: (_) => MockAuthService()),
             ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider(authService: MockAuthService())),
             ProxyProvider<AuthProvider, ApiService>(
