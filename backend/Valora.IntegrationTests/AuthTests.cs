@@ -95,6 +95,16 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Login_WithInvalidEmail_ReturnsBadRequest()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/login", new LoginDto("invalid-email", "Password123!"));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Login_WithValidCredentials_ReturnsToken()
     {
         // Arrange

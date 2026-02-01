@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Hangfire.Dashboard;
 
 namespace Valora.Api.Middleware;
@@ -63,6 +64,7 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
         return accum == 0;
     }
 
+    [ExcludeFromCodeCoverage]
     protected virtual HttpContext GetHttpContext(DashboardContext context)
     {
         return context.GetHttpContext();

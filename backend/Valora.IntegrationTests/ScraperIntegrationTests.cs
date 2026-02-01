@@ -32,6 +32,19 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
     }
 
     [Fact]
+    public async Task Seed_WithMissingRegion_ReturnsBadRequest()
+    {
+        // Arrange
+        await AuthenticateAsync();
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/scraper/seed?region=", new { });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task TriggerLimited_WithInvalidLimit_ReturnsBadRequest()
     {
         // Arrange
