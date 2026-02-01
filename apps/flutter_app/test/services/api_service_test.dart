@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:retry/retry.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +67,10 @@ void main() {
         throw TimeoutException('Timed out');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(
+        client: client,
+        retryOptions: const RetryOptions(maxAttempts: 1),
+      );
 
       expect(
         () => apiService.getListings(const ListingFilter()),
@@ -79,7 +83,10 @@ void main() {
         throw http.ClientException('Client error');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(
+        client: client,
+        retryOptions: const RetryOptions(maxAttempts: 1),
+      );
 
       expect(
         () => apiService.getListings(const ListingFilter()),

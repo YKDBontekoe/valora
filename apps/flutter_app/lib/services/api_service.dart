@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:retry/retry.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/listing.dart';
@@ -16,14 +17,18 @@ class ApiService {
   final http.Client _client;
   String? _authToken;
   final Future<String?> Function()? _refreshTokenCallback;
+  final RetryOptions _retryOptions;
 
   ApiService({
     http.Client? client,
     String? authToken,
     Future<String?> Function()? refreshTokenCallback,
+    RetryOptions? retryOptions,
   })  : _client = client ?? http.Client(),
         _authToken = authToken,
-        _refreshTokenCallback = refreshTokenCallback;
+        _refreshTokenCallback = refreshTokenCallback,
+        _retryOptions = retryOptions ??
+            const RetryOptions(maxAttempts: 3, delayFactor: Duration(seconds: 1));
 
   Map<String, String> get _headers => {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
@@ -32,16 +37,31 @@ class ApiService {
 
   Future<http.Response> _authenticatedRequest(
       Future<http.Response> Function(Map<String, String> headers) request) async {
-    var response = await request(_headers);
+    return await _retryOptions.retry(
+      () async {
+        final response = await request(_headers);
 
-    if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback();
-      if (newToken != null) {
-        _authToken = newToken;
-        response = await request(_headers);
-      }
-    }
-    return response;
+        if (response.statusCode == 401 && _refreshTokenCallback != null) {
+          final newToken = await _refreshTokenCallback();
+          if (newToken != null) {
+            _authToken = newToken;
+            return await request(_headers);
+          }
+        }
+
+        // Force retry on server errors
+        if (response.statusCode >= 500) {
+          throw ServerException('Server error (${response.statusCode})');
+        }
+
+        return response;
+      },
+      retryIf: (e) =>
+          e is SocketException ||
+          e is TimeoutException ||
+          e is http.ClientException ||
+          e is ServerException,
+    );
   }
 
   Future<bool> healthCheck() async {
@@ -151,6 +171,18 @@ class ApiService {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
+        // Handle FluentValidation 'errors' dictionary
+        if (jsonBody['errors'] is Map<String, dynamic>) {
+          final errors = jsonBody['errors'] as Map<String, dynamic>;
+          final messages = errors.entries.map((e) {
+            final value = e.value;
+            if (value is List) return value.join(', ');
+            return value.toString();
+          });
+          return messages.join('\n');
+        }
+
+        // Handle RFC 7807 problem details
         return jsonBody['detail'] as String? ?? jsonBody['title'] as String?;
       }
     } catch (_) {
