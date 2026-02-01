@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Exceptions;
 
 namespace Valora.Api.Middleware;
@@ -60,6 +61,16 @@ public class ExceptionHandlingMiddleware
                 statusCode = 499; // Client Closed Request
                 title = "Request Cancelled";
                 detail = "The request was cancelled.";
+                break;
+            case DbUpdateConcurrencyException:
+                statusCode = (int)HttpStatusCode.Conflict;
+                title = "Concurrency Conflict";
+                detail = "The resource you are attempting to update has been modified by another user.";
+                break;
+            case DbUpdateException:
+                statusCode = (int)HttpStatusCode.Conflict;
+                title = "Database Error";
+                detail = "A database constraint violation occurred.";
                 break;
         }
 
