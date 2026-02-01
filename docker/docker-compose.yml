@@ -27,6 +27,19 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=valora;Username=valora;Password=valora_dev
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+      - AllowedHosts=*
+      - Scraper__SearchUrls__0=https://www.funda.nl/zoeken/koop?selected_area=%5B%22amsterdam%22%5D
+      - Scraper__DelayBetweenRequestsMs=2000
+      - Scraper__MaxRetries=3
+      - Scraper__CronExpression=0 */6 * * *
+      - Hangfire__Enabled=true
+      - JwtSettings__Secret=DevSecretKey_ChangeMe_In_Production_Configuration_123!
+      - JwtSettings__Issuer=ValoraApi
+      - JwtSettings__Audience=ValoraApp
+      - JwtSettings__ExpiryMinutes=60
+      - EnableHttpsRedirection=false
     depends_on:
       postgres:
         condition: service_healthy
