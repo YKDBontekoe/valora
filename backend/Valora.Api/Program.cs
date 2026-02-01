@@ -219,7 +219,7 @@ api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJ
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
     return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
-});
+}).RequireAuthorization();
 
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
