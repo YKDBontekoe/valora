@@ -59,11 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
             child: Form(
               key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo Placeholder
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Logo Placeholder
                   Icon(
                     Icons.home_work_rounded,
                     size: 80,
@@ -91,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Email
                   TextFormField(
                     controller: _emailController,
+                    autofillHints: const [AutofillHints.email],
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
@@ -113,6 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Password
                   TextFormField(
                     controller: _passwordController,
+                    autofillHints: const [AutofillHints.password],
                     decoration: const InputDecoration(
                       labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outline),
@@ -133,9 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: ValoraSpacing.lg),
 
-                  // Login Button
-                  FilledButton(
-                    onPressed: isLoading ? null : _submit,
+              // Login Button
+              FilledButton(
+                onPressed: isLoading ? null : _submit,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -183,6 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

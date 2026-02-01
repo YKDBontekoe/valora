@@ -77,11 +77,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
             child: Form(
               key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
                     'Create Account',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.displaySmall?.copyWith(
@@ -102,6 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Email
                   TextFormField(
                     controller: _emailController,
+                    autofillHints: const [AutofillHints.email],
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
@@ -120,6 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Password
                   TextFormField(
                     controller: _passwordController,
+                    autofillHints: const [AutofillHints.newPassword],
                     decoration: const InputDecoration(
                       labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outline),
@@ -138,6 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Confirm Password
                   TextFormField(
                     controller: _confirmPasswordController,
+                    autofillHints: const [AutofillHints.newPassword],
                     decoration: const InputDecoration(
                       labelText: 'Confirm Password',
                       prefixIcon: Icon(Icons.lock_outline),
@@ -191,6 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),
