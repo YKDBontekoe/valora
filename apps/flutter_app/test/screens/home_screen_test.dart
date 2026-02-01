@@ -9,6 +9,7 @@ import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/valora_filter_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:retry/retry.dart';
 
 void main() {
   setUpAll(() async {
@@ -21,7 +22,8 @@ void main() {
       final mockClient = MockClient((request) async {
         return http.Response('Error', 500); // Fail health check
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(MaterialApp(
         home: HomeScreen(apiService: apiService),
@@ -40,7 +42,7 @@ void main() {
           return http.Response('OK', 200);
         }
         if (request.url.toString().contains('listings')) {
-           return http.Response(
+          return http.Response(
               '''
               {
                 "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
@@ -55,7 +57,8 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(MaterialApp(
         home: HomeScreen(apiService: apiService),
@@ -74,11 +77,12 @@ void main() {
           return http.Response('OK', 200);
         }
         if (request.url.toString().contains('listings')) {
-           return http.Response('Server Error', 500);
+          return http.Response('Server Error', 500);
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(MaterialApp(
         home: HomeScreen(apiService: apiService),
@@ -122,7 +126,8 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(MaterialApp(
         home: HomeScreen(apiService: apiService),
@@ -152,7 +157,7 @@ void main() {
           return http.Response('OK', 200);
         }
         if (request.url.toString().contains('listings')) {
-           return http.Response(
+          return http.Response(
               '''
               {
                 "items": [],
@@ -167,7 +172,8 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(MaterialApp(
         home: HomeScreen(apiService: apiService),
@@ -202,17 +208,21 @@ void main() {
 
     testWidgets('Search bar interaction', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        if (request.url.toString().contains('health'))
+          return http.Response('OK', 200);
         return http.Response(
             '''
             {
               "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
             }
-            ''', 200);
+            ''',
+            200);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpWidget(
+          MaterialApp(home: HomeScreen(apiService: apiService)));
       await tester.pumpAndSettle();
 
       // Verify search field is always visible
@@ -225,18 +235,22 @@ void main() {
 
     testWidgets('Shows scrape button when no listings and no filters', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        if (request.url.toString().contains('health'))
+          return http.Response('OK', 200);
         // Return empty list
         return http.Response(
             '''
             {
               "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
             }
-            ''', 200);
+            ''',
+            200);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpWidget(
+          MaterialApp(home: HomeScreen(apiService: apiService)));
       await tester.pumpAndSettle();
 
       // Verify empty state
@@ -246,18 +260,22 @@ void main() {
 
     testWidgets('Clears filters via empty state action', (WidgetTester tester) async {
       final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health')) return http.Response('OK', 200);
+        if (request.url.toString().contains('health'))
+          return http.Response('OK', 200);
         // Return empty list
         return http.Response(
             '''
             {
               "items": [], "pageIndex": 1, "totalPages": 1, "totalCount": 0, "hasNextPage": false, "hasPreviousPage": false
             }
-            ''', 200);
+            ''',
+            200);
       });
-      final apiService = ApiService(client: mockClient);
+      final apiService = ApiService(
+          client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
-      await tester.pumpWidget(MaterialApp(home: HomeScreen(apiService: apiService)));
+      await tester.pumpWidget(
+          MaterialApp(home: HomeScreen(apiService: apiService)));
       await tester.pumpAndSettle();
 
       // NEW: Apply a filter to trigger the "No listings found" state

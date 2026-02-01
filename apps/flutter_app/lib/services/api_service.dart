@@ -51,7 +51,8 @@ class ApiService {
 
         // Force retry on server errors
         if (response.statusCode >= 500) {
-          throw ServerException('Server error (${response.statusCode})');
+          throw ServerException(
+              'Server error (${response.statusCode}). Please try again later.');
         }
 
         return response;
