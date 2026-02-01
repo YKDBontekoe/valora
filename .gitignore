@@ -105,3 +105,4 @@ docker/data/
 .env
 .env.*
 !.env.example
+test_output.txt

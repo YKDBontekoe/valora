@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -262,147 +263,57 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: Theme.of(context).textTheme.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: 'Search address, city...',
-                  hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                ),
-                onChanged: _onSearchChanged,
-              )
-            : Text(
-                'Valora',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              final parentContext = context;
-              showDialog(
-                context: context,
-                builder: (dialogContext) => ValoraDialog(
-                  title: 'Logout',
-                  actions: [
-                    ValoraButton(
-                      label: 'Cancel',
-                      variant: ValoraButtonVariant.ghost,
-                      onPressed: () => Navigator.pop(dialogContext),
-                    ),
-                    ValoraButton(
-                      label: 'Logout',
-                      variant: ValoraButtonVariant.primary,
-                      onPressed: () {
-                        Navigator.pop(dialogContext);
-                        parentContext.read<AuthProvider>().logout();
-                      },
-                    ),
-                  ],
-                  child: const Text('Are you sure you want to logout?'),
-                ),
-              );
-            },
-            tooltip: 'Logout',
-          ),
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                if (_isSearching) {
-                  _isSearching = false;
-                  _searchController.clear();
-                  _searchTerm = '';
-                  _loadListings(refresh: true);
-                } else {
-                  _isSearching = true;
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.filter_list),
-                if (_minPrice != null ||
-                    _maxPrice != null ||
-                    _city != null ||
-                    _minBedrooms != null ||
-                    _minLivingArea != null ||
-                    _maxLivingArea != null)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: ValoraColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 8,
-                        minHeight: 8,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: _openFilterDialog,
-            tooltip: 'Filter',
-          ),
-          const SizedBox(width: ValoraSpacing.sm),
-        ],
-      ),
+      extendBodyBehindAppBar: true, // Allow body to scroll behind glass app bar
       body: _buildContent(),
-      floatingActionButton: _isConnected && _listings.isEmpty && _error == null ? FloatingActionButton.extended(
-        onPressed: () => _loadListings(refresh: true),
-        backgroundColor: ValoraColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.refresh),
-        label: const Text('Refresh'),
-        elevation: ValoraSpacing.elevationLg,
-      ) : null,
+      floatingActionButton: _isConnected && _listings.isEmpty && _error == null
+          ? FloatingActionButton.extended(
+              onPressed: () => _loadListings(refresh: true),
+              backgroundColor: ValoraColors.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh'),
+              elevation: ValoraSpacing.elevationLg,
+            )
+          : null,
     );
   }
 
   Widget _buildContent() {
-    if (_isLoading) {
-       return const ValoraLoadingIndicator(message: 'Loading listings...');
-    }
+    Widget contentSliver;
 
-    if (!_isConnected) {
-      return ValoraEmptyState(
-        icon: Icons.cloud_off_outlined,
-        title: 'Backend not connected',
-        subtitle: 'Unable to connect to Valora Server. Please ensure the backend is running.',
-        action: ValoraButton(
-          label: 'Retry',
-          variant: ValoraButtonVariant.primary,
-          icon: Icons.refresh,
-          onPressed: _checkConnection,
+    if (_isLoading) {
+      contentSliver = const SliverFillRemaining(
+        child: ValoraLoadingIndicator(message: 'Loading listings...'),
+      );
+    } else if (!_isConnected) {
+      contentSliver = SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: ValoraEmptyState(
+            icon: Icons.cloud_off_outlined,
+            title: 'Backend not connected',
+            subtitle:
+                'Unable to connect to Valora Server. Please ensure the backend is running.',
+            action: ValoraButton(
+              label: 'Retry',
+              variant: ValoraButtonVariant.primary,
+              icon: Icons.refresh,
+              onPressed: _checkConnection,
+            ),
+          ),
         ),
       );
-    }
-
-    if (_listings.isEmpty && _error != null) {
-      return ValoraErrorState(
-        error: _error!,
-        onRetry: () => _loadListings(refresh: true),
+    } else if (_listings.isEmpty && _error != null) {
+      contentSliver = SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: ValoraErrorState(
+            error: _error!,
+            onRetry: () => _loadListings(refresh: true),
+          ),
+        ),
       );
-    }
-
-    if (_listings.isEmpty) {
+    } else if (_listings.isEmpty) {
       final bool hasFilters = _minPrice != null ||
           _maxPrice != null ||
           _city != null ||
@@ -411,41 +322,98 @@ class _HomeScreenState extends State<HomeScreen> {
           _maxLivingArea != null ||
           _searchTerm.isNotEmpty;
 
-      if (!hasFilters) {
-        return ValoraEmptyState(
-          icon: Icons.home_work_outlined,
-          title: 'No listings yet',
-          subtitle: 'Get started by scraping some listings.',
-          action: ValoraButton(
-            label: 'Scrape 10 Items',
-            variant: ValoraButtonVariant.primary,
-            icon: Icons.cloud_download,
-            onPressed: _triggerScrape,
-          ),
-        );
-      }
+      contentSliver = SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: !hasFilters
+              ? ValoraEmptyState(
+                  icon: Icons.home_work_outlined,
+                  title: 'No listings yet',
+                  subtitle: 'Get started by scraping some listings.',
+                  action: ValoraButton(
+                    label: 'Scrape 10 Items',
+                    variant: ValoraButtonVariant.primary,
+                    icon: Icons.cloud_download,
+                    onPressed: _triggerScrape,
+                  ),
+                )
+              : ValoraEmptyState(
+                  icon: Icons.search_off,
+                  title: 'No listings found',
+                  subtitle: 'Try adjusting your filters or search term.',
+                  action: ValoraButton(
+                    label: 'Clear Filters',
+                    variant: ValoraButtonVariant.outline,
+                    onPressed: () {
+                      setState(() {
+                        _minPrice = null;
+                        _maxPrice = null;
+                        _city = null;
+                        _minBedrooms = null;
+                        _minLivingArea = null;
+                        _maxLivingArea = null;
+                        _searchTerm = '';
+                        _searchController.clear();
+                        _isSearching = false;
+                      });
+                      _loadListings(refresh: true);
+                    },
+                  ),
+                ),
+        ),
+      );
+    } else {
+      contentSliver = SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          ValoraSpacing.screenPadding,
+          ValoraSpacing.screenPadding,
+          ValoraSpacing.screenPadding,
+          ValoraSpacing.xxl, // Bottom padding
+        ),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index == _listings.length) {
+                if (_hasNextPage) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: ValoraSpacing.md),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }
 
-      return ValoraEmptyState(
-        icon: Icons.search_off,
-        title: 'No listings found',
-        subtitle: 'Try adjusting your filters or search term.',
-        action: ValoraButton(
-          label: 'Clear Filters',
-          variant: ValoraButtonVariant.outline,
-          onPressed: () {
-            setState(() {
-              _minPrice = null;
-              _maxPrice = null;
-              _city = null;
-              _minBedrooms = null;
-              _minLivingArea = null;
-              _maxLivingArea = null;
-              _searchTerm = '';
-              _searchController.clear();
-              _isSearching = false;
-            });
-            _loadListings(refresh: true);
-          },
+              final listing = _listings[index];
+              // Only animate first page
+              final int delay =
+                  (index < _pageSize && _currentPage == 1) ? index * 100 : 0;
+
+              return Padding(
+                padding:
+                    const EdgeInsets.only(bottom: ValoraSpacing.listItemGap),
+                child: RepaintBoundary(
+                  child: _SlideInItem(
+                    delay: Duration(milliseconds: delay),
+                    child: ValoraListingCard(
+                      listing: listing,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ListingDetailScreen(listing: listing),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+            childCount: _listings.length + (_hasNextPage ? 1 : 0),
+          ),
         ),
       );
     }
@@ -453,45 +421,134 @@ class _HomeScreenState extends State<HomeScreen> {
     return RefreshIndicator(
       onRefresh: () => _loadListings(refresh: true),
       color: ValoraColors.primary,
-      child: ListView.separated(
+      edgeOffset: 100, // Offset for glass app bar
+      child: CustomScrollView(
         controller: _scrollController,
-        padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
-        itemCount: _listings.length + (_hasNextPage ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(
-          height: ValoraSpacing.listItemGap,
+        slivers: [
+          _buildSliverAppBar(floating: true),
+          contentSliver,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar({bool floating = false}) {
+    return SliverAppBar(
+      pinned: true,
+      floating: floating,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      flexibleSpace: ClipRRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? ValoraColors.glassBlack
+                : ValoraColors.glassWhite,
+          ),
         ),
-        itemBuilder: (context, index) {
-          if (index == _listings.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: ValoraSpacing.md),
-              child: Center(
-                child: CircularProgressIndicator(),
+      ),
+      title: _isSearching
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: Theme.of(context).textTheme.bodyLarge,
+              decoration: InputDecoration(
+                hintText: 'Search address, city...',
+                hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+              ),
+              onChanged: _onSearchChanged,
+            )
+          : Text(
+              'Valora',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () {
+            final parentContext = context;
+            showDialog(
+              context: context,
+              builder: (dialogContext) => ValoraDialog(
+                title: 'Logout',
+                actions: [
+                  ValoraButton(
+                    label: 'Cancel',
+                    variant: ValoraButtonVariant.ghost,
+                    onPressed: () => Navigator.pop(dialogContext),
+                  ),
+                  ValoraButton(
+                    label: 'Logout',
+                    variant: ValoraButtonVariant.primary,
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      parentContext.read<AuthProvider>().logout();
+                    },
+                  ),
+                ],
+                child: const Text('Are you sure you want to logout?'),
               ),
             );
-          }
-
-          final listing = _listings[index];
-          // Only animate first page
-          final int delay = (index < _pageSize && _currentPage == 1) ? index * 100 : 0;
-
-          return RepaintBoundary(
-            child: _SlideInItem(
-              delay: Duration(milliseconds: delay),
-              child: ValoraListingCard(
-                listing: listing,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ListingDetailScreen(listing: listing),
+          },
+          tooltip: 'Logout',
+        ),
+        IconButton(
+          icon: Icon(_isSearching ? Icons.close : Icons.search),
+          onPressed: () {
+            setState(() {
+              if (_isSearching) {
+                _isSearching = false;
+                _searchController.clear();
+                _searchTerm = '';
+                _loadListings(refresh: true);
+              } else {
+                _isSearching = true;
+              }
+            });
+          },
+        ),
+        IconButton(
+          icon: Stack(
+            children: [
+              const Icon(Icons.filter_list),
+              if (_minPrice != null ||
+                  _maxPrice != null ||
+                  _city != null ||
+                  _minBedrooms != null ||
+                  _minLivingArea != null ||
+                  _maxLivingArea != null)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: ValoraColors.error,
+                      shape: BoxShape.circle,
                     ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
-      ),
+                    constraints: const BoxConstraints(
+                      minWidth: 8,
+                      minHeight: 8,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          onPressed: _openFilterDialog,
+          tooltip: 'Filter',
+        ),
+        const SizedBox(width: ValoraSpacing.sm),
+      ],
     );
   }
 }

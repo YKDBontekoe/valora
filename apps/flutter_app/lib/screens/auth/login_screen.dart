@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/valora_widgets.dart';
+import '../../widgets/valora_glass_container.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = context.read<AuthProvider>();
+    if (authProvider.isLoading) return;
+
     try {
       await authProvider.login(
         _emailController.text.trim(),
@@ -48,145 +53,165 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
-            child: Form(
-              key: _formKey,
-              child: AutofillGroup(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Logo Placeholder
-                  Icon(
-                    Icons.home_work_rounded,
-                    size: 80,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: ValoraSpacing.lg),
-                  Text(
-                    'Welcome Back',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: ValoraSpacing.sm),
-                  Text(
-                    'Sign in to access premium listings',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: ValoraSpacing.xl),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Image
+          Image.network(
+            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2666&auto=format&fit=crop',
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                color: isDark ? ValoraColors.backgroundDark : ValoraColors.backgroundLight,
+              );
+            },
+            errorBuilder: (context, error, stackTrace) => Container(
+               color: isDark ? ValoraColors.backgroundDark : ValoraColors.backgroundLight,
+            ),
+          ),
 
-                  // Email
-                  TextFormField(
-                    controller: _emailController,
-                    autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: ValoraSpacing.md),
-
-                  // Password
-                  TextFormField(
-                    controller: _passwordController,
-                    autofillHints: const [AutofillHints.password],
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _submit(),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: ValoraSpacing.lg),
-
-              // Login Button
-              FilledButton(
-                onPressed: isLoading ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Login',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                  ),
-                  const SizedBox(height: ValoraSpacing.md),
-
-                  // Register Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Don\'t have an account?',
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                      TextButton(
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const RegisterScreen(),
-                                  ),
-                                );
-                              },
-                        child: const Text('Create Account'),
-                      ),
-                    ],
-                  ),
+          // Gradient Overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  (isDark ? Colors.black : Colors.white).withValues(alpha: 0.3),
+                  (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7),
                 ],
               ),
             ),
           ),
-        ),
-      ),
+
+          // Content
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
+              child: ValoraGlassContainer(
+                padding: const EdgeInsets.all(ValoraSpacing.xl),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
+                blur: 15,
+                child: Form(
+                  key: _formKey,
+                  child: AutofillGroup(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Logo
+                        Icon(
+                          Icons.home_work_rounded,
+                          size: 64,
+                          color: ValoraColors.primary,
+                        ),
+                        const SizedBox(height: ValoraSpacing.lg),
+                        Text(
+                          'Welcome Back',
+                          textAlign: TextAlign.center,
+                          style: ValoraTypography.headlineMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: ValoraSpacing.sm),
+                        Text(
+                          'Sign in to access premium listings',
+                          textAlign: TextAlign.center,
+                          style: ValoraTypography.bodyLarge.copyWith(
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: ValoraSpacing.xl),
+
+                        // Email
+                        ValoraTextField(
+                          controller: _emailController,
+                          label: 'Email',
+                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
+                          textInputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: ValoraSpacing.md),
+
+                        // Password
+                        ValoraTextField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: true,
+                          autofillHints: const [AutofillHints.password],
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: ValoraSpacing.xl),
+
+                        // Login Button
+                        ValoraButton(
+                          label: 'Login',
+                          isLoading: isLoading,
+                          isFullWidth: true,
+                          onPressed: _submit,
+                        ),
+                        const SizedBox(height: ValoraSpacing.md),
+
+                        // Register Link
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Don\'t have an account?',
+                              style: TextStyle(
+                                color: isDark ? Colors.white70 : Colors.black54,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const RegisterScreen(),
+                                        ),
+                                      );
+                                    },
+                              child: const Text('Create Account'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

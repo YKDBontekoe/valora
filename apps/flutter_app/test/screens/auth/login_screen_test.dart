@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/screens/auth/login_screen.dart';
+import 'package:valora_app/widgets/valora_widgets.dart';
 
 class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
@@ -45,7 +46,7 @@ void main() {
 
     // Verify Email field hints
     final emailFieldFinder = find.descendant(
-      of: find.widgetWithText(TextFormField, 'Email'),
+      of: find.widgetWithText(ValoraTextField, 'Email'),
       matching: find.byType(TextField),
     );
     expect(emailFieldFinder, findsOneWidget);
@@ -54,7 +55,7 @@ void main() {
 
     // Verify Password field hints
     final passwordFieldFinder = find.descendant(
-      of: find.widgetWithText(TextFormField, 'Password'),
+      of: find.widgetWithText(ValoraTextField, 'Password'),
       matching: find.byType(TextField),
     );
     expect(passwordFieldFinder, findsOneWidget);
