@@ -122,6 +122,30 @@ void main() {
       }
     });
 
+    test('getListings throws ValidationException on 400 with errors dictionary',
+        () async {
+      final client = MockClient((request) async {
+        return http.Response(
+            json.encode({
+              'errors': {
+                'Field1': ['Error 1', 'Error 2'],
+                'Field2': 'Error 3'
+              }
+            }),
+            400);
+      });
+
+      final apiService = ApiService(client: client);
+
+      try {
+        await apiService.getListings(const ListingFilter());
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Error 1, Error 2'));
+        expect(e.message, contains('Error 3'));
+      }
+    });
+
     test('getListings throws ValidationException on 400 with title', () async {
       final client = MockClient((request) async {
         return http.Response(json.encode({'title': 'Invalid input'}), 400);
