@@ -139,7 +139,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsProduction() || builder.Configuration["ENABLE_HTTPS_REDIRECTION"] == "true")
+if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION"))
 {
     app.UseHttpsRedirection();
 }
