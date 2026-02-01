@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../core/exceptions/app_exceptions.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/listing.dart';
+import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
 
 class ApiService {
@@ -36,36 +37,9 @@ class ApiService {
     }
   }
 
-  Future<ListingResponse> getListings({
-    int page = 1,
-    int pageSize = 10,
-    String? searchTerm,
-    double? minPrice,
-    double? maxPrice,
-    String? city,
-    int? minBedrooms,
-    int? minLivingArea,
-    int? maxLivingArea,
-    String? sortBy,
-    String? sortOrder,
-  }) async {
+  Future<ListingResponse> getListings(ListingFilter filter) async {
     try {
-      final queryParams = <String, String>{
-        'page': page.toString(),
-        'pageSize': pageSize.toString(),
-      };
-
-      if (searchTerm != null && searchTerm.isNotEmpty) queryParams['searchTerm'] = searchTerm;
-      if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
-      if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
-      if (city != null && city.isNotEmpty) queryParams['city'] = city;
-      if (minBedrooms != null) queryParams['minBedrooms'] = minBedrooms.toString();
-      if (minLivingArea != null) queryParams['minLivingArea'] = minLivingArea.toString();
-      if (maxLivingArea != null) queryParams['maxLivingArea'] = maxLivingArea.toString();
-      if (sortBy != null && sortBy.isNotEmpty) queryParams['sortBy'] = sortBy;
-      if (sortOrder != null && sortOrder.isNotEmpty) queryParams['sortOrder'] = sortOrder;
-
-      final uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
+      final uri = Uri.parse('$baseUrl/listings').replace(queryParameters: filter.toQueryParameters());
 
       final response = await _client
           .get(uri, headers: _headers)

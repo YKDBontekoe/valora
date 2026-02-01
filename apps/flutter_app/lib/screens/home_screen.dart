@@ -8,6 +8,7 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
+import '../models/listing_filter.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_listing_card.dart';
 import '../widgets/valora_filter_dialog.dart';
@@ -123,17 +124,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final response = await _apiService.getListings(
-        page: _currentPage,
-        pageSize: _pageSize,
-        searchTerm: _searchTerm,
-        minPrice: _minPrice,
-        maxPrice: _maxPrice,
-        city: _city,
-        minBedrooms: _minBedrooms,
-        minLivingArea: _minLivingArea,
-        maxLivingArea: _maxLivingArea,
-        sortBy: _sortBy,
-        sortOrder: _sortOrder,
+        ListingFilter(
+          page: _currentPage,
+          pageSize: _pageSize,
+          searchTerm: _searchTerm,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          city: _city,
+          minBedrooms: _minBedrooms,
+          minLivingArea: _minLivingArea,
+          maxLivingArea: _maxLivingArea,
+          sortBy: _sortBy,
+          sortOrder: _sortOrder,
+        )
       );
 
       if (mounted) {
