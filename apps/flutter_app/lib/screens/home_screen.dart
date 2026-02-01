@@ -294,7 +294,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 context: context,
                 builder: (context) => ValoraDialog(
                   title: 'Logout',
-                  child: const Text('Are you sure you want to logout?'),
                   actions: [
                     ValoraButton(
                       label: 'Cancel',
@@ -310,6 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ],
+                  child: const Text('Are you sure you want to logout?'),
                 ),
               );
             },
