@@ -9,7 +9,7 @@ on:
 jobs:
   backend:
     name: Backend (.NET)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
@@ -39,7 +39,7 @@ jobs:
 
   frontend:
     name: Frontend (Flutter)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/flutter_app
