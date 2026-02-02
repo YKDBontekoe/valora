@@ -16,11 +16,13 @@ public class TokenService : ITokenService
 {
     private readonly JwtOptions _options;
     private readonly ValoraDbContext _context;
+    private readonly TimeProvider _timeProvider;
 
-    public TokenService(IOptions<JwtOptions> options, ValoraDbContext context)
+    public TokenService(IOptions<JwtOptions> options, ValoraDbContext context, TimeProvider timeProvider)
     {
         _options = options.Value;
         _context = context;
+        _timeProvider = timeProvider;
     }
 
     public string GenerateToken(ApplicationUser user)
@@ -38,11 +40,12 @@ public class TokenService : ITokenService
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,
             audience: _options.Audience,
-            expires: DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes),
+            expires: now.AddMinutes(_options.ExpiryMinutes),
             claims: authClaims,
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
@@ -56,13 +59,14 @@ public class TokenService : ITokenService
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         var rawToken = Convert.ToBase64String(randomNumber);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         return new RefreshToken
         {
             RawToken = rawToken,
             TokenHash = HashRefreshToken(rawToken),
-            Expires = DateTime.UtcNow.AddDays(30),
-            CreatedAt = DateTime.UtcNow,
+            Expires = now.AddDays(30),
+            CreatedAt = now,
             UserId = userId
         };
     }
@@ -97,7 +101,7 @@ public class TokenService : ITokenService
         var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
         if (existingToken != null)
         {
-            existingToken.Revoked = DateTime.UtcNow;
+            existingToken.Revoked = _timeProvider.GetUtcNow().UtcDateTime;
             await _context.SaveChangesAsync();
         }
     }
