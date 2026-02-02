@@ -96,6 +96,8 @@ public class ListingServiceTests
             Id = Guid.NewGuid(),
             FundaId = "123",
             Address = "Some Addr",
+            Price = 500000,
+            ImageUrl = "http://img",
             Bedrooms = 3,
             LivingAreaM2 = 100
         };
@@ -104,6 +106,8 @@ public class ListingServiceTests
         {
             FundaId = "123",
             Url = "http://url",
+            Price = null, // Should not overwrite
+            ImageUrl = null, // Should not overwrite
             Bedrooms = null, // Should not overwrite
             LivingAreaM2 = null // Should not overwrite
         };
@@ -115,6 +119,10 @@ public class ListingServiceTests
         await _service.ProcessListingsAsync([dto], false);
 
         // Assert
-        _listingRepoMock.Verify(x => x.UpdateAsync(It.Is<Listing>(l => l.Bedrooms == 3 && l.LivingAreaM2 == 100), It.IsAny<CancellationToken>()), Times.Once);
+        _listingRepoMock.Verify(x => x.UpdateAsync(It.Is<Listing>(l =>
+            l.Price == 500000 &&
+            l.ImageUrl == "http://img" &&
+            l.Bedrooms == 3 &&
+            l.LivingAreaM2 == 100), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

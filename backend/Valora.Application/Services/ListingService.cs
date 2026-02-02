@@ -111,8 +111,8 @@ public class ListingService : IListingService
         }
 
         // Update listing properties
-        existingListing.Price = dto.Price;
-        existingListing.ImageUrl = dto.ImageUrl;
+        if (dto.Price.HasValue) existingListing.Price = dto.Price;
+        if (!string.IsNullOrEmpty(dto.ImageUrl)) existingListing.ImageUrl = dto.ImageUrl;
 
         // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
         if (dto.Bedrooms.HasValue) existingListing.Bedrooms = dto.Bedrooms;
