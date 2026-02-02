@@ -142,19 +142,19 @@ class ListingDetailScreen extends StatelessWidget {
                           _buildPlaceholder(isDark),
                     )
                   : _buildPlaceholder(isDark),
-              // Gradient overlay for text readability if we put text on image
-              const DecoratedBox(
+              // Gradient overlay for text readability
+              DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black45,
+                      Colors.black.withValues(alpha: 0.6),
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.black54,
+                      Colors.black.withValues(alpha: 0.7),
                     ],
-                    stops: [0.0, 0.2, 0.6, 1.0],
+                    stops: const [0.0, 0.3, 0.7, 1.0],
                   ),
                 ),
               ),
@@ -230,7 +230,7 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (listing.bedrooms != null) {
       specs.add(_buildSpecItem(
-        Icons.bed_outlined,
+        Icons.bed_rounded,
         'Bedrooms',
         '${listing.bedrooms}',
         colorScheme,
@@ -239,7 +239,7 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (listing.bathrooms != null) {
       specs.add(_buildSpecItem(
-        Icons.bathtub_outlined,
+        Icons.shower_rounded,
         'Bathrooms',
         '${listing.bathrooms}',
         colorScheme,
@@ -248,7 +248,7 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (listing.livingAreaM2 != null) {
       specs.add(_buildSpecItem(
-        Icons.square_foot_outlined,
+        Icons.square_foot_rounded,
         'Living Area',
         '${listing.livingAreaM2} m²',
         colorScheme,
@@ -257,7 +257,7 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (listing.plotAreaM2 != null) {
       specs.add(_buildSpecItem(
-        Icons.landscape_outlined,
+        Icons.landscape_rounded,
         'Plot Size',
         '${listing.plotAreaM2} m²',
         colorScheme,
@@ -266,14 +266,15 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (specs.isEmpty) return const SizedBox.shrink();
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 2.5,
-      mainAxisSpacing: ValoraSpacing.md,
-      crossAxisSpacing: ValoraSpacing.md,
-      children: specs,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: specs.map((widget) => Padding(
+          padding: const EdgeInsets.only(right: ValoraSpacing.lg),
+          child: widget,
+        )).toList(),
+      ),
     );
   }
 
@@ -283,40 +284,54 @@ class ListingDetailScreen extends StatelessWidget {
     String value,
     ColorScheme colorScheme,
   ) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(ValoraSpacing.sm),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-          ),
-          child: Icon(
-            icon,
-            size: ValoraSpacing.iconSizeMd,
-            color: colorScheme.primary,
-          ),
+    return Container(
+      padding: const EdgeInsets.all(ValoraSpacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
-        const SizedBox(width: ValoraSpacing.md),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: ValoraTypography.labelSmall.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              shape: BoxShape.circle,
             ),
-            Text(
-              value,
-              style: ValoraTypography.titleMedium.copyWith(
-                color: colorScheme.onSurface,
-              ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: colorScheme.primary,
             ),
-          ],
-        ),
-      ],
+          ),
+          const SizedBox(width: ValoraSpacing.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: ValoraTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: ValoraTypography.titleMedium.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: ValoraSpacing.sm),
+        ],
+      ),
     );
   }
 

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -43,9 +44,9 @@ class HomeHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                     border: Border.all(
@@ -160,54 +161,118 @@ class HomeHeader extends StatelessWidget {
     Color? backgroundColor,
     Color? textColor,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = backgroundColor ?? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
-    final text = textColor ?? (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
-    final border = isActive ? Colors.transparent : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
+    return _FilterChip(
+      icon: icon,
+      label: label,
+      isActive: isActive,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
+    );
+  }
+}
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => HapticFeedback.selectionClick(),
-        borderRadius: BorderRadius.circular(100),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+class _FilterChip extends StatefulWidget {
+  final IconData? icon;
+  final String label;
+  final bool isActive;
+  final Color? backgroundColor;
+  final Color? textColor;
+
+  const _FilterChip({
+    this.icon,
+    required this.label,
+    this.isActive = false,
+    this.backgroundColor,
+    this.textColor,
+  });
+
+  @override
+  State<_FilterChip> createState() => _FilterChipState();
+}
+
+class _FilterChipState extends State<_FilterChip> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = widget.backgroundColor ?? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
+    final text = widget.textColor ?? (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
+    final border = widget.isActive ? Colors.transparent : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
+
+    return Listener(
+      onPointerDown: (_) => _controller.forward(),
+      onPointerUp: (_) => _controller.reverse(),
+      onPointerCancel: (_) => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
           decoration: BoxDecoration(
-            color: bg,
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: border),
-            boxShadow: isActive
+            boxShadow: widget.isActive
                 ? [
                     BoxShadow(
                       color: ValoraColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     )
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     )
                   ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 16, color: text),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: ValoraTypography.labelSmall.copyWith(
-                  color: text,
-                  fontWeight: FontWeight.w600,
+          child: Material(
+            color: bg,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+              side: BorderSide(color: border),
+            ),
+            child: InkWell(
+              onTap: () => HapticFeedback.selectionClick(),
+              borderRadius: BorderRadius.circular(100),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.icon != null) ...[
+                      Icon(widget.icon, size: 16, color: text),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      widget.label,
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -251,16 +316,19 @@ class FeaturedListingCard extends StatelessWidget {
                   height: 180,
                   color: ValoraColors.neutral200,
                   child: listing.imageUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: listing.imageUrl!,
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Center(
-                            child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
-                          ),
-                          errorWidget: (context, url, error) => Center(
-                            child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
+                      ? Hero(
+                          tag: listing.id,
+                          child: CachedNetworkImage(
+                            imageUrl: listing.imageUrl!,
+                            width: double.infinity,
+                            height: 180,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Center(
+                              child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
+                            ),
+                            errorWidget: (context, url, error) => Center(
+                              child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
+                            ),
                           ),
                         )
                       : Center(
@@ -275,11 +343,11 @@ class FeaturedListingCard extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.3),
+                          Colors.black.withValues(alpha: 0.4),
                           Colors.transparent,
                           Colors.transparent,
                         ],
-                        stops: const [0.0, 0.4, 1.0],
+                        stops: const [0.0, 0.5, 1.0],
                       ),
                     ),
                   ),
@@ -287,31 +355,51 @@ class FeaturedListingCard extends StatelessWidget {
                 Positioned(
                   top: 12,
                   left: 12,
-                  child: ValoraGlassContainer(
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    color: ValoraColors.glassBlack.withValues(alpha: 0.6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: ValoraColors.success,
-                            shape: BoxShape.circle,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: ValoraColors.glassBlack.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            width: 1,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          '98% Match',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: ValoraColors.success,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: ValoraColors.success,
+                                    blurRadius: 4,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              '98% Match',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -463,14 +551,17 @@ class NearbyListingCard extends StatelessWidget {
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: listing.imageUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: listing.imageUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Center(
-                            child: Icon(Icons.home, color: ValoraColors.neutral400),
-                          ),
-                          errorWidget: (context, url, error) => Center(
-                            child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
+                      ? Hero(
+                          tag: listing.id,
+                          child: CachedNetworkImage(
+                            imageUrl: listing.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Center(
+                              child: Icon(Icons.home, color: ValoraColors.neutral400),
+                            ),
+                            errorWidget: (context, url, error) => Center(
+                              child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
+                            ),
                           ),
                         )
                       : Center(
@@ -633,9 +724,10 @@ class HomeBottomNavBar extends StatelessWidget {
 
   Widget _buildNavItem(BuildContext context, int index, IconData icon, String label) {
     final isSelected = currentIndex == index;
-    final color = isSelected
-        ? ValoraColors.primary
-        : (Theme.of(context).brightness == Brightness.dark ? ValoraColors.neutral400 : ValoraColors.neutral500);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final selectedColor = ValoraColors.primary;
+    final unselectedColor = isDark ? ValoraColors.neutral400 : ValoraColors.neutral500;
 
     return GestureDetector(
       onTap: () {
@@ -647,22 +739,26 @@ class HomeBottomNavBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 4,
-            width: isSelected ? 20 : 0,
-            margin: const EdgeInsets.only(bottom: 4),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: isSelected ? 56 : 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: ValoraColors.primary,
-              borderRadius: BorderRadius.circular(2),
+              color: isSelected ? ValoraColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              icon,
+              color: isSelected ? selectedColor : unselectedColor,
+              size: 24,
             ),
           ),
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label,
             style: ValoraTypography.labelSmall.copyWith(
-              color: color,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? selectedColor : unselectedColor,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               fontSize: 10,
             ),
           ),
