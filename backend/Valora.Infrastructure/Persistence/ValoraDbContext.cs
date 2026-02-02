@@ -40,7 +40,16 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.PostalCode);
             entity.HasIndex(e => e.Bedrooms);
             entity.HasIndex(e => e.LivingAreaM2);
-            entity.Property(e => e.Address).IsRequired();
+
+            entity.Property(e => e.Address).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            entity.Property(e => e.PropertyType).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Url).HasMaxLength(500);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.FundaId).HasMaxLength(50);
+
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
         });
 

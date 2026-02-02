@@ -163,7 +163,10 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new Valora.Api.Filters.HangfireAuthorizationFilter(app.Configuration) }
+    });
 
     // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(
@@ -173,7 +176,8 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 }
 
 // API Endpoints
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api")
+    .AddEndpointFilter<Valora.Api.Filters.ValidationFilter>();
 
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
@@ -214,21 +218,16 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 }).RequireAuthorization();
 
 // Limited trigger endpoint
-api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJob job, CancellationToken ct) =>
+api.MapPost("/scraper/trigger-limited", (TriggerLimitedDto dto, FundaScraperJob job, CancellationToken ct) =>
 {
     if (!hangfireEnabled) return Results.StatusCode(503);
-    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
-    return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
+    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(dto.Region, dto.Limit, ct));
+    return Results.Ok(new { message = $"Limited scraper job queued for {dto.Region} (limit {dto.Limit})" });
 }).RequireAuthorization();
 
 // Seed endpoint
-api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
+api.MapPost("/scraper/seed", async (SeedDto dto, IListingRepository repo, CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(region))
-    {
-        return Results.BadRequest("Region is required");
-    }
-
     if (!hangfireEnabled) return Results.StatusCode(503);
 
     var count = await repo.CountAsync(ct);
@@ -238,8 +237,8 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
         return Results.Ok(new { message = "Data already exists, skipping seed", skipped = true });
     }
 
-    BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
-    return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
+    BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(dto.Region, CancellationToken.None));
+    return Results.Ok(new { message = $"Seed job queued for {dto.Region}", skipped = false });
 }).RequireAuthorization();
 
 app.Run();
