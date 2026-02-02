@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/screens/auth/login_screen.dart';
+import 'package:valora_app/models/user_model.dart';
 
 class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
@@ -15,6 +16,9 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   String? get token => null;
 
   @override
+  User? get user => null;
+
+  @override
   Future<void> checkAuth() async {}
 
   @override
@@ -24,7 +28,10 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   Future<void> logout() async {}
 
   @override
-  Future<void> register(String email, String password, String confirmPassword) async {}
+  Future<void> register(String email, String password, String confirmPassword, List<String> preferredCities) async {}
+
+  @override
+  Future<void> updateProfile(List<String> preferredCities) async {}
 }
 
 void main() {

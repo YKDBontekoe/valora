@@ -114,7 +114,7 @@ void main() {
         body: anyNamed('body'),
       )).thenAnswer((_) async => http.Response('', 200));
 
-      await authService.register('test@test.com', 'password', 'password');
+      await authService.register('test@test.com', 'password', 'password', []);
     });
 
     test('register throws exception on failure', () async {
@@ -125,7 +125,7 @@ void main() {
       )).thenAnswer((_) async => http.Response('Server Error', 500));
 
       expect(
-          () => authService.register('test@test.com', 'password', 'password'),
+          () => authService.register('test@test.com', 'password', 'password', []),
           throwsA(isA<ServerException>()));
     });
 
@@ -151,7 +151,7 @@ void main() {
 
       final result = await authService.refreshToken();
 
-      expect(result, 'new_access_token');
+      expect(result?['token'], 'new_access_token');
       verify(mockStorage.write(key: 'auth_token', value: 'new_access_token')).called(1);
     });
 
