@@ -108,6 +108,7 @@ class ListingDetailScreen extends StatelessWidget {
       actions: [
         if (listing.url != null)
           IconButton(
+            // ignore: deprecated_member_use
             onPressed: () => Share.share(listing.url!),
             icon: const Icon(Icons.share_rounded, color: Colors.white),
           ),

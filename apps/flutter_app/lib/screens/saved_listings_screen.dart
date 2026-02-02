@@ -5,7 +5,6 @@ import '../core/theme/valora_typography.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_widgets.dart';
-import '../widgets/valora_error_state.dart';
 import 'listing_detail_screen.dart';
 
 class SavedListingsScreen extends StatelessWidget {
