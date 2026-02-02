@@ -1,4 +1,5 @@
 using Testcontainers.PostgreSql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Infrastructure.Persistence;
 using Xunit;
@@ -7,8 +8,7 @@ namespace Valora.IntegrationTests;
 
 public class TestcontainersDatabaseFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:15-alpine")
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:15-alpine")
         .WithDatabase("valora_test")
         .WithUsername("postgres")
         .WithPassword("postgres")
@@ -26,7 +26,7 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         // Ensure database schema is created
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-        await context.Database.EnsureCreatedAsync();
+        await context.Database.MigrateAsync();
     }
 
     public async Task DisposeAsync()

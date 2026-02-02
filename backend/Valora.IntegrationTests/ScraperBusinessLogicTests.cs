@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
+using System.Globalization;
 using Valora.Infrastructure.Scraping;
 using Valora.Application.Scraping;
 using WireMock.RequestBuilders;
@@ -20,6 +21,10 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
     private readonly WireMockServer _server;
     private readonly IServiceScope _scope;
     private readonly ValoraDbContext _context;
+
+    // Track disposable resources
+    private readonly List<IDisposable> _disposables = new();
+    private readonly List<IAsyncDisposable> _asyncDisposables = new();
 
     public ScraperBusinessLogicTests(TestcontainersDatabaseFixture fixture)
     {
@@ -41,12 +46,21 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         await _context.SaveChangesAsync();
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
         _server.Stop();
         _server.Dispose();
         _scope.Dispose();
-        return Task.CompletedTask;
+
+        foreach (var disposable in _disposables)
+        {
+            disposable.Dispose();
+        }
+
+        foreach (var asyncDisposable in _asyncDisposables)
+        {
+            await asyncDisposable.DisposeAsync();
+        }
     }
 
     private IFundaScraperService GetScraperServiceWithMockedApi()
@@ -63,12 +77,14 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
             });
         });
 
+        // Track the factory for disposal
+        _asyncDisposables.Add(clientFactory);
+
         // We create a scope from this new factory
         var scope = clientFactory.Services.CreateScope();
-        // Note: we're not disposing this scope in DisposeAsync explicitly,
-        // relying on the test method scope or GC, but strictly we should track it.
-        // For simplicity in this test pattern, we'll return the service and let the factory dispose eventually.
-        // Ideally, we should use a 'using' block in the test.
+
+        // Track the scope for disposal
+        _disposables.Add(scope);
 
         return scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
     }
@@ -81,7 +97,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
             ""listings"": [
                 {{
                     ""globalId"": {fundaId},
-                    ""price"": ""€ {price:N0} k.k."",
+                    ""price"": ""€ {price.ToString("N0", CultureInfo.GetCultureInfo("nl-NL"))} k.k."",
                     ""isSinglePrice"": true,
                     ""listingUrl"": ""/koop/{city?.ToLower()}/huis-{fundaId}-{address.Replace(" ", "-").ToLower()}/"",
                     ""image"": {{
