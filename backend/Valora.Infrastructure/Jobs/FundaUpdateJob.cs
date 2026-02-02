@@ -25,6 +25,7 @@ public class FundaUpdateJob
 
         try
         {
+            // Execute the update logic to check for price/status changes
             await _scraperService.UpdateExistingListingsAsync(cancellationToken);
             _logger.LogInformation("FundaUpdateJob completed successfully at {Time}", DateTime.UtcNow);
         }
