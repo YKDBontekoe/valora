@@ -218,11 +218,15 @@ class HomeHeader extends StatelessWidget {
 class FeaturedListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
   const FeaturedListingCard({
     super.key,
     required this.listing,
     required this.onTap,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -314,16 +318,19 @@ class FeaturedListingCard extends StatelessWidget {
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.favorite_border_rounded,
-                      size: 18,
-                      color: ValoraColors.neutral400,
+                  child: GestureDetector(
+                    onTap: onFavoriteToggle,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        size: 18,
+                        color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                      ),
                     ),
                   ),
                 ),
@@ -421,11 +428,15 @@ class FeaturedListingCard extends StatelessWidget {
 class NearbyListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
   const NearbyListingCard({
     super.key,
     required this.listing,
     required this.onTap,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -441,28 +452,52 @@ class NearbyListingCard extends StatelessWidget {
         child: Row(
           children: [
             // Image
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                color: ValoraColors.neutral200,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: listing.imageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: listing.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Center(
-                        child: Icon(Icons.home, color: ValoraColors.neutral400),
+            Stack(
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                    color: ValoraColors.neutral200,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: listing.imageUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: listing.imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Center(
+                            child: Icon(Icons.home, color: ValoraColors.neutral400),
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
+                          ),
+                        )
+                      : Center(
+                          child: Icon(Icons.home, color: ValoraColors.neutral400),
+                        ),
+                ),
+                if (onFavoriteToggle != null)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: onFavoriteToggle,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          size: 14,
+                          color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                        ),
                       ),
-                      errorWidget: (context, url, error) => Center(
-                        child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
-                      ),
-                    )
-                  : Center(
-                      child: Icon(Icons.home, color: ValoraColors.neutral400),
                     ),
+                  ),
+              ],
             ),
             const SizedBox(width: 16),
             // Info

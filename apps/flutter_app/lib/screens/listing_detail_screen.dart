@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
+import '../providers/favorites_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_glass_container.dart';
 
@@ -102,6 +105,26 @@ class ListingDetailScreen extends StatelessWidget {
       stretch: true,
       backgroundColor: Colors.transparent,
       iconTheme: const IconThemeData(color: Colors.white),
+      actions: [
+        if (listing.url != null)
+          IconButton(
+            onPressed: () => Share.share(listing.url!),
+            icon: const Icon(Icons.share_rounded, color: Colors.white),
+          ),
+        Consumer<FavoritesProvider>(
+          builder: (context, favorites, _) {
+            final isFav = favorites.isFavorite(listing.id);
+            return IconButton(
+              onPressed: () => favorites.toggleFavorite(listing),
+              icon: Icon(
+                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                color: isFav ? ValoraColors.error : Colors.white,
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Hero(
           tag: listing.id,
