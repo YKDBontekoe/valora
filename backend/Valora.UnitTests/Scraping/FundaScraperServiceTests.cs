@@ -197,16 +197,13 @@ public class FundaScraperServiceTests
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("API Error"));
 
-        // Act
-        // The service logic: TryFetchFromApiAsync catches exception and returns empty list.
-        // Then checks if count == 0 -> logs warning and notifies "No results found" or error if caught in outer loop.
-        // Wait, ScrapeSearchUrlAsync calls TryFetchFromApiAsync. If it returns empty, it logs warning "No listings found from API".
-        // It notifies "No results found." if shouldNotify is true.
+        // Act & Assert
+        // The service logic now lets exceptions bubble up so the job can fail (and retry via Hangfire).
+        // It should still notify the user about the error.
         
-        await _service.ScrapeLimitedAsync("amsterdam", 10);
+        await Assert.ThrowsAsync<Exception>(() => _service.ScrapeLimitedAsync("amsterdam", 10));
 
-        // Assert
-        // Verify error notification
-        _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("No results found"))), Times.Once);
+        // Verify error notification with the actual exception message
+        _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("API Error"))), Times.Once);
     }
 }

@@ -9,6 +9,8 @@ using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Services;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace Valora.Infrastructure;
 
@@ -41,7 +43,10 @@ public static class DependencyInjection
 
         // Scraper services
         // FundaApiClient uses Funda's Topposition API for more reliable listing discovery
-        services.AddHttpClient<FundaApiClient>();
+        services.AddHttpClient<FundaApiClient>()
+            .AddTransientHttpErrorPolicy(builder =>
+                builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
         services.AddScoped<IFundaScraperService, FundaScraperService>();
         services.AddScoped<FundaScraperJob>();
 
