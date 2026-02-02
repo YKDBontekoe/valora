@@ -30,11 +30,13 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
+        services.AddScoped<IRegionScrapeCursorRepository, RegionScrapeCursorRepository>();
 
         // Services
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddSingleton<IApiRateLimiter, ApiRateLimiter>();
 
         // Configuration
         services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
@@ -65,6 +67,31 @@ public static class DependencyInjection
         if (int.TryParse(configuration["SCRAPER_MAX_RETRIES"], out var retries))
         {
             options.MaxRetries = retries;
+        }
+
+        if (int.TryParse(configuration["SCRAPER_MAX_CALLS_PER_MINUTE"], out var maxCallsPerMinute))
+        {
+            options.MaxApiCallsPerMinute = maxCallsPerMinute;
+        }
+
+        if (int.TryParse(configuration["SCRAPER_MAX_CALLS_PER_RUN"], out var maxCallsPerRun))
+        {
+            options.MaxApiCallsPerRun = maxCallsPerRun;
+        }
+
+        if (int.TryParse(configuration["SCRAPER_RECENT_PAGES_PER_REGION"], out var recentPagesPerRegion))
+        {
+            options.RecentPagesPerRegion = recentPagesPerRegion;
+        }
+
+        if (int.TryParse(configuration["SCRAPER_MAX_BACKFILL_PAGES_PER_RUN"], out var maxBackfillPagesPerRun))
+        {
+            options.MaxBackfillPagesPerRun = maxBackfillPagesPerRun;
+        }
+
+        if (bool.TryParse(configuration["SCRAPER_FOCUS_NEW_CONSTRUCTION"], out var focusOnNewConstruction))
+        {
+            options.FocusOnNewConstruction = focusOnNewConstruction;
         }
 
         var cron = configuration["SCRAPER_CRON"];

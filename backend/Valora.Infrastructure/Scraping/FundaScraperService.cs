@@ -16,6 +16,7 @@ public partial class FundaScraperService : IFundaScraperService
 
     private readonly IListingRepository _listingRepository;
     private readonly IPriceHistoryRepository _priceHistoryRepository;
+    private readonly IRegionScrapeCursorRepository _cursorRepository;
     private readonly FundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
@@ -24,6 +25,7 @@ public partial class FundaScraperService : IFundaScraperService
     public FundaScraperService(
         IListingRepository listingRepository,
         IPriceHistoryRepository priceHistoryRepository,
+        IRegionScrapeCursorRepository cursorRepository,
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
         IScraperNotificationService notificationService,
@@ -31,6 +33,7 @@ public partial class FundaScraperService : IFundaScraperService
     {
         _listingRepository = listingRepository;
         _priceHistoryRepository = priceHistoryRepository;
+        _cursorRepository = cursorRepository;
         _apiClient = apiClient;
         _options = options.Value;
         _logger = logger;
@@ -41,15 +44,52 @@ public partial class FundaScraperService : IFundaScraperService
     {
         _logger.LogInformation("Starting funda.nl scrape job (API only)");
 
-        foreach (var searchUrl in _options.SearchUrls)
+        var regions = _options.SearchUrls
+            .Select(ExtractRegionFromUrl)
+            .Where(region => !string.IsNullOrWhiteSpace(region))
+            .Select(region => region!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (regions.Count == 0)
         {
+            _logger.LogWarning("No valid regions found in scraper search URLs.");
+            return;
+        }
+
+        var remainingCalls = Math.Max(0, _options.MaxApiCallsPerRun);
+
+        foreach (var region in regions)
+        {
+            if (remainingCalls <= 0)
+            {
+                break;
+            }
+
             try
             {
-                await ScrapeSearchUrlAsync(searchUrl, null, cancellationToken);
+                remainingCalls = await ScrapeRecentPagesAsync(region, remainingCalls, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to scrape search URL: {Url}", searchUrl);
+                _logger.LogError(ex, "Failed recent scrape for region: {Region}", region);
+            }
+        }
+
+        foreach (var region in regions)
+        {
+            if (remainingCalls <= 0)
+            {
+                break;
+            }
+
+            try
+            {
+                remainingCalls = await ScrapeBackfillPagesAsync(region, remainingCalls, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed backfill scrape for region: {Region}", region);
             }
         }
 
@@ -63,9 +103,26 @@ public partial class FundaScraperService : IFundaScraperService
 
         try
         {
-            // Construct basic search URL for the region
-            var searchUrl = $"https://www.funda.nl/koop/{region}/";
-            await ScrapeSearchUrlAsync(searchUrl, limit, cancellationToken);
+            await _notificationService.NotifyProgressAsync("Fetching search results...");
+            var remainingCalls = Math.Max(1, _options.MaxApiCallsPerRun);
+            var collected = new List<FundaApiListing>();
+            var maxPages = Math.Max(1, (int)Math.Ceiling(limit / 10d));
+
+            for (var page = 1; page <= maxPages && remainingCalls > 0 && collected.Count < limit; page++)
+            {
+                var pageListings = await FetchListingsPageAsync(region, page, cancellationToken);
+                remainingCalls--;
+
+                if (pageListings.Count == 0)
+                {
+                    break;
+                }
+
+                collected.AddRange(pageListings);
+            }
+
+            var limitedListings = collected.Take(limit).ToList();
+            await ProcessListingsAsync(limitedListings, shouldNotify: true, cancellationToken);
 
             await _notificationService.NotifyCompleteAsync();
         }
@@ -77,82 +134,26 @@ public partial class FundaScraperService : IFundaScraperService
         }
     }
 
-    private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Scraping search URL: {Url}", searchUrl);
-        bool shouldNotify = limit.HasValue;
-
-        if (shouldNotify)
-        {
-            await _notificationService.NotifyProgressAsync("Fetching search results...");
-        }
-
-        // Try to extract region from URL for API-based search
-        var region = ExtractRegionFromUrl(searchUrl);
-        
-        if (string.IsNullOrEmpty(region))
-        {
-            _logger.LogWarning("Could not extract region from URL: {Url}", searchUrl);
-            return;
-        }
-
-        _logger.LogDebug("Searching API for region: {Region}", region);
-        var apiListings = await TryFetchFromApiAsync(region, limit, cancellationToken);
-
-        if (apiListings.Count == 0)
-        {
-            _logger.LogWarning("No listings found from API for: {Region}", region);
-            if (shouldNotify)
-            {
-                await NotifyScrapingErrorAsync("No results found.");
-            }
-            return;
-        }
-
-        _logger.LogInformation("Found {Count} listings via API", apiListings.Count);
-        if (shouldNotify)
-        {
-            await _notificationService.NotifyProgressAsync($"Found {apiListings.Count} listings. Processing...");
-        }
-
-        foreach (var apiListing in apiListings)
-        {
-            try
-            {
-                await ProcessListingAsync(apiListing, shouldNotify, cancellationToken);
-                
-                // Rate limiting delay
-                await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process listing: {GlobalId}", apiListing.GlobalId);
-            }
-        }
-    }
-    
-    private async Task<List<FundaApiListing>> TryFetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
+    private async Task<List<FundaApiListing>> FetchListingsPageAsync(string region, int page, CancellationToken cancellationToken)
     {
         try
         {
-            var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
-            var apiListings = await _apiClient.SearchAllBuyPagesAsync(region, maxPages, cancellationToken: cancellationToken);
-            
-            // Filter valid listings
-            var validListings = apiListings
+            var response = _options.FocusOnNewConstruction
+                ? await _apiClient.SearchProjectsAsync(region, page, cancellationToken: cancellationToken)
+                : await _apiClient.SearchBuyAsync(region, page, cancellationToken: cancellationToken);
+
+            var listings = response?.Listings ?? [];
+
+            var filtered = listings
                 .Where(l => !string.IsNullOrEmpty(l.ListingUrl) && l.GlobalId > 0)
                 .ToList();
-            
-            if (limit.HasValue)
+
+            if (_options.FocusOnNewConstruction)
             {
-                validListings = validListings.Take(limit.Value).ToList();
+                filtered = filtered.Where(l => l.IsProject).ToList();
             }
-            
-            return validListings;
+
+            return filtered;
         }
         catch (Exception ex)
         {
@@ -195,7 +196,7 @@ public partial class FundaScraperService : IFundaScraperService
         return null;
     }
 
-    private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
+    private async Task<bool> ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
     {
         var fundaId = apiListing.GlobalId.ToString();
         var existingListing = await _listingRepository.GetByFundaIdAsync(fundaId, cancellationToken);
@@ -205,11 +206,11 @@ public partial class FundaScraperService : IFundaScraperService
         if (existingListing == null)
         {
             await AddNewListingAsync(listing, shouldNotify, cancellationToken);
+            return true;
         }
-        else
-        {
-            await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
-        }
+
+        await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
+        return false;
     }
 
     private static Listing MapApiListingToDomain(FundaApiListing apiListing, string fundaId)
@@ -333,6 +334,99 @@ public partial class FundaScraperService : IFundaScraperService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to send error notification: {Message}", message);
+        }
+    }
+
+    private async Task<int> ScrapeRecentPagesAsync(string region, int remainingCalls, CancellationToken cancellationToken)
+    {
+        var pages = Math.Max(1, _options.RecentPagesPerRegion);
+        var cursor = await _cursorRepository.GetOrCreateAsync(region, cancellationToken);
+
+        for (var page = 1; page <= pages && remainingCalls > 0; page++)
+        {
+            var listings = await FetchListingsPageAsync(region, page, cancellationToken);
+            remainingCalls--;
+
+            if (listings.Count == 0)
+            {
+                break;
+            }
+
+            await ProcessListingsAsync(listings, shouldNotify: false, cancellationToken);
+        }
+
+        cursor.LastRecentScrapeUtc = DateTime.UtcNow;
+        await _cursorRepository.UpdateAsync(cursor, cancellationToken);
+
+        return remainingCalls;
+    }
+
+    private async Task<int> ScrapeBackfillPagesAsync(string region, int remainingCalls, CancellationToken cancellationToken)
+    {
+        if (_options.MaxBackfillPagesPerRun <= 0)
+        {
+            return remainingCalls;
+        }
+
+        var cursor = await _cursorRepository.GetOrCreateAsync(region, cancellationToken);
+        var pagesToFetch = _options.MaxBackfillPagesPerRun;
+
+        for (var i = 0; i < pagesToFetch && remainingCalls > 0; i++)
+        {
+            var page = Math.Max(1, cursor.NextBackfillPage);
+            var listings = await FetchListingsPageAsync(region, page, cancellationToken);
+            remainingCalls--;
+
+            if (listings.Count == 0)
+            {
+                cursor.NextBackfillPage = 1;
+                break;
+            }
+
+            await ProcessListingsAsync(listings, shouldNotify: false, cancellationToken);
+            cursor.NextBackfillPage = page + 1;
+        }
+
+        cursor.LastBackfillScrapeUtc = DateTime.UtcNow;
+        await _cursorRepository.UpdateAsync(cursor, cancellationToken);
+
+        return remainingCalls;
+    }
+
+    private async Task ProcessListingsAsync(
+        IReadOnlyCollection<FundaApiListing> listings,
+        bool shouldNotify,
+        CancellationToken cancellationToken)
+    {
+        if (listings.Count == 0)
+        {
+            if (shouldNotify)
+            {
+                await NotifyScrapingErrorAsync("No results found.");
+            }
+            return;
+        }
+
+        if (shouldNotify)
+        {
+            await _notificationService.NotifyProgressAsync($"Found {listings.Count} listings. Processing...");
+        }
+
+        foreach (var apiListing in listings)
+        {
+            try
+            {
+                await ProcessListingAsync(apiListing, shouldNotify, cancellationToken);
+                await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process listing: {GlobalId}", apiListing.GlobalId);
+            }
         }
     }
 }

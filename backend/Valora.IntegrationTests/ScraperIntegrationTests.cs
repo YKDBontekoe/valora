@@ -45,7 +45,7 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
                         ""listingAddress"": ""{address}"",
                         ""city"": ""{city}""
                     }},
-                    ""isProject"": false
+                    ""isProject"": true
                 }}
             ]
         }}";
@@ -88,7 +88,7 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         Assert.Null(listing.PlotAreaM2);
         Assert.Null(listing.Bedrooms);
         
-        Assert.Equal("Woonhuis", listing.PropertyType); // Default for non-project
+        Assert.Equal("Nieuwbouwproject", listing.PropertyType);
         Assert.Equal("Beschikbaar", listing.Status);
 
         var priceHistoryRepository = scope.ServiceProvider.GetRequiredService<IPriceHistoryRepository>();

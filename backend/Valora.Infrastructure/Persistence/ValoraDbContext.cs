@@ -13,6 +13,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Listing> Listings => Set<Listing>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<RegionScrapeCursor> RegionScrapeCursors => Set<RegionScrapeCursor>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +53,13 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(l => l.PriceHistory)
                   .HasForeignKey(e => e.ListingId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RegionScrapeCursor>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Region).IsUnique();
+            entity.Property(e => e.Region).IsRequired();
         });
     }
 }

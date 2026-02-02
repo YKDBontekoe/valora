@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
@@ -21,15 +22,20 @@ public class FundaApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FundaApiClient> _logger;
+    private readonly IApiRateLimiter _rateLimiter;
     
     private const string ToppositionApiUrl = "https://search-topposition.funda.io/v2.0/search";
     private const string ListingSummaryApiUrlTemplate = "https://listing-detail-summary.funda.io/api/v1/listing/nl/{0}";
     private const string SimilarListingsApiUrlTemplate = "https://local-listings.funda.io/api/v1/similarlistings?globalid={0}";
     
-    public FundaApiClient(HttpClient httpClient, ILogger<FundaApiClient> logger)
+    public FundaApiClient(
+        HttpClient httpClient,
+        ILogger<FundaApiClient> logger,
+        IApiRateLimiter rateLimiter)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _rateLimiter = rateLimiter;
         
         ConfigureHttpClient();
     }
@@ -43,6 +49,7 @@ public class FundaApiClient
         var url = string.Format(ListingSummaryApiUrlTemplate, globalId);
         try
         {
+            await _rateLimiter.WaitAsync(cancellationToken);
             return await _httpClient.GetFromJsonAsync<FundaApiListingSummary>(url, cancellationToken);
         }
         catch (Exception ex)
@@ -61,6 +68,7 @@ public class FundaApiClient
         var url = string.Format(SimilarListingsApiUrlTemplate, globalId);
         try
         {
+            await _rateLimiter.WaitAsync(cancellationToken);
             var response = await _httpClient.GetAsync(url, cancellationToken);
             if (!response.IsSuccessStatusCode) return null;
             
@@ -182,6 +190,7 @@ public class FundaApiClient
             _logger.LogDebug("Fetching {Aggregation} ({Offering}) from Funda API for {GeoInfo}, page {Page}", 
                 aggregationType, offeringType, geoInfo, page);
             
+            await _rateLimiter.WaitAsync(cancellationToken);
             var response = await _httpClient.PostAsJsonAsync(ToppositionApiUrl, request, cancellationToken);
             
             if (!response.IsSuccessStatusCode)
@@ -238,9 +247,6 @@ public class FundaApiClient
             }
             
             allListings.AddRange(result.Listings);
-            
-            // Small delay to be respectful
-            await Task.Delay(500);
         }
         
         return allListings;

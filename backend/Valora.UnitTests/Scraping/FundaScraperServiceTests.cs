@@ -13,6 +13,7 @@ public class FundaScraperServiceTests
 {
     private readonly Mock<IListingRepository> _listingRepoMock;
     private readonly Mock<IPriceHistoryRepository> _priceHistoryRepoMock;
+    private readonly Mock<IRegionScrapeCursorRepository> _cursorRepoMock;
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<FundaApiClient> _apiClientMock;
@@ -22,22 +23,28 @@ public class FundaScraperServiceTests
     {
         _listingRepoMock = new Mock<IListingRepository>();
         _priceHistoryRepoMock = new Mock<IPriceHistoryRepository>();
+        _cursorRepoMock = new Mock<IRegionScrapeCursorRepository>();
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
         // Mock FundaApiClient using a loose mock (mocking virtual methods)
         // We pass dummy dependencies to the base constructor because it's a class mock
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _apiClientMock = new Mock<FundaApiClient>(
+            new HttpClient(),
+            Mock.Of<ILogger<FundaApiClient>>(),
+            Mock.Of<IApiRateLimiter>());
 
         var options = Options.Create(new ScraperOptions
         {
             SearchUrls = [],
-            DelayBetweenRequestsMs = 0 
+            DelayBetweenRequestsMs = 0,
+            FocusOnNewConstruction = true
         });
 
         _service = new FundaScraperService(
             _listingRepoMock.Object,
             _priceHistoryRepoMock.Object,
+            _cursorRepoMock.Object,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
@@ -51,12 +58,12 @@ public class FundaScraperServiceTests
         // Arrange
         var apiListings = new List<FundaApiListing>
         {
-            new() { GlobalId = 123, Price = "€ 500.000 k.k.", ListingUrl = "http://url1", Address = new() { ListingAddress = "Addr1", City = "City1" } },
-            new() { GlobalId = 456, Price = "€ 600.000 k.k.", ListingUrl = "http://url2", Address = new() { ListingAddress = "Addr2", City = "City2" } }
+            new() { GlobalId = 123, Price = "€ 500.000 k.k.", ListingUrl = "http://url1", Address = new() { ListingAddress = "Addr1", City = "City1" }, IsProject = true },
+            new() { GlobalId = 456, Price = "€ 600.000 k.k.", ListingUrl = "http://url2", Address = new() { ListingAddress = "Addr2", City = "City2" }, IsProject = true }
         };
 
-        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(apiListings);
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse { Listings = apiListings });
 
         // Act
         await _service.ScrapeLimitedAsync("amsterdam", 2);
@@ -85,23 +92,35 @@ public class FundaScraperServiceTests
         var options = Options.Create(new ScraperOptions
         {
             SearchUrls = ["https://www.funda.nl/koop/city1/", "https://www.funda.nl/koop/city2/"],
-            DelayBetweenRequestsMs = 0
+            DelayBetweenRequestsMs = 0,
+            FocusOnNewConstruction = true,
+            MaxBackfillPagesPerRun = 0
         });
 
         var service = new FundaScraperService(
             _listingRepoMock.Object,
             _priceHistoryRepoMock.Object,
+            _cursorRepoMock.Object,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
             _apiClientMock.Object
         );
 
-        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new() { GlobalId = 1, ListingUrl = "u1", Address = new() { City = "City1" } }]);
-        
-        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city2", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new() { GlobalId = 2, ListingUrl = "u2", Address = new() { City = "City2" } }]);
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("city1", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse
+            {
+                Listings = [new() { GlobalId = 1, ListingUrl = "u1", Address = new() { City = "City1" }, IsProject = true }]
+            });
+
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("city2", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse
+            {
+                Listings = [new() { GlobalId = 2, ListingUrl = "u2", Address = new() { City = "City2" }, IsProject = true }]
+            });
+
+        _cursorRepoMock.Setup(x => x.GetOrCreateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RegionScrapeCursor { Region = "city1" });
 
         // Act
         await service.ScrapeAndStoreAsync();
@@ -120,11 +139,12 @@ public class FundaScraperServiceTests
             GlobalId = 1, 
             Price = "€ 600.000 k.k.", 
             ListingUrl = "url", 
-            Address = new() { ListingAddress = "Addr1" } 
+            Address = new() { ListingAddress = "Addr1" },
+            IsProject = true
         };
 
-        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([apiListing]);
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse { Listings = [apiListing] });
 
         var existingListing = new Listing
         {
@@ -140,17 +160,23 @@ public class FundaScraperServiceTests
         var options = Options.Create(new ScraperOptions
         {
             SearchUrls = ["https://www.funda.nl/koop/amsterdam/"],
-            DelayBetweenRequestsMs = 0
+            DelayBetweenRequestsMs = 0,
+            FocusOnNewConstruction = true,
+            MaxBackfillPagesPerRun = 0
         });
 
         var service = new FundaScraperService(
             _listingRepoMock.Object,
             _priceHistoryRepoMock.Object,
+            _cursorRepoMock.Object,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
             _apiClientMock.Object
         );
+
+        _cursorRepoMock.Setup(x => x.GetOrCreateAsync("amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RegionScrapeCursor { Region = "amsterdam" });
 
         // Act
         await service.ScrapeAndStoreAsync();
@@ -170,13 +196,13 @@ public class FundaScraperServiceTests
         // API returns 3 listings
         var apiListings = new List<FundaApiListing>
         {
-            new() { GlobalId = 1, ListingUrl = "u1", Address = new() { ListingAddress = "1" } },
-            new() { GlobalId = 2, ListingUrl = "u2", Address = new() { ListingAddress = "2" } },
-            new() { GlobalId = 3, ListingUrl = "u3", Address = new() { ListingAddress = "3" } }
+            new() { GlobalId = 1, ListingUrl = "u1", Address = new() { ListingAddress = "1" }, IsProject = true },
+            new() { GlobalId = 2, ListingUrl = "u2", Address = new() { ListingAddress = "2" }, IsProject = true },
+            new() { GlobalId = 3, ListingUrl = "u3", Address = new() { ListingAddress = "3" }, IsProject = true }
         };
 
-        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(apiListings);
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse { Listings = apiListings });
 
         // Act
         // Limit to 1
@@ -194,7 +220,7 @@ public class FundaScraperServiceTests
     public async Task ScrapeLimitedAsync_ShouldHandleApiErrors_AndNotify()
     {
         // Arrange
-        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("API Error"));
 
         // Act
@@ -208,5 +234,52 @@ public class FundaScraperServiceTests
         // Assert
         // Verify error notification
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("No results found"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task ScrapeAndStoreAsync_ShouldAdvanceBackfillCursor()
+    {
+        var options = Options.Create(new ScraperOptions
+        {
+            SearchUrls = ["https://www.funda.nl/koop/amsterdam/"],
+            DelayBetweenRequestsMs = 0,
+            FocusOnNewConstruction = true,
+            RecentPagesPerRegion = 1,
+            MaxBackfillPagesPerRun = 1,
+            MaxApiCallsPerRun = 5
+        });
+
+        var cursor = new RegionScrapeCursor { Region = "amsterdam", NextBackfillPage = 3 };
+
+        _cursorRepoMock.Setup(x => x.GetOrCreateAsync("amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cursor);
+
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("amsterdam", 1, It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse
+            {
+                Listings = [new() { GlobalId = 10, ListingUrl = "u1", Address = new() { City = "Amsterdam" }, IsProject = true }]
+            });
+
+        _apiClientMock.Setup(x => x.SearchProjectsAsync("amsterdam", 3, It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse
+            {
+                Listings = [new() { GlobalId = 11, ListingUrl = "u2", Address = new() { City = "Amsterdam" }, IsProject = true }]
+            });
+
+        var service = new FundaScraperService(
+            _listingRepoMock.Object,
+            _priceHistoryRepoMock.Object,
+            _cursorRepoMock.Object,
+            options,
+            _loggerMock.Object,
+            _notificationServiceMock.Object,
+            _apiClientMock.Object
+        );
+
+        await service.ScrapeAndStoreAsync();
+
+        Assert.Equal(4, cursor.NextBackfillPage);
+        Assert.NotNull(cursor.LastBackfillScrapeUtc);
+        _cursorRepoMock.Verify(x => x.UpdateAsync(cursor, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 }

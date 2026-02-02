@@ -169,7 +169,7 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
     RecurringJob.AddOrUpdate<FundaScraperJob>(
         "funda-scraper",
         job => job.ExecuteAsync(CancellationToken.None),
-        builder.Configuration["SCRAPER_CRON"] ?? "0 */6 * * *"); // Default: every 6 hours
+        builder.Configuration["SCRAPER_CRON"] ?? "*/15 * * * *"); // Default: every 15 minutes
 }
 
 // API Endpoints

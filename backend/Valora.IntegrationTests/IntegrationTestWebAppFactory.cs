@@ -26,6 +26,11 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             {
                 { "DATABASE_URL", _connectionString },
                 { "HANGFIRE_ENABLED", "false" },
+                { "SCRAPER_MAX_CALLS_PER_MINUTE", "6000" },
+                { "SCRAPER_MAX_CALLS_PER_RUN", "20" },
+                { "SCRAPER_RECENT_PAGES_PER_REGION", "1" },
+                { "SCRAPER_MAX_BACKFILL_PAGES_PER_RUN", "1" },
+                { "SCRAPER_FOCUS_NEW_CONSTRUCTION", "true" },
                 { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
                 { "JWT_ISSUER", "ValoraTest" },
                 { "JWT_AUDIENCE", "ValoraTest" },
