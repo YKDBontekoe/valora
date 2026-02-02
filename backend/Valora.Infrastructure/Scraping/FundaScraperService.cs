@@ -2,32 +2,29 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
 using Valora.Application.Scraping;
-using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
 public class FundaScraperService : IFundaScraperService
 {
-    private readonly IListingRepository _listingRepository;
-    private readonly IPriceHistoryRepository _priceHistoryRepository;
     private readonly FundaApiClient _apiClient;
+    private readonly IListingService _listingService;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
     private readonly IScraperNotificationService _notificationService;
 
     public FundaScraperService(
-        IListingRepository listingRepository,
-        IPriceHistoryRepository priceHistoryRepository,
+        FundaApiClient apiClient,
+        IListingService listingService,
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
-        IScraperNotificationService notificationService,
-        FundaApiClient apiClient)
+        IScraperNotificationService notificationService)
     {
-        _listingRepository = listingRepository;
-        _priceHistoryRepository = priceHistoryRepository;
         _apiClient = apiClient;
+        _listingService = listingService;
         _options = options.Value;
         _logger = logger;
         _notificationService = notificationService;
@@ -111,23 +108,25 @@ public class FundaScraperService : IFundaScraperService
             await _notificationService.NotifyProgressAsync($"Found {apiListings.Count} listings. Processing...");
         }
 
+        // Map to DTOs
+        var dtos = new List<ScrapedListingDto>();
         foreach (var apiListing in apiListings)
         {
             try
             {
-                await ProcessListingAsync(apiListing, shouldNotify, cancellationToken);
-                
-                // Rate limiting delay
-                await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
+                var dto = MapToDto(apiListing);
+                dtos.Add(dto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to process listing: {GlobalId}", apiListing.GlobalId);
+                _logger.LogError(ex, "Failed to map listing to DTO: {GlobalId}", apiListing.GlobalId);
             }
+        }
+
+        // Delegate to Application Service
+        if (dtos.Count > 0)
+        {
+            await _listingService.ProcessListingsAsync(dtos, shouldNotify, cancellationToken);
         }
     }
     
@@ -189,28 +188,19 @@ public class FundaScraperService : IFundaScraperService
         return null;
     }
 
-    private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
+    private static ScrapedListingDto MapToDto(FundaApiListing apiListing)
     {
-        var fundaId = apiListing.GlobalId.ToString();
+        var price = ParsePriceFromApi(apiListing.Price);
         var fullUrl = apiListing.ListingUrl!.StartsWith("http") ? apiListing.ListingUrl : $"https://www.funda.nl{apiListing.ListingUrl}";
 
-        // Check if listing already exists
-        var existingListing = await _listingRepository.GetByFundaIdAsync(fundaId, cancellationToken);
-
-        // Map API model to Domain entity
-        // Note: API provides limited details compared to HTML scraping.
-        // Missing: Bedrooms, LivingAreaM2, PlotAreaM2, PropertyType, Status (exact)
-        var price = ParsePriceFromApi(apiListing.Price);
-        
-        var listing = new Listing
+        return new ScrapedListingDto
         {
-            FundaId = fundaId,
+            FundaId = apiListing.GlobalId.ToString(),
             Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
             City = apiListing.Address?.City,
             PostalCode = null, // Not provided by API
             Price = price,
             Bedrooms = null, // Not provided by API
-            Bathrooms = null,
             LivingAreaM2 = null, // Not provided by API
             PlotAreaM2 = null, // Not provided by API
             PropertyType = apiListing.IsProject ? "Nieuwbouwproject" : "Woonhuis", // Best guess
@@ -218,86 +208,6 @@ public class FundaScraperService : IFundaScraperService
             Url = fullUrl,
             ImageUrl = apiListing.Image?.Default
         };
-
-        if (existingListing == null)
-        {
-            await AddNewListingAsync(listing, shouldNotify, cancellationToken);
-        }
-        else
-        {
-            await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
-        }
-    }
-
-    private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // New listing - add it
-        await _listingRepository.AddAsync(listing, cancellationToken);
-        _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync(listing.Address);
-        }
-
-        // Record initial price
-        if (listing.Price.HasValue)
-        {
-            await _priceHistoryRepository.AddAsync(new PriceHistory
-            {
-                ListingId = listing.Id,
-                Price = listing.Price.Value
-            }, cancellationToken);
-        }
-    }
-
-    private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // Existing listing - check for price changes
-        var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
-
-        if (priceChanged)
-        {
-            _logger.LogInformation(
-                "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
-                listing.FundaId, existingListing.Price, listing.Price);
-
-            await _priceHistoryRepository.AddAsync(new PriceHistory
-            {
-                ListingId = existingListing.Id,
-                Price = listing.Price!.Value
-            }, cancellationToken);
-        }
-
-        // Update listing properties
-        existingListing.Price = listing.Price;
-        existingListing.ImageUrl = listing.ImageUrl;
-        
-        // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
-        if (listing.Bedrooms.HasValue) existingListing.Bedrooms = listing.Bedrooms;
-        if (listing.LivingAreaM2.HasValue) existingListing.LivingAreaM2 = listing.LivingAreaM2;
-        if (listing.PlotAreaM2.HasValue) existingListing.PlotAreaM2 = listing.PlotAreaM2;
-        if (!string.IsNullOrEmpty(listing.Status)) existingListing.Status = listing.Status;
-
-        await _listingRepository.UpdateAsync(existingListing, cancellationToken);
-        _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
-        }
-    }
-
-    private async Task NotifyMatchFoundAsync(string address)
-    {
-        try
-        {
-            await _notificationService.NotifyListingFoundAsync(address);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to send notification for listing: {Address}", address);
-        }
     }
 
     private async Task NotifyScrapingErrorAsync(string message)
