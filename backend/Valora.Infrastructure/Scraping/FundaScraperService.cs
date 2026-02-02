@@ -163,15 +163,17 @@ public partial class FundaScraperService : IFundaScraperService
     
     private static string? ExtractRegionFromUrl(string url)
     {
+        var decodedUrl = Uri.UnescapeDataString(url);
+
         // URL format: https://www.funda.nl/koop/amsterdam/ or https://www.funda.nl/zoeken/koop?selected_area=...
-        var regionMatch = UrlRegionRegex().Match(url);
+        var regionMatch = UrlRegionRegex().Match(decodedUrl);
         if (regionMatch.Success)
         {
             return regionMatch.Groups[1].Value;
         }
         
         // Try to extract from query string
-        var queryMatch = QueryRegionRegex().Match(url);
+        var queryMatch = QueryRegionRegex().Match(decodedUrl);
         if (queryMatch.Success)
         {
             return queryMatch.Groups[1].Value;
@@ -233,7 +235,7 @@ public partial class FundaScraperService : IFundaScraperService
             LivingAreaM2 = null, // Not provided by API
             PlotAreaM2 = null, // Not provided by API
             PropertyType = apiListing.IsProject ? ProjectType : HouseType, // Best guess
-            Status = DefaultStatus, // API usually returns available listings
+            Status = null, // Unknown from API; don't overwrite enriched status
             Url = fullUrl,
             ImageUrl = apiListing.Image?.Default
         };
@@ -250,6 +252,9 @@ public partial class FundaScraperService : IFundaScraperService
 
     private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
+        // Set default status for new listings if not present
+        listing.Status ??= DefaultStatus;
+
         // New listing - add it
         await _listingRepository.AddAsync(listing, cancellationToken);
         _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);

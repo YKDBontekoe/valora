@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _pageSize = 10;
   static const String _defaultScrapeRegion = 'amsterdam';
   static const int _featuredCount = 5;
+  static const double _bottomListPadding = 80.0;
 
   late ApiService _apiService;
   late final ScrollController _scrollController;
@@ -334,6 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onSearchChanged: _onSearchChanged,
         onFilterPressed: _openFilterDialog,
         activeFilterCount: activeFilters,
+        userInitials: 'JD',
       ),
     ];
 
@@ -469,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                return const SizedBox(height: 80);
+                  return const SizedBox(height: _bottomListPadding);
               }
 
               final listing = nearbyListings[index];

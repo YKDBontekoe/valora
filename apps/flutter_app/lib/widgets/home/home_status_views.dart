@@ -8,6 +8,7 @@ class HomeLoadingSliver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SliverFillRemaining(
+      hasScrollBody: false,
       child: Center(child: ValoraLoadingIndicator(message: 'Loading listings...')),
     );
   }

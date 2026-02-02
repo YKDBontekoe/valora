@@ -9,6 +9,7 @@ class HomeSliverAppBar extends StatelessWidget {
   final VoidCallback onFilterPressed;
   final int activeFilterCount;
   final VoidCallback? onProfilePressed;
+  final String? userInitials;
 
   const HomeSliverAppBar({
     super.key,
@@ -17,6 +18,7 @@ class HomeSliverAppBar extends StatelessWidget {
     required this.onFilterPressed,
     this.activeFilterCount = 0,
     this.onProfilePressed,
+    this.userInitials,
   });
 
   @override
@@ -43,7 +45,7 @@ class HomeSliverAppBar extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: null, // TODO: Implement notifications
                 icon: Icon(
                   Icons.notifications_none_rounded,
                   color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500
@@ -66,10 +68,10 @@ class HomeSliverAppBar extends StatelessWidget {
                         color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
                         width: 2),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'JD',
-                      style: TextStyle(
+                      userInitials ?? '?',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
