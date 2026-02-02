@@ -93,7 +93,7 @@ public class FundaScraperService : IFundaScraperService
         }
 
         _logger.LogDebug("Searching API for region: {Region}", region);
-        var apiListings = await TryFetchFromApiAsync(region, limit, cancellationToken);
+        var apiListings = await FetchFromApiAsync(region, limit, cancellationToken);
 
         if (apiListings.Count == 0)
         {
@@ -131,7 +131,7 @@ public class FundaScraperService : IFundaScraperService
         }
     }
     
-    private async Task<List<FundaApiListing>> TryFetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
+    private async Task<List<FundaApiListing>> FetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
     {
         var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
         var apiListings = await _apiClient.SearchAllBuyPagesAsync(region, maxPages, cancellationToken: cancellationToken);

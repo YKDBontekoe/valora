@@ -54,11 +54,8 @@ public class FundaApiClient
         var url = string.Format(SimilarListingsApiUrlTemplate, globalId);
         var response = await _httpClient.GetAsync(url, cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("Failed to fetch similar listings for {GlobalId}. Status: {Status}", globalId, response.StatusCode);
-            return null;
-        }
+        // Throw on error so Polly can handle retries
+        response.EnsureSuccessStatusCode();
 
         // The API returns a JSON array of objects if multiple, but here it returns an object with arrays. verified via curl.
         return await response.Content.ReadFromJsonAsync<FundaApiSimilarListingsResponse>(cancellationToken);
@@ -172,13 +169,8 @@ public class FundaApiClient
 
         var response = await _httpClient.PostAsJsonAsync(ToppositionApiUrl, request, cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogWarning("Funda API request failed with status {StatusCode}. Body: {Body}",
-                response.StatusCode, errorContent);
-            return null;
-        }
+        // Throw on error so Polly can handle retries
+        response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize<FundaApiResponse>(content);

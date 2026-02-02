@@ -45,7 +45,13 @@ public static class DependencyInjection
         // FundaApiClient uses Funda's Topposition API for more reliable listing discovery
         services.AddHttpClient<FundaApiClient>()
             .AddTransientHttpErrorPolicy(builder =>
-                builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+                builder.WaitAndRetryAsync(
+                    3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    onRetry: (outcome, timespan, retryAttempt, context) =>
+                    {
+                        Console.WriteLine($"[Polly] Retrying Funda API request. Attempt {retryAttempt}. Delay: {timespan.TotalSeconds}s. Error: {outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString()}");
+                    }));
 
         services.AddScoped<IFundaScraperService, FundaScraperService>();
         services.AddScoped<FundaScraperJob>();
