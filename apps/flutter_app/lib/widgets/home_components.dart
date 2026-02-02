@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
+import '../providers/favorites_provider.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import 'valora_widgets.dart';
@@ -218,15 +220,11 @@ class HomeHeader extends StatelessWidget {
 class FeaturedListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
-  final bool isFavorite;
-  final VoidCallback? onFavoriteToggle;
 
   const FeaturedListingCard({
     super.key,
     required this.listing,
     required this.onTap,
-    this.isFavorite = false,
-    this.onFavoriteToggle,
   });
 
   @override
@@ -318,20 +316,25 @@ class FeaturedListingCard extends StatelessWidget {
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: GestureDetector(
-                    onTap: onFavoriteToggle,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 18,
-                        color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                      ),
-                    ),
+                  child: Consumer<FavoritesProvider>(
+                    builder: (context, favoritesProvider, _) {
+                      final isFavorite = favoritesProvider.isFavorite(listing.id);
+                      return GestureDetector(
+                        onTap: () => favoritesProvider.toggleFavorite(listing),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 18,
+                            color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -428,15 +431,11 @@ class FeaturedListingCard extends StatelessWidget {
 class NearbyListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
-  final bool isFavorite;
-  final VoidCallback? onFavoriteToggle;
 
   const NearbyListingCard({
     super.key,
     required this.listing,
     required this.onTap,
-    this.isFavorite = false,
-    this.onFavoriteToggle,
   });
 
   @override
@@ -477,26 +476,30 @@ class NearbyListingCard extends StatelessWidget {
                           child: Icon(Icons.home, color: ValoraColors.neutral400),
                         ),
                 ),
-                if (onFavoriteToggle != null)
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: onFavoriteToggle,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Consumer<FavoritesProvider>(
+                    builder: (context, favoritesProvider, _) {
+                      final isFavorite = favoritesProvider.isFavorite(listing.id);
+                      return GestureDetector(
+                        onTap: () => favoritesProvider.toggleFavorite(listing),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 14,
+                            color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                          ),
                         ),
-                        child: Icon(
-                          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          size: 14,
-                          color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                        ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
+                ),
               ],
             ),
             const SizedBox(width: 16),

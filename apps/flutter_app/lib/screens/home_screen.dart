@@ -32,6 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isConnected = false;
   List<Listing> _listings = [];
+  List<Listing> _featuredListings = [];
+  List<Listing> _nearbyListings = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   Object? _error;
@@ -149,6 +151,8 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             _listings.addAll(response.items);
           }
+          _featuredListings = _listings.take(5).toList();
+          _nearbyListings = _listings.skip(5).toList();
           _hasNextPage = response.hasNextPage;
           _error = null;
         });
@@ -318,7 +322,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeView() {
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
     int activeFilters = 0;
     if (_minPrice != null) activeFilters++;
     if (_maxPrice != null) activeFilters++;
@@ -405,10 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ));
     } else {
-      final featuredListings = _listings.take(5).toList();
-      final nearbyListings = _listings.skip(5).toList();
-
-      if (featuredListings.isNotEmpty) {
+      if (_featuredListings.isNotEmpty) {
         slivers.add(SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -452,14 +452,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               scrollDirection: Axis.horizontal,
-              itemCount: featuredListings.length,
+              itemCount: _featuredListings.length,
               itemBuilder: (context, index) {
-                final listing = featuredListings[index];
+                final listing = _featuredListings[index];
                 return FeaturedListingCard(
                   listing: listing,
                   onTap: () => _onListingTap(listing),
-                  isFavorite: favoritesProvider.isFavorite(listing.id),
-                  onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
                 );
               },
             ),
@@ -467,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
       }
 
-      if (nearbyListings.isNotEmpty || _hasNextPage) {
+      if (_nearbyListings.isNotEmpty || _hasNextPage) {
         slivers.add(SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -485,7 +483,7 @@ class _HomeScreenState extends State<HomeScreen> {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                if (index == nearbyListings.length) {
+                if (index == _nearbyListings.length) {
                   if (_hasNextPage) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
@@ -495,15 +493,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const SizedBox(height: 80);
                 }
 
-                final listing = nearbyListings[index];
+                final listing = _nearbyListings[index];
                 return NearbyListingCard(
                   listing: listing,
                   onTap: () => _onListingTap(listing),
-                  isFavorite: favoritesProvider.isFavorite(listing.id),
-                  onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
                 );
               },
-              childCount: nearbyListings.length + (_hasNextPage ? 1 : 0),
+              childCount: _nearbyListings.length + (_hasNextPage ? 1 : 0),
             ),
           ),
         ));
