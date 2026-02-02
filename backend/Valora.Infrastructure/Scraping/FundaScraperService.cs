@@ -8,8 +8,12 @@ using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-public class FundaScraperService : IFundaScraperService
+public partial class FundaScraperService : IFundaScraperService
 {
+    private const string DefaultStatus = "Beschikbaar";
+    private const string ProjectType = "Nieuwbouwproject";
+    private const string HouseType = "Woonhuis";
+
     private readonly IListingRepository _listingRepository;
     private readonly IPriceHistoryRepository _priceHistoryRepository;
     private readonly FundaApiClient _apiClient;
@@ -160,17 +164,17 @@ public class FundaScraperService : IFundaScraperService
     private static string? ExtractRegionFromUrl(string url)
     {
         // URL format: https://www.funda.nl/koop/amsterdam/ or https://www.funda.nl/zoeken/koop?selected_area=...
-        var match = Regex.Match(url, @"funda\.nl/(?:koop|huur)/([^/]+)", RegexOptions.IgnoreCase);
-        if (match.Success)
+        var regionMatch = UrlRegionRegex().Match(url);
+        if (regionMatch.Success)
         {
-            return match.Groups[1].Value;
+            return regionMatch.Groups[1].Value;
         }
         
         // Try to extract from query string
-        match = Regex.Match(url, @"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase);
-        if (match.Success)
+        var queryMatch = QueryRegionRegex().Match(url);
+        if (queryMatch.Success)
         {
-            return match.Groups[1].Value;
+            return queryMatch.Groups[1].Value;
         }
         
         return null;
@@ -181,7 +185,7 @@ public class FundaScraperService : IFundaScraperService
         if (string.IsNullOrEmpty(priceText)) return null;
         
         // Remove currency symbol, periods (thousands separator), and suffixes like "k.k."
-        var cleaned = Regex.Replace(priceText, @"[^\d]", "");
+        var cleaned = PriceCleanupRegex().Replace(priceText, "");
         if (decimal.TryParse(cleaned, out var price) && price > 0)
         {
             return price;
@@ -192,32 +196,9 @@ public class FundaScraperService : IFundaScraperService
     private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
     {
         var fundaId = apiListing.GlobalId.ToString();
-        var fullUrl = apiListing.ListingUrl!.StartsWith("http") ? apiListing.ListingUrl : $"https://www.funda.nl{apiListing.ListingUrl}";
-
-        // Check if listing already exists
         var existingListing = await _listingRepository.GetByFundaIdAsync(fundaId, cancellationToken);
 
-        // Map API model to Domain entity
-        // Note: API provides limited details compared to HTML scraping.
-        // Missing: Bedrooms, LivingAreaM2, PlotAreaM2, PropertyType, Status (exact)
-        var price = ParsePriceFromApi(apiListing.Price);
-        
-        var listing = new Listing
-        {
-            FundaId = fundaId,
-            Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
-            City = apiListing.Address?.City,
-            PostalCode = null, // Not provided by API
-            Price = price,
-            Bedrooms = null, // Not provided by API
-            Bathrooms = null,
-            LivingAreaM2 = null, // Not provided by API
-            PlotAreaM2 = null, // Not provided by API
-            PropertyType = apiListing.IsProject ? "Nieuwbouwproject" : "Woonhuis", // Best guess
-            Status = "Beschikbaar", // API usually returns available listings
-            Url = fullUrl,
-            ImageUrl = apiListing.Image?.Default
-        };
+        var listing = MapApiListingToDomain(apiListing, fundaId);
 
         if (existingListing == null)
         {
@@ -228,6 +209,44 @@ public class FundaScraperService : IFundaScraperService
             await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
         }
     }
+
+    private static Listing MapApiListingToDomain(FundaApiListing apiListing, string fundaId)
+    {
+        var fullUrl = apiListing.ListingUrl!.StartsWith("http")
+            ? apiListing.ListingUrl
+            : $"https://www.funda.nl{apiListing.ListingUrl}";
+
+        var price = ParsePriceFromApi(apiListing.Price);
+
+        // Map API model to Domain entity
+        // Note: API provides limited details compared to HTML scraping.
+        // Missing: Bedrooms, LivingAreaM2, PlotAreaM2, PropertyType, Status (exact)
+        return new Listing
+        {
+            FundaId = fundaId,
+            Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
+            City = apiListing.Address?.City,
+            PostalCode = null, // Not provided by API
+            Price = price,
+            Bedrooms = null, // Not provided by API
+            Bathrooms = null,
+            LivingAreaM2 = null, // Not provided by API
+            PlotAreaM2 = null, // Not provided by API
+            PropertyType = apiListing.IsProject ? ProjectType : HouseType, // Best guess
+            Status = DefaultStatus, // API usually returns available listings
+            Url = fullUrl,
+            ImageUrl = apiListing.Image?.Default
+        };
+    }
+
+    [GeneratedRegex(@"funda\.nl/(?:koop|huur)/([^/]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex UrlRegionRegex();
+
+    [GeneratedRegex(@"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase)]
+    private static partial Regex QueryRegionRegex();
+
+    [GeneratedRegex(@"[^\d]")]
+    private static partial Regex PriceCleanupRegex();
 
     private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {

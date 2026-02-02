@@ -33,7 +33,7 @@ public class TokenServiceTests
 
         _mockOptions.Setup(x => x.Value).Returns(jwtOptions);
 
-        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object);
+        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object, TimeProvider.System);
 
         var user = new ApplicationUser
         {
@@ -78,7 +78,7 @@ public class TokenServiceTests
 
         _mockOptions.Setup(x => x.Value).Returns(jwtOptions);
 
-        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object);
+        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object, TimeProvider.System);
 
         var user = new ApplicationUser { Id = "1", UserName = "test" };
 

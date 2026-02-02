@@ -8,10 +8,10 @@ import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../providers/favorites_provider.dart';
-import '../widgets/valora_widgets.dart';
 import '../widgets/valora_filter_dialog.dart';
-import '../widgets/valora_error_state.dart';
 import '../widgets/home_components.dart';
+import '../widgets/home/home_sliver_app_bar.dart';
+import '../widgets/home/home_status_views.dart';
 import 'listing_detail_screen.dart';
 import 'saved_listings_screen.dart';
 import 'settings_screen.dart';
@@ -26,6 +26,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const int _pageSize = 10;
+  static const String _defaultScrapeRegion = 'amsterdam';
+  static const int _featuredCount = 5;
+
   late ApiService _apiService;
   late final ScrollController _scrollController;
   bool _isInit = false;
@@ -38,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Pagination
   int _currentPage = 1;
-  static const int _pageSize = 10;
   bool _hasNextPage = true;
 
   // Filters
@@ -55,8 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // Search
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-
-  static const String _defaultScrapeRegion = 'amsterdam';
 
   // Navigation
   int _currentNavIndex = 0;
@@ -275,8 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Allow body to extend behind bottom nav if needed, but we have a custom one
-      // The design has a fixed bottom nav. Scaffold.bottomNavigationBar works well.
+      extendBody: true,
       bottomNavigationBar: HomeBottomNavBar(
         currentIndex: _currentNavIndex,
         onTap: (index) => setState(() => _currentNavIndex = index),
@@ -284,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _buildBody(),
       floatingActionButton: _currentNavIndex == 0
           ? Padding(
-              padding: const EdgeInsets.only(bottom: 16.0), // Adjust for bottom nav
+              padding: const EdgeInsets.only(bottom: 16.0),
               child: FloatingActionButton.extended(
                 onPressed: _triggerScrape,
                 backgroundColor: ValoraColors.primary,
@@ -318,7 +318,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeView() {
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
     int activeFilters = 0;
     if (_minPrice != null) activeFilters++;
     if (_maxPrice != null) activeFilters++;
@@ -330,184 +329,43 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool hasFilters = activeFilters > 0 || _searchTerm.isNotEmpty;
 
     List<Widget> slivers = [
-      _buildSliverAppBar(activeFilters),
+      HomeSliverAppBar(
+        searchController: _searchController,
+        onSearchChanged: _onSearchChanged,
+        onFilterPressed: _openFilterDialog,
+        activeFilterCount: activeFilters,
+      ),
     ];
 
     if (_isLoading && _listings.isEmpty) {
-      slivers.add(const SliverFillRemaining(
-        child: Center(child: ValoraLoadingIndicator(message: 'Loading listings...')),
-      ));
+      slivers.add(const HomeLoadingSliver());
     } else if (!_isConnected) {
-      slivers.add(SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-          child: ValoraEmptyState(
-            icon: Icons.cloud_off_outlined,
-            title: 'Backend not connected',
-            subtitle: 'Unable to connect to Valora Server.',
-            action: ValoraButton(
-              label: 'Retry',
-              variant: ValoraButtonVariant.primary,
-              icon: Icons.refresh,
-              onPressed: _checkConnection,
-            ),
-          ),
-        ),
-      ));
+      slivers.add(HomeDisconnectedSliver(onRetry: _checkConnection));
     } else if (_listings.isEmpty && _error != null) {
-      slivers.add(SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-          child: ValoraErrorState(
-            error: _error!,
-            onRetry: () => _loadListings(refresh: true),
-          ),
-        ),
+      slivers.add(HomeErrorSliver(
+        error: _error!,
+        onRetry: () => _loadListings(refresh: true),
       ));
     } else if (_listings.isEmpty) {
-      slivers.add(SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-            child: !hasFilters
-                ? ValoraEmptyState(
-                    icon: Icons.home_work_outlined,
-                    title: 'No listings yet',
-                    subtitle: 'Get started by scraping some listings.',
-                    action: ValoraButton(
-                      label: 'Scrape 10 Items',
-                      variant: ValoraButtonVariant.primary,
-                      icon: Icons.cloud_download,
-                      onPressed: _triggerScrape,
-                    ),
-                  )
-                : ValoraEmptyState(
-                    icon: Icons.search_off,
-                    title: 'No listings found',
-                    subtitle: 'Try adjusting your filters or search term.',
-                    action: ValoraButton(
-                      label: 'Clear Filters',
-                      variant: ValoraButtonVariant.outline,
-                      onPressed: () {
-                        setState(() {
-                          _minPrice = null;
-                          _maxPrice = null;
-                          _city = null;
-                          _minBedrooms = null;
-                          _minLivingArea = null;
-                          _maxLivingArea = null;
-                          _searchTerm = '';
-                          _searchController.clear();
-                        });
-                        _loadListings(refresh: true);
-                      },
-                    ),
-                  ),
-        ),
+      slivers.add(HomeEmptySliver(
+        hasFilters: hasFilters,
+        onScrape: _triggerScrape,
+        onClearFilters: () {
+          setState(() {
+            _minPrice = null;
+            _maxPrice = null;
+            _city = null;
+            _minBedrooms = null;
+            _minLivingArea = null;
+            _maxLivingArea = null;
+            _searchTerm = '';
+            _searchController.clear();
+          });
+          _loadListings(refresh: true);
+        },
       ));
     } else {
-      final featuredListings = _listings.take(5).toList();
-      final nearbyListings = _listings.skip(5).toList();
-
-      if (featuredListings.isNotEmpty) {
-        slivers.add(SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Featured for You',
-                      style: ValoraTypography.titleLarge.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Curated by Valora AI based on your taste',
-                      style: ValoraTypography.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  'See All',
-                  style: ValoraTypography.labelSmall.copyWith(
-                    color: ValoraColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ));
-
-        slivers.add(SliverToBoxAdapter(
-          child: SizedBox(
-            height: 320,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              scrollDirection: Axis.horizontal,
-              itemCount: featuredListings.length,
-              itemBuilder: (context, index) {
-                final listing = featuredListings[index];
-                return FeaturedListingCard(
-                  listing: listing,
-                  onTap: () => _onListingTap(listing),
-                  isFavorite: favoritesProvider.isFavorite(listing.id),
-                  onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
-                );
-              },
-            ),
-          ),
-        ));
-      }
-
-      if (nearbyListings.isNotEmpty || _hasNextPage) {
-        slivers.add(SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-            child: Text(
-              'Nearby Listings',
-              style: ValoraTypography.titleLarge.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ));
-
-        slivers.add(SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == nearbyListings.length) {
-                  if (_hasNextPage) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  return const SizedBox(height: 80);
-                }
-
-                final listing = nearbyListings[index];
-                return NearbyListingCard(
-                  listing: listing,
-                  onTap: () => _onListingTap(listing),
-                  isFavorite: favoritesProvider.isFavorite(listing.id),
-                  onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
-                );
-              },
-              childCount: nearbyListings.length + (_hasNextPage ? 1 : 0),
-            ),
-          ),
-        ));
-      }
+      slivers.addAll(_buildListingSlivers());
     }
 
     return RefreshIndicator(
@@ -521,74 +379,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSliverAppBar(int activeFilters) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  List<Widget> _buildListingSlivers() {
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final featuredListings = _listings.take(_featuredCount).toList();
+    final nearbyListings = _listings.skip(_featuredCount).toList();
+    final List<Widget> slivers = [];
 
-    return SliverAppBar(
-      pinned: true,
-      backgroundColor: isDark ? ValoraColors.backgroundDark.withValues(alpha: 0.95) : ValoraColors.backgroundLight.withValues(alpha: 0.95),
-      surfaceTintColor: Colors.transparent,
-      titleSpacing: 24,
-      toolbarHeight: 70, // Height for the top row (Title + Profile)
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Valora',
-            style: ValoraTypography.headlineMedium.copyWith(
-              color: ValoraColors.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-            ),
-          ),
-          Row(
+    if (featuredListings.isNotEmpty) {
+      slivers.add(SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              IconButton(
-                onPressed: () {},
-                icon: Icon(
-                  Icons.notifications_none_rounded,
-                  color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [ValoraColors.primary, ValoraColors.primaryLight],
-                    begin: Alignment.bottomLeft,
-                    end: Alignment.topRight,
-                  ),
-                  border: Border.all(
-                      color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-                      width: 2),
-                ),
-                child: const Center(
-                  child: Text(
-                    'JD',
-                    style: TextStyle(
-                      color: Colors.white,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Featured for You',
+                    style: ValoraTypography.titleLarge.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Curated by Valora AI based on your taste',
+                    style: ValoraTypography.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                'See All',
+                style: ValoraTypography.labelSmall.copyWith(
+                  color: ValoraColors.primary,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-        ],
-      ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(140),
-        child: HomeHeader(
-          searchController: _searchController,
-          onSearchChanged: _onSearchChanged,
-          onFilterPressed: _openFilterDialog,
-          activeFilterCount: activeFilters,
         ),
-      ),
-    );
+      ));
+
+      slivers.add(SliverToBoxAdapter(
+        child: SizedBox(
+          height: 320,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            scrollDirection: Axis.horizontal,
+            itemCount: featuredListings.length,
+            itemBuilder: (context, index) {
+              final listing = featuredListings[index];
+              return FeaturedListingCard(
+                listing: listing,
+                onTap: () => _onListingTap(listing),
+                isFavorite: favoritesProvider.isFavorite(listing.id),
+                onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
+              );
+            },
+          ),
+        ),
+      ));
+    }
+
+    if (nearbyListings.isNotEmpty || _hasNextPage) {
+      slivers.add(SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+          child: Text(
+            'Nearby Listings',
+            style: ValoraTypography.titleLarge.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ));
+
+      slivers.add(SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index == nearbyListings.length) {
+                if (_hasNextPage) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return const SizedBox(height: 80);
+              }
+
+              final listing = nearbyListings[index];
+              return NearbyListingCard(
+                listing: listing,
+                onTap: () => _onListingTap(listing),
+                isFavorite: favoritesProvider.isFavorite(listing.id),
+                onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
+              );
+            },
+            childCount: nearbyListings.length + (_hasNextPage ? 1 : 0),
+          ),
+        ),
+      ));
+    }
+    return slivers;
   }
 }
