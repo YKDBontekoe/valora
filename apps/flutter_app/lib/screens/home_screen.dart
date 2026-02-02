@@ -7,11 +7,13 @@ import '../core/theme/valora_typography.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
+import '../providers/favorites_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_error_state.dart';
 import '../widgets/home_components.dart';
 import 'listing_detail_screen.dart';
+import 'saved_listings_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -307,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return const Center(child: Text('Search View Placeholder'));
       case 2:
-        return const Center(child: Text('Saved Listings Placeholder'));
+        return const SavedListingsScreen();
       case 3:
         return const SettingsScreen();
       default:
@@ -316,6 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeView() {
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
     int activeFilters = 0;
     if (_minPrice != null) activeFilters++;
     if (_maxPrice != null) activeFilters++;
@@ -451,9 +454,12 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               itemCount: featuredListings.length,
               itemBuilder: (context, index) {
+                final listing = featuredListings[index];
                 return FeaturedListingCard(
-                  listing: featuredListings[index],
-                  onTap: () => _onListingTap(featuredListings[index]),
+                  listing: listing,
+                  onTap: () => _onListingTap(listing),
+                  isFavorite: favoritesProvider.isFavorite(listing.id),
+                  onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
                 );
               },
             ),
@@ -493,6 +499,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 return NearbyListingCard(
                   listing: listing,
                   onTap: () => _onListingTap(listing),
+                  isFavorite: favoritesProvider.isFavorite(listing.id),
+                  onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
                 );
               },
               childCount: nearbyListings.length + (_hasNextPage ? 1 : 0),
