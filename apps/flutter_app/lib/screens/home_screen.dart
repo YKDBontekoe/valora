@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../providers/favorites_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/home_components.dart';
 import '../widgets/home/home_sliver_app_bar.dart';
@@ -128,6 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userCities = authProvider.user?.preferredCities;
+
       final response = await _apiService.getListings(
         ListingFilter(
           page: _currentPage,
@@ -136,6 +140,9 @@ class _HomeScreenState extends State<HomeScreen> {
           minPrice: _minPrice,
           maxPrice: _maxPrice,
           city: _city,
+          cities: (_city == null || _city!.isEmpty) && userCities != null && userCities.isNotEmpty
+              ? userCities
+              : null,
           minBedrooms: _minBedrooms,
           minLivingArea: _minLivingArea,
           maxLivingArea: _maxLivingArea,

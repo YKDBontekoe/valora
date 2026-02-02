@@ -5,6 +5,7 @@ class ListingFilter {
   final double? minPrice;
   final double? maxPrice;
   final String? city;
+  final List<String>? cities;
   final int? minBedrooms;
   final int? minLivingArea;
   final int? maxLivingArea;
@@ -18,6 +19,7 @@ class ListingFilter {
     this.minPrice,
     this.maxPrice,
     this.city,
+    this.cities,
     this.minBedrooms,
     this.minLivingArea,
     this.maxLivingArea,
@@ -32,6 +34,7 @@ class ListingFilter {
     double? minPrice,
     double? maxPrice,
     String? city,
+    List<String>? cities,
     int? minBedrooms,
     int? minLivingArea,
     int? maxLivingArea,
@@ -45,6 +48,7 @@ class ListingFilter {
       minPrice: minPrice ?? this.minPrice,
       maxPrice: maxPrice ?? this.maxPrice,
       city: city ?? this.city,
+      cities: cities ?? this.cities,
       minBedrooms: minBedrooms ?? this.minBedrooms,
       minLivingArea: minLivingArea ?? this.minLivingArea,
       maxLivingArea: maxLivingArea ?? this.maxLivingArea,
@@ -53,8 +57,8 @@ class ListingFilter {
     );
   }
 
-  Map<String, String> toQueryParameters() {
-    final params = <String, String>{
+  Map<String, dynamic> toQueryParameters() {
+    final params = <String, dynamic>{
       'page': page.toString(),
       'pageSize': pageSize.toString(),
     };
@@ -65,6 +69,7 @@ class ListingFilter {
     if (minPrice != null) params['minPrice'] = minPrice.toString();
     if (maxPrice != null) params['maxPrice'] = maxPrice.toString();
     if (city != null && city!.isNotEmpty) params['city'] = city!;
+    if (cities != null && cities!.isNotEmpty) params['cities'] = cities!;
     if (minBedrooms != null) params['minBedrooms'] = minBedrooms.toString();
     if (minLivingArea != null) params['minLivingArea'] = minLivingArea.toString();
     if (maxLivingArea != null) params['maxLivingArea'] = maxLivingArea.toString();

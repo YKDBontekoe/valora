@@ -16,12 +16,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _citiesController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _citiesController.dispose();
     super.dispose();
   }
 
@@ -30,10 +32,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final authProvider = context.read<AuthProvider>();
     try {
+      final cities = _citiesController.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
       await authProvider.register(
         _emailController.text.trim(),
         _passwordController.text,
         _confirmPasswordController.text,
+        cities,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,13 +157,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       border: OutlineInputBorder(),
                     ),
                     obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _submit(),
+                    textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Required';
                       if (value != _passwordController.text) return 'Passwords do not match';
                       return null;
                     },
+                  ),
+                  const SizedBox(height: ValoraSpacing.md),
+
+                  // Preferred Cities
+                  TextFormField(
+                    controller: _citiesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Preferred Cities (comma separated)',
+                      prefixIcon: Icon(Icons.location_city_outlined),
+                      border: OutlineInputBorder(),
+                      hintText: 'e.g. Amsterdam, Rotterdam',
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: ValoraSpacing.lg),
 

@@ -6,6 +6,7 @@ public class ListingFilterDto
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
     public string? City { get; set; }
+    public List<string>? Cities { get; set; }
     public int? MinBedrooms { get; set; }
     public int? MinLivingArea { get; set; }
     public int? MaxLivingArea { get; set; }

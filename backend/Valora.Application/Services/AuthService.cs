@@ -22,7 +22,10 @@ public class AuthService : IAuthService
             return Result.Failure(new[] { "Passwords do not match" });
         }
 
-        var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
+        var (result, userId) = await _identityService.CreateUserAsync(
+            registerDto.Email,
+            registerDto.Password,
+            registerDto.PreferredCities);
 
         return result;
     }
@@ -49,7 +52,8 @@ public class AuthService : IAuthService
             token,
             refreshToken.RawToken,
             user.Email!,
-            user.Id
+            user.Id,
+            user.PreferredCities
         );
     }
 
@@ -73,7 +77,13 @@ public class AuthService : IAuthService
             newAccessToken,
             newRefreshToken.RawToken,
             existingToken.User.Email!,
-            existingToken.User.Id
+            existingToken.User.Id,
+            existingToken.User.PreferredCities
         );
+    }
+
+    public async Task<Result> UpdateProfileAsync(string userId, UpdateProfileDto updateProfileDto)
+    {
+        return await _identityService.UpdateUserAsync(userId, updateProfileDto);
     }
 }

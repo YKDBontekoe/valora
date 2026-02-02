@@ -20,13 +20,21 @@ public record RegisterDto
     [Required]
     [Compare(nameof(Password))]
     public string ConfirmPassword { get; init; } = string.Empty;
+
+    public List<string> PreferredCities { get; init; } = new();
+}
+
+public record UpdateProfileDto
+{
+    public List<string> PreferredCities { get; init; } = new();
 }
 
 public record AuthResponseDto(
     string Token,
     string RefreshToken,
     string Email,
-    string UserId
+    string UserId,
+    List<string> PreferredCities
 );
 
 public record RefreshTokenRequestDto(

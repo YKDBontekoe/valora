@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -51,5 +52,23 @@ public static class AuthEndpoints
 
             return Results.Ok(response);
         });
+
+        group.MapPut("/profile", async (
+            [FromBody] UpdateProfileDto updateProfileDto,
+            IAuthService authService,
+            ClaimsPrincipal user) =>
+        {
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+            var result = await authService.UpdateProfileAsync(userId, updateProfileDto);
+
+            if (result.Succeeded)
+            {
+                return Results.Ok(new { message = "Profile updated successfully" });
+            }
+
+            return Results.BadRequest(result.Errors.Select(e => new { description = e }));
+        }).RequireAuthorization();
     }
 }

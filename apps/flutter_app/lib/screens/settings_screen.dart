@@ -108,6 +108,7 @@ class SettingsScreen extends StatelessWidget {
                           title: 'Search Preferences',
                           subtitle: 'Location, Price, Amenities',
                           showDivider: true,
+                          onTap: () => _showSearchPreferencesDialog(context),
                         ),
                         _buildSettingsTile(
                           context,
@@ -378,6 +379,65 @@ class SettingsScreen extends StatelessWidget {
             letterSpacing: 1.0,
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSearchPreferencesDialog(BuildContext context) {
+    final authProvider = context.read<AuthProvider>();
+    final cities = authProvider.user?.preferredCities.join(', ') ?? '';
+    final controller = TextEditingController(text: cities);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Search Preferences'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Preferred Cities',
+                hintText: 'Comma separated (e.g. Amsterdam, Utrecht)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newCities = controller.text
+                  .split(',')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList();
+
+              Navigator.pop(context); // Close dialog first
+
+              try {
+                await authProvider.updateProfile(newCities);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Preferences updated')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to update: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

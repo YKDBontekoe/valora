@@ -65,6 +65,12 @@ public class ListingRepository : IListingRepository
             }
         }
 
+        if (filter.Cities != null && filter.Cities.Any())
+        {
+            var lowerCities = filter.Cities.Select(c => c.ToLower()).ToList();
+            query = query.Where(l => l.City != null && lowerCities.Contains(l.City.ToLower()));
+        }
+
         if (filter.MinBedrooms.HasValue)
         {
             query = query.Where(l => l.Bedrooms >= filter.MinBedrooms.Value);

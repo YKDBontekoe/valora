@@ -29,7 +29,7 @@ class AuthService {
     await _storage.delete(key: _refreshTokenKey);
   }
 
-  Future<String?> refreshToken() async {
+  Future<Map<String, dynamic>?> refreshToken() async {
     final refreshToken = await _storage.read(key: _refreshTokenKey);
     if (refreshToken == null) return null;
 
@@ -45,7 +45,7 @@ class AuthService {
         final newToken = data['token'];
         if (newToken != null) {
           await saveToken(newToken);
-          return newToken;
+          return data;
         }
       }
     } catch (_) {
@@ -80,7 +80,7 @@ class AuthService {
     }
   }
 
-  Future<void> register(String email, String password, String confirmPassword) async {
+  Future<void> register(String email, String password, String confirmPassword, List<String> preferredCities) async {
     try {
       final response = await _client.post(
         Uri.parse('$baseUrl/auth/register'),
@@ -89,6 +89,7 @@ class AuthService {
           'email': email,
           'password': password,
           'confirmPassword': confirmPassword,
+          'preferredCities': preferredCities,
         }),
       ).timeout(ApiService.timeoutDuration);
 
@@ -98,6 +99,31 @@ class AuthService {
     } catch (e) {
       if (e is AppException) rethrow;
       throw NetworkException('Registration failed: $e');
+    }
+  }
+
+  Future<void> updateProfile(List<String> preferredCities) async {
+    final token = await getToken();
+    if (token == null) throw ValidationException('Not authenticated');
+
+    try {
+      final response = await _client.put(
+        Uri.parse('$baseUrl/auth/profile'),
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'preferredCities': preferredCities,
+        }),
+      ).timeout(ApiService.timeoutDuration);
+
+      if (response.statusCode != 200) {
+        throw _handleError(response);
+      }
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw NetworkException('Update profile failed: $e');
     }
   }
 
