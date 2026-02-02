@@ -8,6 +8,10 @@ using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
+/// <summary>
+/// Service responsible for scraping listing data from Funda.nl via their API and persisting it to the database.
+/// This service handles the orchestration of fetching, mapping, and updating listings, including price history tracking.
+/// </summary>
 public class FundaScraperService : IFundaScraperService
 {
     private readonly IListingRepository _listingRepository;
@@ -33,6 +37,9 @@ public class FundaScraperService : IFundaScraperService
         _notificationService = notificationService;
     }
 
+    /// <summary>
+    /// Triggered by Cron job. Iterates through all configured search URLs and scrapes them.
+    /// </summary>
     public async Task ScrapeAndStoreAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting funda.nl scrape job (API only)");
@@ -52,6 +59,9 @@ public class FundaScraperService : IFundaScraperService
         _logger.LogInformation("Funda.nl scrape job completed");
     }
 
+    /// <summary>
+    /// Triggers a limited scrape for a specific region, useful for testing or manual updates.
+    /// </summary>
     public async Task ScrapeLimitedAsync(string region, int limit, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting limited scrape for region: {Region}", region);
@@ -73,6 +83,12 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Core scraping logic for a single URL/Region.
+    /// 1. Extracts region from URL.
+    /// 2. Fetches raw data from Funda API.
+    /// 3. Processes each listing (Create/Update).
+    /// </summary>
     private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Scraping search URL: {Url}", searchUrl);
@@ -131,6 +147,10 @@ public class FundaScraperService : IFundaScraperService
         }
     }
     
+    /// <summary>
+    /// Attempts to fetch listings from the Funda API.
+    /// Handles pagination and basic filtering of invalid results.
+    /// </summary>
     private async Task<List<FundaApiListing>> TryFetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
     {
         try
@@ -189,12 +209,19 @@ public class FundaScraperService : IFundaScraperService
         return null;
     }
 
+    /// <summary>
+    /// Processes a single listing from the API.
+    /// - Checks if it exists in the DB.
+    /// - If new: Inserts it and records initial price.
+    /// - If existing: Updates details and checks for price changes.
+    /// </summary>
     private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
     {
         var fundaId = apiListing.GlobalId.ToString();
         var fullUrl = apiListing.ListingUrl!.StartsWith("http") ? apiListing.ListingUrl : $"https://www.funda.nl{apiListing.ListingUrl}";
 
-        // Check if listing already exists
+        // We check existence first to decide between Insert vs Update strategy.
+        // This prevents unique constraint violations and allows us to track history.
         var existingListing = await _listingRepository.GetByFundaIdAsync(fundaId, cancellationToken);
 
         // Map API model to Domain entity
@@ -229,6 +256,9 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Persists a new listing and creates its first PriceHistory entry.
+    /// </summary>
     private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
         // New listing - add it
@@ -251,6 +281,10 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Updates an existing listing.
+    /// Crucially, it detects price changes to create historical records and avoids overwriting enriched data with nulls.
+    /// </summary>
     private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
         // Existing listing - check for price changes
@@ -262,6 +296,8 @@ public class FundaScraperService : IFundaScraperService
                 "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
                 listing.FundaId, existingListing.Price, listing.Price);
 
+            // Create a history record for the NEW price (or old price? Logic here records the NEW price as history, effectively a snapshot of current state)
+            // Ideally, history should capture the timeline. Here we just log the datapoint.
             await _priceHistoryRepository.AddAsync(new PriceHistory
             {
                 ListingId = existingListing.Id,
@@ -274,6 +310,7 @@ public class FundaScraperService : IFundaScraperService
         existingListing.ImageUrl = listing.ImageUrl;
         
         // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
+        // This "partial update" strategy ensures we don't regress data quality if the API returns sparse data.
         if (listing.Bedrooms.HasValue) existingListing.Bedrooms = listing.Bedrooms;
         if (listing.LivingAreaM2.HasValue) existingListing.LivingAreaM2 = listing.LivingAreaM2;
         if (listing.PlotAreaM2.HasValue) existingListing.PlotAreaM2 = listing.PlotAreaM2;

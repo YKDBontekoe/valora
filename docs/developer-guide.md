@@ -21,7 +21,7 @@ Valora follows a **Clean Architecture** approach. This ensures separation of con
 3.  **Valora.Infrastructure**
     *   **Responsibility**: Implements interfaces defined in the Application layer. interacting with external systems (Database, Funda.nl, Hangfire).
     *   **Dependencies**: `Valora.Application`, `Valora.Domain`.
-    *   **Key Components**: `ValoraDbContext` (EF Core), `FundaScraperService`, `TokenService`.
+    *   **Key Components**: `ValoraDbContext` (EF Core), `FundaScraperService`, `TokenService`, `FundaApiClient`.
 
 4.  **Valora.Api**
     *   **Responsibility**: The entry point of the application. Handles HTTP requests, dependency injection, and configuration.
@@ -52,14 +52,20 @@ classDiagram
         +GetAllAsync(filter)
     }
 
+    class FundaApiClient {
+        -HttpClient _http
+        +SearchAllBuyPagesAsync(region, maxPages)
+    }
+
     class FundaScraperService {
         -IListingRepository _repo
-        -HttpClient _http
+        -FundaApiClient _apiClient
         +ScrapeAndStoreAsync()
     }
 
     ListingRepository ..|> IListingRepository
     FundaScraperService --> IListingRepository
+    FundaScraperService --> FundaApiClient
     ListingRepository --> Listing
 ```
 
@@ -86,34 +92,45 @@ Understanding how a request travels through the system is crucial for new develo
 
 ### Scraping Workflow
 
+The scraper runs as a background job using Hangfire. It fetches data from the Funda API (via `FundaApiClient`) and persists it to the database.
+
+1.  **Trigger**: A job (`FundaScraperJob`) is triggered (manually or via Cron).
+2.  **Fetch**: `FundaScraperService` calls `FundaApiClient` to search for listings in configured regions.
+3.  **Process**: For each result:
+    *   It checks if the listing exists in the database by `FundaId`.
+    *   If **New**: Creates a `Listing` and initial `PriceHistory`.
+    *   If **Existing**: Updates details and checks for price changes. If the price changed, adds a new `PriceHistory` entry.
+4.  **Notification**: Use `IScraperNotificationService` (SignalR) to notify connected clients of progress.
+
 ```mermaid
 sequenceDiagram
     participant Job as FundaScraperJob
     participant Service as FundaScraperService
-    participant Parser as FundaHtmlParser
-    participant Funda as Funda.nl
+    participant ApiClient as FundaApiClient
+    participant Funda as Funda.nl API
     participant DB as Database
+    participant Notify as NotificationService
 
     Job->>Service: ScrapeAndStoreAsync()
-    loop For each SearchUrl
-        Service->>Funda: GET Search Page
-        Funda-->>Service: HTML
-        Service->>Parser: ParseSearchResults(HTML)
-        Parser-->>Service: List<ListingPreview>
+    loop For each Region/URL
+        Service->>ApiClient: SearchAllBuyPagesAsync(region)
+        ApiClient->>Funda: GET Search API
+        Funda-->>ApiClient: JSON Results
+        ApiClient-->>Service: List<FundaApiListing>
 
         loop For each Listing
-            Service->>Funda: GET Detail Page
-            Funda-->>Service: HTML
-            Service->>Parser: ParseListingDetail(HTML)
-            Parser-->>Service: Listing Entity
+            Service->>DB: GetByFundaIdAsync(id)
+            DB-->>Service: Listing?
 
             alt New Listing
                 Service->>DB: Add Listing
                 Service->>DB: Add PriceHistory
+                Service->>Notify: NotifyMatchFound
             else Existing Listing
                 Service->>DB: Update Listing
                 opt Price Changed
                     Service->>DB: Add PriceHistory
+                    Service->>Notify: NotifyMatchFound (Updated)
                 end
             end
         end
@@ -157,6 +174,11 @@ The backend exposes a REST API via Minimal APIs in `Valora.Api`.
 *   `POST /api/scraper/trigger`
     *   Headers: `Authorization: Bearer <token>`
     *   Triggers the `FundaScraperJob` immediately via Hangfire.
+
+*   `POST /api/scraper/trigger-limited`
+    *   Headers: `Authorization: Bearer <token>`
+    *   Query Params: `region`, `limit`
+    *   Triggers a limited scrape for a specific region.
 
 ## Configuration
 

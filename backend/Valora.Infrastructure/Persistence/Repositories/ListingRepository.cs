@@ -6,6 +6,9 @@ using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
 
+/// <summary>
+/// Repository implementation for Listing entities using EF Core.
+/// </summary>
 public class ListingRepository : IListingRepository
 {
     private readonly ValoraDbContext _context;
@@ -15,8 +18,14 @@ public class ListingRepository : IListingRepository
         _context = context;
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of listings based on filters.
+    /// Uses AsNoTracking() for read optimization since no updates are performed here.
+    /// Implements provider-specific logic (PostgreSQL ILike) for efficient case-insensitive searching.
+    /// </summary>
     public async Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
+        // AsNoTracking improves performance by not attaching entities to the ChangeTracker.
         var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
@@ -25,6 +34,8 @@ public class ListingRepository : IListingRepository
         {
             if (isPostgres)
             {
+                // Use PostgreSQL ILIKE for efficient case-insensitive matching.
+                // We escape special characters to prevent SQL injection-like behavior in the LIKE pattern.
                 var escapedTerm = EscapeLikePattern(filter.SearchTerm);
                 var search = $"%{escapedTerm}%";
                 query = query.Where(l =>
@@ -34,6 +45,7 @@ public class ListingRepository : IListingRepository
             }
             else
             {
+                // Fallback for InMemory/Other providers
                 var search = filter.SearchTerm.ToLower();
                 query = query.Where(l =>
                     l.Address.ToLower().Contains(search) ||
@@ -114,12 +126,20 @@ public class ListingRepository : IListingRepository
         return await PaginatedList<ListingDto>.CreateAsync(dtoQuery, filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
+    /// <summary>
+    /// gets a listing by its internal GUID.
+    /// Does not track changes by default unless attached later, but here we return the entity which might be tracked if we didn't use AsNoTracking (we are not using AsNoTracking here, so it is tracked).
+    /// </summary>
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Listings
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets a listing by its external Funda ID.
+    /// Used by the scraper to check for duplicates.
+    /// </summary>
     public async Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default)
     {
         return await _context.Listings

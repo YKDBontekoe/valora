@@ -12,6 +12,13 @@ House listing scraper for funda.nl.
 
 ## Architecture Overview
 
+Valora follows **Clean Architecture** principles to ensure separation of concerns and testability.
+
+- **Valora.Domain**: The core of the application containing entities (`Listing`, `PriceHistory`, `ApplicationUser`) and business rules. It has no dependencies.
+- **Valora.Application**: Defines use cases, interfaces (`IListingRepository`, `IScraperService`), and DTOs. It depends only on Domain.
+- **Valora.Infrastructure**: Implements the interfaces defined in Application. Handles database access (EF Core), external API calls (Funda), and background jobs.
+- **Valora.Api**: The entry point. Configures Dependency Injection, maps HTTP endpoints, and handles middleware.
+
 ```mermaid
 graph TD
     Client[Flutter Client] -->|HTTP/REST| API[Valora.Api]
@@ -41,7 +48,7 @@ valora/
 ## Documentation
 
 - [User Guide](docs/user-guide.md): How to use Valora.
-- [Developer Guide](docs/developer-guide.md): Architecture, API, and implementation details.
+- [Developer Guide](docs/developer-guide.md): Architecture, API, Data Flow, and implementation details.
 
 ## Getting Started
 
@@ -68,7 +75,9 @@ cd backend
 cp .env.example .env
 ```
 
-Ensure `JWT_SECRET` is set in your environment or `.env` file.
+> **Note**: **Database migrations are applied automatically** when the backend starts. You do not need to run manual migration commands.
+
+Ensure `JWT_SECRET` is set in your environment or `.env` file. For local development, the app will warn but fallback to a dev key if missing.
 
 Run the backend:
 
@@ -101,8 +110,9 @@ The backend provides the following key endpoints:
 | `GET` | `/api/listings` | Get paginated listings | Yes |
 | `GET` | `/api/listings/{id}` | Get listing details | Yes |
 | `POST` | `/api/scraper/trigger` | Trigger manual scrape | Yes |
+| `POST` | `/api/scraper/trigger-limited` | Trigger scrape for specific region | Yes |
 
-See [Developer Guide](docs/developer-guide.md) for full API documentation.
+See [Developer Guide](docs/developer-guide.md) for full API documentation and Data Flow explanation.
 
 ## Troubleshooting
 
