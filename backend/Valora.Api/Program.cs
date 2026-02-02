@@ -172,6 +172,7 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
         builder.Configuration["SCRAPER_CRON"] ?? "*/5 * * * *");
 
     // Configure recurring job for updates (hourly by default)
+    // This job tracks existing listings for price changes and status updates.
     RecurringJob.AddOrUpdate<FundaUpdateJob>(
         "funda-update",
         job => job.ExecuteAsync(CancellationToken.None),
