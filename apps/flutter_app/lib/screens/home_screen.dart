@@ -335,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onSearchChanged: _onSearchChanged,
         onFilterPressed: _openFilterDialog,
         activeFilterCount: activeFilters,
-        userInitials: 'JD',
+        userInitials: null,
       ),
     ];
 
@@ -482,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
               );
             },
-            childCount: nearbyListings.length + (_hasNextPage ? 1 : 0),
+            childCount: nearbyListings.length + 1,
           ),
         ),
       ));
