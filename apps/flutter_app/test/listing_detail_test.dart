@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/models/listing.dart';
+import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/listing_detail_screen.dart';
 
 void main() {
+  setUpAll(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('ListingDetailScreen displays listing details',
       (WidgetTester tester) async {
     final listing = Listing(
@@ -25,8 +32,15 @@ void main() {
 
     // Provide a MediaQuery to ensure layout works (though MaterialApp provides it)
     await tester.pumpWidget(
-      MaterialApp(
-        home: ListingDetailScreen(listing: listing),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<FavoritesProvider>(
+            create: (_) => FavoritesProvider(),
+          ),
+        ],
+        child: MaterialApp(
+          home: ListingDetailScreen(listing: listing),
+        ),
       ),
     );
 
