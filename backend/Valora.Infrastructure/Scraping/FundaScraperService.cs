@@ -97,7 +97,7 @@ public partial class FundaScraperService : IFundaScraperService
         }
 
         _logger.LogDebug("Searching API for region: {Region}", region);
-        var apiListings = await TryFetchFromApiAsync(region, limit, cancellationToken);
+        var apiListings = await FetchFromApiAsync(region, limit, cancellationToken);
 
         if (apiListings.Count == 0)
         {
@@ -135,30 +135,22 @@ public partial class FundaScraperService : IFundaScraperService
         }
     }
     
-    private async Task<List<FundaApiListing>> TryFetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
+    private async Task<List<FundaApiListing>> FetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
     {
-        try
+        var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
+        var apiListings = await _apiClient.SearchAllBuyPagesAsync(region, maxPages, cancellationToken: cancellationToken);
+
+        // Filter valid listings
+        var validListings = apiListings
+            .Where(l => !string.IsNullOrEmpty(l.ListingUrl) && l.GlobalId > 0)
+            .ToList();
+
+        if (limit.HasValue)
         {
-            var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
-            var apiListings = await _apiClient.SearchAllBuyPagesAsync(region, maxPages, cancellationToken: cancellationToken);
-            
-            // Filter valid listings
-            var validListings = apiListings
-                .Where(l => !string.IsNullOrEmpty(l.ListingUrl) && l.GlobalId > 0)
-                .ToList();
-            
-            if (limit.HasValue)
-            {
-                validListings = validListings.Take(limit.Value).ToList();
-            }
-            
-            return validListings;
+            validListings = validListings.Take(limit.Value).ToList();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to fetch from Funda API");
-            return [];
-        }
+
+        return validListings;
     }
     
     private static string? ExtractRegionFromUrl(string url)

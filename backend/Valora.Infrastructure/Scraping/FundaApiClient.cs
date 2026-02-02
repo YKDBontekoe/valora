@@ -41,15 +41,8 @@ public class FundaApiClient
     public virtual async Task<FundaApiListingSummary?> GetListingSummaryAsync(int globalId, CancellationToken cancellationToken = default)
     {
         var url = string.Format(ListingSummaryApiUrlTemplate, globalId);
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<FundaApiListingSummary>(url, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to fetch listing summary for {GlobalId}", globalId);
-            return null;
-        }
+        // Exception handling is delegated to the caller/Polly to allow for retries and proper failure reporting.
+        return await _httpClient.GetFromJsonAsync<FundaApiListingSummary>(url, cancellationToken);
     }
 
     /// <summary>
@@ -59,19 +52,13 @@ public class FundaApiClient
     public virtual async Task<FundaApiSimilarListingsResponse?> GetSimilarListingsAsync(int globalId, CancellationToken cancellationToken = default)
     {
         var url = string.Format(SimilarListingsApiUrlTemplate, globalId);
-        try
-        {
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            
-            // The API returns a JSON array of objects if multiple, but here it returns an object with arrays. verified via curl.
-            return await response.Content.ReadFromJsonAsync<FundaApiSimilarListingsResponse>(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to fetch similar listings for {GlobalId}", globalId);
-            return null;
-        }
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+
+        // Throw on error so Polly can handle retries
+        response.EnsureSuccessStatusCode();
+
+        // The API returns a JSON array of objects if multiple, but here it returns an object with arrays. verified via curl.
+        return await response.Content.ReadFromJsonAsync<FundaApiSimilarListingsResponse>(cancellationToken);
     }
     
     private void ConfigureHttpClient()
@@ -160,50 +147,37 @@ public class FundaApiClient
         int? maxPrice,
         CancellationToken cancellationToken)
     {
-        try
+        var request = new FundaApiRequest
         {
-            var request = new FundaApiRequest
+            AggregationType = [aggregationType],
+            CultureInfo = "nl",
+            GeoInformation = geoInfo.ToLowerInvariant(),
+            OfferingType = [offeringType],
+            Page = page,
+            Price = new FundaApiPriceFilter
             {
-                AggregationType = [aggregationType],
-                CultureInfo = "nl",
-                GeoInformation = geoInfo.ToLowerInvariant(),
-                OfferingType = [offeringType],
-                Page = page,
-                Price = new FundaApiPriceFilter
-                {
-                    LowerBound = minPrice ?? 0,
-                    // Empirical testing shows "SalePrice" works for Rent/Projects too in this API
-                    PriceRangeType = "SalePrice", 
-                    UpperBound = maxPrice
-                },
-                Zoning = ["residential"]
-            };
-            
-            _logger.LogDebug("Fetching {Aggregation} ({Offering}) from Funda API for {GeoInfo}, page {Page}", 
-                aggregationType, offeringType, geoInfo, page);
-            
-            var response = await _httpClient.PostAsJsonAsync(ToppositionApiUrl, request, cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogWarning("Funda API request failed with status {StatusCode}. Body: {Body}", 
-                    response.StatusCode, errorContent);
-                return null;
-            }
-            
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<FundaApiResponse>(content);
-            
-            _logger.LogDebug("Funda API returned {Count} items", result?.Listings?.Count ?? 0);
-            
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching from Funda API for {GeoInfo}", geoInfo);
-            return null;
-        }
+                LowerBound = minPrice ?? 0,
+                // Empirical testing shows "SalePrice" works for Rent/Projects too in this API
+                PriceRangeType = "SalePrice",
+                UpperBound = maxPrice
+            },
+            Zoning = ["residential"]
+        };
+
+        _logger.LogDebug("Fetching {Aggregation} ({Offering}) from Funda API for {GeoInfo}, page {Page}",
+            aggregationType, offeringType, geoInfo, page);
+
+        var response = await _httpClient.PostAsJsonAsync(ToppositionApiUrl, request, cancellationToken);
+
+        // Throw on error so Polly can handle retries
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<FundaApiResponse>(content);
+
+        _logger.LogDebug("Funda API returned {Count} items", result?.Listings?.Count ?? 0);
+
+        return result;
     }
     
     /// <summary>
