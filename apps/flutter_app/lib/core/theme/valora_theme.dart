@@ -27,6 +27,13 @@ abstract final class ValoraTheme {
         iconTheme: _lightIconTheme,
         dividerTheme: _lightDividerTheme,
         scaffoldBackgroundColor: ValoraColors.backgroundLight,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       );
 
   // ============================================
@@ -48,6 +55,13 @@ abstract final class ValoraTheme {
         iconTheme: _darkIconTheme,
         dividerTheme: _darkDividerTheme,
         scaffoldBackgroundColor: ValoraColors.backgroundDark,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       );
 
   // ============================================
