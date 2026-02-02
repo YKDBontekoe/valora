@@ -165,11 +165,17 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
     // Hangfire Dashboard
     app.UseHangfireDashboard("/hangfire");
 
-    // Configure recurring job for scraping
+    // Configure recurring job for scraping (every 5 mins by default)
     RecurringJob.AddOrUpdate<FundaScraperJob>(
         "funda-scraper",
         job => job.ExecuteAsync(CancellationToken.None),
-        builder.Configuration["SCRAPER_CRON"] ?? "0 */6 * * *"); // Default: every 6 hours
+        builder.Configuration["SCRAPER_CRON"] ?? "*/5 * * * *");
+
+    // Configure recurring job for updates (hourly by default)
+    RecurringJob.AddOrUpdate<FundaUpdateJob>(
+        "funda-update",
+        job => job.ExecuteAsync(CancellationToken.None),
+        builder.Configuration["UPDATE_CRON"] ?? "0 * * * *");
 }
 
 // API Endpoints
