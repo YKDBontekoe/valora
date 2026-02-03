@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -17,6 +18,33 @@ class ListingDetailScreen extends StatelessWidget {
   });
 
   final Listing listing;
+
+  Future<void> _openExternalLink(BuildContext context) async {
+    final url = listing.url;
+    if (url != null) {
+      final uri = Uri.parse(url);
+      try {
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          if (context.mounted) {
+            _showErrorSnackBar(context, 'Could not open $url');
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          _showErrorSnackBar(context, 'Error launching URL: $e');
+        }
+      }
+    }
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: ValoraColors.error,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +139,32 @@ class ListingDetailScreen extends StatelessWidget {
                   // Broker Section
                   if (listing.brokerLogoUrl != null || listing.brokerPhone != null)
                     _buildBrokerSection(colorScheme),
+
+                  if (listing.url != null) ...[
+                    const SizedBox(height: ValoraSpacing.xl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _openExternalLink(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ValoraColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                          ),
+                        ),
+                        icon: const Icon(Icons.open_in_new_rounded),
+                        label: const Text(
+                          'View on Funda',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: ValoraSpacing.xl),
                 ],
