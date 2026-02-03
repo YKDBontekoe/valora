@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -18,33 +17,6 @@ class ListingDetailScreen extends StatelessWidget {
   });
 
   final Listing listing;
-
-  Future<void> _openExternalLink(BuildContext context) async {
-    final url = listing.url;
-    if (url != null) {
-      final uri = Uri.parse(url);
-      try {
-        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-          if (context.mounted) {
-            _showErrorSnackBar(context, 'Could not open $url');
-          }
-        }
-      } catch (e) {
-        if (context.mounted) {
-          _showErrorSnackBar(context, 'Error launching URL: $e');
-        }
-      }
-    }
-  }
-
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: ValoraColors.error,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
