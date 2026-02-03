@@ -13,9 +13,4 @@ public interface IListingRepository
     Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<int> CountAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Retrieves all listings that are currently active (not sold/withdrawn) for status updates.
-    /// </summary>
-    Task<List<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default);
 }
