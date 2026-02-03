@@ -2,20 +2,102 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
+import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_widgets.dart';
 import 'listing_detail_screen.dart';
 
-class SavedListingsScreen extends StatelessWidget {
+class SavedListingsScreen extends StatefulWidget {
   const SavedListingsScreen({super.key});
 
   @override
+  State<SavedListingsScreen> createState() => _SavedListingsScreenState();
+}
+
+class _SavedListingsScreenState extends State<SavedListingsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _sortOrder = 'date_added'; // 'date_added', 'price_asc', 'price_desc'
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _confirmRemove(BuildContext context, Listing listing) async {
+    final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Remove Favorite?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Remove',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text('Are you sure you want to remove this listing from your saved items?'),
+      ),
+    );
+
+    if (confirmed == true) {
+      await favoritesProvider.toggleFavorite(listing);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Consumer<FavoritesProvider>(
       builder: (context, favoritesProvider, child) {
-        final listings = favoritesProvider.favorites;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        var listings = favoritesProvider.favorites;
+
+        // Filter
+        if (_searchQuery.isNotEmpty) {
+          listings = listings.where((l) {
+            return l.address.toLowerCase().contains(_searchQuery) ||
+                   (l.city?.toLowerCase().contains(_searchQuery) ?? false) ||
+                   (l.postalCode?.toLowerCase().contains(_searchQuery) ?? false);
+          }).toList();
+        }
+
+        // Sort
+        // Create a copy to sort
+        listings = List.from(listings);
+        switch (_sortOrder) {
+          case 'price_asc':
+            listings.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));
+            break;
+          case 'price_desc':
+            listings.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
+            break;
+          case 'date_added':
+          default:
+            // Assuming the list from provider is already in order of addition (or reverse)
+            // If provider appends, then last is newest. Let's assume we want newest first.
+             listings = listings.reversed.toList();
+            break;
+        }
 
         return CustomScrollView(
           slivers: [
@@ -34,6 +116,34 @@ class SavedListingsScreen extends StatelessWidget {
               ),
               centerTitle: false,
             ),
+             SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Column(
+                  children: [
+                    ValoraTextField(
+                      controller: _searchController,
+                      label: '',
+                      hint: 'Search saved listings...',
+                      prefixIcon: Icons.search_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildSortChip('Newest', 'date_added'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('Price: Low to High', 'price_asc'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('Price: High to Low', 'price_desc'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             if (favoritesProvider.isLoading)
               const SliverFillRemaining(
                 child: Center(
@@ -45,10 +155,18 @@ class SavedListingsScreen extends StatelessWidget {
                 hasScrollBody: false,
                 child: Center(
                   child: ValoraEmptyState(
-                    icon: Icons.favorite_border_rounded,
-                    title: 'No saved listings',
-                    subtitle: 'Listings you save will appear here.',
-                    action: const SizedBox.shrink(), // No action needed
+                    icon: _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.favorite_border_rounded,
+                    title: _searchQuery.isNotEmpty ? 'No matches found' : 'No saved listings',
+                    subtitle: _searchQuery.isNotEmpty
+                        ? 'Try adjusting your search terms.'
+                        : 'Listings you save will appear here.',
+                     action: _searchQuery.isNotEmpty
+                        ? ValoraButton(
+                            label: 'Clear Search',
+                            variant: ValoraButtonVariant.secondary,
+                            onPressed: () => _searchController.clear(),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ),
               )
@@ -61,6 +179,8 @@ class SavedListingsScreen extends StatelessWidget {
                       final listing = listings[index];
                       return NearbyListingCard(
                         listing: listing,
+                        isFavorite: true,
+                        onFavoriteToggle: () => _confirmRemove(context, listing),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -79,6 +199,20 @@ class SavedListingsScreen extends StatelessWidget {
              const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         );
+      },
+    );
+  }
+
+  Widget _buildSortChip(String label, String value) {
+    return ValoraChip(
+      label: label,
+      isSelected: _sortOrder == value,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _sortOrder = value;
+          });
+        }
       },
     );
   }

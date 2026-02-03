@@ -3,7 +3,6 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Persistence.Extensions;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
 
@@ -130,7 +129,7 @@ public class ListingRepository : IListingRepository
             l.PublicationDate, l.IsSoldOrRented, l.Labels
         ));
 
-        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
+        return await PaginatedList<ListingDto>.CreateAsync(dtoQuery, filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
