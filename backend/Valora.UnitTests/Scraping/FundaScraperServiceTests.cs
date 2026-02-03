@@ -206,4 +206,129 @@ public class FundaScraperServiceTests
         // Verify error notification with the actual exception message
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("API Error"))), Times.Once);
     }
+
+    [Fact]
+    public async Task UpdateExistingListingsAsync_ShouldUpdatePrice_WhenChanged()
+    {
+        // Arrange
+        var listing = new Listing
+        {
+            Id = Guid.NewGuid(),
+            FundaId = "123",
+            Price = 500000,
+            Address = "Test Address",
+            Status = "Beschikbaar"
+        };
+
+        _listingRepoMock.Setup(x => x.GetActiveListingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([listing]);
+
+        // Mock GetListingSummaryAsync
+        _apiClientMock.Setup(x => x.GetListingSummaryAsync(123, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiListingSummary
+            {
+                Identifiers = new FundaApiIdentifiers { GlobalId = 123 },
+                Price = new FundaApiSummaryPrice { SellingPrice = "€ 550.000 k.k." }
+            });
+
+        // Act
+        await _service.UpdateExistingListingsAsync();
+
+        // Assert
+        // Verify price update on object
+        Assert.Equal(550000, listing.Price);
+
+        // Verify update call
+        _listingRepoMock.Verify(x => x.UpdateAsync(listing, It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify history added
+        _priceHistoryRepoMock.Verify(x => x.AddAsync(It.Is<PriceHistory>(ph => ph.Price == 550000), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateExistingListingsAsync_ShouldSkip_WhenFundaIdInvalid()
+    {
+        // Arrange
+        var listing = new Listing { FundaId = "invalid-id", Address = "A", Status = "Active" };
+        _listingRepoMock.Setup(x => x.GetActiveListingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([listing]);
+
+        // Act
+        await _service.UpdateExistingListingsAsync();
+
+        // Assert
+        // Should not call API
+        _apiClientMock.Verify(x => x.GetListingSummaryAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateExistingListingsAsync_ShouldSkip_WhenSummaryIsNull()
+    {
+        // Arrange
+        var listing = new Listing { FundaId = "123", Address = "A", Status = "Active" };
+        _listingRepoMock.Setup(x => x.GetActiveListingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([listing]);
+
+        _apiClientMock.Setup(x => x.GetListingSummaryAsync(123, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((FundaApiListingSummary?)null);
+
+        // Act
+        await _service.UpdateExistingListingsAsync();
+
+        // Assert
+        _listingRepoMock.Verify(x => x.UpdateAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateExistingListingsAsync_ShouldNotUpdate_WhenPriceUnchanged()
+    {
+        // Arrange
+        var listing = new Listing { FundaId = "123", Price = 500000, Address = "A", Status = "Active" };
+        _listingRepoMock.Setup(x => x.GetActiveListingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([listing]);
+
+        _apiClientMock.Setup(x => x.GetListingSummaryAsync(123, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiListingSummary
+            {
+                Identifiers = new FundaApiIdentifiers { GlobalId = 123 },
+                Price = new FundaApiSummaryPrice { SellingPrice = "€ 500.000 k.k." }
+            });
+
+        // Act
+        await _service.UpdateExistingListingsAsync();
+
+        // Assert
+        _listingRepoMock.Verify(x => x.UpdateAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Never);
+        _priceHistoryRepoMock.Verify(x => x.AddAsync(It.IsAny<PriceHistory>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateExistingListingsAsync_ShouldHandleApiExceptions()
+    {
+        // Arrange
+        var listing1 = new Listing { FundaId = "123", Address = "A" };
+        var listing2 = new Listing { FundaId = "456", Address = "B" };
+
+        _listingRepoMock.Setup(x => x.GetActiveListingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([listing1, listing2]);
+
+        // Fail first one
+        _apiClientMock.Setup(x => x.GetListingSummaryAsync(123, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Not Found"));
+
+        // Succeed second one
+        _apiClientMock.Setup(x => x.GetListingSummaryAsync(456, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiListingSummary
+            {
+                Identifiers = new FundaApiIdentifiers { GlobalId = 456 },
+                Price = new FundaApiSummaryPrice { SellingPrice = "€ 400.000 k.k." }
+            });
+
+        // Act
+        await _service.UpdateExistingListingsAsync();
+
+        // Assert
+        // First one failed but loop continued
+        _apiClientMock.Verify(x => x.GetListingSummaryAsync(456, It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

@@ -170,4 +170,30 @@ public class ListingRepositoryTests
         Assert.Single(resAreaRange.Items);
         Assert.Equal("Medium", resAreaRange.Items[0].Address);
     }
+
+    [Fact]
+    public async Task GetActiveListingsAsync_ShouldReturnOnlyActiveListings()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        context.Listings.AddRange(
+            new Listing { FundaId = "1", Address = "Active 1", Status = "Beschikbaar", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "Sold", Status = "Verkocht", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "3", Address = "Withdrawn", Status = "Ingetrokken", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "4", Address = "Active 2", Status = "Onder bod", CreatedAt = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        var result = await repository.GetActiveListingsAsync();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, l => l.Address == "Active 1");
+        Assert.Contains(result, l => l.Address == "Active 2");
+        Assert.DoesNotContain(result, l => l.Address == "Sold");
+        Assert.DoesNotContain(result, l => l.Address == "Withdrawn");
+    }
 }
