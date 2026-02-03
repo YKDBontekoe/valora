@@ -46,34 +46,34 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Features)
                 .HasColumnType("jsonb") // Hint for Postgres
                 .HasConversion(
-                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                    v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new Dictionary<string, string>());
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<Dictionary<string, string>>(v));
             
             // Phase 4: JSON conversions for list properties
             entity.Property(e => e.ImageUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
-                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<List<string>>(v));
             
             entity.Property(e => e.FloorPlanUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
-                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<List<string>>(v));
             
             entity.Property(e => e.OpenHouseDates)
                 .HasColumnType("jsonb")
                 .HasConversion(
-                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                    v => System.Text.Json.JsonSerializer.Deserialize<List<DateTime>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<DateTime>());
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<List<DateTime>>(v));
             
             // New: Labels from Summary API (e.g., "Nieuw", "Open huis")
             entity.Property(e => e.Labels)
                 .HasColumnType("jsonb")
                 .HasConversion(
-                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                    v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<List<string>>(v));
         });
 
         modelBuilder.Entity<PriceHistory>(entity =>
