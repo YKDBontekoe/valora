@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path; // Hide Path to avoid conflict with dart:ui Path
 import 'package:provider/provider.dart';
@@ -10,7 +9,6 @@ import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
-import '../widgets/home_components.dart';
 import 'listing_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -38,7 +36,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _generateLocations() {
-    final random = Random(42); // Fixed seed for stability
     _listingLocations = widget.listings.map((listing) {
       // Generate a deterministic location around Amsterdam based on ID
       // If we used listing.id.hashCode directly it might be too scattered,
@@ -101,7 +98,7 @@ class _MapScreenState extends State<MapScreen> {
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
               ),
-              onTap: (_, __) {
+              onTap: (_, _) {
                 if (_selectedIndex != -1) {
                   setState(() => _selectedIndex = -1);
                 }
