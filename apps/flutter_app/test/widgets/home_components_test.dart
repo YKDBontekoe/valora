@@ -41,7 +41,7 @@ void main() {
       );
 
       // Find the AnimatedContainer wrapping the TextField
-      final containerFinder = find.descendant(
+      find.descendant(
         of: find.byType(HomeHeader),
         matching: find.byType(AnimatedContainer),
       ).first;
