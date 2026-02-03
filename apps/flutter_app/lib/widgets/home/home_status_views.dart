@@ -1,15 +1,112 @@
 import 'package:flutter/material.dart';
 import '../valora_widgets.dart';
 import '../valora_error_state.dart';
+import '../../core/theme/valora_spacing.dart';
 
 class HomeLoadingSliver extends StatelessWidget {
   const HomeLoadingSliver({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const SliverFillRemaining(
-      hasScrollBody: false,
-      child: Center(child: ValoraLoadingIndicator(message: 'Loading listings...')),
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(ValoraSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Featured Header
+            const ValoraShimmer(width: 150, height: 24),
+            const SizedBox(height: ValoraSpacing.xs),
+            const ValoraShimmer(width: 200, height: 14),
+            const SizedBox(height: ValoraSpacing.lg),
+
+            // Featured Cards Row
+            SizedBox(
+              height: 300,
+              child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 2,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const ValoraShimmer(
+                            width: 260,
+                            height: 180,
+                            borderRadius: ValoraSpacing.radiusXl,
+                          ),
+                          const SizedBox(height: ValoraSpacing.md),
+                          const ValoraShimmer(width: 120, height: 20),
+                          const SizedBox(height: ValoraSpacing.xs),
+                          const ValoraShimmer(width: 180, height: 16),
+                          const SizedBox(height: ValoraSpacing.sm),
+                          Row(
+                            children: const [
+                              ValoraShimmer(width: 40, height: 16),
+                              SizedBox(width: 8),
+                              ValoraShimmer(width: 40, height: 16),
+                              SizedBox(width: 8),
+                              ValoraShimmer(width: 60, height: 16),
+                            ],
+                          )
+                        ],
+                      ),
+                    );
+                  }),
+            ),
+            const SizedBox(height: ValoraSpacing.xl),
+
+            // Nearby Header
+            const ValoraShimmer(width: 180, height: 24),
+            const SizedBox(height: ValoraSpacing.lg),
+
+            // Nearby List
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
+                  child: Row(
+                    children: [
+                      const ValoraShimmer(
+                        width: 100,
+                        height: 100,
+                        borderRadius: ValoraSpacing.radiusMd,
+                      ),
+                      const SizedBox(width: ValoraSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const ValoraShimmer(width: 100, height: 20),
+                            const SizedBox(height: ValoraSpacing.xs),
+                            const ValoraShimmer(width: 200, height: 14),
+                            const SizedBox(height: ValoraSpacing.md),
+                            Row(
+                              children: const [
+                                ValoraShimmer(width: 30, height: 12),
+                                SizedBox(width: 8),
+                                ValoraShimmer(width: 30, height: 12),
+                                SizedBox(width: 8),
+                                ValoraShimmer(width: 50, height: 12),
+                              ],
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                );
+              },
+            )
+          ],
+        ),
+      ),
     );
   }
 }
