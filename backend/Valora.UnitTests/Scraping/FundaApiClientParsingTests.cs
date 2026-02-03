@@ -100,4 +100,83 @@ public class FundaApiClientParsingTests
         Assert.Equal(2, result.Media.Items.Count);
         Assert.Equal("12345", result.Media.Items[0].Id);
     }
+
+    [Fact]
+    public async Task GetListingSummaryAsync_ShouldReturnSummary()
+    {
+        // Arrange
+        var json = @"{ ""identifiers"": { ""globalId"": 123 }, ""address"": { ""title"": ""Street 1"" } }";
+        SetupResponse(json);
+
+        // Act
+        var result = await _client.GetListingSummaryAsync(123);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(123, result!.Identifiers?.GlobalId);
+        Assert.Equal("Street 1", result.Address?.Street);
+    }
+
+    [Fact]
+    public async Task GetContactDetailsAsync_ShouldReturnContacts()
+    {
+        // Arrange
+        var json = @"{ ""id"": ""c1"", ""contactBlockDetails"": [ { ""id"": 1, ""displayName"": ""Broker"" } ] }";
+        SetupResponse(json);
+
+        // Act
+        var result = await _client.GetContactDetailsAsync(123);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result!.ContactDetails);
+        Assert.Equal("Broker", result.ContactDetails[0].DisplayName);
+    }
+
+    [Fact]
+    public async Task GetFiberAvailabilityAsync_ShouldReturnAvailability()
+    {
+        // Arrange
+        var json = @"{ ""postalCode"": ""1234AB"", ""availability"": true }";
+        SetupResponse(json);
+
+        // Act
+        var result = await _client.GetFiberAvailabilityAsync("1234AB");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result!.Availability);
+    }
+
+    [Fact]
+    public async Task SearchBuyAsync_ShouldReturnListings()
+    {
+        // Arrange
+        var json = @"{ ""listings"": [ { ""globalId"": 1, ""listingUrl"": ""url1"" } ] }";
+        SetupResponse(json);
+
+        // Act
+        var result = await _client.SearchBuyAsync("amsterdam");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result!.Listings);
+        Assert.Equal(1, result.Listings[0].GlobalId);
+    }
+
+    private void SetupResponse(string jsonContent)
+    {
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(jsonContent)
+            });
+    }
 }
