@@ -69,7 +69,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             if (_connectionString == "InMemory")
             {
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseInMemoryDatabase("ValoraIntegrationTestDb"));
+                    options.UseInMemoryDatabase("ValoraIntegrationTestDb")
+                           .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
             }
             else
             {
