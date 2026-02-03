@@ -95,4 +95,52 @@ public class FundaApiClientTests
         // SearchAsync logs Error then throws. AggregatePagesAsync catches and logs Warning.
         // So we should see LogWarning.
     }
+
+    [Fact]
+    public async Task SearchRentAsync_ShouldCallCorrectApiEndpoint()
+    {
+        // Arrange
+        var responseJson = JsonSerializer.Serialize(new FundaApiResponse { Listings = [] });
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(responseJson) })
+            .Verifiable();
+
+        // Act
+        await _client.SearchRentAsync("amsterdam");
+
+        // Assert
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri!.ToString().Contains("v2.0/search")),
+            ItExpr.IsAny<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    public async Task SearchProjectsAsync_ShouldCallCorrectApiEndpoint()
+    {
+        // Arrange
+        var responseJson = JsonSerializer.Serialize(new FundaApiResponse { Listings = [] });
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(responseJson) })
+            .Verifiable();
+
+        // Act
+        await _client.SearchProjectsAsync("amsterdam");
+
+        // Assert
+        _httpMessageHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri!.ToString().Contains("v2.0/search")),
+            ItExpr.IsAny<CancellationToken>()
+        );
+    }
 }

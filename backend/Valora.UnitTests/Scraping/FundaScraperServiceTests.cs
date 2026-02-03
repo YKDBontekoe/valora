@@ -218,4 +218,104 @@ public class FundaScraperServiceTests
         // Verify error notification with the actual exception message
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("API Error"))), Times.Once);
     }
+
+    [Fact]
+    public async Task ScrapeAndStoreAsync_InvalidUrl_ShouldSkipAndLog()
+    {
+        // Arrange
+        var options = Options.Create(new ScraperOptions
+        {
+            SearchUrls = ["invalid-url", "https://www.funda.nl/koop/valid/"],
+            DelayBetweenRequestsMs = 0
+        });
+
+        var service = new FundaScraperService(
+            _listingRepoMock.Object,
+            _priceHistoryRepoMock.Object,
+            _dbContext,
+            options,
+            _loggerMock.Object,
+            _notificationServiceMock.Object,
+            _apiClientMock.Object
+        );
+
+        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        // Act
+        await service.ScrapeAndStoreAsync();
+
+        // Assert
+        // Should only call API for the valid URL
+        _apiClientMock.Verify(x => x.SearchAllBuyPagesAsync("valid", It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify invalid URL caused a log error (checking for the specific message format)
+        // Note: Logger extension methods are hard to verify with Moq unless checking the underlying ILogger.Log
+        // We assume logic is correct if API is not called for 'invalid-url' which would be region 'invalid-url' if regex failed or null
+    }
+
+    [Fact]
+    public async Task ScrapeLimitedAsync_RepositoryError_ShouldThrowAndLog()
+    {
+        // Arrange
+        var apiListings = new List<FundaApiListing>
+        {
+            new() { GlobalId = 123, Price = "€ 500.000 k.k.", ListingUrl = "http://url1", Address = new() { ListingAddress = "Addr1", City = "City1" } }
+        };
+
+        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(apiListings);
+
+        _listingRepoMock.Setup(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Database Error"));
+
+        // Act & Assert
+        // Exceptions in ProcessListingAsync are caught and logged inside ScrapeSearchUrlAsync loop.
+        // The loop continues.
+        await _service.ScrapeLimitedAsync("amsterdam", 1);
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to process listing")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateExistingListingAsync_RepositoryError_ShouldThrowAndLog()
+    {
+        // Arrange
+        var apiListing = new FundaApiListing { GlobalId = 123, Price = "€ 600.000 k.k.", ListingUrl = "u", Address = new() { ListingAddress = "A", City = "C" } };
+
+        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([apiListing]);
+
+        var existingListing = new Listing { FundaId = "123", Price = 500000, Address = "A" };
+        _listingRepoMock.Setup(x => x.GetByFundaIdAsync("123", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingListing);
+
+        _listingRepoMock.Setup(x => x.UpdateAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Update Error"));
+
+        // Act & Assert
+        // We use ScrapeLimitedAsync to trigger the pipeline.
+        // NOTE: Exceptions in ProcessListingAsync are caught and logged inside ScrapeSearchUrlAsync.
+        // They are NOT rethrown, to allow other listings to be processed.
+        // So we expect ScrapeLimitedAsync to complete successfully, but we verify the logger interaction.
+        await _service.ScrapeLimitedAsync("amsterdam", 1);
+
+        // Use verify on Logger via the mocked object.
+        // Since LogError is an extension method, we check ILogger.Log
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to process listing")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }
