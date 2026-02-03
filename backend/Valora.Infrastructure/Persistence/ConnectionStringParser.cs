@@ -6,7 +6,7 @@ public static class ConnectionStringParser
 {
     public static string BuildConnectionString(string? connectionUrl)
     {
-        if (string.IsNullOrEmpty(connectionUrl)) 
+        if (string.IsNullOrEmpty(connectionUrl))
             return string.Empty;
 
         // If it doesn't start with postgres:// or postgresql://, assume it's already a connection string

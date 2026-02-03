@@ -35,7 +35,7 @@ public class ListingTests : BaseIntegrationTest
 
         // Act
         var response = await Client.GetAsync("/api/listings");
-        
+
         // Assert
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<ListingResponseDto>();
@@ -188,13 +188,13 @@ public class ListingTests : BaseIntegrationTest
         // Arrange
         for (int i = 0; i < 15; i++)
         {
-             DbContext.Listings.Add(new Listing
-             {
-                 FundaId = $"Page_{i}",
-                 Address = $"Street {i}",
-                 City = "Amsterdam",
-                 ListedDate = DateTime.UtcNow
-             });
+            DbContext.Listings.Add(new Listing
+            {
+                FundaId = $"Page_{i}",
+                Address = $"Street {i}",
+                City = "Amsterdam",
+                ListedDate = DateTime.UtcNow
+            });
         }
         await DbContext.SaveChangesAsync();
 

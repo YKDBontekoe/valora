@@ -45,8 +45,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             var configType = Type.GetType("Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration`1, Microsoft.EntityFrameworkCore");
             if (configType != null)
             {
-                 var genericConfigType = configType.MakeGenericType(typeof(ValoraDbContext));
-                 services.RemoveAll(genericConfigType);
+                var genericConfigType = configType.MakeGenericType(typeof(ValoraDbContext));
+                services.RemoveAll(genericConfigType);
             }
 
             // Also try to find it via interface matching if reflection fails or assembly issues

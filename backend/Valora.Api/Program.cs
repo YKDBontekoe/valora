@@ -165,18 +165,11 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
     // Hangfire Dashboard
     app.UseHangfireDashboard("/hangfire");
 
-    // Configure recurring job for scraping (every 5 mins by default)
+    // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(
         "funda-scraper",
         job => job.ExecuteAsync(CancellationToken.None),
-        builder.Configuration["SCRAPER_CRON"] ?? "*/5 * * * *");
-
-    // Configure recurring job for updates (hourly by default)
-    // This job tracks existing listings for price changes and status updates.
-    RecurringJob.AddOrUpdate<FundaUpdateJob>(
-        "funda-update",
-        job => job.ExecuteAsync(CancellationToken.None),
-        builder.Configuration["UPDATE_CRON"] ?? "0 * * * *");
+        builder.Configuration["SCRAPER_CRON"] ?? "0 */6 * * *"); // Default: every 6 hours
 }
 
 // API Endpoints
@@ -203,7 +196,7 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
 {
     var listing = await repo.GetByIdAsync(id, ct);
     if (listing is null) return Results.NotFound();
-    
+
     var dto = new ListingDto(
         listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
         listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,

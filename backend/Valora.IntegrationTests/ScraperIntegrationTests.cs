@@ -82,12 +82,12 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         Assert.Equal(address, listing.Address);
         Assert.Equal(city, listing.City);
         Assert.Equal(price, listing.Price);
-        
+
         // API-only scraping provides limited details compared to HTML scraping
         Assert.Null(listing.LivingAreaM2);
         Assert.Null(listing.PlotAreaM2);
         Assert.Null(listing.Bedrooms);
-        
+
         Assert.Equal("Woonhuis", listing.PropertyType); // Default for non-project
         Assert.Equal("Beschikbaar", listing.Status);
 

@@ -21,19 +21,19 @@ public class FundaApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FundaApiClient> _logger;
-    
+
     private const string ToppositionApiUrl = "https://search-topposition.funda.io/v2.0/search";
     private const string ListingSummaryApiUrlTemplate = "https://listing-detail-summary.funda.io/api/v1/listing/nl/{0}";
     private const string SimilarListingsApiUrlTemplate = "https://local-listings.funda.io/api/v1/similarlistings?globalid={0}";
-    
+
     public FundaApiClient(HttpClient httpClient, ILogger<FundaApiClient> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
-        
+
         ConfigureHttpClient();
     }
-    
+
     /// <summary>
     /// Fetches a detailed summary of a specific listing using its Global ID.
     /// Includes address, price, energy label, and broker info.
@@ -60,7 +60,7 @@ public class FundaApiClient
         // The API returns a JSON array of objects if multiple, but here it returns an object with arrays. verified via curl.
         return await response.Content.ReadFromJsonAsync<FundaApiSimilarListingsResponse>(cancellationToken);
     }
-    
+
     private void ConfigureHttpClient()
     {
         // Set browser-like headers for the API requests
@@ -71,7 +71,7 @@ public class FundaApiClient
         _httpClient.DefaultRequestHeaders.Add("Origin", "https://www.funda.nl");
         _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.funda.nl/");
     }
-    
+
     /// <summary>
     /// Search for residential buy listings (Koop).
     /// </summary>
@@ -83,12 +83,12 @@ public class FundaApiClient
         CancellationToken cancellationToken = default)
     {
         return await SearchAsync(
-            geoInfo, 
-            offeringType: "buy", 
-            aggregationType: "listing", 
-            page: page, 
-            minPrice: minPrice, 
-            maxPrice: maxPrice, 
+            geoInfo,
+            offeringType: "buy",
+            aggregationType: "listing",
+            page: page,
+            minPrice: minPrice,
+            maxPrice: maxPrice,
             cancellationToken: cancellationToken);
     }
 
@@ -106,12 +106,12 @@ public class FundaApiClient
         // or effectively ignore the type mismatch if the bounds are numeric.
         // We use the generic SearchAsync which defaults to SalePrice for now as it's proven to work.
         return await SearchAsync(
-            geoInfo, 
-            offeringType: "rent", 
-            aggregationType: "listing", 
-            page: page, 
-            minPrice: minPrice, 
-            maxPrice: maxPrice, 
+            geoInfo,
+            offeringType: "rent",
+            aggregationType: "listing",
+            page: page,
+            minPrice: minPrice,
+            maxPrice: maxPrice,
             cancellationToken: cancellationToken);
     }
 
@@ -126,12 +126,12 @@ public class FundaApiClient
         CancellationToken cancellationToken = default)
     {
         return await SearchAsync(
-            geoInfo, 
-            offeringType: "buy", 
-            aggregationType: "project", 
-            page: page, 
-            minPrice: minPrice, 
-            maxPrice: maxPrice, 
+            geoInfo,
+            offeringType: "buy",
+            aggregationType: "project",
+            page: page,
+            minPrice: minPrice,
+            maxPrice: maxPrice,
             cancellationToken: cancellationToken);
     }
 
@@ -189,7 +189,7 @@ public class FundaApiClient
             throw new HttpRequestException("Received invalid JSON from Funda API", ex);
         }
     }
-    
+
     /// <summary>
     /// Search multiple pages and aggregate results for residential buy listings.
     /// </summary>
@@ -211,7 +211,7 @@ public class FundaApiClient
         int maxPages)
     {
         var allListings = new List<FundaApiListing>();
-        
+
         for (var page = 1; page <= maxPages; page++)
         {
             try
@@ -224,13 +224,9 @@ public class FundaApiClient
                 }
 
                 allListings.AddRange(result.Listings);
-            
+
                 // Small delay to be respectful
                 await Task.Delay(500);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -238,7 +234,7 @@ public class FundaApiClient
                 break;
             }
         }
-        
+
         return allListings;
     }
 }

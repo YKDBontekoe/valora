@@ -11,9 +11,4 @@ public interface IFundaScraperService
     /// Performs a limited scrape for a specific region/city.
     /// </summary>
     Task ScrapeLimitedAsync(string region, int limit, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Checks all active listings in the database for updates (price, status, etc.) via the API.
-    /// </summary>
-    Task UpdateExistingListingsAsync(CancellationToken cancellationToken = default);
 }

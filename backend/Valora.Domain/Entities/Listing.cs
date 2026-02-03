@@ -18,6 +18,6 @@ public class Listing : BaseEntity
     public string? Url { get; set; }
     public string? ImageUrl { get; set; }
     public DateTime? ListedDate { get; set; }
-    
+
     public ICollection<PriceHistory> PriceHistory { get; set; } = [];
 }
