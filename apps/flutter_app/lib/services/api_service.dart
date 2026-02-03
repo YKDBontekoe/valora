@@ -163,6 +163,8 @@ class ApiService {
       return NetworkException('Server request timed out.');
     } else if (error is http.ClientException) {
       return NetworkException('Connection failed. Please check your network.');
+    } else if (error is FormatException) {
+      return JsonParsingException();
     }
 
     return UnknownException('Unexpected error: $error');

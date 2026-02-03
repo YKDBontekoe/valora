@@ -249,17 +249,24 @@ public class FundaApiClient
         
         for (var page = 1; page <= maxPages; page++)
         {
-            var result = await searchAction(page);
-            
-            if (result?.Listings == null || result.Listings.Count == 0)
+            try
             {
-                break;
+                var result = await searchAction(page);
+
+                if (result?.Listings == null || result.Listings.Count == 0)
+                {
+                    break;
+                }
+
+                allListings.AddRange(result.Listings);
+
+                // Small delay to be respectful
+                await Task.Delay(500);
             }
-            
-            allListings.AddRange(result.Listings);
-            
-            // Small delay to be respectful
-            await Task.Delay(500);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch page {Page}", page);
+            }
         }
         
         return allListings;

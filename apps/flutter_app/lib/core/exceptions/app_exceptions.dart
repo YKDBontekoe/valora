@@ -34,3 +34,8 @@ class UnknownException extends AppException {
   UnknownException([String? message])
       : super(message ?? 'An unknown error occurred');
 }
+
+class JsonParsingException extends AppException {
+  JsonParsingException([String? message])
+      : super(message ?? 'Failed to parse server response', 'Data Error: ');
+}
