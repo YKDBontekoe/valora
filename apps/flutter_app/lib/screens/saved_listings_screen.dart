@@ -43,7 +43,6 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
       context: context,
       builder: (context) => ValoraDialog(
         title: 'Remove Favorite?',
-        child: const Text('Are you sure you want to remove this listing from your saved items?'),
         actions: [
           ValoraButton(
             label: 'Cancel',
@@ -56,6 +55,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
             onPressed: () => Navigator.pop(context, true),
           ),
         ],
+        child: const Text('Are you sure you want to remove this listing from your saved items?'),
       ),
     );
 
