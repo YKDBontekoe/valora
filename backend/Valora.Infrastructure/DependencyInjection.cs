@@ -21,7 +21,7 @@ public static class DependencyInjection
         var rawConnectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
         var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 
-        services.AddDbContext<ValoraDbContext>(options =>
+        services.AddDbContextPool<ValoraDbContext>(options =>
             options.UseNpgsql(
                 connectionString,
                 npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
@@ -45,6 +45,8 @@ public static class DependencyInjection
         // Scraper services
         // FundaApiClient uses Funda's Topposition API for more reliable listing discovery
         services.AddHttpClient<FundaApiClient>()
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+            .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
             .AddTransientHttpErrorPolicy(builder =>
                 builder.WaitAndRetryAsync(
                     3,
