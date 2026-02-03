@@ -81,6 +81,78 @@ public partial class FundaScraperService : IFundaScraperService
         }
     }
 
+    public async Task UpdateExistingListingsAsync(CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Starting existing listings update job...");
+
+        var activeListings = await _listingRepository.GetActiveListingsAsync(cancellationToken);
+        _logger.LogInformation("Found {Count} active listings to check", activeListings.Count);
+
+        foreach (var listing in activeListings)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
+
+            try
+            {
+                if (!int.TryParse(listing.FundaId, out var globalId))
+                {
+                    _logger.LogWarning("Invalid FundaId: {Id}", listing.FundaId);
+                    continue;
+                }
+
+                // Respect rate limits
+                await Task.Delay(Math.Min(1000, _options.DelayBetweenRequestsMs), cancellationToken);
+
+                var summary = await _apiClient.GetListingSummaryAsync(globalId, cancellationToken);
+
+                if (summary == null)
+                {
+                    _logger.LogWarning("Listing {FundaId} returned null summary", listing.FundaId);
+                    continue;
+                }
+
+                bool updated = false;
+
+                // Check Price
+                var newPrice = ParsePriceFromApi(summary.Price?.SellingPrice);
+                if (newPrice.HasValue && newPrice != listing.Price)
+                {
+                    _logger.LogInformation("Price update for {Address}: {Old} -> {New}", listing.Address, listing.Price, newPrice);
+
+                    await _priceHistoryRepository.AddAsync(new PriceHistory
+                    {
+                        ListingId = listing.Id,
+                        Price = newPrice.Value
+                    }, cancellationToken);
+
+                    listing.Price = newPrice;
+                    updated = true;
+                }
+
+                // TODO: Check Status updates (Sold/Under Bid/etc)
+                // The summary API doesn't provide clear status codes, need to investigate specific fields or alternative endpoints.
+                // Status inference logic needs to be implemented here.
+
+                if (updated)
+                {
+                    await _listingRepository.UpdateAsync(listing, cancellationToken);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                // Likely 404 or 410 - listing removed
+                _logger.LogWarning("Listing {FundaId} API error (possibly removed): {Message}", listing.FundaId, ex.Message);
+                // TODO: Mark as removed/sold?
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update listing {FundaId}", listing.FundaId);
+            }
+        }
+
+        _logger.LogInformation("Update job completed");
+    }
+
     private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
     {
         if (!Uri.IsWellFormedUriString(searchUrl, UriKind.Absolute))

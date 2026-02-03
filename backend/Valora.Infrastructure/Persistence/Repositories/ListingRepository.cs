@@ -156,6 +156,15 @@ public class ListingRepository : IListingRepository
         return await _context.Listings.CountAsync(cancellationToken);
     }
 
+    public async Task<List<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default)
+    {
+        // Return listings that are not explicitly sold or withdrawn
+        // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
+        return await _context.Listings
+            .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken")
+            .ToListAsync(cancellationToken);
+    }
+
     private static string EscapeLikePattern(string pattern)
     {
         return pattern
