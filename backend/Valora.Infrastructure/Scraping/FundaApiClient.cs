@@ -25,6 +25,8 @@ public class FundaApiClient
     private const string ToppositionApiUrl = "https://search-topposition.funda.io/v2.0/search";
     private const string ListingSummaryApiUrlTemplate = "https://listing-detail-summary.funda.io/api/v1/listing/nl/{0}";
     private const string SimilarListingsApiUrlTemplate = "https://local-listings.funda.io/api/v1/similarlistings?globalid={0}";
+    private const string ContactDetailsApiUrlTemplate = "https://contacts-bff.funda.io/api/v3/listings/{0}/contact-details?website=1";
+    private const string FiberApiUrlTemplate = "https://kpnopticfiber.funda.io/api/v1/{0}";
     
     public FundaApiClient(HttpClient httpClient, ILogger<FundaApiClient> logger)
     {
@@ -59,6 +61,49 @@ public class FundaApiClient
 
         // The API returns a JSON array of objects if multiple, but here it returns an object with arrays. verified via curl.
         return await response.Content.ReadFromJsonAsync<FundaApiSimilarListingsResponse>(cancellationToken);
+    }
+
+    /// <summary>
+    /// Fetches contact details for a listing's broker/agent.
+    /// Returns broker phone number, logo, and association code (NVM/VBO).
+    /// </summary>
+    public virtual async Task<FundaContactDetailsResponse?> GetContactDetailsAsync(int globalId, CancellationToken cancellationToken = default)
+    {
+        var url = string.Format(ContactDetailsApiUrlTemplate, globalId);
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<FundaContactDetailsResponse>(url, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // Contact details not available for all listings
+            _logger.LogDebug("Contact details not found for listing {GlobalId}", globalId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Checks fiber optic availability at the given postal code.
+    /// Requires FULL postal code (e.g., "1096DE") not just prefix.
+    /// </summary>
+    public virtual async Task<FundaFiberResponse?> GetFiberAvailabilityAsync(string postalCode, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(postalCode) || postalCode.Length < 6)
+            return null;
+            
+        // Remove spaces and ensure uppercase (e.g., "1096 DE" -> "1096DE")
+        var cleanPostalCode = postalCode.Replace(" ", "").ToUpperInvariant();
+        var url = string.Format(FiberApiUrlTemplate, cleanPostalCode);
+        
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<FundaFiberResponse>(url, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogDebug(ex, "Failed to check fiber availability for postal code {PostalCode}", cleanPostalCode);
+            return null;
+        }
     }
     
     private void ConfigureHttpClient()
@@ -218,6 +263,126 @@ public class FundaApiClient
         }
         
         return allListings;
+    }
+    /// <summary>
+    /// Fetches the details page HTML and extracts the Nuxt hydration state to get rich data.
+    /// This includes full description, multiple photos, bathrooms, etc.
+    /// </summary>
+    public virtual async Task<FundaNuxtListingData?> GetListingDetailsAsync(string url, CancellationToken cancellationToken = default)
+    {
+        // 1. Fetch HTML
+        var html = await GetListingDetailHtmlAsync(url, cancellationToken);
+        if (string.IsNullOrEmpty(html)) return null;
+
+        // 2. Extract JSON content from script
+        // Look for <script type="application/json" ...> that *looks* like it has the data
+        // The Nuxt script typically starts with [ followed by some meta keys
+        var jsonContent = ExtractNuxtJson(html);
+        if (string.IsNullOrEmpty(jsonContent))
+        {
+            _logger.LogWarning("Could not find Nuxt state JSON in page: {Url}", url);
+            return null;
+        }
+
+        // 3. Parse and find the listing data node
+        return ParseNuxtState(jsonContent);
+    }
+    
+    private async Task<string> GetListingDetailHtmlAsync(string url, CancellationToken cancellationToken)
+    {
+        // Ensure we have a valid Absolute URL
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+             // Try to construct if it's relative? Funda usually gives us full URLs.
+             if (url.StartsWith("/")) url = "https://www.funda.nl" + url;
+        }
+
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
+    private string? ExtractNuxtJson(string html)
+    {
+        // Simple regex to find the script content. 
+        // We look for script type="application/json" and rely on the fact that the Nuxt blob is usually the largest one.
+        // Or we can look for specific identifying text like "cachedListingData" inside the tag.
+        var pattern = @"<script type=""application/json""[^>]*>(.*?cachedListingData.*?)</script>";
+        var match = System.Text.RegularExpressions.Regex.Match(html, pattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+        
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        
+        // Fallback: finding any application/json script and checking valid JSON
+        var multiPattern = @"<script type=""application/json""[^>]*>(.*?)</script>";
+        var matches = System.Text.RegularExpressions.Regex.Matches(html, multiPattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+        foreach (System.Text.RegularExpressions.Match m in matches)
+        {
+             var content = m.Groups[1].Value;
+             if (content.Contains("cachedListingData") || content.Contains("features") && content.Contains("media"))
+             {
+                 return content;
+             }
+        }
+
+        return null;
+    }
+
+    private FundaNuxtListingData? ParseNuxtState(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            // The root is usually an array (Nuxt 3 devalue)
+            // We need to walk the tree to find an object that has "features", "media", "description".
+            
+            // Breadth-first search for the node
+            var queue = new Queue<JsonElement>();
+            queue.Enqueue(doc.RootElement);
+
+            int safetyCounter = 0;
+            while (queue.Count > 0 && safetyCounter++ < 10000)
+            {
+                var current = queue.Dequeue();
+
+                if (current.ValueKind == JsonValueKind.Object)
+                {
+                    // Check if this is our candidate
+                    if (current.TryGetProperty("features", out _) && 
+                        current.TryGetProperty("media", out _) && 
+                        current.TryGetProperty("description", out _))
+                    {
+                        return current.Deserialize<FundaNuxtListingData>();
+                    }
+
+                    foreach (var prop in current.EnumerateObject())
+                    {
+                        if (prop.Value.ValueKind == JsonValueKind.Object || prop.Value.ValueKind == JsonValueKind.Array)
+                        {
+                            queue.Enqueue(prop.Value);
+                        }
+                    }
+                }
+                else if (current.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in current.EnumerateArray())
+                    {
+                        if (item.ValueKind == JsonValueKind.Object || item.ValueKind == JsonValueKind.Array)
+                        {
+                            queue.Enqueue(item);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse Nuxt state JSON");
+        }
+
+        return null;
     }
 }
 

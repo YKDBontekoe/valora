@@ -100,6 +100,19 @@ public record FundaApiListingSummary
     
     [JsonPropertyName("brokers")]
     public List<FundaApiBroker> Brokers { get; init; } = [];
+    
+    // New fields from verified API response
+    [JsonPropertyName("publicationDate")]
+    public DateTime? PublicationDate { get; init; }
+    
+    [JsonPropertyName("isSoldOrRented")]
+    public bool IsSoldOrRented { get; init; }
+    
+    [JsonPropertyName("labels")]
+    public List<FundaApiLabel> Labels { get; init; } = [];
+    
+    [JsonPropertyName("tracking")]
+    public FundaApiTracking? Tracking { get; init; }
 }
 
 public record FundaApiIdentifiers
@@ -164,3 +177,97 @@ public record FundaApiShortId
     [JsonPropertyName("globalId")]
     public int GlobalId { get; init; }
 }
+
+// ===== Extended Summary API Response Fields =====
+
+public record FundaApiLabel
+{
+    [JsonPropertyName("text")]
+    public string? Text { get; init; }
+    
+    [JsonPropertyName("type")]
+    public string? Type { get; init; }
+}
+
+public record FundaApiTracking
+{
+    [JsonPropertyName("values")]
+    public FundaApiTrackingValues? Values { get; init; }
+}
+
+public record FundaApiTrackingValues
+{
+    [JsonPropertyName("listing_askingprice")]
+    public int? AskingPrice { get; init; }
+    
+    [JsonPropertyName("listing_status")]
+    public string? Status { get; init; }
+    
+    [JsonPropertyName("listing_type")]
+    public string? Type { get; init; }
+    
+    [JsonPropertyName("listing_postal_code")]
+    public string? PostalCode { get; init; }
+}
+
+// ===== Contact Details API Response =====, 
+// Endpoint: https://contacts-bff.funda.io/api/v3/listings/{GlobalId}/contact-details?website=1
+// Example: {"id":"7879910","listingId":7879910,"tinyId":"43224373",...
+//          "contactBlockDetails":[{"id":12285,"logoUrl":"...","displayName":"Makelaarsland",
+//          "phoneNumber":"088-2002000","isContactingEnabled":true,...}]}
+
+public record FundaContactDetailsResponse
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+    
+    [JsonPropertyName("listingId")]
+    public int ListingId { get; init; }
+    
+    [JsonPropertyName("tinyId")]
+    public string? TinyId { get; init; }
+    
+    [JsonPropertyName("listingStatus")]
+    public string? ListingStatus { get; init; }
+    
+    [JsonPropertyName("contactBlockDetails")]
+    public List<FundaContactBlockDetail> ContactDetails { get; init; } = [];
+}
+
+public record FundaContactBlockDetail
+{
+    [JsonPropertyName("id")]
+    public int Id { get; init; }
+    
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; init; }
+    
+    [JsonPropertyName("logoUrl")]
+    public string? LogoUrl { get; init; }
+    
+    [JsonPropertyName("phoneNumber")]
+    public string? PhoneNumber { get; init; }
+    
+    [JsonPropertyName("associationCode")]
+    public string? AssociationCode { get; init; }
+    
+    [JsonPropertyName("isContactingEnabled")]
+    public bool IsContactingEnabled { get; init; }
+}
+
+// ===== Fiber Availability API Response =====
+// Endpoint: https://kpnopticfiber.funda.io/api/v1/{FullPostalCode}
+// Example: {"postalCode":"1096DE","message":"...has access to KPN optic fiber.","availability":true}
+
+public record FundaFiberResponse
+{
+    [JsonPropertyName("postalCode")]
+    public string? PostalCode { get; init; }
+    
+    [JsonPropertyName("availability")]
+    public bool Availability { get; init; }
+    
+    [JsonPropertyName("message")]
+    public string? Message { get; init; }
+}
+

@@ -207,7 +207,25 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     var dto = new ListingDto(
         listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
         listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,
-        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt
+        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt,
+        // Rich Data
+        listing.Description, listing.EnergyLabel, listing.YearBuilt, listing.ImageUrls,
+        // Phase 2
+        listing.OwnershipType, listing.CadastralDesignation, listing.VVEContribution, listing.HeatingType,
+        listing.InsulationType, listing.GardenOrientation, listing.HasGarage, listing.ParkingType,
+        // Phase 3
+        listing.AgentName, listing.VolumeM3, listing.BalconyM2, listing.GardenM2, listing.ExternalStorageM2,
+        listing.Features,
+        // Geo & Media
+        listing.Latitude, listing.Longitude, listing.VideoUrl, listing.VirtualTourUrl, listing.FloorPlanUrls, listing.BrochureUrl,
+        // Construction
+        listing.RoofType, listing.NumberOfFloors, listing.ConstructionPeriod, listing.CVBoilerBrand, listing.CVBoilerYear,
+        // Broker
+        listing.BrokerPhone, listing.BrokerLogoUrl,
+        // Infra
+        listing.FiberAvailable,
+        // Status
+        listing.PublicationDate, listing.IsSoldOrRented, listing.Labels
     );
     return Results.Ok(dto);
 }).RequireAuthorization();
@@ -247,6 +265,47 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
 
     BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
+}).RequireAuthorization();
+
+// Dynamic Funda search - cache-through pattern
+// Searches Funda on-demand, caching results in the database
+api.MapGet("/search", async (
+    [AsParameters] Valora.Application.Scraping.FundaSearchQuery query,
+    Valora.Application.Scraping.IFundaSearchService searchService,
+    CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(query.Region))
+    {
+        return Results.BadRequest(new { error = "Region is required" });
+    }
+    
+    var result = await searchService.SearchAsync(query, ct);
+    return Results.Ok(new
+    {
+        result.Items,
+        result.TotalCount,
+        result.Page,
+        result.PageSize,
+        result.FromCache
+    });
+}).RequireAuthorization();
+
+// Lookup a specific Funda listing by URL
+// Fetches from Funda if not cached or stale
+api.MapGet("/lookup", async (
+    string url,
+    Valora.Application.Scraping.IFundaSearchService searchService,
+    CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(url))
+    {
+        return Results.BadRequest(new { error = "URL is required" });
+    }
+    
+    var listing = await searchService.GetByFundaUrlAsync(url, ct);
+    return listing is null 
+        ? Results.NotFound(new { error = "Listing not found" }) 
+        : Results.Ok(listing);
 }).RequireAuthorization();
 
 app.Run();

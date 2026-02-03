@@ -109,7 +109,25 @@ public class ListingRepository : IListingRepository
             l.Url,
             l.ImageUrl,
             l.ListedDate,
-            l.CreatedAt
+            l.CreatedAt,
+            // Rich Data
+            l.Description, l.EnergyLabel, l.YearBuilt, l.ImageUrls,
+            // Phase 2
+            l.OwnershipType, l.CadastralDesignation, l.VVEContribution, l.HeatingType,
+            l.InsulationType, l.GardenOrientation, l.HasGarage, l.ParkingType,
+            // Phase 3
+            l.AgentName, l.VolumeM3, l.BalconyM2, l.GardenM2, l.ExternalStorageM2,
+            l.Features,
+            // Geo & Media
+            l.Latitude, l.Longitude, l.VideoUrl, l.VirtualTourUrl, l.FloorPlanUrls, l.BrochureUrl,
+            // Construction
+            l.RoofType, l.NumberOfFloors, l.ConstructionPeriod, l.CVBoilerBrand, l.CVBoilerYear,
+            // Broker
+            l.BrokerPhone, l.BrokerLogoUrl,
+            // Infra
+            l.FiberAvailable,
+            // Status
+            l.PublicationDate, l.IsSoldOrRented, l.Labels
         ));
 
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
@@ -162,6 +180,57 @@ public class ListingRepository : IListingRepository
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
         return await _context.Listings
             .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken")
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Listing>> GetByCityAsync(
+        string city, 
+        int? minPrice = null, 
+        int? maxPrice = null, 
+        int? minBedrooms = null,
+        int pageSize = 20, 
+        int page = 1,
+        CancellationToken cancellationToken = default)
+    {
+        var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
+        var query = _context.Listings.AsNoTracking().AsQueryable();
+
+        // Filter by city (case-insensitive)
+        if (isPostgres)
+        {
+            var escapedCity = EscapeLikePattern(city);
+            query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, escapedCity, @"\"));
+        }
+        else
+        {
+            query = query.Where(l => l.City != null && l.City.ToLower() == city.ToLower());
+        }
+
+        // Apply filters
+        if (minPrice.HasValue)
+        {
+            query = query.Where(l => l.Price >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(l => l.Price <= maxPrice.Value);
+        }
+
+        if (minBedrooms.HasValue)
+        {
+            query = query.Where(l => l.Bedrooms >= minBedrooms.Value);
+        }
+
+        // Order by last fetch time (freshest first), then by price
+        query = query
+            .OrderByDescending(l => l.LastFundaFetchUtc)
+            .ThenByDescending(l => l.Price);
+
+        // Paginate
+        return await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
     }
 
