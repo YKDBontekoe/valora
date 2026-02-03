@@ -20,7 +20,7 @@ void main() {
 
   group('ApiService', () {
     test('baseUrl uses dotenv', () {
-      expect(ApiService.baseUrl, 'http://localhost:5000/api');
+      expect(ApiService.baseUrl, 'https://valora-ylpr.onrender.com/api');
     });
 
     test('baseUrl falls back to default if dotenv missing', () {

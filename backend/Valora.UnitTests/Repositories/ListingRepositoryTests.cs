@@ -170,4 +170,116 @@ public class ListingRepositoryTests
         Assert.Single(resAreaRange.Items);
         Assert.Equal("Medium", resAreaRange.Items[0].Address);
     }
+
+    [Fact]
+    public async Task GetActiveListingsAsync_ShouldReturnOnlyActiveListings()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        context.Listings.AddRange(
+            new Listing { FundaId = "1", Address = "Active 1", Status = "Beschikbaar", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "Sold", Status = "Verkocht", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "3", Address = "Withdrawn", Status = "Ingetrokken", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "4", Address = "Option", Status = "Onder optie", CreatedAt = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        var result = await repository.GetActiveListingsAsync();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, l => l.Address == "Active 1");
+        Assert.Contains(result, l => l.Address == "Option");
+        Assert.DoesNotContain(result, l => l.Address == "Sold");
+        Assert.DoesNotContain(result, l => l.Address == "Withdrawn");
+    }
+
+    [Fact]
+    public async Task GetByCityAsync_ShouldFilterAndSort()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        context.Listings.AddRange(
+            new Listing { FundaId = "1", Address = "A", City = "Amsterdam", Price = 300000, LastFundaFetchUtc = DateTime.UtcNow.AddHours(-1), CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "B", City = "Amsterdam", Price = 200000, LastFundaFetchUtc = DateTime.UtcNow, CreatedAt = DateTime.UtcNow }, // Fresher
+            new Listing { FundaId = "3", Address = "C", City = "Rotterdam", Price = 250000, CreatedAt = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        var result = await repository.GetByCityAsync("Amsterdam", minPrice: 150000);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        // Should be ordered by freshness desc
+        Assert.Equal("B", result[0].Address);
+        Assert.Equal("A", result[1].Address);
+    }
+
+    [Fact]
+    public async Task CountAsync_ShouldReturnTotalCount()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        context.Listings.AddRange(
+            new Listing { FundaId = "1", Address = "A", CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "B", CreatedAt = DateTime.UtcNow }
+        );
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        var count = await repository.CountAsync();
+
+        // Assert
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldUpdateListing()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        var listing = new Listing { FundaId = "1", Address = "Old", CreatedAt = DateTime.UtcNow };
+        context.Listings.Add(listing);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        listing.Address = "New";
+        await repository.UpdateAsync(listing);
+
+        // Assert
+        var updated = await context.Listings.FindAsync(listing.Id);
+        Assert.Equal("New", updated!.Address);
+        Assert.NotNull(updated.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldRemoveListing()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        var listing = new Listing { FundaId = "1", Address = "DeleteMe", CreatedAt = DateTime.UtcNow };
+        context.Listings.Add(listing);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        await repository.DeleteAsync(listing.Id);
+
+        // Assert
+        var deleted = await context.Listings.FindAsync(listing.Id);
+        Assert.Null(deleted);
+    }
 }

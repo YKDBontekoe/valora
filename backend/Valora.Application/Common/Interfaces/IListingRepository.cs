@@ -13,4 +13,22 @@ public interface IListingRepository
     Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<int> CountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves all listings that are currently active (not sold/withdrawn) for status updates.
+    /// </summary>
+    Task<List<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retrieves listings by city/region with basic filtering.
+    /// Returns full Listing entities for dynamic search caching.
+    /// </summary>
+    Task<List<Listing>> GetByCityAsync(
+        string city, 
+        int? minPrice = null, 
+        int? maxPrice = null, 
+        int? minBedrooms = null,
+        int pageSize = 20, 
+        int page = 1,
+        CancellationToken cancellationToken = default);
 }

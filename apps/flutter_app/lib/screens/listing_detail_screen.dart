@@ -71,22 +71,102 @@ class ListingDetailScreen extends StatelessWidget {
                   const SizedBox(height: ValoraSpacing.lg),
                   Divider(color: colorScheme.outlineVariant),
                   const SizedBox(height: ValoraSpacing.lg),
-                  _buildSpecsGrid(context, colorScheme),
+                  _buildMainSpecsGrid(context, colorScheme),
                   const SizedBox(height: ValoraSpacing.xl),
-                  if (listing.url != null)
-                    SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.only(bottom: ValoraSpacing.md),
-                        child: ValoraButton(
-                          label: 'View on Funda',
-                          icon: Icons.open_in_new,
-                          isFullWidth: true,
-                          onPressed: () => _openExternalLink(context),
+                  
+                  // Description
+                  if (listing.description != null) ...[
+                     Text(
+                      'About this home',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.sm),
+                    Text(
+                      listing.description!,
+                      style: ValoraTypography.bodyMedium.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.xl),
+                  ],
+
+                  // Key Features Grid
+                  _buildKeyFeaturesGrid(context, colorScheme),
+                  const SizedBox(height: ValoraSpacing.xl),
+
+                  // Technical Details
+                  _buildTechnicalDetails(context, colorScheme),
+                  const SizedBox(height: ValoraSpacing.xl),
+
+                  // Features List
+                  if (listing.features.isNotEmpty) ...[
+                    Text(
+                      'Features',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.md),
+                    ...listing.features.entries.map((e) => Padding(
+                      padding: const EdgeInsets.only(bottom: ValoraSpacing.sm),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.check_circle_outline_rounded, size: 20, color: colorScheme.primary),
+                          const SizedBox(width: ValoraSpacing.sm),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurface),
+                                children: [
+                                  TextSpan(text: '${e.key}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: e.value),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                    const SizedBox(height: ValoraSpacing.xl),
+                  ],
+                  
+                  // Broker Section
+                  if (listing.brokerLogoUrl != null || listing.brokerPhone != null)
+                    _buildBrokerSection(colorScheme),
+
+                  if (listing.url != null) ...[
+                    const SizedBox(height: ValoraSpacing.xl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _openExternalLink(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ValoraColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                          ),
+                        ),
+                        icon: const Icon(Icons.open_in_new_rounded),
+                        label: const Text(
+                          'View on Funda',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
+                  ],
+
+                  const SizedBox(height: ValoraSpacing.xl),
                 ],
               ),
             ),
@@ -225,7 +305,7 @@ class ListingDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSpecsGrid(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildMainSpecsGrid(BuildContext context, ColorScheme colorScheme) {
     final specs = <Widget>[];
 
     if (listing.bedrooms != null) {
@@ -274,6 +354,176 @@ class ListingDetailScreen extends StatelessWidget {
           padding: const EdgeInsets.only(right: ValoraSpacing.lg),
           child: widget,
         )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildKeyFeaturesGrid(BuildContext context, ColorScheme colorScheme) {
+    final features = <Widget>[];
+
+    if (listing.energyLabel != null) {
+      features.add(_buildFeatureChip(Icons.energy_savings_leaf_rounded, 'Label ${listing.energyLabel}', colorScheme));
+    }
+    if (listing.yearBuilt != null) {
+      features.add(_buildFeatureChip(Icons.calendar_today_rounded, 'Built ${listing.yearBuilt}', colorScheme));
+    }
+    if (listing.ownershipType != null) {
+      features.add(_buildFeatureChip(Icons.gavel_rounded, listing.ownershipType!, colorScheme));
+    }
+    if (listing.heatingType != null) {
+      features.add(_buildFeatureChip(Icons.thermostat_rounded, listing.heatingType!, colorScheme));
+    }
+    if (listing.hasGarage) {
+      features.add(_buildFeatureChip(Icons.garage_rounded, 'Garage', colorScheme));
+    }
+
+    if (features.isEmpty) return const SizedBox.shrink();
+
+    return Wrap(
+      spacing: ValoraSpacing.sm,
+      runSpacing: ValoraSpacing.sm,
+      children: features,
+    );
+  }
+
+  Widget _buildFeatureChip(IconData icon, String label, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: colorScheme.onSecondaryContainer),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: ValoraTypography.labelLarge.copyWith(color: colorScheme.onSecondaryContainer),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTechnicalDetails(BuildContext context, ColorScheme colorScheme) {
+    final details = <String, String?>{
+      'Roof Type': listing.roofType,
+      'Construction': listing.constructionPeriod,
+      'Insulation': listing.insulationType,
+      'Parking': listing.parkingType,
+      'Orientation': listing.gardenOrientation,
+      'Boiler': listing.cvBoilerBrand != null ? '${listing.cvBoilerBrand} (${listing.cvBoilerYear ?? "Unknown"})' : null,
+      'Volume': listing.volumeM3 != null ? '${listing.volumeM3} m³' : null,
+    };
+
+    final validDetails = details.entries.where((e) => e.value != null).toList();
+
+    if (validDetails.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Details',
+          style: ValoraTypography.titleLarge.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: ValoraSpacing.md),
+        Container(
+          padding: const EdgeInsets.all(ValoraSpacing.md),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+          ),
+          child: Column(
+            children: validDetails.map((e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                   Text(
+                    e.key,
+                    style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                  Text(
+                    e.value!,
+                    style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBrokerSection(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(ValoraSpacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          if (listing.brokerLogoUrl != null)
+             Container(
+               width: 50,
+               height: 50,
+               decoration: BoxDecoration(
+                 color: Colors.white,
+                 borderRadius: BorderRadius.circular(8),
+                 image: DecorationImage(
+                   image: NetworkImage(listing.brokerLogoUrl!),
+                   fit: BoxFit.contain,
+                 ),
+               ),
+             )
+          else
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.business, color: Colors.white),
+            ),
+          const SizedBox(width: ValoraSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Broker',
+                  style: ValoraTypography.labelMedium.copyWith(color: colorScheme.primary),
+                ),
+                Text(
+                 // Use agentName if available as falback or specific broker name field if added later
+                 // For now, assume agentName might be person, not company. 
+                 // If no specific broker name field, we might just show "Contact Broker"
+                  listing.agentName ?? 'Real Estate Agent',
+                  style: ValoraTypography.titleMedium.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (listing.brokerPhone != null)
+                  Text(
+                    listing.brokerPhone!,
+                    style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
