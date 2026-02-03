@@ -22,6 +22,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultRazorPageItems>false</EnableDefaultRazorPageItems>
+    <EnableDefaultRazorGenerateItems>false</EnableDefaultRazorGenerateItems>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
 
   <ItemGroup>
