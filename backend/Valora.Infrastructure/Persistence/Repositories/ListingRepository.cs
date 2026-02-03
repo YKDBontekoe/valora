@@ -179,7 +179,7 @@ public class ListingRepository : IListingRepository
         // Return listings that are not explicitly sold or withdrawn
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
         return await _context.Listings
-            .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken")
+            .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken" && !l.IsSoldOrRented)
             .ToListAsync(cancellationToken);
     }
 
@@ -192,6 +192,8 @@ public class ListingRepository : IListingRepository
         int page = 1,
         CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
         var query = _context.Listings.AsNoTracking().AsQueryable();
 

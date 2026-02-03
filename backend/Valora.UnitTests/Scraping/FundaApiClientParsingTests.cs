@@ -164,6 +164,58 @@ public class FundaApiClientParsingTests
         Assert.Equal(1, result.Listings[0].GlobalId);
     }
 
+    [Fact]
+    public async Task SearchAllBuyPagesAsync_PartialFailure_ShouldReturnSuccessResults()
+    {
+        // Arrange
+        var jsonPage1 = @"{ ""listings"": [ { ""globalId"": 101 } ] }";
+        var jsonPage3 = @"{ ""listings"": [ { ""globalId"": 102 } ] }";
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.Content != null && r.Content.ReadAsStringAsync().Result.Contains("\"page\":1")),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(jsonPage1)
+            });
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.Content != null && r.Content.ReadAsStringAsync().Result.Contains("\"page\":2")),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ThrowsAsync(new HttpRequestException("Simulated Network Error"));
+
+         _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.Content != null && r.Content.ReadAsStringAsync().Result.Contains("\"page\":3")),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(jsonPage3)
+            });
+
+        // Act
+        var result = await _client.SearchAllBuyPagesAsync("amsterdam", 3);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, l => l.GlobalId == 101);
+        Assert.Contains(result, l => l.GlobalId == 102);
+    }
+
     private void SetupResponse(string jsonContent)
     {
         _httpHandlerMock
