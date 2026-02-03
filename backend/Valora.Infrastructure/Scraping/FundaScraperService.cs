@@ -115,11 +115,19 @@ public partial class FundaScraperService : IFundaScraperService
             await _notificationService.NotifyProgressAsync($"Found {apiListings.Count} listings. Processing...");
         }
 
+        // Batch fetch existing listings to avoid N+1
+        var fundaIds = apiListings.Select(x => x.GlobalId.ToString()).Distinct().ToList();
+        var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
+        var existingMap = existingListings.ToDictionary(x => x.FundaId, x => x);
+
         foreach (var apiListing in apiListings)
         {
             try
             {
-                await ProcessListingAsync(apiListing, shouldNotify, cancellationToken);
+                var fundaId = apiListing.GlobalId.ToString();
+                var existing = existingMap.GetValueOrDefault(fundaId);
+
+                await ProcessListingAsync(apiListing, existing, shouldNotify, cancellationToken);
                 
                 // Rate limiting delay
                 await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
@@ -187,11 +195,9 @@ public partial class FundaScraperService : IFundaScraperService
         return null;
     }
 
-    private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
+    private async Task ProcessListingAsync(FundaApiListing apiListing, Listing? existingListing, bool shouldNotify, CancellationToken cancellationToken)
     {
         var fundaId = apiListing.GlobalId.ToString();
-        var existingListing = await _listingRepository.GetByFundaIdAsync(fundaId, cancellationToken);
-
         var listing = MapApiListingToDomain(apiListing, fundaId);
 
         if (existingListing == null)

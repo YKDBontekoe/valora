@@ -126,6 +126,13 @@ public class ListingRepository : IListingRepository
             .FirstOrDefaultAsync(l => l.FundaId == fundaId, cancellationToken);
     }
 
+    public async Task<List<Listing>> GetByFundaIdsAsync(IEnumerable<string> fundaIds, CancellationToken cancellationToken = default)
+    {
+        return await _context.Listings
+            .Where(l => fundaIds.Contains(l.FundaId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Listing> AddAsync(Listing listing, CancellationToken cancellationToken = default)
     {
         _context.Listings.Add(listing);

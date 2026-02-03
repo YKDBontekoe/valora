@@ -58,6 +58,9 @@ public class FundaScraperServiceTests
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(apiListings);
 
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
         // Act
         await _service.ScrapeLimitedAsync("amsterdam", 2);
 
@@ -103,6 +106,9 @@ public class FundaScraperServiceTests
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city2", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([new() { GlobalId = 2, ListingUrl = "u2", Address = new() { City = "City2" } }]);
 
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
         // Act
         await service.ScrapeAndStoreAsync();
 
@@ -134,8 +140,9 @@ public class FundaScraperServiceTests
             Address = "Addr1"
         };
 
-        _listingRepoMock.Setup(x => x.GetByFundaIdAsync("1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingListing);
+        // Update to mock GetByFundaIdsAsync instead of GetByFundaIdAsync
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.Is<IEnumerable<string>>(ids => ids.Contains("1")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([existingListing]);
 
         var options = Options.Create(new ScraperOptions
         {
@@ -177,6 +184,9 @@ public class FundaScraperServiceTests
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(apiListings);
+
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
 
         // Act
         // Limit to 1

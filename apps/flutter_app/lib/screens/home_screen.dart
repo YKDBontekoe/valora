@@ -7,7 +7,6 @@ import '../core/theme/valora_typography.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
-import '../providers/favorites_provider.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/home_components.dart';
 import '../widgets/home/home_sliver_app_bar.dart';
