@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/saved_listings_screen.dart';
-import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:valora_app/widgets/home_components.dart';
 
 void main() {
@@ -112,9 +111,6 @@ void main() {
        // Find the first card
        final firstCard = find.byType(NearbyListingCard).first;
 
-       // Find an icon inside the first card
-       final iconInCard = find.descendant(of: firstCard, matching: find.byType(Icon)).first;
-
        // Tap it. This assumes the first icon found is the favorite one (it's last in Stack, but order in traversal depends).
        // Actually, Favorite is last child of Stack.
        // Other icons (bed, bath) are in a Column which is the second child of Row (first child is the Image/Stack).
@@ -157,7 +153,6 @@ void main() {
        } else {
          // If dialog didn't show, maybe we tapped wrong thing.
          // But at least we tried.
-         print("Dialog not found - skipping removal check");
        }
     });
   });

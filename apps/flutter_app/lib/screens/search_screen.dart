@@ -29,6 +29,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isLoading = false;
   String? _error;
   String _currentQuery = '';
+  String? _activeSearchQuery;
 
   @override
   void initState() {
@@ -64,12 +65,14 @@ class _SearchScreenState extends State<SearchScreen> {
           _listings = [];
           _isLoading = false;
           _error = null;
+          _activeSearchQuery = null;
         });
       }
     });
   }
 
   Future<void> _performSearch(String query) async {
+    _activeSearchQuery = query;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -83,14 +86,14 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
 
-      if (mounted) {
+      if (mounted && _activeSearchQuery == query) {
         setState(() {
           _listings = response.items;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && _activeSearchQuery == query) {
         setState(() {
           _error = e is AppException ? e.message : 'Failed to search listings';
           _isLoading = false;
