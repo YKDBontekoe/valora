@@ -13,6 +13,7 @@ import '../widgets/home_components.dart';
 import '../widgets/home/home_sliver_app_bar.dart';
 import '../widgets/home/home_status_views.dart';
 import 'listing_detail_screen.dart';
+import 'map_screen.dart';
 import 'saved_listings_screen.dart';
 import 'search_screen.dart';
 import 'settings_screen.dart';
@@ -304,12 +305,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBody() {
+Widget _buildBody() {
     switch (_currentNavIndex) {
       case 0:
         return _buildHomeView();
       case 1:
-        return const SearchScreen();
+        return MapScreen(listings: _listings);
       case 2:
         return const SavedListingsScreen();
       case 3:
