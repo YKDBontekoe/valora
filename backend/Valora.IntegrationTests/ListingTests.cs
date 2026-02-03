@@ -217,6 +217,32 @@ public class ListingTests : BaseIntegrationTest
         Assert.Equal(5, result2!.Items.Count);
         Assert.False(result2.HasNextPage);
     }
+
+    [Fact]
+    public async Task GetByFundaIdsAsync_ShouldReturnCorrectListings()
+    {
+        // Arrange
+        var repository = GetRequiredService<IListingRepository>();
+        var listing1 = new Listing { FundaId = "Batch1", Address = "A" };
+        var listing2 = new Listing { FundaId = "Batch2", Address = "B" };
+        var listing3 = new Listing { FundaId = "Batch3", Address = "C" };
+
+        await repository.AddAsync(listing1);
+        await repository.AddAsync(listing2);
+        await repository.AddAsync(listing3);
+
+        var idsToFetch = new[] { "Batch1", "Batch3", "NonExistent" };
+
+        // Act
+        var result = await repository.GetByFundaIdsAsync(idsToFetch);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, l => l.FundaId == "Batch1");
+        Assert.Contains(result, l => l.FundaId == "Batch3");
+        Assert.DoesNotContain(result, l => l.FundaId == "Batch2");
+    }
 }
 
 public class ListingResponseDto
