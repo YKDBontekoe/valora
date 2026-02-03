@@ -86,6 +86,10 @@ public partial class FundaScraperService : IFundaScraperService
         if (!Uri.IsWellFormedUriString(searchUrl, UriKind.Absolute))
         {
              _logger.LogError("Invalid search URL provided: {Url}", searchUrl);
+             if (limit > 0)
+             {
+                 await NotifyScrapingErrorAsync($"Invalid search URL provided: {searchUrl}");
+             }
              return;
         }
 

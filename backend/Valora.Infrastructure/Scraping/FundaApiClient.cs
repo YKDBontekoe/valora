@@ -228,6 +228,10 @@ public class FundaApiClient
                 // Small delay to be respectful
                 await Task.Delay(500);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to fetch page {Page} during aggregation. Returning {Count} listings found so far.", page, allListings.Count);
