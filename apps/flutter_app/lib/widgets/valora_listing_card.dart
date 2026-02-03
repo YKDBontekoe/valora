@@ -4,7 +4,6 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
-import '../screens/property_details_screen.dart';
 import 'valora_widgets.dart';
 
 /// Property listing card with image, price, and details.
@@ -39,14 +38,7 @@ class ValoraListingCard extends StatelessWidget {
 
     return ValoraCard(
       padding: EdgeInsets.zero,
-      onTap: onTap ??
-          () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => PropertyDetailsScreen(listing: listing),
-              ),
-            );
-          },
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

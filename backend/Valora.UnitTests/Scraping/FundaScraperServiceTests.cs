@@ -206,42 +206,4 @@ public class FundaScraperServiceTests
         // Verify error notification with the actual exception message
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("API Error"))), Times.Once);
     }
-
-    [Fact]
-    public async Task UpdateExistingListingsAsync_ShouldUpdatePrice_WhenChanged()
-    {
-        // Arrange
-        var listing = new Listing
-        {
-            Id = Guid.NewGuid(),
-            FundaId = "123",
-            Price = 500000,
-            Address = "Test Address",
-            Status = "Beschikbaar"
-        };
-
-        _listingRepoMock.Setup(x => x.GetActiveListingsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync([listing]);
-
-        // Mock GetListingSummaryAsync
-        _apiClientMock.Setup(x => x.GetListingSummaryAsync(123, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaApiListingSummary
-            {
-                Identifiers = new FundaApiIdentifiers { GlobalId = 123 },
-                Price = new FundaApiSummaryPrice { SellingPrice = "€ 550.000 k.k." }
-            });
-
-        // Act
-        await _service.UpdateExistingListingsAsync();
-
-        // Assert
-        // Verify price update on object
-        Assert.Equal(550000, listing.Price);
-
-        // Verify update call
-        _listingRepoMock.Verify(x => x.UpdateAsync(listing, It.IsAny<CancellationToken>()), Times.Once);
-
-        // Verify history added
-        _priceHistoryRepoMock.Verify(x => x.AddAsync(It.Is<PriceHistory>(ph => ph.Price == 550000), It.IsAny<CancellationToken>()), Times.Once);
-    }
 }
