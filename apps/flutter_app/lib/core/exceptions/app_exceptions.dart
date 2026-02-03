@@ -30,6 +30,11 @@ class NotFoundException extends AppException {
       : super(message ?? 'Resource not found', 'Not Found: ');
 }
 
+class JsonParsingException extends AppException {
+  JsonParsingException([String? message])
+      : super(message ?? 'Failed to process server response', 'Data Error: ');
+}
+
 class UnknownException extends AppException {
   UnknownException([String? message])
       : super(message ?? 'An unknown error occurred');

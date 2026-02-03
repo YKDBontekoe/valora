@@ -173,11 +173,21 @@ public class FundaApiClient
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<FundaApiResponse>(content);
 
-        _logger.LogDebug("Funda API returned {Count} items", result?.Listings?.Count ?? 0);
-
-        return result;
+        try
+        {
+            var result = JsonSerializer.Deserialize<FundaApiResponse>(content);
+            _logger.LogDebug("Funda API returned {Count} items", result?.Listings?.Count ?? 0);
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize Funda API response. Content preview: {Content}",
+                content.Length > 100 ? content[..100] + "..." : content);
+            // Throw HttpRequestException to trigger Polly retry if policy includes it,
+            // or let the caller handle it.
+            throw new HttpRequestException("Received invalid JSON from Funda API", ex);
+        }
     }
     
     /// <summary>
@@ -204,17 +214,25 @@ public class FundaApiClient
         
         for (var page = 1; page <= maxPages; page++)
         {
-            var result = await searchAction(page);
-            
-            if (result?.Listings == null || result.Listings.Count == 0)
+            try
             {
+                var result = await searchAction(page);
+
+                if (result?.Listings == null || result.Listings.Count == 0)
+                {
+                    break;
+                }
+
+                allListings.AddRange(result.Listings);
+            
+                // Small delay to be respectful
+                await Task.Delay(500);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch page {Page} during aggregation. Returning {Count} listings found so far.", page, allListings.Count);
                 break;
             }
-            
-            allListings.AddRange(result.Listings);
-            
-            // Small delay to be respectful
-            await Task.Delay(500);
         }
         
         return allListings;

@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
 using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
 
@@ -16,6 +18,7 @@ public class FundaScraperServiceTests
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly ValoraDbContext _dbContext;
     private readonly FundaScraperService _service;
 
     public FundaScraperServiceTests()
@@ -35,9 +38,16 @@ public class FundaScraperServiceTests
             DelayBetweenRequestsMs = 0 
         });
 
+        var dbOptions = new DbContextOptionsBuilder<ValoraDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
+        _dbContext = new ValoraDbContext(dbOptions);
+
         _service = new FundaScraperService(
             _listingRepoMock.Object,
             _priceHistoryRepoMock.Object,
+            _dbContext,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
@@ -91,6 +101,7 @@ public class FundaScraperServiceTests
         var service = new FundaScraperService(
             _listingRepoMock.Object,
             _priceHistoryRepoMock.Object,
+            _dbContext,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
@@ -146,6 +157,7 @@ public class FundaScraperServiceTests
         var service = new FundaScraperService(
             _listingRepoMock.Object,
             _priceHistoryRepoMock.Object,
+            _dbContext,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,

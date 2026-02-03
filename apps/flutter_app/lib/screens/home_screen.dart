@@ -255,10 +255,20 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
 
+      String message = 'Failed to trigger scrape';
+      if (e is ServerException && e.message.contains('503')) {
+        message = 'Scraper service is currently unavailable. Please try again later.';
+      } else if (e is AppException) {
+        message = e.message;
+      } else {
+        message = 'An unexpected error occurred: ${e.toString()}';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to trigger scrape: ${e is AppException ? e.message : e}'),
+          content: Text(message),
           backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       setState(() => _isLoading = false);

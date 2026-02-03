@@ -129,7 +129,12 @@ class ApiService {
 
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return parser(response.body);
+      try {
+        return parser(response.body);
+      } catch (e) {
+        developer.log('JSON Parsing Error: $e', name: 'ApiService');
+        throw JsonParsingException('Invalid response format from server');
+      }
     }
 
     developer.log(
@@ -163,6 +168,8 @@ class ApiService {
       return NetworkException('Server request timed out.');
     } else if (error is http.ClientException) {
       return NetworkException('Connection failed. Please check your network.');
+    } else if (error is FormatException) {
+      return JsonParsingException('Bad response format.');
     }
 
     return UnknownException('Unexpected error: $error');

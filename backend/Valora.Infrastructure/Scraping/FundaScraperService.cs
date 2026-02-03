@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
 using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
@@ -16,6 +17,7 @@ public partial class FundaScraperService : IFundaScraperService
 
     private readonly IListingRepository _listingRepository;
     private readonly IPriceHistoryRepository _priceHistoryRepository;
+    private readonly ValoraDbContext _dbContext;
     private readonly FundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
@@ -24,6 +26,7 @@ public partial class FundaScraperService : IFundaScraperService
     public FundaScraperService(
         IListingRepository listingRepository,
         IPriceHistoryRepository priceHistoryRepository,
+        ValoraDbContext dbContext,
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
         IScraperNotificationService notificationService,
@@ -31,6 +34,7 @@ public partial class FundaScraperService : IFundaScraperService
     {
         _listingRepository = listingRepository;
         _priceHistoryRepository = priceHistoryRepository;
+        _dbContext = dbContext;
         _apiClient = apiClient;
         _options = options.Value;
         _logger = logger;
@@ -79,6 +83,12 @@ public partial class FundaScraperService : IFundaScraperService
 
     private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
     {
+        if (!Uri.IsWellFormedUriString(searchUrl, UriKind.Absolute))
+        {
+             _logger.LogError("Invalid search URL provided: {Url}", searchUrl);
+             return;
+        }
+
         _logger.LogInformation("Scraping search URL: {Url}", searchUrl);
         bool shouldNotify = limit.HasValue;
 
@@ -244,63 +254,89 @@ public partial class FundaScraperService : IFundaScraperService
 
     private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
-        // Set default status for new listings if not present
-        listing.Status ??= DefaultStatus;
+        using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        // New listing - add it
-        await _listingRepository.AddAsync(listing, cancellationToken);
-        _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
-
-        if (shouldNotify)
+        try
         {
-            await NotifyMatchFoundAsync(listing.Address);
-        }
+            // Set default status for new listings if not present
+            listing.Status ??= DefaultStatus;
 
-        // Record initial price
-        if (listing.Price.HasValue)
-        {
-            await _priceHistoryRepository.AddAsync(new PriceHistory
+            // New listing - add it
+            await _listingRepository.AddAsync(listing, cancellationToken);
+            _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
+
+            // Record initial price
+            if (listing.Price.HasValue)
             {
-                ListingId = listing.Id,
-                Price = listing.Price.Value
-            }, cancellationToken);
+                await _priceHistoryRepository.AddAsync(new PriceHistory
+                {
+                    ListingId = listing.Id,
+                    Price = listing.Price.Value
+                }, cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+
+            // Notify after commit
+            if (shouldNotify)
+            {
+                await NotifyMatchFoundAsync(listing.Address);
+            }
+        }
+        catch (Exception ex)
+        {
+             _logger.LogError(ex, "Failed to add new listing {FundaId}", listing.FundaId);
+             throw;
         }
     }
 
     private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
-        // Existing listing - check for price changes
-        var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
+        using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        if (priceChanged)
+        try
         {
-            _logger.LogInformation(
-                "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
-                listing.FundaId, existingListing.Price, listing.Price);
+            // Existing listing - check for price changes
+            var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
 
-            await _priceHistoryRepository.AddAsync(new PriceHistory
+            if (priceChanged)
             {
-                ListingId = existingListing.Id,
-                Price = listing.Price!.Value
-            }, cancellationToken);
+                _logger.LogInformation(
+                    "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
+                    listing.FundaId, existingListing.Price, listing.Price);
+
+                await _priceHistoryRepository.AddAsync(new PriceHistory
+                {
+                    ListingId = existingListing.Id,
+                    Price = listing.Price!.Value
+                }, cancellationToken);
+            }
+
+            // Update listing properties
+            existingListing.Price = listing.Price;
+            existingListing.ImageUrl = listing.ImageUrl;
+
+            // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
+            if (listing.Bedrooms.HasValue) existingListing.Bedrooms = listing.Bedrooms;
+            if (listing.LivingAreaM2.HasValue) existingListing.LivingAreaM2 = listing.LivingAreaM2;
+            if (listing.PlotAreaM2.HasValue) existingListing.PlotAreaM2 = listing.PlotAreaM2;
+            if (!string.IsNullOrEmpty(listing.Status)) existingListing.Status = listing.Status;
+
+            await _listingRepository.UpdateAsync(existingListing, cancellationToken);
+            _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            // Notify after commit
+            if (shouldNotify)
+            {
+                await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
+            }
         }
-
-        // Update listing properties
-        existingListing.Price = listing.Price;
-        existingListing.ImageUrl = listing.ImageUrl;
-        
-        // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
-        if (listing.Bedrooms.HasValue) existingListing.Bedrooms = listing.Bedrooms;
-        if (listing.LivingAreaM2.HasValue) existingListing.LivingAreaM2 = listing.LivingAreaM2;
-        if (listing.PlotAreaM2.HasValue) existingListing.PlotAreaM2 = listing.PlotAreaM2;
-        if (!string.IsNullOrEmpty(listing.Status)) existingListing.Status = listing.Status;
-
-        await _listingRepository.UpdateAsync(existingListing, cancellationToken);
-        _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
-
-        if (shouldNotify)
+        catch (Exception ex)
         {
-            await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
+             _logger.LogError(ex, "Failed to update listing {FundaId}", listing.FundaId);
+             throw;
         }
     }
 
