@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/listing_detail_screen.dart';
@@ -12,29 +15,79 @@ import 'package:valora_app/screens/listing_detail_screen.dart';
 @GenerateMocks([FavoritesProvider])
 import 'listing_detail_screen_test.mocks.dart';
 
+// Mock UrlLauncherPlatform
+class MockUrlLauncher extends Fake with MockPlatformInterfaceMixin implements UrlLauncherPlatform {
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    if (url.contains('fail')) {
+      return false;
+    }
+    if (url.contains('error')) {
+      throw PlatformException(code: 'ERROR', message: 'Launch failed');
+    }
+    return true;
+  }
+
+  @override
+  Future<bool> canLaunch(String url) async => true;
+}
+
+class MockHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return _MockHttpClient();
+  }
+}
+
+class _MockHttpClient extends Mock implements HttpClient {
+  @override
+  Future<HttpClientRequest> getUrl(Uri url) async {
+    return _MockHttpClientRequest();
+  }
+}
+
+class _MockHttpClientRequest extends Mock implements HttpClientRequest {
+  @override
+  Future<HttpClientResponse> close() async {
+    return _MockHttpClientResponse();
+  }
+}
+
+class _MockHttpClientResponse extends Mock implements HttpClientResponse {
+  final List<int> _imageBytes = [
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+    0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+    0x42, 0x60, 0x82
+  ];
+
+  @override
+  int get statusCode => 200;
+
+  @override
+  int get contentLength => _imageBytes.length;
+
+  @override
+  HttpClientResponseCompressionState get compressionState => HttpClientResponseCompressionState.notCompressed;
+
+  @override
+  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
+      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+    onData?.call(_imageBytes);
+    onDone?.call();
+    return Stream<List<int>>.fromIterable([_imageBytes]).listen(null);
+  }
+}
+
 void main() {
   late MockFavoritesProvider mockFavoritesProvider;
-  final List<MethodCall> log = <MethodCall>[];
 
   setUp(() {
     mockFavoritesProvider = MockFavoritesProvider();
     when(mockFavoritesProvider.isFavorite(any)).thenReturn(false);
-    HttpOverrides.global = null;
-    log.clear();
-
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (MethodCall methodCall) async {
-      log.add(methodCall);
-      if (methodCall.method == 'UrlLauncher.launch') {
-        return true;
-      }
-      return null;
-    });
-  });
-
-  tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null);
+    UrlLauncherPlatform.instance = MockUrlLauncher();
+    HttpOverrides.global = MockHttpOverrides();
   });
 
   Widget createWidgetUnderTest(Listing listing) {
@@ -93,7 +146,7 @@ void main() {
     expect(find.text('Test Agent'), findsOneWidget);
   });
 
-  testWidgets('Tapping "View on Funda" launches URL', (tester) async {
+  testWidgets('Tapping "View on Funda" launches URL success', (tester) async {
     final listing = Listing(
       id: '1',
       fundaId: '123',
@@ -104,14 +157,59 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('View on Funda'), 500);
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('View on Funda'));
     await tester.pumpAndSettle();
 
-    // Verify method channel call if possible, or assume success if no error
-    // Note: url_launcher implementation details might vary, but we mock standard platform channel
-    // For web/newer plugins it might use a different channel name.
-    // However, verify no snackbar error is enough for success path.
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('Tapping "View on Funda" handles launch failure', (tester) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Test Address',
+      url: 'https://fail.com',
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('View on Funda'), 500);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('View on Funda'));
+    // Pump to start snackbar animation, but don't settle (which might wait for it to close)
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500)); // Wait a bit for entrance
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.textContaining('Could not open'), findsOneWidget);
+  });
+
+  testWidgets('Tapping "View on Funda" handles launch error', (tester) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Test Address',
+      url: 'https://error.com',
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('View on Funda'), 500);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('View on Funda'));
+    // Pump to start snackbar animation, but don't settle
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.textContaining('Error launching URL'), findsOneWidget);
   });
 
   testWidgets('Tapping "Contact Broker" launches dialer', (tester) async {
@@ -123,6 +221,9 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Contact Broker'), 500);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Contact Broker'));

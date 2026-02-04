@@ -59,9 +59,33 @@ void main() {
       await gesture.moveTo(tester.getCenter(find.text('Hover Me')));
       await tester.pumpAndSettle();
 
-      // Verify no crash; checking exact scale requires finding the Transform widget
-      // which is implementation detail of AnimatedContainer/ScaleTransition
       expect(find.text('Hover Me'), findsOneWidget);
+    });
+
+    testWidgets('handles tap down/up/cancel state', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              child: const Text('Interact'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(tester.getCenter(find.text('Interact')));
+      await tester.pump(); // Tap down
+
+      await gesture.up(); // Tap up
+      await tester.pumpAndSettle();
+
+      // Test Cancel
+      final gesture2 = await tester.startGesture(tester.getCenter(find.text('Interact')));
+      await tester.pump();
+      await gesture2.cancel();
+      await tester.pumpAndSettle();
     });
   });
 
@@ -190,12 +214,12 @@ void main() {
       expect(find.text('Ghost'), findsOneWidget);
     });
 
-    testWidgets('handles press animation state', (tester) async {
+    testWidgets('handles pointer up/cancel states', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ValoraButton(
-              label: 'Animate Me',
+              label: 'Interact',
               onPressed: () {},
             ),
           ),
@@ -203,11 +227,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final gesture = await tester.startGesture(tester.getCenter(find.text('Animate Me')));
-      await tester.pump(); // Start animation
-      // Verify state change implicitly via coverage hitting Listener logic
+      // Press down
+      final gesture = await tester.startGesture(tester.getCenter(find.text('Interact')));
+      await tester.pump();
 
+      // Press up
       await gesture.up();
+      await tester.pumpAndSettle();
+
+      // Press cancel
+      final gesture2 = await tester.startGesture(tester.getCenter(find.text('Interact')));
+      await tester.pump();
+      await gesture2.cancel();
       await tester.pumpAndSettle();
     });
   });
@@ -282,21 +313,36 @@ void main() {
       expect(find.text('Email'), findsOneWidget);
     });
 
-    testWidgets('accepts input', (tester) async {
+    testWidgets('handles controller and input properties', (tester) async {
+      final controller = TextEditingController();
+      String submittedValue = '';
+
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
             body: ValoraTextField(
+              controller: controller,
               label: 'Input',
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (val) => submittedValue = val,
+              autofillHints: const [AutofillHints.password],
+              prefixIcon: Icons.lock,
+              prefixText: 'Pass: ',
             ),
           ),
         ),
       );
 
-      await tester.enterText(find.byType(TextFormField), 'Test Input');
+      await tester.enterText(find.byType(TextFormField), '12345');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump();
 
-      expect(find.text('Test Input'), findsOneWidget);
+      expect(controller.text, '12345');
+      expect(submittedValue, '12345');
+      expect(find.byIcon(Icons.lock), findsOneWidget);
+      expect(find.text('Pass: '), findsOneWidget);
     });
   });
 
