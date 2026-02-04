@@ -162,7 +162,6 @@ void main() {
           ),
         ),
       );
-      // Don't use pumpAndSettle because CircularProgressIndicator never settles
       await tester.pump();
 
       await tester.tap(find.byType(ValoraButton));
@@ -170,7 +169,6 @@ void main() {
 
       expect(pressed, isFalse);
 
-      // Unmount the widget to dispose the infinite animation timer
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
     });
@@ -255,7 +253,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle(); // Allow animations to finish
+      await tester.pumpAndSettle();
 
       expect(find.text('New'), findsOneWidget);
     });
@@ -279,7 +277,7 @@ void main() {
   });
 
   group('ValoraTextField Tests', () {
-     testWidgets('renders label and hint', (tester) async {
+    testWidgets('renders label and hint', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -296,7 +294,7 @@ void main() {
     });
 
     testWidgets('updates focused state', (tester) async {
-       await tester.pumpWidget(
+      await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: ValoraTextField(
@@ -309,7 +307,6 @@ void main() {
       await tester.tap(find.byType(TextFormField));
       await tester.pump();
 
-      // Verify visual feedback if possible, or just that it doesn't crash
       expect(find.text('Email'), findsOneWidget);
     });
 
@@ -345,6 +342,7 @@ void main() {
       expect(find.text('Pass: '), findsOneWidget);
     });
 
+    // --- Resolved Conflicts Below ---
     testWidgets('validates input', (tester) async {
       final formKey = GlobalKey<FormState>();
       await tester.pumpWidget(
@@ -430,7 +428,7 @@ void main() {
           ),
         ),
       );
-      await tester.pump(); // Infinite animation
+      await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
@@ -465,7 +463,6 @@ void main() {
         ),
       );
 
-      // Expected format based on code: € 123.456
       expect(find.textContaining('123.456'), findsOneWidget);
     });
 

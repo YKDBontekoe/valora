@@ -21,6 +21,39 @@ public class FundaApiClientParsingTests
     }
 
     [Fact]
+    public async Task GetListingDetailsAsync_NoMatchingScript_ReturnsNull()
+    {
+        // Arrange
+        var html = $@"
+        <html>
+        <body>
+            <script type=""application/json"">
+                {{ ""irrelevant"": true }}
+            </script>
+        </body>
+        </html>";
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(html)
+            });
+
+        // Act
+        var result = await _client.GetListingDetailsAsync("https://example.com", CancellationToken.None);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task GetListingDetailsAsync_ParsesNuxtStateCorrectly()
     {
         // Arrange
@@ -99,6 +132,48 @@ public class FundaApiClientParsingTests
         Assert.NotNull(result.Media);
         Assert.Equal(2, result.Media.Items.Count);
         Assert.Equal("12345", result.Media.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task GetListingDetailsAsync_MultipleScripts_ExtractsCorrectOne()
+    {
+        // Arrange
+        var targetJson = @"{ ""description"": { ""content"": ""Correct"" }, ""features"": {}, ""media"": {} }";
+
+        var html = $@"
+        <html>
+        <body>
+            <script type=""application/json"">
+                {{ ""irrelevant"": true }}
+            </script>
+            <script type=""application/json"">
+                {{ ""cachedListingData"": true, {targetJson.Trim('{', '}')} }}
+            </script>
+            <script type=""application/json"">
+                {{ ""other"": ""data"" }}
+            </script>
+        </body>
+        </html>";
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(html)
+            });
+
+        // Act
+        var result = await _client.GetListingDetailsAsync("https://example.com", CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Correct", result!.Description?.Content);
     }
 
     [Fact]
