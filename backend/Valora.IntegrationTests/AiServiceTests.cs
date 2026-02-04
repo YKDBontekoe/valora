@@ -52,14 +52,52 @@ public class AiServiceTests : IDisposable
 
         var request = _server.LogEntries.First().RequestMessage;
 
-        // Verify Headers
-        Assert.Contains(request.Headers, h => h.Key == "HTTP-Referer");
-        Assert.Contains(request.Headers, h => h.Key == "X-Title");
+        // Verify Headers (Defaults)
+        Assert.Contains(request.Headers, h => h.Key == "HTTP-Referer" && h.Value.Contains("https://valora.app"));
+        Assert.Contains(request.Headers, h => h.Key == "X-Title" && h.Value.Contains("Valora"));
 
         // Verify Body DOES NOT contain model property
         var body = request.BodyData?.BodyAsString;
         Assert.NotNull(body);
         Assert.DoesNotContain("\"model\"", body);
+    }
+
+    [Fact]
+    public async Task ChatAsync_WithCustomHeadersConfig_ShouldSendCustomHeaders()
+    {
+        // Arrange
+        var customConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "OPENROUTER_API_KEY", "test-key" },
+                { "OPENROUTER_BASE_URL", _server.Url },
+                { "OPENROUTER_SITE_URL", "https://custom.com" },
+                { "OPENROUTER_SITE_NAME", "CustomApp" }
+            })
+            .Build();
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""id"": ""chatcmpl-123"",
+                    ""choices"": [{
+                        ""message"": { ""role"": ""assistant"", ""content"": ""Response"" }
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(customConfig);
+
+        // Act
+        await sut.ChatAsync("Hello");
+
+        // Assert
+        var request = _server.LogEntries.Last().RequestMessage;
+
+        // Verify Headers
+        Assert.Contains(request.Headers, h => h.Key == "HTTP-Referer" && h.Value.Contains("https://custom.com"));
+        Assert.Contains(request.Headers, h => h.Key == "X-Title" && h.Value.Contains("CustomApp"));
     }
 
     [Fact]
@@ -125,25 +163,6 @@ public class AiServiceTests : IDisposable
 
         // Assert
         Assert.Equal(string.Empty, result);
-    }
-
-    [Fact]
-    public async Task Policy_ShouldHandleInvalidJsonGracefully()
-    {
-        // Arrange
-        // We rely on the fact that if JSON parsing fails, the policy just passes it through.
-        // However, the OpenAI SDK itself enforces valid JSON structure for requests.
-        // So this test mainly covers the "try-catch" block in the policy by ensuring
-        // normal operation works, and maybe mocking a scenario where we manually invoke the policy
-        // but that's hard with internal classes.
-        // Instead, we trust the integration test coverage for the happy path.
-
-        // To truly test the async path of the policy, we need to ensure the SDK uses the async path.
-        // The SDK's CompleteChatAsync should trigger ProcessAsync in the policy.
-        // We can verify this implicitly by the fact that our tests pass (using ChatAsync),
-        // assuming the SDK pipeline calls ProcessAsync.
-
-        await ChatAsync_WithDefaultModel_ShouldOmitModelFieldInRequest();
     }
 
     public void Dispose()

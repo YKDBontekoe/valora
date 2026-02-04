@@ -12,6 +12,8 @@ public class OpenRouterAiService : IAiService
     private readonly string _apiKey;
     private readonly string _defaultModel;
     private readonly Uri _endpoint;
+    private readonly string _siteUrl;
+    private readonly string _siteName;
 
     // This string must match the one in OpenRouterDefaultModelPolicy
     private const string PlaceholderModel = "openrouter/default";
@@ -25,6 +27,9 @@ public class OpenRouterAiService : IAiService
 
         var baseUrl = configuration["OPENROUTER_BASE_URL"] ?? "https://openrouter.ai/api/v1";
         _endpoint = new Uri(baseUrl);
+
+        _siteUrl = configuration["OPENROUTER_SITE_URL"] ?? "https://valora.app";
+        _siteName = configuration["OPENROUTER_SITE_NAME"] ?? "Valora";
     }
 
     public async Task<string> ChatAsync(string prompt, string? model = null, CancellationToken cancellationToken = default)
@@ -37,8 +42,8 @@ public class OpenRouterAiService : IAiService
         };
 
         // Add policies to handle OpenRouter specifics
-        // Headers for attribution
-        options.AddPolicy(new OpenRouterHeadersPolicy(), PipelinePosition.PerCall);
+        // Headers for attribution - configurable via settings
+        options.AddPolicy(new OpenRouterHeadersPolicy(_siteUrl, _siteName), PipelinePosition.PerCall);
 
         // Policy to remove "model" field if it matches our placeholder (triggering user default at OpenRouter)
         options.AddPolicy(new OpenRouterDefaultModelPolicy(), PipelinePosition.PerCall);
