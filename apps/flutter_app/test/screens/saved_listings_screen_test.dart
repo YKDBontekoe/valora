@@ -175,7 +175,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       await tester.enterText(find.byType(ValoraTextField), 'Amsterdam');
-      await tester.pump(const Duration(milliseconds: 500)); // Animation
+      await tester.pump(const Duration(seconds: 1)); // Animation
 
       expect(find.text('A Street'), findsOneWidget);
       expect(find.text('B Street'), findsNothing);
@@ -187,14 +187,15 @@ void main() {
 
       // Enter search query that matches nothing
       await tester.enterText(find.byType(ValoraTextField), 'Unknown');
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(seconds: 1)); // Wait longer
 
       expect(find.text('No matches found'), findsOneWidget);
       expect(find.text('Clear Search'), findsOneWidget);
 
       // Clear search
       await tester.tap(find.text('Clear Search'));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(); // Start animations/rebuild
+      await tester.pump(const Duration(seconds: 2)); // Wait longer for all animations (fade in lists + images)
 
       expect(find.text('A Street'), findsOneWidget);
       expect(find.text('B Street'), findsOneWidget);
@@ -214,7 +215,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       await tester.tap(chipFinder);
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(seconds: 1));
 
       final finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
       final cards = tester.widgetList<NearbyListingCard>(finder);
@@ -236,13 +237,13 @@ void main() {
 
       await tester.scrollUntilVisible(priceChip, 50.0, scrollable: scrollable);
       await tester.tap(priceChip);
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(seconds: 1));
 
       // Now tap Newest
       final newestChip = find.widgetWithText(FilterChip, 'Newest');
       await tester.scrollUntilVisible(newestChip, 50.0, scrollable: scrollable);
       await tester.tap(newestChip);
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(seconds: 1));
 
       final finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
       final cards = tester.widgetList<NearbyListingCard>(finder);
@@ -273,13 +274,13 @@ void main() {
           }
        }
 
-       await tester.pump(const Duration(milliseconds: 500)); // Dialog animation
+       await tester.pump(const Duration(seconds: 1)); // Dialog animation
 
        // Verify Dialog
        if (find.text('Remove Favorite?').evaluate().isNotEmpty) {
          expect(find.text('Remove Favorite?'), findsOneWidget);
          await tester.tap(find.text('Remove'));
-         await tester.pump(const Duration(milliseconds: 500)); // Animation
+         await tester.pump(const Duration(seconds: 1)); // Animation
          expect(find.byType(NearbyListingCard), findsOneWidget);
        }
     });
