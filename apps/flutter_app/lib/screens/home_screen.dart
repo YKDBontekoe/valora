@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _pageSize = 10;
   static const String _defaultScrapeRegion = 'amsterdam';
   static const int _featuredCount = 5;
-  static const double _bottomListPadding = 80.0;
+  static const double _bottomListPadding = 160.0;
 
   late ApiService _apiService;
   late final ScrollController _scrollController;
@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _buildBody(),
       floatingActionButton: _currentNavIndex == 0
           ? Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
+              padding: const EdgeInsets.only(bottom: 100.0),
               child: FloatingActionButton.extended(
                 onPressed: _triggerScrape,
                 backgroundColor: ValoraColors.primary,
