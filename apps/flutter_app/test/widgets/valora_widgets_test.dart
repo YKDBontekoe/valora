@@ -236,4 +236,184 @@ void main() {
       expect(find.text('Email'), findsOneWidget);
     });
   });
+
+  group('ValoraEmptyState Tests', () {
+    testWidgets('renders icon, title, and subtitle', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraEmptyState(
+              icon: Icons.info,
+              title: 'Empty Title',
+              subtitle: 'Empty Subtitle',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.info), findsOneWidget);
+      expect(find.text('Empty Title'), findsOneWidget);
+      expect(find.text('Empty Subtitle'), findsOneWidget);
+    });
+
+    testWidgets('renders action button', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraEmptyState(
+              icon: Icons.info,
+              title: 'Empty Title',
+              action: ElevatedButton(onPressed: () {}, child: const Text('Retry')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+
+  group('ValoraLoadingIndicator Tests', () {
+    testWidgets('renders circular progress indicator', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraLoadingIndicator(),
+          ),
+        ),
+      );
+      await tester.pump(); // Infinite animation
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('renders message if provided', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraLoadingIndicator(message: 'Loading data...'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Loading data...'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('ValoraPrice Tests', () {
+    testWidgets('formats price correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraPrice(price: 123456),
+          ),
+        ),
+      );
+
+      // Expected format based on code: € 123.456
+      expect(find.textContaining('123.456'), findsOneWidget);
+    });
+
+    testWidgets('renders different sizes', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                ValoraPrice(price: 100, size: ValoraPriceSize.small),
+                ValoraPrice(price: 200, size: ValoraPriceSize.medium),
+                ValoraPrice(price: 300, size: ValoraPriceSize.large),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('100'), findsOneWidget);
+      expect(find.textContaining('200'), findsOneWidget);
+      expect(find.textContaining('300'), findsOneWidget);
+    });
+  });
+
+  group('ValoraShimmer Tests', () {
+    testWidgets('renders container with correct size', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraShimmer(width: 100, height: 50),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final container = find.byType(Container).first;
+      final size = tester.getSize(container);
+      expect(size.width, 100);
+      expect(size.height, 50);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('ValoraChip Tests', () {
+    testWidgets('renders label and selection state', (tester) async {
+      bool selected = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return ValoraChip(
+                  label: 'Filter',
+                  isSelected: selected,
+                  onSelected: (val) => setState(() => selected = val),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Filter'), findsOneWidget);
+
+      await tester.tap(find.text('Filter'));
+      await tester.pumpAndSettle();
+
+      expect(selected, isTrue);
+    });
+  });
+
+  group('ValoraDialog Tests', () {
+    testWidgets('renders title, content, and actions', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraDialog(
+              title: 'Dialog Title',
+              child: const Text('Dialog Content'),
+              actions: [
+                TextButton(onPressed: () {}, child: const Text('OK')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dialog Title'), findsOneWidget);
+      expect(find.text('Dialog Content'), findsOneWidget);
+      expect(find.text('OK'), findsOneWidget);
+    });
+  });
 }
