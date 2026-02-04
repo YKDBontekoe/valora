@@ -8,11 +8,12 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = true;
   String? _token;
   String? _email;
-
+  bool _isAdmin = false;
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get token => _token;
   String? get email => _email;
+  bool get isAdmin => _isAdmin;
 
   AuthProvider({AuthService? authService})
       : _authService = authService ?? AuthService();
@@ -32,6 +33,7 @@ class AuthProvider extends ChangeNotifier {
       _isAuthenticated = false;
       _token = null;
       _email = null;
+      _isAdmin = false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -69,6 +71,7 @@ class AuthProvider extends ChangeNotifier {
     await _authService.deleteToken();
     _token = null;
     _email = null;
+      _isAdmin = false;
     _isAuthenticated = false;
     notifyListeners();
   }
@@ -84,6 +87,14 @@ class AuthProvider extends ChangeNotifier {
       // Try standard claims for email/username
       if (payloadMap is Map<String, dynamic>) {
         _email = payloadMap['email'] ?? payloadMap['unique_name'] ?? payloadMap['sub'];
+        final roles = payloadMap['role'] ?? payloadMap['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        if (roles != null) {
+          if (roles is List) {
+            _isAdmin = roles.contains('Admin');
+          } else if (roles is String) {
+            _isAdmin = roles == 'Admin';
+          }
+        }
       }
     } catch (e) {
       debugPrint('Error parsing JWT: $e');

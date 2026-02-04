@@ -7,8 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/settings_screen.dart';
+import 'package:valora_app/services/api_service.dart';
 
-@GenerateMocks([AuthProvider, ThemeProvider])
+@GenerateMocks([AuthProvider, ThemeProvider, ApiService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
@@ -66,14 +67,17 @@ const List<int> _transparentImage = <int>[
 
 void main() {
   late MockAuthProvider mockAuthProvider;
+  late MockApiService mockApiService;
   late MockThemeProvider mockThemeProvider;
 
   setUp(() {
     mockAuthProvider = MockAuthProvider();
     mockThemeProvider = MockThemeProvider();
+    mockApiService = MockApiService();
 
     when(mockAuthProvider.email).thenReturn('test@example.com');
     when(mockThemeProvider.isDarkMode).thenReturn(false);
+    when(mockAuthProvider.isAdmin).thenReturn(false);
 
     // Use the mock HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -84,6 +88,7 @@ void main() {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
         ChangeNotifierProvider<ThemeProvider>.value(value: mockThemeProvider),
+        Provider<ApiService>.value(value: mockApiService),
       ],
       child: const MaterialApp(
         home: SettingsScreen(),
@@ -161,5 +166,22 @@ void main() {
     expect(find.text('Log Out?'), findsNothing);
 
     addTearDown(() => tester.view.resetPhysicalSize());
+  });
+
+  testWidgets('SettingsScreen shows admin controls when user is admin', (WidgetTester tester) async {
+    when(mockAuthProvider.isAdmin).thenReturn(true);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+
+    expect(find.text('ADMIN CONTROLS'), findsOneWidget);
+    expect(find.text('Trigger Scrape'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen hides admin controls when user is not admin', (WidgetTester tester) async {
+    when(mockAuthProvider.isAdmin).thenReturn(false);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+
+    expect(find.text('ADMIN CONTROLS'), findsNothing);
   });
 }
