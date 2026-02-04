@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Moq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Valora.Application.Common.Models;
@@ -13,14 +14,18 @@ namespace Valora.UnitTests.Services;
 public class TokenServiceTests
 {
     private readonly Mock<IOptions<JwtOptions>> _mockOptions;
+    private readonly Mock<UserManager<ApplicationUser>> _mockUserManager;
 
     public TokenServiceTests()
     {
         _mockOptions = new Mock<IOptions<JwtOptions>>();
+
+        var store = new Mock<IUserStore<ApplicationUser>>();
+        _mockUserManager = new Mock<UserManager<ApplicationUser>>(store.Object, null, null, null, null, null, null, null, null);
     }
 
     [Fact]
-    public void GenerateToken_ReturnsToken_WhenOptionsAreValid()
+    public async Task GenerateToken_ReturnsToken_WhenOptionsAreValid()
     {
         // Arrange
         var jwtOptions = new JwtOptions
@@ -33,7 +38,15 @@ public class TokenServiceTests
 
         _mockOptions.Setup(x => x.Value).Returns(jwtOptions);
 
-        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object, TimeProvider.System);
+        // Mock Roles logic
+        _mockUserManager.Setup(x => x.GetRolesAsync(It.IsAny<ApplicationUser>()))
+            .ReturnsAsync(new List<string> { "User" });
+
+        var tokenService = new TokenService(
+            _mockOptions.Object,
+            new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object,
+            TimeProvider.System,
+            _mockUserManager.Object);
 
         var user = new ApplicationUser
         {
@@ -43,7 +56,7 @@ public class TokenServiceTests
         };
 
         // Act
-        var token = tokenService.GenerateToken(user);
+        var token = await tokenService.GenerateTokenAsync(user);
 
         // Assert
         Assert.NotNull(token);
@@ -62,10 +75,14 @@ public class TokenServiceTests
 
         Assert.NotNull(nameIdClaim);
         Assert.Equal("user-id", nameIdClaim.Value);
+
+        var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+        Assert.NotNull(roleClaim);
+        Assert.Equal("User", roleClaim.Value);
     }
 
     [Fact]
-    public void GenerateToken_ThrowsException_WhenSecretIsMissing()
+    public async Task GenerateToken_ThrowsException_WhenSecretIsMissing()
     {
         // Arrange
         var jwtOptions = new JwtOptions
@@ -78,11 +95,15 @@ public class TokenServiceTests
 
         _mockOptions.Setup(x => x.Value).Returns(jwtOptions);
 
-        var tokenService = new TokenService(_mockOptions.Object, new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object, TimeProvider.System);
+        var tokenService = new TokenService(
+            _mockOptions.Object,
+            new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object,
+            TimeProvider.System,
+            _mockUserManager.Object);
 
         var user = new ApplicationUser { Id = "1", UserName = "test" };
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => tokenService.GenerateToken(user));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => tokenService.GenerateTokenAsync(user));
     }
 }

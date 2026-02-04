@@ -8,7 +8,6 @@ import '../core/theme/valora_typography.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
-import '../providers/favorites_provider.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/home_components.dart';
 import '../widgets/home/home_sliver_app_bar.dart';
@@ -384,7 +383,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _buildListingSlivers() {
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
     final featuredListings = _listings.take(_featuredCount).toList();
     final nearbyListings = _listings.skip(_featuredCount).toList();
     final List<Widget> slivers = [];
@@ -437,10 +435,9 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final listing = featuredListings[index];
               return FeaturedListingCard(
+                key: ValueKey(listing.id),
                 listing: listing,
                 onTap: () => _onListingTap(listing),
-                isFavorite: favoritesProvider.isFavorite(listing.id),
-                onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
               ).animate().fade(duration: 400.ms).slideX(begin: 0.1, end: 0, delay: (50 * index).ms);
             },
           ),
@@ -478,10 +475,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               final listing = nearbyListings[index];
               return NearbyListingCard(
+                key: ValueKey(listing.id),
                 listing: listing,
                 onTap: () => _onListingTap(listing),
-                isFavorite: favoritesProvider.isFavorite(listing.id),
-                onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
               ).animate().fade(duration: 400.ms).slideY(begin: 0.1, end: 0, delay: (50 * (index % 10)).ms);
             },
             childCount: nearbyListings.length + 1,

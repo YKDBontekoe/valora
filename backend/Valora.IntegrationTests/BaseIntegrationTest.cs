@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Xunit;
 
@@ -34,28 +36,75 @@ public class BaseIntegrationTest : IAsyncLifetime
         await DbContext.SaveChangesAsync();
     }
 
-    protected async Task AuthenticateAsync()
+    protected async Task AuthenticateAsync(string email = "test@example.com", string password = "Password123!")
     {
         var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new
         {
-            Email = "test@example.com",
-            Password = "Password123!",
-            ConfirmPassword = "Password123!"
+            Email = email,
+            Password = password,
+            ConfirmPassword = password
         });
-        registerResponse.EnsureSuccessStatusCode();
+        // We allow register to fail (e.g. user already exists) but login must succeed
 
         var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
         {
-            Email = "test@example.com",
-            Password = "Password123!"
+            Email = email,
+            Password = password
         });
         loginResponse.EnsureSuccessStatusCode();
 
         var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
-        if (authResponse != null)
+        if (authResponse?.Token == null)
         {
-            Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+            throw new InvalidOperationException("Failed to extract auth token from login response");
         }
+        Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+    }
+
+    protected async Task AuthenticateAsAdminAsync()
+    {
+        var email = "admin@example.com";
+        var password = "AdminPassword123!";
+
+        // 1. Create User via UserManager to bypass API limits and ensure role
+        using var scope = Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            var result = await roleManager.CreateAsync(new IdentityRole("Admin"));
+            if (!result.Succeeded) throw new Exception($"Failed to create Admin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
+
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new ApplicationUser { UserName = email, Email = email };
+            var result = await userManager.CreateAsync(user, password);
+            if (!result.Succeeded) throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
+
+        if (!await userManager.IsInRoleAsync(user, "Admin"))
+        {
+            var result = await userManager.AddToRoleAsync(user, "Admin");
+            if (!result.Succeeded) throw new Exception($"Failed to add user to Admin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
+
+        // 2. Login via API to get token
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Email = email,
+            Password = password
+        });
+        loginResponse.EnsureSuccessStatusCode();
+
+        var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
+        if (authResponse?.Token == null)
+        {
+            throw new InvalidOperationException("Failed to extract auth token from admin login response");
+        }
+        Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
     }
 
     public virtual Task DisposeAsync()

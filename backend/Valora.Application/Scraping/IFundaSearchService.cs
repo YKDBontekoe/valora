@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Valora.Application.Scraping;
 
 /// <summary>
@@ -22,43 +24,15 @@ public interface IFundaSearchService
 /// <summary>
 /// Query parameters for Funda search.
 /// </summary>
-public record FundaSearchQuery
-{
-    /// <summary>
-    /// Region/city to search, e.g. "amsterdam", "rotterdam".
-    /// </summary>
-    public required string Region { get; init; }
-    
-    /// <summary>
-    /// Minimum price filter.
-    /// </summary>
-    public int? MinPrice { get; init; }
-    
-    /// <summary>
-    /// Maximum price filter.
-    /// </summary>
-    public int? MaxPrice { get; init; }
-    
-    /// <summary>
-    /// Minimum number of bedrooms.
-    /// </summary>
-    public int? MinBedrooms { get; init; }
-    
-    /// <summary>
-    /// Type of offering: "buy", "rent", or "project".
-    /// </summary>
-    public string OfferingType { get; init; } = "buy";
-    
-    /// <summary>
-    /// Number of results per page.
-    /// </summary>
-    public int PageSize { get; init; } = 20;
-    
-    /// <summary>
-    /// Page number (1-indexed).
-    /// </summary>
-    public int Page { get; init; } = 1;
-}
+public record FundaSearchQuery(
+    [MaxLength(100)] string Region,
+    int? MinPrice = null,
+    int? MaxPrice = null,
+    int? MinBedrooms = null,
+    [RegularExpression("(?i)^(buy|rent|project)$")] string OfferingType = "buy",
+    [Range(1, 100)] int PageSize = 20,
+    [Range(1, 10000)] int Page = 1
+);
 
 /// <summary>
 /// Result of a Funda search operation.

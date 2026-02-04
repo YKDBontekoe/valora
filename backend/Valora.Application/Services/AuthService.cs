@@ -42,7 +42,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var token = _tokenService.GenerateToken(user);
+        var token = await _tokenService.GenerateTokenAsync(user);
         var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
         await _tokenService.SaveRefreshTokenAsync(refreshToken);
 
@@ -77,7 +77,7 @@ public class AuthService : IAuthService
         var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
         await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
 
-        var newAccessToken = _tokenService.GenerateToken(existingToken.User);
+        var newAccessToken = await _tokenService.GenerateTokenAsync(existingToken.User);
 
         return new AuthResponseDto(
             newAccessToken,

@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:mockito/mockito.dart';
 import 'package:valora_app/models/listing.dart';
+import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:valora_app/core/theme/valora_spacing.dart';
 
+class MockFavoritesProvider extends Mock implements FavoritesProvider {
+  @override
+  bool isFavorite(String? id) => false;
+
+  @override
+  bool get hasListeners => false;
+}
+
 void main() {
+  final mockFavoritesProvider = MockFavoritesProvider();
+
   final dummyListing = Listing(
     id: '1',
     fundaId: 'f1',
@@ -64,9 +77,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FeaturedListingCard(
-              listing: dummyListing,
-              onTap: () {},
+            body: ChangeNotifierProvider<FavoritesProvider>.value(
+              value: mockFavoritesProvider,
+              child: FeaturedListingCard(
+                listing: dummyListing,
+                onTap: () {},
+              ),
             ),
           ),
         ),
@@ -112,9 +128,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: NearbyListingCard(
-              listing: dummyListing,
-              onTap: () {},
+            body: ChangeNotifierProvider<FavoritesProvider>.value(
+              value: mockFavoritesProvider,
+              child: NearbyListingCard(
+                listing: dummyListing,
+                onTap: () {},
+              ),
             ),
           ),
         ),
