@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Moq;
 using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
@@ -12,13 +13,15 @@ public class AuthServiceTests
 {
     private readonly Mock<IIdentityService> _mockIdentityService;
     private readonly Mock<ITokenService> _mockTokenService;
+    private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly AuthService _authService;
 
     public AuthServiceTests()
     {
         _mockIdentityService = new Mock<IIdentityService>();
         _mockTokenService = new Mock<ITokenService>();
-        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object);
+        _mockConfiguration = new Mock<IConfiguration>();
+        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockConfiguration.Object);
     }
 
     [Fact]
@@ -34,11 +37,30 @@ public class AuthServiceTests
     public async Task RegisterAsync_ValidData_ReturnsSuccess()
     {
         var registerDto = new RegisterDto { Email = "t@t.com", Password = "p", ConfirmPassword = "p" };
+        
+        _mockConfiguration.Setup(x => x["ADMIN_EMAIL"]).Returns((string?)null);
         _mockIdentityService.Setup(x => x.CreateUserAsync(registerDto.Email, registerDto.Password))
             .ReturnsAsync((Result.Success(), "userId"));
 
         var result = await _authService.RegisterAsync(registerDto);
         Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_AdminEmail_AssignsAdminRole()
+    {
+        var adminEmail = "admin@valora.com";
+        var registerDto = new RegisterDto { Email = adminEmail, Password = "p", ConfirmPassword = "p" };
+        
+        _mockConfiguration.Setup(x => x["ADMIN_EMAIL"]).Returns(adminEmail);
+        _mockIdentityService.Setup(x => x.CreateUserAsync(registerDto.Email, registerDto.Password))
+            .ReturnsAsync((Result.Success(), "adminId"));
+
+        var result = await _authService.RegisterAsync(registerDto);
+
+        Assert.True(result.Succeeded);
+        _mockIdentityService.Verify(x => x.EnsureRoleAsync("Admin"), Times.Once);
+        _mockIdentityService.Verify(x => x.AddToRoleAsync("adminId", "Admin"), Times.Once);
     }
 
     [Fact]
