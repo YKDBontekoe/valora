@@ -72,8 +72,10 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         {
             builder.ConfigureTestServices(services =>
             {
+                // Force 127.0.0.1 to avoid IPv6 issues in CI
+                var url = _server.Urls[0].Replace("localhost", "127.0.0.1");
                 services.AddHttpClient<FundaApiClient>()
-                        .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
+                        .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(url));
             });
         });
 

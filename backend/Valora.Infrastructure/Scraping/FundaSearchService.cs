@@ -44,7 +44,7 @@ public partial class FundaSearchService : IFundaSearchService
 
     public async Task<FundaSearchResult> SearchAsync(FundaSearchQuery query, CancellationToken ct = default)
     {
-        var normalizedRegion = query.Region.ToLowerInvariant().Trim();
+        var normalizedRegion = (query.Region ?? string.Empty).ToLowerInvariant().Trim();
         _logger.LogInformation("Dynamic search for region: {Region}, offering: {Type}", 
             normalizedRegion, query.OfferingType);
 
@@ -275,7 +275,7 @@ public partial class FundaSearchService : IFundaSearchService
     private async Task<List<Listing>> QueryDatabaseAsync(FundaSearchQuery query, CancellationToken ct)
     {
         return await _listingRepository.GetByCityAsync(
-            query.Region,
+            query.Region ?? string.Empty,
             query.MinPrice,
             query.MaxPrice,
             query.MinBedrooms,
