@@ -502,7 +502,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
-                          children: const [
+                          children: [
                             Icon(Icons.trending_down_rounded, size: 14, color: ValoraColors.primary),
                             const SizedBox(width: 4),
                             Text(

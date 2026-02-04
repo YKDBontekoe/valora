@@ -21,7 +21,7 @@ public static class DependencyInjection
         var rawConnectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
         var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 
-        services.AddDbContextPool<ValoraDbContext>(options =>
+        services.AddDbContext<ValoraDbContext>(options =>
             options.UseNpgsql(
                 connectionString,
                 npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
