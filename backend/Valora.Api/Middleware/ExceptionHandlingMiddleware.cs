@@ -30,8 +30,9 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred processing {Method} {Path}. RequestId: {RequestId}",
-                context.Request.Method, context.Request.Path, context.TraceIdentifier);
+            var user = context.User?.Identity?.Name ?? "Anonymous";
+            _logger.LogError(ex, "An unhandled exception occurred processing {Method} {Path} for user {User}. RequestId: {RequestId}",
+                context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -71,6 +72,10 @@ public class ExceptionHandlingMiddleware
                 statusCode = (int)HttpStatusCode.Conflict;
                 title = "Database Error";
                 detail = "A database constraint violation occurred.";
+                break;
+            case BadHttpRequestException:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                title = "Bad Request";
                 break;
         }
 

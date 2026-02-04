@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../screens/startup_screen.dart';
 
 class GlobalErrorWidget extends StatelessWidget {
   final FlutterErrorDetails details;
@@ -23,7 +24,7 @@ class GlobalErrorWidget extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               const Text(
-                'Oops! Something went wrong.',
+                "We're sorry, something went wrong",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -33,12 +34,28 @@ class GlobalErrorWidget extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                'We encountered an unexpected error. Please try restarting the app.',
+                'Please restart the application. If the problem persists, contact support.',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.black54,
                 ),
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: () {
+                   Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const StartupScreen()),
+                    (route) => false,
+                  );
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Restart Application'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
               ),
               const SizedBox(height: 32),
               if (kDebugMode) ...[

@@ -304,23 +304,15 @@ public partial class FundaApiClient
     private string? ExtractNuxtJson(string html)
     {
         // Simple regex to find the script content. 
-        // We look for script type="application/json" and rely on the fact that the Nuxt blob is usually the largest one.
-        // Or we can look for specific identifying text like "cachedListingData" inside the tag.
-
-        var match = NuxtCachedDataRegex().Match(html);
-        
-        if (match.Success)
-        {
-            return match.Groups[1].Value;
-        }
-        
-        // Fallback: finding any application/json script and checking valid JSON
+        // We look for script type="application/json" and iterate over them to find the one with the data.
+        // This is safer than a greedy regex which might capture multiple script tags.
 
         var matches = NuxtScriptRegex().Matches(html);
         foreach (System.Text.RegularExpressions.Match m in matches)
         {
              var content = m.Groups[1].Value;
-             if (content.Contains("cachedListingData") || content.Contains("features") && content.Contains("media"))
+             // Check for key identifiers of the Nuxt hydration state
+             if (content.Contains("cachedListingData") || (content.Contains("features") && content.Contains("media")))
              {
                  return content;
              }
@@ -383,9 +375,6 @@ public partial class FundaApiClient
 
         return null;
     }
-
-    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?cachedListingData.*?)</script>", RegexOptions.Singleline)]
-    private static partial Regex NuxtCachedDataRegex();
 
     [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
     private static partial Regex NuxtScriptRegex();
