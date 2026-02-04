@@ -6,18 +6,25 @@ namespace Valora.Infrastructure.Services;
 
 public class HangfireJobScheduler : IScraperJobScheduler
 {
+    private readonly IBackgroundJobClient _backgroundJobClient;
+
+    public HangfireJobScheduler(IBackgroundJobClient backgroundJobClient)
+    {
+        _backgroundJobClient = backgroundJobClient;
+    }
+
     public string EnqueueScraper(CancellationToken cancellationToken)
     {
-        return BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(cancellationToken));
+        return _backgroundJobClient.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(cancellationToken));
     }
 
     public string EnqueueLimitedScraper(string region, int limit, CancellationToken cancellationToken)
     {
-        return BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, cancellationToken));
+        return _backgroundJobClient.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, cancellationToken));
     }
 
     public string EnqueueSeed(string region, CancellationToken cancellationToken)
     {
-        return BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, cancellationToken));
+        return _backgroundJobClient.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, cancellationToken));
     }
 }
