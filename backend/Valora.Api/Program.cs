@@ -134,6 +134,45 @@ if (!app.Environment.IsEnvironment("Testing"))
         try
         {
             dbContext.Database.Migrate();
+
+            // Seed Admin User
+            var adminEmail = app.Configuration["ADMIN_EMAIL"];
+            var adminPassword = app.Configuration["ADMIN_PASSWORD"];
+
+            if (!string.IsNullOrEmpty(adminEmail) && !string.IsNullOrEmpty(adminPassword))
+            {
+                var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+                await identityService.EnsureRoleAsync("Admin");
+                
+                var user = await identityService.GetUserByEmailAsync(adminEmail);
+                if (user == null)
+                {
+                    // Only create and promote if user does NOT exist (prevents takeover of existing accounts)
+                    var (createResult, userId) = await identityService.CreateUserAsync(adminEmail, adminPassword);
+                    if (createResult.Succeeded)
+                    {
+                        var roleResult = await identityService.AddToRoleAsync(userId, "Admin");
+                        if (roleResult.Succeeded)
+                        {
+                            logger.LogInformation("Successfully seeded initial Admin user.");
+                        }
+                        else
+                        {
+                            logger.LogWarning("Created Admin user but failed to assign role. Check identity logs.");
+                        }
+                    }
+                    else
+                    {
+                        logger.LogWarning("Failed to create initial Admin user. Check identity logs.");
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("Admin seeding: User configured in ADMIN_EMAIL already exists. Skipping automatic promotion to prevent privilege escalation.");
+                }
+            }
         }
         catch (Exception ex)
         {

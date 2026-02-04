@@ -8,4 +8,6 @@ public interface IIdentityService
     Task<(Result Result, string UserId)> CreateUserAsync(string email, string password);
     Task<bool> CheckPasswordAsync(string email, string password);
     Task<ApplicationUser?> GetUserByEmailAsync(string email);
+    Task EnsureRoleAsync(string roleName);
+    Task<Result> AddToRoleAsync(string userId, string roleName);
 }
