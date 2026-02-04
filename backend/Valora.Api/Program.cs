@@ -179,6 +179,14 @@ api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(filter);
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+
+    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(filter, validationContext, validationResults, true))
+    {
+        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
+    }
+
     var paginatedList = await repo.GetAllAsync(filter, ct);
 
     return Results.Ok(new
@@ -267,6 +275,17 @@ api.MapGet("/search", async (
     Valora.Application.Scraping.IFundaSearchService searchService,
     CancellationToken ct) =>
 {
+    // Explicit fallback validation to ensure constraints are respected even if attribute validation behaves unexpectedly
+    if (query.Page < 1 || query.Page > 10000)
+    {
+        return Results.BadRequest(new { error = "Page must be between 1 and 10000" });
+    }
+
+    if (!new[] { "buy", "rent", "project" }.Contains(query.OfferingType?.ToLower()))
+    {
+        return Results.BadRequest(new { error = "Invalid OfferingType" });
+    }
+
     if (string.IsNullOrWhiteSpace(query.Region))
     {
         return Results.BadRequest(new { error = "Region is required" });

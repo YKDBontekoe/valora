@@ -34,20 +34,20 @@ public class BaseIntegrationTest : IAsyncLifetime
         await DbContext.SaveChangesAsync();
     }
 
-    protected async Task AuthenticateAsync()
+    protected async Task AuthenticateAsync(string email = "test@example.com", string password = "Password123!")
     {
         var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new
         {
-            Email = "test@example.com",
-            Password = "Password123!",
-            ConfirmPassword = "Password123!"
+            Email = email,
+            Password = password,
+            ConfirmPassword = password
         });
-        registerResponse.EnsureSuccessStatusCode();
+        // We allow register to fail (e.g. user already exists) but login must succeed
 
         var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
         {
-            Email = "test@example.com",
-            Password = "Password123!"
+            Email = email,
+            Password = password
         });
         loginResponse.EnsureSuccessStatusCode();
 

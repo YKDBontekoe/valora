@@ -13,12 +13,25 @@ public class ScraperAuthorizationTests : BaseIntegrationTest
     [InlineData("/api/scraper/trigger")]
     [InlineData("/api/scraper/trigger-limited?region=amsterdam&limit=1")]
     [InlineData("/api/scraper/seed?region=amsterdam")]
-    public async Task ScraperEndpoints_WithoutAuthentication_ReturnUnauthorizedOrForbidden(string url)
+    public async Task ScraperEndpoints_WithoutAuthentication_ReturnUnauthorized(string url)
     {
         var response = await Client.PostAsync(url, content: null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 
-        Assert.True(
-            response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden,
-            $"Expected 401/403 but got {(int)response.StatusCode} ({response.StatusCode}).");
+    [Theory]
+    [InlineData("/api/scraper/trigger")]
+    [InlineData("/api/scraper/trigger-limited?region=amsterdam&limit=1")]
+    [InlineData("/api/scraper/seed?region=amsterdam")]
+    public async Task ScraperEndpoints_WithStandardUser_ReturnForbidden(string url)
+    {
+        // Arrange: Authenticate as a standard user (no Admin role)
+        await AuthenticateAsync("user@example.com", "Password123!");
+
+        // Act
+        var response = await Client.PostAsync(url, content: null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }
