@@ -301,6 +301,29 @@ api.MapGet("/lookup", async (
         : Results.Ok(listing);
 }).RequireAuthorization();
 
+// AI Chat Endpoint
+api.MapPost("/ai/chat", async (
+    AiChatRequest request,
+    IAiService aiService,
+    CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Prompt))
+    {
+        return Results.BadRequest(new { error = "Prompt is required" });
+    }
+
+    try
+    {
+        var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
+        return Results.Ok(new { response });
+    }
+    catch (Exception ex)
+    {
+        // Log error
+        return Results.Problem(detail: ex.Message, statusCode: 500);
+    }
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program { }

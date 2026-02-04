@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IAiService, OpenRouterAiService>();
 
         // Configuration
         services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
