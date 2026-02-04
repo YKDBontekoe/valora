@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -84,9 +85,7 @@ class ApiService {
       final response = await _authenticatedRequest((headers) =>
           _client.get(uri, headers: headers).timeout(timeoutDuration));
 
-      return _handleResponse(response, (body) {
-        return ListingResponse.fromJson(json.decode(body));
-      });
+      return await _handleResponse(response, (body) => compute(_parseListingResponse, body));
     } catch (e) {
       throw _handleException(e);
     }
@@ -101,9 +100,7 @@ class ApiService {
         return null;
       }
 
-      return _handleResponse(response, (body) {
-        return Listing.fromJson(json.decode(body));
-      });
+      return await _handleResponse(response, (body) => compute(_parseListing, body));
     } catch (e) {
       throw _handleException(e);
     }
@@ -193,4 +190,13 @@ class ApiService {
     }
     return null;
   }
+}
+
+// Top-level functions for isolate
+ListingResponse _parseListingResponse(String body) {
+  return ListingResponse.fromJson(json.decode(body));
+}
+
+Listing _parseListing(String body) {
+  return Listing.fromJson(json.decode(body));
 }

@@ -45,7 +45,11 @@ class ValoraListingCard extends StatelessWidget {
           // Image Section
           Stack(
             children: [
-              _buildImage(isDark),
+              _ListingImage(
+                imageUrl: listing.imageUrl,
+                listingId: listing.id,
+                isDark: isDark,
+              ),
               if (listing.status != null)
                 Positioned(
                   top: ValoraSpacing.sm,
@@ -58,7 +62,10 @@ class ValoraListingCard extends StatelessWidget {
               Positioned(
                 top: ValoraSpacing.sm,
                 right: ValoraSpacing.sm,
-                child: _buildFavoriteButton(colorScheme),
+                child: _FavoriteButton(
+                  isFavorite: isFavorite,
+                  onFavorite: onFavorite,
+                ),
               ),
             ],
           ),
@@ -95,7 +102,13 @@ class ValoraListingCard extends StatelessWidget {
                 const SizedBox(height: ValoraSpacing.md),
 
                 // Specs Row
-                _buildSpecsRow(colorScheme),
+                _ListingSpecs(
+                  bedrooms: listing.bedrooms,
+                  bathrooms: listing.bathrooms,
+                  livingAreaM2: listing.livingAreaM2,
+                  plotAreaM2: listing.plotAreaM2,
+                  colorScheme: colorScheme,
+                ),
               ],
             ),
           ),
@@ -104,28 +117,62 @@ class ValoraListingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImage(bool isDark) {
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'new':
+        return ValoraColors.newBadge;
+      case 'sold':
+      case 'under offer':
+        return ValoraColors.soldBadge;
+      default:
+        return ValoraColors.primary;
+    }
+  }
+}
+
+class _ListingImage extends StatelessWidget {
+  const _ListingImage({
+    required this.imageUrl,
+    required this.listingId,
+    required this.isDark,
+  });
+
+  final String? imageUrl;
+  final String listingId;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
     return Hero(
-      tag: listing.id,
+      tag: listingId,
       child: AspectRatio(
         aspectRatio: 16 / 10,
-        child: listing.imageUrl != null
+        child: imageUrl != null
             ? CachedNetworkImage(
-                imageUrl: listing.imageUrl!,
+                imageUrl: imageUrl!,
+                memCacheWidth: 800, // Optimize memory usage
                 fit: BoxFit.cover,
                 placeholder: (context, url) =>
-                    _buildPlaceholder(isDark, isLoading: true),
+                    _Placeholder(isDark: isDark, isLoading: true),
                 errorWidget: (context, url, error) =>
-                    _buildPlaceholder(isDark),
+                    _Placeholder(isDark: isDark),
                 fadeInDuration: const Duration(milliseconds: 500),
                 fadeInCurve: Curves.easeOut,
               )
-            : _buildPlaceholder(isDark),
+            : _Placeholder(isDark: isDark),
       ),
     );
   }
+}
 
-  Widget _buildPlaceholder(bool isDark, {bool isLoading = false}) {
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({required this.isDark, this.isLoading = false});
+
+  final bool isDark;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
     if (isLoading) {
       return const ValoraShimmer(
         width: double.infinity,
@@ -145,8 +192,19 @@ class ValoraListingCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildFavoriteButton(ColorScheme colorScheme) {
+class _FavoriteButton extends StatelessWidget {
+  const _FavoriteButton({
+    required this.isFavorite,
+    this.onFavorite,
+  });
+
+  final bool isFavorite;
+  final VoidCallback? onFavorite;
+
+  @override
+  Widget build(BuildContext context) {
     return Material(
       color: Colors.white.withValues(alpha: 0.9),
       shape: const CircleBorder(),
@@ -171,38 +229,55 @@ class ValoraListingCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildSpecsRow(ColorScheme colorScheme) {
+class _ListingSpecs extends StatelessWidget {
+  const _ListingSpecs({
+    this.bedrooms,
+    this.bathrooms,
+    this.livingAreaM2,
+    this.plotAreaM2,
+    required this.colorScheme,
+  });
+
+  final int? bedrooms;
+  final int? bathrooms;
+  final int? livingAreaM2;
+  final int? plotAreaM2;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
     final specs = <Widget>[];
 
-    if (listing.bedrooms != null) {
+    if (bedrooms != null) {
       specs.add(_buildSpec(
         Icons.bed_outlined,
-        '${listing.bedrooms}',
+        '$bedrooms',
         colorScheme,
       ));
     }
 
-    if (listing.bathrooms != null) {
+    if (bathrooms != null) {
       specs.add(_buildSpec(
         Icons.bathtub_outlined,
-        '${listing.bathrooms}',
+        '$bathrooms',
         colorScheme,
       ));
     }
 
-    if (listing.livingAreaM2 != null) {
+    if (livingAreaM2 != null) {
       specs.add(_buildSpec(
         Icons.square_foot_outlined,
-        '${listing.livingAreaM2} m²',
+        '$livingAreaM2 m²',
         colorScheme,
       ));
     }
 
-    if (listing.plotAreaM2 != null) {
+    if (plotAreaM2 != null) {
       specs.add(_buildSpec(
         Icons.landscape_outlined,
-        '${listing.plotAreaM2} m²',
+        '$plotAreaM2 m²',
         colorScheme,
       ));
     }
@@ -236,17 +311,5 @@ class ValoraListingCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'new':
-        return ValoraColors.newBadge;
-      case 'sold':
-      case 'under offer':
-        return ValoraColors.soldBadge;
-      default:
-        return ValoraColors.primary;
-    }
   }
 }
