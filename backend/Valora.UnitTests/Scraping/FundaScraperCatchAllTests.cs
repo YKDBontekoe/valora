@@ -26,18 +26,10 @@ public class FundaScraperCatchAllTests
             }
         };
         
-        // Reflection to access private static method if needed, or we just trust the integration.
-        // For unit testing private methods, typically we make them internal or use "InternalsVisibleTo".
-        // However, since we modified the class, we can check if we should make the enricher public or test indirectly.
-        // Given complexity, let's assume we can't easily call private static without reflection.
-        // BUT, `FundaScraperService` is the SUT. We can verify the logic via a "Testable" subclass or reflection.
-        
-        // Let's use reflection for this specific logic verification
-        var method = typeof(FundaScraperService).GetMethod("EnrichListingWithNuxtData", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            
+        var mapper = new FundaMapper();
+
         // Act
-        method!.Invoke(null, [listing, data]);
+        mapper.EnrichListingWithNuxtData(listing, data);
 
         // Assert
         Assert.NotNull(listing.Features);

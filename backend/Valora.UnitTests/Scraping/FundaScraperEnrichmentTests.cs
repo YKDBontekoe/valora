@@ -16,6 +16,8 @@ public class FundaScraperEnrichmentTests
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly IFundaUrlParser _urlParser;
+    private readonly IFundaMapper _mapper;
     private readonly FundaScraperService _service;
 
     public FundaScraperEnrichmentTests()
@@ -24,6 +26,8 @@ public class FundaScraperEnrichmentTests
         _priceHistoryRepoMock = new Mock<IPriceHistoryRepository>();
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
+        _urlParser = new FundaUrlParser();
+        _mapper = new FundaMapper();
         
         _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
 
@@ -39,7 +43,9 @@ public class FundaScraperEnrichmentTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _urlParser,
+            _mapper
         );
     }
 

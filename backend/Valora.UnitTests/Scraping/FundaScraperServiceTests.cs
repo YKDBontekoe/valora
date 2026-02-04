@@ -16,6 +16,8 @@ public class FundaScraperServiceTests
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly IFundaUrlParser _urlParser;
+    private readonly IFundaMapper _mapper;
     private readonly FundaScraperService _service;
 
     public FundaScraperServiceTests()
@@ -24,6 +26,8 @@ public class FundaScraperServiceTests
         _priceHistoryRepoMock = new Mock<IPriceHistoryRepository>();
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
+        _urlParser = new FundaUrlParser();
+        _mapper = new FundaMapper();
         
         // Mock FundaApiClient using a loose mock (mocking virtual methods)
         // We pass dummy dependencies to the base constructor because it's a class mock
@@ -41,7 +45,9 @@ public class FundaScraperServiceTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _urlParser,
+            _mapper
         );
     }
 
@@ -94,7 +100,9 @@ public class FundaScraperServiceTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _urlParser,
+            _mapper
         );
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -149,7 +157,9 @@ public class FundaScraperServiceTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _urlParser,
+            _mapper
         );
 
         // Act

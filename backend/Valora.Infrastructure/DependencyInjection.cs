@@ -58,6 +58,8 @@ public static class DependencyInjection
 
         services.AddScoped<IFundaScraperService, FundaScraperService>();
         services.AddScoped<IFundaSearchService, FundaSearchService>();
+        services.AddScoped<IFundaUrlParser, FundaUrlParser>();
+        services.AddScoped<IFundaMapper, FundaMapper>();
         services.AddScoped<FundaScraperJob>();
 
         return services;
