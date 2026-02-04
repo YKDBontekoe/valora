@@ -37,6 +37,24 @@ class ListingDetailScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _contactBroker(BuildContext context) async {
+    final phone = listing.brokerPhone;
+    if (phone != null) {
+      final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^0-9+]'), '')}');
+      try {
+        if (!await launchUrl(uri)) {
+           if (context.mounted) {
+            _showErrorSnackBar(context, 'Could not launch dialer');
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          _showErrorSnackBar(context, 'Error launching dialer: $e');
+        }
+      }
+    }
+  }
+
   void _showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -137,11 +155,13 @@ class ListingDetailScreen extends StatelessWidget {
                   ],
                   
                   // Broker Section
-                  if (listing.brokerLogoUrl != null || listing.brokerPhone != null)
+                  if (listing.brokerLogoUrl != null || listing.brokerPhone != null) ...[
                     _buildBrokerSection(colorScheme),
+                    const SizedBox(height: ValoraSpacing.md),
+                  ],
 
                   if (listing.url != null) ...[
-                    const SizedBox(height: ValoraSpacing.xl),
+                    const SizedBox(height: ValoraSpacing.sm),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -157,6 +177,32 @@ class ListingDetailScreen extends StatelessWidget {
                         icon: const Icon(Icons.open_in_new_rounded),
                         label: const Text(
                           'View on Funda',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  if (listing.brokerPhone != null) ...[
+                    const SizedBox(height: ValoraSpacing.md),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _contactBroker(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ValoraColors.primary,
+                          side: const BorderSide(color: ValoraColors.primary),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                          ),
+                        ),
+                        icon: const Icon(Icons.phone_rounded),
+                        label: const Text(
+                          'Contact Broker',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
