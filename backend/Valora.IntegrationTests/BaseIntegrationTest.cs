@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Xunit;
 
@@ -44,6 +46,48 @@ public class BaseIntegrationTest : IAsyncLifetime
         });
         // We allow register to fail (e.g. user already exists) but login must succeed
 
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Email = email,
+            Password = password
+        });
+        loginResponse.EnsureSuccessStatusCode();
+
+        var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
+        if (authResponse != null)
+        {
+            Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+        }
+    }
+
+    protected async Task AuthenticateAsAdminAsync()
+    {
+        var email = "admin@example.com";
+        var password = "AdminPassword123!";
+
+        // 1. Create User via UserManager to bypass API limits and ensure role
+        using var scope = Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        }
+
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new ApplicationUser { UserName = email, Email = email };
+            await userManager.CreateAsync(user, password);
+        }
+
+        if (!await userManager.IsInRoleAsync(user, "Admin"))
+        {
+            await userManager.AddToRoleAsync(user, "Admin");
+        }
+
+        // 2. Login via API to get token
         var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
         {
             Email = email,

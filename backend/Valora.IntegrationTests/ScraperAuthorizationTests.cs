@@ -34,4 +34,22 @@ public class ScraperAuthorizationTests : BaseIntegrationTest
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [Theory]
+    [InlineData("/api/scraper/trigger")]
+    [InlineData("/api/scraper/trigger-limited?region=amsterdam&limit=1")]
+    [InlineData("/api/scraper/seed?region=amsterdam")]
+    public async Task ScraperEndpoints_WithAdminUser_ReturnsServiceUnavailable(string url)
+    {
+        // Arrange: Authenticate as an Admin user
+        // The endpoints return 503 Service Unavailable when Hangfire is disabled (which it is in tests)
+        // This confirms authorization passed (otherwise we'd get 401/403) and the handler executed.
+        await AuthenticateAsAdminAsync();
+
+        // Act
+        var response = await Client.PostAsync(url, content: null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
 }
