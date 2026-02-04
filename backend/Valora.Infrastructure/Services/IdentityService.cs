@@ -49,14 +49,18 @@ public class IdentityService : IIdentityService
     {
         if (!await _roleManager.RoleExistsAsync(roleName))
         {
-            await _roleManager.CreateAsync(new IdentityRole(roleName));
+            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+            if (!result.Succeeded)
+            {
+                throw new Exception($"Failed to create role '{roleName}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
         }
     }
 
     public async Task<Result> AddToRoleAsync(string userId, string roleName)
     {
         var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Result.Failure(new[] { "User not found." });
+        if (user == null) return Result.Failure(new[] { "Operation failed." });
 
         if (!await _userManager.IsInRoleAsync(user, roleName))
         {

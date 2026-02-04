@@ -47,23 +47,6 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task RegisterAsync_AdminEmail_AssignsAdminRole()
-    {
-        var adminEmail = "admin@valora.com";
-        var registerDto = new RegisterDto { Email = adminEmail, Password = "p", ConfirmPassword = "p" };
-        
-        _mockConfiguration.Setup(x => x["ADMIN_EMAIL"]).Returns(adminEmail);
-        _mockIdentityService.Setup(x => x.CreateUserAsync(registerDto.Email, registerDto.Password))
-            .ReturnsAsync((Result.Success(), "adminId"));
-
-        var result = await _authService.RegisterAsync(registerDto);
-
-        Assert.True(result.Succeeded);
-        _mockIdentityService.Verify(x => x.EnsureRoleAsync("Admin"), Times.Once);
-        _mockIdentityService.Verify(x => x.AddToRoleAsync("adminId", "Admin"), Times.Once);
-    }
-
-    [Fact]
     public async Task LoginAsync_UserNotFound_ReturnsNull()
     {
         _mockIdentityService.Setup(x => x.GetUserByEmailAsync("t@t.com")).ReturnsAsync((ApplicationUser?)null);

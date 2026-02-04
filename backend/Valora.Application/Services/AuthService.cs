@@ -28,16 +28,6 @@ public class AuthService : IAuthService
 
         var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
 
-        if (result.Succeeded)
-        {
-            var adminEmail = _configuration["ADMIN_EMAIL"];
-            if (!string.IsNullOrEmpty(adminEmail) && registerDto.Email.Equals(adminEmail, StringComparison.OrdinalIgnoreCase))
-            {
-                await _identityService.EnsureRoleAsync("Admin");
-                await _identityService.AddToRoleAsync(userId, "Admin");
-            }
-        }
-
         return result;
     }
 
