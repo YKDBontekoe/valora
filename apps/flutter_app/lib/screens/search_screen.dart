@@ -6,7 +6,6 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
-import '../providers/favorites_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_widgets.dart';
@@ -230,7 +229,6 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
 
     return Scaffold(
       body: CustomScrollView(
@@ -403,8 +401,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     final listing = _listings[index];
                     return NearbyListingCard(
                       listing: listing,
-                      isFavorite: favoritesProvider.isFavorite(listing.id),
-                      onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
                       onTap: () {
                         Navigator.push(
                           context,

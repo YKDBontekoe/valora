@@ -179,8 +179,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                       final listing = listings[index];
                       return NearbyListingCard(
                         listing: listing,
-                        isFavorite: true,
-                        onFavoriteToggle: () => _confirmRemove(context, listing),
+                        onFavoriteTap: () => _confirmRemove(context, listing),
                         onTap: () {
                           Navigator.push(
                             context,

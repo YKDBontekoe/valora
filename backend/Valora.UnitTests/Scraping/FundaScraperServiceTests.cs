@@ -29,6 +29,10 @@ public class FundaScraperServiceTests
         // We pass dummy dependencies to the base constructor because it's a class mock
         _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
 
+        // Default setup for GetByFundaIdsAsync to return empty list
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+
         var options = Options.Create(new ScraperOptions
         {
             SearchUrls = [],
@@ -134,8 +138,8 @@ public class FundaScraperServiceTests
             Address = "Addr1"
         };
 
-        _listingRepoMock.Setup(x => x.GetByFundaIdAsync("1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(existingListing);
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.Is<IEnumerable<string>>(ids => ids.Contains("1")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([existingListing]);
 
         var options = Options.Create(new ScraperOptions
         {

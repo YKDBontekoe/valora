@@ -69,12 +69,14 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             if (_connectionString == "InMemory")
             {
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseInMemoryDatabase("ValoraIntegrationTestDb"));
+                    options.UseInMemoryDatabase("ValoraIntegrationTestDb")
+                           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
             else
             {
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseNpgsql(_connectionString));
+                    options.UseNpgsql(_connectionString)
+                           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
 
             // Remove Hangfire hosted services

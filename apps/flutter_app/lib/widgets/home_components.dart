@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
+import '../providers/favorites_provider.dart';
 import 'valora_widgets.dart';
 import 'valora_glass_container.dart';
 
@@ -296,15 +298,13 @@ class _FilterChipState extends State<_FilterChip> {
 class FeaturedListingCard extends StatefulWidget {
   final Listing listing;
   final VoidCallback onTap;
-  final bool isFavorite;
-  final VoidCallback? onFavoriteToggle;
+  final VoidCallback? onFavoriteTap;
 
   const FeaturedListingCard({
     super.key,
     required this.listing,
     required this.onTap,
-    this.isFavorite = false,
-    this.onFavoriteToggle,
+    this.onFavoriteTap,
   });
 
   @override
@@ -429,24 +429,29 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: GestureDetector(
-                    onTap: widget.onFavoriteToggle,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        widget.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 18,
-                        color: widget.isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                      )
-                      .animate(target: widget.isFavorite ? 1 : 0)
-                      .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
-                      .then()
-                      .scale(end: const Offset(1, 1)),
-                    ),
+                  child: Consumer<FavoritesProvider>(
+                    builder: (context, favoritesProvider, child) {
+                      final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
+                      return GestureDetector(
+                        onTap: widget.onFavoriteTap ?? () => favoritesProvider.toggleFavorite(widget.listing),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 18,
+                            color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                          )
+                          .animate(target: isFavorite ? 1 : 0)
+                          .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
+                          .then()
+                          .scale(end: const Offset(1, 1)),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -543,15 +548,13 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
 class NearbyListingCard extends StatefulWidget {
   final Listing listing;
   final VoidCallback onTap;
-  final bool isFavorite;
-  final VoidCallback? onFavoriteToggle;
+  final VoidCallback? onFavoriteTap;
 
   const NearbyListingCard({
     super.key,
     required this.listing,
     required this.onTap,
-    this.isFavorite = false,
-    this.onFavoriteToggle,
+    this.onFavoriteTap,
   });
 
   @override
@@ -607,30 +610,34 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                   .animate(target: _isHovered ? 1 : 0)
                   .scale(end: const Offset(1.05, 1.05), duration: 400.ms, curve: Curves.easeOut),
 
-                  if (widget.onFavoriteToggle != null)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: widget.onFavoriteToggle,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
-                            shape: BoxShape.circle,
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Consumer<FavoritesProvider>(
+                      builder: (context, favoritesProvider, child) {
+                        final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
+                        return GestureDetector(
+                          onTap: widget.onFavoriteTap ?? () => favoritesProvider.toggleFavorite(widget.listing),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 14,
+                              color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                            )
+                            .animate(target: isFavorite ? 1 : 0)
+                            .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
+                            .then()
+                            .scale(end: const Offset(1, 1)),
                           ),
-                          child: Icon(
-                            widget.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            size: 14,
-                            color: widget.isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                          )
-                          .animate(target: widget.isFavorite ? 1 : 0)
-                          .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
-                          .then()
-                          .scale(end: const Offset(1, 1)),
-                        ),
-                      ),
+                        );
+                      },
                     ),
+                  ),
                 ],
               ),
               const SizedBox(width: 16),

@@ -46,6 +46,8 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => new { e.City, e.Price });
             entity.HasIndex(e => new { e.City, e.Bedrooms });
             entity.HasIndex(e => new { e.City, e.LivingAreaM2 });
+            entity.HasIndex(e => e.Address);
+            entity.HasIndex(e => e.PropertyType);
             entity.Property(e => e.Address).IsRequired();
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
             // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)
