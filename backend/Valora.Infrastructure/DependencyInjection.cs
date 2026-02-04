@@ -39,6 +39,15 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
 
+        if (configuration.GetValue<bool>("HANGFIRE_ENABLED"))
+        {
+            services.AddScoped<IScraperJobScheduler, HangfireJobScheduler>();
+        }
+        else
+        {
+            services.AddScoped<IScraperJobScheduler, NoOpScraperJobScheduler>();
+        }
+
         // Configuration
         services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));

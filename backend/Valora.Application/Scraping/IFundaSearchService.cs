@@ -27,7 +27,7 @@ public record FundaSearchQuery
     /// <summary>
     /// Region/city to search, e.g. "amsterdam", "rotterdam".
     /// </summary>
-    public required string Region { get; init; }
+    public string? Region { get; init; }
     
     /// <summary>
     /// Minimum price filter.

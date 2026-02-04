@@ -124,7 +124,8 @@ public class RedirectHandler : DelegatingHandler
             var wireMockUri = new Uri(_replacementBase);
 
             builder.Scheme = wireMockUri.Scheme;
-            builder.Host = wireMockUri.Host;
+            // Force 127.0.0.1 to avoid localhost resolution issues (IPv6 vs IPv4) in CI
+            builder.Host = wireMockUri.Host == "localhost" ? "127.0.0.1" : wireMockUri.Host;
             builder.Port = wireMockUri.Port;
 
             request.RequestUri = builder.Uri;
