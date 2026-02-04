@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -162,58 +163,27 @@ class ListingDetailScreen extends StatelessWidget {
 
                   if (listing.url != null) ...[
                     const SizedBox(height: ValoraSpacing.sm),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _openExternalLink(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ValoraColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-                          ),
-                        ),
-                        icon: const Icon(Icons.open_in_new_rounded),
-                        label: const Text(
-                          'View on Funda',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    ValoraButton(
+                      label: 'View on Funda',
+                      icon: Icons.open_in_new_rounded,
+                      isFullWidth: true,
+                      onPressed: () => _openExternalLink(context),
                     ),
                   ],
 
                   if (listing.brokerPhone != null) ...[
                     const SizedBox(height: ValoraSpacing.md),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _contactBroker(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ValoraColors.primary,
-                          side: const BorderSide(color: ValoraColors.primary),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-                          ),
-                        ),
-                        icon: const Icon(Icons.phone_rounded),
-                        label: const Text(
-                          'Contact Broker',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    ValoraButton(
+                      label: 'Contact Broker',
+                      icon: Icons.phone_rounded,
+                      variant: ValoraButtonVariant.outline,
+                      isFullWidth: true,
+                      onPressed: () => _contactBroker(context),
                     ),
                   ],
 
                   const SizedBox(height: ValoraSpacing.xl),
-                ],
+                ].animate(interval: 50.ms).fade(duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOut),
               ),
             ),
           ),
@@ -461,7 +431,9 @@ class ListingDetailScreen extends StatelessWidget {
       'Insulation': listing.insulationType,
       'Parking': listing.parkingType,
       'Orientation': listing.gardenOrientation,
-      'Boiler': listing.cvBoilerBrand != null ? '${listing.cvBoilerBrand} (${listing.cvBoilerYear ?? "Unknown"})' : null,
+      'Boiler': listing.cvBoilerBrand != null
+          ? '${listing.cvBoilerBrand} (${listing.cvBoilerYear ?? "Unknown"})'
+          : null,
       'Volume': listing.volumeM3 != null ? '${listing.volumeM3} m³' : null,
     };
 
@@ -480,30 +452,35 @@ class ListingDetailScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: ValoraSpacing.md),
-        Container(
-          padding: const EdgeInsets.all(ValoraSpacing.md),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-          ),
-          child: Column(
-            children: validDetails.map((e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                   Text(
-                    e.key,
-                    style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
+        Wrap(
+          spacing: ValoraSpacing.md,
+          runSpacing: ValoraSpacing.md,
+          children: validDetails.map((e) => ValoraGlassContainer(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ValoraSpacing.md,
+              vertical: ValoraSpacing.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  e.key,
+                  style: ValoraTypography.labelSmall.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                  Text(
-                    e.value!,
-                    style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  e.value!,
+                  style: ValoraTypography.bodyMedium.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
-            )).toList(),
-          ),
+                ),
+              ],
+            ),
+          )).toList(),
         ),
       ],
     );
