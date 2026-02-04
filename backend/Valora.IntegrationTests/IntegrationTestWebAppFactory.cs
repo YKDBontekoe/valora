@@ -79,16 +79,22 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                     options.UseNpgsql(_connectionString));
             }
 
-            // Remove Hangfire hosted services
-            var hostedServices = services.Where(d =>
-                d.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService) &&
-                d.ImplementationType?.FullName?.Contains("Hangfire") == true)
-                .ToList();
+            // Remove Hangfire hosted services ONLY if explicitly disabled
+            // We can't easily check final config here, but we can check if we are in InMemory mode
+            // If InMemory, and using MemoryStorage (which we enabled in Program.cs), it is safe to keep them.
+            // However, ScraperEndpointsTests enables Hangfire.
+            // If we remove them, UseHangfireDashboard crashes.
+            // So we should NOT remove them if they are using MemoryStorage (which doesn't need external infra).
 
-            foreach (var descriptor in hostedServices)
-            {
-                services.Remove(descriptor);
-            }
+            // To be safe, let's only remove them if NOT using InMemory/MemoryStorage logic.
+            // But Program.cs logic relies on HANGFIRE_ENABLED.
+            // If HANGFIRE_ENABLED is false, Program.cs doesn't add them. So nothing to remove.
+            // If HANGFIRE_ENABLED is true, Program.cs adds them.
+            // If we remove them, it crashes.
+            // So we should NEVER remove them here if Program.cs logic is correct.
+            // The only reason to remove them is if they start side effects we don't want.
+            // With MemoryStorage, side effects are minimal (in-memory job server).
+            // So let's remove this block.
         });
     }
 }

@@ -1,4 +1,5 @@
 using Hangfire;
+using Hangfire.MemoryStorage;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -105,9 +106,17 @@ if (hangfireEnabled)
 {
     // Configure Hangfire to use PostgreSQL for job storage.
     // This allows jobs to persist across restarts.
-    builder.Services.AddHangfire(config =>
-        config.UsePostgreSqlStorage(options =>
-            options.UseNpgsqlConnection(connectionString)));
+    // Use MemoryStorage for tests if configured or if connection string is "InMemory"
+    if (connectionString == "InMemory" || builder.Configuration.GetValue<bool>("USE_IN_MEMORY_HANGFIRE"))
+    {
+        builder.Services.AddHangfire(config => config.UseMemoryStorage());
+    }
+    else
+    {
+        builder.Services.AddHangfire(config =>
+            config.UsePostgreSqlStorage(options =>
+                options.UseNpgsqlConnection(connectionString)));
+    }
     builder.Services.AddHangfireServer();
 }
 
@@ -171,7 +180,7 @@ app.MapAiEndpoints();
 app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 
 // Re-check configuration from built app to ensure test overrides are respected
-if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
+if (hangfireEnabled)
 {
     // Hangfire Dashboard
     app.UseHangfireDashboard("/hangfire");

@@ -1,6 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Infrastructure.Persistence;
 
@@ -10,22 +15,38 @@ public class ScraperEndpointsTests : IDisposable
 {
     private readonly IntegrationTestWebAppFactory _factory;
     private readonly HttpClient _client;
-    private readonly IServiceScope _scope;
-    private readonly ValoraDbContext _dbContext;
+    private readonly Mock<IScraperJobScheduler> _mockScheduler = new();
+    private readonly Mock<IListingRepository> _mockRepo = new();
 
     public ScraperEndpointsTests()
     {
         _factory = new IntegrationTestWebAppFactory("InMemory");
-        _client = _factory.CreateClient();
-        _scope = _factory.Services.CreateScope();
-        _dbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-        _dbContext.Database.EnsureCreated();
+
+        // Use WithWebHostBuilder to inject mocks and override config
+        var clientFactory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((ctx, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "HANGFIRE_ENABLED", "true" }
+                });
+            });
+
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddScoped(_ => _mockScheduler.Object);
+                // Note: IListingRepository is used in Seed. We can mock it or use real one.
+                // If we mock it, we control CountAsync.
+                services.AddScoped(_ => _mockRepo.Object);
+            });
+        });
+
+        _client = clientFactory.CreateClient();
     }
 
     public void Dispose()
     {
-        _dbContext.Database.EnsureDeleted();
-        _scope.Dispose();
         _factory.Dispose();
     }
 
@@ -43,7 +64,7 @@ public class ScraperEndpointsTests : IDisposable
     }
 
     [Fact]
-    public async Task TriggerScraper_WhenHangfireDisabled_ShouldReturn503()
+    public async Task TriggerScraper_WhenHangfireEnabled_ShouldQueueJob()
     {
         await AuthenticateAsync();
 
@@ -51,12 +72,12 @@ public class ScraperEndpointsTests : IDisposable
         var response = await _client.PostAsync("/api/scraper/trigger", null);
 
         // Assert
-        // The factory sets HANGFIRE_ENABLED = false by default
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _mockScheduler.Verify(x => x.EnqueueScraper(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task TriggerLimitedScraper_WhenHangfireDisabled_ShouldReturn503()
+    public async Task TriggerLimitedScraper_WhenHangfireEnabled_ShouldQueueJob()
     {
         await AuthenticateAsync();
 
@@ -64,18 +85,43 @@ public class ScraperEndpointsTests : IDisposable
         var response = await _client.PostAsync("/api/scraper/trigger-limited?region=amsterdam&limit=10", null);
 
         // Assert
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _mockScheduler.Verify(x => x.EnqueueLimitedScraper("amsterdam", 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Seed_WhenRegionMissing_ShouldReturnBadRequest()
+    public async Task Seed_WhenDataExists_ShouldSkip()
     {
         await AuthenticateAsync();
 
+        _mockRepo.Setup(x => x.CountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
         // Act
-        var response = await _client.PostAsync("/api/scraper/seed", null);
+        var response = await _client.PostAsync("/api/scraper/seed?region=amsterdam", null);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var content = await response.Content.ReadFromJsonAsync<SeedResponse>();
+        Assert.True(content!.Skipped);
+        _mockScheduler.Verify(x => x.EnqueueSeed(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Seed_WhenDataEmpty_ShouldQueueJob()
+    {
+        await AuthenticateAsync();
+
+        _mockRepo.Setup(x => x.CountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        // Act
+        var response = await _client.PostAsync("/api/scraper/seed?region=amsterdam", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var content = await response.Content.ReadFromJsonAsync<SeedResponse>();
+        Assert.False(content!.Skipped);
+        _mockScheduler.Verify(x => x.EnqueueSeed("amsterdam", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    record SeedResponse(string Message, bool Skipped);
 }

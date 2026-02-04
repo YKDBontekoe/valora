@@ -22,43 +22,15 @@ public interface IFundaSearchService
 /// <summary>
 /// Query parameters for Funda search.
 /// </summary>
-public record FundaSearchQuery
-{
-    /// <summary>
-    /// Region/city to search, e.g. "amsterdam", "rotterdam".
-    /// </summary>
-    public string? Region { get; init; }
-    
-    /// <summary>
-    /// Minimum price filter.
-    /// </summary>
-    public int? MinPrice { get; init; }
-    
-    /// <summary>
-    /// Maximum price filter.
-    /// </summary>
-    public int? MaxPrice { get; init; }
-    
-    /// <summary>
-    /// Minimum number of bedrooms.
-    /// </summary>
-    public int? MinBedrooms { get; init; }
-    
-    /// <summary>
-    /// Type of offering: "buy", "rent", or "project".
-    /// </summary>
-    public string OfferingType { get; init; } = "buy";
-    
-    /// <summary>
-    /// Number of results per page.
-    /// </summary>
-    public int PageSize { get; init; } = 20;
-    
-    /// <summary>
-    /// Page number (1-indexed).
-    /// </summary>
-    public int Page { get; init; } = 1;
-}
+public record FundaSearchQuery(
+    string? Region,
+    int? MinPrice = null,
+    int? MaxPrice = null,
+    int? MinBedrooms = null,
+    string OfferingType = "buy",
+    int PageSize = 20,
+    int Page = 1
+);
 
 /// <summary>
 /// Result of a Funda search operation.

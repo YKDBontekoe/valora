@@ -89,6 +89,23 @@ public class AiEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Chat_ReturnsInternalServerError_WhenServiceThrows()
+    {
+        // Arrange
+        await AuthenticateAsync();
+        var request = new AiChatRequest { Prompt = "Error", Model = "gpt-4" };
+        _mockAiService
+            .Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("AI Error"));
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/ai/chat", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
     // Helper record
     record AiChatResponse(string Response);
 }
