@@ -5,7 +5,6 @@ import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/models/listing_response.dart';
-import 'package:valora_app/models/listing_filter.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/services/api_service.dart';
