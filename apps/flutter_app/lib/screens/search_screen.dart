@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
@@ -409,7 +410,10 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         );
                       },
-                    );
+                    )
+                    .animate(delay: (50 * (index % 10)).ms)
+                    .fade(duration: 400.ms)
+                    .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
                   },
                   childCount: _listings.length + 1, // +1 for loader/padding
                 ),

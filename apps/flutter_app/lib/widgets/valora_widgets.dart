@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
@@ -83,6 +84,13 @@ class _ValoraCardState extends State<ValoraCard> {
           child: cardContent,
         ),
       );
+    } else {
+      // Allow hover effect even without tap
+      cardContent = MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: cardContent,
+      );
     }
 
     return AnimatedContainer(
@@ -95,21 +103,35 @@ class _ValoraCardState extends State<ValoraCard> {
             : null,
         borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: [
+          // Ambient shadow
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: currentElevation * 2,
+            offset: Offset(0, currentElevation),
+          ),
+          // Sharp shadow for depth
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: currentElevation * 4,
-            offset: Offset(0, currentElevation * 2),
+            blurRadius: currentElevation * 6,
+            offset: Offset(0, currentElevation * 3),
+            spreadRadius: -2,
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: cardContent,
     )
-    .animate(target: _isPressed ? 1 : 0)
+    .animate(target: _isPressed ? 1 : 0) // Press scale
     .scale(
       end: const Offset(0.98, 0.98),
       duration: 100.ms,
       curve: Curves.easeInOut,
+    )
+    .animate(target: _isHovered && !_isPressed ? 1 : 0) // Hover lift
+    .scale(
+      end: const Offset(1.02, 1.02),
+      duration: 200.ms,
+      curve: Curves.easeOut,
     );
   }
 }
@@ -269,7 +291,13 @@ class _ValoraButtonState extends State<ValoraButton> {
   @override
   Widget build(BuildContext context) {
     Widget child = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: Curves.easeOutBack,
+      switchOutCurve: Curves.easeInBack,
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: animation,
+        child: child,
+      ),
       child: widget.isLoading
           ? SizedBox(
               key: const ValueKey('loading'),
@@ -344,7 +372,7 @@ class _ValoraButtonState extends State<ValoraButton> {
     return button
         .animate(target: _isPressed ? 1 : 0)
         .scale(
-          end: const Offset(0.96, 0.96),
+          end: const Offset(0.95, 0.95),
           duration: 100.ms,
           curve: Curves.easeInOut,
         );
@@ -419,37 +447,46 @@ class ValoraBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = color ?? ValoraColors.primary;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ValoraSpacing.sm,
-        vertical: ValoraSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ValoraSpacing.sm,
+            vertical: ValoraSpacing.xs,
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: ValoraSpacing.iconSizeSm, color: Colors.white),
-            const SizedBox(width: ValoraSpacing.xs),
-          ],
-          Text(
-            label,
-            style: ValoraTypography.labelSmall.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
+          decoration: BoxDecoration(
+            color: bgColor.withValues(alpha: 0.8), // Glass opacity
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1,
             ),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: ValoraSpacing.iconSizeSm, color: Colors.white),
+                const SizedBox(width: ValoraSpacing.xs),
+              ],
+              Text(
+                label,
+                style: ValoraTypography.labelSmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     ).animate().fadeIn().scale(curve: Curves.easeOutBack);
   }

@@ -40,6 +40,7 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pumpAndSettle();
 
     expect(find.text('Contact Broker'), findsOneWidget);
     expect(find.byIcon(Icons.phone_rounded), findsOneWidget);
@@ -54,6 +55,7 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pumpAndSettle();
 
     expect(find.text('Contact Broker'), findsNothing);
   });

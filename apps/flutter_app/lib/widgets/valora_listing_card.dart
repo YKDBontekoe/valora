@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -221,12 +222,27 @@ class _FavoriteButton extends StatelessWidget {
             transitionBuilder: (child, animation) {
               return ScaleTransition(scale: animation, child: child);
             },
-            child: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              key: ValueKey(isFavorite),
-              size: ValoraSpacing.iconSizeMd,
-              color: isFavorite ? ValoraColors.error : ValoraColors.neutral600,
-            ),
+            child: isFavorite
+                ? Icon(
+                    Icons.favorite,
+                    key: const ValueKey(true),
+                    size: ValoraSpacing.iconSizeMd,
+                    color: ValoraColors.error,
+                  )
+                    .animate()
+                    .scale(
+                      duration: 400.ms,
+                      curve: Curves.elasticOut,
+                      begin: const Offset(0.5, 0.5),
+                      end: const Offset(1, 1),
+                    )
+                    .shimmer(delay: 200.ms, duration: 600.ms)
+                : Icon(
+                    Icons.favorite_border,
+                    key: const ValueKey(false),
+                    size: ValoraSpacing.iconSizeMd,
+                    color: ValoraColors.neutral600,
+                  ),
           ),
         ),
       ),
