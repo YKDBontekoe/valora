@@ -72,6 +72,10 @@ public class ExceptionHandlingMiddleware
                 title = "Database Error";
                 detail = "A database constraint violation occurred.";
                 break;
+            case BadHttpRequestException:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                title = "Bad Request";
+                break;
         }
 
         context.Response.StatusCode = statusCode;

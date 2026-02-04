@@ -30,7 +30,7 @@ public static class SearchEndpoints
         });
 
         group.MapGet("/lookup", async (
-            string url,
+            string? url,
             IFundaSearchService searchService,
             CancellationToken ct) =>
         {

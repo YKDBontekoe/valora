@@ -32,7 +32,7 @@ public static class ScraperEndpoints
         });
 
         group.MapPost("/seed", async (
-            string region,
+            string? region,
             [FromServices] IListingRepository repo,
             [FromServices] IScraperJobScheduler scheduler,
             [FromServices] IConfiguration config,
