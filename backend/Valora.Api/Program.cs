@@ -126,18 +126,21 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Apply database migrations
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        dbContext.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        // Log error or handle it (e.g., if database is not ready yet)
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
+        var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        try
+        {
+            dbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            // Log error or handle it (e.g., if database is not ready yet)
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while migrating the database.");
+        }
     }
 }
 
@@ -179,6 +182,14 @@ api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(filter);
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+
+    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(filter, validationContext, validationResults, true))
+    {
+        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
+    }
+
     var paginatedList = await repo.GetAllAsync(filter, ct);
 
     return Results.Ok(new
@@ -229,7 +240,7 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
-}).RequireAuthorization();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Limited trigger endpoint
 api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJob job, CancellationToken ct) =>
@@ -237,7 +248,7 @@ api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJ
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
     return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
-}).RequireAuthorization();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
@@ -258,7 +269,7 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
 
     BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
-}).RequireAuthorization();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Dynamic Funda search - cache-through pattern
 // Searches Funda on-demand, caching results in the database
@@ -267,9 +278,10 @@ api.MapGet("/search", async (
     Valora.Application.Scraping.IFundaSearchService searchService,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(query.Region))
+    // Explicit fallback validation to ensure constraints are respected even if attribute validation behaves unexpectedly
+    if (!Valora.Application.Validators.SearchQueryValidator.IsValid(query, out var validationError))
     {
-        return Results.BadRequest(new { error = "Region is required" });
+        return Results.BadRequest(new { error = validationError });
     }
     
     var result = await searchService.SearchAsync(query, ct);

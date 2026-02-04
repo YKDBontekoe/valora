@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -17,15 +18,21 @@ public class TokenService : ITokenService
     private readonly JwtOptions _options;
     private readonly ValoraDbContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public TokenService(IOptions<JwtOptions> options, ValoraDbContext context, TimeProvider timeProvider)
+    public TokenService(
+        IOptions<JwtOptions> options,
+        ValoraDbContext context,
+        TimeProvider timeProvider,
+        UserManager<ApplicationUser> userManager)
     {
         _options = options.Value;
         _context = context;
         _timeProvider = timeProvider;
+        _userManager = userManager;
     }
 
-    public string GenerateToken(ApplicationUser user)
+    public async Task<string> GenerateTokenAsync(ApplicationUser user)
     {
         if (string.IsNullOrEmpty(_options.Secret))
         {
@@ -38,6 +45,13 @@ public class TokenService : ITokenService
             new(ClaimTypes.NameIdentifier, user.Id),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
+
+        // Add User Roles
+        var roles = await _userManager.GetRolesAsync(user);
+        foreach (var role in roles)
+        {
+            authClaims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
         var now = _timeProvider.GetUtcNow().UtcDateTime;
