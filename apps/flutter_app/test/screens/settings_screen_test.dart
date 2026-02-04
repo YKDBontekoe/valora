@@ -184,4 +184,80 @@ void main() {
 
     expect(find.text('ADMIN CONTROLS'), findsNothing);
   });
+
+  testWidgets('Admin can trigger scrape', (WidgetTester tester) async {
+    when(mockAuthProvider.isAdmin).thenReturn(true);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+
+    // Use scrollUntilVisible if needed, but here we assume it fits or use a large screen
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+
+    await tester.tap(find.text('Trigger Scrape'));
+    await tester.pump(); // Start future
+    await tester.pump(); // Process future
+
+    verify(mockApiService.triggerScrape()).called(1);
+    addTearDown(() => tester.view.resetPhysicalSize());
+  });
+
+  testWidgets('Admin can trigger limited scrape', (WidgetTester tester) async {
+    when(mockAuthProvider.isAdmin).thenReturn(true);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+
+    await tester.tap(find.text('Limited Scrape'));
+    await tester.pumpAndSettle();
+
+    // Fill dialog
+    await tester.enterText(find.widgetWithText(TextField, 'Region (e.g. amsterdam)'), 'utrecht');
+    await tester.enterText(find.widgetWithText(TextField, 'Limit'), '5');
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Trigger'));
+    await tester.pumpAndSettle();
+
+    verify(mockApiService.triggerLimitedScrape('utrecht', 5)).called(1);
+    addTearDown(() => tester.view.resetPhysicalSize());
+  });
+
+  testWidgets('Admin can trigger seed database', (WidgetTester tester) async {
+    when(mockAuthProvider.isAdmin).thenReturn(true);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+
+    await tester.tap(find.text('Seed Database'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Region (e.g. amsterdam)'), 'rotterdam');
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Seed'));
+    await tester.pumpAndSettle();
+
+    verify(mockApiService.seedDatabase('rotterdam')).called(1);
+    addTearDown(() => tester.view.resetPhysicalSize());
+  });
+
+  testWidgets('Admin can clear database', (WidgetTester tester) async {
+    when(mockAuthProvider.isAdmin).thenReturn(true);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+
+    await tester.tap(find.text('Clear Database'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear Database?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Clear All'));
+    await tester.pumpAndSettle();
+
+    verify(mockApiService.clearDatabase()).called(1);
+    addTearDown(() => tester.view.resetPhysicalSize());
+  });
 }
