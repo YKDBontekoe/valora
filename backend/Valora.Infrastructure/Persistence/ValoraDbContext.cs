@@ -47,6 +47,30 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => new { e.City, e.Bedrooms });
             entity.HasIndex(e => new { e.City, e.LivingAreaM2 });
             entity.Property(e => e.Address).IsRequired();
+
+            // Constraints
+            entity.Property(e => e.FundaId).HasMaxLength(50);
+            entity.Property(e => e.Address).HasMaxLength(200);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            entity.Property(e => e.Url).HasMaxLength(500);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.PropertyType).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.EnergyLabel).HasMaxLength(20);
+            entity.Property(e => e.OwnershipType).HasMaxLength(100);
+            entity.Property(e => e.CadastralDesignation).HasMaxLength(100);
+            entity.Property(e => e.HeatingType).HasMaxLength(100);
+            entity.Property(e => e.InsulationType).HasMaxLength(100);
+            entity.Property(e => e.GardenOrientation).HasMaxLength(50);
+            entity.Property(e => e.ParkingType).HasMaxLength(100);
+            entity.Property(e => e.AgentName).HasMaxLength(200);
+            entity.Property(e => e.RoofType).HasMaxLength(100);
+            entity.Property(e => e.ConstructionPeriod).HasMaxLength(100);
+            entity.Property(e => e.CVBoilerBrand).HasMaxLength(100);
+            entity.Property(e => e.BrokerPhone).HasMaxLength(50);
+            entity.Property(e => e.BrokerAssociationCode).HasMaxLength(20);
+
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
             // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)
             entity.Property(e => e.Features)

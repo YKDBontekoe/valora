@@ -229,7 +229,7 @@ api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
     return Results.Ok(new { message = "Scraper job queued" });
-}).RequireAuthorization();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Limited trigger endpoint
 api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJob job, CancellationToken ct) =>
@@ -237,7 +237,7 @@ api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJ
     if (!hangfireEnabled) return Results.StatusCode(503);
     BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
     return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
-}).RequireAuthorization();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Seed endpoint
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
@@ -258,7 +258,7 @@ api.MapPost("/scraper/seed", async (string region, IListingRepository repo, Canc
 
     BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
     return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
-}).RequireAuthorization();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Dynamic Funda search - cache-through pattern
 // Searches Funda on-demand, caching results in the database

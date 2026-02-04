@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Valora.Application.Scraping;
 
 /// <summary>
@@ -27,6 +29,7 @@ public record FundaSearchQuery
     /// <summary>
     /// Region/city to search, e.g. "amsterdam", "rotterdam".
     /// </summary>
+    [MaxLength(100)]
     public required string Region { get; init; }
     
     /// <summary>
@@ -47,16 +50,19 @@ public record FundaSearchQuery
     /// <summary>
     /// Type of offering: "buy", "rent", or "project".
     /// </summary>
+    [RegularExpression("(?i)^(buy|rent|project)$", ErrorMessage = "Invalid OfferingType.")]
     public string OfferingType { get; init; } = "buy";
     
     /// <summary>
     /// Number of results per page.
     /// </summary>
+    [Range(1, 100)]
     public int PageSize { get; init; } = 20;
     
     /// <summary>
     /// Page number (1-indexed).
     /// </summary>
+    [Range(1, 10000)]
     public int Page { get; init; } = 1;
 }
 
