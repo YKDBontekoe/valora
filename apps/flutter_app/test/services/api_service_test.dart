@@ -1,3 +1,4 @@
+import '../helpers/test_runners.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -11,7 +12,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:retry/retry.dart';
 
-Future<R> syncRunner<Q, R>(ComputeCallback<Q, R> callback, Q message) async => await callback(message);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 

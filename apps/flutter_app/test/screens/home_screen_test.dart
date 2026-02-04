@@ -1,3 +1,4 @@
+import '../helpers/test_runners.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -13,7 +14,6 @@ import 'package:valora_app/widgets/valora_filter_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:retry/retry.dart';
-Future<R> syncRunner<Q, R>(ComputeCallback<Q, R> callback, Q message) async => await callback(message);
 
 void main() {
   setUpAll(() async {

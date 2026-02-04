@@ -124,7 +124,7 @@ class ApiService {
       final response = await _authenticatedRequest((headers) =>
           _client.post(uri, headers: headers).timeout(timeoutDuration));
 
-      _handleResponse(response, (_) => null);
+      await _handleResponse(response, (_) => null);
     } catch (e) {
       throw _handleException(e);
     }
