@@ -10,7 +10,6 @@ using Valora.Infrastructure;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.DTOs;
 using Valora.Api.Endpoints;
 using Valora.Api.Hubs;
 using Valora.Api.Services;
@@ -156,6 +155,18 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 // Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
 
+// Map Listing Endpoints
+app.MapListingEndpoints();
+
+// Map Scraper Endpoints
+app.MapScraperEndpoints();
+
+// Map Search Endpoints
+app.MapSearchEndpoints();
+
+// Map AI Endpoints
+app.MapAiEndpoints();
+
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 
@@ -172,157 +183,9 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
         builder.Configuration["SCRAPER_CRON"] ?? "0 */6 * * *"); // Default: every 6 hours
 }
 
-// API Endpoints
 var api = app.MapGroup("/api");
 
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
-
-api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
-{
-    var paginatedList = await repo.GetAllAsync(filter, ct);
-
-    return Results.Ok(new
-    {
-        paginatedList.Items,
-        paginatedList.PageIndex,
-        paginatedList.TotalPages,
-        paginatedList.TotalCount,
-        paginatedList.HasNextPage,
-        paginatedList.HasPreviousPage
-    });
-}).RequireAuthorization();
-
-api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
-{
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
-    
-    var dto = new ListingDto(
-        listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
-        listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,
-        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt,
-        // Rich Data
-        listing.Description, listing.EnergyLabel, listing.YearBuilt, listing.ImageUrls,
-        // Phase 2
-        listing.OwnershipType, listing.CadastralDesignation, listing.VVEContribution, listing.HeatingType,
-        listing.InsulationType, listing.GardenOrientation, listing.HasGarage, listing.ParkingType,
-        // Phase 3
-        listing.AgentName, listing.VolumeM3, listing.BalconyM2, listing.GardenM2, listing.ExternalStorageM2,
-        listing.Features,
-        // Geo & Media
-        listing.Latitude, listing.Longitude, listing.VideoUrl, listing.VirtualTourUrl, listing.FloorPlanUrls, listing.BrochureUrl,
-        // Construction
-        listing.RoofType, listing.NumberOfFloors, listing.ConstructionPeriod, listing.CVBoilerBrand, listing.CVBoilerYear,
-        // Broker
-        listing.BrokerPhone, listing.BrokerLogoUrl,
-        // Infra
-        listing.FiberAvailable,
-        // Status
-        listing.PublicationDate, listing.IsSoldOrRented, listing.Labels
-    );
-    return Results.Ok(dto);
-}).RequireAuthorization();
-
-// Manual trigger endpoint for scraping
-api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
-{
-    if (!hangfireEnabled) return Results.StatusCode(503);
-    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
-    return Results.Ok(new { message = "Scraper job queued" });
-}).RequireAuthorization();
-
-// Limited trigger endpoint
-api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJob job, CancellationToken ct) =>
-{
-    if (!hangfireEnabled) return Results.StatusCode(503);
-    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
-    return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
-}).RequireAuthorization();
-
-// Seed endpoint
-api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(region))
-    {
-        return Results.BadRequest("Region is required");
-    }
-
-    if (!hangfireEnabled) return Results.StatusCode(503);
-
-    var count = await repo.CountAsync(ct);
-    if (count > 0)
-    {
-        // "skip" if data exists as per requirements
-        return Results.Ok(new { message = "Data already exists, skipping seed", skipped = true });
-    }
-
-    BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
-    return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
-}).RequireAuthorization();
-
-// Dynamic Funda search - cache-through pattern
-// Searches Funda on-demand, caching results in the database
-api.MapGet("/search", async (
-    [AsParameters] Valora.Application.Scraping.FundaSearchQuery query,
-    Valora.Application.Scraping.IFundaSearchService searchService,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(query.Region))
-    {
-        return Results.BadRequest(new { error = "Region is required" });
-    }
-    
-    var result = await searchService.SearchAsync(query, ct);
-    return Results.Ok(new
-    {
-        result.Items,
-        result.TotalCount,
-        result.Page,
-        result.PageSize,
-        result.FromCache
-    });
-}).RequireAuthorization();
-
-// Lookup a specific Funda listing by URL
-// Fetches from Funda if not cached or stale
-api.MapGet("/lookup", async (
-    string url,
-    Valora.Application.Scraping.IFundaSearchService searchService,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(url))
-    {
-        return Results.BadRequest(new { error = "URL is required" });
-    }
-    
-    var listing = await searchService.GetByFundaUrlAsync(url, ct);
-    return listing is null 
-        ? Results.NotFound(new { error = "Listing not found" }) 
-        : Results.Ok(listing);
-}).RequireAuthorization();
-
-// AI Chat Endpoint
-api.MapPost("/ai/chat", async (
-    AiChatRequest request,
-    IAiService aiService,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Prompt))
-    {
-        return Results.BadRequest(new { error = "Prompt is required" });
-    }
-
-    try
-    {
-        var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
-        return Results.Ok(new { response });
-    }
-    catch (Exception ex)
-    {
-        // Log error
-        return Results.Problem(detail: ex.Message, statusCode: 500);
-    }
-}).RequireAuthorization();
 
 app.Run();
 

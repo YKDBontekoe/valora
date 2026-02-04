@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
+        services.AddScoped<IScraperJobScheduler, HangfireJobScheduler>();
 
         // Configuration
         services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
