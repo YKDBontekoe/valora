@@ -126,18 +126,21 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Apply database migrations
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        dbContext.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        // Log error or handle it (e.g., if database is not ready yet)
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
+        var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        try
+        {
+            dbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            // Log error or handle it (e.g., if database is not ready yet)
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while migrating the database.");
+        }
     }
 }
 
