@@ -18,7 +18,6 @@ public class FundaMapperTests
     [Fact]
     public void MapApiListingToDomain_MapsBasicFields()
     {
-        // Arrange
         var apiListing = new FundaApiListing
         {
             ListingUrl = "/koop/amsterdam/huis-123",
@@ -29,11 +28,8 @@ public class FundaMapperTests
         };
 
         var method = _mapperType.GetMethod("MapApiListingToDomain", BindingFlags.Public | BindingFlags.Static);
-
-        // Act
         var result = (Listing)method!.Invoke(null, [apiListing, "123"])!;
 
-        // Assert
         Assert.Equal("123", result.FundaId);
         Assert.Equal("Kerkstraat 1", result.Address);
         Assert.Equal("Amsterdam", result.City);
@@ -44,83 +40,101 @@ public class FundaMapperTests
     }
 
     [Fact]
-    public void EnrichListingWithNuxtData_PopulatesFeaturesMap()
+    public void EnrichListingWithSummary_MapsFields()
     {
-        // Arrange
         var listing = new Listing { FundaId = "1", Address = "Test" };
-        var data = new FundaNuxtListingData
+        var summary = new FundaApiListingSummary
         {
-            Features = new FundaNuxtFeatures
-            {
-                Indeling = new FundaNuxtFeatureGroup
-                {
-                    KenmerkenList =
-                    [
-                        new() { Label = "Bijzonderheid", Value = "Monumentaal pand" },
-                        new() { Label = "Sauna", Value = "Ja" }
-                    ]
-                }
-            }
+            PublicationDate = new DateTime(2023, 1, 1),
+            IsSoldOrRented = true,
+            Labels = [ new() { Text = "Nieuw" } ],
+            Address = new FundaApiSummaryAddress { PostalCode = "1234AB", City = "TestCity" },
+            Tracking = new FundaApiTracking { Values = new FundaApiTrackingValues { Status = "verkocht" } }
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
+        var method = _mapperType.GetMethod("EnrichListingWithSummary", BindingFlags.Public | BindingFlags.Static);
+        method!.Invoke(null, [listing, summary]);
 
-        // Act
-        method!.Invoke(null, [listing, data]);
-
-        // Assert
-        Assert.NotNull(listing.Features);
-        Assert.True(listing.Features.ContainsKey("Bijzonderheid"));
-        Assert.Equal("Monumentaal pand", listing.Features["Bijzonderheid"]);
-
-        Assert.True(listing.Features.ContainsKey("Sauna"));
-        Assert.Equal("Ja", listing.Features["Sauna"]);
+        Assert.Equal(new DateTime(2023, 1, 1), listing.PublicationDate);
+        Assert.True(listing.IsSoldOrRented);
+        Assert.Single(listing.Labels);
+        Assert.Equal("Nieuw", listing.Labels[0]);
+        Assert.Equal("1234AB", listing.PostalCode);
+        Assert.Equal("TestCity", listing.City);
+        Assert.Equal("Verkocht", listing.Status);
     }
 
     [Fact]
-    public void EnrichListingWithNuxtData_ParsesSpecificFields()
+    public void EnrichListingWithNuxtData_Comprehensive_MapsAllFields()
     {
-        // Arrange
         var listing = new Listing { FundaId = "1", Address = "Test" };
         var data = new FundaNuxtListingData
         {
+            Description = new FundaNuxtDescription { Content = "Nice house" },
             Features = new FundaNuxtFeatures
             {
-                Indeling = new FundaNuxtFeatureGroup
+                Bouw = new FundaNuxtFeatureGroup
                 {
-                    KenmerkenList = [ new() { Label = "Aantal kamers", Value = "5 kamers (3 slaapkamers)" } ]
-                },
-                Energie = new FundaNuxtFeatureGroup
-                {
-                    KenmerkenList = [ new() { Label = "Energielabel", Value = "A" } ]
+                    KenmerkenList =
+                    [
+                        new() { Label = "Daktype", Value = "Zadeldak" },
+                        new() { Label = "Bouwperiode", Value = "1906-1930" },
+                        new() { Label = "Aantal woonlagen", Value = "3 woonlagen" },
+                        new() { Label = "CV-ketel", Value = "Vaillant (2019)" }
+                    ]
                 }
             },
-            ObjectType = new FundaNuxtObjectType
+            Media = new FundaNuxtMedia
             {
-                PropertySpecification = new FundaNuxtPropertySpecification
-                {
-                    SelectedArea = 120,
-                    SelectedPlotArea = 200
-                }
-            }
+                Items = [ new() { Id = "img1", Type = 1 } ]
+            },
+            Coordinates = new FundaNuxtCoordinates { Lat = 52.0, Lng = 4.0 },
+            Videos = [ new() { Url = "vid.mp4" } ],
+            Photos360 = [ new() { Url = "360.jpg" } ],
+            FloorPlans = [ new() { Url = "floor.jpg" } ],
+            BrochureUrl = "brochure.pdf",
+            ObjectInsights = new FundaNuxtObjectInsights { Views = 100, Saves = 10 },
+            LocalInsights = new FundaNuxtLocalInsights { Inhabitants = 5000, AvgPricePerM2 = 4000 },
+            OpenHouseDates = [ new() { Date = new DateTime(2023, 5, 1) } ]
         };
 
         var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
-
-        // Act
         method!.Invoke(null, [listing, data]);
 
-        // Assert
-        Assert.Equal(120, listing.LivingAreaM2);
-        Assert.Equal(200, listing.PlotAreaM2);
-        Assert.Equal(3, listing.Bedrooms); // Parsed from regex
-        Assert.Equal("A", listing.EnergyLabel);
+        // Assertions
+        Assert.Equal("Nice house", listing.Description);
+
+        // Features
+        Assert.Equal("Zadeldak", listing.RoofType);
+        Assert.Equal("1906-1930", listing.ConstructionPeriod);
+        Assert.Equal(3, listing.NumberOfFloors);
+        Assert.Equal("Vaillant", listing.CVBoilerBrand);
+        Assert.Equal(2019, listing.CVBoilerYear);
+
+        // Media
+        Assert.Single(listing.ImageUrls);
+        Assert.Contains("img1", listing.ImageUrls[0]);
+        Assert.Equal(52.0, listing.Latitude);
+        Assert.Equal("vid.mp4", listing.VideoUrl);
+        Assert.Equal("360.jpg", listing.VirtualTourUrl);
+        Assert.Single(listing.FloorPlanUrls);
+        Assert.Equal("floor.jpg", listing.FloorPlanUrls[0]);
+        Assert.Equal("brochure.pdf", listing.BrochureUrl);
+
+        // Insights
+        Assert.Equal(100, listing.ViewCount);
+        Assert.Equal(10, listing.SaveCount);
+        Assert.Equal(5000, listing.NeighborhoodPopulation);
+        Assert.Equal(4000, listing.NeighborhoodAvgPriceM2);
+
+        // Dates
+        Assert.Single(listing.OpenHouseDates);
+        Assert.Equal(new DateTime(2023, 5, 1), listing.OpenHouseDates[0]);
     }
 
     [Fact]
     public void MergeListingDetails_UpdatesTarget()
     {
-        // Arrange
         var target = new Listing { FundaId = "1", Address = "Test", Price = 100000 };
         var source = new Listing
         {
@@ -133,15 +147,11 @@ public class FundaMapperTests
         };
 
         var method = _mapperType.GetMethod("MergeListingDetails", BindingFlags.Public | BindingFlags.Static);
-
-        // Act
         method!.Invoke(null, [target, source]);
 
-        // Assert
         Assert.Equal(3, target.Bedrooms);
         Assert.Equal("Verkocht", target.Status);
         Assert.Equal("0612345678", target.BrokerPhone);
-        // Price is NOT updated by MergeListingDetails
         Assert.Equal(100000, target.Price);
     }
 
@@ -149,7 +159,6 @@ public class FundaMapperTests
     public void ParseFirstNumber_ParsesCorrectly()
     {
         var method = _mapperType.GetMethod("ParseFirstNumber", BindingFlags.Public | BindingFlags.Static);
-
         Assert.Equal(123, method!.Invoke(null, ["123 m²"]));
         Assert.Equal(50, method.Invoke(null, ["€ 50.000"]));
         Assert.Null(method.Invoke(null, ["Geen cijfers"]));
