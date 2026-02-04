@@ -21,27 +21,7 @@ public class ListingRepository : IListingRepository
         var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
-        // Filtering
-        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-        {
-            if (isPostgres)
-            {
-                var escapedTerm = EscapeLikePattern(filter.SearchTerm);
-                var search = $"%{escapedTerm}%";
-                query = query.Where(l =>
-                    EF.Functions.ILike(l.Address, search, @"\") ||
-                    (l.City != null && EF.Functions.ILike(l.City, search, @"\")) ||
-                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search, @"\")));
-            }
-            else
-            {
-                var search = filter.SearchTerm.ToLower();
-                query = query.Where(l =>
-                    l.Address.ToLower().Contains(search) ||
-                    (l.City != null && l.City.ToLower().Contains(search)) ||
-                    (l.PostalCode != null && l.PostalCode.ToLower().Contains(search)));
-            }
-        }
+        query = query.ApplySearchFilter(filter, isPostgres);
 
         if (filter.MinPrice.HasValue)
         {
@@ -53,18 +33,7 @@ public class ListingRepository : IListingRepository
             query = query.Where(l => l.Price <= filter.MaxPrice.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(filter.City))
-        {
-            if (isPostgres)
-            {
-                var escapedCity = EscapeLikePattern(filter.City);
-                query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, escapedCity, @"\"));
-            }
-            else
-            {
-                query = query.Where(l => l.City != null && l.City.ToLower() == filter.City.ToLower());
-            }
-        }
+        query = query.ApplyCityFilter(filter.City, isPostgres);
 
         if (filter.MinBedrooms.HasValue)
         {
@@ -81,17 +50,7 @@ public class ListingRepository : IListingRepository
             query = query.Where(l => l.LivingAreaM2 <= filter.MaxLivingArea.Value);
         }
 
-        // Sorting
-        query = (filter.SortBy?.ToLower(), filter.SortOrder?.ToLower()) switch
-        {
-            ("price", "desc") => query.OrderByDescending(l => l.Price),
-            ("price", "asc") => query.OrderBy(l => l.Price),
-            ("date", "asc") => query.OrderBy(l => l.ListedDate),
-            ("date", "desc") => query.OrderByDescending(l => l.ListedDate),
-            ("livingarea", "asc") => query.OrderBy(l => l.LivingAreaM2),
-            ("livingarea", "desc") => query.OrderByDescending(l => l.LivingAreaM2),
-            _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
-        };
+        query = query.ApplySorting(filter.SortBy, filter.SortOrder);
 
         var dtoQuery = query.Select(l => new ListingDto(
             l.Id,
@@ -198,15 +157,7 @@ public class ListingRepository : IListingRepository
         var query = _context.Listings.AsNoTracking().AsQueryable();
 
         // Filter by city (case-insensitive)
-        if (isPostgres)
-        {
-            var escapedCity = EscapeLikePattern(city);
-            query = query.Where(l => l.City != null && EF.Functions.ILike(l.City, escapedCity, @"\"));
-        }
-        else
-        {
-            query = query.Where(l => l.City != null && l.City.ToLower() == city.ToLower());
-        }
+        query = query.ApplyCityFilter(city, isPostgres);
 
         // Apply filters
         if (minPrice.HasValue)
@@ -234,13 +185,5 @@ public class ListingRepository : IListingRepository
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
-    }
-
-    private static string EscapeLikePattern(string pattern)
-    {
-        return pattern
-            .Replace(@"\", @"\\")
-            .Replace("%", @"\%")
-            .Replace("_", @"\_");
     }
 }

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
@@ -26,18 +27,18 @@ public class FundaScraperCatchAllTests
             }
         };
         
-        // Reflection to access private static method if needed, or we just trust the integration.
-        // For unit testing private methods, typically we make them internal or use "InternalsVisibleTo".
-        // However, since we modified the class, we can check if we should make the enricher public or test indirectly.
-        // Given complexity, let's assume we can't easily call private static without reflection.
-        // BUT, `FundaScraperService` is the SUT. We can verify the logic via a "Testable" subclass or reflection.
+        // Use reflection on FundaMapper (internal class)
+        var assembly = typeof(FundaScraperService).Assembly;
+        var type = assembly.GetType("Valora.Infrastructure.Scraping.FundaMapper");
+        Assert.NotNull(type);
+
+        var method = type.GetMethod("EnrichListingWithNuxtData",
+            BindingFlags.Public | BindingFlags.Static);
         
-        // Let's use reflection for this specific logic verification
-        var method = typeof(FundaScraperService).GetMethod("EnrichListingWithNuxtData", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            
+        Assert.NotNull(method);
+
         // Act
-        method!.Invoke(null, [listing, data]);
+        method.Invoke(null, [listing, data]);
 
         // Assert
         Assert.NotNull(listing.Features);

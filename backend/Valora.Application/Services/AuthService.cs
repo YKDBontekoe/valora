@@ -1,3 +1,4 @@
+using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
@@ -19,7 +20,7 @@ public class AuthService : IAuthService
     {
         if (registerDto.Password != registerDto.ConfirmPassword)
         {
-            return Result.Failure(new[] { "Passwords do not match" });
+            return Result.Failure(new[] { ErrorMessages.PasswordsDoNotMatch });
         }
 
         var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
