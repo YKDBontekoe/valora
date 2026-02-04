@@ -13,6 +13,7 @@ import 'package:valora_app/widgets/valora_filter_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:retry/retry.dart';
+Future<R> syncRunner<Q, R>(ComputeCallback<Q, R> callback, Q message) async => await callback(message);
 
 void main() {
   setUpAll(() async {
@@ -39,7 +40,7 @@ void main() {
       final mockClient = MockClient((request) async {
         return http.Response('Error', 500); // Fail health check
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -72,7 +73,7 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -94,7 +95,7 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -137,7 +138,7 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -181,7 +182,7 @@ void main() {
         }
         return http.Response('Not Found', 404);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -226,7 +227,7 @@ void main() {
             ''',
             200);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -254,7 +255,7 @@ void main() {
             ''',
             200);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
@@ -279,7 +280,7 @@ void main() {
             ''',
             200);
       });
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
           client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
 
       await tester.pumpWidget(createHomeScreen(apiService));
