@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
@@ -422,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-          ),
+          ).animate().fade().slideX(begin: -0.2, end: 0, duration: 400.ms),
         ),
       ));
 
@@ -440,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _onListingTap(listing),
                 isFavorite: favoritesProvider.isFavorite(listing.id),
                 onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
-              );
+              ).animate().fade(duration: 400.ms).slideX(begin: 0.1, end: 0, delay: (50 * index).ms);
             },
           ),
         ),
@@ -456,7 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: ValoraTypography.titleLarge.copyWith(
               fontWeight: FontWeight.bold,
             ),
-          ),
+          ).animate().fade().slideY(begin: 0.2, end: 0, delay: 200.ms),
         ),
       ));
 
@@ -481,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _onListingTap(listing),
                 isFavorite: favoritesProvider.isFavorite(listing.id),
                 onFavoriteToggle: () => favoritesProvider.toggleFavorite(listing),
-              );
+              ).animate().fade(duration: 400.ms).slideY(begin: 0.1, end: 0, delay: (50 * (index % 10)).ms);
             },
             childCount: nearbyListings.length + 1,
           ),

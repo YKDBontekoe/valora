@@ -40,20 +40,19 @@ void main() {
         ),
       );
 
+      // Allow entry animations (filter chips) to complete
+      await tester.pump(const Duration(seconds: 1));
+
       // Find the AnimatedContainer wrapping the TextField
       find.descendant(
         of: find.byType(HomeHeader),
         matching: find.byType(AnimatedContainer),
       ).first;
 
-      // Initial state check (unfocused)
-      // Note: testing exact decoration properties on AnimatedContainer can be tricky as it animates.
-      // We'll check if focusing triggers a rebuild/animation.
-
       // Tap to focus
       await tester.tap(find.byType(TextField));
       await tester.pump(); // Start animation
-      await tester.pump(const Duration(milliseconds: 200)); // Finish animation
+      await tester.pump(const Duration(milliseconds: 500)); // Finish animation
 
       // Verify the widget tree is stable and no errors occurred during animation
       expect(find.byType(HomeHeader), findsOneWidget);
@@ -73,17 +72,13 @@ void main() {
         ),
       );
 
+      // Allow entry animations
+      await tester.pump(const Duration(seconds: 1));
+
       final cardFinder = find.byType(ValoraCard);
       expect(cardFinder, findsOneWidget);
 
-      // Verify initial elevation (should be elevationMd = 2.0 unless hovered)
-      // ValoraCard wraps a Container with boxShadow. We can check the elevation property passed to ValoraCard
-      // but since it's inside the build method of FeaturedListingCard, we might need to inspect the widget directly if possible
-      // or check the shadow of the container.
-
-      // Simpler approach: trigger hover and ensure pump works without error, assuming logic is correct if code matches.
-      // To strictly verify, we'd need to find the ValoraCard widget instance.
-
+      // Verify initial elevation
       ValoraCard card = tester.widget(cardFinder);
       expect(card.elevation, ValoraSpacing.elevationMd);
 
@@ -93,7 +88,9 @@ void main() {
       addTearDown(gesture.removePointer);
       await tester.pump();
       await gesture.moveTo(tester.getCenter(cardFinder));
-      await tester.pumpAndSettle();
+      // Finite pump
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify hover elevation
       card = tester.widget(cardFinder);
@@ -101,7 +98,8 @@ void main() {
 
       // Simulate mouse exit
       await gesture.moveTo(const Offset(-100, -100));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify return to normal elevation
       card = tester.widget(cardFinder);
@@ -122,13 +120,15 @@ void main() {
         ),
       );
 
+      // Allow entry animations
+      await tester.pump(const Duration(seconds: 1));
+
       final cardFinder = find.byType(ValoraCard);
       expect(cardFinder, findsOneWidget);
 
       // Initial state
       ValoraCard card = tester.widget(cardFinder);
-      expect(card.elevation, null); // Default is null in code when not hovered?
-      // Checking code: elevation: _isHovered ? ValoraSpacing.elevationLg : null,
+      expect(card.elevation, null);
 
       // Simulate mouse enter
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -136,7 +136,8 @@ void main() {
       addTearDown(gesture.removePointer);
       await tester.pump();
       await gesture.moveTo(tester.getCenter(cardFinder));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify hover elevation
       card = tester.widget(cardFinder);
@@ -144,7 +145,8 @@ void main() {
 
       // Simulate mouse exit
       await gesture.moveTo(const Offset(-100, -100));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify return to normal
       card = tester.widget(cardFinder);

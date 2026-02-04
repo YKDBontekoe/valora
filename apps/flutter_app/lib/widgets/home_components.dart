@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -149,7 +150,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                                 ),
                               ),
                             ),
-                          ),
+                          ).animate().scale(curve: Curves.elasticOut),
                       ],
                     ),
                   ),
@@ -178,7 +179,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                 _buildFilterChip(context, label: '3+ Beds'),
                 const SizedBox(width: 8),
                 _buildFilterChip(context, label: 'Near Schools'),
-              ],
+              ].animate(interval: 50.ms).fade().slideX(begin: 0.2, end: 0),
             ),
           ),
         ],
@@ -223,27 +224,8 @@ class _FilterChip extends StatefulWidget {
   State<_FilterChip> createState() => _FilterChipState();
 }
 
-class _FilterChipState extends State<_FilterChip> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _FilterChipState extends State<_FilterChip> {
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -253,63 +235,61 @@ class _FilterChipState extends State<_FilterChip> with SingleTickerProviderState
     final border = widget.isActive ? Colors.transparent : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
 
     return Listener(
-      onPointerDown: (_) => _controller.forward(),
-      onPointerUp: (_) => _controller.reverse(),
-      onPointerCancel: (_) => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          decoration: BoxDecoration(
+      onPointerDown: (_) => setState(() => _isPressed = true),
+      onPointerUp: (_) => setState(() => _isPressed = false),
+      onPointerCancel: (_) => setState(() => _isPressed = false),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: widget.isActive
+              ? [
+                  BoxShadow(
+                    color: ValoraColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  )
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+        ),
+        child: Material(
+          color: bg,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100),
-            boxShadow: widget.isActive
-                ? [
-                    BoxShadow(
-                      color: ValoraColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    )
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ],
+            side: BorderSide(color: border),
           ),
-          child: Material(
-            color: bg,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100),
-              side: BorderSide(color: border),
-            ),
-            child: InkWell(
-              onTap: () => HapticFeedback.selectionClick(),
-              borderRadius: BorderRadius.circular(100),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.icon != null) ...[
-                      Icon(widget.icon, size: 16, color: text),
-                      const SizedBox(width: 6),
-                    ],
-                    Text(
-                      widget.label,
-                      style: ValoraTypography.labelSmall.copyWith(
-                        color: text,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+          child: InkWell(
+            onTap: () => HapticFeedback.selectionClick(),
+            borderRadius: BorderRadius.circular(100),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.icon != null) ...[
+                    Icon(widget.icon, size: 16, color: text),
+                    const SizedBox(width: 6),
                   ],
-                ),
+                  Text(
+                    widget.label,
+                    style: ValoraTypography.labelSmall.copyWith(
+                      color: text,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
-    );
+    ).animate(target: _isPressed ? 1 : 0)
+     .scale(end: const Offset(0.95, 0.95), duration: 100.ms);
   }
 }
 
@@ -366,9 +346,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                             width: double.infinity,
                             height: 180,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Center(
-                              child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
-                            ),
+                            placeholder: (context, url) => const ValoraShimmer(width: double.infinity, height: 180),
                             errorWidget: (context, url, error) => Center(
                               child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                             ),
@@ -377,7 +355,9 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                       : Center(
                           child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
                         ),
-                ),
+                )
+                .animate(target: _isHovered ? 1 : 0)
+                .scale(end: const Offset(1.05, 1.05), duration: 400.ms, curve: Curves.easeOut),
                 // Gradient Overlay
                 Positioned.fill(
                   child: DecoratedBox(
@@ -461,7 +441,11 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         widget.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                         size: 18,
                         color: widget.isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                      ),
+                      )
+                      .animate(target: widget.isFavorite ? 1 : 0)
+                      .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
+                      .then()
+                      .scale(end: const Offset(1, 1)),
                     ),
                   ),
                 ),
@@ -610,9 +594,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             child: CachedNetworkImage(
                               imageUrl: widget.listing.imageUrl!,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Center(
-                                child: Icon(Icons.home, color: ValoraColors.neutral400),
-                              ),
+                              placeholder: (context, url) => const ValoraShimmer(width: 96, height: 96),
                               errorWidget: (context, url, error) => Center(
                                 child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                               ),
@@ -621,7 +603,10 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                         : Center(
                             child: Icon(Icons.home, color: ValoraColors.neutral400),
                           ),
-                  ),
+                  )
+                  .animate(target: _isHovered ? 1 : 0)
+                  .scale(end: const Offset(1.05, 1.05), duration: 400.ms, curve: Curves.easeOut),
+
                   if (widget.onFavoriteToggle != null)
                     Positioned(
                       top: 4,
@@ -638,7 +623,11 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             widget.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                             size: 14,
                             color: widget.isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                          ),
+                          )
+                          .animate(target: widget.isFavorite ? 1 : 0)
+                          .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
+                          .then()
+                          .scale(end: const Offset(1, 1)),
                         ),
                       ),
                     ),
@@ -806,7 +795,11 @@ class HomeBottomNavBar extends StatelessWidget {
               color: isSelected ? selectedColor : unselectedColor,
               size: 24,
             ),
-          ),
+          )
+          .animate(target: isSelected ? 1 : 0)
+          .scale(end: const Offset(1.1, 1.1), duration: 200.ms, curve: Curves.easeOutBack)
+          .then()
+          .scale(end: const Offset(1.0, 1.0)),
           const SizedBox(height: 4),
           Text(
             label,
