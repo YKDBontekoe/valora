@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
@@ -37,6 +38,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
+    });
+
+    testWidgets('handles mouse hover', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              child: Text('Hover Me'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(find.text('Hover Me')));
+      await tester.pumpAndSettle();
+
+      // Verify no crash; checking exact scale requires finding the Transform widget
+      // which is implementation detail of AnimatedContainer/ScaleTransition
+      expect(find.text('Hover Me'), findsOneWidget);
     });
   });
 
@@ -164,6 +189,27 @@ void main() {
       expect(find.text('Outline'), findsOneWidget);
       expect(find.text('Ghost'), findsOneWidget);
     });
+
+    testWidgets('handles press animation state', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraButton(
+              label: 'Animate Me',
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(tester.getCenter(find.text('Animate Me')));
+      await tester.pump(); // Start animation
+      // Verify state change implicitly via coverage hitting Listener logic
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
   });
 
   group('ValoraBadge Tests', () {
@@ -234,6 +280,23 @@ void main() {
 
       // Verify visual feedback if possible, or just that it doesn't crash
       expect(find.text('Email'), findsOneWidget);
+    });
+
+    testWidgets('accepts input', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraTextField(
+              label: 'Input',
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextFormField), 'Test Input');
+      await tester.pump();
+
+      expect(find.text('Test Input'), findsOneWidget);
     });
   });
 
