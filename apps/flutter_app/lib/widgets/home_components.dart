@@ -742,57 +742,59 @@ class HomeBottomNavBar extends StatelessWidget {
 
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: glassColor,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: borderColor, width: 1),
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _GlassNavItem(
-                    icon: Icons.home_rounded,
-                    label: 'Home',
-                    isSelected: currentIndex == 0,
-                    onTap: () => onTap(0),
-                  ),
-                  _GlassNavItem(
-                    icon: Icons.search_rounded,
-                    label: 'Search',
-                    isSelected: currentIndex == 1,
-                    onTap: () => onTap(1),
-                  ),
-                  _GlassNavItem(
-                    icon: Icons.favorite_rounded,
-                    label: 'Saved',
-                    isSelected: currentIndex == 2,
-                    onTap: () => onTap(2),
-                  ),
-                  _GlassNavItem(
-                    icon: Icons.settings_rounded,
-                    label: 'Settings',
-                    isSelected: currentIndex == 3,
-                    onTap: () => onTap(3),
-                  ),
-                ],
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: glassColor,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: borderColor, width: 1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _GlassNavItem(
+                      icon: Icons.home_rounded,
+                      label: 'Home',
+                      isSelected: currentIndex == 0,
+                      onTap: () => onTap(0),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.search_rounded,
+                      label: 'Search',
+                      isSelected: currentIndex == 1,
+                      onTap: () => onTap(1),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.favorite_rounded,
+                      label: 'Saved',
+                      isSelected: currentIndex == 2,
+                      onTap: () => onTap(2),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.settings_rounded,
+                      label: 'Settings',
+                      isSelected: currentIndex == 3,
+                      onTap: () => onTap(3),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -862,7 +864,7 @@ class _GlassNavItem extends StatelessWidget {
                       fontSize: 14,
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.clip,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
