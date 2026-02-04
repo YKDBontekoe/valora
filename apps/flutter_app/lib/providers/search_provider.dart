@@ -54,9 +54,7 @@ class SearchProvider extends ChangeNotifier {
       _city != null ||
       _minBedrooms != null ||
       _minLivingArea != null ||
-      _maxLivingArea != null ||
-      _sortBy != null ||
-      _sortOrder != null;
+      _maxLivingArea != null;
 
   Timer? _debounce;
 
@@ -126,17 +124,17 @@ class SearchProvider extends ChangeNotifier {
   }
 
   Future<void> loadMoreListings() async {
-    if (_isLoading || _isLoadingMore || !_hasNextPage) return;
+    if (_isLoadingMore || !_hasNextPage) return;
 
     _isLoadingMore = true;
     notifyListeners();
 
-    final nextPage = _currentPage + 1;
+    _currentPage++;
     try {
        final response = await apiService.getListings(
         ListingFilter(
           searchTerm: _currentQuery,
-          page: nextPage,
+          page: _currentPage,
           pageSize: _pageSize,
           minPrice: _minPrice,
           maxPrice: _maxPrice,
@@ -149,7 +147,6 @@ class SearchProvider extends ChangeNotifier {
         ),
       );
 
-      _currentPage = nextPage;
       _listings.addAll(response.items);
       _hasNextPage = response.hasNextPage;
     } catch (e) {
@@ -159,8 +156,6 @@ class SearchProvider extends ChangeNotifier {
     } finally {
       _isLoadingMore = false;
       notifyListeners();
-    }
-  }
     }
   }
 
