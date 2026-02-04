@@ -276,14 +276,9 @@ api.MapGet("/search", async (
     CancellationToken ct) =>
 {
     // Explicit fallback validation to ensure constraints are respected even if attribute validation behaves unexpectedly
-    if (query.Page < 1 || query.Page > 10000)
+    if (!Valora.Application.Validators.SearchQueryValidator.IsValid(query, out var validationError))
     {
-        return Results.BadRequest(new { error = "Page must be between 1 and 10000" });
-    }
-
-    if (!new[] { "buy", "rent", "project" }.Contains(query.OfferingType?.ToLower()))
-    {
-        return Results.BadRequest(new { error = "Invalid OfferingType" });
+        return Results.BadRequest(new { error = validationError });
     }
 
     if (string.IsNullOrWhiteSpace(query.Region))

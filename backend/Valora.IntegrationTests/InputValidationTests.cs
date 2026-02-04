@@ -24,4 +24,31 @@ public class InputValidationTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task FundaSearch_WithInvalidPage_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var query = new FundaSearchQuery
+        {
+            Region = "amsterdam",
+            Page = 10001 // Invalid
+        };
+
+        var queryString = $"region={query.Region}&page={query.Page}";
+        var response = await Client.GetAsync($"/api/search?{queryString}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FundaSearch_WithInvalidOfferingType_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var queryString = "region=amsterdam&offeringType=invalid_type";
+        var response = await Client.GetAsync($"/api/search?{queryString}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
