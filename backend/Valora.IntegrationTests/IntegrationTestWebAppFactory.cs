@@ -68,8 +68,10 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
             if (_connectionString == "InMemory")
             {
+                // Use a unique database name per factory instance to prevent test interference
+                var dbName = Guid.NewGuid().ToString();
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseInMemoryDatabase("ValoraIntegrationTestDb"));
+                    options.UseInMemoryDatabase(dbName));
             }
             else
             {
