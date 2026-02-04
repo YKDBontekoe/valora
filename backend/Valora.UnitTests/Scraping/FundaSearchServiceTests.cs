@@ -42,7 +42,7 @@ public class FundaSearchServiceTests
     public async Task SearchAsync_ShouldFetchFromApi_WhenCacheIsStale()
     {
         // Arrange
-        var query = new FundaSearchQuery { Region = "amsterdam", OfferingType = "buy" };
+        var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "buy");
         
         _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FundaApiResponse 
@@ -70,7 +70,7 @@ public class FundaSearchServiceTests
     public async Task SearchAsync_ShouldUseCache_WhenFresh()
     {
         // Arrange
-        var query = new FundaSearchQuery { Region = "amsterdam", OfferingType = "buy" };
+        var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "buy");
         
         // First call to populate cache
         _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))

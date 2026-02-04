@@ -9,7 +9,7 @@ public class SearchQueryValidatorTests
     [Fact]
     public void IsValid_WithValidQuery_ReturnsTrue()
     {
-        var query = new FundaSearchQuery { Region = "amsterdam", Page = 1, OfferingType = "buy" };
+        var query = new FundaSearchQuery(Region: "amsterdam", Page: 1, OfferingType: "buy");
         var result = SearchQueryValidator.IsValid(query, out var error);
         Assert.True(result);
         Assert.Null(error);
@@ -21,7 +21,7 @@ public class SearchQueryValidatorTests
     [InlineData(10001)]
     public void IsValid_WithInvalidPage_ReturnsFalse(int page)
     {
-        var query = new FundaSearchQuery { Region = "amsterdam", Page = page, OfferingType = "buy" };
+        var query = new FundaSearchQuery(Region: "amsterdam", Page: page, OfferingType: "buy");
         var result = SearchQueryValidator.IsValid(query, out var error);
         Assert.False(result);
         Assert.Equal("Page must be between 1 and 10000", error);
@@ -38,7 +38,7 @@ public class SearchQueryValidatorTests
         // If the property is required/non-nullable, the compiler warns, but runtime might have null.
         // However, the record default is "buy".
 
-        var query = new FundaSearchQuery { Region = "amsterdam", Page = 1, OfferingType = offeringType ?? "invalid" };
+        var query = new FundaSearchQuery(Region: "amsterdam", Page: 1, OfferingType: offeringType ?? "invalid");
         var result = SearchQueryValidator.IsValid(query, out var error);
         Assert.False(result);
         Assert.Equal("Invalid OfferingType", error);
