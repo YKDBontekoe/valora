@@ -19,7 +19,6 @@ void main() {
 
   group('AuthProvider', () {
     test('checkAuth should set email from valid token', () async {
-      // Create a valid JWT with email
       final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
       final payload = base64Url.encode(utf8.encode(json.encode({'email': 'test@example.com', 'sub': '123'})));
       final token = '$header.$payload.signature';
@@ -37,17 +36,21 @@ void main() {
 
       await authProvider.checkAuth();
 
-      // Current implementation sets isAuthenticated = true if token is not null,
-      // even if parsing fails. This might be desired behavior (e.g. valid opaque token)
-      // or a bug. Based on code:
-      // if (_token != null) { _parseJwt(_token!); _isAuthenticated = true; }
-      // _parseJwt catches errors internally and doesn't rethrow.
       expect(authProvider.isAuthenticated, true);
       expect(authProvider.email, null);
     });
 
     test('checkAuth should set isAuthenticated to false if token is null', () async {
       when(mockAuthService.getToken()).thenAnswer((_) async => null);
+
+      await authProvider.checkAuth();
+
+      expect(authProvider.isAuthenticated, false);
+      expect(authProvider.email, null);
+    });
+
+    test('checkAuth catches exception from authService', () async {
+      when(mockAuthService.getToken()).thenThrow(Exception('Storage error'));
 
       await authProvider.checkAuth();
 
@@ -69,8 +72,27 @@ void main() {
       expect(authProvider.email, 'login@example.com');
     });
 
+    test('login propagates exception', () async {
+      when(mockAuthService.login(any, any)).thenThrow(Exception('Login failed'));
+
+      expect(() => authProvider.login('test@example.com', 'password'), throwsException);
+    });
+
+    test('register calls authService register', () async {
+      when(mockAuthService.register(any, any, any)).thenAnswer((_) async {});
+
+      await authProvider.register('new@example.com', 'password', 'password');
+
+      verify(mockAuthService.register('new@example.com', 'password', 'password')).called(1);
+    });
+
+    test('register propagates exception', () async {
+       when(mockAuthService.register(any, any, any)).thenThrow(Exception('Registration failed'));
+
+       expect(() => authProvider.register('new@example.com', 'pass', 'pass'), throwsException);
+    });
+
     test('logout should clear token and email', () async {
-      // Setup state
       final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
       final payload = base64Url.encode(utf8.encode(json.encode({'email': 'test@example.com'})));
       final token = '$header.$payload.signature';
@@ -79,7 +101,6 @@ void main() {
 
       expect(authProvider.email, 'test@example.com');
 
-      // Logout
       await authProvider.logout();
 
       expect(authProvider.isAuthenticated, false);
@@ -88,19 +109,8 @@ void main() {
     });
 
     test('checkAuth catches exception during parsing', () async {
-       // Make base64 decode fail
        final token = 'header.invalid_base64.sig';
        when(mockAuthService.getToken()).thenAnswer((_) async => token);
-
-       // The code:
-       // try { _token = ...; if token!=null { _parseJwt; ... } } catch (e) { ... }
-       // _parseJwt calls _decodeBase64.
-       // _decodeBase64 throws Exception if invalid length or bad chars.
-       // This exception is caught inside _parseJwt?
-       // Let's check code:
-       // void _parseJwt(String token) { try { ... } catch (e) { debugPrint... } }
-       // So _parseJwt swallows the error.
-       // So _isAuthenticated will be TRUE if token is not null, even if parsing fails.
 
        await authProvider.checkAuth();
        expect(authProvider.isAuthenticated, true);
