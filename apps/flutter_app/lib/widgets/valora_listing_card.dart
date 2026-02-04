@@ -143,13 +143,16 @@ class _ListingImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final validImageUrl = imageUrl?.trim();
+    final hasValidImage = validImageUrl != null && validImageUrl.isNotEmpty;
+
     return Hero(
       tag: listingId,
       child: AspectRatio(
         aspectRatio: 16 / 10,
-        child: imageUrl != null
+        child: hasValidImage
             ? CachedNetworkImage(
-                imageUrl: imageUrl!,
+                imageUrl: validImageUrl,
                 memCacheWidth: 800, // Optimize memory usage
                 fit: BoxFit.cover,
                 placeholder: (context, url) =>
