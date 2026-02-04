@@ -15,16 +15,14 @@
     },
     {
       "groupName": "dotnet-dependencies",
-      "matchPackageNames": [
-        "/^Microsoft\\./",
-        "/^System\\./"
+      "matchManagers": [
+        "nuget"
       ]
     },
     {
       "groupName": "flutter-dependencies",
-      "matchPackageNames": [
-        "/^flutter/",
-        "/^dart/"
+      "matchManagers": [
+        "pub"
       ]
     }
   ]
