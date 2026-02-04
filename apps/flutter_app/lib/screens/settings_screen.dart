@@ -3,9 +3,36 @@ import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/valora_widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Log Out?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Log Out',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text('Are you sure you want to log out?'),
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<AuthProvider>().logout();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,9 +251,7 @@ class SettingsScreen extends StatelessWidget {
 
                   // Logout
                   TextButton.icon(
-                    onPressed: () {
-                      context.read<AuthProvider>().logout();
-                    },
+                    onPressed: () => _confirmLogout(context),
                     icon: const Icon(Icons.logout_rounded, size: 20),
                     label: const Text('Log Out'),
                     style: TextButton.styleFrom(
@@ -269,6 +294,10 @@ class SettingsScreen extends StatelessWidget {
     Color textColor,
     Color subtextColor
   ) {
+    // Get user info from AuthProvider
+    final authProvider = context.watch<AuthProvider>();
+    final userEmail = authProvider.email ?? 'Sarah Jenkins';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -326,7 +355,7 @@ class SettingsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Sarah Jenkins',
+                  userEmail,
                   style: TextStyle(
                     color: textColor,
                     fontSize: 18,

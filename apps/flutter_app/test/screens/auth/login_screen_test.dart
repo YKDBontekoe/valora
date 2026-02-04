@@ -15,6 +15,9 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   String? get token => null;
 
   @override
+  String? get email => null;
+
+  @override
   Future<void> checkAuth() async {}
 
   @override
