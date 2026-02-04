@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -10,6 +11,9 @@ import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
 
+typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
+typedef ComputeRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message);
+
 class ApiService {
   static String get baseUrl => dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
   static const Duration timeoutDuration = Duration(seconds: 10);
@@ -18,17 +22,20 @@ class ApiService {
   String? _authToken;
   final Future<String?> Function()? _refreshTokenCallback;
   final RetryOptions _retryOptions;
+  final ComputeRunner _runner;
 
   ApiService({
     http.Client? client,
     String? authToken,
     Future<String?> Function()? refreshTokenCallback,
     RetryOptions? retryOptions,
+    ComputeRunner? runner,
   })  : _client = client ?? http.Client(),
         _authToken = authToken,
         _refreshTokenCallback = refreshTokenCallback,
         _retryOptions = retryOptions ??
-            const RetryOptions(maxAttempts: 3, delayFactor: Duration(seconds: 1));
+            const RetryOptions(maxAttempts: 3, delayFactor: Duration(seconds: 1)),
+        _runner = runner ?? compute;
 
   Map<String, String> get _headers => {
         if (_authToken != null) 'Authorization': 'Bearer $_authToken',
@@ -84,9 +91,7 @@ class ApiService {
       final response = await _authenticatedRequest((headers) =>
           _client.get(uri, headers: headers).timeout(timeoutDuration));
 
-      return _handleResponse(response, (body) {
-        return ListingResponse.fromJson(json.decode(body));
-      });
+      return await _handleResponse(response, (body) => _runner(_parseListingResponse, body));
     } catch (e) {
       throw _handleException(e);
     }
@@ -101,9 +106,7 @@ class ApiService {
         return null;
       }
 
-      return _handleResponse(response, (body) {
-        return Listing.fromJson(json.decode(body));
-      });
+      return await _handleResponse(response, (body) => _runner(_parseListing, body));
     } catch (e) {
       throw _handleException(e);
     }
@@ -121,7 +124,7 @@ class ApiService {
       final response = await _authenticatedRequest((headers) =>
           _client.post(uri, headers: headers).timeout(timeoutDuration));
 
-      _handleResponse(response, (_) => null);
+      await _handleResponse(response, (_) => null);
     } catch (e) {
       throw _handleException(e);
     }
@@ -193,4 +196,13 @@ class ApiService {
     }
     return null;
   }
+}
+
+// Top-level functions for isolate
+ListingResponse _parseListingResponse(String body) {
+  return ListingResponse.fromJson(json.decode(body));
+}
+
+Listing _parseListing(String body) {
+  return Listing.fromJson(json.decode(body));
 }

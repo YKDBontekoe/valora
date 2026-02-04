@@ -1,3 +1,4 @@
+import '../helpers/test_runners.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -41,7 +42,7 @@ void main() {
         return http.Response('Internal Server Error', 500);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       expect(
         () => apiService.getListings(const ListingFilter()),
@@ -54,7 +55,7 @@ void main() {
         throw const SocketException('No internet');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       expect(
         () => apiService.getListings(const ListingFilter()),
@@ -67,7 +68,7 @@ void main() {
         throw TimeoutException('Timed out');
       });
 
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
         client: client,
         retryOptions: const RetryOptions(maxAttempts: 1),
       );
@@ -83,7 +84,7 @@ void main() {
         throw http.ClientException('Client error');
       });
 
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
         client: client,
         retryOptions: const RetryOptions(maxAttempts: 1),
       );
@@ -99,7 +100,7 @@ void main() {
         throw Exception('Boom');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       expect(
         () => apiService.getListings(const ListingFilter()),
@@ -112,7 +113,7 @@ void main() {
         return http.Response(json.encode({'detail': 'Some detailed error'}), 400);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       try {
         await apiService.getListings(const ListingFilter());
@@ -135,7 +136,7 @@ void main() {
             400);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       try {
         await apiService.getListings(const ListingFilter());
@@ -151,7 +152,7 @@ void main() {
         return http.Response(json.encode({'title': 'Invalid input'}), 400);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       try {
         await apiService.getListings(const ListingFilter());
@@ -166,7 +167,7 @@ void main() {
         return http.Response('Not JSON', 400);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       try {
         await apiService.getListings(const ListingFilter());
@@ -190,7 +191,7 @@ void main() {
         return http.Response(json.encode(mockResponse), 200);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
 
       final result = await apiService.getListings(const ListingFilter());
       expect(result.items, isEmpty);
@@ -201,7 +202,7 @@ void main() {
         throw Exception('Fail');
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
       expect(await apiService.healthCheck(), isFalse);
     });
 
@@ -210,7 +211,7 @@ void main() {
         return http.Response('Not Found', 404);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
       expect(await apiService.getListing('123'), isNull);
     });
 
@@ -219,7 +220,7 @@ void main() {
         return http.Response('Error', 500);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
        expect(
         () => apiService.getListing('123'),
         throwsA(isA<ServerException>()),
@@ -235,7 +236,7 @@ void main() {
         return http.Response(json.encode({'message': 'Queued'}), 200);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
       await apiService.triggerLimitedScrape('amsterdam', 10);
     });
 
@@ -244,7 +245,7 @@ void main() {
         return http.Response('Error', 500);
       });
 
-      final apiService = ApiService(client: client);
+      final apiService = ApiService(runner: syncRunner, client: client);
       expect(
         () => apiService.triggerLimitedScrape('amsterdam', 10),
         throwsA(isA<ServerException>()),
@@ -275,7 +276,7 @@ void main() {
         return http.Response('Unauthorized', 401);
       });
 
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
         client: client,
         authToken: 'old_token',
         refreshTokenCallback: () async => 'new_token',
@@ -291,7 +292,7 @@ void main() {
         return http.Response('Unauthorized', 401);
       });
 
-      final apiService = ApiService(
+      final apiService = ApiService(runner: syncRunner,
         client: client,
         authToken: 'old_token',
         refreshTokenCallback: () async => null,
