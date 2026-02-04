@@ -133,6 +133,126 @@ public class FundaMapperTests
     }
 
     [Fact]
+    public void EnrichListingWithNuxtData_CVBoiler_NoYear_ParsesCorrectly()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+            Features = new FundaNuxtFeatures
+            {
+                Bouw = new FundaNuxtFeatureGroup
+                {
+                    KenmerkenList =
+                    [
+                        new() { Label = "CV-ketel", Value = "Intergas" }
+                    ]
+                }
+            }
+        };
+
+        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
+        method!.Invoke(null, [listing, data]);
+
+        Assert.Equal("Intergas", listing.CVBoilerBrand);
+        Assert.Null(listing.CVBoilerYear);
+    }
+
+    [Fact]
+    public void EnrichListingWithNuxtData_GardenArea_ParsesHighest()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+            Features = new FundaNuxtFeatures
+            {
+                Indeling = new FundaNuxtFeatureGroup
+                {
+                    KenmerkenList =
+                    [
+                        new() { Label = "Achtertuin", Value = "30 m²" },
+                        new() { Label = "Voortuin", Value = "15 m²" }
+                    ]
+                }
+            }
+        };
+
+        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
+        method!.Invoke(null, [listing, data]);
+
+        // Should pick highest garden area (30)
+        Assert.Equal(30, listing.GardenM2);
+    }
+
+    [Fact]
+    public void FlattenFeatures_NestedItems_RecursesCorrectly()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+            Features = new FundaNuxtFeatures
+            {
+                Indeling = new FundaNuxtFeatureGroup
+                {
+                    KenmerkenList =
+                    [
+                        new()
+                        {
+                            Label = "Badkamer",
+                            Value = "Luxe",
+                            KenmerkenList =
+                            [
+                                new() { Label = "Ligbad", Value = "Ja" }
+                            ]
+                        }
+                    ]
+                }
+            }
+        };
+
+        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
+        method!.Invoke(null, [listing, data]);
+
+        Assert.NotNull(listing.Features);
+        Assert.True(listing.Features.ContainsKey("Badkamer"));
+        Assert.True(listing.Features.ContainsKey("Ligbad"));
+        Assert.Equal("Ja", listing.Features["Ligbad"]);
+    }
+
+    [Fact]
+    public void FlattenFeatures_GroupTitleNode_RecursesCorrectly()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        // Structure: No label on parent, only children
+        var data = new FundaNuxtListingData
+        {
+            Features = new FundaNuxtFeatures
+            {
+                Indeling = new FundaNuxtFeatureGroup
+                {
+                    KenmerkenList =
+                    [
+                        new()
+                        {
+                            // Missing Label/Value, acts as group
+                            KenmerkenList =
+                            [
+                                new() { Label = "Isolatie", Value = "Dubbel glas" }
+                            ]
+                        }
+                    ]
+                }
+            }
+        };
+
+        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
+        method!.Invoke(null, [listing, data]);
+
+        Assert.NotNull(listing.Features);
+        Assert.True(listing.Features.ContainsKey("Isolatie"));
+        Assert.Equal("Dubbel glas", listing.Features["Isolatie"]);
+    }
+
+    [Fact]
     public void MergeListingDetails_UpdatesTarget()
     {
         var target = new Listing { FundaId = "1", Address = "Test", Price = 100000 };
