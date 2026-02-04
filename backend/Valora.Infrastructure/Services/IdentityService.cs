@@ -8,10 +8,12 @@ namespace Valora.Infrastructure.Services;
 public class IdentityService : IIdentityService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
 
-    public IdentityService(UserManager<ApplicationUser> userManager)
+    public IdentityService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
     {
         _userManager = userManager;
+        _roleManager = roleManager;
     }
 
     public async Task<(Result Result, string UserId)> CreateUserAsync(string email, string password)
@@ -41,6 +43,28 @@ public class IdentityService : IIdentityService
     public async Task<ApplicationUser?> GetUserByEmailAsync(string email)
     {
         return await _userManager.FindByEmailAsync(email);
+    }
+
+    public async Task EnsureRoleAsync(string roleName)
+    {
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            await _roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+    }
+
+    public async Task<Result> AddToRoleAsync(string userId, string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Result.Failure(new[] { "User not found." });
+
+        if (!await _userManager.IsInRoleAsync(user, roleName))
+        {
+            var result = await _userManager.AddToRoleAsync(user, roleName);
+            return ToApplicationResult(result);
+        }
+
+        return Result.Success();
     }
 
     private static Result ToApplicationResult(IdentityResult result)

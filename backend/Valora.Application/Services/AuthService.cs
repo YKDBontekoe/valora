@@ -2,6 +2,7 @@ using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
+using Microsoft.Extensions.Configuration;
 
 namespace Valora.Application.Services;
 
@@ -9,11 +10,13 @@ public class AuthService : IAuthService
 {
     private readonly IIdentityService _identityService;
     private readonly ITokenService _tokenService;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(IIdentityService identityService, ITokenService tokenService)
+    public AuthService(IIdentityService identityService, ITokenService tokenService, IConfiguration configuration)
     {
         _identityService = identityService;
         _tokenService = tokenService;
+        _configuration = configuration;
     }
 
     public async Task<Result> RegisterAsync(RegisterDto registerDto)
@@ -24,6 +27,16 @@ public class AuthService : IAuthService
         }
 
         var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
+
+        if (result.Succeeded)
+        {
+            var adminEmail = _configuration["ADMIN_EMAIL"];
+            if (!string.IsNullOrEmpty(adminEmail) && registerDto.Email.Equals(adminEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                await _identityService.EnsureRoleAsync("Admin");
+                await _identityService.AddToRoleAsync(userId, "Admin");
+            }
+        }
 
         return result;
     }

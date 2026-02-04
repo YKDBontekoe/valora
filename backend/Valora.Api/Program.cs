@@ -134,6 +134,33 @@ if (!app.Environment.IsEnvironment("Testing"))
         try
         {
             dbContext.Database.Migrate();
+
+            // Seed Admin User
+            var adminEmail = app.Configuration["ADMIN_EMAIL"];
+            if (!string.IsNullOrEmpty(adminEmail))
+            {
+                var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+                await identityService.EnsureRoleAsync("Admin");
+                var user = await identityService.GetUserByEmailAsync(adminEmail);
+                if (user != null)
+                {
+                    var result = await identityService.AddToRoleAsync(user.Id, "Admin");
+                    if (result.Succeeded)
+                    {
+                        logger.LogInformation("Successfully ensured Admin role for user: {Email}", adminEmail);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Failed to add user {Email} to Admin role: {Errors}", adminEmail, string.Join(", ", result.Errors));
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("Admin seeding: User with email {Email} not found. Role ensured but not assigned.", adminEmail);
+                }
+            }
         }
         catch (Exception ex)
         {
