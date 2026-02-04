@@ -74,7 +74,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             else
             {
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseNpgsql(_connectionString));
+                    options.UseNpgsql(_connectionString)
+                           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
 
             // Remove Hangfire hosted services
