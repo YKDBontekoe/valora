@@ -49,6 +49,8 @@ void main() {
       await tester.pump(); // Start connection check
       await tester.pump(); // Finish connection check
 
+      await tester.pumpAndSettle(); // Allow animations to finish
+
       expect(find.text('Backend not connected'), findsOneWidget);
     });
 
@@ -81,6 +83,9 @@ void main() {
       await tester.pump(); // Start connection check
       await tester.pump(); // Finish connection check and start loading listings
       await tester.pump(); // Finish loading listings
+
+      // Allow entrance animations to complete. Use finite pump because shimmer might be looping.
+      await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('Test City'), findsOneWidget);
     });
@@ -239,6 +244,8 @@ void main() {
       // Type in search
       await tester.enterText(find.byType(TextField), 'Amsterdam');
       await tester.pump(const Duration(milliseconds: 600)); // Wait for debounce
+
+      await tester.pumpAndSettle(); // Ensure timer/animations cleared
     });
 
     testWidgets('Shows scrape button when no listings and no filters', (WidgetTester tester) async {

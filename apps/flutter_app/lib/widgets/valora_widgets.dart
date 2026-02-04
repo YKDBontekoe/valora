@@ -1,65 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 
-/// A wrapper that adds a subtle scale animation on press.
-class _ValoraScaleWrapper extends StatefulWidget {
-  const _ValoraScaleWrapper({
-    required this.child,
-    this.enabled = true,
-  });
-
-  final Widget child;
-  final bool enabled;
-
-  @override
-  State<_ValoraScaleWrapper> createState() => _ValoraScaleWrapperState();
-}
-
-class _ValoraScaleWrapperState extends State<_ValoraScaleWrapper>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
-
-    return Listener(
-      onPointerDown: (_) => _controller.forward(),
-      onPointerUp: (_) => _controller.reverse(),
-      onPointerCancel: (_) => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
-    );
-  }
-}
-
-/// A versatile card component with consistent styling.
+/// A versatile card component with consistent styling and interactions.
 ///
 /// Use for content containers like listings, info panels, etc.
-class ValoraCard extends StatelessWidget {
+class ValoraCard extends StatefulWidget {
   const ValoraCard({
     super.key,
     required this.child,
@@ -93,56 +41,76 @@ class ValoraCard extends StatelessWidget {
   final Gradient? gradient;
 
   @override
+  State<ValoraCard> createState() => _ValoraCardState();
+}
+
+class _ValoraCardState extends State<ValoraCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardRadius = borderRadius ?? ValoraSpacing.radiusLg;
+    final cardRadius = widget.borderRadius ?? ValoraSpacing.radiusLg;
+    final baseElevation = widget.elevation ?? ValoraSpacing.elevationSm;
+
+    // Interactive elevation logic
+    final currentElevation = _isPressed
+        ? baseElevation * 0.5
+        : (_isHovered ? baseElevation * 1.5 : baseElevation);
 
     Widget cardContent = Container(
-      padding: padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
-      decoration: gradient != null
+      padding: widget.padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
+      decoration: widget.gradient != null
           ? BoxDecoration(
-              gradient: gradient,
+              gradient: widget.gradient,
               borderRadius: BorderRadius.circular(cardRadius),
             )
           : null,
-      child: child,
+      child: widget.child,
     );
 
-    if (onTap != null) {
+    if (widget.onTap != null) {
       cardContent = Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
+          onHover: (hovered) => setState(() => _isHovered = hovered),
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
           borderRadius: BorderRadius.circular(cardRadius),
           child: cardContent,
         ),
       );
     }
 
-    final card = Container(
-      margin: margin,
+    return AnimatedContainer(
+      duration: 200.ms,
+      curve: Curves.easeOut,
+      margin: widget.margin,
       decoration: BoxDecoration(
-        color: gradient == null
+        color: widget.gradient == null
             ? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight)
             : null,
         borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: (elevation ?? ValoraSpacing.elevationSm) * 4,
-            offset: Offset(0, (elevation ?? ValoraSpacing.elevationSm) * 2),
+            blurRadius: currentElevation * 4,
+            offset: Offset(0, currentElevation * 2),
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: cardContent,
+    )
+    .animate(target: _isPressed ? 1 : 0)
+    .scale(
+      end: const Offset(0.98, 0.98),
+      duration: 100.ms,
+      curve: Curves.easeInOut,
     );
-
-    if (onTap != null) {
-      return _ValoraScaleWrapper(child: card);
-    }
-
-    return card;
   }
 }
 
@@ -190,13 +158,13 @@ class ValoraEmptyState extends StatelessWidget {
                 size: ValoraSpacing.iconSizeXl,
                 color: colorScheme.onSurfaceVariant,
               ),
-            ),
+            ).animate().fade().scale(curve: Curves.easeOutBack),
             const SizedBox(height: ValoraSpacing.lg),
             Text(
               title,
               style: textTheme.titleMedium,
               textAlign: TextAlign.center,
-            ),
+            ).animate().fade(delay: 100.ms).slideY(begin: 0.2, end: 0),
             if (subtitle != null) ...[
               const SizedBox(height: ValoraSpacing.sm),
               Text(
@@ -205,11 +173,11 @@ class ValoraEmptyState extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
-              ),
+              ).animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0),
             ],
             if (action != null) ...[
               const SizedBox(height: ValoraSpacing.lg),
-              action!,
+              action!.animate().fade(delay: 300.ms).scale(),
             ],
           ],
         ),
@@ -251,7 +219,7 @@ class ValoraLoadingIndicator extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-            ),
+            ).animate().fade().shimmer(),
           ],
         ],
       ),
@@ -262,7 +230,7 @@ class ValoraLoadingIndicator extends StatelessWidget {
 /// Button component with multiple variants.
 enum ValoraButtonVariant { primary, secondary, outline, ghost }
 
-class ValoraButton extends StatelessWidget {
+class ValoraButton extends StatefulWidget {
   const ValoraButton({
     super.key,
     required this.label,
@@ -292,10 +260,17 @@ class ValoraButton extends StatelessWidget {
   final bool isFullWidth;
 
   @override
+  State<ValoraButton> createState() => _ValoraButtonState();
+}
+
+class _ValoraButtonState extends State<ValoraButton> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     Widget child = AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
-      child: isLoading
+      child: widget.isLoading
           ? SizedBox(
               key: const ValueKey('loading'),
               width: ValoraSpacing.iconSizeSm,
@@ -303,7 +278,7 @@ class ValoraButton extends StatelessWidget {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation(
-                  variant == ValoraButtonVariant.primary
+                  widget.variant == ValoraButtonVariant.primary
                       ? Colors.white
                       : Theme.of(context).colorScheme.primary,
                 ),
@@ -311,22 +286,22 @@ class ValoraButton extends StatelessWidget {
             )
           : Row(
               key: const ValueKey('content'),
-              mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (icon != null) ...[
-                  Icon(icon, size: ValoraSpacing.iconSizeSm + 2),
+                if (widget.icon != null) ...[
+                  Icon(widget.icon, size: ValoraSpacing.iconSizeSm + 2),
                   const SizedBox(width: ValoraSpacing.sm),
                 ],
-                Text(label),
+                Text(widget.label),
               ],
             ),
     );
 
-    final effectiveOnPressed = isLoading ? null : onPressed;
+    final effectiveOnPressed = widget.isLoading ? null : widget.onPressed;
 
     Widget button;
-    switch (variant) {
+    switch (widget.variant) {
       case ValoraButtonVariant.primary:
         button = ElevatedButton(
           onPressed: effectiveOnPressed,
@@ -357,10 +332,22 @@ class ValoraButton extends StatelessWidget {
         break;
     }
 
-    return _ValoraScaleWrapper(
-      enabled: onPressed != null && !isLoading,
-      child: button,
-    );
+    if (effectiveOnPressed != null) {
+      button = Listener(
+        onPointerDown: (_) => setState(() => _isPressed = true),
+        onPointerUp: (_) => setState(() => _isPressed = false),
+        onPointerCancel: (_) => setState(() => _isPressed = false),
+        child: button,
+      );
+    }
+
+    return button
+        .animate(target: _isPressed ? 1 : 0)
+        .scale(
+          end: const Offset(0.96, 0.96),
+          duration: 100.ms,
+          curve: Curves.easeInOut,
+        );
   }
 }
 
@@ -464,12 +451,12 @@ class ValoraBadge extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).animate().fadeIn().scale(curve: Curves.easeOutBack);
   }
 }
 
 /// A shimmer effect widget for loading states.
-class ValoraShimmer extends StatefulWidget {
+class ValoraShimmer extends StatelessWidget {
   const ValoraShimmer({
     super.key,
     required this.width,
@@ -482,77 +469,26 @@ class ValoraShimmer extends StatefulWidget {
   final double? borderRadius;
 
   @override
-  State<ValoraShimmer> createState() => _ValoraShimmerState();
-}
-
-class _ValoraShimmerState extends State<ValoraShimmer>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-
-    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.linear),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor =
         isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100;
-    final highlightColor =
-        isDark ? ValoraColors.neutral700 : ValoraColors.neutral50;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              widget.borderRadius ?? ValoraSpacing.radiusMd,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [baseColor, highlightColor, baseColor],
-              stops: [
-                0.0,
-                0.5,
-                1.0,
-              ],
-              transform: _SlidingGradientTransform(_animation.value),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SlidingGradientTransform extends GradientTransform {
-  const _SlidingGradientTransform(this.slidePercent);
-
-  final double slidePercent;
-
-  @override
-  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
-    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
+    // flutter_animate's shimmer is easier to use
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(
+          borderRadius ?? ValoraSpacing.radiusMd,
+        ),
+      ),
+    ).animate(onPlay: (controller) => controller.repeat())
+     .shimmer(
+       duration: 1500.ms,
+       color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral50,
+     );
   }
 }
 
@@ -694,7 +630,10 @@ class ValoraChip extends StatelessWidget {
           vertical: ValoraSpacing.xs,
         ),
       ),
-    );
+    ).animate(target: isSelected ? 1 : 0)
+    .scale(end: const Offset(1.05, 1.05), duration: 200.ms, curve: Curves.easeOutBack)
+    .then()
+    .scale(end: const Offset(1.0, 1.0), duration: 200.ms);
   }
 }
 
@@ -747,6 +686,6 @@ class ValoraDialog extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fade().scale(curve: Curves.easeOutBack);
   }
 }

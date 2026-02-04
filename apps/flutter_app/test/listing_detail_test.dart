@@ -43,6 +43,9 @@ void main() {
         ),
       ),
     );
+    // Use finite pump instead of pumpAndSettle to avoid timeouts with infinite animations (like shimmer)
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
 
     // Verify address
     expect(find.text('Test Address 123'), findsOneWidget);
