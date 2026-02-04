@@ -116,5 +116,72 @@ void main() {
        expect(authProvider.isAuthenticated, true);
        expect(authProvider.email, null);
     });
+
+    test('checkAuth sets isAdmin true for simple role', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'admin@example.com', 'role': 'Admin'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      expect(authProvider.isAdmin, true);
+    });
+
+    test('checkAuth sets isAdmin true for microsoft role claim', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'admin@example.com', 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'Admin'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      expect(authProvider.isAdmin, true);
+    });
+
+    test('checkAuth sets isAdmin true for list of roles', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'admin@example.com', 'role': ['User', 'Admin']})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      expect(authProvider.isAdmin, true);
+    });
+
+    test('checkAuth sets isAdmin false for User role', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'user@example.com', 'role': 'User'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      expect(authProvider.isAdmin, false);
+    });
+
+    test('checkAuth sets isAdmin false on error', () async {
+      when(mockAuthService.getToken()).thenThrow(Exception('Fail'));
+      await authProvider.checkAuth();
+      expect(authProvider.isAdmin, false);
+    });
+
+    test('logout resets isAdmin', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'role': 'Admin'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+      await authProvider.checkAuth();
+      expect(authProvider.isAdmin, true);
+
+      await authProvider.logout();
+      expect(authProvider.isAdmin, false);
+    });
   });
 }

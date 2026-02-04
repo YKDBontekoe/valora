@@ -20,6 +20,8 @@ class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
   String? get token => null;
   @override
   String? get email => null;
+  @override
+  bool get isAdmin => false;
 
   @override
   Future<void> login(String email, String password) async {}

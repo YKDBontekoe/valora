@@ -4,6 +4,7 @@ import '../core/theme/valora_colors.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/valora_widgets.dart';
+import '../services/api_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -100,6 +101,8 @@ class SettingsScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
+                  _buildAdminSection(context, surfaceColor, borderColor, subtextColor),
+                  const SizedBox(height: 24),
                   // Preferences Section
                   _buildSectionHeader('PREFERENCES', subtextColor),
                   const SizedBox(height: 12),
@@ -285,6 +288,241 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildAdminSection(BuildContext context, Color surfaceColor, Color borderColor, Color subtextColor) {
+    final isAdmin = context.watch<AuthProvider>().isAdmin;
+    if (!isAdmin) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        _buildSectionHeader('ADMIN CONTROLS', subtextColor),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildSettingsTile(
+                context,
+                icon: Icons.refresh_rounded,
+                iconColor: Colors.blue,
+                iconBgColor: Colors.blue.withValues(alpha: 0.1),
+                title: 'Trigger Scrape',
+                subtitle: 'Start full scraping job',
+                showDivider: true,
+                onTap: () => _triggerScrape(context),
+              ),
+              _buildSettingsTile(
+                context,
+                icon: Icons.filter_list_rounded,
+                iconColor: Colors.orange,
+                iconBgColor: Colors.orange.withValues(alpha: 0.1),
+                title: 'Limited Scrape',
+                subtitle: 'Scrape specific region/limit',
+                showDivider: true,
+                onTap: () => _triggerLimitedScrapeDialog(context),
+              ),
+              _buildSettingsTile(
+                context,
+                icon: Icons.cloud_download_rounded,
+                iconColor: Colors.green,
+                iconBgColor: Colors.green.withValues(alpha: 0.1),
+                title: 'Seed Database',
+                subtitle: 'Initial seed for region',
+                showDivider: true,
+                onTap: () => _seedDatabaseDialog(context),
+              ),
+              _buildSettingsTile(
+                context,
+                icon: Icons.delete_forever_rounded,
+                iconColor: Colors.red,
+                iconBgColor: Colors.red.withValues(alpha: 0.1),
+                title: 'Clear Database',
+                subtitle: 'Remove all listings',
+                subtitleColor: Colors.red,
+                showDivider: false,
+                onTap: () => _confirmClearDatabase(context),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Future<void> _triggerScrape(BuildContext context) async {
+    try {
+      await context.read<ApiService>().triggerScrape();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Scrape job triggered successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _triggerLimitedScrapeDialog(BuildContext context) async {
+    final regionController = TextEditingController();
+    final limitController = TextEditingController(text: '10');
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Limited Scrape',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Trigger',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: regionController,
+              decoration: const InputDecoration(labelText: 'Region (e.g. amsterdam)'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: limitController,
+              decoration: const InputDecoration(labelText: 'Limit'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true && context.mounted) {
+      try {
+        final region = regionController.text;
+        final limit = int.tryParse(limitController.text) ?? 10;
+        if (region.isEmpty) return;
+
+        await context.read<ApiService>().triggerLimitedScrape(region, limit);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Limited scrape triggered')),
+          );
+        }
+      } catch (e) {
+         if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _seedDatabaseDialog(BuildContext context) async {
+      final regionController = TextEditingController();
+
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => ValoraDialog(
+          title: 'Seed Database',
+          actions: [
+            ValoraButton(
+              label: 'Cancel',
+              variant: ValoraButtonVariant.ghost,
+              onPressed: () => Navigator.pop(context, false),
+            ),
+            ValoraButton(
+              label: 'Seed',
+              variant: ValoraButtonVariant.primary,
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ],
+          child: TextField(
+            controller: regionController,
+            decoration: const InputDecoration(labelText: 'Region (e.g. amsterdam)'),
+          ),
+        ),
+      );
+
+    if (result == true && context.mounted) {
+      try {
+        final region = regionController.text;
+        if (region.isEmpty) return;
+
+        await context.read<ApiService>().seedDatabase(region);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Seed job triggered')),
+          );
+        }
+      } catch (e) {
+         if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmClearDatabase(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Clear Database?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Clear All',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text('This will permanently delete all listings from the database. This action cannot be undone.', style: TextStyle(color: Colors.red)),
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+       try {
+        await context.read<ApiService>().clearDatabase();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Database cleared successfully')),
+          );
+        }
+      } catch (e) {
+         if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildProfileCard(
