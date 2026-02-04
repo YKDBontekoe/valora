@@ -27,6 +27,10 @@ public class FundaScraperEnrichmentTests
         
         _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
 
+        // Default setup for GetByFundaIdsAsync
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+
         var options = Options.Create(new ScraperOptions
         {
             SearchUrls = [],
