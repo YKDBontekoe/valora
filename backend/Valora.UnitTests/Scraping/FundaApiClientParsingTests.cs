@@ -102,6 +102,48 @@ public class FundaApiClientParsingTests
     }
 
     [Fact]
+    public async Task GetListingDetailsAsync_MultipleScripts_ExtractsCorrectOne()
+    {
+        // Arrange
+        var targetJson = @"{ ""description"": { ""content"": ""Correct"" }, ""features"": {}, ""media"": {} }";
+
+        var html = $@"
+        <html>
+        <body>
+            <script type=""application/json"">
+                {{ ""irrelevant"": true }}
+            </script>
+            <script type=""application/json"">
+                {{ ""cachedListingData"": true, {targetJson.Trim('{', '}')} }}
+            </script>
+            <script type=""application/json"">
+                {{ ""other"": ""data"" }}
+            </script>
+        </body>
+        </html>";
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(html)
+            });
+
+        // Act
+        var result = await _client.GetListingDetailsAsync("https://example.com", CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Correct", result!.Description?.Content);
+    }
+
+    [Fact]
     public async Task GetListingSummaryAsync_ShouldReturnSummary()
     {
         // Arrange

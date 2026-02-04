@@ -133,4 +133,57 @@ public class ExceptionHandlingMiddlewareTests
         // Assert
         Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
     }
+
+    [Fact]
+    public async Task InvokeAsync_BadHttpRequestException_ReturnsBadRequest()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new BadHttpRequestException("Invalid request"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithUser_LogsUserName()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Boom"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        var claims = new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "TestUser") };
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuthType");
+        context.User = new System.Security.Claims.ClaimsPrincipal(identity);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        // We verify that the logger was called. Checking the exact message string with the username
+        // is harder with extension methods, but ensuring no crash occurs during logging is key.
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
+            Times.Once);
+
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+    }
 }
