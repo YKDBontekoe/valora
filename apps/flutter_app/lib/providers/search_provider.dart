@@ -54,7 +54,9 @@ class SearchProvider extends ChangeNotifier {
       _city != null ||
       _minBedrooms != null ||
       _minLivingArea != null ||
-      _maxLivingArea != null;
+      _maxLivingArea != null ||
+      _sortBy != null ||
+      _sortOrder != null;
 
   Timer? _debounce;
 
