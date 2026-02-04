@@ -32,7 +32,7 @@ public class TokenService : ITokenService
         _userManager = userManager;
     }
 
-    public string GenerateToken(ApplicationUser user)
+    public async Task<string> GenerateTokenAsync(ApplicationUser user)
     {
         if (string.IsNullOrEmpty(_options.Secret))
         {
@@ -47,7 +47,7 @@ public class TokenService : ITokenService
         };
 
         // Add User Roles
-        var roles = _userManager.GetRolesAsync(user).GetAwaiter().GetResult();
+        var roles = await _userManager.GetRolesAsync(user);
         foreach (var role in roles)
         {
             authClaims.Add(new Claim(ClaimTypes.Role, role));

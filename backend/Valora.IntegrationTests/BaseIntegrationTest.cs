@@ -54,10 +54,11 @@ public class BaseIntegrationTest : IAsyncLifetime
         loginResponse.EnsureSuccessStatusCode();
 
         var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
-        if (authResponse != null)
+        if (authResponse?.Token == null)
         {
-            Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+            throw new InvalidOperationException("Failed to extract auth token from login response");
         }
+        Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
     }
 
     protected async Task AuthenticateAsAdminAsync()
@@ -72,19 +73,22 @@ public class BaseIntegrationTest : IAsyncLifetime
 
         if (!await roleManager.RoleExistsAsync("Admin"))
         {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
+            var result = await roleManager.CreateAsync(new IdentityRole("Admin"));
+            if (!result.Succeeded) throw new Exception($"Failed to create Admin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
         {
             user = new ApplicationUser { UserName = email, Email = email };
-            await userManager.CreateAsync(user, password);
+            var result = await userManager.CreateAsync(user, password);
+            if (!result.Succeeded) throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         if (!await userManager.IsInRoleAsync(user, "Admin"))
         {
-            await userManager.AddToRoleAsync(user, "Admin");
+            var result = await userManager.AddToRoleAsync(user, "Admin");
+            if (!result.Succeeded) throw new Exception($"Failed to add user to Admin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         // 2. Login via API to get token
@@ -96,10 +100,11 @@ public class BaseIntegrationTest : IAsyncLifetime
         loginResponse.EnsureSuccessStatusCode();
 
         var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
-        if (authResponse != null)
+        if (authResponse?.Token == null)
         {
-            Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+            throw new InvalidOperationException("Failed to extract auth token from admin login response");
         }
+        Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
     }
 
     public virtual Task DisposeAsync()

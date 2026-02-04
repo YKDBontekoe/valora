@@ -25,7 +25,7 @@ public class TokenServiceTests
     }
 
     [Fact]
-    public void GenerateToken_ReturnsToken_WhenOptionsAreValid()
+    public async Task GenerateToken_ReturnsToken_WhenOptionsAreValid()
     {
         // Arrange
         var jwtOptions = new JwtOptions
@@ -56,7 +56,7 @@ public class TokenServiceTests
         };
 
         // Act
-        var token = tokenService.GenerateToken(user);
+        var token = await tokenService.GenerateTokenAsync(user);
 
         // Assert
         Assert.NotNull(token);
@@ -82,7 +82,7 @@ public class TokenServiceTests
     }
 
     [Fact]
-    public void GenerateToken_ThrowsException_WhenSecretIsMissing()
+    public async Task GenerateToken_ThrowsException_WhenSecretIsMissing()
     {
         // Arrange
         var jwtOptions = new JwtOptions
@@ -104,6 +104,6 @@ public class TokenServiceTests
         var user = new ApplicationUser { Id = "1", UserName = "test" };
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => tokenService.GenerateToken(user));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => tokenService.GenerateTokenAsync(user));
     }
 }

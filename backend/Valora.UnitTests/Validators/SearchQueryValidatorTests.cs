@@ -30,17 +30,31 @@ public class SearchQueryValidatorTests
     [Theory]
     [InlineData("invalid")]
     [InlineData("")]
-    [InlineData(null)]
-    public void IsValid_WithInvalidOfferingType_ReturnsFalse(string? offeringType)
+    public void IsValid_WithInvalidOfferingType_ReturnsFalse(string offeringType)
     {
-        // OfferingType is non-nullable in record but can be set to null via object initializer in some contexts or if binding allows
-        // Here we test the validation logic specifically.
-        // If the property is required/non-nullable, the compiler warns, but runtime might have null.
-        // However, the record default is "buy".
-
-        var query = new FundaSearchQuery(Region: "amsterdam", Page: 1, OfferingType: offeringType ?? "invalid");
+        var query = new FundaSearchQuery(Region: "amsterdam", Page: 1, OfferingType: offeringType);
         var result = SearchQueryValidator.IsValid(query, out var error);
         Assert.False(result);
         Assert.Equal("Invalid OfferingType", error);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public void IsValid_WithInvalidPageSize_ReturnsFalse(int pageSize)
+    {
+        var query = new FundaSearchQuery(Region: "amsterdam", PageSize: pageSize);
+        var result = SearchQueryValidator.IsValid(query, out var error);
+        Assert.False(result);
+        Assert.Equal("PageSize must be between 1 and 100", error);
+    }
+
+    [Fact]
+    public void IsValid_WithEmptyRegion_ReturnsFalse()
+    {
+        var query = new FundaSearchQuery(Region: "");
+        var result = SearchQueryValidator.IsValid(query, out var error);
+        Assert.False(result);
+        Assert.Equal("Region is required", error);
     }
 }

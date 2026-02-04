@@ -283,11 +283,6 @@ api.MapGet("/search", async (
     {
         return Results.BadRequest(new { error = validationError });
     }
-
-    if (string.IsNullOrWhiteSpace(query.Region))
-    {
-        return Results.BadRequest(new { error = "Region is required" });
-    }
     
     var result = await searchService.SearchAsync(query, ct);
     return Results.Ok(new

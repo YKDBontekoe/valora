@@ -68,7 +68,7 @@ public class AuthServiceTests
 
         _mockIdentityService.Setup(x => x.GetUserByEmailAsync("t@t.com")).ReturnsAsync(user);
         _mockIdentityService.Setup(x => x.CheckPasswordAsync("t@t.com", "p")).ReturnsAsync(true);
-        _mockTokenService.Setup(x => x.GenerateToken(user)).Returns("access_token");
+        _mockTokenService.Setup(x => x.GenerateTokenAsync(user)).ReturnsAsync("access_token");
         _mockTokenService.Setup(x => x.GenerateRefreshToken(user.Id)).Returns(refreshToken);
 
         var result = await _authService.LoginAsync(new LoginDto("t@t.com", "p"));
@@ -103,7 +103,7 @@ public class AuthServiceTests
 
         _mockTokenService.Setup(x => x.GetRefreshTokenAsync("old")).ReturnsAsync(oldToken);
         _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(newToken);
-        _mockTokenService.Setup(x => x.GenerateToken(user)).Returns("new_access");
+        _mockTokenService.Setup(x => x.GenerateTokenAsync(user)).ReturnsAsync("new_access");
 
         var result = await _authService.RefreshTokenAsync("old");
 
