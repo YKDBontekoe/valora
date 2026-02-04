@@ -56,9 +56,17 @@ public class OpenRouterAiService : IAiService
             cancellationToken
         );
 
-        if (completion.Content.Count > 0)
+        try
         {
-            return completion.Content[0].Text;
+            if (completion.Content != null && completion.Content.Count > 0)
+            {
+                return completion.Content[0].Text;
+            }
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            // Accessing .Content property getter might throw if the collection is empty/malformed internally in the SDK.
+            // This is defensive coding against SDK behavior when choices is empty.
         }
 
         return string.Empty;
