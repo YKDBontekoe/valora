@@ -53,8 +53,9 @@ public class AiServiceTests : IDisposable
         var request = _server.LogEntries.First().RequestMessage;
 
         // Verify Headers (Defaults)
-        Assert.Contains(request.Headers, h => h.Key == "HTTP-Referer" && h.Value.Contains("https://valora.app"));
-        Assert.Contains(request.Headers, h => h.Key == "X-Title" && h.Value.Contains("Valora"));
+        Assert.NotNull(request.Headers);
+        Assert.Contains(request.Headers!, h => h.Key == "HTTP-Referer" && h.Value.Contains("https://valora.app"));
+        Assert.Contains(request.Headers!, h => h.Key == "X-Title" && h.Value.Contains("Valora"));
 
         // Verify Body DOES NOT contain model property
         var body = request.BodyData?.BodyAsString;
@@ -96,8 +97,9 @@ public class AiServiceTests : IDisposable
         var request = _server.LogEntries.Last().RequestMessage;
 
         // Verify Headers
-        Assert.Contains(request.Headers, h => h.Key == "HTTP-Referer" && h.Value.Contains("https://custom.com"));
-        Assert.Contains(request.Headers, h => h.Key == "X-Title" && h.Value.Contains("CustomApp"));
+        Assert.NotNull(request.Headers);
+        Assert.Contains(request.Headers!, h => h.Key == "HTTP-Referer" && h.Value.Contains("https://custom.com"));
+        Assert.Contains(request.Headers!, h => h.Key == "X-Title" && h.Value.Contains("CustomApp"));
     }
 
     [Fact]
