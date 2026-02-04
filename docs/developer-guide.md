@@ -2,9 +2,16 @@
 
 This guide explains the technical architecture and implementation details of Valora.
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
 Valora follows a **Clean Architecture** approach. This ensures separation of concerns, testability, and independence from external frameworks.
+
+### Why Clean Architecture?
+
+1.  **Independence of Frameworks**: The architecture doesn't depend on the existence of some library of feature laden software. This allows you to use such frameworks as tools rather than having to cram your system into their limited constraints.
+2.  **Testability**: The business rules can be tested without the UI, Database, Web Server, or any other external element.
+3.  **Independence of UI**: The UI can change easily, without changing the rest of the system. A Web UI could be replaced with a console UI, for example, without changing the business rules.
+4.  **Independence of Database**: You can swap out PostgreSQL for SQL Server or Mongo, for example. Your business rules are not bound to the database.
 
 ### Layers
 
@@ -63,7 +70,7 @@ classDiagram
     ListingRepository --> Listing
 ```
 
-## Onboarding: Data Flow
+## 🔄 Onboarding: Data Flow
 
 Understanding how a request travels through the system is crucial for new developers.
 
@@ -86,26 +93,54 @@ Understanding how a request travels through the system is crucial for new develo
 
 ### Scraping Workflow
 
+This process runs via Hangfire or manual trigger. It involves a 4-step enrichment strategy to gather data that is not available on the basic search results page.
+
 ```mermaid
 sequenceDiagram
     participant Job as FundaScraperJob
     participant Service as FundaScraperService
-    participant Parser as FundaHtmlParser
+    participant Client as FundaApiClient
+    participant Mapper as FundaMapper
     participant Funda as Funda.nl
     participant DB as Database
 
     Job->>Service: ScrapeAndStoreAsync()
-    loop For each SearchUrl
-        Service->>Funda: GET Search Page
-        Funda-->>Service: HTML
-        Service->>Parser: ParseSearchResults(HTML)
-        Parser-->>Service: List<ListingPreview>
 
-        loop For each Listing
-            Service->>Funda: GET Detail Page
-            Funda-->>Service: HTML
-            Service->>Parser: ParseListingDetail(HTML)
-            Parser-->>Service: Listing Entity
+    loop For each SearchUrl
+        Service->>Client: SearchAllBuyPagesAsync(region)
+        Client->>Funda: POST /api/topposition/v2/search
+        Funda-->>Client: JSON (Basic Listings)
+        Client-->>Service: List<FundaApiListing>
+
+        loop For each ApiListing
+            Service->>Mapper: MapApiListingToDomain()
+            Mapper-->>Service: Listing (Basic)
+
+            note right of Service: 1. Summary Enrichment
+            Service->>Client: GetListingSummaryAsync()
+            Client->>Funda: GET /api/detail-summary/v2
+            Funda-->>Client: JSON
+            Service->>Mapper: EnrichListingWithSummary()
+
+            note right of Service: 2. Nuxt Hydration Enrichment
+            Service->>Client: GetListingDetailsAsync(url)
+            Client->>Funda: GET Listing HTML
+            Funda-->>Client: HTML
+            Client->>Client: Extract Nuxt JSON
+            Client-->>Service: FundaNuxtListingData
+            Service->>Mapper: EnrichListingWithNuxtData()
+
+            note right of Service: 3. Contact Enrichment
+            Service->>Client: GetContactDetailsAsync()
+            Client->>Funda: GET /api/v3/contact-details
+            Funda-->>Client: JSON
+            Service->>Service: Update Broker Info
+
+            note right of Service: 4. Fiber Enrichment
+            Service->>Client: GetFiberAvailabilityAsync()
+            Client->>Funda: GET /api/v1/{postalCode}
+            Funda-->>Client: JSON
+            Service->>Service: Update Fiber Status
 
             alt New Listing
                 Service->>DB: Add Listing
@@ -120,7 +155,7 @@ sequenceDiagram
     end
 ```
 
-## API Documentation
+## 📚 API Documentation
 
 The backend exposes a REST API via Minimal APIs in `Valora.Api`.
 
@@ -158,7 +193,7 @@ The backend exposes a REST API via Minimal APIs in `Valora.Api`.
     *   Headers: `Authorization: Bearer <token>`
     *   Triggers the `FundaScraperJob` immediately via Hangfire.
 
-## Configuration
+## ⚙️ Configuration
 
 Configuration is managed entirely via **Environment Variables**. There is no `appsettings.json`.
 
@@ -169,7 +204,7 @@ Configuration is managed entirely via **Environment Variables**. There is no `ap
 | `SCRAPER_SEARCH_URLS` | Semicolon-separated Funda URLs | `https://www.funda.nl/koop/amsterdam/` |
 | `HANGFIRE_ENABLED` | Enable background jobs | `true` |
 
-## Testing
+## 🧪 Testing
 
 ### Backend
 

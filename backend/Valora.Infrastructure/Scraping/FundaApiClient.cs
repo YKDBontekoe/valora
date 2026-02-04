@@ -230,6 +230,7 @@ public partial class FundaApiClient
 
     /// <summary>
     /// Helper to aggregate multiple pages of results.
+    /// Implements a partial success strategy: if one page fails, it logs the error but returns the listings found so far.
     /// </summary>
     private async Task<List<FundaApiListing>> AggregatePagesAsync(
         Func<int, Task<FundaApiResponse?>> searchAction,
@@ -261,10 +262,15 @@ public partial class FundaApiClient
         
         return allListings;
     }
+
     /// <summary>
     /// Fetches the details page HTML and extracts the Nuxt hydration state to get rich data.
     /// This includes full description, multiple photos, bathrooms, etc.
     /// </summary>
+    /// <remarks>
+    /// Modern single-page applications (SPAs) like Funda often embed their initial state in a JSON object within a script tag.
+    /// This method parses that JSON to access data that isn't available in the HTML DOM directly without JS execution.
+    /// </remarks>
     public virtual async Task<FundaNuxtListingData?> GetListingDetailsAsync(string url, CancellationToken cancellationToken = default)
     {
         // 1. Fetch HTML

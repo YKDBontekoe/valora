@@ -34,6 +34,10 @@ public class FundaScraperService : IFundaScraperService
         _notificationService = notificationService;
     }
 
+    /// <summary>
+    /// Orchestrates the scraping process for all configured search URLs.
+    /// It iterates through each URL, extracts the region, and triggers the search and processing pipeline.
+    /// </summary>
     public async Task ScrapeAndStoreAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting funda.nl scrape job (API only)");
@@ -74,6 +78,15 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Scrapes a specific search URL by extracting the region and using the Funda API to fetch listings.
+    /// </summary>
+    /// <remarks>
+    /// This method uses an API-first approach:
+    /// 1. Extracts the region (e.g., "amsterdam") from the URL.
+    /// 2. Calls the Funda 'Topposition' API to get a list of listings efficiently.
+    /// 3. Processes each listing individually with enrichment steps.
+    /// </remarks>
     private async Task ScrapeSearchUrlAsync(string searchUrl, int? limit, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Scraping search URL: {Url}", searchUrl);
@@ -150,6 +163,16 @@ public class FundaScraperService : IFundaScraperService
         return validListings;
     }
 
+    /// <summary>
+    /// Processes a single listing by enriching it with data from multiple sources and persisting it.
+    /// </summary>
+    /// <remarks>
+    /// The enrichment strategy involves 4 steps:
+    /// 1. **Summary API**: Fetches basic details like publication date, sold status, and labels.
+    /// 2. **Nuxt Hydration**: Scrapes the HTML to extract the embedded Nuxt state, providing rich descriptions and features.
+    /// 3. **Contact Details**: Fetches broker information (phone, logo).
+    /// 4. **Fiber Availability**: Checks KPN fiber availability using the postal code.
+    /// </remarks>
     private async Task ProcessListingAsync(FundaApiListing apiListing, bool shouldNotify, CancellationToken cancellationToken)
     {
         var fundaId = apiListing.GlobalId.ToString();

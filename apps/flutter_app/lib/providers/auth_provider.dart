@@ -73,6 +73,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Parses the JWT payload to extract user information (like email) without verifying the signature.
+  /// Verification happens on the backend. This is purely for UI display purposes.
   void _parseJwt(String token) {
     try {
       final parts = token.split('.');
@@ -90,6 +92,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Decodes a Base64 URL-safe string.
+  /// We implement this manually to avoid adding a heavy external dependency (like `jwt_decoder`)
+  /// just for this single use case. It handles the URL-safe character replacements and padding.
   String _decodeBase64(String str) {
     String output = str.replaceAll('-', '+').replaceAll('_', '/');
     switch (output.length % 4) {

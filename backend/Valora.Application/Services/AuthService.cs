@@ -54,6 +54,15 @@ public class AuthService : IAuthService
         );
     }
 
+    /// <summary>
+    /// Refreshes the access token using a valid refresh token.
+    /// </summary>
+    /// <remarks>
+    /// This method implements Refresh Token Rotation for enhanced security.
+    /// When a refresh token is used, it is immediately revoked (invalidated) and a new one is issued.
+    /// This helps detect token theft: if an attacker tries to use an old refresh token, it will fail,
+    /// and the system can potentially flag the breach.
+    /// </remarks>
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
     {
         var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);

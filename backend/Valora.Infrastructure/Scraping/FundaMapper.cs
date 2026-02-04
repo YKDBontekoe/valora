@@ -9,6 +9,14 @@ internal static partial class FundaMapper
     private const string ProjectType = "Nieuwbouwproject";
     private const string HouseType = "Woonhuis";
 
+    /// <summary>
+    /// Maps a raw API listing response to a domain Listing entity.
+    /// </summary>
+    /// <remarks>
+    /// Note that `Status` is explicitly mapped as `null`. This is critical because the initial API response
+    /// often lacks detailed status information. If we were to set a default here, we might overwrite
+    /// richer status data obtained from subsequent enrichment steps or previous scrapes.
+    /// </remarks>
     public static Listing MapApiListingToDomain(FundaApiListing apiListing, string fundaId)
     {
         var listingUrl = apiListing.ListingUrl ?? "";
