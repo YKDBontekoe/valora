@@ -3,6 +3,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence.Extensions;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
 
@@ -129,7 +130,7 @@ public class ListingRepository : IListingRepository
             l.PublicationDate, l.IsSoldOrRented, l.Labels
         ));
 
-        return await PaginatedList<ListingDto>.CreateAsync(dtoQuery, filter.Page ?? 1, filter.PageSize ?? 10);
+        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10);
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -178,7 +179,7 @@ public class ListingRepository : IListingRepository
         // Return listings that are not explicitly sold or withdrawn
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
         return await _context.Listings
-            .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken")
+            .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken" && !l.IsSoldOrRented)
             .ToListAsync(cancellationToken);
     }
 
@@ -191,6 +192,8 @@ public class ListingRepository : IListingRepository
         int page = 1,
         CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
         var query = _context.Listings.AsNoTracking().AsQueryable();
 

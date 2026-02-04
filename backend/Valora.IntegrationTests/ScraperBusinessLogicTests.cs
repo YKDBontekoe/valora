@@ -113,7 +113,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         }}";
 
         _server.Reset();
-        _server.Given(Request.Create().UsingPost().WithPath("/v2.0/search"))
+        _server.Given(Request.Create().UsingPost().WithPath("/api/topposition/v2/search"))
                .RespondWith(Response.Create()
                    .WithStatusCode(200)
                    .WithHeader("Content-Type", "application/json")

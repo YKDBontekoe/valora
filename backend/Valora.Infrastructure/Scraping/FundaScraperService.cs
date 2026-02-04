@@ -537,7 +537,7 @@ public partial class FundaScraperService : IFundaScraperService
             if (listing.Features.TryGetValue("CV-ketel", out var cvKetel))
             {
                 // Parse "Vaillant (2019)"
-                var cvMatch = System.Text.RegularExpressions.Regex.Match(cvKetel, @"(.+?)\s*\((\d{4})\)");
+                var cvMatch = CVBoilerRegex().Match(cvKetel);
                 if (cvMatch.Success)
                 {
                     listing.CVBoilerBrand = cvMatch.Groups[1].Value.Trim();
@@ -599,11 +599,15 @@ public partial class FundaScraperService : IFundaScraperService
     [GeneratedRegex(@"\d+")]
     private static partial Regex NumberRegex();
 
+    [GeneratedRegex(@"(.+?)\s*\((\d{4})\)")]
+    private static partial Regex CVBoilerRegex();
+
     private static Listing MapApiListingToDomain(FundaApiListing apiListing, string fundaId)
     {
-        var fullUrl = apiListing.ListingUrl!.StartsWith("http")
+        var listingUrl = apiListing.ListingUrl ?? "";
+        var fullUrl = listingUrl.StartsWith("http")
             ? apiListing.ListingUrl
-            : $"https://www.funda.nl{apiListing.ListingUrl}";
+            : $"https://www.funda.nl{listingUrl}";
 
         var price = ParsePriceFromApi(apiListing.Price);
 

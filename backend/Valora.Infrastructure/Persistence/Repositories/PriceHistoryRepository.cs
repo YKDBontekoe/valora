@@ -36,4 +36,10 @@ public class PriceHistoryRepository : IPriceHistoryRepository
         await _context.SaveChangesAsync(cancellationToken);
         return priceHistory;
     }
+
+    public async Task AddRangeAsync(IEnumerable<PriceHistory> priceHistories, CancellationToken cancellationToken = default)
+    {
+        await _context.PriceHistories.AddRangeAsync(priceHistories, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

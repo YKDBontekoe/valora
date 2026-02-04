@@ -56,8 +56,8 @@ public class TokenService : ITokenService
     public RefreshToken GenerateRefreshToken(string userId)
     {
         var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
+        RandomNumberGenerator.Fill(randomNumber);
+
         var rawToken = Convert.ToBase64String(randomNumber);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 

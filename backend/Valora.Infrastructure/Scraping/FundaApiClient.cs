@@ -1,124 +1,108 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-/// <summary>
-/// Client for Funda's publicly accessible APIs.
-/// Uses the Topposition API which is more reliable than HTML scraping
-/// and doesn't require bypassing anti-bot measures.
-/// </summary>
-// <summary>
-/// Client for Funda's publicly accessible APIs.
-/// Uses the Topposition API to discover listings for:
-/// - Residential Buy (Koop)
-/// - Residential Rent (Huur)
-/// - New Developments (Nieuwbouw)
-/// </summary>
-public class FundaApiClient
+public partial class FundaApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FundaApiClient> _logger;
-    
-    private const string ToppositionApiUrl = "https://search-topposition.funda.io/v2.0/search";
-    private const string ListingSummaryApiUrlTemplate = "https://listing-detail-summary.funda.io/api/v1/listing/nl/{0}";
-    private const string SimilarListingsApiUrlTemplate = "https://local-listings.funda.io/api/v1/similarlistings?globalid={0}";
-    private const string ContactDetailsApiUrlTemplate = "https://contacts-bff.funda.io/api/v3/listings/{0}/contact-details?website=1";
-    private const string FiberApiUrlTemplate = "https://kpnopticfiber.funda.io/api/v1/{0}";
-    
+    private const string ToppositionApiUrl = "https://www.funda.nl/api/topposition/v2/search";
+
     public FundaApiClient(HttpClient httpClient, ILogger<FundaApiClient> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
-        
-        ConfigureHttpClient();
     }
-    
+
     /// <summary>
-    /// Fetches a detailed summary of a specific listing using its Global ID.
-    /// Includes address, price, energy label, and broker info.
+    /// Fetches the summary (including correct address/globalId) for a listing ID.
+    /// Uses the internal API endpoint: https://www.funda.nl/api/detail-summary/v2/getsummary/{globalId}
     /// </summary>
     public virtual async Task<FundaApiListingSummary?> GetListingSummaryAsync(int globalId, CancellationToken cancellationToken = default)
     {
-        var url = string.Format(ListingSummaryApiUrlTemplate, globalId);
-        // Exception handling is delegated to the caller/Polly to allow for retries and proper failure reporting.
-        return await _httpClient.GetFromJsonAsync<FundaApiListingSummary>(url, cancellationToken);
+        try
+        {
+            var url = $"https://www.funda.nl/api/detail-summary/v2/getsummary/{globalId}";
+            var response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to fetch summary for listing {GlobalId}: {StatusCode}", globalId, response.StatusCode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize<FundaApiListingSummary>(content);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching summary for listing {GlobalId}", globalId);
+            return null;
+        }
     }
 
     /// <summary>
-    /// Fetches similar listings (recommendations) for a given listing.
-    /// Useful for graph-based crawling / discovery.
-    /// </summary>
-    public virtual async Task<FundaApiSimilarListingsResponse?> GetSimilarListingsAsync(int globalId, CancellationToken cancellationToken = default)
-    {
-        var url = string.Format(SimilarListingsApiUrlTemplate, globalId);
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-
-        // Throw on error so Polly can handle retries
-        response.EnsureSuccessStatusCode();
-
-        // The API returns a JSON array of objects if multiple, but here it returns an object with arrays. verified via curl.
-        return await response.Content.ReadFromJsonAsync<FundaApiSimilarListingsResponse>(cancellationToken);
-    }
-
-    /// <summary>
-    /// Fetches contact details for a listing's broker/agent.
-    /// Returns broker phone number, logo, and association code (NVM/VBO).
+    /// Fetches contact details (broker info) for a listing.
+    /// Uses endpoint: https://contacts-bff.funda.io/api/v3/listings/{GlobalId}/contact-details?website=1
     /// </summary>
     public virtual async Task<FundaContactDetailsResponse?> GetContactDetailsAsync(int globalId, CancellationToken cancellationToken = default)
     {
-        var url = string.Format(ContactDetailsApiUrlTemplate, globalId);
         try
         {
-            return await _httpClient.GetFromJsonAsync<FundaContactDetailsResponse>(url, cancellationToken);
+            var url = $"https://contacts-bff.funda.io/api/v3/listings/{globalId}/contact-details?website=1";
+            var response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogDebug("Contact details not found for listing {GlobalId}", globalId);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize<FundaContactDetailsResponse>(content);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (Exception ex)
         {
-            // Contact details not available for all listings
-            _logger.LogDebug("Contact details not found for listing {GlobalId}", globalId);
+            _logger.LogError(ex, "Error fetching contact details for listing {GlobalId}", globalId);
             return null;
         }
     }
 
     /// <summary>
-    /// Checks fiber optic availability at the given postal code.
-    /// Requires FULL postal code (e.g., "1096DE") not just prefix.
+    /// Checks fiber internet availability.
+    /// Endpoint: https://kpnopticfiber.funda.io/api/v1/{postalCode}
     /// </summary>
     public virtual async Task<FundaFiberResponse?> GetFiberAvailabilityAsync(string postalCode, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(postalCode) || postalCode.Length < 6)
-            return null;
-            
-        // Remove spaces and ensure uppercase (e.g., "1096 DE" -> "1096DE")
-        var cleanPostalCode = postalCode.Replace(" ", "").ToUpperInvariant();
-        var url = string.Format(FiberApiUrlTemplate, cleanPostalCode);
+        if (string.IsNullOrWhiteSpace(postalCode)) return null;
         
+        // Format postal code: 1234AB (remove space)
+        var cleanPostalCode = postalCode.Replace(" ", "").ToUpperInvariant();
+
         try
         {
-            return await _httpClient.GetFromJsonAsync<FundaFiberResponse>(url, cancellationToken);
+            var url = $"https://kpnopticfiber.funda.io/api/v1/{cleanPostalCode}";
+            var response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize<FundaFiberResponse>(content);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
             _logger.LogDebug(ex, "Failed to check fiber availability for postal code {PostalCode}", cleanPostalCode);
             return null;
         }
     }
-    
-    private void ConfigureHttpClient()
-    {
-        // Set browser-like headers for the API requests
-        _httpClient.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-        _httpClient.DefaultRequestHeaders.Add("Accept-Language", "nl-NL,nl;q=0.9,en;q=0.8");
-        _httpClient.DefaultRequestHeaders.Add("Origin", "https://www.funda.nl");
-        _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.funda.nl/");
-    }
-    
+
     /// <summary>
-    /// Search for residential buy listings (Koop).
+    /// Search for residential listings (Koop).
     /// </summary>
     public virtual async Task<FundaApiResponse?> SearchBuyAsync(
         string geoInfo,
@@ -138,7 +122,7 @@ public class FundaApiClient
     }
 
     /// <summary>
-    /// Search for residential rent listings (Huur).
+    /// Search for rental listings (Huur).
     /// </summary>
     public virtual async Task<FundaApiResponse?> SearchRentAsync(
         string geoInfo,
@@ -218,11 +202,17 @@ public class FundaApiClient
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JsonSerializer.Deserialize<FundaApiResponse>(content);
-
-        _logger.LogDebug("Funda API returned {Count} items", result?.Listings?.Count ?? 0);
-
-        return result;
+        try
+        {
+            var result = JsonSerializer.Deserialize<FundaApiResponse>(content);
+            _logger.LogDebug("Funda API returned {Count} items", result?.Listings?.Count ?? 0);
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize Funda API response");
+            return null;
+        }
     }
     
     /// <summary>
@@ -249,17 +239,24 @@ public class FundaApiClient
         
         for (var page = 1; page <= maxPages; page++)
         {
-            var result = await searchAction(page);
-            
-            if (result?.Listings == null || result.Listings.Count == 0)
+            try
             {
-                break;
+                var result = await searchAction(page);
+
+                if (result?.Listings == null || result.Listings.Count == 0)
+                {
+                    break;
+                }
+
+                allListings.AddRange(result.Listings);
+
+                // Small delay to be respectful
+                await Task.Delay(500);
             }
-            
-            allListings.AddRange(result.Listings);
-            
-            // Small delay to be respectful
-            await Task.Delay(500);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch page {Page}", page);
+            }
         }
         
         return allListings;
@@ -290,6 +287,8 @@ public class FundaApiClient
     
     private async Task<string> GetListingDetailHtmlAsync(string url, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(url)) return string.Empty;
+
         // Ensure we have a valid Absolute URL
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
@@ -307,8 +306,8 @@ public class FundaApiClient
         // Simple regex to find the script content. 
         // We look for script type="application/json" and rely on the fact that the Nuxt blob is usually the largest one.
         // Or we can look for specific identifying text like "cachedListingData" inside the tag.
-        var pattern = @"<script type=""application/json""[^>]*>(.*?cachedListingData.*?)</script>";
-        var match = System.Text.RegularExpressions.Regex.Match(html, pattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        var match = NuxtCachedDataRegex().Match(html);
         
         if (match.Success)
         {
@@ -316,8 +315,8 @@ public class FundaApiClient
         }
         
         // Fallback: finding any application/json script and checking valid JSON
-        var multiPattern = @"<script type=""application/json""[^>]*>(.*?)</script>";
-        var matches = System.Text.RegularExpressions.Regex.Matches(html, multiPattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        var matches = NuxtScriptRegex().Matches(html);
         foreach (System.Text.RegularExpressions.Match m in matches)
         {
              var content = m.Groups[1].Value;
@@ -384,6 +383,12 @@ public class FundaApiClient
 
         return null;
     }
+
+    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?cachedListingData.*?)</script>", RegexOptions.Singleline)]
+    private static partial Regex NuxtCachedDataRegex();
+
+    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
+    private static partial Regex NuxtScriptRegex();
 }
 
 /// <summary>
