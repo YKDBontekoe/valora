@@ -401,10 +401,10 @@ void main() {
           home: Scaffold(
             body: ValoraDialog(
               title: 'Dialog Title',
-              child: const Text('Dialog Content'),
               actions: [
                 TextButton(onPressed: () {}, child: const Text('OK')),
               ],
+              child: const Text('Dialog Content'),
             ),
           ),
         ),
