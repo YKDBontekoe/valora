@@ -29,7 +29,7 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         var city = "Amsterdam";
         var price = 500000;
 
-        // Mock API Response (FundaApiClient uses POST to /v2.0/search)
+        // Mock API Response (FundaApiClient uses POST to /api/topposition/v2/search)
         var apiResponseJson = $@"
         {{
             ""listings"": [
@@ -50,7 +50,7 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
             ]
         }}";
 
-        _server.Given(Request.Create().UsingPost().WithPath("/v2.0/search"))
+        _server.Given(Request.Create().UsingPost().WithPath("/api/topposition/v2/search"))
                .RespondWith(Response.Create()
                    .WithStatusCode(200)
                    .WithHeader("Content-Type", "application/json")
