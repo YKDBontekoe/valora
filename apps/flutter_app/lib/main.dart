@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/favorites_provider.dart';
+import 'providers/search_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -58,6 +59,11 @@ Future<void> main() async {
             authToken: authProvider.token,
             refreshTokenCallback: authService.refreshToken,
           ),
+        ),
+        ChangeNotifierProxyProvider<ApiService, SearchProvider>(
+          create: (context) => SearchProvider(apiService: context.read<ApiService>()),
+          update: (context, apiService, previous) =>
+              previous ?? SearchProvider(apiService: apiService),
         ),
       ],
       child: const ValoraApp(),

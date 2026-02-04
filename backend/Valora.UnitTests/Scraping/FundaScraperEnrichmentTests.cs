@@ -6,6 +6,7 @@ using Valora.Application.Scraping;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
+using Xunit;
 
 namespace Valora.UnitTests.Scraping;
 
@@ -17,6 +18,7 @@ public class FundaScraperEnrichmentTests
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<FundaApiClient> _apiClientMock;
     private readonly FundaScraperService _service;
+    private readonly ListingEnricher _realEnricher;
 
     public FundaScraperEnrichmentTests()
     {
@@ -26,6 +28,7 @@ public class FundaScraperEnrichmentTests
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
         _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _realEnricher = new ListingEnricher(_apiClientMock.Object, Mock.Of<ILogger<ListingEnricher>>());
 
         var options = Options.Create(new ScraperOptions
         {
@@ -39,7 +42,8 @@ public class FundaScraperEnrichmentTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _realEnricher
         );
     }
 

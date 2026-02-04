@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
-import '../models/listing.dart';
-import '../models/listing_filter.dart';
 import '../providers/favorites_provider.dart';
-import '../services/api_service.dart';
+import '../providers/search_provider.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_filter_dialog.dart';
@@ -23,214 +20,85 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  Timer? _debounce;
 
-  ApiService? _apiService;
-  List<Listing> _listings = [];
-  bool _isLoading = false;
-  bool _isLoadingMore = false;
-  String? _error;
-  String _currentQuery = '';
-
-  // Filters & Pagination
-  int _currentPage = 1;
-  bool _hasNextPage = true;
-  static const int _pageSize = 20;
-
-  double? _minPrice;
-  double? _maxPrice;
-  String? _city;
-  int? _minBedrooms;
-  int? _minLivingArea;
-  int? _maxLivingArea;
-  String? _sortBy;
-  String? _sortOrder;
+  // No local state for search logic anymore
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
-  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _apiService ??= Provider.of<ApiService>(context);
+    // Initialize query from provider if returning
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+             final provider = Provider.of<SearchProvider>(context, listen: false);
+             if (_searchController.text != provider.currentQuery) {
+                 _searchController.text = provider.currentQuery;
+             }
+        }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
-    _debounce?.cancel();
     super.dispose();
   }
 
   void _onScroll() {
+    final provider = Provider.of<SearchProvider>(context, listen: false);
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoadingMore &&
-        _hasNextPage &&
-        _error == null &&
-        (_listings.isNotEmpty || _currentQuery.isNotEmpty)) { // Only load more if we have initial results or a query
-      _loadMoreListings();
+        !provider.isLoadingMore &&
+        provider.hasNextPage &&
+        provider.error == null &&
+        (provider.listings.isNotEmpty || provider.currentQuery.isNotEmpty)) {
+      provider.loadMoreListings();
     }
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text;
-    if (query == _currentQuery) return;
-    _currentQuery = query;
-
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _loadListings(refresh: true);
-    });
-  }
-
-  Future<void> _loadListings({bool refresh = false}) async {
-    if (refresh) {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-        _currentPage = 1;
-        if (refresh) _listings = [];
-      });
-    }
-
-    // Don't search if query is empty and no filters are set
-    // Exception: If we just want to explore listings, we might allow empty search
-    // But typically search screen starts empty.
-    if (_currentQuery.isEmpty && !_hasActiveFilters) {
-      setState(() {
-        _listings = [];
-        _isLoading = false;
-        _hasNextPage = false;
-      });
-      return;
-    }
-
-    try {
-      final response = await _apiService!.getListings(
-        ListingFilter(
-          searchTerm: _currentQuery,
-          page: _currentPage,
-          pageSize: _pageSize,
-          minPrice: _minPrice,
-          maxPrice: _maxPrice,
-          city: _city,
-          minBedrooms: _minBedrooms,
-          minLivingArea: _minLivingArea,
-          maxLivingArea: _maxLivingArea,
-          sortBy: _sortBy,
-          sortOrder: _sortOrder,
-        ),
-      );
-
-      if (mounted) {
-        setState(() {
-          if (refresh) {
-            _listings = response.items;
-          } else {
-            _listings.addAll(response.items);
-          }
-          _hasNextPage = response.hasNextPage;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e is AppException ? e.message : 'Failed to search listings';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _loadMoreListings() async {
-    if (_isLoadingMore) return;
-    setState(() => _isLoadingMore = true);
-    _currentPage++;
-    try {
-       final response = await _apiService!.getListings(
-        ListingFilter(
-          searchTerm: _currentQuery,
-          page: _currentPage,
-          pageSize: _pageSize,
-          minPrice: _minPrice,
-          maxPrice: _maxPrice,
-          city: _city,
-          minBedrooms: _minBedrooms,
-          minLivingArea: _minLivingArea,
-          maxLivingArea: _maxLivingArea,
-          sortBy: _sortBy,
-          sortOrder: _sortOrder,
-        ),
-      );
-      if (mounted) {
-        setState(() {
-          _listings.addAll(response.items);
-          _hasNextPage = response.hasNextPage;
-        });
-      }
-    } catch (e) {
-      // Quietly fail pagination or show snackbar
-      if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load more items')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingMore = false);
-      }
-    }
+    final provider = Provider.of<SearchProvider>(context, listen: false);
+    provider.setQuery(_searchController.text);
   }
 
   Future<void> _openFilterDialog() async {
+    final provider = Provider.of<SearchProvider>(context, listen: false);
+
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => ValoraFilterDialog(
-        initialMinPrice: _minPrice,
-        initialMaxPrice: _maxPrice,
-        initialCity: _city,
-        initialMinBedrooms: _minBedrooms,
-        initialMinLivingArea: _minLivingArea,
-        initialMaxLivingArea: _maxLivingArea,
-        initialSortBy: _sortBy,
-        initialSortOrder: _sortOrder,
+        initialMinPrice: provider.minPrice,
+        initialMaxPrice: provider.maxPrice,
+        initialCity: provider.city,
+        initialMinBedrooms: provider.minBedrooms,
+        initialMinLivingArea: provider.minLivingArea,
+        initialMaxLivingArea: provider.maxLivingArea,
+        initialSortBy: provider.sortBy,
+        initialSortOrder: provider.sortOrder,
       ),
     );
 
     if (result != null) {
-      setState(() {
-        _minPrice = result['minPrice'];
-        _maxPrice = result['maxPrice'];
-        _city = result['city'];
-        _minBedrooms = result['minBedrooms'];
-        _minLivingArea = result['minLivingArea'];
-        _maxLivingArea = result['maxLivingArea'];
-        _sortBy = result['sortBy'];
-        _sortOrder = result['sortOrder'];
-      });
-      _loadListings(refresh: true);
+      provider.updateFilters(
+        minPrice: result['minPrice'],
+        maxPrice: result['maxPrice'],
+        city: result['city'],
+        minBedrooms: result['minBedrooms'],
+        minLivingArea: result['minLivingArea'],
+        maxLivingArea: result['maxLivingArea'],
+        sortBy: result['sortBy'],
+        sortOrder: result['sortOrder'],
+      );
     }
-  }
-
-  bool get _hasActiveFilters {
-    return _minPrice != null ||
-        _maxPrice != null ||
-        _city != null ||
-        _minBedrooms != null ||
-        _minLivingArea != null ||
-        _maxLivingArea != null;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final provider = Provider.of<SearchProvider>(context);
 
     return Scaffold(
       body: CustomScrollView(
@@ -258,7 +126,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     icon: const Icon(Icons.tune_rounded),
                     tooltip: 'Filters',
                   ),
-                  if (_hasActiveFilters)
+                  if (provider.hasActiveFilters)
                     Positioned(
                       top: 8,
                       right: 8,
@@ -276,7 +144,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(width: 8),
             ],
             bottom: PreferredSize(
-              preferredSize: Size.fromHeight(_hasActiveFilters ? 130 : 80),
+              preferredSize: Size.fromHeight(provider.hasActiveFilters ? 130 : 80),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -290,45 +158,45 @@ class _SearchScreenState extends State<SearchScreen> {
                       textInputAction: TextInputAction.search,
                     ),
                   ),
-                  if (_hasActiveFilters)
+                  if (provider.hasActiveFilters)
                     SizedBox(
                       height: 40,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         children: [
-                          if (_minPrice != null || _maxPrice != null)
+                          if (provider.minPrice != null || provider.maxPrice != null)
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ValoraChip(
-                                label: 'Price: €${_minPrice?.toInt() ?? 0} - ${_maxPrice != null ? '€${_maxPrice!.toInt()}' : 'Any'}',
+                                label: 'Price: €${provider.minPrice?.toInt() ?? 0} - ${provider.maxPrice != null ? '€${provider.maxPrice!.toInt()}' : 'Any'}',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
                               ),
                             ),
-                          if (_city != null)
+                          if (provider.city != null)
                              Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ValoraChip(
-                                label: 'City: $_city',
+                                label: 'City: ${provider.city}',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
                               ),
                             ),
-                           if (_minBedrooms != null)
+                           if (provider.minBedrooms != null)
                              Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ValoraChip(
-                                label: '$_minBedrooms+ Beds',
+                                label: '${provider.minBedrooms}+ Beds',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
                               ),
                             ),
-                           if (_minLivingArea != null)
+                           if (provider.minLivingArea != null)
                              Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ValoraChip(
-                                label: '$_minLivingArea+ m²',
+                                label: '${provider.minLivingArea}+ m²',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
                               ),
@@ -336,32 +204,32 @@ class _SearchScreenState extends State<SearchScreen> {
                         ],
                       ),
                     ),
-                  if (_hasActiveFilters) const SizedBox(height: 12),
+                  if (provider.hasActiveFilters) const SizedBox(height: 12),
                 ],
               ),
             ),
           ),
 
-          if (_isLoading)
+          if (provider.isLoading)
             const SliverFillRemaining(
               child: ValoraLoadingIndicator(message: 'Searching...'),
             )
-          else if (_error != null)
+          else if (provider.error != null)
              SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
                 child: ValoraEmptyState(
                   icon: Icons.error_outline_rounded,
                   title: 'Search Failed',
-                  subtitle: _error,
+                  subtitle: provider.error!,
                   action: ValoraButton(
                     label: 'Retry',
-                    onPressed: () => _loadListings(refresh: true),
+                    onPressed: () => provider.loadListings(refresh: true),
                   ),
                 ),
               ),
             )
-          else if (_listings.isEmpty && (_currentQuery.isNotEmpty || _hasActiveFilters))
+          else if (provider.listings.isEmpty && (provider.currentQuery.isNotEmpty || provider.hasActiveFilters))
             const SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
@@ -372,7 +240,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             )
-          else if (_listings.isEmpty && _currentQuery.isEmpty && !_hasActiveFilters)
+          else if (provider.listings.isEmpty && provider.currentQuery.isEmpty && !provider.hasActiveFilters)
              const SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
@@ -389,8 +257,8 @@ class _SearchScreenState extends State<SearchScreen> {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    if (index == _listings.length) {
-                       if (_isLoadingMore) {
+                    if (index == provider.listings.length) {
+                       if (provider.isLoadingMore) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
                             child: Center(child: CircularProgressIndicator()),
@@ -400,7 +268,7 @@ class _SearchScreenState extends State<SearchScreen> {
                        }
                     }
 
-                    final listing = _listings[index];
+                    final listing = provider.listings[index];
                     return NearbyListingCard(
                       listing: listing,
                       isFavorite: favoritesProvider.isFavorite(listing.id),
@@ -415,7 +283,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       },
                     );
                   },
-                  childCount: _listings.length + 1, // +1 for loader/padding
+                  childCount: provider.listings.length + 1, // +1 for loader/padding
                 ),
               ),
             ),

@@ -6,6 +6,7 @@ using Valora.Application.Scraping;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
+using Xunit;
 
 namespace Valora.UnitTests.Scraping;
 
@@ -16,6 +17,7 @@ public class FundaScraperServiceTests
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IListingEnricher> _enricherMock;
     private readonly FundaScraperService _service;
 
     public FundaScraperServiceTests()
@@ -24,6 +26,7 @@ public class FundaScraperServiceTests
         _priceHistoryRepoMock = new Mock<IPriceHistoryRepository>();
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
+        _enricherMock = new Mock<IListingEnricher>();
         
         // Mock FundaApiClient using a loose mock (mocking virtual methods)
         // We pass dummy dependencies to the base constructor because it's a class mock
@@ -41,7 +44,8 @@ public class FundaScraperServiceTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _enricherMock.Object
         );
     }
 
@@ -75,6 +79,9 @@ public class FundaScraperServiceTests
 
         // Verify repository calls
         _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+
+        // Verify enricher called
+        _enricherMock.Verify(x => x.EnrichListingAsync(It.IsAny<Listing>(), It.IsAny<FundaApiListing>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -94,7 +101,8 @@ public class FundaScraperServiceTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _enricherMock.Object
         );
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -149,7 +157,8 @@ public class FundaScraperServiceTests
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
-            _apiClientMock.Object
+            _apiClientMock.Object,
+            _enricherMock.Object
         );
 
         // Act
