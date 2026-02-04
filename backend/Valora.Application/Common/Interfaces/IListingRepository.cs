@@ -9,6 +9,7 @@ public interface IListingRepository
     Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default);
     Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default);
+    Task<List<Listing>> GetByFundaIdsAsync(IEnumerable<string> fundaIds, CancellationToken cancellationToken = default);
     Task<Listing> AddAsync(Listing listing, CancellationToken cancellationToken = default);
     Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
