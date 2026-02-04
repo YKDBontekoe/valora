@@ -284,23 +284,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) => setState(() => _currentNavIndex = index),
       ),
       body: _buildBody(),
-      floatingActionButton: _currentNavIndex == 0
-          ? Padding(
-              padding: const EdgeInsets.only(bottom: 100.0),
-              child: FloatingActionButton.extended(
-                onPressed: _triggerScrape,
-                backgroundColor: ValoraColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 8,
-                icon: const Icon(Icons.auto_awesome_rounded),
-                label: Row(
-                  children: const [
-                    Text('Compare with AI'),
-                  ],
-                ),
-              ),
-            )
-          : null,
     );
   }
 

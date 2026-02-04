@@ -303,5 +303,39 @@ void main() {
         throwsA(isA<UnknownException>()),
       );
     });
+
+    test('triggerScrape makes correct request', () async {
+      final client = MockClient((request) async {
+        expect(request.url.path, '/api/scraper/trigger');
+        expect(request.method, 'POST');
+        return http.Response(json.encode({'message': 'Queued'}), 200);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+      await apiService.triggerScrape();
+    });
+
+    test('seedDatabase makes correct request', () async {
+      final client = MockClient((request) async {
+        expect(request.url.path, '/api/scraper/seed');
+        expect(request.url.queryParameters['region'], 'amsterdam');
+        expect(request.method, 'POST');
+        return http.Response(json.encode({'message': 'Queued'}), 200);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+      await apiService.seedDatabase('amsterdam');
+    });
+
+    test('clearDatabase makes correct request', () async {
+      final client = MockClient((request) async {
+        expect(request.url.path, '/api/scraper/clear');
+        expect(request.method, 'POST');
+        return http.Response(json.encode({'message': 'Cleared'}), 200);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+      await apiService.clearDatabase();
+    });
   });
 }
