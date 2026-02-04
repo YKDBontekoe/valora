@@ -1,0 +1,529 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 93.0.0 (94.0.0 available)
+  analyzer 10.0.1 (10.0.2 available)
+  characters 1.4.0 (1.4.1 available)
+  hooks 1.0.0 (1.0.1 available)
+  lints 6.0.0 (6.1.0 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.17.0 (1.18.1 available)
+  test_api 0.7.7 (0.7.9 available)
+Got dependencies!
+9 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /app/apps/flutter_app/test/providers/auth_provider_test.dart                                                                                                                         00:01 +0: loading /app/apps/flutter_app/test/providers/auth_provider_test.dart                                                                                                                         00:02 +0: loading /app/apps/flutter_app/test/providers/auth_provider_test.dart                                                                                                                         00:02 +0: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should set email from valid token                                                                       00:02 +1: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should set email from valid token                                                                       00:02 +1: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should handle invalid token gracefully                                                                  00:02 +2: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should handle invalid token gracefully                                                                  00:02 +2: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should set isAuthenticated to false if token is null                                                    00:02 +3: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should set isAuthenticated to false if token is null                                                    00:02 +3: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception from authService                                                                      00:02 +4: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception from authService                                                                      00:02 +4: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider login should set email from returned token                                                                        00:02 +5: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider login should set email from returned token                                                                        00:02 +5: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider login propagates exception                                                                                        00:02 +6: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider login propagates exception                                                                                        00:02 +6: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider register calls authService register                                                                               00:02 +7: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider register calls authService register                                                                               00:02 +7: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider register propagates exception                                                                                     00:02 +8: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider register propagates exception                                                                                     00:02 +8: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider logout should clear token and email                                                                               00:02 +9: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider logout should clear token and email                                                                               00:02 +9: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                        00:02 +9: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing
+Error parsing JWT: FormatException: Invalid encoding before padding (at character 15)
+invalid/base64==
+              ^
+
+00:02 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:03 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:04 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:05 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:06 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:07 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:08 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:09 +10: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing                                                                       00:09 +10: loading /app/apps/flutter_app/test/screens/search_screen_test.dart                                                                                                                          00:09 +10: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen shows empty state initially                                                                                        00:10 +10: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen shows empty state initially                                                                                        00:10 +11: /app/apps/flutter_app/test/screens/listing_detail_screen_test.dart: ListingDetailScreen shows "Contact Broker" button when phone is present                                                 00:10 +12: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen clears listings when query is cleared                                                                              00:10 +13: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen clears listings when query is cleared                                                                              00:10 +14: /app/apps/flutter_app/test/screens/listing_detail_screen_test.dart: ListingDetailScreen shows broker section if logo present                                                                00:11 +14: /app/apps/flutter_app/test/screens/listing_detail_screen_test.dart: ListingDetailScreen shows broker section if logo present                                                                00:11 +15: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen displays listings after successful search                                                                          00:11 +16: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen displays listings after successful search                                                                          00:11 +16: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen opens filter dialog and updates filters                                                                            00:11 +17: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen opens filter dialog and updates filters                                                                            00:11 +17: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen handles error state with generic exception                                                                         00:11 +18: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen handles error state with generic exception                                                                         00:11 +18: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen handles pagination error                                                                                           00:12 +18: /app/apps/flutter_app/test/screens/search_screen_test.dart: SearchScreen handles pagination error                                                                                           00:12 +19: /app/apps/flutter_app/test/screens/auth/register_screen_test.dart: RegisterScreen has AutofillGroup and correct hints                                                                       00:13 +19: /app/apps/flutter_app/test/screens/auth/register_screen_test.dart: RegisterScreen has AutofillGroup and correct hints                                                                       00:13 +20: /app/apps/flutter_app/test/screens/auth/register_screen_test.dart: RegisterScreen has AutofillGroup and correct hints                                                                       00:13 +20: loading /app/apps/flutter_app/test/screens/auth/login_screen_test.dart                                                                                                                      00:13 +20: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints                                                                             00:14 +20: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints                                                                             00:15 +20: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints                                                                             00:15 +21: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Shows offline state when health check fails                                                                            00:16 +21: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Shows offline state when health check fails                                                                            00:16 +22: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows saved listings and icons                                                                      00:16 +23: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows saved listings and icons                                                                      00:17 +23: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows saved listings and icons                                                                      00:17 +24: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows saved listings and icons                                                                      00:17 +25: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows saved listings and icons                                                                      00:18 +25: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows saved listings and icons                                                                      00:18 +26: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Filter dialog interactions                                                                                             00:18 +27: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Filter dialog interactions                                                                                             00:19 +27: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Filter dialog interactions                                                                                             00:19 +28: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows no matches found state and clears search                                                      00:19 +29: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows no matches found state and clears search                                                      00:19 +29: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows no matches found state and clears search
+Pending timers:
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+...     Normal element mounting (69 frames)
+#78     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#79     Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#80     SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#81     SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#82     BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#83     SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#84     RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#85     RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#86     PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#87     RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#88     RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#89     RenderSliverMultiBoxAdaptor.addInitialChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:460:5)
+#90     RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:79:12)
+#91     RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#92     RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#93     RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#94     RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#95     RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#96     RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#97     RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#98     RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#99     PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#100    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#101    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#102    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#103    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#104    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#105    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#108    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#109    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#110    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#113    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#114    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#115    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#116    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#117    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+#10     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#11     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#12     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+#13     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#14     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#15     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+...     Normal element mounting (248 frames)
+#263    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#264    Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#265    SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#266    SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#267    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#268    SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#269    RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#270    RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#271    PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#272    RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#273    RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#274    RenderSliverMultiBoxAdaptor.addInitialChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:460:5)
+#275    RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:79:12)
+#276    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#277    RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#278    RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#279    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#280    RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#281    RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#282    RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#283    RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#284    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#285    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#286    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#287    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#288    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#289    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#290    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#293    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#294    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#295    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#298    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#299    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#300    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#301    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#302    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+...     Normal element mounting (103 frames)
+#112    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#113    MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#114    MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+#115    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#116    MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#117    MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+...     Normal element mounting (248 frames)
+#365    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#366    Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#367    SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#368    SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#369    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#370    SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#371    RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#372    RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#373    PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#374    RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#375    RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#376    RenderSliverMultiBoxAdaptor.addInitialChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:460:5)
+#377    RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:79:12)
+#378    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#379    RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#380    RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#381    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#382    RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#383    RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#384    RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#385    RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#386    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#387    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#388    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#389    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#390    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#391    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#392    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#395    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#396    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#397    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#400    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#401    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#402    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#403    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#404    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+...     Normal element mounting (39 frames)
+#48     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#49     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#50     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+#51     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#52     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#53     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+...     Normal element mounting (248 frames)
+#301    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#302    Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#303    SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#304    SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#305    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#306    SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#307    RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#308    RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#309    PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#310    RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#311    RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#312    RenderSliverMultiBoxAdaptor.addInitialChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:460:5)
+#313    RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:79:12)
+#314    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#315    RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#316    RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#317    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#318    RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#319    RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#320    RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#321    RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#322    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#323    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#324    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#325    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#326    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#327    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#328    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#331    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#332    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#333    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#336    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#337    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#338    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#339    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#340    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+...     Normal element mounting (69 frames)
+#78     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#79     Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#80     SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#81     SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#82     BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#83     SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#84     RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#85     RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#86     PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#87     RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#88     RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#89     RenderSliverMultiBoxAdaptor.insertAndLayoutChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:523:5)
+#90     RenderSliverList.performLayout.advance (package:flutter/src/rendering/sliver_list.dart:242:19)
+#91     RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:283:12)
+#92     RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#93     RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#94     RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#95     RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#96     RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#97     RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#98     RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#99     RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#100    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#101    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#102    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#103    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#104    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#105    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#106    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#109    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#110    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#111    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#114    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#115    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#116    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#117    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#118    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+#10     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#11     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#12     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+#13     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#14     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#15     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+...     Normal element mounting (248 frames)
+#263    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#264    Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#265    SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#266    SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#267    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#268    SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#269    RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#270    RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#271    PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#272    RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#273    RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#274    RenderSliverMultiBoxAdaptor.insertAndLayoutChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:523:5)
+#275    RenderSliverList.performLayout.advance (package:flutter/src/rendering/sliver_list.dart:242:19)
+#276    RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:283:12)
+#277    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#278    RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#279    RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#280    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#281    RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#282    RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#283    RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#284    RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#285    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#286    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#287    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#288    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#289    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#290    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#291    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#294    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#295    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#296    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#299    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#300    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#301    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#302    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#303    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+...     Normal element mounting (103 frames)
+#112    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#113    MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#114    MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+#115    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#116    MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#117    MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+...     Normal element mounting (248 frames)
+#365    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#366    Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#367    SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#368    SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#369    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#370    SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#371    RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#372    RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#373    PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#374    RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#375    RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#376    RenderSliverMultiBoxAdaptor.insertAndLayoutChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:523:5)
+#377    RenderSliverList.performLayout.advance (package:flutter/src/rendering/sliver_list.dart:242:19)
+#378    RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:283:12)
+#379    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#380    RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#381    RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#382    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#383    RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#384    RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#385    RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#386    RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#387    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#388    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#389    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#390    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#391    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#392    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#393    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#396    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#397    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#398    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#401    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#402    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#403    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#404    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#405    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+Timer (duration: 0:00:00.000000, periodic: false), created:
+#0      new FakeTimer._ (package:fake_async/fake_async.dart:342:62)
+#1      FakeAsync._createTimer (package:fake_async/fake_async.dart:260:29)
+#2      FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:185:15)
+#6      _AnimateState._restart (package:flutter_animate/src/animate.dart:318:23)
+#7      _AnimateState.initState (package:flutter_animate/src/animate.dart:290:5)
+#8      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5953:55)
+#9      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5796:5)
+...     Normal element mounting (39 frames)
+#48     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#49     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#50     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+#51     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#52     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7269:36)
+#53     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7285:32)
+...     Normal element mounting (248 frames)
+#301    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4590:20)
+#302    Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#303    SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1068:37)
+#304    SliverMultiBoxAdaptorElement.createChild.<anonymous closure> (package:flutter/src/widgets/sliver.dart:1052:20)
+#305    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#306    SliverMultiBoxAdaptorElement.createChild (package:flutter/src/widgets/sliver.dart:1042:12)
+#307    RenderSliverMultiBoxAdaptor._createOrObtainChild.<anonymous closure> (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:372:23)
+#308    RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2894:17)
+#309    PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1219:15)
+#310    RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2893:14)
+#311    RenderSliverMultiBoxAdaptor._createOrObtainChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:360:5)
+#312    RenderSliverMultiBoxAdaptor.insertAndLayoutChild (package:flutter/src/rendering/sliver_multi_box_adaptor.dart:523:5)
+#313    RenderSliverList.performLayout.advance (package:flutter/src/rendering/sliver_list.dart:242:19)
+#314    RenderSliverList.performLayout (package:flutter/src/rendering/sliver_list.dart:283:12)
+#315    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#316    RenderSliverEdgeInsetsPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:133:12)
+#317    RenderSliverPadding.performLayout (package:flutter/src/rendering/sliver_padding.dart:371:11)
+#318    RenderObject.layout (package:flutter/src/rendering/object.dart:2775:7)
+#319    RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#320    RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#321    RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#322    RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2623:7)
+#323    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1170:18)
+#324    PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1183:15)
+#325    AutomatedTestWidgetsFlutterBinding.drawFrame (package:flutter_test/src/binding.dart:1508:27)
+#326    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#327    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#328    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#329    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1335:9)
+#332    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#333    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#334    WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#337    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#338    WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#339    main.<anonymous closure>.<anonymous closure> (file:///app/apps/flutter_app/test/screens/saved_listings_screen_test.dart:198:20)
+<asynchronous suspension>
+#340    testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#341    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+A Timer is still pending even after the widget tree was disposed.
+'package:flutter_test/src/binding.dart':
+Failed assertion: line 1617 pos 12: '!timersPending'
+
+When the exception was thrown, this was the stack:
+#2      AutomatedTestWidgetsFlutterBinding._verifyInvariants (package:flutter_test/src/binding.dart:1617:12)
+#3      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1078:7)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 3 frames from class _AssertionError and package:stack_trace)
+
+The test description was:
+  Shows no matches found state and clears search
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:19 +30: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows no matches found state and clears search                                                      00:19 +30 -1: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Clears filters via empty state action                                                                               00:19 +30 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Shows no matches found state and clears search [E]
+  Test failed. See exception logs above.
+  The test description was: Shows no matches found state and clears search
+
+
+To run this test again: /opt/flutter/bin/cache/dart-sdk/bin/dart test /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart -p vm --plain-name 'SavedListingsScreen Shows no matches found state and clears search'
+00:20 +31 -1: /app/apps/flutter_app/test/screens/home_screen_test.dart: HomeScreen Clears filters via empty state action                                                                               00:20 +32 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Sorts listings by Newest                                                                         00:20 +33 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Sorts listings by Newest                                                                         00:20 +33 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Removes favorite after confirmation                                                              00:20 +34 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Removes favorite after confirmation                                                              00:21 +34 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Removes favorite after confirmation                                                              00:22 +34 -1: /app/apps/flutter_app/test/screens/saved_listings_screen_test.dart: SavedListingsScreen Removes favorite after confirmation                                                              00:22 +34 -1: loading /app/apps/flutter_app/test/screens/settings_screen_test.dart                                                                                                                     00:22 +34 -1: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen displays user email                                                                                         00:23 +34 -1: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen displays user email                                                                                         00:23 +35 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:24 +35 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:24 +36 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:24 +37 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:24 +38 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:25 +38 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:26 +38 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:27 +38 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:27 +39 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:27 +40 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:27 +41 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:28 +41 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:29 +41 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:30 +41 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:30 +42 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:31 +42 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:31 +43 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:31 +44 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:32 +44 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:32 +45 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:33 +45 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +45 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +46 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +47 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +48 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +49 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +50 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:34 +51 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:35 +51 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:36 +51 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:37 +51 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:38 +51 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:38 +52 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +52 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +53 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +54 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +55 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +56 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +57 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +58 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +59 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +60 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +61 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +62 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details                                                                                        00:39 +62 -1: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+pumpAndSettle timed out
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.pumpAndSettle.<anonymous closure> (package:flutter_test/src/widget_tester.dart:717:11)
+<asynchronous suspension>
+#1      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#2      main.<anonymous closure> (file:///app/apps/flutter_app/test/listing_detail_test.dart:46:5)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  ListingDetailScreen displays listing details
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:39 +62 -2: /app/apps/flutter_app/test/listing_detail_test.dart: ListingDetailScreen displays listing details [E]
+  Test failed. See exception logs above.
+  The test description was: ListingDetailScreen displays listing details
+
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+
+To run this test again: /opt/flutter/bin/cache/dart-sdk/bin/dart test /app/apps/flutter_app/test/listing_detail_test.dart -p vm --plain-name 'ListingDetailScreen displays listing details'
+00:39 +62 -2: /app/apps/flutter_app/test/listing_detail_test.dart: (tearDownAll)                                                                                                                       00:40 +62 -2: /app/apps/flutter_app/test/listing_detail_test.dart: (tearDownAll)                                                                                                                       00:40 +62 -2: loading /app/apps/flutter_app/test/services/api_service_test.dart                                                                                                                        00:40 +62 -2: /app/apps/flutter_app/test/services/api_service_test.dart: (setUpAll)                                                                                                                    00:40 +62 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService baseUrl uses dotenv                                                                                                00:40 +63 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService baseUrl uses dotenv                                                                                                00:40 +63 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService baseUrl falls back to default if dotenv missing                                                                    00:40 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService baseUrl falls back to default if dotenv missing                                                                    00:40 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:41 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:42 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:43 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:44 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:45 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:46 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:47 +64 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:47 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ServerException on 500                                                                          00:47 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:48 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:49 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:50 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:51 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:52 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:53 +65 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:53 +66 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on SocketException                                                             00:53 +66 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on TimeoutException                                                            00:53 +67 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on TimeoutException                                                            00:53 +67 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on ClientException                                                             00:53 +68 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws NetworkException on ClientException                                                             00:53 +68 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws UnknownException on Generic Exception                                                           00:53 +69 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws UnknownException on Generic Exception                                                           00:53 +69 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with detail                                                          00:53 +70 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with detail                                                          00:53 +70 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with errors dictionary                                               00:53 +71 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with errors dictionary                                               00:53 +71 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with title                                                           00:53 +72 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with title                                                           00:53 +72 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with default message on parsing fail                                 00:53 +73 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings throws ValidationException on 400 with default message on parsing fail                                 00:53 +73 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings returns data on 200                                                                                    00:53 +74 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings returns data on 200                                                                                    00:53 +74 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService healthCheck returns false on exception                                                                             00:53 +75 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService healthCheck returns false on exception                                                                             00:53 +75 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing returns null on 404                                                                                     00:53 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing returns null on 404                                                                                     00:53 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:54 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:55 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:56 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:57 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:58 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:59 +76 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:59 +77 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListing throws ServerException on 500                                                                           00:59 +77 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape makes correct request                                                                         00:59 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape makes correct request                                                                         00:59 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:00 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:01 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:02 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:03 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:04 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:05 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:06 +78 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:06 +79 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService triggerLimitedScrape throws ServerException on failure                                                             01:06 +79 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings retries on 401 if refresh callback succeeds                                                            01:06 +80 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings retries on 401 if refresh callback succeeds                                                            01:06 +80 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings fails on 401 if refresh callback returns null                                                          01:06 +81 -2: /app/apps/flutter_app/test/services/api_service_test.dart: ApiService getListings fails on 401 if refresh callback returns null                                                          01:06 +81 -2: /app/apps/flutter_app/test/services/api_service_test.dart: (tearDownAll)                                                                                                                 01:06 +81 -2: Some tests failed.

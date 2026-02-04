@@ -17,6 +17,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle(); // Wait for entry animations
 
       // Check text fields contain the values
       expect(find.text('1000'), findsOneWidget);
@@ -40,9 +41,10 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle(); // Wait for entry animations
 
       await tester.tap(find.text('Clear All'));
-      await tester.pump();
+      await tester.pumpAndSettle(); // Wait for animations (chip selection change)
 
       // Values should be cleared (gone)
       expect(find.text('1000'), findsNothing);
@@ -58,6 +60,7 @@ void main() {
       await tester.pumpWidget(const MaterialApp(
         home: Scaffold(body: ValoraFilterDialog()),
       ));
+      await tester.pumpAndSettle(); // Wait for entry animations
 
       // Scroll to "Price: High to Low"
       final chipFinder = find.widgetWithText(FilterChip, 'Price: High to Low');
@@ -66,7 +69,8 @@ void main() {
 
       // Tap "Price: High to Low"
       await tester.tap(chipFinder);
-      await tester.pump();
+      await tester.pumpAndSettle(); // Wait for selection animation
+
       final chip = tester.widget<FilterChip>(chipFinder);
       expect(chip.selected, isTrue);
     });
@@ -89,6 +93,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();

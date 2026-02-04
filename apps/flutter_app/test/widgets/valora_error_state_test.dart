@@ -14,6 +14,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       expect(find.text('No Connection'), findsOneWidget);
       expect(find.text('No internet'), findsOneWidget);
@@ -29,6 +30,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       expect(find.text('Server Error'), findsOneWidget);
       expect(find.text('Server failed'), findsOneWidget);
@@ -44,6 +46,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       expect(find.text('Not Found'), findsOneWidget);
       expect(find.text('Item not found'), findsOneWidget);
@@ -59,6 +62,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       expect(find.text('Invalid Request'), findsOneWidget);
       expect(find.text('Bad request'), findsOneWidget);
@@ -74,6 +78,7 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('Generic error'), findsOneWidget);
@@ -90,8 +95,10 @@ void main() {
           ),
         ),
       ));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Try Again'));
+      await tester.pumpAndSettle(); // Wait for button press animation
       expect(retried, isTrue);
     });
   });

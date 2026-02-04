@@ -99,6 +99,7 @@ void main() {
 
   testWidgets('SearchScreen shows empty state initially', (WidgetTester tester) async {
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle(); // Wait for entry animations
 
     expect(find.text('Search'), findsOneWidget);
     expect(find.text('Find your home'), findsOneWidget);
@@ -127,18 +128,21 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle(); // Initial animations
 
     // Enter text to load listings
     await tester.enterText(find.byType(TextField), 'Test');
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle();
+    await tester.pump(); // Start fetching
+    await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     expect(find.text('Test Address'), findsOneWidget);
 
     // Clear text
     await tester.enterText(find.byType(TextField), '');
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle();
+    await tester.pump(); // Clear state
+    await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     // Verify listings are cleared (should show "Find your home" empty state)
     expect(find.text('Find your home'), findsOneWidget);
@@ -167,10 +171,12 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'Test');
     await tester.pump(const Duration(milliseconds: 600)); // Debounce
-    await tester.pumpAndSettle();
+    await tester.pump(); // Start fetch
+    await tester.pump(const Duration(milliseconds: 500)); // Wait for animations
 
     expect(find.text('Test Address'), findsOneWidget);
   });
@@ -181,6 +187,7 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
     // Open filter dialog
     await tester.tap(find.byIcon(Icons.tune_rounded));
@@ -210,10 +217,12 @@ void main() {
     when(mockApiService.getListings(any)).thenThrow(Exception('Network error'));
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'Error');
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle();
+    await tester.pump(); // Start fetch
+    await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     // Verify error UI
     expect(find.text('Failed to search listings'), findsOneWidget);
@@ -246,11 +255,13 @@ void main() {
         .thenThrow(Exception('Pagination Error'));
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
     // Load first page
     await tester.enterText(find.byType(TextField), 'Test');
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle();
+    await tester.pump(); // Fetch
+    await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     // Verify first page loaded
     expect(find.byType(NearbyListingCard), findsWidgets);
@@ -258,9 +269,11 @@ void main() {
     // Scroll to bottom
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -2000));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100)); // Debounce scroll? Or just wait for listener
 
-    await tester.pumpAndSettle();
+    // Wait for error handling. Using pump instead of pumpAndSettle to avoid timeout if spinner persists.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
 
     // Verify error snackbar
     expect(find.text('Failed to load more items'), findsOneWidget);
