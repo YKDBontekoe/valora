@@ -125,11 +125,6 @@ public class ListingRepository : IListingRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ClearAllAsync(CancellationToken cancellationToken = default)
-    {
-        await _context.Listings.ExecuteDeleteAsync(cancellationToken);
-    }
-
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var listing = await _context.Listings.FindAsync([id], cancellationToken);

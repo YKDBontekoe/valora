@@ -112,40 +112,6 @@ class ApiService {
     }
   }
 
-  Future<void> triggerScrape() async {
-    try {
-      final uri = Uri.parse('$baseUrl/scraper/trigger');
-      final response = await _authenticatedRequest((headers) =>
-          _client.post(uri, headers: headers).timeout(timeoutDuration));
-      await _handleResponse(response, (_) => null);
-    } catch (e) {
-      throw _handleException(e);
-    }
-  }
-
-  Future<void> seedDatabase(String region) async {
-    try {
-      final queryParams = <String, String>{'region': region};
-      final uri = Uri.parse('$baseUrl/scraper/seed').replace(queryParameters: queryParams);
-      final response = await _authenticatedRequest((headers) =>
-          _client.post(uri, headers: headers).timeout(timeoutDuration));
-      await _handleResponse(response, (_) => null);
-    } catch (e) {
-      throw _handleException(e);
-    }
-  }
-
-  Future<void> clearDatabase() async {
-    try {
-      final uri = Uri.parse('$baseUrl/scraper/clear');
-      final response = await _authenticatedRequest((headers) =>
-          _client.post(uri, headers: headers).timeout(timeoutDuration));
-      await _handleResponse(response, (_) => null);
-    } catch (e) {
-      throw _handleException(e);
-    }
-  }
-
   Future<void> triggerLimitedScrape(String region, int limit) async {
     try {
       final queryParams = <String, String>{

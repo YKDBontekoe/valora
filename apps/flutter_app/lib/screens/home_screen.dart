@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _pageSize = 10;
   static const String _defaultScrapeRegion = 'amsterdam';
   static const int _featuredCount = 5;
-  static const double _bottomListPadding = 80.0;
+  static const double _bottomListPadding = 160.0;
 
   late ApiService _apiService;
   late final ScrollController _scrollController;
@@ -277,6 +277,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the bottom padding from the safe area (including gesture navigation bar)
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    // Calculate the total offset needed for the FAB:
+    // Nav bar height (~70) + bottom padding + margin (12) + extra spacing (16)
+    final fabBottomOffset = 70.0 + bottomPadding + 28.0;
+
     return Scaffold(
       extendBody: true,
       bottomNavigationBar: HomeBottomNavBar(
@@ -284,6 +291,23 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) => setState(() => _currentNavIndex = index),
       ),
       body: _buildBody(),
+      floatingActionButton: _currentNavIndex == 0
+          ? Padding(
+              padding: EdgeInsets.only(bottom: fabBottomOffset),
+              child: FloatingActionButton.extended(
+                onPressed: _triggerScrape,
+                backgroundColor: ValoraColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 8,
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: Row(
+                  children: const [
+                    Text('Compare with AI'),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -450,7 +474,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_hasNextPage) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: _bottomListPadding),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
                   );
                 }
                   return const SizedBox(height: _bottomListPadding);

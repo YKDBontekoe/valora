@@ -737,86 +737,140 @@ class HomeBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final glassColor = isDark ? ValoraColors.glassBlack.withValues(alpha: 0.8) : ValoraColors.glassWhite.withValues(alpha: 0.85);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-        border: Border(
-          top: BorderSide(
-            color: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100,
-            width: 1,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: glassColor,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: borderColor, width: 1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _GlassNavItem(
+                      icon: Icons.home_rounded,
+                      label: 'Home',
+                      isSelected: currentIndex == 0,
+                      onTap: () => onTap(0),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.search_rounded,
+                      label: 'Search',
+                      isSelected: currentIndex == 1,
+                      onTap: () => onTap(1),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.favorite_rounded,
+                      label: 'Saved',
+                      isSelected: currentIndex == 2,
+                      onTap: () => onTap(2),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.settings_rounded,
+                      label: 'Settings',
+                      isSelected: currentIndex == 3,
+                      onTap: () => onTap(3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom + 8,
-        top: 8,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(context, 0, Icons.home_rounded, 'Home'),
-          _buildNavItem(context, 1, Icons.search_rounded, 'Search'),
-          const SizedBox(width: 48), // Space for FAB
-          _buildNavItem(context, 2, Icons.favorite_rounded, 'Saved'),
-          _buildNavItem(context, 3, Icons.settings_rounded, 'Settings'),
-        ],
-      ),
     );
   }
+}
 
-  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label) {
-    final isSelected = currentIndex == index;
+class _GlassNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _GlassNavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final selectedColor = ValoraColors.primary;
-    final unselectedColor = isDark ? ValoraColors.neutral400 : ValoraColors.neutral500;
+    final unselectedColor = isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5);
 
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        onTap(index);
+        onTap();
       },
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOutBack,
-            width: isSelected ? 56 : 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isSelected ? ValoraColors.primary.withValues(alpha: 0.15) : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack,
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 20 : 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? ValoraColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
               icon,
-              color: isSelected ? selectedColor : unselectedColor,
               size: 24,
+              color: isSelected ? ValoraColors.primary : unselectedColor,
+            )
+            .animate(target: isSelected ? 1 : 0)
+            .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 200.ms, curve: Curves.easeOutBack)
+            .then()
+            .scale(end: const Offset(1.0, 1.0)),
+
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
+              child: SizedBox(
+                width: isSelected ? null : 0,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: ValoraColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
             ),
-          )
-          .animate(target: isSelected ? 1 : 0)
-          .scale(end: const Offset(1.1, 1.1), duration: 200.ms, curve: Curves.easeOutBack)
-          .then()
-          .scale(end: const Offset(1.0, 1.0)),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: ValoraTypography.labelSmall.copyWith(
-              color: isSelected ? selectedColor : unselectedColor,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              fontSize: 10,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

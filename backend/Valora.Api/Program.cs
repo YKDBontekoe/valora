@@ -290,13 +290,6 @@ api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJ
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // Seed endpoint
-// Clear database endpoint
-api.MapPost("/scraper/clear", async (IListingRepository repo, CancellationToken ct) =>
-{
-    await repo.ClearAllAsync(ct);
-    return Results.Ok(new { message = "Database cleared" });
-}).RequireAuthorization(policy => policy.RequireRole("Admin"));
-
 api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(region))
