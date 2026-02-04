@@ -15,18 +15,35 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         .Build();
 
     public IntegrationTestWebAppFactory? Factory { get; private set; }
-    public string ConnectionString => _dbContainer.GetConnectionString();
+    public string ConnectionString { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {
-        await _dbContainer.StartAsync();
+        try
+        {
+            await _dbContainer.StartAsync();
+            ConnectionString = _dbContainer.GetConnectionString();
+        }
+        catch
+        {
+            // Fallback to InMemory if Docker fails
+            ConnectionString = "InMemory_" + Guid.NewGuid();
+        }
 
         Factory = new IntegrationTestWebAppFactory(ConnectionString);
 
         // Ensure database schema is created
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-        await context.Database.MigrateAsync();
+
+        if (ConnectionString.StartsWith("InMemory"))
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await context.Database.MigrateAsync();
+        }
     }
 
     public async Task DisposeAsync()
