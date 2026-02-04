@@ -186,4 +186,33 @@ public class ExceptionHandlingMiddlewareTests
 
         Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
     }
+
+    [Fact]
+    public async Task InvokeAsync_WithoutUser_LogsAnonymous()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Boom"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+        // context.User is null or empty by default
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Anonymous")),
+                It.IsAny<Exception>(),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
+            Times.Once);
+
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+    }
 }

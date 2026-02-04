@@ -21,6 +21,39 @@ public class FundaApiClientParsingTests
     }
 
     [Fact]
+    public async Task GetListingDetailsAsync_NoMatchingScript_ReturnsNull()
+    {
+        // Arrange
+        var html = $@"
+        <html>
+        <body>
+            <script type=""application/json"">
+                {{ ""irrelevant"": true }}
+            </script>
+        </body>
+        </html>";
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(html)
+            });
+
+        // Act
+        var result = await _client.GetListingDetailsAsync("https://example.com", CancellationToken.None);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task GetListingDetailsAsync_ParsesNuxtStateCorrectly()
     {
         // Arrange
