@@ -327,7 +327,7 @@ internal static partial class FundaMapper
 
         target.IsSoldOrRented = source.IsSoldOrRented;
 
-        if (source.Labels.Count > 0) target.Labels = source.Labels;
+        if (source.Labels != null && source.Labels.Count > 0) target.Labels = source.Labels;
         if (!string.IsNullOrEmpty(source.PostalCode)) target.PostalCode = source.PostalCode;
         if (!string.IsNullOrEmpty(source.AgentName)) target.AgentName = source.AgentName;
     }

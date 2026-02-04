@@ -1,4 +1,3 @@
-using System.Reflection;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
@@ -7,14 +6,6 @@ namespace Valora.UnitTests.Scraping;
 
 public class FundaMapperTests
 {
-    private readonly Type _mapperType;
-
-    public FundaMapperTests()
-    {
-        var assembly = typeof(FundaScraperService).Assembly;
-        _mapperType = assembly.GetType("Valora.Infrastructure.Scraping.FundaMapper")!;
-    }
-
     [Fact]
     public void MapApiListingToDomain_MapsBasicFields()
     {
@@ -27,8 +18,7 @@ public class FundaMapperTests
             Image = new FundaApiImage { Default = "img.jpg" }
         };
 
-        var method = _mapperType.GetMethod("MapApiListingToDomain", BindingFlags.Public | BindingFlags.Static);
-        var result = (Listing)method!.Invoke(null, [apiListing, "123"])!;
+        var result = FundaMapper.MapApiListingToDomain(apiListing, "123");
 
         Assert.Equal("123", result.FundaId);
         Assert.Equal("Kerkstraat 1", result.Address);
@@ -52,8 +42,7 @@ public class FundaMapperTests
             Tracking = new FundaApiTracking { Values = new FundaApiTrackingValues { Status = "verkocht" } }
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithSummary", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [listing, summary]);
+        FundaMapper.EnrichListingWithSummary(listing, summary);
 
         Assert.Equal(new DateTime(2023, 1, 1), listing.PublicationDate);
         Assert.True(listing.IsSoldOrRented);
@@ -98,8 +87,7 @@ public class FundaMapperTests
             OpenHouseDates = [ new() { Date = new DateTime(2023, 5, 1) } ]
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [listing, data]);
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
 
         // Assertions
         Assert.Equal("Nice house", listing.Description);
@@ -150,8 +138,7 @@ public class FundaMapperTests
             }
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [listing, data]);
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
 
         Assert.Equal("Intergas", listing.CVBoilerBrand);
         Assert.Null(listing.CVBoilerYear);
@@ -176,8 +163,7 @@ public class FundaMapperTests
             }
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [listing, data]);
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
 
         // Should pick highest garden area (30)
         Assert.Equal(30, listing.GardenM2);
@@ -209,8 +195,7 @@ public class FundaMapperTests
             }
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [listing, data]);
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
 
         Assert.NotNull(listing.Features);
         Assert.True(listing.Features.ContainsKey("Badkamer"));
@@ -244,8 +229,7 @@ public class FundaMapperTests
             }
         };
 
-        var method = _mapperType.GetMethod("EnrichListingWithNuxtData", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [listing, data]);
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
 
         Assert.NotNull(listing.Features);
         Assert.True(listing.Features.ContainsKey("Isolatie"));
@@ -266,8 +250,7 @@ public class FundaMapperTests
             BrokerPhone = "0612345678"
         };
 
-        var method = _mapperType.GetMethod("MergeListingDetails", BindingFlags.Public | BindingFlags.Static);
-        method!.Invoke(null, [target, source]);
+        FundaMapper.MergeListingDetails(target, source);
 
         Assert.Equal(3, target.Bedrooms);
         Assert.Equal("Verkocht", target.Status);
@@ -276,11 +259,21 @@ public class FundaMapperTests
     }
 
     [Fact]
+    public void MergeListingDetails_NullLabels_DoesNotCrash()
+    {
+        var target = new Listing { FundaId = "1", Address = "Test" };
+        var source = new Listing { FundaId = "1", Address = "Test", Labels = null! }; // Force null to test the fix
+
+        // Should not throw NullReferenceException
+        var exception = Record.Exception(() => FundaMapper.MergeListingDetails(target, source));
+        Assert.Null(exception);
+    }
+
+    [Fact]
     public void ParseFirstNumber_ParsesCorrectly()
     {
-        var method = _mapperType.GetMethod("ParseFirstNumber", BindingFlags.Public | BindingFlags.Static);
-        Assert.Equal(123, method!.Invoke(null, ["123 m²"]));
-        Assert.Equal(50, method.Invoke(null, ["€ 50.000"]));
-        Assert.Null(method.Invoke(null, ["Geen cijfers"]));
+        Assert.Equal(123, FundaMapper.ParseFirstNumber("123 m²"));
+        Assert.Equal(50, FundaMapper.ParseFirstNumber("€ 50.000"));
+        Assert.Null(FundaMapper.ParseFirstNumber("Geen cijfers"));
     }
 }
