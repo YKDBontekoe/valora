@@ -82,13 +82,13 @@ public class IsolatedListingTests : IClassFixture<WebApplicationFactory<Program>
     {
         var client = CreateClientWithAuth();
 
-        _listingRepoMock.Setup(x => x.GetAllAsync(It.IsAny<ListingFilterDto>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaginatedList<ListingDto>(new List<ListingDto>(), 0, 1, 10));
+        _listingRepoMock.Setup(x => x.GetSummariesAsync(It.IsAny<ListingFilterDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaginatedList<ListingSummaryDto>(new List<ListingSummaryDto>(), 0, 1, 10));
 
         var response = await client.GetAsync("/api/listings?page=1&pageSize=10");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        _listingRepoMock.Verify(x => x.GetAllAsync(It.IsAny<ListingFilterDto>(), It.IsAny<CancellationToken>()), Times.Once);
+        _listingRepoMock.Verify(x => x.GetSummariesAsync(It.IsAny<ListingFilterDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

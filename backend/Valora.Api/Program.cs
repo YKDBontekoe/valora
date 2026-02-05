@@ -229,7 +229,7 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
         return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
     }
 
-    var paginatedList = await repo.GetAllAsync(filter, ct);
+    var paginatedList = await repo.GetSummariesAsync(filter, ct);
 
     return Results.Ok(new
     {

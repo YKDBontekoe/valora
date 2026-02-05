@@ -343,6 +343,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           tag: widget.listing.id,
                           child: CachedNetworkImage(
                             imageUrl: widget.listing.imageUrl!,
+                            memCacheWidth: 800,
                             width: double.infinity,
                             height: 180,
                             fit: BoxFit.cover,
@@ -596,6 +597,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             tag: widget.listing.id,
                             child: CachedNetworkImage(
                               imageUrl: widget.listing.imageUrl!,
+                              memCacheWidth: 300,
                               fit: BoxFit.cover,
                               placeholder: (context, url) => const ValoraShimmer(width: 96, height: 96),
                               errorWidget: (context, url, error) => Center(
