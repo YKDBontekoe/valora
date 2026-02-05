@@ -242,12 +242,18 @@ public partial class FundaSearchService : IFundaSearchService
         // Try to get rich details (but don't fail if we can't)
         try
         {
-            var fullUrl = listing.Url ?? (apiListing.ListingUrl!.StartsWith("http") ? apiListing.ListingUrl : $"https://www.funda.nl{apiListing.ListingUrl}");
-
-            var richData = await _apiClient.GetListingDetailsAsync(fullUrl, ct);
-            if (richData != null)
+            var rawUrl = listing.Url ?? apiListing.ListingUrl;
+            if (!string.IsNullOrEmpty(rawUrl))
             {
-                FundaMapper.EnrichListingWithNuxtData(listing, richData);
+                var fullUrl = rawUrl.StartsWith("http")
+                    ? rawUrl
+                    : $"https://www.funda.nl{rawUrl.TrimStart('/')}";
+
+                var richData = await _apiClient.GetListingDetailsAsync(fullUrl, ct);
+                if (richData != null)
+                {
+                    FundaMapper.EnrichListingWithNuxtData(listing, richData);
+                }
             }
         }
         catch (Exception ex)

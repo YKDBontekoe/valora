@@ -43,14 +43,18 @@ internal static partial class FundaMapper
     {
         if (summary.Address != null)
         {
-            listing.Address = summary.Address.Street ?? listing.Address;
-            listing.City = summary.Address.City ?? listing.City;
-            listing.PostalCode = summary.Address.PostalCode ?? listing.PostalCode;
+            if (!string.IsNullOrEmpty(summary.Address.Street)) listing.Address = summary.Address.Street;
+            if (!string.IsNullOrEmpty(summary.Address.City)) listing.City = summary.Address.City;
+            if (!string.IsNullOrEmpty(summary.Address.PostalCode)) listing.PostalCode = summary.Address.PostalCode;
         }
 
         if (summary.Price != null)
         {
-            listing.Price = ParsePrice(summary.Price.SellingPrice);
+            var parsedPrice = ParsePrice(summary.Price.SellingPrice);
+            if (parsedPrice.HasValue)
+            {
+                listing.Price = parsedPrice;
+            }
         }
 
         if (summary.FastView != null)
@@ -66,15 +70,25 @@ internal static partial class FundaMapper
 
             if (!string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms))
             {
-                listing.Bedrooms = ParseFirstNumber(summary.FastView.NumberOfBedrooms);
+                var bedrooms = ParseFirstNumber(summary.FastView.NumberOfBedrooms);
+                if (bedrooms.HasValue)
+                {
+                    listing.Bedrooms = bedrooms;
+                }
             }
 
-            listing.EnergyLabel = summary.FastView.EnergyLabel;
+            if (!string.IsNullOrEmpty(summary.FastView.EnergyLabel))
+            {
+                listing.EnergyLabel = summary.FastView.EnergyLabel;
+            }
         }
 
         if (summary.Brokers != null && summary.Brokers.Count > 0)
         {
-            listing.AgentName = summary.Brokers[0].Name;
+            if (!string.IsNullOrEmpty(summary.Brokers[0].Name))
+            {
+                listing.AgentName = summary.Brokers[0].Name;
+            }
         }
 
         // Publication date

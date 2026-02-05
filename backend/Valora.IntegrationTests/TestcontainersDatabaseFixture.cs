@@ -15,20 +15,22 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         .Build();
 
     public IntegrationTestWebAppFactory? Factory { get; private set; }
-    public string ConnectionString => _dbContainer.GetConnectionString();
+    public string ConnectionString { get; private set; } = string.Empty;
 
     public async Task InitializeAsync()
     {
         try
         {
             await _dbContainer.StartAsync();
+            ConnectionString = _dbContainer.GetConnectionString();
             Factory = new IntegrationTestWebAppFactory(ConnectionString);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Docker container failed to start: {ex.Message}. Falling back to InMemory.");
             // Fallback to InMemory if Docker fails
-            Factory = new IntegrationTestWebAppFactory("InMemory:TestcontainersDb");
+            ConnectionString = "InMemory:TestcontainersDb";
+            Factory = new IntegrationTestWebAppFactory(ConnectionString);
         }
 
         // Ensure database schema is created

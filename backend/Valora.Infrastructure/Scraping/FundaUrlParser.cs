@@ -29,10 +29,14 @@ internal static partial class FundaUrlParser
     {
         // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
         // The GlobalId is typically the last numeric segment in the URL path
-        var match = GlobalIdRegex().Match(url);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out var id))
+        var matches = GlobalIdRegex().Matches(url);
+        if (matches.Count > 0)
         {
-            return id;
+            var lastMatch = matches[^1];
+            if (lastMatch.Success && int.TryParse(lastMatch.Groups[1].Value, out var id))
+            {
+                return id;
+            }
         }
         return null;
     }

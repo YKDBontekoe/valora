@@ -82,8 +82,8 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         // We create a scope from this new factory
         var scope = clientFactory.Services.CreateScope();
 
-        // Track the scope for disposal
-        _disposables.Add(scope);
+        // Do NOT track the scope for disposal here, as it is returned to the caller
+        // and should be disposed by the caller via 'using'.
 
         return scope;
     }
