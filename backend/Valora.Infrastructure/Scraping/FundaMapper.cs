@@ -16,7 +16,7 @@ internal static partial class FundaMapper
             ? apiListing.ListingUrl
             : $"https://www.funda.nl{listingUrl}";
 
-        var price = ParsePriceFromApi(apiListing.Price);
+        var price = ParsePrice(apiListing.Price);
 
         // Note: API provides limited details compared to HTML scraping.
         // We initialize with nulls where data is missing in API, and fill it later.
@@ -41,6 +41,56 @@ internal static partial class FundaMapper
 
     public static void EnrichListingWithSummary(Listing listing, FundaApiListingSummary summary)
     {
+        if (summary.Address != null)
+        {
+            if (!string.IsNullOrEmpty(summary.Address.Street)) listing.Address = summary.Address.Street;
+            if (!string.IsNullOrEmpty(summary.Address.City)) listing.City = summary.Address.City;
+            if (!string.IsNullOrEmpty(summary.Address.PostalCode)) listing.PostalCode = summary.Address.PostalCode;
+        }
+
+        if (summary.Price != null)
+        {
+            var parsedPrice = ParsePrice(summary.Price.SellingPrice);
+            if (parsedPrice.HasValue)
+            {
+                listing.Price = parsedPrice;
+            }
+        }
+
+        if (summary.FastView != null)
+        {
+            if (!string.IsNullOrEmpty(summary.FastView.LivingArea))
+            {
+                var match = NumberRegex().Match(summary.FastView.LivingArea);
+                if (match.Success && int.TryParse(match.Value, out var area))
+                {
+                    listing.LivingAreaM2 = area;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms))
+            {
+                var bedrooms = ParseFirstNumber(summary.FastView.NumberOfBedrooms);
+                if (bedrooms.HasValue)
+                {
+                    listing.Bedrooms = bedrooms;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(summary.FastView.EnergyLabel))
+            {
+                listing.EnergyLabel = summary.FastView.EnergyLabel;
+            }
+        }
+
+        if (summary.Brokers != null && summary.Brokers.Count > 0)
+        {
+            if (!string.IsNullOrEmpty(summary.Brokers[0].Name))
+            {
+                listing.AgentName = summary.Brokers[0].Name;
+            }
+        }
+
         // Publication date
         listing.PublicationDate = summary.PublicationDate;
 
@@ -54,18 +104,6 @@ internal static partial class FundaMapper
                 .Where(l => !string.IsNullOrEmpty(l.Text))
                 .Select(l => l.Text!)
                 .ToList();
-        }
-
-        // Extract postal code from address if available
-        if (!string.IsNullOrEmpty(summary.Address?.PostalCode))
-        {
-            listing.PostalCode = summary.Address.PostalCode;
-        }
-
-        // City from address
-        if (!string.IsNullOrEmpty(summary.Address?.City))
-        {
-            listing.City = summary.Address.City;
         }
 
         // Status inference from tracking (most reliable source)
@@ -323,6 +361,13 @@ internal static partial class FundaMapper
 
     public static void MergeListingDetails(Listing target, Listing source)
     {
+        // Basic fields - overwrite if present in source (latest crawl)
+        if (!string.IsNullOrEmpty(source.Address)) target.Address = source.Address;
+        if (!string.IsNullOrEmpty(source.City)) target.City = source.City;
+        if (source.Price.HasValue) target.Price = source.Price;
+        if (!string.IsNullOrEmpty(source.ImageUrl)) target.ImageUrl = source.ImageUrl;
+        if (!string.IsNullOrEmpty(source.Url)) target.Url = source.Url;
+
         // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
         if (source.Bedrooms.HasValue) target.Bedrooms = source.Bedrooms;
         if (source.LivingAreaM2.HasValue) target.LivingAreaM2 = source.LivingAreaM2;
@@ -386,7 +431,7 @@ internal static partial class FundaMapper
         return null;
     }
 
-    private static decimal? ParsePriceFromApi(string? priceText)
+    public static decimal? ParsePrice(string? priceText)
     {
         if (string.IsNullOrEmpty(priceText)) return null;
 

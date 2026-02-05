@@ -42,9 +42,11 @@ public class FundaSearchServiceTests
     public async Task SearchAsync_ShouldFetchFromApi_WhenCacheIsStale()
     {
         // Arrange
-        var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "buy");
+        // Use a unique region to avoid cache hits from previous tests (static cache)
+        var region = Guid.NewGuid().ToString();
+        var query = new FundaSearchQuery(Region: region, OfferingType: "buy");
         
-        _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+        _apiClientMock.Setup(x => x.SearchBuyAsync(region, It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FundaApiResponse 
             { 
                 Listings = new List<FundaApiListing> 
@@ -53,7 +55,7 @@ public class FundaSearchServiceTests
                 } 
             });
 
-        _listingRepoMock.Setup(x => x.GetByCityAsync("amsterdam", It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        _listingRepoMock.Setup(x => x.GetByCityAsync(region, It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Listing> { new() { FundaId = "1", Address = "Addr1" } });
 
         // Act
@@ -62,8 +64,42 @@ public class FundaSearchServiceTests
         // Assert
         Assert.Single(result.Items);
         Assert.False(result.FromCache);
-        _apiClientMock.Verify(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _apiClientMock.Verify(x => x.SearchBuyAsync(region, It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
         _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchAsync_ShouldUpdateExistingListing_WhenFoundInApi()
+    {
+        // Arrange
+        var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "buy");
+        var existingListing = new Listing { FundaId = "1", Address = "Old Address", Price = 400000, LastFundaFetchUtc = DateTime.UtcNow.AddHours(-2) }; // Stale
+
+        _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FundaApiResponse
+            {
+                Listings = new List<FundaApiListing>
+                {
+                    new() { GlobalId = 1, ListingUrl = "http://url", Address = new() { ListingAddress = "New Address" }, Price = "€ 450.000 k.k." }
+                }
+            });
+
+        // Mock GetByFundaIdAsync to return existing listing
+        _listingRepoMock.Setup(x => x.GetByFundaIdAsync("1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingListing);
+
+        _listingRepoMock.Setup(x => x.GetByCityAsync("amsterdam", It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing> { existingListing });
+
+        // Act
+        await _service.SearchAsync(query);
+
+        // Assert
+        _listingRepoMock.Verify(x => x.UpdateAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify mapper logic applied
+        Assert.Equal("New Address", existingListing.Address);
+        Assert.Equal(450000, existingListing.Price);
     }
 
     [Fact]

@@ -25,8 +25,27 @@ internal static partial class FundaUrlParser
         return null;
     }
 
+    public static int? ExtractGlobalIdFromUrl(string url)
+    {
+        // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
+        // The GlobalId is typically the last numeric segment in the URL path
+        var matches = GlobalIdRegex().Matches(url);
+        if (matches.Count > 0)
+        {
+            var lastMatch = matches[^1];
+            if (lastMatch.Success && int.TryParse(lastMatch.Groups[1].Value, out var id))
+            {
+                return id;
+            }
+        }
+        return null;
+    }
+
     [GeneratedRegex(@"funda\.nl/(?:koop|huur)/([^/]+)", RegexOptions.IgnoreCase)]
     private static partial Regex UrlRegionRegex();
+
+    [GeneratedRegex(@"/(\d{6,})", RegexOptions.IgnoreCase)]
+    private static partial Regex GlobalIdRegex();
 
     [GeneratedRegex(@"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase)]
     private static partial Regex QueryRegionRegex();

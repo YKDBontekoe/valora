@@ -27,4 +27,27 @@ public class FundaUrlParserTests
 
         Assert.Null(result);
     }
+
+    [Theory]
+    [InlineData("https://www.funda.nl/detail/koop/amsterdam/appartement-12345678-straatnaam/43224373/", 43224373)]
+    [InlineData("https://www.funda.nl/detail/huur/utrecht/huis-87654321-laan/87654321", 87654321)]
+    [InlineData("/detail/koop/amsterdam/appartement-43224373/43224373", 43224373)]
+    public void ExtractGlobalIdFromUrl_ValidUrls_ReturnsId(string url, int expectedId)
+    {
+        var result = FundaUrlParser.ExtractGlobalIdFromUrl(url);
+
+        Assert.NotNull(result);
+        Assert.Equal(expectedId, result);
+    }
+
+    [Theory]
+    [InlineData("https://www.funda.nl/koop/amsterdam/")]
+    [InlineData("https://www.funda.nl/detail/koop/amsterdam/no-id/")]
+    [InlineData("")]
+    public void ExtractGlobalIdFromUrl_InvalidUrls_ReturnsNull(string url)
+    {
+        var result = FundaUrlParser.ExtractGlobalIdFromUrl(url);
+
+        Assert.Null(result);
+    }
 }
