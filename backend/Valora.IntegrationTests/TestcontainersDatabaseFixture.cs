@@ -24,8 +24,11 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
             await _dbContainer.StartAsync();
             ConnectionString = _dbContainer.GetConnectionString();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Failed to start Testcontainers: {ex.Message}");
+            Console.Error.WriteLine(ex.ToString());
+
             // Fallback to In-Memory if Docker is unavailable (e.g., in CI or restricted environments)
             ConnectionString = "InMemory:TestcontainersDb";
         }

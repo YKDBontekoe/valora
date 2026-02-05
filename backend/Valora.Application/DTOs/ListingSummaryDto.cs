@@ -19,5 +19,5 @@ public record ListingSummaryDto(
     DateTime CreatedAt,
     string? EnergyLabel,
     bool IsSoldOrRented,
-    List<string> Labels
+    IReadOnlyList<string> Labels
 );

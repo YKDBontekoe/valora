@@ -60,7 +60,7 @@ public class ListingRepository : IListingRepository
             l.PublicationDate, l.IsSoldOrRented, l.Labels
         ));
 
-        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10);
+        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
 
     public async Task<PaginatedList<ListingSummaryDto>> GetSummariesAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
@@ -92,7 +92,7 @@ public class ListingRepository : IListingRepository
             l.Labels
         ));
 
-        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10);
+        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
 
     private IQueryable<Listing> ApplyFilters(IQueryable<Listing> query, ListingFilterDto filter, bool isPostgres)
