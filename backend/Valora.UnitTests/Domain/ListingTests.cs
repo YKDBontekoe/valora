@@ -20,6 +20,8 @@ public class ListingTests
             Status = "Sold",
             BrokerOfficeId = 123,
             BrokerPhone = "06123",
+            BrokerLogoUrl = "logo.png",
+            BrokerAssociationCode = "NVM",
             FiberAvailable = true,
             PublicationDate = new DateTime(2023, 1, 1),
             Labels = ["New Label"],
@@ -67,6 +69,8 @@ public class ListingTests
         Assert.Equal("Sold", target.Status);
         Assert.Equal(123, target.BrokerOfficeId);
         Assert.Equal("06123", target.BrokerPhone);
+        Assert.Equal("logo.png", target.BrokerLogoUrl);
+        Assert.Equal("NVM", target.BrokerAssociationCode);
         Assert.True(target.FiberAvailable);
         Assert.Equal(new DateTime(2023, 1, 1), target.PublicationDate);
         Assert.Single(target.Labels);
@@ -129,6 +133,37 @@ public class ListingTests
         // Assert
         Assert.Equal(3, target.Bedrooms);
         Assert.Equal(100000, target.Price);
-        Assert.Single(target.Labels); // Should verify collection merging logic if any, currently simple replacement if not null
+        Assert.Single(target.Labels);
+    }
+
+    [Fact]
+    public void UpdateFrom_ShouldHandleCollections_WhenSourceHasItems()
+    {
+        // Arrange
+        var target = new Listing { FundaId = "1", Address = "A", ImageUrls = ["old1.jpg"] };
+        var source = new Listing { FundaId = "1", Address = "A", ImageUrls = ["new1.jpg", "new2.jpg"] };
+
+        // Act
+        target.UpdateFrom(source);
+
+        // Assert
+        Assert.Equal(2, target.ImageUrls.Count);
+        Assert.Contains("new1.jpg", target.ImageUrls);
+        Assert.DoesNotContain("old1.jpg", target.ImageUrls);
+    }
+
+    [Fact]
+    public void UpdateFrom_ShouldHandleOpenHouseDates()
+    {
+        // Arrange
+        var target = new Listing { FundaId = "1", Address = "A", OpenHouseDates = [DateTime.Now.AddDays(-1)] };
+        var source = new Listing { FundaId = "1", Address = "A", OpenHouseDates = [DateTime.Now.AddDays(1)] };
+
+        // Act
+        target.UpdateFrom(source);
+
+        // Assert
+        Assert.Single(target.OpenHouseDates);
+        Assert.Equal(source.OpenHouseDates[0], target.OpenHouseDates[0]);
     }
 }

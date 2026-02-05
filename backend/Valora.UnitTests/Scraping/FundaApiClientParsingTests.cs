@@ -155,7 +155,19 @@ public class FundaApiClientParsingTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal("123", result!.FundaId);
-        // Address mapping check logic
+    }
+
+    [Fact]
+    public async Task GetListingSummaryAsync_Failure_ReturnsNull()
+    {
+        // Arrange
+        SetupResponse("", HttpStatusCode.NotFound);
+
+        // Act
+        var result = await _client.GetListingSummaryAsync(123);
+
+        // Assert
+        Assert.Null(result);
     }
 
     [Fact]
@@ -191,6 +203,19 @@ public class FundaApiClientParsingTests
     }
 
     [Fact]
+    public async Task GetContactDetailsAsync_Failure_ReturnsNull()
+    {
+        // Arrange
+        SetupResponse("", HttpStatusCode.NotFound);
+
+        // Act
+        var result = await _client.GetContactDetailsAsync(123);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task CheckFiberAvailabilityAsync_ShouldReturnAvailability()
     {
         // Arrange
@@ -203,6 +228,29 @@ public class FundaApiClientParsingTests
         // Assert
         Assert.NotNull(result);
         Assert.True(result!.Value);
+    }
+
+    [Fact]
+    public async Task CheckFiberAvailabilityAsync_Failure_ReturnsNull()
+    {
+        // Arrange
+        SetupResponse("", HttpStatusCode.BadRequest);
+
+        // Act
+        var result = await _client.CheckFiberAvailabilityAsync("1234AB");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task CheckFiberAvailabilityAsync_EmptyPostalCode_ReturnsNull()
+    {
+        // Act
+        var result = await _client.CheckFiberAvailabilityAsync("");
+
+        // Assert
+        Assert.Null(result);
     }
 
     [Fact]
@@ -308,7 +356,7 @@ public class FundaApiClientParsingTests
         Assert.Contains(result, l => l.FundaId == "102");
     }
 
-    private void SetupResponse(string jsonContent)
+    private void SetupResponse(string jsonContent, HttpStatusCode statusCode = HttpStatusCode.OK)
     {
         _httpHandlerMock
             .Protected()
@@ -319,7 +367,7 @@ public class FundaApiClientParsingTests
             )
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.OK,
+                StatusCode = statusCode,
                 Content = new StringContent(jsonContent)
             });
     }
