@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
@@ -16,22 +16,21 @@ public class FundaSearchService : IFundaSearchService
 {
     private readonly IFundaApiClient _apiClient;
     private readonly IListingRepository _listingRepository;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<FundaSearchService> _logger;
     private readonly TimeSpan _cacheFreshness;
     private readonly TimeSpan _searchCacheFreshness;
 
-    // In-memory cache for tracking when regions were last searched
-    // Key: normalized region name, Value: last search time
-    private static readonly ConcurrentDictionary<string, DateTime> _regionSearchCache = new();
-
     public FundaSearchService(
         IFundaApiClient apiClient,
         IListingRepository listingRepository,
+        IMemoryCache cache,
         IConfiguration configuration,
         ILogger<FundaSearchService> logger)
     {
         _apiClient = apiClient;
         _listingRepository = listingRepository;
+        _cache = cache;
         _logger = logger;
 
         // Read cache settings from environment variables with defaults
@@ -54,7 +53,7 @@ public class FundaSearchService : IFundaSearchService
         {
             fromCache = false;
             await FetchAndStoreListingsAsync(normalizedRegion, query, ct);
-            _regionSearchCache[normalizedRegion] = DateTime.UtcNow;
+            _cache.Set(GetRegionCacheKey(normalizedRegion), DateTime.UtcNow, _searchCacheFreshness);
         }
 
         // Query from database with filters
@@ -156,13 +155,15 @@ public class FundaSearchService : IFundaSearchService
 
     private bool ShouldRefreshSearch(string region)
     {
-        if (!_regionSearchCache.TryGetValue(region, out var lastSearch))
+        if (!_cache.TryGetValue(GetRegionCacheKey(region), out DateTime lastSearch))
         {
             return true;
         }
 
         return DateTime.UtcNow - lastSearch > _searchCacheFreshness;
     }
+
+    private static string GetRegionCacheKey(string region) => $"Search_{region}";
 
     private bool IsFresh(Listing listing)
     {
@@ -178,7 +179,9 @@ public class FundaSearchService : IFundaSearchService
     {
         _logger.LogInformation("Fetching fresh listings from Funda for region: {Region}", region);
 
-        var apiListings = query.OfferingType.ToLowerInvariant() switch
+        var offeringType = query.OfferingType?.ToLowerInvariant() ?? "buy";
+
+        var apiListings = offeringType switch
         {
             "rent" => await _apiClient.SearchRentAsync(region, query.Page, query.MinPrice, query.MaxPrice, ct),
             "project" => await _apiClient.SearchProjectsAsync(region, query.Page, query.MinPrice, query.MaxPrice, ct),
