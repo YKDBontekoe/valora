@@ -16,7 +16,7 @@ typedef ComputeRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback,
 
 class ApiService {
   static String get baseUrl => dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
-  static const Duration timeoutDuration = Duration(seconds: 10);
+  static const Duration timeoutDuration = Duration(seconds: 30);
 
   final http.Client _client;
   String? _authToken;
@@ -101,10 +101,6 @@ class ApiService {
     try {
       final response = await _authenticatedRequest((headers) =>
           _client.get(Uri.parse('$baseUrl/listings/$id'), headers: headers).timeout(timeoutDuration));
-
-      if (response.statusCode == 404) {
-        return null;
-      }
 
       return await _handleResponse(response, (body) => _runner(_parseListing, body));
     } catch (e) {

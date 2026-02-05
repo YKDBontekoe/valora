@@ -206,13 +206,16 @@ void main() {
       expect(await apiService.healthCheck(), isFalse);
     });
 
-    test('getListing returns null on 404', () async {
+    test('getListing throws NotFoundException on 404', () async {
        final client = MockClient((request) async {
         return http.Response('Not Found', 404);
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
-      expect(await apiService.getListing('123'), isNull);
+      expect(
+        () => apiService.getListing('123'),
+        throwsA(isA<NotFoundException>()),
+      );
     });
 
      test('getListing throws ServerException on 500', () async {
