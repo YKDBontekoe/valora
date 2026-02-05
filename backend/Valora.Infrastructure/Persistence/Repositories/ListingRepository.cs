@@ -126,6 +126,7 @@ public class ListingRepository : IListingRepository
             query = query.Where(l => l.LivingAreaM2 <= filter.MaxLivingArea.Value);
         }
 
+        query = query.ApplyBoundingBoxFilter(filter);
         query = query.ApplySorting(filter.SortBy, filter.SortOrder);
 
         return query;
