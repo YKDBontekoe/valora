@@ -296,28 +296,40 @@ public partial class FundaApiClient
     {
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
+        Uri? requestUri = null;
+
         // Ensure we have a valid Absolute URL
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        // Check relative path first because Uri.TryCreate(..., Absolute) might interpret "/path" as file:// on some systems
+        if (url.StartsWith("/"))
         {
-             // Try to construct if it's relative? Funda usually gives us full URLs.
-             if (url.StartsWith("/"))
+             var absoluteUrl = "https://www.funda.nl" + url;
+             if (Uri.TryCreate(absoluteUrl, UriKind.Absolute, out var constructedUri))
              {
-                 url = "https://www.funda.nl" + url;
-                 Uri.TryCreate(url, UriKind.Absolute, out uri);
+                 requestUri = constructedUri;
              }
+             else
+             {
+                 _logger.LogWarning("Failed to create absolute URI from relative URL: {Url}", url);
+                 return string.Empty;
+             }
+        }
+        else if (Uri.TryCreate(url, UriKind.Absolute, out var validUri))
+        {
+            requestUri = validUri;
         }
 
         // Security: SSRF Protection
         // Only allow requests to funda.nl and subdomains, and only HTTPS
-        if (uri == null ||
-            !uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ||
-            !(uri.Host.Equals("www.funda.nl", StringComparison.OrdinalIgnoreCase) || uri.Host.EndsWith(".funda.nl", StringComparison.OrdinalIgnoreCase)))
+        if (requestUri == null ||
+            !requestUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ||
+            !(requestUri.Host.Equals("www.funda.nl", StringComparison.OrdinalIgnoreCase) || requestUri.Host.EndsWith(".funda.nl", StringComparison.OrdinalIgnoreCase)))
         {
-             _logger.LogWarning("Blocked potential SSRF attempt to URL: {Url}", url);
+             _logger.LogWarning("Blocked potential SSRF attempt. Original: {Url}, Parsed: {ParsedUrl}, Scheme: {Scheme}, Host: {Host}",
+                 url, requestUri?.ToString() ?? "null", requestUri?.Scheme ?? "null", requestUri?.Host ?? "null");
              return string.Empty;
         }
 
-        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }

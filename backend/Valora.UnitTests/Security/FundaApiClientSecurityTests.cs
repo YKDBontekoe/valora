@@ -43,6 +43,39 @@ public class FundaApiClientSecurityTests
     }
 
     [Fact]
+    public async Task GetListingDetailsAsync_RelativeUrl_ConstructsAbsoluteAndMakesRequest()
+    {
+        // Arrange
+        var relativeUrl = "/koop/amsterdam/huis-456";
+        var expectedAbsoluteUrl = "https://www.funda.nl/koop/amsterdam/huis-456";
+        var html = "<html></html>";
+
+        _httpHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(html)
+            });
+
+        // Act
+        await _client.GetListingDetailsAsync(relativeUrl, CancellationToken.None);
+
+        // Assert
+        _httpHandlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString() == expectedAbsoluteUrl),
+            ItExpr.IsAny<CancellationToken>()
+        );
+    }
+
+    [Fact]
     public async Task GetListingDetailsAsync_NonHttpsUrl_ReturnsEmpty()
     {
         // Arrange
