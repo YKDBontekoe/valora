@@ -64,10 +64,9 @@ internal static partial class FundaMapper
                 }
             }
 
-            if (!string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms) &&
-                int.TryParse(summary.FastView.NumberOfBedrooms, out var bedrooms))
+            if (!string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms))
             {
-                listing.Bedrooms = bedrooms;
+                listing.Bedrooms = ParseFirstNumber(summary.FastView.NumberOfBedrooms);
             }
 
             listing.EnergyLabel = summary.FastView.EnergyLabel;
@@ -336,6 +335,13 @@ internal static partial class FundaMapper
 
     public static void MergeListingDetails(Listing target, Listing source)
     {
+        // Basic fields - overwrite if present in source (latest crawl)
+        if (!string.IsNullOrEmpty(source.Address)) target.Address = source.Address;
+        if (!string.IsNullOrEmpty(source.City)) target.City = source.City;
+        if (source.Price.HasValue) target.Price = source.Price;
+        if (!string.IsNullOrEmpty(source.ImageUrl)) target.ImageUrl = source.ImageUrl;
+        if (!string.IsNullOrEmpty(source.Url)) target.Url = source.Url;
+
         // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
         if (source.Bedrooms.HasValue) target.Bedrooms = source.Bedrooms;
         if (source.LivingAreaM2.HasValue) target.LivingAreaM2 = source.LivingAreaM2;

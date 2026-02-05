@@ -30,7 +30,7 @@ public class FundaMapperTests
     }
 
     [Fact]
-    public void EnrichListingWithSummary_MapsFields()
+    public void EnrichListingWithSummary_MapsFields_IncludingFastViewAndBrokers()
     {
         var listing = new Listing { FundaId = "1", Address = "Test" };
         var summary = new FundaApiListingSummary
@@ -38,19 +38,36 @@ public class FundaMapperTests
             PublicationDate = new DateTime(2023, 1, 1),
             IsSoldOrRented = true,
             Labels = [ new() { Text = "Nieuw" } ],
-            Address = new FundaApiSummaryAddress { PostalCode = "1234AB", City = "TestCity" },
-            Tracking = new FundaApiTracking { Values = new FundaApiTrackingValues { Status = "verkocht" } }
+            Address = new FundaApiSummaryAddress { PostalCode = "1234AB", City = "TestCity", Street = "New Street" },
+            Tracking = new FundaApiTracking { Values = new FundaApiTrackingValues { Status = "verkocht" } },
+            Price = new FundaApiSummaryPrice { SellingPrice = "€ 600.000 k.k." },
+            FastView = new FundaApiFastView
+            {
+                LivingArea = "120 m²",
+                NumberOfBedrooms = "3 slaapkamers",
+                EnergyLabel = "A"
+            },
+            Brokers = [ new() { Name = "Super Broker" } ]
         };
 
         FundaMapper.EnrichListingWithSummary(listing, summary);
 
+        // Basic
         Assert.Equal(new DateTime(2023, 1, 1), listing.PublicationDate);
         Assert.True(listing.IsSoldOrRented);
         Assert.Single(listing.Labels);
         Assert.Equal("Nieuw", listing.Labels[0]);
         Assert.Equal("1234AB", listing.PostalCode);
         Assert.Equal("TestCity", listing.City);
+        Assert.Equal("New Street", listing.Address);
         Assert.Equal("Verkocht", listing.Status);
+
+        // New fields
+        Assert.Equal(600000, listing.Price);
+        Assert.Equal(120, listing.LivingAreaM2);
+        Assert.Equal(3, listing.Bedrooms);
+        Assert.Equal("A", listing.EnergyLabel);
+        Assert.Equal("Super Broker", listing.AgentName);
     }
 
     [Fact]
@@ -255,7 +272,7 @@ public class FundaMapperTests
         Assert.Equal(3, target.Bedrooms);
         Assert.Equal("Verkocht", target.Status);
         Assert.Equal("0612345678", target.BrokerPhone);
-        Assert.Equal(100000, target.Price);
+        Assert.Equal(200000, target.Price);
     }
 
     [Fact]
