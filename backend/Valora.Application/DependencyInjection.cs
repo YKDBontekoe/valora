@@ -11,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAuthService, AuthService>();
 
+        services.AddMemoryCache();
         services.AddScoped<IFundaScraperService, FundaScraperService>();
         services.AddScoped<IFundaSearchService, FundaSearchService>();
 
