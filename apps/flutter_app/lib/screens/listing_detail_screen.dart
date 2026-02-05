@@ -8,7 +8,6 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_animations.dart';
-import '../core/theme/valora_shadows.dart';
 import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/valora_widgets.dart';
