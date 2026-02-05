@@ -293,4 +293,45 @@ public class FundaMapperTests
         Assert.Equal(50, FundaMapper.ParseFirstNumber("€ 50.000"));
         Assert.Null(FundaMapper.ParseFirstNumber("Geen cijfers"));
     }
+
+    [Fact]
+    public void EnrichListingWithNuxtData_MiscellaneousFeatures_MapsCorrectly()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+            Features = new FundaNuxtFeatures
+            {
+                Indeling = new FundaNuxtFeatureGroup
+                {
+                    KenmerkenList =
+                    [
+                        new() { Label = "Tuin", Value = "Achtertuin" }, // Added first to ensure Ligging overrides it
+                        new() { Label = "Gebouwgebonden buitenruimte", Value = "10 m²" },
+                        new() { Label = "Externe bergruimte", Value = "5 m²" },
+                        new() { Label = "Inhoud", Value = "400 m³" },
+                        new() { Label = "Ligging", Value = "Aan water" },
+                        new() { Label = "Garage", Value = "Aangebouwd steen" },
+                        new() { Label = "Parkeerfaciliteiten", Value = "Openbaar parkeren" },
+                        // Cadastral logic: key.Any(char.IsUpper) && key.Any(char.IsDigit) && key.Length > 5
+                        // && !key.Contains("kamers") && !key.Contains("bouw")
+                        // AND value is empty or "Title"
+                        // "Kadastrale kaart 12345" has no Upper char! Let's fix that. "Kadastrale Kaart 12345"
+                        // Also FlattenFeatures ignores empty values, so use "Title" which is the other condition
+                        new() { Label = "Kadastrale Kaart 12345", Value = "Title" }
+                    ]
+                }
+            }
+        };
+
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
+
+        Assert.Equal(10, listing.BalconyM2);
+        Assert.Equal(5, listing.ExternalStorageM2);
+        Assert.Equal(400, listing.VolumeM3);
+        Assert.Equal("Aan water", listing.GardenOrientation);
+        Assert.True(listing.HasGarage);
+        Assert.Equal("Openbaar parkeren", listing.ParkingType);
+        Assert.Equal("Kadastrale Kaart 12345", listing.CadastralDesignation);
+    }
 }

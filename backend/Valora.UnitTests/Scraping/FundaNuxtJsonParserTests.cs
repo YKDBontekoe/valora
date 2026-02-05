@@ -105,4 +105,31 @@ public class FundaNuxtJsonParserTests
 
         Assert.Null(result);
     }
+
+    [Fact]
+    public void Parse_ArrayWithMixedTypes_HandlesCorrectly()
+    {
+        // Covers the array handling logic:
+        // else if (current.ValueKind == JsonValueKind.Array) ...
+        // if (item.ValueKind == JsonValueKind.Object || item.ValueKind == JsonValueKind.Array) queue.Enqueue(item);
+
+        var json = @"{
+            ""list"": [
+                ""string_ignored"",
+                123,
+                {
+                    ""nested"": {
+                        ""features"": {},
+                        ""media"": {},
+                        ""description"": { ""content"": ""found_in_array"" }
+                    }
+                }
+            ]
+        }";
+
+        var result = FundaNuxtJsonParser.Parse(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("found_in_array", result.Description?.Content);
+    }
 }
