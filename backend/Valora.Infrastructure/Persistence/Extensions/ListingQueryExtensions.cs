@@ -14,7 +14,7 @@ public static class ListingQueryExtensions
         if (isPostgres)
         {
             var escapedTerm = EscapeLikePattern(filter.SearchTerm);
-            var search = $"%{escapedTerm}%";
+            var search = $"%$escapedTerm%";
             return query.Where(l =>
                 EF.Functions.ILike(l.Address, search, @"\") ||
                 (l.City != null && EF.Functions.ILike(l.City, search, @"\")) ||
@@ -62,10 +62,27 @@ public static class ListingQueryExtensions
         };
     }
 
+    public static IQueryable<Listing> ApplyBoundingBoxFilter(this IQueryable<Listing> query, ListingFilterDto filter)
+    {
+        if (filter.MinLat.HasValue)
+            query = query.Where(l => l.Latitude >= filter.MinLat.Value);
+
+        if (filter.MaxLat.HasValue)
+            query = query.Where(l => l.Latitude <= filter.MaxLat.Value);
+
+        if (filter.MinLng.HasValue)
+            query = query.Where(l => l.Longitude >= filter.MinLng.Value);
+
+        if (filter.MaxLng.HasValue)
+            query = query.Where(l => l.Longitude <= filter.MaxLng.Value);
+
+        return query;
+    }
+
     private static string EscapeLikePattern(string pattern)
     {
         return pattern
-            .Replace(@"\", @"\\")
+            .Replace(@"\", @"\")
             .Replace("%", @"\%")
             .Replace("_", @"\_");
     }

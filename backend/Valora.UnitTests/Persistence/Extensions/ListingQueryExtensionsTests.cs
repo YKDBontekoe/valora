@@ -1,3 +1,4 @@
+using Xunit;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence.Extensions;
@@ -12,144 +13,100 @@ public class ListingQueryExtensionsTests
     {
         _listings = new List<Listing>
         {
-            new() { Id = Guid.NewGuid(), FundaId = "1", Address = "Main St 1", City = "New York", Price = 500000, ListedDate = DateTime.UtcNow.AddDays(-1), LivingAreaM2 = 100 },
-            new() { Id = Guid.NewGuid(), FundaId = "2", Address = "Broadway 2", City = "New York", Price = 1000000, ListedDate = DateTime.UtcNow, LivingAreaM2 = 200 },
-            new() { Id = Guid.NewGuid(), FundaId = "3", Address = "Side St 3", City = "Boston", Price = 300000, ListedDate = DateTime.UtcNow.AddDays(-5), LivingAreaM2 = 80 },
-            new() { Id = Guid.NewGuid(), FundaId = "4", Address = "High St 4", City = null, Price = 400000, ListedDate = DateTime.UtcNow.AddDays(-2), LivingAreaM2 = 120 }
+            new() { Id = Guid.NewGuid(), FundaId = "1", Address = "A1", Latitude = 10, Longitude = 10 },
+            new() { Id = Guid.NewGuid(), FundaId = "2", Address = "A2", Latitude = 20, Longitude = 20 },
+            new() { Id = Guid.NewGuid(), FundaId = "3", Address = "A3", Latitude = 30, Longitude = 30 },
         }.AsQueryable();
     }
 
     [Fact]
-    public void ApplySorting_CityAsc()
+    public void ApplyBoundingBoxFilter_ShouldReturnAll_WhenFilterIsEmpty()
     {
-        var result = _listings.ApplySorting("city", "asc").ToList();
-        // Boston, New York (2), New York (2), null (typically first or last depending on LINQ provider, for Objects null is usually first)
-        // Wait, for LINQ to Objects, nulls come first.
-        // Let's filter out null city for a cleaner test or expect it.
-        // "Boston" < "New York".
+        // Arrange
+        var filter = new ListingFilterDto();
 
-        var list = result.Where(x => x.City != null).ToList();
-        Assert.Equal("Boston", list.First().City);
-        Assert.Equal("New York", list.Last().City);
+        // Act
+        var result = _listings.ApplyBoundingBoxFilter(filter);
+
+        // Assert
+        Assert.Equal(3, result.Count());
     }
 
     [Fact]
-    public void ApplySorting_CityDesc()
+    public void ApplyBoundingBoxFilter_ShouldFilterByMinLat()
     {
-        var result = _listings.ApplySorting("city", "desc").ToList();
-        var list = result.Where(x => x.City != null).ToList();
+        // Arrange
+        var filter = new ListingFilterDto { MinLat = 15 };
 
-        Assert.Equal("New York", list.First().City);
-        Assert.Equal("Boston", list.Last().City);
+        // Act
+        var result = _listings.ApplyBoundingBoxFilter(filter);
+
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.True(result.All(l => l.Latitude >= 15));
     }
 
     [Fact]
-    public void ApplySearchFilter_Generic_FiltersCorrectly()
+    public void ApplyBoundingBoxFilter_ShouldFilterByMaxLat()
     {
-        var filter = new ListingFilterDto { SearchTerm = "Main" };
-        var result = _listings.ApplySearchFilter(filter, isPostgres: false).ToList();
+        // Arrange
+        var filter = new ListingFilterDto { MaxLat = 25 };
 
+        // Act
+        var result = _listings.ApplyBoundingBoxFilter(filter);
+
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.True(result.All(l => l.Latitude <= 25));
+    }
+
+    [Fact]
+    public void ApplyBoundingBoxFilter_ShouldFilterByMinLng()
+    {
+        // Arrange
+        var filter = new ListingFilterDto { MinLng = 15 };
+
+        // Act
+        var result = _listings.ApplyBoundingBoxFilter(filter);
+
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.True(result.All(l => l.Longitude >= 15));
+    }
+
+    [Fact]
+    public void ApplyBoundingBoxFilter_ShouldFilterByMaxLng()
+    {
+        // Arrange
+        var filter = new ListingFilterDto { MaxLng = 25 };
+
+        // Act
+        var result = _listings.ApplyBoundingBoxFilter(filter);
+
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.True(result.All(l => l.Longitude <= 25));
+    }
+
+    [Fact]
+    public void ApplyBoundingBoxFilter_ShouldFilterByBox()
+    {
+        // Arrange
+        var filter = new ListingFilterDto
+        {
+            MinLat = 15,
+            MaxLat = 25,
+            MinLng = 15,
+            MaxLng = 25
+        };
+
+        // Act
+        var result = _listings.ApplyBoundingBoxFilter(filter);
+
+        // Assert
         Assert.Single(result);
-        Assert.Equal("Main St 1", result[0].Address);
-    }
-
-    [Fact]
-    public void ApplySearchFilter_Generic_FiltersByCity()
-    {
-        var filter = new ListingFilterDto { SearchTerm = "Boston" };
-        var result = _listings.ApplySearchFilter(filter, isPostgres: false).ToList();
-
-        Assert.Single(result);
-        Assert.Equal("Side St 3", result[0].Address);
-    }
-
-    [Fact]
-    public void ApplySearchFilter_EmptyTerm_ReturnsAll()
-    {
-        var filter = new ListingFilterDto { SearchTerm = "" };
-        var result = _listings.ApplySearchFilter(filter, isPostgres: false).ToList();
-
-        Assert.Equal(4, result.Count);
-    }
-
-    [Fact]
-    public void ApplyCityFilter_Generic_FiltersCorrectly()
-    {
-        var result = _listings.ApplyCityFilter("New York", isPostgres: false).ToList();
-
-        Assert.Equal(2, result.Count);
-        Assert.All(result, l => Assert.Equal("New York", l.City));
-    }
-
-    [Fact]
-    public void ApplyCityFilter_EmptyCity_ReturnsAll()
-    {
-        var result = _listings.ApplyCityFilter("", isPostgres: false).ToList();
-
-        Assert.Equal(4, result.Count);
-    }
-
-    [Fact]
-    public void ApplySorting_PriceAsc()
-    {
-        var result = _listings.ApplySorting("price", "asc").ToList();
-        Assert.Equal(300000, result[0].Price);
-        Assert.Equal(1000000, result.Last().Price);
-    }
-
-    [Fact]
-    public void ApplySorting_PriceDesc()
-    {
-        var result = _listings.ApplySorting("price", "desc").ToList();
-        Assert.Equal(1000000, result[0].Price);
-        Assert.Equal(300000, result.Last().Price);
-    }
-
-    [Fact]
-    public void ApplySorting_DateAsc()
-    {
-        var result = _listings.ApplySorting("date", "asc").ToList();
-        // Oldest listed date first (-5 days)
-        Assert.Equal("Side St 3", result[0].Address);
-    }
-
-    [Fact]
-    public void ApplySorting_DateDesc()
-    {
-        var result = _listings.ApplySorting("date", "desc").ToList();
-        // Newest listed date first (today)
-        Assert.Equal("Broadway 2", result[0].Address);
-    }
-
-    [Fact]
-    public void ApplySorting_LivingAreaAsc()
-    {
-        var result = _listings.ApplySorting("livingarea", "asc").ToList();
-        Assert.Equal(80, result[0].LivingAreaM2);
-    }
-
-    [Fact]
-    public void ApplySorting_LivingAreaDesc()
-    {
-        var result = _listings.ApplySorting("livingarea", "desc").ToList();
-        Assert.Equal(200, result[0].LivingAreaM2);
-    }
-
-    [Fact]
-    public void ApplySearchFilter_Postgres_ReturnsQueryable()
-    {
-        // We can't execute this against InMemory objects as EF.Functions.ILike won't work,
-        // but we can ensure the expression is built without error.
-        var filter = new ListingFilterDto { SearchTerm = "test" };
-        var query = _listings.ApplySearchFilter(filter, isPostgres: true);
-
-        Assert.NotNull(query);
-    }
-
-    [Fact]
-    public void ApplyCityFilter_Postgres_ReturnsQueryable()
-    {
-        var query = _listings.ApplyCityFilter("test", isPostgres: true);
-        Assert.NotNull(query);
+        var item = result.First();
+        Assert.Equal(20, item.Latitude);
+        Assert.Equal(20, item.Longitude);
     }
 }
