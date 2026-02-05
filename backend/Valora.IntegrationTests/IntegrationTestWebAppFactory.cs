@@ -66,10 +66,11 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                 services.Remove(s);
             }
 
-            if (_connectionString == "InMemory")
+            if (_connectionString.StartsWith("InMemory"))
             {
+                var dbName = _connectionString.Contains(":") ? _connectionString.Split(':')[1] : "ValoraIntegrationTestDb";
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseInMemoryDatabase("ValoraIntegrationTestDb")
+                    options.UseInMemoryDatabase(dbName)
                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
             else
