@@ -94,128 +94,143 @@ internal static partial class FundaMapper
 
     public static void EnrichListingWithNuxtData(Listing listing, FundaNuxtListingData data)
     {
-        // Description
         listing.Description = data.Description?.Content;
 
-        // Features
-        if (data.Features != null)
+        EnrichFeatures(listing, data);
+        EnrichMedia(listing, data);
+        EnrichCoordinates(listing, data);
+        EnrichInsights(listing, data);
+        EnrichMiscellaneous(listing, data);
+
+        if (listing.Features != null)
         {
-            // Living Area & Plot Area from ObjectType (Most reliable if available)
-            if (data.ObjectType?.PropertySpecification != null)
-            {
-                listing.LivingAreaM2 = data.ObjectType.PropertySpecification.SelectedArea;
-                listing.PlotAreaM2 = data.ObjectType.PropertySpecification.SelectedPlotArea;
-            }
+            EnrichConstructionDetails(listing, listing.Features);
+        }
+    }
 
-            // Flatten the recursive feature tree for easier access
-            var featureMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    private static void EnrichFeatures(Listing listing, FundaNuxtListingData data)
+    {
+        if (data.Features == null) return;
 
-            if (data.Features.Indeling != null) FlattenFeatures(data.Features.Indeling.KenmerkenList, featureMap);
-            if (data.Features.Afmetingen != null) FlattenFeatures(data.Features.Afmetingen.KenmerkenList, featureMap);
-            if (data.Features.Energie != null) FlattenFeatures(data.Features.Energie.KenmerkenList, featureMap);
-            if (data.Features.Bouw != null) FlattenFeatures(data.Features.Bouw.KenmerkenList, featureMap);
+        // Living Area & Plot Area from ObjectType
+        if (data.ObjectType?.PropertySpecification != null)
+        {
+            listing.LivingAreaM2 = data.ObjectType.PropertySpecification.SelectedArea;
+            listing.PlotAreaM2 = data.ObjectType.PropertySpecification.SelectedPlotArea;
+        }
 
-            // -- P3: Store ALL features --
-            listing.Features = featureMap;
+        var featureMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            // -- Extract Data Points from Map --
+        if (data.Features.Indeling != null) FlattenFeatures(data.Features.Indeling.KenmerkenList, featureMap);
+        if (data.Features.Afmetingen != null) FlattenFeatures(data.Features.Afmetingen.KenmerkenList, featureMap);
+        if (data.Features.Energie != null) FlattenFeatures(data.Features.Energie.KenmerkenList, featureMap);
+        if (data.Features.Bouw != null) FlattenFeatures(data.Features.Bouw.KenmerkenList, featureMap);
 
-            // Areas (Fallback)
-            if (!listing.LivingAreaM2.HasValue && featureMap.TryGetValue("Wonen", out var livingArea))
-                listing.LivingAreaM2 = ParseFirstNumber(livingArea);
+        listing.Features = featureMap;
 
-            if (!listing.PlotAreaM2.HasValue && featureMap.TryGetValue("Perceel", out var plotArea))
-                listing.PlotAreaM2 = ParseFirstNumber(plotArea);
+        EnrichAreasFromMap(listing, featureMap);
+        EnrichRoomsAndBathrooms(listing, featureMap);
+        EnrichEnergyAndConstruction(listing, featureMap);
+        EnrichGardenAndParking(listing, featureMap);
+        EnrichCadastral(listing, featureMap);
+    }
 
-            // Phase 3: New Specific Areas
-            if (featureMap.TryGetValue("Gebouwgebonden buitenruimte", out var balcony)) listing.BalconyM2 = ParseFirstNumber(balcony);
-            if (featureMap.TryGetValue("Externe bergruimte", out var storage)) listing.ExternalStorageM2 = ParseFirstNumber(storage);
-            if (featureMap.TryGetValue("Inhoud", out var volume)) listing.VolumeM3 = ParseFirstNumber(volume);
+    private static void EnrichAreasFromMap(Listing listing, Dictionary<string, string> featureMap)
+    {
+        if (!listing.LivingAreaM2.HasValue && featureMap.TryGetValue("Wonen", out var livingArea))
+            listing.LivingAreaM2 = ParseFirstNumber(livingArea);
 
-            // Garden Area logic
-            foreach(var kvp in featureMap)
-            {
-               if (kvp.Key.Contains("tuin", StringComparison.OrdinalIgnoreCase) && kvp.Value.Contains("m²"))
+        if (!listing.PlotAreaM2.HasValue && featureMap.TryGetValue("Perceel", out var plotArea))
+            listing.PlotAreaM2 = ParseFirstNumber(plotArea);
+
+        if (featureMap.TryGetValue("Gebouwgebonden buitenruimte", out var balcony)) listing.BalconyM2 = ParseFirstNumber(balcony);
+        if (featureMap.TryGetValue("Externe bergruimte", out var storage)) listing.ExternalStorageM2 = ParseFirstNumber(storage);
+        if (featureMap.TryGetValue("Inhoud", out var volume)) listing.VolumeM3 = ParseFirstNumber(volume);
+
+        foreach(var kvp in featureMap)
+        {
+           if (kvp.Key.Contains("tuin", StringComparison.OrdinalIgnoreCase) && kvp.Value.Contains("m²"))
+           {
+               var area = ParseFirstNumber(kvp.Value);
+               if (area.HasValue && area > (listing.GardenM2 ?? 0))
                {
-                   var area = ParseFirstNumber(kvp.Value);
-                   if (area.HasValue && area > (listing.GardenM2 ?? 0))
-                   {
-                       listing.GardenM2 = area;
-                   }
+                   listing.GardenM2 = area;
                }
-            }
+           }
+        }
+    }
 
-
-            // Rooms
-            if (featureMap.TryGetValue("Aantal kamers", out var rooms))
+    private static void EnrichRoomsAndBathrooms(Listing listing, Dictionary<string, string> featureMap)
+    {
+        if (featureMap.TryGetValue("Aantal kamers", out var rooms))
+        {
+            var bedroomMatch = BedroomRegex().Match(rooms);
+            if (bedroomMatch.Success && int.TryParse(bedroomMatch.Groups[1].Value, out var bedrooms))
             {
-                var bedroomMatch = BedroomRegex().Match(rooms);
-                if (bedroomMatch.Success && int.TryParse(bedroomMatch.Groups[1].Value, out var bedrooms))
-                {
-                    listing.Bedrooms = bedrooms;
-                }
-                else
-                {
-                    listing.Bedrooms = ParseFirstNumber(rooms);
-                }
+                listing.Bedrooms = bedrooms;
             }
-
-            // Bathrooms
-            if (featureMap.TryGetValue("Aantal badkamers", out var bathrooms))
-                listing.Bathrooms = ParseFirstNumber(bathrooms);
-
-            // Energy
-            if (featureMap.TryGetValue("Energielabel", out var label)) listing.EnergyLabel = label.Trim();
-            if (featureMap.TryGetValue("Isolatie", out var insulation)) listing.InsulationType = insulation;
-            if (featureMap.TryGetValue("Verwarming", out var heating)) listing.HeatingType = heating;
-
-            // Year Built
-            if (featureMap.TryGetValue("Bouwjaar", out var year)) listing.YearBuilt = ParseFirstNumber(year);
-
-            // Ownership
-            if (featureMap.TryGetValue("Eigendomssituatie", out var ownership)) listing.OwnershipType = ownership;
-
-            // VVE
-            if (featureMap.TryGetValue("Bijdrage VvE", out var vveRaw))
+            else
             {
-                 // Parsing "€ 150,00 per maand"
-                 var vveClean = PriceCleanupRegex().Replace(vveRaw, "");
-                 if (decimal.TryParse(vveClean, out var vveCost)) listing.VVEContribution = vveCost;
-            }
-
-            // Garden / Garage / Parking
-            foreach (var kvp in featureMap)
-            {
-                if (kvp.Key.Contains("Tuin", StringComparison.OrdinalIgnoreCase) || kvp.Key.Contains("Buitenruimte", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!string.IsNullOrWhiteSpace(kvp.Value)) listing.GardenOrientation = kvp.Value;
-                }
-
-                if (kvp.Key.Equals("Ligging", StringComparison.OrdinalIgnoreCase) && featureMap.ContainsKey("Tuin"))
-                {
-                     listing.GardenOrientation = kvp.Value;
-                }
-
-                if (kvp.Key.Contains("Garage", StringComparison.OrdinalIgnoreCase)) listing.HasGarage = true;
-
-                if (kvp.Key.Contains("Parkeerfaciliteiten", StringComparison.OrdinalIgnoreCase)) listing.ParkingType = kvp.Value;
-            }
-
-            // Cadastral
-            foreach (var key in featureMap.Keys)
-            {
-                if (key.Any(char.IsUpper) && key.Any(char.IsDigit) && key.Length > 5 && !key.Contains("kamers") && !key.Contains("bouw"))
-                {
-                     if (featureMap.TryGetValue(key, out var val) && (string.IsNullOrEmpty(val) || val == "Title"))
-                     {
-                         listing.CadastralDesignation = key;
-                         break;
-                     }
-                }
+                listing.Bedrooms = ParseFirstNumber(rooms);
             }
         }
 
-        // Images
+        if (featureMap.TryGetValue("Aantal badkamers", out var bathrooms))
+            listing.Bathrooms = ParseFirstNumber(bathrooms);
+    }
+
+    private static void EnrichEnergyAndConstruction(Listing listing, Dictionary<string, string> featureMap)
+    {
+        if (featureMap.TryGetValue("Energielabel", out var label)) listing.EnergyLabel = label.Trim();
+        if (featureMap.TryGetValue("Isolatie", out var insulation)) listing.InsulationType = insulation;
+        if (featureMap.TryGetValue("Verwarming", out var heating)) listing.HeatingType = heating;
+        if (featureMap.TryGetValue("Bouwjaar", out var year)) listing.YearBuilt = ParseFirstNumber(year);
+        if (featureMap.TryGetValue("Eigendomssituatie", out var ownership)) listing.OwnershipType = ownership;
+
+        if (featureMap.TryGetValue("Bijdrage VvE", out var vveRaw))
+        {
+             var vveClean = PriceCleanupRegex().Replace(vveRaw, "");
+             if (decimal.TryParse(vveClean, out var vveCost)) listing.VVEContribution = vveCost;
+        }
+    }
+
+    private static void EnrichGardenAndParking(Listing listing, Dictionary<string, string> featureMap)
+    {
+        foreach (var kvp in featureMap)
+        {
+            if (kvp.Key.Contains("Tuin", StringComparison.OrdinalIgnoreCase) || kvp.Key.Contains("Buitenruimte", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Value)) listing.GardenOrientation = kvp.Value;
+            }
+
+            if (kvp.Key.Equals("Ligging", StringComparison.OrdinalIgnoreCase) && featureMap.ContainsKey("Tuin"))
+            {
+                 listing.GardenOrientation = kvp.Value;
+            }
+
+            if (kvp.Key.Contains("Garage", StringComparison.OrdinalIgnoreCase)) listing.HasGarage = true;
+
+            if (kvp.Key.Contains("Parkeerfaciliteiten", StringComparison.OrdinalIgnoreCase)) listing.ParkingType = kvp.Value;
+        }
+    }
+
+    private static void EnrichCadastral(Listing listing, Dictionary<string, string> featureMap)
+    {
+        foreach (var key in featureMap.Keys)
+        {
+            if (key.Any(char.IsUpper) && key.Any(char.IsDigit) && key.Length > 5 && !key.Contains("kamers") && !key.Contains("bouw"))
+            {
+                 if (featureMap.TryGetValue(key, out var val) && (string.IsNullOrEmpty(val) || val == "Title"))
+                 {
+                     listing.CadastralDesignation = key;
+                     break;
+                 }
+            }
+        }
+    }
+
+    private static void EnrichMedia(Listing listing, FundaNuxtListingData data)
+    {
         if (data.Media?.Items != null)
         {
             listing.ImageUrls = data.Media.Items
@@ -229,28 +244,16 @@ internal static partial class FundaMapper
             }
         }
 
-        // Phase 4: Complete Data Capture
-
-        // Coordinates
-        if (data.Coordinates != null)
-        {
-            listing.Latitude = data.Coordinates.Lat;
-            listing.Longitude = data.Coordinates.Lng;
-        }
-
-        // Videos
         if (data.Videos != null && data.Videos.Count > 0)
         {
             listing.VideoUrl = data.Videos[0].Url;
         }
 
-        // 360 Photos / Virtual Tour
         if (data.Photos360 != null && data.Photos360.Count > 0)
         {
             listing.VirtualTourUrl = data.Photos360[0].Url;
         }
 
-        // Floor Plans
         if (data.FloorPlans != null)
         {
             listing.FloorPlanUrls = data.FloorPlans
@@ -259,24 +262,35 @@ internal static partial class FundaMapper
                 .ToList();
         }
 
-        // Brochure
         listing.BrochureUrl = data.BrochureUrl;
+    }
 
-        // Engagement Insights
+    private static void EnrichCoordinates(Listing listing, FundaNuxtListingData data)
+    {
+        if (data.Coordinates != null)
+        {
+            listing.Latitude = data.Coordinates.Lat;
+            listing.Longitude = data.Coordinates.Lng;
+        }
+    }
+
+    private static void EnrichInsights(Listing listing, FundaNuxtListingData data)
+    {
         if (data.ObjectInsights != null)
         {
             listing.ViewCount = data.ObjectInsights.Views;
             listing.SaveCount = data.ObjectInsights.Saves;
         }
 
-        // Local / Neighborhood Insights
         if (data.LocalInsights != null)
         {
             listing.NeighborhoodPopulation = data.LocalInsights.Inhabitants;
             listing.NeighborhoodAvgPriceM2 = data.LocalInsights.AvgPricePerM2;
         }
+    }
 
-        // Open House Dates
+    private static void EnrichMiscellaneous(Listing listing, FundaNuxtListingData data)
+    {
         if (data.OpenHouseDates != null)
         {
             listing.OpenHouseDates = data.OpenHouseDates
@@ -284,27 +298,25 @@ internal static partial class FundaMapper
                 .Select(oh => oh.Date!.Value)
                 .ToList();
         }
+    }
 
-        // Construction Details from Features map
-        if (listing.Features != null)
+    private static void EnrichConstructionDetails(Listing listing, Dictionary<string, string> featureMap)
+    {
+        if (featureMap.TryGetValue("Daktype", out var roofType)) listing.RoofType = roofType;
+        if (featureMap.TryGetValue("Dak", out var roof)) listing.RoofType ??= roof;
+        if (featureMap.TryGetValue("Aantal woonlagen", out var floors)) listing.NumberOfFloors = ParseFirstNumber(floors);
+        if (featureMap.TryGetValue("Bouwperiode", out var period)) listing.ConstructionPeriod = period;
+        if (featureMap.TryGetValue("CV-ketel", out var cvKetel))
         {
-            if (listing.Features.TryGetValue("Daktype", out var roofType)) listing.RoofType = roofType;
-            if (listing.Features.TryGetValue("Dak", out var roof)) listing.RoofType ??= roof;
-            if (listing.Features.TryGetValue("Aantal woonlagen", out var floors)) listing.NumberOfFloors = ParseFirstNumber(floors);
-            if (listing.Features.TryGetValue("Bouwperiode", out var period)) listing.ConstructionPeriod = period;
-            if (listing.Features.TryGetValue("CV-ketel", out var cvKetel))
+            var cvMatch = CVBoilerRegex().Match(cvKetel);
+            if (cvMatch.Success)
             {
-                // Parse "Vaillant (2019)"
-                var cvMatch = CVBoilerRegex().Match(cvKetel);
-                if (cvMatch.Success)
-                {
-                    listing.CVBoilerBrand = cvMatch.Groups[1].Value.Trim();
-                    if (int.TryParse(cvMatch.Groups[2].Value, out var cvYear)) listing.CVBoilerYear = cvYear;
-                }
-                else
-                {
-                    listing.CVBoilerBrand = cvKetel;
-                }
+                listing.CVBoilerBrand = cvMatch.Groups[1].Value.Trim();
+                if (int.TryParse(cvMatch.Groups[2].Value, out var cvYear)) listing.CVBoilerYear = cvYear;
+            }
+            else
+            {
+                listing.CVBoilerBrand = cvKetel;
             }
         }
     }

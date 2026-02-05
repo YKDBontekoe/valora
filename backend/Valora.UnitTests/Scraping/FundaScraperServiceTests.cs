@@ -210,4 +210,50 @@ public class FundaScraperServiceTests
         // Verify error notification with the actual exception message
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("API Error"))), Times.Once);
     }
+
+    [Fact]
+    public async Task EnrichListingAsync_EnrichmentFailures_AreLoggedButDontStopProcess()
+    {
+        // Arrange
+        var apiListing = new FundaApiListing { GlobalId = 1, ListingUrl = "url", Address = new() { ListingAddress = "Addr" } };
+        _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([apiListing]);
+
+        // Mock all enrichment steps to throw
+        _apiClientMock.Setup(x => x.GetListingSummaryAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Summary Failed"));
+
+        _apiClientMock.Setup(x => x.GetListingDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Nuxt Failed"));
+
+        _apiClientMock.Setup(x => x.GetContactDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Contacts Failed"));
+
+        // Act
+        await _service.ScrapeLimitedAsync("amsterdam", 1);
+
+        // Assert
+        // Should still save the listing despite enrichment failures
+        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Should verify logger warnings for failures
+        // We use a lenient verify because exact log message matching can be brittle
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
+            Times.AtLeast(2)); // Summary and Nuxt failures log as Warning
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
+            Times.AtLeastOnce); // Contacts failure logs as Debug
+    }
 }
