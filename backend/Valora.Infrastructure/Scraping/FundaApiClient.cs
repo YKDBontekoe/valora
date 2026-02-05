@@ -323,83 +323,9 @@ public partial class FundaApiClient
 
     private FundaNuxtListingData? ParseNuxtState(string json)
     {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            // The root is usually an array (Nuxt 3 devalue)
-            // We need to walk the tree to find an object that has "features", "media", "description".
-            
-            // Breadth-first search for the node
-            var queue = new Queue<JsonElement>();
-            queue.Enqueue(doc.RootElement);
-
-            int safetyCounter = 0;
-            while (queue.Count > 0 && safetyCounter++ < 10000)
-            {
-                var current = queue.Dequeue();
-
-                if (current.ValueKind == JsonValueKind.Object)
-                {
-                    // Check if this is our candidate
-                    if (current.TryGetProperty("features", out _) && 
-                        current.TryGetProperty("media", out _) && 
-                        current.TryGetProperty("description", out _))
-                    {
-                        return current.Deserialize<FundaNuxtListingData>();
-                    }
-
-                    foreach (var prop in current.EnumerateObject())
-                    {
-                        if (prop.Value.ValueKind == JsonValueKind.Object || prop.Value.ValueKind == JsonValueKind.Array)
-                        {
-                            queue.Enqueue(prop.Value);
-                        }
-                    }
-                }
-                else if (current.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var item in current.EnumerateArray())
-                    {
-                        if (item.ValueKind == JsonValueKind.Object || item.ValueKind == JsonValueKind.Array)
-                        {
-                            queue.Enqueue(item);
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to parse Nuxt state JSON");
-        }
-
-        return null;
+        return FundaNuxtJsonParser.Parse(json, _logger);
     }
 
     [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
     private static partial Regex NuxtScriptRegex();
-}
-
-/// <summary>
-/// Request body for the Funda Topposition API.
-/// </summary>
-internal record FundaApiRequest
-{
-    public List<string> AggregationType { get; init; } = [];
-    public string CultureInfo { get; init; } = "nl";
-    public string GeoInformation { get; init; } = "";
-    public List<string> OfferingType { get; init; } = [];
-    public int Page { get; init; } = 1;
-    public FundaApiPriceFilter? Price { get; init; }
-    public List<string> Zoning { get; init; } = [];
-}
-
-/// <summary>
-/// Price filter for the Funda API request.
-/// </summary>
-internal record FundaApiPriceFilter
-{
-    public int LowerBound { get; init; }
-    public string PriceRangeType { get; init; } = "SalePrice";
-    public int? UpperBound { get; init; }
 }
