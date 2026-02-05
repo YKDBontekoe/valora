@@ -15,8 +15,8 @@ public class ListingFilterDto
     public int? MinLivingArea { get; set; }
     public int? MaxLivingArea { get; set; }
 
-    [RegularExpression("(?i)^(Price|Date|LivingArea)$", ErrorMessage = "Invalid SortBy value.")]
-    public string? SortBy { get; set; } // "Price", "Date", "LivingArea"
+    [RegularExpression("(?i)^(Price|Date|LivingArea|City)$", ErrorMessage = "Invalid SortBy value.")]
+    public string? SortBy { get; set; } // "Price", "Date", "LivingArea", "City"
 
     [RegularExpression("(?i)^(asc|desc)$", ErrorMessage = "Invalid SortOrder value.")]
     public string? SortOrder { get; set; } // "asc", "desc"

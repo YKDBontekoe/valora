@@ -41,6 +41,28 @@ class ListingDetailScreen extends StatelessWidget {
   Future<void> _contactBroker(BuildContext context) async {
     final phone = listing.brokerPhone;
     if (phone != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => ValoraDialog(
+          title: 'Call Broker?',
+          actions: [
+            ValoraButton(
+              label: 'Cancel',
+              variant: ValoraButtonVariant.ghost,
+              onPressed: () => Navigator.pop(context, false),
+            ),
+            ValoraButton(
+              label: 'Call',
+              variant: ValoraButtonVariant.primary,
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ],
+          child: Text('Do you want to call ${listing.agentName ?? 'the broker'} at $phone?'),
+        ),
+      );
+
+      if (confirmed != true) return;
+
       final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^0-9+]'), '')}');
       try {
         if (!await launchUrl(uri)) {

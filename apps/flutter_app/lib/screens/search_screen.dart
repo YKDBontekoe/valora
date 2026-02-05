@@ -232,11 +232,14 @@ class _SearchScreenState extends State<SearchScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          SliverAppBar(
-            pinned: true,
+      body: RefreshIndicator(
+        onRefresh: () => _loadListings(refresh: true),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: _scrollController,
+          slivers: [
+            SliverAppBar(
+              pinned: true,
             backgroundColor: isDark
                 ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
                 : ValoraColors.backgroundLight.withValues(alpha: 0.95),
@@ -332,6 +335,30 @@ class _SearchScreenState extends State<SearchScreen> {
                                 onSelected: (_) => _openFilterDialog(),
                               ),
                             ),
+                            if (_hasActiveFilters)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: IconButton(
+                                  icon: const Icon(Icons.clear_all_rounded, size: 20),
+                                  tooltip: 'Clear Filters',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: isDark
+                                      ? ValoraColors.surfaceVariantDark
+                                      : ValoraColors.surfaceVariantLight,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _minPrice = null;
+                                      _maxPrice = null;
+                                      _city = null;
+                                      _minBedrooms = null;
+                                      _minLivingArea = null;
+                                      _maxLivingArea = null;
+                                    });
+                                    _loadListings(refresh: true);
+                                  },
+                                ),
+                              ),
                         ],
                       ),
                     ),
@@ -419,7 +446,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

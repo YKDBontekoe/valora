@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import 'valora_widgets.dart';
@@ -77,6 +78,20 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     final minLivingArea = int.tryParse(_minLivingAreaController.text);
     final maxLivingArea = int.tryParse(_maxLivingAreaController.text);
 
+    if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Min price cannot be greater than Max price')),
+      );
+      return;
+    }
+
+    if (minLivingArea != null && maxLivingArea != null && minLivingArea > maxLivingArea) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Min area cannot be greater than Max area')),
+      );
+      return;
+    }
+
     Navigator.pop(context, {
       'minPrice': minPrice,
       'maxPrice': maxPrice,
@@ -139,6 +154,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                   label: 'Min Price',
                   prefixText: '€ ',
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
               const SizedBox(width: ValoraSpacing.md),
@@ -148,6 +164,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                   label: 'Max Price',
                   prefixText: '€ ',
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
             ],
@@ -164,6 +181,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
             label: 'Min Bedrooms',
             keyboardType: TextInputType.number,
             prefixIcon: Icons.bed_outlined,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
           const SizedBox(height: ValoraSpacing.lg),
           Text('Living Area (m²)', style: ValoraTypography.titleMedium),
@@ -176,6 +194,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                   controller: _minLivingAreaController,
                   label: 'Min',
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
               const SizedBox(width: ValoraSpacing.md),
@@ -184,6 +203,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                   controller: _maxLivingAreaController,
                   label: 'Max',
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
             ],

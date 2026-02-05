@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
@@ -545,6 +546,7 @@ class ValoraTextField extends StatefulWidget {
     this.textInputAction,
     this.onFieldSubmitted,
     this.autofillHints,
+    this.inputFormatters,
   });
 
   final TextEditingController? controller;
@@ -559,6 +561,7 @@ class ValoraTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
   final Iterable<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<ValoraTextField> createState() => _ValoraTextFieldState();
@@ -609,6 +612,7 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
           textInputAction: widget.textInputAction,
           onFieldSubmitted: widget.onFieldSubmitted,
           autofillHints: widget.autofillHints,
+          inputFormatters: widget.inputFormatters,
           style: ValoraTypography.bodyMedium,
           decoration: InputDecoration(
             hintText: widget.hint,
