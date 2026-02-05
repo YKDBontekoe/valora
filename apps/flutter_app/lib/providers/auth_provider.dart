@@ -73,6 +73,27 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String?> refreshSession() async {
+    try {
+      final newToken = await _authService.refreshToken();
+      if (newToken != null) {
+        _token = newToken;
+        _parseJwt(newToken);
+        _isAuthenticated = true;
+        notifyListeners();
+        return newToken;
+      }
+    } catch (_) {
+      // Ignore refresh errors to keep behavior aligned with AuthService.
+    }
+
+    _token = null;
+    _email = null;
+    _isAuthenticated = false;
+    notifyListeners();
+    return null;
+  }
+
   void _parseJwt(String token) {
     try {
       final parts = token.split('.');

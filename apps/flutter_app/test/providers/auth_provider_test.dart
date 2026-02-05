@@ -108,6 +108,30 @@ void main() {
       verify(mockAuthService.deleteToken()).called(1);
     });
 
+    test('refreshSession should update token and email on success', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'refresh@example.com'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.refreshToken()).thenAnswer((_) async => token);
+
+      final result = await authProvider.refreshSession();
+
+      expect(result, token);
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, 'refresh@example.com');
+    });
+
+    test('refreshSession should clear state on failure', () async {
+      when(mockAuthService.refreshToken()).thenAnswer((_) async => null);
+
+      final result = await authProvider.refreshSession();
+
+      expect(result, isNull);
+      expect(authProvider.isAuthenticated, false);
+      expect(authProvider.email, null);
+    });
+
     test('checkAuth catches exception during parsing', () async {
        final token = 'header.invalid_base64.sig';
        when(mockAuthService.getToken()).thenAnswer((_) async => token);

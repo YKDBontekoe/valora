@@ -86,8 +86,30 @@ public class AuthServiceTests
     [Fact]
     public async Task RefreshTokenAsync_InvalidToken_ReturnsNull()
     {
-        _mockTokenService.Setup(x => x.GetRefreshTokenAsync("bad")).ReturnsAsync((RefreshToken?)null);
+        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("bad")).ReturnsAsync((RefreshToken?)null);
         var result = await _authService.RefreshTokenAsync("bad");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_RevokedToken_ReturnsNull()
+    {
+        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("revoked"))
+            .ReturnsAsync((RefreshToken?)null);
+
+        var result = await _authService.RefreshTokenAsync("revoked");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ExpiredToken_ReturnsNull()
+    {
+        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("expired"))
+            .ReturnsAsync((RefreshToken?)null);
+
+        var result = await _authService.RefreshTokenAsync("expired");
+
         Assert.Null(result);
     }
 
@@ -95,18 +117,15 @@ public class AuthServiceTests
     public async Task RefreshTokenAsync_Success_RotatesTokens()
     {
         var user = new ApplicationUser { Id = "1", Email = "t@t.com" };
-        // IsActive check: Revoked == null && !IsExpired (UTC < Expires)
         var oldToken = new RefreshToken
         {
             RawToken = "old",
             UserId = "1",
-            Revoked = null,
-            Expires = DateTime.UtcNow.AddDays(1),
             User = user
         };
         var newToken = new RefreshToken { RawToken = "new", UserId = "1" };
 
-        _mockTokenService.Setup(x => x.GetRefreshTokenAsync("old")).ReturnsAsync(oldToken);
+        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("old")).ReturnsAsync(oldToken);
         _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(newToken);
         _mockTokenService.Setup(x => x.GenerateTokenAsync(user)).ReturnsAsync("new_access");
 

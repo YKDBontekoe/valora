@@ -153,6 +153,7 @@ void main() {
 
       expect(result, 'new_access_token');
       verify(mockStorage.write(key: 'auth_token', value: 'new_access_token')).called(1);
+      verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token')).called(1);
     });
 
     test('refreshToken returns null if no refresh token stored', () async {

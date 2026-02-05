@@ -56,7 +56,7 @@ Future<void> main() async {
         ProxyProvider2<AuthService, AuthProvider, ApiService>(
           update: (context, authService, authProvider, _) => ApiService(
             authToken: authProvider.token,
-            refreshTokenCallback: authService.refreshToken,
+            refreshTokenCallback: authProvider.refreshSession,
           ),
         ),
       ],

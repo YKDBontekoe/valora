@@ -43,8 +43,12 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final newToken = data['token'];
+        final newRefreshToken = data['refreshToken'];
         if (newToken != null) {
           await saveToken(newToken);
+          if (newRefreshToken != null) {
+            await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
+          }
           return newToken;
         }
       }
