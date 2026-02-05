@@ -278,4 +278,86 @@ void main() {
     // Verify error snackbar
     expect(find.text('Failed to load more items'), findsOneWidget);
   });
+
+  testWidgets('SearchScreen clears filters via Clear button', (WidgetTester tester) async {
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Enter query to ensure API is called
+    await tester.enterText(find.byType(TextField), 'test');
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+
+    // Set a filter (e.g. city)
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.descendant(
+            of: find.widgetWithText(ValoraTextField, 'City'),
+            matching: find.byType(TextField)),
+        'FilterCity');
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    // Verify filter chip appears
+    expect(find.text('City: FilterCity'), findsOneWidget);
+
+    // Verify Clear button appears
+    final clearButton = find.byIcon(Icons.clear_all_rounded);
+    expect(clearButton, findsOneWidget);
+
+    // Tap Clear
+    await tester.tap(clearButton);
+    await tester.pumpAndSettle();
+
+    // Verify filter chip gone
+    expect(find.text('City: FilterCity'), findsNothing);
+
+    // Verify reload triggered with empty filters
+    verify(mockApiService.getListings(argThat(predicate((filter) {
+        if (filter is! ListingFilter) return false;
+        return filter.city == null;
+    })))).called(greaterThan(1)); // Initial load + apply filter + clear filter
+  });
+
+  testWidgets('SearchScreen refreshes on pull down', (WidgetTester tester) async {
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Enter query
+    await tester.enterText(find.byType(TextField), 'test');
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+
+    // Pull down
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
+    await tester.pump(const Duration(seconds: 1)); // Trigger refresh
+    await tester.pump(const Duration(seconds: 1)); // Finish refresh
+
+    // Verify reload triggered
+    verify(mockApiService.getListings(any)).called(greaterThan(1));
+  });
 }

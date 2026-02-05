@@ -253,6 +253,38 @@ void main() {
       expect(cards.last.listing.address, 'A Street');
     });
 
+    testWidgets('Sorts listings by City', (WidgetTester tester) async {
+      await tester.pumpWidget(createSavedListingsScreen());
+      await tester.pump(const Duration(seconds: 1));
+
+      final scrollable = find.descendant(
+        of: find.byType(SingleChildScrollView),
+        matching: find.byType(Scrollable),
+      ).first;
+
+      // Sort A-Z (Amsterdam, Rotterdam)
+      final cityAscChip = find.widgetWithText(FilterChip, 'City: A-Z');
+      await tester.scrollUntilVisible(cityAscChip, 50.0, scrollable: scrollable);
+      await tester.tap(cityAscChip);
+      await tester.pump(const Duration(seconds: 1));
+
+      var finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
+      var cards = tester.widgetList<NearbyListingCard>(finder);
+      expect(cards.first.listing.city, 'Amsterdam');
+      expect(cards.last.listing.city, 'Rotterdam');
+
+      // Sort Z-A (Rotterdam, Amsterdam)
+      final cityDescChip = find.widgetWithText(FilterChip, 'City: Z-A');
+      await tester.scrollUntilVisible(cityDescChip, 50.0, scrollable: scrollable);
+      await tester.tap(cityDescChip);
+      await tester.pump(const Duration(seconds: 1));
+
+      finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
+      cards = tester.widgetList<NearbyListingCard>(finder);
+      expect(cards.first.listing.city, 'Rotterdam');
+      expect(cards.last.listing.city, 'Amsterdam');
+    });
+
     testWidgets('Removes favorite after confirmation', (WidgetTester tester) async {
        await tester.pumpWidget(createSavedListingsScreen());
        await tester.pump(const Duration(seconds: 1));
