@@ -145,6 +145,23 @@ public class FundaMapperTests
     }
 
     [Fact]
+    public void EnrichListingWithNuxtData_NullData_DoesNotCrash()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+             // All null
+        };
+
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
+
+        // Should not throw and fields remain null
+        // Note: The new logic initializes feature map even if empty, so checks if empty not null
+        Assert.Empty(listing.Features!);
+        Assert.Null(listing.Description);
+    }
+
+    [Fact]
     public void EnrichListingWithNuxtData_GardenArea_ParsesHighest()
     {
         var listing = new Listing { FundaId = "1", Address = "Test" };
