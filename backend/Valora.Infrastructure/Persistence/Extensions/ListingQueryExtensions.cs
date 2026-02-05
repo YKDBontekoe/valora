@@ -56,6 +56,8 @@ public static class ListingQueryExtensions
             ("date", "desc") => query.OrderByDescending(l => l.ListedDate),
             ("livingarea", "asc") => query.OrderBy(l => l.LivingAreaM2),
             ("livingarea", "desc") => query.OrderByDescending(l => l.LivingAreaM2),
+            ("city", "asc") => query.OrderBy(l => l.City),
+            ("city", "desc") => query.OrderByDescending(l => l.City),
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
     }

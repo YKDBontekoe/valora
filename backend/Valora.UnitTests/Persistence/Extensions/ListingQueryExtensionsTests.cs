@@ -20,6 +20,30 @@ public class ListingQueryExtensionsTests
     }
 
     [Fact]
+    public void ApplySorting_CityAsc()
+    {
+        var result = _listings.ApplySorting("city", "asc").ToList();
+        // Boston, New York (2), New York (2), null (typically first or last depending on LINQ provider, for Objects null is usually first)
+        // Wait, for LINQ to Objects, nulls come first.
+        // Let's filter out null city for a cleaner test or expect it.
+        // "Boston" < "New York".
+
+        var list = result.Where(x => x.City != null).ToList();
+        Assert.Equal("Boston", list.First().City);
+        Assert.Equal("New York", list.Last().City);
+    }
+
+    [Fact]
+    public void ApplySorting_CityDesc()
+    {
+        var result = _listings.ApplySorting("city", "desc").ToList();
+        var list = result.Where(x => x.City != null).ToList();
+
+        Assert.Equal("New York", list.First().City);
+        Assert.Equal("Boston", list.Last().City);
+    }
+
+    [Fact]
     public void ApplySearchFilter_Generic_FiltersCorrectly()
     {
         var filter = new ListingFilterDto { SearchTerm = "Main" };

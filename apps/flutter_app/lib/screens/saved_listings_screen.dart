@@ -91,6 +91,12 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
           case 'price_desc':
             listings.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
             break;
+          case 'city_asc':
+            listings.sort((a, b) => (a.city ?? '').compareTo(b.city ?? ''));
+            break;
+          case 'city_desc':
+            listings.sort((a, b) => (b.city ?? '').compareTo(a.city ?? ''));
+            break;
           case 'date_added':
           default:
             // Assuming the list from provider is already in order of addition (or reverse)
@@ -137,6 +143,10 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                           _buildSortChip('Price: Low to High', 'price_asc'),
                           const SizedBox(width: 8),
                           _buildSortChip('Price: High to Low', 'price_desc'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('City: A-Z', 'city_asc'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('City: Z-A', 'city_desc'),
                         ],
                       ),
                     ),

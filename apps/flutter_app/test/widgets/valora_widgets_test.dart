@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
@@ -343,6 +344,26 @@ void main() {
       expect(submittedValue, '12345');
       expect(find.byIcon(Icons.lock), findsOneWidget);
       expect(find.text('Pass: '), findsOneWidget);
+    });
+
+    testWidgets('respects input formatters', (tester) async {
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraTextField(
+              controller: controller,
+              label: 'Digits Only',
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextFormField), '123abc456');
+      await tester.pump();
+
+      expect(controller.text, '123456');
     });
   });
 
