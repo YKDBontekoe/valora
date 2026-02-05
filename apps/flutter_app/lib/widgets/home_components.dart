@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_animations.dart';
+import '../core/theme/valora_shadows.dart';
 import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import 'valora_widgets.dart';
@@ -67,18 +69,13 @@ class _HomeHeaderState extends State<HomeHeader> {
             children: [
               Expanded(
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: ValoraAnimations.normal,
+                  curve: ValoraAnimations.standard,
                   height: 52,
                   decoration: BoxDecoration(
                     color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
                     borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: _isSearchFocused ? 0.12 : 0.08),
-                        blurRadius: _isSearchFocused ? 24 : 20,
-                        offset: Offset(0, _isSearchFocused ? 10 : 8),
-                      ),
-                    ],
+                    boxShadow: _isSearchFocused ? ValoraShadows.lg : ValoraShadows.sm,
                     border: Border.all(
                       color: _isSearchFocused
                           ? ValoraColors.primary
@@ -181,7 +178,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                 _buildFilterChip(context, label: '3+ Beds'),
                 const SizedBox(width: 8),
                 _buildFilterChip(context, label: 'Near Schools'),
-              ].animate(interval: 50.ms).fade().slideX(begin: 0.2, end: 0),
+              ].animate(interval: 50.ms).fade().slideX(begin: 0.2, end: 0, curve: ValoraAnimations.deceleration),
             ),
           ),
         ],
@@ -244,20 +241,8 @@ class _FilterChipState extends State<_FilterChip> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
           boxShadow: widget.isActive
-              ? [
-                  BoxShadow(
-                    color: ValoraColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  )
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ],
+              ? ValoraShadows.primary
+              : ValoraShadows.sm,
         ),
         child: Material(
           color: bg,
@@ -291,7 +276,7 @@ class _FilterChipState extends State<_FilterChip> {
         ),
       ),
     ).animate(target: _isPressed ? 1 : 0)
-     .scale(end: const Offset(0.95, 0.95), duration: 100.ms);
+     .scale(end: const Offset(0.95, 0.95), duration: ValoraAnimations.fast);
   }
 }
 
@@ -328,7 +313,8 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
           padding: EdgeInsets.zero,
           onTap: widget.onTap,
           borderRadius: ValoraSpacing.radiusXl,
-          elevation: _isHovered ? ValoraSpacing.elevationLg : ValoraSpacing.elevationMd,
+          // Let ValoraCard handle elevation changes based on hover/press
+          elevation: ValoraSpacing.elevationMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -357,7 +343,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         ),
                 )
                 .animate(target: _isHovered ? 1 : 0)
-                .scale(end: const Offset(1.05, 1.05), duration: 400.ms, curve: Curves.easeOut),
+                .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.slow, curve: ValoraAnimations.deceleration),
                 // Gradient Overlay
                 Positioned.fill(
                   child: DecoratedBox(
@@ -577,7 +563,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
           onTap: widget.onTap,
           padding: const EdgeInsets.all(ValoraSpacing.sm),
           borderRadius: ValoraSpacing.radiusLg,
-          elevation: _isHovered ? ValoraSpacing.elevationLg : null,
+          // Let ValoraCard handle interactive elevation
+          elevation: ValoraSpacing.elevationSm,
           child: Row(
             children: [
               // Image
@@ -608,7 +595,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                           ),
                   )
                   .animate(target: _isHovered ? 1 : 0)
-                  .scale(end: const Offset(1.05, 1.05), duration: 400.ms, curve: Curves.easeOut),
+                  .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.slow, curve: ValoraAnimations.deceleration),
 
                   Positioned(
                     top: 4,
@@ -747,13 +734,7 @@ class HomeBottomNavBar extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(24, 0, 24, 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: ValoraShadows.xl,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(32),
@@ -829,8 +810,8 @@ class _GlassNavItem extends StatelessWidget {
       },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutBack,
+        duration: ValoraAnimations.medium,
+        curve: ValoraAnimations.emphatic,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 20 : 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? ValoraColors.primary.withValues(alpha: 0.15) : Colors.transparent,
@@ -845,13 +826,13 @@ class _GlassNavItem extends StatelessWidget {
               color: isSelected ? ValoraColors.primary : unselectedColor,
             )
             .animate(target: isSelected ? 1 : 0)
-            .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 200.ms, curve: Curves.easeOutBack)
+            .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: ValoraAnimations.fast, curve: ValoraAnimations.emphatic)
             .then()
             .scale(end: const Offset(1.0, 1.0)),
 
             AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
+              duration: ValoraAnimations.medium,
+              curve: ValoraAnimations.emphatic,
               child: SizedBox(
                 width: isSelected ? null : 0,
                 child: Padding(

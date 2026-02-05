@@ -73,7 +73,7 @@ void main() {
   });
 
   group('FeaturedListingCard Tests', () {
-    testWidgets('Hover state updates elevation', (WidgetTester tester) async {
+    testWidgets('Renders with correct base elevation', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -97,34 +97,11 @@ void main() {
       // Verify initial elevation
       ValoraCard card = tester.widget(cardFinder);
       expect(card.elevation, ValoraSpacing.elevationMd);
-
-      // Simulate mouse enter
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await gesture.addPointer(location: Offset.zero);
-      addTearDown(gesture.removePointer);
-      await tester.pump();
-      await gesture.moveTo(tester.getCenter(cardFinder));
-      // Finite pump
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Verify hover elevation
-      card = tester.widget(cardFinder);
-      expect(card.elevation, ValoraSpacing.elevationLg);
-
-      // Simulate mouse exit
-      await gesture.moveTo(const Offset(-100, -100));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Verify return to normal elevation
-      card = tester.widget(cardFinder);
-      expect(card.elevation, ValoraSpacing.elevationMd);
     });
   });
 
   group('NearbyListingCard Tests', () {
-    testWidgets('Hover state updates elevation', (WidgetTester tester) async {
+    testWidgets('Renders with correct base elevation', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -147,29 +124,7 @@ void main() {
 
       // Initial state
       ValoraCard card = tester.widget(cardFinder);
-      expect(card.elevation, null);
-
-      // Simulate mouse enter
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await gesture.addPointer(location: Offset.zero);
-      addTearDown(gesture.removePointer);
-      await tester.pump();
-      await gesture.moveTo(tester.getCenter(cardFinder));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Verify hover elevation
-      card = tester.widget(cardFinder);
-      expect(card.elevation, ValoraSpacing.elevationLg);
-
-      // Simulate mouse exit
-      await gesture.moveTo(const Offset(-100, -100));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Verify return to normal
-      card = tester.widget(cardFinder);
-      expect(card.elevation, null);
+      expect(card.elevation, ValoraSpacing.elevationSm);
     });
   });
 }
