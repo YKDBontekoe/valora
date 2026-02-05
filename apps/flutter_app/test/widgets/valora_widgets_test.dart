@@ -18,6 +18,8 @@ void main() {
         ),
       );
 
+      await tester.pumpAndSettle();
+
       expect(find.text('Test Child'), findsOneWidget);
     });
 
@@ -81,6 +83,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       final cardFinder = find.byType(AnimatedContainer);
       final container = tester.widget<AnimatedContainer>(cardFinder);
@@ -199,11 +203,17 @@ void main() {
         ),
       );
 
+      await tester.pumpAndSettle(); // Allow entrance animations to settle
+
       final cardFinder = find.byType(AnimatedContainer);
       final container = tester.widget<AnimatedContainer>(cardFinder);
       final decoration = container.decoration as BoxDecoration;
       // Default dark shadow
       expect(decoration.boxShadow, ValoraShadows.smDark);
+
+      // Force disposal and pump to clear animations
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 
@@ -220,6 +230,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pumpAndSettle(); // Resolve animations
 
       expect(find.text('Click Me'), findsOneWidget);
       expect(find.byIcon(Icons.add), findsOneWidget);
@@ -238,8 +250,16 @@ void main() {
         ),
       );
 
+      // Allow button entrance animation (scale) to complete
+      // but do not wait for the infinite spinner
+      await tester.pump(const Duration(milliseconds: 500));
+
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text('Click Me'), findsNothing);
+
+      // Force disposal to stop infinite animation and pump to clear
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
     testWidgets('does not call onPressed when isLoading is true', (WidgetTester tester) async {
@@ -256,11 +276,18 @@ void main() {
         ),
       );
 
-      // Warning: Standard tap might not work if button is disabled or eating events differently
-      // But ElevatedButton handles null onPressed by disabling itself.
+      await tester.pump(); // Advance one frame
+
       await tester.tap(find.byType(ValoraButton));
-      await tester.pump();
+      // Pump enough time for the button press animation (scale) to complete
+      // but do not settle (as spinner is infinite)
+      await tester.pump(const Duration(milliseconds: 500));
+
       expect(pressed, isFalse);
+
+      // Force disposal and pump to clear
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 
@@ -276,6 +303,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pumpAndSettle(); // Allow animations to complete
 
       expect(find.text('New'), findsOneWidget);
       expect(find.byIcon(Icons.star), findsOneWidget);
@@ -295,6 +324,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pumpAndSettle(); // Allow animations to complete
 
       expect(find.byIcon(Icons.error), findsOneWidget);
       expect(find.text('Nothing here'), findsOneWidget);
