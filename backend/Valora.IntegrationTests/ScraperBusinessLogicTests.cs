@@ -1,16 +1,12 @@
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Scraping.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
-using System.Globalization;
-using Valora.Infrastructure.Scraping;
-using Valora.Application.Scraping;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
+using Moq;
 using Xunit;
 
 namespace Valora.IntegrationTests;
@@ -19,7 +15,7 @@ namespace Valora.IntegrationTests;
 public class ScraperBusinessLogicTests : IAsyncLifetime
 {
     private readonly TestcontainersDatabaseFixture _fixture;
-    private readonly WireMockServer _server;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly IServiceScope _scope;
     private readonly ValoraDbContext _context;
 
@@ -30,7 +26,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
     public ScraperBusinessLogicTests(TestcontainersDatabaseFixture fixture)
     {
         _fixture = fixture;
-        _server = WireMockServer.Start();
+        _apiClientMock = new Mock<IFundaApiClient>();
 
         if (_fixture.Factory == null)
             throw new InvalidOperationException("Factory not initialized");
@@ -45,12 +41,11 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         _context.PriceHistories.RemoveRange(_context.PriceHistories);
         _context.Listings.RemoveRange(_context.Listings);
         await _context.SaveChangesAsync();
+        _apiClientMock.Reset();
     }
 
     public async Task DisposeAsync()
     {
-        _server.Stop();
-        _server.Dispose();
         _scope.Dispose();
 
         foreach (var disposable in _disposables)
@@ -66,15 +61,18 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
 
     private IFundaScraperService GetScraperServiceWithMockedApi()
     {
-        // Create a custom scope with the mocked HTTP handler
+        // Create a custom scope with the Mocked IFundaApiClient
         // We need to create a NEW factory instance derived from the original one
         // to inject the test services.
         var clientFactory = _fixture.Factory!.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
-                services.AddHttpClient<FundaApiClient>()
-                        .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
+                // Remove existing registration
+                services.RemoveAll<IFundaApiClient>();
+
+                // Register our mock
+                services.AddSingleton(_apiClientMock.Object);
             });
         });
 
@@ -90,35 +88,23 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         return scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
     }
 
-    // Helper to configure WireMock
+    // Helper to configure Moq
     private void SetupMockSearchResponse(string fundaId, string address, decimal price, string? city = "Amsterdam")
     {
-        var apiResponseJson = $@"
-        {{
-            ""listings"": [
-                {{
-                    ""globalId"": {fundaId},
-                    ""price"": ""€ {price.ToString("N0", CultureInfo.GetCultureInfo("nl-NL"))} k.k."",
-                    ""isSinglePrice"": true,
-                    ""listingUrl"": ""/koop/{city?.ToLower()}/huis-{fundaId}-{address.Replace(" ", "-").ToLower()}/"",
-                    ""image"": {{
-                        ""default"": ""https://cloud.funda.nl/test.jpg""
-                    }},
-                    ""address"": {{
-                        ""listingAddress"": ""{address}"",
-                        ""city"": ""{city}""
-                    }},
-                    ""isProject"": false
-                }}
-            ]
-        }}";
+        var listing = new Listing
+        {
+            FundaId = fundaId,
+            Address = address,
+            City = city,
+            Price = price,
+            Url = $"https://www.funda.nl/koop/{city?.ToLower()}/huis-{fundaId}/",
+            Status = "Beschikbaar",
+            PropertyType = "Woonhuis"
+        };
 
-        _server.Reset();
-        _server.Given(Request.Create().UsingPost().WithPath("/api/topposition/v2/search"))
-               .RespondWith(Response.Create()
-                   .WithStatusCode(200)
-                   .WithHeader("Content-Type", "application/json")
-                   .WithBody(apiResponseJson));
+        _apiClientMock
+            .Setup(x => x.SearchAllBuyPagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing> { listing });
     }
 
     [Fact]
@@ -136,6 +122,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         await scraper.ScrapeLimitedAsync("amsterdam", 1, CancellationToken.None);
 
         // Assert
+        _context.ChangeTracker.Clear();
         var listing = await _context.Listings
             .Include(l => l.PriceHistory)
             .FirstOrDefaultAsync(l => l.FundaId == fundaId);
