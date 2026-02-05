@@ -32,6 +32,20 @@ public class FundaSearchServiceTests
         _configMock.Setup(x => x.GetSection("CACHE_FRESHNESS_MINUTES")).Returns(configSectionMock.Object);
         _configMock.Setup(x => x.GetSection("SEARCH_CACHE_MINUTES")).Returns(configSectionMock.Object);
 
+        // Default setups to prevent NullReferenceException on await null Task
+        _apiClientMock
+            .Setup(x => x.SearchBuyAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+        _apiClientMock
+            .Setup(x => x.SearchRentAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+        _apiClientMock
+            .Setup(x => x.SearchProjectsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+        _apiClientMock
+            .Setup(x => x.GetListingDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Listing?)null);
+
         _service = new FundaSearchService(
             _apiClientMock.Object,
             _listingRepoMock.Object,
@@ -96,12 +110,15 @@ public class FundaSearchServiceTests
     public async Task SearchAsync_Rent_ShouldCallSearchRent()
     {
         var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "rent");
+        // Ensure this specific call returns something to distinguish from default
+        var expectedListing = new Listing { FundaId = "2", Url = "url", Address = "A" };
         _apiClientMock.Setup(x => x.SearchRentAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Listing>());
+            .ReturnsAsync(new List<Listing> { expectedListing });
 
         await _service.SearchAsync(query);
 
         _apiClientMock.Verify(x => x.SearchRentAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -120,16 +137,11 @@ public class FundaSearchServiceTests
     public async Task SearchAsync_ApiReturnsNull_ShouldLogWarningAndSkipProcessing()
     {
         var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "buy");
-        // Ensure SearchBuyAsync can handle returning null (though signature says List<Listing>) - actually wait, the interface says Task<List<Listing>>. Implementation returns new List if null.
-        // If interface returns null, we should check null check coverage.
-        // Mock returning empty list
-        _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Listing>());
+        // Interface returns Task<List>, implementation ensures non-null, but let's say it returns empty list (default setup)
 
         await _service.SearchAsync(query);
 
         // Verify warning logged "No listings found"
-        // We can't verify LogWarning easily with extension methods unless we verify Log method.
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Warning,
