@@ -7,6 +7,7 @@ using Valora.Infrastructure.Persistence;
 using System.Globalization;
 using Valora.Infrastructure.Scraping;
 using Valora.Application.Scraping;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
