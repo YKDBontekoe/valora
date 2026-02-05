@@ -46,6 +46,14 @@ public class FundaSearchServiceTests
             .Setup(x => x.GetListingDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Listing?)null);
 
+        // Default setups for Repository to prevent NRE
+        _listingRepoMock
+            .Setup(x => x.GetByFundaIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Listing?)null);
+        _listingRepoMock
+            .Setup(x => x.GetByCityAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+
         _service = new FundaSearchService(
             _apiClientMock.Object,
             _listingRepoMock.Object,
