@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Valora.Application.Common.Models;
@@ -21,7 +22,26 @@ public class TokenServiceTests
         _mockOptions = new Mock<IOptions<JwtOptions>>();
 
         var store = new Mock<IUserStore<ApplicationUser>>();
-        _mockUserManager = new Mock<UserManager<ApplicationUser>>(store.Object, null, null, null, null, null, null, null, null);
+        var identityOptions = new Mock<IOptions<IdentityOptions>>();
+        identityOptions.Setup(x => x.Value).Returns(new IdentityOptions());
+        var passwordHasher = new Mock<IPasswordHasher<ApplicationUser>>();
+        var userValidators = new List<IUserValidator<ApplicationUser>>();
+        var passwordValidators = new List<IPasswordValidator<ApplicationUser>>();
+        var lookupNormalizer = new Mock<ILookupNormalizer>();
+        var errorDescriber = new IdentityErrorDescriber();
+        var serviceProvider = new Mock<IServiceProvider>();
+        var logger = new Mock<ILogger<UserManager<ApplicationUser>>>();
+
+        _mockUserManager = new Mock<UserManager<ApplicationUser>>(
+            store.Object,
+            identityOptions.Object,
+            passwordHasher.Object,
+            userValidators,
+            passwordValidators,
+            lookupNormalizer.Object,
+            errorDescriber,
+            serviceProvider.Object,
+            logger.Object);
     }
 
     [Fact]

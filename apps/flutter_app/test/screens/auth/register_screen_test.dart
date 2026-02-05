@@ -28,6 +28,11 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
 
   @override
   Future<void> register(String email, String password, String confirmPassword) async {}
+
+  @override
+  Future<String?> refreshSession() async {
+    return null;
+  }
 }
 
 void main() {

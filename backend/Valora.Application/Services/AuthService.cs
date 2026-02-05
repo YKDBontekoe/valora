@@ -59,9 +59,9 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
     {
-        var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
+        var existingToken = await _tokenService.GetActiveRefreshTokenAsync(refreshToken);
 
-        if (existingToken == null || !existingToken.IsActive || existingToken.User == null)
+        if (existingToken == null || existingToken.User == null)
         {
             return null;
         }

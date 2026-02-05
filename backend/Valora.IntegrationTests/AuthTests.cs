@@ -180,6 +180,34 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Refresh_WithRevokedToken_ReturnsUnauthorized()
+    {
+        // Arrange
+        var email = "revokedrefresh@example.com";
+        var password = "Password123!";
+        await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = email,
+            Password = password,
+            ConfirmPassword = password
+        });
+
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new LoginDto(email, password));
+        var authData = await loginResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
+        Assert.NotNull(authData);
+
+        var storedToken = await DbContext.RefreshTokens.SingleAsync();
+        storedToken.Revoked = DateTime.UtcNow;
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequestDto(authData.RefreshToken));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Refresh_WithInvalidToken_ReturnsUnauthorized()
     {
         // Act

@@ -109,6 +109,19 @@ public class TokenService : ITokenService
             .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
     }
 
+    public async Task<RefreshToken?> GetActiveRefreshTokenAsync(string token)
+    {
+        var tokenHash = HashRefreshToken(token);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+        return await _context.RefreshTokens
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r =>
+                r.TokenHash == tokenHash &&
+                r.Revoked == null &&
+                r.Expires > now);
+    }
+
     public async Task RevokeRefreshTokenAsync(string token)
     {
         var tokenHash = HashRefreshToken(token);

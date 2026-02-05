@@ -14,10 +14,10 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
+[Collection("TestDatabase")]
 public class ScraperBusinessLogicTests : IAsyncLifetime
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
     private readonly WireMockServer _server;
     private readonly IServiceScope _scope;
     private readonly ValoraDbContext _context;
@@ -26,7 +26,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
     private readonly List<IDisposable> _disposables = new();
     private readonly List<IAsyncDisposable> _asyncDisposables = new();
 
-    public ScraperBusinessLogicTests(TestcontainersDatabaseFixture fixture)
+    public ScraperBusinessLogicTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
         _server = WireMockServer.Start();

@@ -29,6 +29,11 @@ class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
 
   @override
   Future<void> logout() async {}
+
+  @override
+  Future<String?> refreshSession() async {
+    return null;
+  }
 }
 
 void main() {

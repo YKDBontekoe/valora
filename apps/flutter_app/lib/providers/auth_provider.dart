@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -71,6 +73,46 @@ class AuthProvider extends ChangeNotifier {
     _email = null;
     _isAuthenticated = false;
     notifyListeners();
+  }
+
+  Future<String?> refreshSession() async {
+    try {
+      final newToken = await _authService.refreshToken();
+      if (newToken != null) {
+        _token = newToken;
+        _parseJwt(newToken);
+        _isAuthenticated = true;
+        notifyListeners();
+        return newToken;
+      }
+    } on RefreshTokenInvalidException catch (e, stackTrace) {
+      developer.log(
+        'Refresh token invalid. Clearing auth state.',
+        name: 'AuthProvider',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await logout();
+      return null;
+    } on AppException catch (e, stackTrace) {
+      developer.log(
+        'Refresh token failed (transient). Keeping auth state.',
+        name: 'AuthProvider',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    } catch (e, stackTrace) {
+      developer.log(
+        'Refresh token failed (unexpected). Keeping auth state.',
+        name: 'AuthProvider',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+
+    return null;
   }
 
   void _parseJwt(String token) {

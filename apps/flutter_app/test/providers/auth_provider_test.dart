@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/services/auth_service.dart';
 
@@ -106,6 +107,61 @@ void main() {
       expect(authProvider.isAuthenticated, false);
       expect(authProvider.email, null);
       verify(mockAuthService.deleteToken()).called(1);
+    });
+
+    test('refreshSession should update token and email on success', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'refresh@example.com'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.refreshToken()).thenAnswer((_) async => token);
+
+      final result = await authProvider.refreshSession();
+
+      expect(result, token);
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, 'refresh@example.com');
+    });
+
+    test('refreshSession should clear state on invalid refresh token', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'stale@example.com'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+      when(mockAuthService.deleteToken()).thenAnswer((_) async {});
+
+      await authProvider.checkAuth();
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, 'stale@example.com');
+
+      when(mockAuthService.refreshToken())
+          .thenThrow(RefreshTokenInvalidException('Invalid refresh'));
+
+      final result = await authProvider.refreshSession();
+
+      expect(result, isNull);
+      expect(authProvider.isAuthenticated, false);
+      expect(authProvider.email, null);
+      verify(mockAuthService.deleteToken()).called(1);
+    });
+
+    test('refreshSession should keep state on transient failure', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'keep@example.com'})));
+      final token = '$header.$payload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+      await authProvider.checkAuth();
+
+      when(mockAuthService.refreshToken()).thenThrow(NetworkException('Timeout'));
+
+      final result = await authProvider.refreshSession();
+
+      expect(result, isNull);
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, 'keep@example.com');
+      verifyNever(mockAuthService.deleteToken());
     });
 
     test('checkAuth catches exception during parsing', () async {
