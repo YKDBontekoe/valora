@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
+using Valora.Application.Scraping.Interfaces;
 using Valora.Infrastructure.Scraping;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -62,8 +63,8 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         {
             builder.ConfigureTestServices(services =>
             {
-                // Intercept HttpClient for FundaApiClient
-                services.AddHttpClient<FundaApiClient>()
+                // Intercept HttpClient for IFundaApiClient/FundaApiClient
+                services.AddHttpClient<IFundaApiClient, FundaApiClient>()
                         .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
             });
         });

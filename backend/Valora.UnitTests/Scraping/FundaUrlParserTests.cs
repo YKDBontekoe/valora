@@ -1,4 +1,4 @@
-using Valora.Infrastructure.Scraping;
+using Valora.Application.Scraping.Utils;
 
 namespace Valora.UnitTests.Scraping;
 
@@ -26,5 +26,15 @@ public class FundaUrlParserTests
         var result = FundaUrlParser.ExtractRegionFromUrl(url);
 
         Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData("https://www.funda.nl/detail/koop/amsterdam/appartement-42424242-test/42424242/", 42424242)]
+    [InlineData("https://www.funda.nl/detail/huur/rotterdam/huis-123456/123456/", 123456)]
+    [InlineData("https://www.funda.nl/43224373/", 43224373)]
+    public void ExtractGlobalIdFromUrl_ValidUrls_ReturnsId(string url, int expectedId)
+    {
+        var result = FundaUrlParser.ExtractGlobalIdFromUrl(url);
+        Assert.Equal(expectedId, result);
     }
 }

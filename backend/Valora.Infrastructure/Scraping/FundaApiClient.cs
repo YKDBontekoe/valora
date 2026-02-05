@@ -3,11 +3,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Valora.Application.Scraping.Interfaces;
+using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-public partial class FundaApiClient
+public partial class FundaApiClient : IFundaApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FundaApiClient> _logger;
@@ -19,11 +21,98 @@ public partial class FundaApiClient
         _logger = logger;
     }
 
-    /// <summary>
-    /// Fetches the summary (including correct address/globalId) for a listing ID.
-    /// Uses the internal API endpoint: https://www.funda.nl/api/detail-summary/v2/getsummary/{globalId}
-    /// </summary>
-    public virtual async Task<FundaApiListingSummary?> GetListingSummaryAsync(int globalId, CancellationToken cancellationToken = default)
+    // --- IFundaApiClient Implementation ---
+
+    public async Task<List<Listing>> SearchBuyAsync(string region, int page = 1, int? minPrice = null, int? maxPrice = null, CancellationToken cancellationToken = default)
+    {
+        var response = await FetchSearchBuyAsync(region, page, minPrice, maxPrice, cancellationToken);
+        return MapResponseToListings(response);
+    }
+
+    public async Task<List<Listing>> SearchRentAsync(string region, int page = 1, int? minPrice = null, int? maxPrice = null, CancellationToken cancellationToken = default)
+    {
+        var response = await FetchSearchRentAsync(region, page, minPrice, maxPrice, cancellationToken);
+        return MapResponseToListings(response);
+    }
+
+    public async Task<List<Listing>> SearchProjectsAsync(string region, int page = 1, int? minPrice = null, int? maxPrice = null, CancellationToken cancellationToken = default)
+    {
+        var response = await FetchSearchProjectsAsync(region, page, minPrice, maxPrice, cancellationToken);
+        return MapResponseToListings(response);
+    }
+
+    public async Task<List<Listing>> SearchAllBuyPagesAsync(string region, int maxPages = 5, CancellationToken cancellationToken = default)
+    {
+        var apiListings = await FetchAllBuyPagesAsync(region, maxPages, cancellationToken);
+        return apiListings.Select(l => FundaMapper.MapApiListingToDomain(l, l.GlobalId.ToString())).ToList();
+    }
+
+    public async Task<Listing?> GetListingSummaryAsync(int globalId, CancellationToken cancellationToken = default)
+    {
+        var summary = await FetchListingSummaryAsync(globalId, cancellationToken);
+        if (summary == null) return null;
+
+        // Create a partial listing with the summary data
+        var listing = new Listing
+        {
+            FundaId = globalId.ToString(),
+            Address = "Unknown" // Placeholder, will be populated by enricher
+        };
+        FundaMapper.EnrichListingWithSummary(listing, summary);
+        return listing;
+    }
+
+    public async Task<Listing?> GetListingDetailsAsync(string url, CancellationToken cancellationToken = default)
+    {
+        var richData = await FetchListingDetailsAsync(url, cancellationToken);
+        if (richData == null) return null;
+
+        var listing = new Listing
+        {
+            FundaId = "0", // Unknown context here
+            Address = "Unknown"
+        };
+        FundaMapper.EnrichListingWithNuxtData(listing, richData);
+        return listing;
+    }
+
+    public async Task<Listing?> GetContactDetailsAsync(int globalId, CancellationToken cancellationToken = default)
+    {
+        var contacts = await FetchContactDetailsAsync(globalId, cancellationToken);
+        if (contacts?.ContactDetails == null || contacts.ContactDetails.Count == 0) return null;
+
+        var primary = contacts.ContactDetails[0];
+        return new Listing
+        {
+            FundaId = globalId.ToString(),
+            Address = "Unknown",
+            BrokerOfficeId = primary.Id,
+            BrokerPhone = primary.PhoneNumber,
+            BrokerLogoUrl = primary.LogoUrl,
+            BrokerAssociationCode = primary.AssociationCode,
+            AgentName = primary.DisplayName
+        };
+    }
+
+    public async Task<bool?> CheckFiberAvailabilityAsync(string postalCode, CancellationToken cancellationToken = default)
+    {
+        var fiber = await FetchFiberAvailabilityAsync(postalCode, cancellationToken);
+        return fiber?.Availability;
+    }
+
+    private List<Listing> MapResponseToListings(FundaApiResponse? response)
+    {
+        if (response?.Listings == null) return new List<Listing>();
+
+        return response.Listings
+            .Where(l => !string.IsNullOrEmpty(l.ListingUrl) && l.GlobalId > 0)
+            .Select(l => FundaMapper.MapApiListingToDomain(l, l.GlobalId.ToString()))
+            .ToList();
+    }
+
+    // --- Internal Infrastructure Methods (Fetch...) ---
+
+    protected virtual async Task<FundaApiListingSummary?> FetchListingSummaryAsync(int globalId, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -46,11 +135,7 @@ public partial class FundaApiClient
         }
     }
 
-    /// <summary>
-    /// Fetches contact details (broker info) for a listing.
-    /// Uses endpoint: https://contacts-bff.funda.io/api/v3/listings/{GlobalId}/contact-details?website=1
-    /// </summary>
-    public virtual async Task<FundaContactDetailsResponse?> GetContactDetailsAsync(int globalId, CancellationToken cancellationToken = default)
+    protected virtual async Task<FundaContactDetailsResponse?> FetchContactDetailsAsync(int globalId, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -73,15 +158,10 @@ public partial class FundaApiClient
         }
     }
 
-    /// <summary>
-    /// Checks fiber internet availability.
-    /// Endpoint: https://kpnopticfiber.funda.io/api/v1/{postalCode}
-    /// </summary>
-    public virtual async Task<FundaFiberResponse?> GetFiberAvailabilityAsync(string postalCode, CancellationToken cancellationToken = default)
+    protected virtual async Task<FundaFiberResponse?> FetchFiberAvailabilityAsync(string postalCode, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(postalCode)) return null;
         
-        // Format postal code: 1234AB (remove space)
         var cleanPostalCode = postalCode.Replace(" ", "").ToUpperInvariant();
 
         try
@@ -101,10 +181,7 @@ public partial class FundaApiClient
         }
     }
 
-    /// <summary>
-    /// Search for residential listings (Koop).
-    /// </summary>
-    public virtual async Task<FundaApiResponse?> SearchBuyAsync(
+    protected virtual async Task<FundaApiResponse?> FetchSearchBuyAsync(
         string geoInfo,
         int page = 1,
         int? minPrice = null,
@@ -121,19 +198,13 @@ public partial class FundaApiClient
             cancellationToken: cancellationToken);
     }
 
-    /// <summary>
-    /// Search for rental listings (Huur).
-    /// </summary>
-    public virtual async Task<FundaApiResponse?> SearchRentAsync(
+    protected virtual async Task<FundaApiResponse?> FetchSearchRentAsync(
         string geoInfo,
         int page = 1,
         int? minPrice = null,
         int? maxPrice = null,
         CancellationToken cancellationToken = default)
     {
-        // Note: Rent requests also seem to accept "SalePrice" as the range type in this specific API,
-        // or effectively ignore the type mismatch if the bounds are numeric.
-        // We use the generic SearchAsync which defaults to SalePrice for now as it's proven to work.
         return await SearchAsync(
             geoInfo, 
             offeringType: "rent", 
@@ -144,10 +215,7 @@ public partial class FundaApiClient
             cancellationToken: cancellationToken);
     }
 
-    /// <summary>
-    /// Search for new construction projects (Nieuwbouw).
-    /// </summary>
-    public virtual async Task<FundaApiResponse?> SearchProjectsAsync(
+    protected virtual async Task<FundaApiResponse?> FetchSearchProjectsAsync(
         string geoInfo,
         int page = 1,
         int? minPrice = null,
@@ -164,9 +232,6 @@ public partial class FundaApiClient
             cancellationToken: cancellationToken);
     }
 
-    /// <summary>
-    /// Generic search method for the Funda Topposition API.
-    /// </summary>
     private async Task<FundaApiResponse?> SearchAsync(
         string geoInfo,
         string offeringType,
@@ -186,7 +251,6 @@ public partial class FundaApiClient
             Price = new FundaApiPriceFilter
             {
                 LowerBound = minPrice ?? 0,
-                // Empirical testing shows "SalePrice" works for Rent/Projects too in this API
                 PriceRangeType = "SalePrice",
                 UpperBound = maxPrice
             },
@@ -197,8 +261,6 @@ public partial class FundaApiClient
             aggregationType, offeringType, geoInfo, page);
 
         var response = await _httpClient.PostAsJsonAsync(ToppositionApiUrl, request, cancellationToken);
-
-        // Throw on error so Polly can handle retries
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -215,22 +277,16 @@ public partial class FundaApiClient
         }
     }
     
-    /// <summary>
-    /// Search multiple pages and aggregate results for residential buy listings.
-    /// </summary>
-    public virtual async Task<List<FundaApiListing>> SearchAllBuyPagesAsync(
+    protected virtual async Task<List<FundaApiListing>> FetchAllBuyPagesAsync(
         string geoInfo,
         int maxPages = 5,
         CancellationToken cancellationToken = default)
     {
         return await AggregatePagesAsync(
-            page => SearchBuyAsync(geoInfo, page, cancellationToken: cancellationToken),
+            page => FetchSearchBuyAsync(geoInfo, page, cancellationToken: cancellationToken),
             maxPages);
     }
 
-    /// <summary>
-    /// Helper to aggregate multiple pages of results.
-    /// </summary>
     private async Task<List<FundaApiListing>> AggregatePagesAsync(
         Func<int, Task<FundaApiResponse?>> searchAction,
         int maxPages)
@@ -249,8 +305,6 @@ public partial class FundaApiClient
                 }
 
                 allListings.AddRange(result.Listings);
-
-                // Small delay to be respectful
                 await Task.Delay(500);
             }
             catch (Exception ex)
@@ -261,19 +315,12 @@ public partial class FundaApiClient
         
         return allListings;
     }
-    /// <summary>
-    /// Fetches the details page HTML and extracts the Nuxt hydration state to get rich data.
-    /// This includes full description, multiple photos, bathrooms, etc.
-    /// </summary>
-    public virtual async Task<FundaNuxtListingData?> GetListingDetailsAsync(string url, CancellationToken cancellationToken = default)
+
+    protected virtual async Task<FundaNuxtListingData?> FetchListingDetailsAsync(string url, CancellationToken cancellationToken = default)
     {
-        // 1. Fetch HTML
         var html = await GetListingDetailHtmlAsync(url, cancellationToken);
         if (string.IsNullOrEmpty(html)) return null;
 
-        // 2. Extract JSON content from script
-        // Look for <script type="application/json" ...> that *looks* like it has the data
-        // The Nuxt script typically starts with [ followed by some meta keys
         var jsonContent = ExtractNuxtJson(html);
         if (string.IsNullOrEmpty(jsonContent))
         {
@@ -281,7 +328,6 @@ public partial class FundaApiClient
             return null;
         }
 
-        // 3. Parse and find the listing data node
         return ParseNuxtState(jsonContent);
     }
     
@@ -289,10 +335,8 @@ public partial class FundaApiClient
     {
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
-        // Ensure we have a valid Absolute URL
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
-             // Try to construct if it's relative? Funda usually gives us full URLs.
              if (url.StartsWith("/")) url = "https://www.funda.nl" + url;
         }
 
@@ -303,21 +347,15 @@ public partial class FundaApiClient
 
     private string? ExtractNuxtJson(string html)
     {
-        // Simple regex to find the script content. 
-        // We look for script type="application/json" and iterate over them to find the one with the data.
-        // This is safer than a greedy regex which might capture multiple script tags.
-
         var matches = NuxtScriptRegex().Matches(html);
         foreach (System.Text.RegularExpressions.Match m in matches)
         {
              var content = m.Groups[1].Value;
-             // Check for key identifiers of the Nuxt hydration state
              if (content.Contains("cachedListingData") || (content.Contains("features") && content.Contains("media")))
              {
                  return content;
              }
         }
-
         return null;
     }
 
