@@ -5,6 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_animations.dart';
+import '../core/theme/valora_shadows.dart';
 
 /// A versatile card component with consistent styling and interactions.
 ///
@@ -56,10 +58,36 @@ class _ValoraCardState extends State<ValoraCard> {
     final cardRadius = widget.borderRadius ?? ValoraSpacing.radiusLg;
     final baseElevation = widget.elevation ?? ValoraSpacing.elevationSm;
 
-    // Interactive elevation logic
-    final currentElevation = _isPressed
-        ? baseElevation * 0.5
-        : (_isHovered ? baseElevation * 1.5 : baseElevation);
+    // Interactive elevation logic: maps elevation values to shadow tokens
+    List<BoxShadow> currentShadows;
+
+    // Determine target shadow based on state and elevation
+    if (baseElevation <= ValoraSpacing.elevationNone) {
+      currentShadows = [];
+    } else {
+      // Determine base shadow level
+      List<BoxShadow> baseShadows;
+      List<BoxShadow> hoverShadows;
+
+      if (baseElevation <= ValoraSpacing.elevationSm) {
+        baseShadows = isDark ? ValoraShadows.smDark : ValoraShadows.sm;
+        hoverShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
+      } else if (baseElevation <= ValoraSpacing.elevationMd) {
+        baseShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
+        hoverShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+      } else {
+        baseShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+        hoverShadows = isDark ? ValoraShadows.xlDark : ValoraShadows.xl;
+      }
+
+      if (_isPressed) {
+        currentShadows = baseShadows; // Pressing flattens back to base
+      } else if (_isHovered) {
+        currentShadows = hoverShadows;
+      } else {
+        currentShadows = baseShadows;
+      }
+    }
 
     Widget cardContent = Container(
       padding: widget.padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
@@ -76,7 +104,10 @@ class _ValoraCardState extends State<ValoraCard> {
       cardContent = Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: widget.onTap,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onTap?.call();
+          },
           onHover: (hovered) => setState(() => _isHovered = hovered),
           onTapDown: (_) => setState(() => _isPressed = true),
           onTapUp: (_) => setState(() => _isPressed = false),
@@ -95,29 +126,15 @@ class _ValoraCardState extends State<ValoraCard> {
     }
 
     return AnimatedContainer(
-      duration: 200.ms,
-      curve: Curves.easeOut,
+      duration: ValoraAnimations.normal,
+      curve: ValoraAnimations.standard,
       margin: widget.margin,
       decoration: BoxDecoration(
         color: widget.gradient == null
             ? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight)
             : null,
         borderRadius: BorderRadius.circular(cardRadius),
-        boxShadow: [
-          // Ambient shadow
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: currentElevation * 2,
-            offset: Offset(0, currentElevation),
-          ),
-          // Sharp shadow for depth
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: currentElevation * 6,
-            offset: Offset(0, currentElevation * 3),
-            spreadRadius: -2,
-          ),
-        ],
+        boxShadow: currentShadows,
       ),
       clipBehavior: Clip.antiAlias,
       child: cardContent,
@@ -125,14 +142,14 @@ class _ValoraCardState extends State<ValoraCard> {
     .animate(target: _isPressed ? 1 : 0) // Press scale
     .scale(
       end: const Offset(0.98, 0.98),
-      duration: 100.ms,
-      curve: Curves.easeInOut,
+      duration: ValoraAnimations.fast,
+      curve: ValoraAnimations.standard,
     )
     .animate(target: _isHovered && !_isPressed ? 1 : 0) // Hover lift
     .scale(
       end: const Offset(1.02, 1.02),
-      duration: 200.ms,
-      curve: Curves.easeOut,
+      duration: ValoraAnimations.normal,
+      curve: ValoraAnimations.standard,
     );
   }
 }
@@ -181,13 +198,13 @@ class ValoraEmptyState extends StatelessWidget {
                 size: ValoraSpacing.iconSizeXl,
                 color: colorScheme.onSurfaceVariant,
               ),
-            ).animate().fade().scale(curve: Curves.easeOutBack),
+            ).animate().fade().scale(curve: ValoraAnimations.emphatic),
             const SizedBox(height: ValoraSpacing.lg),
             Text(
               title,
               style: textTheme.titleMedium,
               textAlign: TextAlign.center,
-            ).animate().fade(delay: 100.ms).slideY(begin: 0.2, end: 0),
+            ).animate().fade(delay: 100.ms).slideY(begin: 0.2, end: 0, curve: ValoraAnimations.deceleration),
             if (subtitle != null) ...[
               const SizedBox(height: ValoraSpacing.sm),
               Text(
@@ -196,11 +213,11 @@ class ValoraEmptyState extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
-              ).animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0),
+              ).animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0, curve: ValoraAnimations.deceleration),
             ],
             if (action != null) ...[
               const SizedBox(height: ValoraSpacing.lg),
-              action!.animate().fade(delay: 300.ms).scale(),
+              action!.animate().fade(delay: 300.ms).scale(curve: ValoraAnimations.emphatic),
             ],
           ],
         ),
@@ -242,7 +259,7 @@ class ValoraLoadingIndicator extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-            ).animate().fade().shimmer(),
+            ).animate().fade().shimmer(duration: ValoraAnimations.verySlow),
           ],
         ],
       ),
@@ -292,9 +309,9 @@ class _ValoraButtonState extends State<ValoraButton> {
   @override
   Widget build(BuildContext context) {
     Widget child = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      switchInCurve: Curves.easeOutBack,
-      switchOutCurve: Curves.easeInBack,
+      duration: ValoraAnimations.normal,
+      switchInCurve: ValoraAnimations.emphatic,
+      switchOutCurve: ValoraAnimations.acceleration,
       transitionBuilder: (child, animation) => ScaleTransition(
         scale: animation,
         child: child,
@@ -374,8 +391,8 @@ class _ValoraButtonState extends State<ValoraButton> {
         .animate(target: _isPressed ? 1 : 0)
         .scale(
           end: const Offset(0.95, 0.95),
-          duration: 100.ms,
-          curve: Curves.easeInOut,
+          duration: ValoraAnimations.fast,
+          curve: ValoraAnimations.standard,
         );
   }
 }
@@ -489,7 +506,7 @@ class ValoraBadge extends StatelessWidget {
           ),
         ),
       ),
-    ).animate().fadeIn().scale(curve: Curves.easeOutBack);
+    ).animate().fadeIn().scale(curve: ValoraAnimations.emphatic);
   }
 }
 
@@ -644,7 +661,8 @@ class ValoraChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: ValoraAnimations.normal,
+      curve: ValoraAnimations.standard,
       child: FilterChip(
         label: Text(label),
         selected: isSelected,
@@ -672,9 +690,9 @@ class ValoraChip extends StatelessWidget {
         ),
       ),
     ).animate(target: isSelected ? 1 : 0)
-    .scale(end: const Offset(1.05, 1.05), duration: 200.ms, curve: Curves.easeOutBack)
+    .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.normal, curve: ValoraAnimations.emphatic)
     .then()
-    .scale(end: const Offset(1.0, 1.0), duration: 200.ms);
+    .scale(end: const Offset(1.0, 1.0), duration: ValoraAnimations.normal);
   }
 }
 
@@ -727,6 +745,6 @@ class ValoraDialog extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fade().scale(curve: Curves.easeOutBack);
+    ).animate().fade().scale(curve: ValoraAnimations.emphatic);
   }
 }

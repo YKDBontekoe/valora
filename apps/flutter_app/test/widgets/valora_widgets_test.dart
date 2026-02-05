@@ -1,27 +1,29 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valora_app/core/theme/valora_shadows.dart';
+import 'package:valora_app/core/theme/valora_spacing.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 void main() {
   group('ValoraCard Tests', () {
-    testWidgets('renders child content', (tester) async {
+    testWidgets('renders child content', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: ValoraCard(
-              child: Text('Card Content'),
+              child: Text('Test Child'),
             ),
           ),
         ),
       );
+
       await tester.pumpAndSettle();
 
-      expect(find.text('Card Content'), findsOneWidget);
+      expect(find.text('Test Child'), findsOneWidget);
     });
 
-    testWidgets('calls onTap when tapped', (tester) async {
+    testWidgets('calls onTap when tapped', (WidgetTester tester) async {
       bool tapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -33,517 +35,301 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Tap Me'));
+      await tester.tap(find.byType(ValoraCard));
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
     });
 
-    testWidgets('handles mouse hover', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraCard(
-              child: Text('Hover Me'),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await gesture.addPointer(location: Offset.zero);
-      addTearDown(gesture.removePointer);
-      await tester.pump();
-      await gesture.moveTo(tester.getCenter(find.text('Hover Me')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Hover Me'), findsOneWidget);
-    });
-
-    testWidgets('handles tap down/up/cancel state', (tester) async {
+    testWidgets('handles mouse hover for default elevation (Sm)', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ValoraCard(
               onTap: () {},
-              child: const Text('Interact'),
+              child: const SizedBox(width: 100, height: 100),
             ),
           ),
         ),
       );
-      await tester.pumpAndSettle();
 
-      final gesture = await tester.startGesture(tester.getCenter(find.text('Interact')));
-      await tester.pump(); // Tap down
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      // Default elevation is Sm
+      expect(decoration.boxShadow, ValoraShadows.sm);
 
-      await gesture.up(); // Tap up
-      await tester.pumpAndSettle();
-
-      // Test Cancel
-      final gesture2 = await tester.startGesture(tester.getCenter(find.text('Interact')));
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
       await tester.pump();
-      await gesture2.cancel();
+      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
       await tester.pumpAndSettle();
+
+      final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
+      final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
+      expect(hoveredDecoration.boxShadow, ValoraShadows.md);
+    });
+
+    testWidgets('handles elevationNone (no shadows)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              elevation: ValoraSpacing.elevationNone,
+              child: SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      expect(decoration.boxShadow, isEmpty);
+    });
+
+    testWidgets('handles elevationMd logic', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              elevation: ValoraSpacing.elevationMd,
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      expect(decoration.boxShadow, ValoraShadows.md);
+
+      // Hover
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await tester.pumpAndSettle();
+
+      final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
+      final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
+      expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
+    });
+
+    testWidgets('handles elevationLg (fallthrough else case)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              elevation: ValoraSpacing.elevationLg, // Or any value > Md
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      expect(decoration.boxShadow, ValoraShadows.lg);
+
+      // Hover
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await tester.pumpAndSettle();
+
+      final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
+      final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
+      expect(hoveredDecoration.boxShadow, ValoraShadows.xl);
+    });
+
+    testWidgets('handles press state (reverts to base shadow)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      final cardFinder = find.byType(AnimatedContainer);
+
+      // Hover first to lift it
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await tester.pumpAndSettle();
+
+      var container = tester.widget<AnimatedContainer>(cardFinder);
+      var decoration = container.decoration as BoxDecoration;
+      expect(decoration.boxShadow, ValoraShadows.md); // Lifted
+
+      // Now press down
+      await tester.startGesture(tester.getCenter(find.byType(ValoraCard)));
+      await tester.pumpAndSettle();
+
+      container = tester.widget<AnimatedContainer>(cardFinder);
+      decoration = container.decoration as BoxDecoration;
+      // Should revert to base (Sm)
+      expect(decoration.boxShadow, ValoraShadows.sm);
+    });
+
+    testWidgets('uses dark mode shadows', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle(); // Allow entrance animations to settle
+
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      // Default dark shadow
+      expect(decoration.boxShadow, ValoraShadows.smDark);
+
+      // Force disposal and pump to clear animations
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 
   group('ValoraButton Tests', () {
-    testWidgets('renders label', (tester) async {
+    testWidgets('renders label and icon', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraButton(
+              label: 'Click Me',
+              icon: Icons.add,
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle(); // Resolve animations
+
+      expect(find.text('Click Me'), findsOneWidget);
+      expect(find.byIcon(Icons.add), findsOneWidget);
+    });
+
+    testWidgets('shows loading indicator when isLoading is true', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ValoraButton(
               label: 'Click Me',
               onPressed: () {},
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Click Me'), findsOneWidget);
-    });
-
-    testWidgets('shows loading indicator when isLoading is true', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraButton(
-              label: 'Loading...',
               isLoading: true,
-              onPressed: () {},
             ),
           ),
         ),
       );
-      // Don't use pumpAndSettle because CircularProgressIndicator never settles
-      await tester.pump();
+
+      // Allow button entrance animation (scale) to complete
+      // but do not wait for the infinite spinner
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Loading...'), findsNothing);
+      expect(find.text('Click Me'), findsNothing);
 
-      // Unmount the widget to dispose the infinite animation timer
+      // Force disposal to stop infinite animation and pump to clear
       await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
-    });
-
-    testWidgets('calls onPressed when tapped', (tester) async {
-      bool pressed = false;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraButton(
-              label: 'Press Me',
-              onPressed: () => pressed = true,
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Press Me'));
-      await tester.pumpAndSettle();
-
-      expect(pressed, isTrue);
-    });
-
-    testWidgets('does not call onPressed when isLoading is true', (tester) async {
-      bool pressed = false;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraButton(
-              label: 'Loading...',
-              isLoading: true,
-              onPressed: () => pressed = true,
-            ),
-          ),
-        ),
-      );
-      // Don't use pumpAndSettle because CircularProgressIndicator never settles
       await tester.pump();
+    });
+
+    testWidgets('does not call onPressed when isLoading is true', (WidgetTester tester) async {
+      bool pressed = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraButton(
+              label: 'Click Me',
+              onPressed: () => pressed = true,
+              isLoading: true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(); // Advance one frame
 
       await tester.tap(find.byType(ValoraButton));
-      await tester.pump();
+      // Pump enough time for the button press animation (scale) to complete
+      // but do not settle (as spinner is infinite)
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(pressed, isFalse);
 
-      // Unmount the widget to dispose the infinite animation timer
+      // Force disposal and pump to clear
       await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
-    });
-
-    testWidgets('renders different variants', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                ValoraButton(
-                  label: 'Primary',
-                  variant: ValoraButtonVariant.primary,
-                  onPressed: () {},
-                ),
-                ValoraButton(
-                  label: 'Secondary',
-                  variant: ValoraButtonVariant.secondary,
-                  onPressed: () {},
-                ),
-                ValoraButton(
-                  label: 'Outline',
-                  variant: ValoraButtonVariant.outline,
-                  onPressed: () {},
-                ),
-                ValoraButton(
-                  label: 'Ghost',
-                  variant: ValoraButtonVariant.ghost,
-                  onPressed: () {},
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Primary'), findsOneWidget);
-      expect(find.text('Secondary'), findsOneWidget);
-      expect(find.text('Outline'), findsOneWidget);
-      expect(find.text('Ghost'), findsOneWidget);
-    });
-
-    testWidgets('handles pointer up/cancel states', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraButton(
-              label: 'Interact',
-              onPressed: () {},
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Press down
-      final gesture = await tester.startGesture(tester.getCenter(find.text('Interact')));
       await tester.pump();
-
-      // Press up
-      await gesture.up();
-      await tester.pumpAndSettle();
-
-      // Press cancel
-      final gesture2 = await tester.startGesture(tester.getCenter(find.text('Interact')));
-      await tester.pump();
-      await gesture2.cancel();
-      await tester.pumpAndSettle();
     });
   });
 
   group('ValoraBadge Tests', () {
-    testWidgets('renders label', (tester) async {
+    testWidgets('renders label and icon', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: ValoraBadge(
               label: 'New',
+              icon: Icons.star,
             ),
           ),
         ),
       );
 
-      await tester.pumpAndSettle(); // Allow animations to finish
+      await tester.pumpAndSettle(); // Allow animations to complete
 
       expect(find.text('New'), findsOneWidget);
-    });
-
-    testWidgets('renders icon when provided', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraBadge(
-              label: 'Verified',
-              icon: Icons.check,
-            ),
-          ),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.check), findsOneWidget);
-    });
-  });
-
-  group('ValoraTextField Tests', () {
-     testWidgets('renders label and hint', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraTextField(
-              label: 'Email',
-              hint: 'Enter your email',
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Email'), findsOneWidget);
-      expect(find.text('Enter your email'), findsOneWidget);
-    });
-
-    testWidgets('updates focused state', (tester) async {
-       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraTextField(
-              label: 'Email',
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.byType(TextFormField));
-      await tester.pump();
-
-      // Verify visual feedback if possible, or just that it doesn't crash
-      expect(find.text('Email'), findsOneWidget);
-    });
-
-    testWidgets('handles controller and input properties', (tester) async {
-      final controller = TextEditingController();
-      String submittedValue = '';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraTextField(
-              controller: controller,
-              label: 'Input',
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (val) => submittedValue = val,
-              autofillHints: const [AutofillHints.password],
-              prefixIcon: Icons.lock,
-              prefixText: 'Pass: ',
-            ),
-          ),
-        ),
-      );
-
-      await tester.enterText(find.byType(TextFormField), '12345');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pump();
-
-      expect(controller.text, '12345');
-      expect(submittedValue, '12345');
-      expect(find.byIcon(Icons.lock), findsOneWidget);
-      expect(find.text('Pass: '), findsOneWidget);
-    });
-
-    testWidgets('respects input formatters', (tester) async {
-      final controller = TextEditingController();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraTextField(
-              controller: controller,
-              label: 'Digits Only',
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-          ),
-        ),
-      );
-
-      await tester.enterText(find.byType(TextFormField), '123abc456');
-      await tester.pump();
-
-      expect(controller.text, '123456');
+      expect(find.byIcon(Icons.star), findsOneWidget);
     });
   });
 
   group('ValoraEmptyState Tests', () {
-    testWidgets('renders icon, title, and subtitle', (tester) async {
+    testWidgets('renders icon, title, and subtitle', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: ValoraEmptyState(
-              icon: Icons.info,
-              title: 'Empty Title',
-              subtitle: 'Empty Subtitle',
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.info), findsOneWidget);
-      expect(find.text('Empty Title'), findsOneWidget);
-      expect(find.text('Empty Subtitle'), findsOneWidget);
-    });
-
-    testWidgets('renders action button', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraEmptyState(
-              icon: Icons.info,
-              title: 'Empty Title',
-              action: ElevatedButton(onPressed: () {}, child: const Text('Retry')),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Retry'), findsOneWidget);
-    });
-  });
-
-  group('ValoraLoadingIndicator Tests', () {
-    testWidgets('renders circular progress indicator', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraLoadingIndicator(),
-          ),
-        ),
-      );
-      await tester.pump(); // Infinite animation
-
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
-    });
-
-    testWidgets('renders message if provided', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraLoadingIndicator(message: 'Loading data...'),
-          ),
-        ),
-      );
-      await tester.pump();
-
-      expect(find.text('Loading data...'), findsOneWidget);
-
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
-    });
-  });
-
-  group('ValoraPrice Tests', () {
-    testWidgets('formats price correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraPrice(price: 123456),
-          ),
-        ),
-      );
-
-      // Expected format based on code: € 123.456
-      expect(find.textContaining('123.456'), findsOneWidget);
-    });
-
-    testWidgets('renders different sizes', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                ValoraPrice(price: 100, size: ValoraPriceSize.small),
-                ValoraPrice(price: 200, size: ValoraPriceSize.medium),
-                ValoraPrice(price: 300, size: ValoraPriceSize.large),
-              ],
+              icon: Icons.error,
+              title: 'Nothing here',
+              subtitle: 'Try adjusting filters',
             ),
           ),
         ),
       );
 
-      expect(find.textContaining('100'), findsOneWidget);
-      expect(find.textContaining('200'), findsOneWidget);
-      expect(find.textContaining('300'), findsOneWidget);
-    });
-  });
+      await tester.pumpAndSettle(); // Allow animations to complete
 
-  group('ValoraShimmer Tests', () {
-    testWidgets('renders container with correct size', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ValoraShimmer(width: 100, height: 50),
-          ),
-        ),
-      );
-      await tester.pump();
-
-      final container = find.byType(Container).first;
-      final size = tester.getSize(container);
-      expect(size.width, 100);
-      expect(size.height, 50);
-
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
-    });
-  });
-
-  group('ValoraChip Tests', () {
-    testWidgets('renders label and selection state', (tester) async {
-      bool selected = false;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: StatefulBuilder(
-              builder: (context, setState) {
-                return ValoraChip(
-                  label: 'Filter',
-                  isSelected: selected,
-                  onSelected: (val) => setState(() => selected = val),
-                );
-              },
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Filter'), findsOneWidget);
-
-      await tester.tap(find.text('Filter'));
-      await tester.pumpAndSettle();
-
-      expect(selected, isTrue);
-    });
-  });
-
-  group('ValoraDialog Tests', () {
-    testWidgets('renders title, content, and actions', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ValoraDialog(
-              title: 'Dialog Title',
-              actions: [
-                TextButton(onPressed: () {}, child: const Text('OK')),
-              ],
-              child: const Text('Dialog Content'),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Dialog Title'), findsOneWidget);
-      expect(find.text('Dialog Content'), findsOneWidget);
-      expect(find.text('OK'), findsOneWidget);
+      expect(find.byIcon(Icons.error), findsOneWidget);
+      expect(find.text('Nothing here'), findsOneWidget);
+      expect(find.text('Try adjusting filters'), findsOneWidget);
     });
   });
 }

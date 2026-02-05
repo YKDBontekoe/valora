@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_animations.dart';
 import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/valora_widgets.dart';
@@ -205,7 +206,7 @@ class ListingDetailScreen extends StatelessWidget {
                   ],
 
                   const SizedBox(height: ValoraSpacing.xl),
-                ].animate(interval: 50.ms).fade(duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOut),
+                ].animate(interval: 50.ms).fade(duration: ValoraAnimations.slow).slideY(begin: 0.1, end: 0, curve: ValoraAnimations.deceleration),
               ),
             ),
           ),
