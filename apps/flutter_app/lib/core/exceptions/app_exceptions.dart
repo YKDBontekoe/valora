@@ -39,3 +39,8 @@ class JsonParsingException extends AppException {
   JsonParsingException([String? message])
       : super(message ?? 'Failed to parse server response', 'Data Error: ');
 }
+
+class RefreshTokenInvalidException extends AppException {
+  RefreshTokenInvalidException([String? message])
+      : super(message ?? 'Refresh token is invalid', 'Authentication Error: ');
+}

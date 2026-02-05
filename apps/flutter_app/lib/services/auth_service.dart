@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../core/exceptions/app_exceptions.dart';
@@ -31,7 +33,9 @@ class AuthService {
 
   Future<String?> refreshToken() async {
     final refreshToken = await _storage.read(key: _refreshTokenKey);
-    if (refreshToken == null) return null;
+    if (refreshToken == null) {
+      throw RefreshTokenInvalidException('No refresh token available');
+    }
 
     try {
       final response = await _client.post(
@@ -51,11 +55,25 @@ class AuthService {
           }
           return newToken;
         }
+        throw JsonParsingException('Missing token in refresh response');
       }
-    } catch (_) {
-      // Ignore refresh errors
+      if (response.statusCode == 400 || response.statusCode == 401) {
+        throw RefreshTokenInvalidException('Refresh token rejected');
+      }
+      throw ServerException('Refresh failed: ${response.statusCode}');
+    } on AppException {
+      rethrow;
+    } on TimeoutException catch (e) {
+      throw NetworkException('Refresh timed out: $e');
+    } on SocketException catch (e) {
+      throw NetworkException('Refresh failed: $e');
+    } on http.ClientException catch (e) {
+      throw NetworkException('Refresh failed: $e');
+    } on FormatException catch (e) {
+      throw JsonParsingException('Failed to parse refresh response: $e');
+    } catch (e) {
+      throw UnknownException('Refresh failed: $e');
     }
-    return null;
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {

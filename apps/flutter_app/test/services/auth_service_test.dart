@@ -156,17 +156,19 @@ void main() {
       verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token')).called(1);
     });
 
-    test('refreshToken returns null if no refresh token stored', () async {
+    test('refreshToken throws if no refresh token stored', () async {
       when(mockStorage.read(key: 'refresh_token'))
           .thenAnswer((_) async => null);
 
-      final result = await authService.refreshToken();
-
-      expect(result, isNull);
-      verifyNever(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')));
+      expect(
+        () => authService.refreshToken(),
+        throwsA(isA<RefreshTokenInvalidException>()),
+      );
+      verifyNever(
+          mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')));
     });
 
-    test('refreshToken returns null on API failure', () async {
+    test('refreshToken throws on invalid refresh token', () async {
       when(mockStorage.read(key: 'refresh_token'))
           .thenAnswer((_) async => 'valid_refresh_token');
 
@@ -176,9 +178,10 @@ void main() {
         body: anyNamed('body'),
       )).thenAnswer((_) async => http.Response('Unauthorized', 401));
 
-      final result = await authService.refreshToken();
-
-      expect(result, isNull);
+      expect(
+        () => authService.refreshToken(),
+        throwsA(isA<RefreshTokenInvalidException>()),
+      );
     });
 
     test('deleteToken removes both tokens', () async {

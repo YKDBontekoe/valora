@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -83,14 +85,33 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return newToken;
       }
-    } catch (_) {
-      // Ignore refresh errors to keep behavior aligned with AuthService.
+    } on RefreshTokenInvalidException catch (e, stackTrace) {
+      developer.log(
+        'Refresh token invalid. Clearing auth state.',
+        name: 'AuthProvider',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await logout();
+      return null;
+    } on AppException catch (e, stackTrace) {
+      developer.log(
+        'Refresh token failed (transient). Keeping auth state.',
+        name: 'AuthProvider',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    } catch (e, stackTrace) {
+      developer.log(
+        'Refresh token failed (unexpected). Keeping auth state.',
+        name: 'AuthProvider',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
     }
 
-    _token = null;
-    _email = null;
-    _isAuthenticated = false;
-    notifyListeners();
     return null;
   }
 
