@@ -121,5 +121,79 @@ void main() {
       expect(result!['minPrice'], 500.0);
       expect(result!['city'], 'TestCity');
     });
+
+    testWidgets('Shows error when Min Price > Max Price', (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) => const ValoraFilterDialog(),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final minPriceField = find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'Min Price'),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(minPriceField, '1000');
+
+      final maxPriceField = find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'Max Price'),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(maxPriceField, '500');
+
+      await tester.tap(find.text('Apply'));
+      await tester.pump(); // Start snackbar animation
+
+      expect(find.text('Min price cannot be greater than Max price'), findsOneWidget);
+    });
+
+    testWidgets('Shows error when Min Area > Max Area', (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) => const ValoraFilterDialog(),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final minAreaField = find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'Min'),
+        matching: find.byType(TextField),
+      ).first; // First 'Min' is for Living Area
+      await tester.enterText(minAreaField, '100');
+
+      final maxAreaField = find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'Max'),
+        matching: find.byType(TextField),
+      ).first;
+      await tester.enterText(maxAreaField, '50');
+
+      await tester.tap(find.text('Apply'));
+      await tester.pump(); // Start snackbar animation
+
+      expect(find.text('Min area cannot be greater than Max area'), findsOneWidget);
+    });
   });
 }
