@@ -301,6 +301,16 @@ public partial class FundaApiClient
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Extracts the JSON content from the Nuxt hydration script tag.
+    /// <para>
+    /// <strong>Strategy:</strong>
+    /// Funda uses Nuxt.js, which hydrates the client-side state via a `<script type="application/json">` tag.
+    /// Instead of using a greedy regex (which is prone to catastrophic backtracking on large HTML),
+    /// we iterate over all matching script tags and inspect their content for known keywords
+    /// like "cachedListingData" or "features" + "media".
+    /// </para>
+    /// </summary>
     private string? ExtractNuxtJson(string html)
     {
         // Simple regex to find the script content. 

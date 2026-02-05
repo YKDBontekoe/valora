@@ -217,8 +217,15 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 // API Endpoints
 var api = app.MapGroup("/api");
 
+/// <summary>
+/// Health check endpoint. Used by Docker Compose and load balancers.
+/// </summary>
 api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
+/// <summary>
+/// Retrieves a paginated list of listings based on filter criteria.
+/// Requires Authentication.
+/// </summary>
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
     var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(filter);
@@ -242,6 +249,10 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
     });
 }).RequireAuthorization();
 
+/// <summary>
+/// Retrieves detailed information for a specific listing by ID.
+/// Requires Authentication.
+/// </summary>
 api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
 {
     var listing = await repo.GetByIdAsync(id, ct);
@@ -273,7 +284,10 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     return Results.Ok(dto);
 }).RequireAuthorization();
 
-// Manual trigger endpoint for scraping
+/// <summary>
+/// Manually triggers a full scraping job via Hangfire.
+/// Requires 'Admin' role.
+/// </summary>
 api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
 {
     if (!hangfireEnabled) return Results.StatusCode(503);

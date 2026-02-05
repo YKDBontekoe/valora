@@ -6,6 +6,17 @@ namespace Valora.Infrastructure.Scraping;
 
 internal static class FundaNuxtJsonParser
 {
+    /// <summary>
+    /// Parses the raw Nuxt JSON state to find the listing data.
+    /// <para>
+    /// <strong>Why BFS?</strong>
+    /// The structure of the Nuxt hydration state is highly volatile and deeply nested.
+    /// The actual listing data might be at different depths depending on the page type (Project vs Listing)
+    /// or A/B tests. Instead of hardcoding a path (e.g., `payload.data.listing`), we use a
+    /// Breadth-First Search (BFS) to traverse the JSON object graph until we find an object
+    /// that contains the signature keys: `features`, `media`, and `description`.
+    /// </para>
+    /// </summary>
     public static FundaNuxtListingData? Parse(string json, ILogger? logger = null)
     {
         try
