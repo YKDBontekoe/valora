@@ -70,12 +70,14 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
           as _i4.Future<void>);
 
   @override
-  _i4.Future<String?> refreshToken() =>
+  _i4.Future<_i2.RefreshTokenResult> refreshToken() =>
       (super.noSuchMethod(
             Invocation.method(#refreshToken, []),
-            returnValue: _i4.Future<String?>.value(),
+            returnValue: _i4.Future<_i2.RefreshTokenResult>.value(
+              const _i2.RefreshTokenResult.transientFailure(),
+            ),
           )
-          as _i4.Future<String?>);
+          as _i4.Future<_i2.RefreshTokenResult>);
 
   @override
   _i4.Future<Map<String, dynamic>> login(String? email, String? password) =>

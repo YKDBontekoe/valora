@@ -1,8 +1,41 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../core/exceptions/app_exceptions.dart';
 import 'api_service.dart';
+
+enum RefreshTokenStatus {
+  success,
+  invalid,
+  missingRefreshToken,
+  transientFailure,
+}
+
+class RefreshTokenResult {
+  final RefreshTokenStatus status;
+  final String? token;
+
+  const RefreshTokenResult._(this.status, this.token);
+
+  const RefreshTokenResult.success(String token)
+      : this._(RefreshTokenStatus.success, token);
+
+  const RefreshTokenResult.invalid()
+      : this._(RefreshTokenStatus.invalid, null);
+
+  const RefreshTokenResult.missingRefreshToken()
+      : this._(RefreshTokenStatus.missingRefreshToken, null);
+
+  const RefreshTokenResult.transientFailure()
+      : this._(RefreshTokenStatus.transientFailure, null);
+
+  bool get isSuccess => status == RefreshTokenStatus.success;
+  bool get isInvalid =>
+      status == RefreshTokenStatus.invalid ||
+      status == RefreshTokenStatus.missingRefreshToken;
+}
 
 class AuthService {
   final FlutterSecureStorage _storage;
@@ -29,9 +62,11 @@ class AuthService {
     await _storage.delete(key: _refreshTokenKey);
   }
 
-  Future<String?> refreshToken() async {
+  Future<RefreshTokenResult> refreshToken() async {
     final refreshToken = await _storage.read(key: _refreshTokenKey);
-    if (refreshToken == null) return null;
+    if (refreshToken == null) {
+      return const RefreshTokenResult.missingRefreshToken();
+    }
 
     try {
       final response = await _client.post(
@@ -49,13 +84,28 @@ class AuthService {
           if (newRefreshToken != null) {
             await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
           }
-          return newToken;
+          return RefreshTokenResult.success(newToken);
         }
+        return const RefreshTokenResult.transientFailure();
       }
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 403) {
+        return const RefreshTokenResult.invalid();
+      }
+      if (response.statusCode >= 500) {
+        return const RefreshTokenResult.transientFailure();
+      }
+      return const RefreshTokenResult.transientFailure();
+    } on TimeoutException {
+      return const RefreshTokenResult.transientFailure();
+    } on SocketException {
+      return const RefreshTokenResult.transientFailure();
+    } on http.ClientException {
+      return const RefreshTokenResult.transientFailure();
     } catch (_) {
-      // Ignore refresh errors
+      return const RefreshTokenResult.transientFailure();
     }
-    return null;
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {

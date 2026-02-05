@@ -151,22 +151,23 @@ void main() {
 
       final result = await authService.refreshToken();
 
-      expect(result, 'new_access_token');
+      expect(result.status, RefreshTokenStatus.success);
+      expect(result.token, 'new_access_token');
       verify(mockStorage.write(key: 'auth_token', value: 'new_access_token')).called(1);
       verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token')).called(1);
     });
 
-    test('refreshToken returns null if no refresh token stored', () async {
+    test('refreshToken returns missing status if no refresh token stored', () async {
       when(mockStorage.read(key: 'refresh_token'))
           .thenAnswer((_) async => null);
 
       final result = await authService.refreshToken();
 
-      expect(result, isNull);
+      expect(result.status, RefreshTokenStatus.missingRefreshToken);
       verifyNever(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')));
     });
 
-    test('refreshToken returns null on API failure', () async {
+    test('refreshToken returns invalid on 401', () async {
       when(mockStorage.read(key: 'refresh_token'))
           .thenAnswer((_) async => 'valid_refresh_token');
 
@@ -178,7 +179,23 @@ void main() {
 
       final result = await authService.refreshToken();
 
-      expect(result, isNull);
+      expect(result.status, RefreshTokenStatus.invalid);
+      expect(result.token, isNull);
+    });
+
+    test('refreshToken returns transient failure on 500', () async {
+      when(mockStorage.read(key: 'refresh_token'))
+          .thenAnswer((_) async => 'valid_refresh_token');
+
+      when(mockClient.post(
+        any,
+        headers: anyNamed('headers'),
+        body: anyNamed('body'),
+      )).thenAnswer((_) async => http.Response('Server Error', 500));
+
+      final result = await authService.refreshToken();
+
+      expect(result.status, RefreshTokenStatus.transientFailure);
     });
 
     test('deleteToken removes both tokens', () async {

@@ -75,22 +75,23 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> refreshSession() async {
     try {
-      final newToken = await _authService.refreshToken();
-      if (newToken != null) {
-        _token = newToken;
-        _parseJwt(newToken);
+      final result = await _authService.refreshToken();
+      if (result.isSuccess && result.token != null) {
+        _token = result.token;
+        _parseJwt(result.token!);
         _isAuthenticated = true;
         notifyListeners();
-        return newToken;
+        return result.token;
+      }
+      if (result.isInvalid) {
+        _token = null;
+        _email = null;
+        _isAuthenticated = false;
+        notifyListeners();
       }
     } catch (_) {
-      // Ignore refresh errors to keep behavior aligned with AuthService.
+      // Treat unexpected refresh errors as transient to avoid logging out users.
     }
-
-    _token = null;
-    _email = null;
-    _isAuthenticated = false;
-    notifyListeners();
     return null;
   }
 

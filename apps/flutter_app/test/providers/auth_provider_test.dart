@@ -113,7 +113,8 @@ void main() {
       final payload = base64Url.encode(utf8.encode(json.encode({'email': 'refresh@example.com'})));
       final token = '$header.$payload.signature';
 
-      when(mockAuthService.refreshToken()).thenAnswer((_) async => token);
+      when(mockAuthService.refreshToken())
+          .thenAnswer((_) async => RefreshTokenResult.success(token));
 
       final result = await authProvider.refreshSession();
 
@@ -122,14 +123,40 @@ void main() {
       expect(authProvider.email, 'refresh@example.com');
     });
 
-    test('refreshSession should clear state on failure', () async {
-      when(mockAuthService.refreshToken()).thenAnswer((_) async => null);
+    test('refreshSession should clear state on invalid refresh', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'refresh@example.com'})));
+      final token = '$header.$payload.signature';
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      when(mockAuthService.refreshToken())
+          .thenAnswer((_) async => const RefreshTokenResult.invalid());
 
       final result = await authProvider.refreshSession();
 
       expect(result, isNull);
       expect(authProvider.isAuthenticated, false);
       expect(authProvider.email, null);
+    });
+
+    test('refreshSession should keep state on transient failure', () async {
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'refresh@example.com'})));
+      final token = '$header.$payload.signature';
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      when(mockAuthService.refreshToken())
+          .thenAnswer((_) async => const RefreshTokenResult.transientFailure());
+
+      final result = await authProvider.refreshSession();
+
+      expect(result, isNull);
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, 'refresh@example.com');
     });
 
     test('checkAuth catches exception during parsing', () async {
