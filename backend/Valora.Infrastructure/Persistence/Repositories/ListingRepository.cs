@@ -21,36 +21,7 @@ public class ListingRepository : IListingRepository
         var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
-        query = query.ApplySearchFilter(filter, isPostgres);
-
-        if (filter.MinPrice.HasValue)
-        {
-            query = query.Where(l => l.Price >= filter.MinPrice.Value);
-        }
-
-        if (filter.MaxPrice.HasValue)
-        {
-            query = query.Where(l => l.Price <= filter.MaxPrice.Value);
-        }
-
-        query = query.ApplyCityFilter(filter.City, isPostgres);
-
-        if (filter.MinBedrooms.HasValue)
-        {
-            query = query.Where(l => l.Bedrooms >= filter.MinBedrooms.Value);
-        }
-
-        if (filter.MinLivingArea.HasValue)
-        {
-            query = query.Where(l => l.LivingAreaM2 >= filter.MinLivingArea.Value);
-        }
-
-        if (filter.MaxLivingArea.HasValue)
-        {
-            query = query.Where(l => l.LivingAreaM2 <= filter.MaxLivingArea.Value);
-        }
-
-        query = query.ApplySorting(filter.SortBy, filter.SortOrder);
+        query = ApplyFilters(query, filter, isPostgres);
 
         var dtoQuery = query.Select(l => new ListingDto(
             l.Id,
@@ -90,6 +61,74 @@ public class ListingRepository : IListingRepository
         ));
 
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10);
+    }
+
+    public async Task<PaginatedList<ListingSummaryDto>> GetSummariesAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Listings.AsNoTracking().AsQueryable();
+        var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
+
+        query = ApplyFilters(query, filter, isPostgres);
+
+        var dtoQuery = query.Select(l => new ListingSummaryDto(
+            l.Id,
+            l.FundaId,
+            l.Address,
+            l.City,
+            l.PostalCode,
+            l.Price,
+            l.Bedrooms,
+            l.Bathrooms,
+            l.LivingAreaM2,
+            l.PlotAreaM2,
+            l.PropertyType,
+            l.Status,
+            l.Url,
+            l.ImageUrl,
+            l.ListedDate,
+            l.CreatedAt,
+            l.EnergyLabel,
+            l.IsSoldOrRented,
+            l.Labels
+        ));
+
+        return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10);
+    }
+
+    private IQueryable<Listing> ApplyFilters(IQueryable<Listing> query, ListingFilterDto filter, bool isPostgres)
+    {
+        query = query.ApplySearchFilter(filter, isPostgres);
+
+        if (filter.MinPrice.HasValue)
+        {
+            query = query.Where(l => l.Price >= filter.MinPrice.Value);
+        }
+
+        if (filter.MaxPrice.HasValue)
+        {
+            query = query.Where(l => l.Price <= filter.MaxPrice.Value);
+        }
+
+        query = query.ApplyCityFilter(filter.City, isPostgres);
+
+        if (filter.MinBedrooms.HasValue)
+        {
+            query = query.Where(l => l.Bedrooms >= filter.MinBedrooms.Value);
+        }
+
+        if (filter.MinLivingArea.HasValue)
+        {
+            query = query.Where(l => l.LivingAreaM2 >= filter.MinLivingArea.Value);
+        }
+
+        if (filter.MaxLivingArea.HasValue)
+        {
+            query = query.Where(l => l.LivingAreaM2 <= filter.MaxLivingArea.Value);
+        }
+
+        query = query.ApplySorting(filter.SortBy, filter.SortOrder);
+
+        return query;
     }
 
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
