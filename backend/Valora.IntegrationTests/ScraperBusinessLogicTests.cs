@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Scraping;
 using Valora.Application.Scraping.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
