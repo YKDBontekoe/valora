@@ -5,8 +5,8 @@ using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using System.Globalization;
-using Valora.Infrastructure.Scraping;
 using Valora.Application.Scraping;
+using Valora.Infrastructure.Scraping;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -19,8 +19,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
 {
     private readonly TestcontainersDatabaseFixture _fixture;
     private readonly WireMockServer _server;
-    private readonly IServiceScope _scope;
-    private readonly ValoraDbContext _context;
+    private readonly ValoraDbContext _cleanupContext;
 
     // Track disposable resources
     private readonly List<IDisposable> _disposables = new();
@@ -34,23 +33,23 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         if (_fixture.Factory == null)
             throw new InvalidOperationException("Factory not initialized");
 
-        _scope = _fixture.Factory.Services.CreateScope();
-        _context = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        var scope = _fixture.Factory.Services.CreateScope();
+        _cleanupContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        _disposables.Add(scope);
     }
 
     public async Task InitializeAsync()
     {
         // Cleanup data before each test
-        _context.PriceHistories.RemoveRange(_context.PriceHistories);
-        _context.Listings.RemoveRange(_context.Listings);
-        await _context.SaveChangesAsync();
+        _cleanupContext.PriceHistories.RemoveRange(_cleanupContext.PriceHistories);
+        _cleanupContext.Listings.RemoveRange(_cleanupContext.Listings);
+        await _cleanupContext.SaveChangesAsync();
     }
 
     public async Task DisposeAsync()
     {
         _server.Stop();
         _server.Dispose();
-        _scope.Dispose();
 
         foreach (var disposable in _disposables)
         {
@@ -63,7 +62,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         }
     }
 
-    private IFundaScraperService GetScraperServiceWithMockedApi()
+    private IServiceScope CreateScopeWithMockedApi()
     {
         // Create a custom scope with the mocked HTTP handler
         // We need to create a NEW factory instance derived from the original one
@@ -86,7 +85,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         // Track the scope for disposal
         _disposables.Add(scope);
 
-        return scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
+        return scope;
     }
 
     // Helper to configure WireMock
@@ -129,13 +128,15 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         decimal price = 500000;
         SetupMockSearchResponse(fundaId, address, price);
 
-        var scraper = GetScraperServiceWithMockedApi();
+        using var scope = CreateScopeWithMockedApi();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        var scraper = scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
 
         // Act
         await scraper.ScrapeLimitedAsync("amsterdam", 1, CancellationToken.None);
 
         // Assert
-        var listing = await _context.Listings
+        var listing = await context.Listings
             .Include(l => l.PriceHistory)
             .FirstOrDefaultAsync(l => l.FundaId == fundaId);
 
@@ -154,6 +155,9 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         decimal oldPrice = 400000;
         decimal newPrice = 450000;
 
+        using var scope = CreateScopeWithMockedApi();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
         // Seed existing listing
         var existingListing = new Listing
         {
@@ -165,24 +169,24 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
             PropertyType = "Woonhuis",
             Status = "Beschikbaar"
         };
-        _context.Listings.Add(existingListing);
-        await _context.SaveChangesAsync();
+        context.Listings.Add(existingListing);
+        await context.SaveChangesAsync();
 
         // Add initial history
-        _context.PriceHistories.Add(new PriceHistory { ListingId = existingListing.Id, Price = oldPrice, RecordedAt = DateTime.UtcNow.AddDays(-1) });
-        await _context.SaveChangesAsync();
+        context.PriceHistories.Add(new PriceHistory { ListingId = existingListing.Id, Price = oldPrice, RecordedAt = DateTime.UtcNow.AddDays(-1) });
+        await context.SaveChangesAsync();
 
         // Setup Mock with new price
         SetupMockSearchResponse(fundaId, address, newPrice);
-        var scraper = GetScraperServiceWithMockedApi();
+
+        var scraper = scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
 
         // Act
         await scraper.ScrapeLimitedAsync("amsterdam", 1, CancellationToken.None);
 
         // Assert
-        // We need to reload the entity to see changes
-        _context.ChangeTracker.Clear();
-        var listing = await _context.Listings
+        context.ChangeTracker.Clear();
+        var listing = await context.Listings
             .Include(l => l.PriceHistory)
             .FirstOrDefaultAsync(l => l.FundaId == fundaId);
 
@@ -202,6 +206,9 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         var address = "Same St 3";
         decimal price = 300000;
 
+        using var scope = CreateScopeWithMockedApi();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
         var existingListing = new Listing
         {
             FundaId = fundaId,
@@ -212,21 +219,22 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
             PropertyType = "Woonhuis",
             Status = "Beschikbaar"
         };
-        _context.Listings.Add(existingListing);
-        await _context.SaveChangesAsync();
+        context.Listings.Add(existingListing);
+        await context.SaveChangesAsync();
 
-        _context.PriceHistories.Add(new PriceHistory { ListingId = existingListing.Id, Price = price });
-        await _context.SaveChangesAsync();
+        context.PriceHistories.Add(new PriceHistory { ListingId = existingListing.Id, Price = price });
+        await context.SaveChangesAsync();
 
         SetupMockSearchResponse(fundaId, address, price);
-        var scraper = GetScraperServiceWithMockedApi();
+
+        var scraper = scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
 
         // Act
         await scraper.ScrapeLimitedAsync("amsterdam", 1, CancellationToken.None);
 
         // Assert
-        _context.ChangeTracker.Clear();
-        var listing = await _context.Listings
+        context.ChangeTracker.Clear();
+        var listing = await context.Listings
             .Include(l => l.PriceHistory)
             .FirstOrDefaultAsync(l => l.FundaId == fundaId);
 
@@ -242,6 +250,9 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         var address = "Partial St 4";
         decimal price = 600000;
 
+        using var scope = CreateScopeWithMockedApi();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
         var existingListing = new Listing
         {
             FundaId = fundaId,
@@ -254,19 +265,20 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
             Bedrooms = 3,           // Existing data
             LivingAreaM2 = 120      // Existing data
         };
-        _context.Listings.Add(existingListing);
-        await _context.SaveChangesAsync();
+        context.Listings.Add(existingListing);
+        await context.SaveChangesAsync();
 
         // Mock response (API doesn't return bedrooms/living area in our mock setup)
         SetupMockSearchResponse(fundaId, address, price);
-        var scraper = GetScraperServiceWithMockedApi();
+
+        var scraper = scope.ServiceProvider.GetRequiredService<IFundaScraperService>();
 
         // Act
         await scraper.ScrapeLimitedAsync("amsterdam", 1, CancellationToken.None);
 
         // Assert
-        _context.ChangeTracker.Clear();
-        var listing = await _context.Listings.FirstOrDefaultAsync(l => l.FundaId == fundaId);
+        context.ChangeTracker.Clear();
+        var listing = await context.Listings.FirstOrDefaultAsync(l => l.FundaId == fundaId);
 
         Assert.NotNull(listing);
         Assert.Equal(3, listing.Bedrooms);        // Should be preserved

@@ -16,7 +16,7 @@ internal static partial class FundaMapper
             ? apiListing.ListingUrl
             : $"https://www.funda.nl{listingUrl}";
 
-        var price = ParsePriceFromApi(apiListing.Price);
+        var price = ParsePrice(apiListing.Price);
 
         // Note: API provides limited details compared to HTML scraping.
         // We initialize with nulls where data is missing in API, and fill it later.
@@ -41,6 +41,43 @@ internal static partial class FundaMapper
 
     public static void EnrichListingWithSummary(Listing listing, FundaApiListingSummary summary)
     {
+        if (summary.Address != null)
+        {
+            listing.Address = summary.Address.Street ?? listing.Address;
+            listing.City = summary.Address.City ?? listing.City;
+            listing.PostalCode = summary.Address.PostalCode ?? listing.PostalCode;
+        }
+
+        if (summary.Price != null)
+        {
+            listing.Price = ParsePrice(summary.Price.SellingPrice);
+        }
+
+        if (summary.FastView != null)
+        {
+            if (!string.IsNullOrEmpty(summary.FastView.LivingArea))
+            {
+                var match = NumberRegex().Match(summary.FastView.LivingArea);
+                if (match.Success && int.TryParse(match.Value, out var area))
+                {
+                    listing.LivingAreaM2 = area;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms) &&
+                int.TryParse(summary.FastView.NumberOfBedrooms, out var bedrooms))
+            {
+                listing.Bedrooms = bedrooms;
+            }
+
+            listing.EnergyLabel = summary.FastView.EnergyLabel;
+        }
+
+        if (summary.Brokers != null && summary.Brokers.Count > 0)
+        {
+            listing.AgentName = summary.Brokers[0].Name;
+        }
+
         // Publication date
         listing.PublicationDate = summary.PublicationDate;
 
@@ -54,18 +91,6 @@ internal static partial class FundaMapper
                 .Where(l => !string.IsNullOrEmpty(l.Text))
                 .Select(l => l.Text!)
                 .ToList();
-        }
-
-        // Extract postal code from address if available
-        if (!string.IsNullOrEmpty(summary.Address?.PostalCode))
-        {
-            listing.PostalCode = summary.Address.PostalCode;
-        }
-
-        // City from address
-        if (!string.IsNullOrEmpty(summary.Address?.City))
-        {
-            listing.City = summary.Address.City;
         }
 
         // Status inference from tracking (most reliable source)
@@ -374,7 +399,7 @@ internal static partial class FundaMapper
         return null;
     }
 
-    private static decimal? ParsePriceFromApi(string? priceText)
+    public static decimal? ParsePrice(string? priceText)
     {
         if (string.IsNullOrEmpty(priceText)) return null;
 

@@ -74,7 +74,7 @@ public partial class FundaSearchService : IFundaSearchService
     public async Task<Listing?> GetByFundaUrlAsync(string fundaUrl, CancellationToken ct = default)
     {
         // Extract GlobalId from URL
-        var globalId = ExtractGlobalIdFromUrl(fundaUrl);
+        var globalId = FundaUrlParser.ExtractGlobalIdFromUrl(fundaUrl);
         if (globalId == null)
         {
             _logger.LogWarning("Could not extract GlobalId from URL: {Url}", fundaUrl);
@@ -126,12 +126,12 @@ public partial class FundaSearchService : IFundaSearchService
             };
 
             // Update from summary
-            UpdateListingFromSummary(listing, summary);
+            FundaMapper.EnrichListingWithSummary(listing, summary);
             
             // Enrich with rich data if available
             if (richData != null)
             {
-                EnrichListingWithNuxtData(listing, richData);
+                FundaMapper.EnrichListingWithNuxtData(listing, richData);
             }
 
             listing.LastFundaFetchUtc = DateTime.UtcNow;
@@ -226,31 +226,28 @@ public partial class FundaSearchService : IFundaSearchService
             return;
         }
 
-        var listing = existing ?? new Listing
+        var mappedListing = FundaMapper.MapApiListingToDomain(apiListing, fundaId);
+        Listing listing;
+
+        if (existing == null)
         {
-            FundaId = fundaId,
-            Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
-        };
-
-        // Basic data from API response
-        listing.City = apiListing.Address?.City;
-        listing.AgentName = apiListing.AgentName;
-        listing.ImageUrl = apiListing.Image?.Default;
-        listing.Price = ParsePrice(apiListing.Price);
-        listing.PropertyType = apiListing.IsProject ? "Nieuwbouwproject" : "Woonhuis";
-
-        var fullUrl = apiListing.ListingUrl!.StartsWith("http")
-            ? apiListing.ListingUrl
-            : $"https://www.funda.nl{apiListing.ListingUrl}";
-        listing.Url = fullUrl;
+             listing = mappedListing;
+        }
+        else
+        {
+             listing = existing;
+             FundaMapper.MergeListingDetails(listing, mappedListing);
+        }
 
         // Try to get rich details (but don't fail if we can't)
         try
         {
+            var fullUrl = listing.Url ?? (apiListing.ListingUrl!.StartsWith("http") ? apiListing.ListingUrl : $"https://www.funda.nl{apiListing.ListingUrl}");
+
             var richData = await _apiClient.GetListingDetailsAsync(fullUrl, ct);
             if (richData != null)
             {
-                EnrichListingWithNuxtData(listing, richData);
+                FundaMapper.EnrichListingWithNuxtData(listing, richData);
             }
         }
         catch (Exception ex)
@@ -283,196 +280,4 @@ public partial class FundaSearchService : IFundaSearchService
             query.Page,
             ct);
     }
-
-    private static int? ExtractGlobalIdFromUrl(string url)
-    {
-        // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
-        // The GlobalId is typically the last numeric segment in the URL path
-        var match = GlobalIdRegex().Match(url);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out var id))
-        {
-            return id;
-        }
-        return null;
-    }
-
-    private static decimal? ParsePrice(string? priceText)
-    {
-        if (string.IsNullOrEmpty(priceText)) return null;
-        var cleaned = PriceCleanupRegex().Replace(priceText, "");
-        if (decimal.TryParse(cleaned, out var price) && price > 0)
-        {
-            return price;
-        }
-        return null;
-    }
-
-    private static void UpdateListingFromSummary(Listing listing, FundaApiListingSummary summary)
-    {
-        if (summary.Address != null)
-        {
-            listing.Address = summary.Address.Street ?? listing.Address;
-            listing.City = summary.Address.City;
-            listing.PostalCode = summary.Address.PostalCode;
-        }
-
-        if (summary.Price != null)
-        {
-            listing.Price = ParsePrice(summary.Price.SellingPrice);
-        }
-
-        if (summary.FastView != null)
-        {
-            if (!string.IsNullOrEmpty(summary.FastView.LivingArea))
-            {
-                var match = NumberRegex().Match(summary.FastView.LivingArea);
-                if (match.Success && int.TryParse(match.Value, out var area))
-                {
-                    listing.LivingAreaM2 = area;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms) && 
-                int.TryParse(summary.FastView.NumberOfBedrooms, out var bedrooms))
-            {
-                listing.Bedrooms = bedrooms;
-            }
-
-            listing.EnergyLabel = summary.FastView.EnergyLabel;
-        }
-
-        if (summary.Brokers.Count > 0)
-        {
-            listing.AgentName = summary.Brokers[0].Name;
-        }
-
-        listing.PublicationDate = summary.PublicationDate;
-        listing.IsSoldOrRented = summary.IsSoldOrRented;
-        
-        if (summary.Labels.Count > 0)
-        {
-            listing.Labels = summary.Labels.Select(l => l.Text ?? "").Where(t => !string.IsNullOrEmpty(t)).ToList();
-        }
-    }
-
-    // This method mirrors the one in FundaScraperService to maintain consistency
-    private static void EnrichListingWithNuxtData(Listing listing, FundaNuxtListingData data)
-    {
-        // Description
-        listing.Description = data.Description?.Content;
-
-        // Features
-        if (data.Features != null)
-        {
-            if (data.ObjectType?.PropertySpecification != null)
-            {
-                listing.LivingAreaM2 = data.ObjectType.PropertySpecification.SelectedArea;
-                listing.PlotAreaM2 = data.ObjectType.PropertySpecification.SelectedPlotArea;
-            }
-
-            var featureMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            
-            if (data.Features.Indeling != null) FlattenFeatures(data.Features.Indeling.KenmerkenList, featureMap);
-            if (data.Features.Afmetingen != null) FlattenFeatures(data.Features.Afmetingen.KenmerkenList, featureMap);
-            if (data.Features.Energie != null) FlattenFeatures(data.Features.Energie.KenmerkenList, featureMap);
-            if (data.Features.Bouw != null) FlattenFeatures(data.Features.Bouw.KenmerkenList, featureMap);
-
-            listing.Features = featureMap;
-
-            // Extract specific fields from feature map
-            if (!listing.LivingAreaM2.HasValue && featureMap.TryGetValue("Wonen", out var livingArea))
-                listing.LivingAreaM2 = ParseFirstNumber(livingArea);
-            
-            if (!listing.PlotAreaM2.HasValue && featureMap.TryGetValue("Perceel", out var plotArea)) 
-                listing.PlotAreaM2 = ParseFirstNumber(plotArea);
-
-            if (featureMap.TryGetValue("Aantal kamers", out var rooms))
-            {
-                var bedroomMatch = BedroomRegex().Match(rooms);
-                if (bedroomMatch.Success && int.TryParse(bedroomMatch.Groups[1].Value, out var bedrooms))
-                {
-                    listing.Bedrooms = bedrooms;
-                }
-                else
-                {
-                    listing.Bedrooms = ParseFirstNumber(rooms);
-                }
-            }
-
-            if (featureMap.TryGetValue("Aantal badkamers", out var bathrooms))
-                listing.Bathrooms = ParseFirstNumber(bathrooms);
-            
-            if (featureMap.TryGetValue("Energielabel", out var label)) listing.EnergyLabel = label.Trim();
-            if (featureMap.TryGetValue("Bouwjaar", out var year)) listing.YearBuilt = ParseFirstNumber(year);
-        }
-
-        // Images
-        if (data.Media?.Items != null)
-        {
-            listing.ImageUrls = data.Media.Items
-                .Where(x => !string.IsNullOrEmpty(x.Id))
-                .Select(x => $"https://cloud.funda.nl/valentina_media/{x.Id}_720.jpg")
-                .ToList();
-            
-            if (listing.ImageUrls.Count > 0)
-            {
-                listing.ImageUrl = listing.ImageUrls[0];
-            }
-        }
-
-        // Coordinates
-        if (data.Coordinates != null)
-        {
-            listing.Latitude = data.Coordinates.Lat;
-            listing.Longitude = data.Coordinates.Lng;
-        }
-    }
-
-    private static void FlattenFeatures(List<FundaNuxtFeatureItem>? items, Dictionary<string, string> map)
-    {
-        if (items == null) return;
-
-        foreach (var item in items)
-        {
-            if (!string.IsNullOrEmpty(item.Label))
-            {
-                if (!string.IsNullOrEmpty(item.Value))
-                {
-                    map.TryAdd(item.Label.Trim(), item.Value.Trim());
-                }
-                
-                if (item.KenmerkenList != null && item.KenmerkenList.Count > 0)
-                {
-                    FlattenFeatures(item.KenmerkenList, map);
-                }
-            }
-            else if (item.KenmerkenList != null)
-            {
-                FlattenFeatures(item.KenmerkenList, map);
-            }
-        }
-    }
-
-    private static int? ParseFirstNumber(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return null;
-        var match = NumberRegex().Match(text);
-        if (match.Success && int.TryParse(match.Value, out var num))
-        {
-            return num;
-        }
-        return null;
-    }
-
-    [GeneratedRegex(@"/(\d{6,})", RegexOptions.IgnoreCase)]
-    private static partial Regex GlobalIdRegex();
-
-    [GeneratedRegex(@"[^\d]")]
-    private static partial Regex PriceCleanupRegex();
-
-    [GeneratedRegex(@"\d+")]
-    private static partial Regex NumberRegex();
-
-    [GeneratedRegex(@"(\d+)\s*slaapkamer", RegexOptions.IgnoreCase)]
-    private static partial Regex BedroomRegex();
 }
