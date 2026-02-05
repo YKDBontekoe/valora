@@ -1,6 +1,6 @@
 # Valora
 
-House listing scraper for funda.nl.
+House listing scraper and tracker for funda.nl.
 
 ## Stack
 
@@ -10,7 +10,15 @@ House listing scraper for funda.nl.
 - **Orchestration**: Docker Compose
 - **Background Jobs**: Hangfire
 
+## Documentation
+
+- **[Onboarding Guide](docs/onboarding.md)**: Start here! Data flow walkthroughs and first steps.
+- [User Guide](docs/user-guide.md): How to use the application.
+- [Developer Guide](docs/developer-guide.md): Deep dive into architecture and implementation.
+
 ## Architecture Overview
+
+Valora follows **Clean Architecture** principles to ensure maintainability and testability.
 
 ```mermaid
 graph TD
@@ -23,6 +31,11 @@ graph TD
     Infra -->|Http| Funda[Funda.nl]
     Infra -->|Background Jobs| Hangfire
 ```
+
+- **Valora.Domain**: The core. Contains entities (`Listing`) and business rules. No dependencies.
+- **Valora.Application**: The logic. Defines interfaces (`IListingRepository`), use cases, and DTOs. Depends only on Domain.
+- **Valora.Infrastructure**: The machinery. Implements interfaces (EF Core, Funda Scraper). Depends on Application and Domain.
+- **Valora.Api**: The entry point. Configures DI and maps HTTP endpoints. Depends on Application and Infrastructure.
 
 ## Structure
 
@@ -38,49 +51,34 @@ valora/
 └── docker/               # Docker Compose
 ```
 
-## Documentation
+## Quick Start
 
-- [User Guide](docs/user-guide.md): How to use Valora.
-- [Developer Guide](docs/developer-guide.md): Architecture, API, and implementation details.
-
-## Getting Started
+Get up and running in minutes.
 
 ### Prerequisites
 
-- .NET 10 SDK
-- Flutter SDK
 - Docker Desktop
+- .NET 10 SDK (for backend dev)
+- Flutter SDK (for frontend dev)
 
-### 1. Database Setup
+### 1. Start Infrastructure
 
-Start the PostgreSQL database using Docker Compose:
+Start PostgreSQL and other services:
 
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-### 2. Backend Setup
-
-The backend relies on environment variables. Copy the example file and configure it:
+### 2. Run Backend
 
 ```bash
 cd backend
 cp .env.example .env
-```
-
-Ensure `JWT_SECRET` is set in your environment or `.env` file.
-
-Run the backend:
-
-```bash
-dotnet restore
-dotnet build
 dotnet run --project Valora.Api
 ```
+*Server starts at `http://localhost:5000`*
 
-The server will start at `http://localhost:5000`.
-
-### 3. Frontend Setup
+### 3. Run Frontend
 
 ```bash
 cd apps/flutter_app
@@ -91,7 +89,7 @@ flutter run
 
 ## API Reference
 
-The backend provides the following key endpoints:
+The backend provides the following key endpoints (see `Valora.Api/Program.cs` for full list):
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -102,19 +100,8 @@ The backend provides the following key endpoints:
 | `GET` | `/api/listings/{id}` | Get listing details | Yes |
 | `POST` | `/api/scraper/trigger` | Trigger manual scrape | Yes |
 
-See [Developer Guide](docs/developer-guide.md) for full API documentation.
-
 ## Troubleshooting
 
-### "Backend not connected"
-- Ensure the backend is running on port 5000.
-- Check if `http://localhost:5000/api/health` returns `200 OK`.
-- Verify the frontend `.env` points to the correct `API_URL`.
-
-### "JWT Secret is missing"
-- The backend will throw an error if `JWT_SECRET` is not set in production.
-- For development, it falls back to a temporary key, but you should set it in `backend/.env`.
-
-### "Database connection failed"
-- Ensure the Docker container is running: `docker ps`.
-- Check connection string in `.env` or `appsettings.json` (if used, though env vars are preferred).
+- **Backend not connected**: Check if `http://localhost:5000/api/health` returns `200 OK`.
+- **JWT Secret is missing**: Set `JWT_SECRET` in `backend/.env` (use any string for dev).
+- **Database connection failed**: Ensure Docker is running (`docker ps`).

@@ -174,6 +174,21 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
+    /// <summary>
+    /// Orchestrates the enrichment of a basic listing with detailed data from multiple sources.
+    /// <para>
+    /// <strong>Why multiple steps?</strong>
+    /// Funda's data is fragmented across different endpoints and HTML structures:
+    /// 1. <strong>Summary API</strong>: Provides status (sold/rented), publication date, and accurate postal code.
+    /// 2. <strong>Nuxt/HTML</strong>: Provides rich descriptions, media URLs, and extended features (energy label, year built).
+    /// 3. <strong>Contact API</strong>: Provides broker details (phone, logo) which are dynamic.
+    /// 4. <strong>Fiber API</strong>: Provides internet availability (requires full postal code from step 1).
+    /// </para>
+    /// <para>
+    /// Each step is wrapped in a try-catch block to ensure that a failure in one auxiliary data source
+    /// does not prevent the listing from being saved (Graceful Degradation).
+    /// </para>
+    /// </summary>
     private async Task EnrichListingAsync(Listing listing, FundaApiListing apiListing, CancellationToken cancellationToken)
     {
         // 1. Enrich with Summary API (includes publicationDate, sold status, labels, postal code)

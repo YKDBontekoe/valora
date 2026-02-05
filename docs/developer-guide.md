@@ -65,60 +65,7 @@ classDiagram
 
 ## Onboarding: Data Flow
 
-Understanding how a request travels through the system is crucial for new developers.
-
-### Request Lifecycle: `GET /api/listings`
-
-1.  **API Layer (`Program.cs`)**
-    *   The Minimal API endpoint receives the request.
-    *   `[AsParameters] ListingFilterDto filter` is bound from query parameters.
-    *   `IListingRepository` is injected via DI.
-
-2.  **Infrastructure Layer (`ListingRepository`)**
-    *   `GetAllAsync` is called with the filter.
-    *   The repository constructs an EF Core query based on the filter (e.g., filtering by city, price range).
-    *   The query is executed against the PostgreSQL database.
-    *   Results are mapped to a `PaginatedList<Listing>`.
-
-3.  **Response**
-    *   The API layer wraps the result in an anonymous object (Items, TotalCount, etc.).
-    *   Returns `200 OK` with JSON.
-
-### Scraping Workflow
-
-```mermaid
-sequenceDiagram
-    participant Job as FundaScraperJob
-    participant Service as FundaScraperService
-    participant Parser as FundaHtmlParser
-    participant Funda as Funda.nl
-    participant DB as Database
-
-    Job->>Service: ScrapeAndStoreAsync()
-    loop For each SearchUrl
-        Service->>Funda: GET Search Page
-        Funda-->>Service: HTML
-        Service->>Parser: ParseSearchResults(HTML)
-        Parser-->>Service: List<ListingPreview>
-
-        loop For each Listing
-            Service->>Funda: GET Detail Page
-            Funda-->>Service: HTML
-            Service->>Parser: ParseListingDetail(HTML)
-            Parser-->>Service: Listing Entity
-
-            alt New Listing
-                Service->>DB: Add Listing
-                Service->>DB: Add PriceHistory
-            else Existing Listing
-                Service->>DB: Update Listing
-                opt Price Changed
-                    Service->>DB: Add PriceHistory
-                end
-            end
-        end
-    end
-```
+> **Note:** The detailed data flow guide has been moved to the [Onboarding Guide](onboarding.md).
 
 ## API Documentation
 
