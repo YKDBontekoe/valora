@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +77,17 @@ public class ExceptionHandlingMiddleware
             case BadHttpRequestException:
                 statusCode = (int)HttpStatusCode.BadRequest;
                 title = "Bad Request";
+                break;
+            case HttpRequestException:
+            case SocketException:
+                statusCode = (int)HttpStatusCode.ServiceUnavailable;
+                title = "External Service Error";
+                detail = "An external service is unavailable.";
+                break;
+            case TimeoutException:
+                statusCode = (int)HttpStatusCode.GatewayTimeout;
+                title = "Request Timeout";
+                detail = "The request timed out waiting for an upstream service.";
                 break;
         }
 
