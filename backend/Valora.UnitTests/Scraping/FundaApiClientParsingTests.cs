@@ -47,7 +47,7 @@ public class FundaApiClientParsingTests
             });
 
         // Act
-        var result = await _client.GetListingDetailsAsync("https://example.com", CancellationToken.None);
+        var result = await _client.GetListingDetailsAsync("https://www.funda.nl/koop/nope", CancellationToken.None);
 
         // Assert
         Assert.Null(result);
@@ -169,7 +169,7 @@ public class FundaApiClientParsingTests
             });
 
         // Act
-        var result = await _client.GetListingDetailsAsync("https://example.com", CancellationToken.None);
+        var result = await _client.GetListingDetailsAsync("https://www.funda.nl/koop/yep", CancellationToken.None);
 
         // Assert
         Assert.NotNull(result);

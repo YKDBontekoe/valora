@@ -14,7 +14,7 @@ public record RegisterDto
     public string Email { get; init; } = string.Empty;
 
     [Required]
-    [MinLength(6)]
+    [MinLength(8, ErrorMessage = "Password must be at least 8 characters long.")]
     public string Password { get; init; } = string.Empty;
 
     [Required]
