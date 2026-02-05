@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Scraping;
+using Valora.Application.Scraping.Interfaces;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
@@ -45,7 +46,7 @@ public static class DependencyInjection
 
         // Scraper services
         // FundaApiClient uses Funda's Topposition API for more reliable listing discovery
-        services.AddHttpClient<FundaApiClient>()
+        services.AddHttpClient<IFundaApiClient, FundaApiClient>()
             .SetHandlerLifetime(TimeSpan.FromMinutes(5))
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
             .AddTransientHttpErrorPolicy(builder =>
@@ -57,8 +58,6 @@ public static class DependencyInjection
                         Console.WriteLine($"[Polly] Retrying Funda API request. Attempt {retryAttempt}. Delay: {timespan.TotalSeconds}s. Error: {outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString()}");
                     }));
 
-        services.AddScoped<IFundaScraperService, FundaScraperService>();
-        services.AddScoped<IFundaSearchService, FundaSearchService>();
         services.AddScoped<FundaScraperJob>();
 
         return services;

@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Scraping;
+using Valora.Application.Scraping.Interfaces;
+using Valora.Application.Scraping.Utils;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Scraping.Models;
 
-namespace Valora.Infrastructure.Scraping;
+namespace Valora.Application.Scraping;
 
 public class FundaScraperService : IFundaScraperService
 {
@@ -13,7 +13,7 @@ public class FundaScraperService : IFundaScraperService
 
     private readonly IListingRepository _listingRepository;
     private readonly IPriceHistoryRepository _priceHistoryRepository;
-    private readonly FundaApiClient _apiClient;
+    private readonly IFundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
     private readonly IScraperNotificationService _notificationService;
@@ -24,7 +24,7 @@ public class FundaScraperService : IFundaScraperService
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
         IScraperNotificationService notificationService,
-        FundaApiClient apiClient)
+        IFundaApiClient apiClient)
     {
         _listingRepository = listingRepository;
         _priceHistoryRepository = priceHistoryRepository;
@@ -113,7 +113,7 @@ public class FundaScraperService : IFundaScraperService
         }
 
         // Optimization: Fetch all existing listings in one query to avoid N+1
-        var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
+        var fundaIds = apiListings.Select(l => l.FundaId).ToList();
         var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
         var existingListingsMap = existingListings.ToDictionary(l => l.FundaId, l => l);
 
@@ -121,7 +121,7 @@ public class FundaScraperService : IFundaScraperService
         {
             try
             {
-                existingListingsMap.TryGetValue(apiListing.GlobalId.ToString(), out var existingListing);
+                existingListingsMap.TryGetValue(apiListing.FundaId, out var existingListing);
                 await ProcessListingAsync(apiListing, existingListing, shouldNotify, cancellationToken);
                 
                 // Rate limiting delay
@@ -133,19 +133,19 @@ public class FundaScraperService : IFundaScraperService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to process listing: {GlobalId}", apiListing.GlobalId);
+                _logger.LogError(ex, "Failed to process listing: {FundaId}", apiListing.FundaId);
             }
         }
     }
     
-    private async Task<List<FundaApiListing>> FetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
+    private async Task<List<Listing>> FetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
     {
         var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
         var apiListings = await _apiClient.SearchAllBuyPagesAsync(region, maxPages, cancellationToken: cancellationToken);
 
         // Filter valid listings
         var validListings = apiListings
-            .Where(l => !string.IsNullOrEmpty(l.ListingUrl) && l.GlobalId > 0)
+            .Where(l => !string.IsNullOrEmpty(l.Url) && !string.IsNullOrEmpty(l.FundaId))
             .ToList();
 
         if (limit.HasValue)
@@ -156,13 +156,9 @@ public class FundaScraperService : IFundaScraperService
         return validListings;
     }
 
-    private async Task ProcessListingAsync(FundaApiListing apiListing, Listing? existingListing, bool shouldNotify, CancellationToken cancellationToken)
+    private async Task ProcessListingAsync(Listing listing, Listing? existingListing, bool shouldNotify, CancellationToken cancellationToken)
     {
-        var fundaId = apiListing.GlobalId.ToString();
-
-        var listing = FundaMapper.MapApiListingToDomain(apiListing, fundaId);
-
-        await EnrichListingAsync(listing, apiListing, cancellationToken);
+        await EnrichListingAsync(listing, cancellationToken);
 
         if (existingListing == null)
         {
@@ -174,15 +170,21 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
-    private async Task EnrichListingAsync(Listing listing, FundaApiListing apiListing, CancellationToken cancellationToken)
+    private async Task EnrichListingAsync(Listing listing, CancellationToken cancellationToken)
     {
+        if (!int.TryParse(listing.FundaId, out var globalId))
+        {
+             _logger.LogWarning("Invalid FundaId: {FundaId}", listing.FundaId);
+             return;
+        }
+
         // 1. Enrich with Summary API (includes publicationDate, sold status, labels, postal code)
         try
         {
-            var summary = await _apiClient.GetListingSummaryAsync(apiListing.GlobalId, cancellationToken);
+            var summary = await _apiClient.GetListingSummaryAsync(globalId, cancellationToken);
             if (summary != null)
             {
-                FundaMapper.EnrichListingWithSummary(listing, summary);
+                listing.UpdateFrom(summary);
             }
         }
         catch (Exception ex)
@@ -198,7 +200,7 @@ public class FundaScraperService : IFundaScraperService
                 var richData = await _apiClient.GetListingDetailsAsync(listing.Url, cancellationToken);
                 if (richData != null)
                 {
-                    FundaMapper.EnrichListingWithNuxtData(listing, richData);
+                    listing.UpdateFrom(richData);
                 }
             }
             catch (Exception ex)
@@ -210,19 +212,10 @@ public class FundaScraperService : IFundaScraperService
         // 3. Enrich with Contact Details API (broker phone, logo, association)
         try
         {
-            var contacts = await _apiClient.GetContactDetailsAsync(apiListing.GlobalId, cancellationToken);
-            if (contacts?.ContactDetails?.Count > 0)
+            var contacts = await _apiClient.GetContactDetailsAsync(globalId, cancellationToken);
+            if (contacts != null)
             {
-                var primary = contacts.ContactDetails[0];
-                listing.BrokerOfficeId = primary.Id;
-                listing.BrokerPhone = primary.PhoneNumber;
-                listing.BrokerLogoUrl = primary.LogoUrl;
-                listing.BrokerAssociationCode = primary.AssociationCode;
-                // Update agent name if we have better info
-                if (!string.IsNullOrEmpty(primary.DisplayName))
-                {
-                    listing.AgentName = primary.DisplayName;
-                }
+                listing.UpdateFrom(contacts);
             }
         }
         catch (Exception ex)
@@ -235,10 +228,10 @@ public class FundaScraperService : IFundaScraperService
         {
             try
             {
-                var fiber = await _apiClient.GetFiberAvailabilityAsync(listing.PostalCode, cancellationToken);
-                if (fiber != null)
+                var fiber = await _apiClient.CheckFiberAvailabilityAsync(listing.PostalCode, cancellationToken);
+                if (fiber.HasValue)
                 {
-                    listing.FiberAvailable = fiber.Availability;
+                    listing.FiberAvailable = fiber.Value;
                 }
             }
             catch (Exception ex)
@@ -292,11 +285,11 @@ public class FundaScraperService : IFundaScraperService
         }
 
         // Update listing properties
-        existingListing.Price = listing.Price;
-        existingListing.ImageUrl = listing.ImageUrl;
-        
-        FundaMapper.MergeListingDetails(existingListing, listing);
+        existingListing.UpdateFrom(listing);
 
+        // Ensure manual fields are not overwritten if not handled by UpdateFrom (e.g. ImageUrl)
+        // UpdateFrom handles most.
+        
         await _listingRepository.UpdateAsync(existingListing, cancellationToken);
         _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
 

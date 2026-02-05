@@ -3,9 +3,8 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
+using Valora.Application.Scraping.Interfaces;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Scraping;
-using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.UnitTests.Scraping;
 
@@ -15,7 +14,7 @@ public class FundaScraperEnrichmentTests
     private readonly Mock<IPriceHistoryRepository> _priceHistoryRepoMock;
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
-    private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly FundaScraperService _service;
 
     public FundaScraperEnrichmentTests()
@@ -25,7 +24,7 @@ public class FundaScraperEnrichmentTests
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _apiClientMock = new Mock<IFundaApiClient>();
 
         // Default setup for GetByFundaIdsAsync
         _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
@@ -51,17 +50,19 @@ public class FundaScraperEnrichmentTests
     public async Task ProcessListingAsync_ShouldEnrichWithSummary()
     {
         // Arrange
-        var apiListing = new FundaApiListing { GlobalId = 1, ListingUrl = "http://url", Address = new() { ListingAddress = "Addr1" } };
+        var apiListing = new Listing { FundaId = "1", Url = "http://url", Address = "Addr1" };
         
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([apiListing]);
 
         _apiClientMock.Setup(x => x.GetListingSummaryAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaApiListingSummary 
+            .ReturnsAsync(new Listing
             { 
+                FundaId = "1",
+                Address = "Addr1",
                 PublicationDate = new DateTime(2023, 1, 1),
                 IsSoldOrRented = true,
-                Labels = [new() { Text = "Sold" }]
+                Labels = ["Sold"]
             });
 
         // Act
@@ -79,22 +80,20 @@ public class FundaScraperEnrichmentTests
     public async Task ProcessListingAsync_ShouldEnrichWithContactDetails()
     {
         // Arrange
-        var apiListing = new FundaApiListing { GlobalId = 1, ListingUrl = "http://url", Address = new() { ListingAddress = "Addr1" } };
+        var apiListing = new Listing { FundaId = "1", Url = "http://url", Address = "Addr1" };
         
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([apiListing]);
 
         _apiClientMock.Setup(x => x.GetContactDetailsAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaContactDetailsResponse 
+            .ReturnsAsync(new Listing
             { 
-                ContactDetails = [
-                    new() { 
-                        Id = 100, 
-                        PhoneNumber = "0612345678", 
-                        LogoUrl = "logo.png",
-                        DisplayName = "Top Makelaar"
-                    }
-                ]
+                FundaId = "1",
+                Address = "Addr1",
+                BrokerOfficeId = 100,
+                BrokerPhone = "0612345678",
+                BrokerLogoUrl = "logo.png",
+                AgentName = "Top Makelaar"
             });
 
         // Act
@@ -113,17 +112,17 @@ public class FundaScraperEnrichmentTests
     public async Task ProcessListingAsync_ShouldEnrichWithFiberAvailability()
     {
         // Arrange
-        var apiListing = new FundaApiListing { GlobalId = 1, ListingUrl = "http://url", Address = new() { ListingAddress = "Addr1" } };
+        var apiListing = new Listing { FundaId = "1", Url = "http://url", Address = "Addr1" };
         
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([apiListing]);
 
         // Summary provides postal code
         _apiClientMock.Setup(x => x.GetListingSummaryAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaApiListingSummary { Address = new() { PostalCode = "1234AB" } });
+            .ReturnsAsync(new Listing { FundaId = "1", Address = "Addr1", PostalCode = "1234AB" });
 
-        _apiClientMock.Setup(x => x.GetFiberAvailabilityAsync("1234AB", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaFiberResponse { Availability = true });
+        _apiClientMock.Setup(x => x.CheckFiberAvailabilityAsync("1234AB", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         // Act
         await _service.ScrapeLimitedAsync("amsterdam", 1);

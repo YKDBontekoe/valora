@@ -3,15 +3,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
+using Valora.Application.Scraping.Interfaces;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Scraping;
-using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.UnitTests.Scraping;
 
 public class FundaSearchServiceTests
 {
-    private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly Mock<IListingRepository> _listingRepoMock;
     private readonly Mock<ILogger<FundaSearchService>> _loggerMock;
     private readonly Mock<IConfiguration> _configMock;
@@ -19,7 +18,7 @@ public class FundaSearchServiceTests
 
     public FundaSearchServiceTests()
     {
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _apiClientMock = new Mock<IFundaApiClient>();
         _listingRepoMock = new Mock<IListingRepository>();
         _loggerMock = new Mock<ILogger<FundaSearchService>>();
         _configMock = new Mock<IConfiguration>();
@@ -45,12 +44,9 @@ public class FundaSearchServiceTests
         var query = new FundaSearchQuery(Region: "amsterdam", OfferingType: "buy");
         
         _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaApiResponse 
+            .ReturnsAsync(new List<Listing>
             { 
-                Listings = new List<FundaApiListing> 
-                { 
-                    new() { GlobalId = 1, ListingUrl = "http://url", Address = new() { ListingAddress = "Addr1" } } 
-                } 
+                new() { FundaId = "1", Url = "http://url", Address = "Addr1", City = "Amsterdam" }
             });
 
         _listingRepoMock.Setup(x => x.GetByCityAsync("amsterdam", It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -74,7 +70,7 @@ public class FundaSearchServiceTests
         
         // First call to populate cache
         _apiClientMock.Setup(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaApiResponse { Listings = new List<FundaApiListing>() });
+            .ReturnsAsync(new List<Listing>());
         
         _listingRepoMock.Setup(x => x.GetByCityAsync("amsterdam", It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Listing>());
@@ -121,10 +117,11 @@ public class FundaSearchServiceTests
             .ReturnsAsync((Listing?)null);
 
         _apiClientMock.Setup(x => x.GetListingSummaryAsync(42424242, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FundaApiListingSummary 
+            .ReturnsAsync(new Listing
             { 
-                Address = new() { Street = "Teststraat", City = "Amsterdam" },
-                Identifiers = new() { GlobalId = 42424242 }
+                FundaId = "42424242",
+                Address = "Teststraat",
+                City = "Amsterdam"
             });
 
         // Act

@@ -3,9 +3,8 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Scraping;
+using Valora.Application.Scraping.Interfaces;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Scraping;
-using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.UnitTests.Scraping;
 
@@ -15,7 +14,7 @@ public class FundaScraperServiceTests
     private readonly Mock<IPriceHistoryRepository> _priceHistoryRepoMock;
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
-    private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly FundaScraperService _service;
 
     public FundaScraperServiceTests()
@@ -25,9 +24,7 @@ public class FundaScraperServiceTests
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
-        // Mock FundaApiClient using a loose mock (mocking virtual methods)
-        // We pass dummy dependencies to the base constructor because it's a class mock
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _apiClientMock = new Mock<IFundaApiClient>();
 
         // Default setup for GetByFundaIdsAsync to return empty list
         _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
@@ -53,10 +50,10 @@ public class FundaScraperServiceTests
     public async Task ScrapeLimitedAsync_ShouldProcessListings_AndSendNotifications()
     {
         // Arrange
-        var apiListings = new List<FundaApiListing>
+        var apiListings = new List<Listing>
         {
-            new() { GlobalId = 123, Price = "€ 500.000 k.k.", ListingUrl = "http://url1", Address = new() { ListingAddress = "Addr1", City = "City1" } },
-            new() { GlobalId = 456, Price = "€ 600.000 k.k.", ListingUrl = "http://url2", Address = new() { ListingAddress = "Addr2", City = "City2" } }
+            new() { FundaId = "123", Price = 500000, Url = "http://url1", Address = "Addr1", City = "City1" },
+            new() { FundaId = "456", Price = 600000, Url = "http://url2", Address = "Addr2", City = "City2" }
         };
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -85,7 +82,6 @@ public class FundaScraperServiceTests
     public async Task ScrapeAndStoreAsync_ShouldProcessAllUrls()
     {
         // Arrange
-        // Re-create service with multiple URLs
         var options = Options.Create(new ScraperOptions
         {
             SearchUrls = ["https://www.funda.nl/koop/city1/", "https://www.funda.nl/koop/city2/"],
@@ -102,16 +98,15 @@ public class FundaScraperServiceTests
         );
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new() { GlobalId = 1, ListingUrl = "u1", Address = new() { City = "City1" } }]);
+            .ReturnsAsync([new() { FundaId = "1", Url = "u1", Address = "Addr1", City = "City1" }]);
         
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("city2", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new() { GlobalId = 2, ListingUrl = "u2", Address = new() { City = "City2" } }]);
+            .ReturnsAsync([new() { FundaId = "2", Url = "u2", Address = "Addr2", City = "City2" }]);
 
         // Act
         await service.ScrapeAndStoreAsync();
 
         // Assert
-        // Should verify AddAsync called 2 times (once per URL finding 1 listing)
         _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
@@ -119,12 +114,13 @@ public class FundaScraperServiceTests
     public async Task ScrapeAndStoreAsync_ShouldUpdateExistingListings()
     {
         // Arrange
-        var apiListing = new FundaApiListing 
+        var apiListing = new Listing
         { 
-            GlobalId = 1, 
-            Price = "€ 600.000 k.k.", 
-            ListingUrl = "url", 
-            Address = new() { ListingAddress = "Addr1" } 
+            FundaId = "1",
+            Price = 600000,
+            Url = "url",
+            Address = "Addr1",
+            City = "Amsterdam"
         };
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -135,7 +131,8 @@ public class FundaScraperServiceTests
             Id = Guid.NewGuid(),
             FundaId = "1",
             Price = 500000, // Old price
-            Address = "Addr1"
+            Address = "Addr1",
+            City = "Amsterdam"
         };
 
         _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.Is<IEnumerable<string>>(ids => ids.Contains("1")), It.IsAny<CancellationToken>()))
@@ -171,26 +168,20 @@ public class FundaScraperServiceTests
     public async Task ScrapeLimitedAsync_ShouldEnforceLimit()
     {
         // Arrange
-        // API returns 3 listings
-        var apiListings = new List<FundaApiListing>
+        var apiListings = new List<Listing>
         {
-            new() { GlobalId = 1, ListingUrl = "u1", Address = new() { ListingAddress = "1" } },
-            new() { GlobalId = 2, ListingUrl = "u2", Address = new() { ListingAddress = "2" } },
-            new() { GlobalId = 3, ListingUrl = "u3", Address = new() { ListingAddress = "3" } }
+            new() { FundaId = "1", Url = "u1", Address = "1", City = "C" },
+            new() { FundaId = "2", Url = "u2", Address = "2", City = "C" },
+            new() { FundaId = "3", Url = "u3", Address = "3", City = "C" }
         };
 
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(apiListings);
 
         // Act
-        // Limit to 1
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        // Note: The service logic applies limit inside ScrapeLimitedAsync calling ScrapeSearchUrlAsync with limit.
-        // And ScrapeSearchUrlAsync -> TryFetchFromApiAsync applies the Take(limit).
-        
-        // Should only add 1 listing
         _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -202,12 +193,8 @@ public class FundaScraperServiceTests
             .ThrowsAsync(new Exception("API Error"));
 
         // Act & Assert
-        // The service logic now lets exceptions bubble up so the job can fail (and retry via Hangfire).
-        // It should still notify the user about the error.
-        
         await Assert.ThrowsAsync<Exception>(() => _service.ScrapeLimitedAsync("amsterdam", 10));
 
-        // Verify error notification with the actual exception message
         _notificationServiceMock.Verify(x => x.NotifyErrorAsync(It.Is<string>(s => s.Contains("API Error"))), Times.Once);
     }
 
@@ -215,7 +202,7 @@ public class FundaScraperServiceTests
     public async Task EnrichListingAsync_EnrichmentFailures_AreLoggedButDontStopProcess()
     {
         // Arrange
-        var apiListing = new FundaApiListing { GlobalId = 1, ListingUrl = "url", Address = new() { ListingAddress = "Addr" } };
+        var apiListing = new Listing { FundaId = "1", Url = "url", Address = "Addr", City = "C" };
         _apiClientMock.Setup(x => x.SearchAllBuyPagesAsync("amsterdam", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([apiListing]);
 
@@ -233,11 +220,9 @@ public class FundaScraperServiceTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        // Should still save the listing despite enrichment failures
         _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
 
-        // Should verify logger warnings for failures
-        // We use a lenient verify because exact log message matching can be brittle
+        // Verify warnings
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Warning,
@@ -245,8 +230,9 @@ public class FundaScraperServiceTests
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
                 It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.AtLeast(2)); // Summary and Nuxt failures log as Warning
+            Times.AtLeast(2));
 
+        // Verify debugs
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Debug,
@@ -254,6 +240,6 @@ public class FundaScraperServiceTests
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
                 It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.AtLeastOnce); // Contacts failure logs as Debug
+            Times.AtLeastOnce);
     }
 }
