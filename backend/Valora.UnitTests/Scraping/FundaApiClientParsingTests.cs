@@ -155,11 +155,7 @@ public class FundaApiClientParsingTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal("123", result!.FundaId);
-        // Address might be mapped from different fields. FundaMapper checks Address.Street or City
-        // The mock json provided "title" which is not in FundaApiListingAddress usually.
-        // Let's check FundaApiListingSummary structure in memory/code.
-        // It has `public FundaApiListingAddress? Address`. `FundaApiListingAddress` has `Street`, `City`, `PostalCode`.
-        // So I should provide `street` in JSON.
+        // Address mapping check logic
     }
 
     [Fact]
@@ -175,9 +171,6 @@ public class FundaApiClientParsingTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal("123", result!.FundaId);
-        // FundaMapper only updates PostalCode and City from Summary, NOT street address (it assumes street address came from main listing)
-        // Wait, FundaMapper.EnrichListingWithSummary checks summary.Address.PostalCode and City.
-        // It does NOT update Address (Street).
         Assert.Equal("Amsterdam", result.City);
     }
 
@@ -227,6 +220,40 @@ public class FundaApiClientParsingTests
         Assert.Single(result);
         Assert.Equal("1", result[0].FundaId);
         Assert.Equal("Amsterdam", result[0].City);
+    }
+
+    [Fact]
+    public async Task SearchRentAsync_ShouldReturnListings()
+    {
+        // Arrange
+        var json = @"{ ""listings"": [ { ""globalId"": 2, ""listingUrl"": ""url2"", ""address"": { ""city"": ""Rotterdam"" } } ] }";
+        SetupResponse(json);
+
+        // Act
+        var result = await _client.SearchRentAsync("rotterdam");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("2", result[0].FundaId);
+        Assert.Equal("Rotterdam", result[0].City);
+    }
+
+    [Fact]
+    public async Task SearchProjectsAsync_ShouldReturnListings()
+    {
+        // Arrange
+        var json = @"{ ""listings"": [ { ""globalId"": 3, ""listingUrl"": ""url3"", ""isProject"": true } ] }";
+        SetupResponse(json);
+
+        // Act
+        var result = await _client.SearchProjectsAsync("utrecht");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("3", result[0].FundaId);
+        Assert.Equal("Nieuwbouwproject", result[0].PropertyType);
     }
 
     [Fact]
