@@ -43,6 +43,6 @@ public static partial class FundaUrlParser
     [GeneratedRegex(@"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase)]
     private static partial Regex QueryRegionRegex();
 
-    [GeneratedRegex(@"/(\d{6,})", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"/(\d+)", RegexOptions.IgnoreCase)]
     private static partial Regex GlobalIdRegex();
 }
