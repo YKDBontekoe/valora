@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence;
@@ -17,6 +18,25 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Value Comparers
+        // Suppress null warnings with ! because these properties are initialized to empty collections
+        // and JsonHelper ensures non-null returns from DB.
+        var stringListComparer = new ValueComparer<List<string>>(
+            (c1, c2) => c1!.SequenceEqual(c2!),
+            c => c!.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)),
+            c => c!.ToList());
+
+        var dictionaryComparer = new ValueComparer<Dictionary<string, string>>(
+            (c1, c2) => c1!.Count == c2!.Count && !c1.Except(c2).Any(),
+            // Order by key to ensure GetHashCode is consistent regardless of insertion order
+            c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
+            c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
+
+        var dateListComparer = new ValueComparer<List<DateTime>>(
+            (c1, c2) => c1!.SequenceEqual(c2!),
+            c => c!.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+            c => c!.ToList());
 
         modelBuilder.Entity<RefreshToken>(entity =>
         {
@@ -79,33 +99,38 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .HasColumnType("jsonb") // Hint for Postgres
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<Dictionary<string, string>>(v));
+                    v => JsonHelper.Deserialize<Dictionary<string, string>>(v))
+                .Metadata.SetValueComparer(dictionaryComparer);
             
             // Phase 4: JSON conversions for list properties
             entity.Property(e => e.ImageUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<List<string>>(v));
+                    v => JsonHelper.Deserialize<List<string>>(v))
+                .Metadata.SetValueComparer(stringListComparer);
             
             entity.Property(e => e.FloorPlanUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<List<string>>(v));
+                    v => JsonHelper.Deserialize<List<string>>(v))
+                .Metadata.SetValueComparer(stringListComparer);
             
             entity.Property(e => e.OpenHouseDates)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<List<DateTime>>(v));
+                    v => JsonHelper.Deserialize<List<DateTime>>(v))
+                .Metadata.SetValueComparer(dateListComparer);
             
             // New: Labels from Summary API (e.g., "Nieuw", "Open huis")
             entity.Property(e => e.Labels)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<List<string>>(v));
+                    v => JsonHelper.Deserialize<List<string>>(v))
+                .Metadata.SetValueComparer(stringListComparer);
         });
 
         modelBuilder.Entity<PriceHistory>(entity =>
