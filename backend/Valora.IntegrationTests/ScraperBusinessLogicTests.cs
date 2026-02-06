@@ -72,7 +72,7 @@ public class ScraperBusinessLogicTests : IAsyncLifetime
         {
             builder.ConfigureTestServices(services =>
             {
-                services.AddHttpClient<FundaApiClient>()
+                services.AddHttpClient<IFundaApiClient, FundaApiClient>()
                         .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
             });
         });

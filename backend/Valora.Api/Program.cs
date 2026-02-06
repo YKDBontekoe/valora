@@ -10,6 +10,7 @@ using Valora.Infrastructure;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Api.Endpoints;
 using Valora.Api.Hubs;
@@ -133,7 +134,10 @@ if (!app.Environment.IsEnvironment("Testing"))
         var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
         try
         {
-            dbContext.Database.Migrate();
+            if (dbContext.Database.IsRelational())
+            {
+                dbContext.Database.Migrate();
+            }
 
             // Seed Admin User
             var adminEmail = app.Configuration["ADMIN_EMAIL"];
@@ -258,29 +262,7 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     var listing = await repo.GetByIdAsync(id, ct);
     if (listing is null) return Results.NotFound();
     
-    var dto = new ListingDto(
-        listing.Id, listing.FundaId, listing.Address, listing.City, listing.PostalCode, listing.Price,
-        listing.Bedrooms, listing.Bathrooms, listing.LivingAreaM2, listing.PlotAreaM2,
-        listing.PropertyType, listing.Status, listing.Url, listing.ImageUrl, listing.ListedDate, listing.CreatedAt,
-        // Rich Data
-        listing.Description, listing.EnergyLabel, listing.YearBuilt, listing.ImageUrls,
-        // Phase 2
-        listing.OwnershipType, listing.CadastralDesignation, listing.VVEContribution, listing.HeatingType,
-        listing.InsulationType, listing.GardenOrientation, listing.HasGarage, listing.ParkingType,
-        // Phase 3
-        listing.AgentName, listing.VolumeM3, listing.BalconyM2, listing.GardenM2, listing.ExternalStorageM2,
-        listing.Features,
-        // Geo & Media
-        listing.Latitude, listing.Longitude, listing.VideoUrl, listing.VirtualTourUrl, listing.FloorPlanUrls, listing.BrochureUrl,
-        // Construction
-        listing.RoofType, listing.NumberOfFloors, listing.ConstructionPeriod, listing.CVBoilerBrand, listing.CVBoilerYear,
-        // Broker
-        listing.BrokerPhone, listing.BrokerLogoUrl,
-        // Infra
-        listing.FiberAvailable,
-        // Status
-        listing.PublicationDate, listing.IsSoldOrRented, listing.Labels
-    );
+    var dto = ListingMapper.ToDto(listing);
     return Results.Ok(dto);
 }).RequireAuthorization();
 

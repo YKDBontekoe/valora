@@ -15,7 +15,7 @@ namespace Valora.Infrastructure.Scraping;
 /// </summary>
 public partial class FundaSearchService : IFundaSearchService
 {
-    private readonly FundaApiClient _apiClient;
+    private readonly IFundaApiClient _apiClient;
     private readonly IListingRepository _listingRepository;
     private readonly ILogger<FundaSearchService> _logger;
     private readonly TimeSpan _cacheFreshness;
@@ -26,7 +26,7 @@ public partial class FundaSearchService : IFundaSearchService
     private static readonly ConcurrentDictionary<string, DateTime> _regionSearchCache = new();
 
     public FundaSearchService(
-        FundaApiClient apiClient,
+        IFundaApiClient apiClient,
         IListingRepository listingRepository,
         IConfiguration configuration,
         ILogger<FundaSearchService> logger)

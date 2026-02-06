@@ -7,7 +7,7 @@ using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-public partial class FundaApiClient
+public partial class FundaApiClient : IFundaApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FundaApiClient> _logger;

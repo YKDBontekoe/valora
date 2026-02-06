@@ -13,7 +13,7 @@ public class FundaScraperService : IFundaScraperService
 
     private readonly IListingRepository _listingRepository;
     private readonly IPriceHistoryRepository _priceHistoryRepository;
-    private readonly FundaApiClient _apiClient;
+    private readonly IFundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
     private readonly IScraperNotificationService _notificationService;
@@ -24,7 +24,7 @@ public class FundaScraperService : IFundaScraperService
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
         IScraperNotificationService notificationService,
-        FundaApiClient apiClient)
+        IFundaApiClient apiClient)
     {
         _listingRepository = listingRepository;
         _priceHistoryRepository = priceHistoryRepository;

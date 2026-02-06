@@ -11,7 +11,7 @@ namespace Valora.UnitTests.Scraping;
 
 public class FundaSearchServiceTests
 {
-    private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly Mock<IListingRepository> _listingRepoMock;
     private readonly Mock<ILogger<FundaSearchService>> _loggerMock;
     private readonly Mock<IConfiguration> _configMock;
@@ -19,7 +19,7 @@ public class FundaSearchServiceTests
 
     public FundaSearchServiceTests()
     {
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _apiClientMock = new Mock<IFundaApiClient>();
         _listingRepoMock = new Mock<IListingRepository>();
         _loggerMock = new Mock<ILogger<FundaSearchService>>();
         _configMock = new Mock<IConfiguration>();
