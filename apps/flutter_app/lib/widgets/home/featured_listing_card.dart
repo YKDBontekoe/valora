@@ -54,7 +54,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
               children: [
                 Container(
                   height: 180,
-                  color: ValoraColors.neutral200,
+                  color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
                   child: widget.listing.imageUrl != null
                       ? Hero(
                           tag: widget.listing.id,
