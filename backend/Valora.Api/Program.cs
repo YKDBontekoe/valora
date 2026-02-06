@@ -224,7 +224,25 @@ var api = app.MapGroup("/api");
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
 /// </summary>
-api.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+api.MapGet("/health", async (ValoraDbContext db, ILogger<Program> logger, CancellationToken ct) =>
+{
+    try
+    {
+        if (await db.Database.CanConnectAsync(ct))
+        {
+            return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+        }
+        else
+        {
+            return Results.Problem("Service unavailable", statusCode: 503);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Health check failed");
+        return Results.Problem("Service unavailable", statusCode: 503);
+    }
+});
 
 /// <summary>
 /// Retrieves a paginated list of listings based on filter criteria.
