@@ -35,7 +35,7 @@ internal static partial class FundaUrlParser
 
         // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
         // The GlobalId is typically the last numeric segment in the URL path
-        // We look for matches of /digits or -digits and take the last one to avoid other numbers in slug
+        // We look for all matches of /digits and take the last one to avoid other numbers in slug
         var matches = GlobalIdRegex().Matches(url);
         if (matches.Count > 0)
         {
@@ -56,21 +56,23 @@ internal static partial class FundaUrlParser
     {
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
-        Uri? uri;
-        // Check if it's already a valid absolute URL
-        if (Uri.TryCreate(url, UriKind.Absolute, out uri))
+        // Check if it looks like an absolute web URL
+        if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            // Security: Enforce allowed hosts to prevent SSRF
-            if (AllowedHosts.Contains(uri.Host.ToLowerInvariant()))
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
-                return url;
+                // Security: Enforce allowed hosts to prevent SSRF
+                if (AllowedHosts.Contains(uri.Host.ToLowerInvariant()))
+                {
+                    return url;
+                }
             }
-
-            // Reject external domains
+            // Reject external domains or invalid URIs
             return string.Empty;
         }
 
-        // If it's relative, ensure it starts with /
+        // Treat as relative path
         var path = url.StartsWith("/") ? url : "/" + url;
 
         return "https://www.funda.nl" + path;
