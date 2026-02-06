@@ -54,7 +54,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                     height: 96,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                      color: ValoraColors.neutral200,
+                      color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: widget.listing.imageUrl != null
