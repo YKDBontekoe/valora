@@ -1,55 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
+import '../../core/theme/valora_shadows.dart';
 
 /// A premium choice chip with selection animations.
-class ValoraChip extends StatelessWidget {
+class ValoraChip extends StatefulWidget {
   const ValoraChip({
     super.key,
     required this.label,
     required this.isSelected,
     required this.onSelected,
+    this.icon,
+    this.backgroundColor,
+    this.textColor,
   });
 
   final String label;
   final bool isSelected;
   final ValueChanged<bool> onSelected;
+  final IconData? icon;
+  final Color? backgroundColor;
+  final Color? textColor;
+
+  @override
+  State<ValoraChip> createState() => _ValoraChipState();
+}
+
+class _ValoraChipState extends State<ValoraChip> {
+  bool _isHovered = false;
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: ValoraAnimations.normal,
-      curve: ValoraAnimations.standard,
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: onSelected,
-        checkmarkColor: isSelected ? Colors.white : null,
-        labelStyle: ValoraTypography.labelMedium.copyWith(
-          color: isSelected
-              ? Colors.white
-              : Theme.of(context).colorScheme.onSurface,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        selectedColor: ValoraColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-          side: BorderSide(
-            color: isSelected
-                ? Colors.transparent
-                : Theme.of(context).colorScheme.outline,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Determine colors
+    final bg = widget.isSelected
+        ? (widget.backgroundColor ?? ValoraColors.primary)
+        : (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
+
+    final text = widget.isSelected
+        ? (widget.textColor ?? Colors.white)
+        : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
+
+    final border = widget.isSelected
+        ? Colors.transparent
+        : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Listener(
+        onPointerDown: (_) => setState(() => _isPressed = true),
+        onPointerUp: (_) => setState(() => _isPressed = false),
+        onPointerCancel: (_) => setState(() => _isPressed = false),
+        child: AnimatedContainer(
+          duration: ValoraAnimations.normal,
+          curve: ValoraAnimations.standard,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+            boxShadow: widget.isSelected
+                ? ValoraShadows.primary
+                : (_isHovered ? ValoraShadows.sm : []),
+          ),
+          child: Material(
+            color: bg,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+              side: BorderSide(color: border),
+            ),
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                widget.onSelected(!widget.isSelected);
+              },
+              borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ValoraSpacing.md,
+                  vertical: ValoraSpacing.sm,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.icon != null) ...[
+                      Icon(widget.icon, size: 16, color: text),
+                      const SizedBox(width: ValoraSpacing.xs),
+                    ],
+                    Text(
+                      widget.label,
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-        showCheckmark: false,
-        padding: const EdgeInsets.symmetric(
-          horizontal: ValoraSpacing.sm,
-          vertical: ValoraSpacing.xs,
-        ),
       ),
-    ).animate(target: isSelected ? 1 : 0)
+    )
+    .animate(target: _isPressed ? 1 : 0)
+    .scale(end: const Offset(0.95, 0.95), duration: ValoraAnimations.fast)
+    .animate(target: widget.isSelected ? 1 : 0) // Pulse on selection
     .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.normal, curve: ValoraAnimations.emphatic)
     .then()
     .scale(end: const Offset(1.0, 1.0), duration: ValoraAnimations.normal);

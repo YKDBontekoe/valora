@@ -41,6 +41,7 @@ class ValoraButton extends StatefulWidget {
 }
 
 class _ValoraButtonState extends State<ValoraButton> {
+  bool _isHovered = false;
   bool _isPressed = false;
 
   @override
@@ -62,7 +63,7 @@ class _ValoraButtonState extends State<ValoraButton> {
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation(
                   widget.variant == ValoraButtonVariant.primary
-                      ? Colors.white
+                      ? Theme.of(context).colorScheme.onPrimary
                       : Theme.of(context).colorScheme.primary,
                 ),
               ),
@@ -90,7 +91,7 @@ class _ValoraButtonState extends State<ValoraButton> {
           onPressed: effectiveOnPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: ValoraColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           child: child,
         );
@@ -116,11 +117,15 @@ class _ValoraButtonState extends State<ValoraButton> {
     }
 
     if (effectiveOnPressed != null) {
-      button = Listener(
-        onPointerDown: (_) => setState(() => _isPressed = true),
-        onPointerUp: (_) => setState(() => _isPressed = false),
-        onPointerCancel: (_) => setState(() => _isPressed = false),
-        child: button,
+      button = MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Listener(
+          onPointerDown: (_) => setState(() => _isPressed = true),
+          onPointerUp: (_) => setState(() => _isPressed = false),
+          onPointerCancel: (_) => setState(() => _isPressed = false),
+          child: button,
+        ),
       );
     }
 
@@ -129,6 +134,12 @@ class _ValoraButtonState extends State<ValoraButton> {
         .scale(
           end: const Offset(0.95, 0.95),
           duration: ValoraAnimations.fast,
+          curve: ValoraAnimations.standard,
+        )
+        .animate(target: _isHovered && !_isPressed ? 1 : 0)
+        .scale(
+          end: const Offset(1.02, 1.02),
+          duration: ValoraAnimations.normal,
           curve: ValoraAnimations.standard,
         );
   }

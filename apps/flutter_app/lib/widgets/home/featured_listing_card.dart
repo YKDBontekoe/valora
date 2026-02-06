@@ -39,7 +39,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
       onExit: (_) => setState(() => _isHovered = false),
       child: Container(
         width: 280,
-        margin: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(right: ValoraSpacing.lg),
         child: ValoraCard(
           padding: EdgeInsets.zero,
           onTap: widget.onTap,
@@ -50,200 +50,200 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image Section
-            Stack(
-              children: [
-                Container(
-                  height: 180,
-                  color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
-                  child: widget.listing.imageUrl != null
-                      ? Hero(
-                          tag: widget.listing.id,
-                          child: CachedNetworkImage(
-                            imageUrl: widget.listing.imageUrl!,
-                            memCacheWidth: 800,
-                            width: double.infinity,
-                            height: 180,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const ValoraShimmer(width: double.infinity, height: 180),
-                            errorWidget: (context, url, error) => Center(
-                              child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
-                            ),
-                          ),
-                        )
-                      : Center(
-                          child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
-                        ),
-                )
-                .animate(target: _isHovered ? 1 : 0)
-                .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.slow, curve: ValoraAnimations.deceleration),
-                // Gradient Overlay
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.4),
-                          Colors.transparent,
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: ValoraColors.glassBlack.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: ValoraColors.success,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: ValoraColors.success,
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              '98% Match',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Consumer<FavoritesProvider>(
-                    builder: (context, favoritesProvider, child) {
-                      final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
-                      return GestureDetector(
-                        onTap: widget.onFavoriteTap ?? () => favoritesProvider.toggleFavorite(widget.listing),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            size: 18,
-                            color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                          )
-                          .animate(target: isFavorite ? 1 : 0)
-                          .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
-                          .then()
-                          .scale(end: const Offset(1, 1)),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            // Info Section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Stack(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.listing.price != null ? '\$${widget.listing.price!.toStringAsFixed(0)}' : 'Price on request',
-                            style: ValoraTypography.titleLarge.copyWith(
-                              color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.listing.city ?? widget.listing.address,
-                            style: ValoraTypography.bodySmall.copyWith(
-                              color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: ValoraColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.trending_down_rounded, size: 14, color: ValoraColors.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              '-2%',
-                              style: TextStyle(
-                                color: ValoraColors.primary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                  Container(
+                    height: 180,
+                    color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+                    child: widget.listing.imageUrl != null
+                        ? Hero(
+                            tag: widget.listing.id,
+                            child: CachedNetworkImage(
+                              imageUrl: widget.listing.imageUrl!,
+                              memCacheWidth: 800,
+                              width: double.infinity,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const ValoraShimmer(width: double.infinity, height: 180),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
                               ),
                             ),
+                          )
+                        : Center(
+                            child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
+                          ),
+                  )
+                  .animate(target: _isHovered ? 1 : 0)
+                  .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.slow, curve: ValoraAnimations.deceleration),
+                  // Gradient Overlay
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.4),
+                            Colors.transparent,
+                            Colors.transparent,
                           ],
+                          stops: const [0.0, 0.5, 1.0],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Divider(height: 1, color: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildFeature(context, Icons.bed_rounded, '${widget.listing.bedrooms ?? 0} Bd'),
-                      const SizedBox(width: 8),
-                      _buildFeature(context, Icons.shower_rounded, '${widget.listing.bathrooms ?? 0} Ba'),
-                      const SizedBox(width: 8),
-                      _buildFeature(context, Icons.square_foot_rounded, '${widget.listing.livingAreaM2 ?? 0} m²'),
-                    ],
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: ValoraColors.glassBlack.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                            border: Border.all(
+                              color: ValoraColors.glassBorderDark,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: ValoraColors.success,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: ValoraColors.success,
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '98% Match',
+                                style: ValoraTypography.labelSmall.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Consumer<FavoritesProvider>(
+                      builder: (context, favoritesProvider, child) {
+                        final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
+                        return GestureDetector(
+                          onTap: widget.onFavoriteTap ?? () => favoritesProvider.toggleFavorite(widget.listing),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 18,
+                              color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                            )
+                            .animate(target: isFavorite ? 1 : 0)
+                            .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
+                            .then()
+                            .scale(end: const Offset(1, 1)),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              // Info Section
+              Padding(
+                padding: const EdgeInsets.all(ValoraSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.listing.price != null ? '\$${widget.listing.price!.toStringAsFixed(0)}' : 'Price on request',
+                              style: ValoraTypography.titleLarge.copyWith(
+                                color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.listing.city ?? widget.listing.address,
+                              style: ValoraTypography.bodySmall.copyWith(
+                                color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: ValoraColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.trending_down_rounded, size: 14, color: ValoraColors.primary),
+                              const SizedBox(width: 4),
+                              Text(
+                                '-2%',
+                                style: ValoraTypography.labelSmall.copyWith(
+                                  color: ValoraColors.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: ValoraSpacing.sm),
+                    Divider(height: 1, color: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100),
+                    const SizedBox(height: ValoraSpacing.sm),
+                    Row(
+                      children: [
+                        _buildFeature(context, Icons.bed_rounded, '${widget.listing.bedrooms ?? 0} Bd'),
+                        const SizedBox(width: ValoraSpacing.sm),
+                        _buildFeature(context, Icons.shower_rounded, '${widget.listing.bathrooms ?? 0} Ba'),
+                        const SizedBox(width: ValoraSpacing.sm),
+                        _buildFeature(context, Icons.square_foot_rounded, '${widget.listing.livingAreaM2 ?? 0} m²'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildFeature(BuildContext context, IconData icon, String label) {
