@@ -114,14 +114,22 @@ class _ValoraCardState extends State<ValoraCard> {
           child: cardContent,
         ),
       );
-    } else {
-      // Allow hover effect even without tap
-      cardContent = MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: cardContent,
+    } else if (widget.onTap != null) {
+      // InkWell with tap interaction
+      cardContent = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHover: (isHovering) =>
+              setState(() => _isHovered = isHovering),
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          child: cardContent,
+        ),
       );
     }
+    // No MouseRegion hover effect when non-interactive
 
     return AnimatedContainer(
       duration: ValoraAnimations.normal,
