@@ -1,10 +1,11 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-internal static class FundaNuxtJsonParser
+internal static partial class FundaNuxtJsonParser
 {
     /// <summary>
     /// Parses the raw Nuxt JSON state to find the listing data.
@@ -67,4 +68,37 @@ internal static class FundaNuxtJsonParser
 
         return null;
     }
+
+    /// <summary>
+    /// Extracts the JSON content from the Nuxt hydration script tag.
+    /// <para>
+    /// <strong>Strategy:</strong>
+    /// Funda uses Nuxt.js, which hydrates the client-side state via a `<script type="application/json">` tag.
+    /// Instead of using a greedy regex (which is prone to catastrophic backtracking on large HTML),
+    /// we iterate over all matching script tags and inspect their content for known keywords
+    /// like "cachedListingData" or "features" + "media".
+    /// </para>
+    /// </summary>
+    public static string? ExtractNuxtJson(string html)
+    {
+        // Simple regex to find the script content.
+        // We look for script type="application/json" and iterate over them to find the one with the data.
+        // This is safer than a greedy regex which might capture multiple script tags.
+
+        var matches = NuxtScriptRegex().Matches(html);
+        foreach (System.Text.RegularExpressions.Match m in matches)
+        {
+             var content = m.Groups[1].Value;
+             // Check for key identifiers of the Nuxt hydration state
+             if (content.Contains("cachedListingData") || (content.Contains("features") && content.Contains("media")))
+             {
+                 return content;
+             }
+        }
+
+        return null;
+    }
+
+    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
+    private static partial Regex NuxtScriptRegex();
 }

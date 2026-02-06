@@ -1,7 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Valora.Infrastructure.Scraping.Models;
 
@@ -272,9 +270,7 @@ public partial class FundaApiClient
         if (string.IsNullOrEmpty(html)) return null;
 
         // 2. Extract JSON content from script
-        // Look for <script type="application/json" ...> that *looks* like it has the data
-        // The Nuxt script typically starts with [ followed by some meta keys
-        var jsonContent = ExtractNuxtJson(html);
+        var jsonContent = FundaNuxtJsonParser.ExtractNuxtJson(html);
         if (string.IsNullOrEmpty(jsonContent))
         {
             _logger.LogWarning("Could not find Nuxt state JSON in page: {Url}", url);
@@ -282,60 +278,16 @@ public partial class FundaApiClient
         }
 
         // 3. Parse and find the listing data node
-        return ParseNuxtState(jsonContent);
+        return FundaNuxtJsonParser.Parse(jsonContent, _logger);
     }
     
     private async Task<string> GetListingDetailHtmlAsync(string url, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(url)) return string.Empty;
+        var absoluteUrl = FundaUrlParser.EnsureAbsoluteUrl(url);
+        if (string.IsNullOrEmpty(absoluteUrl)) return string.Empty;
 
-        // Ensure we have a valid Absolute URL
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-             // Try to construct if it's relative? Funda usually gives us full URLs.
-             if (url.StartsWith("/")) url = "https://www.funda.nl" + url;
-        }
-
-        var response = await _httpClient.GetAsync(url, cancellationToken);
+        var response = await _httpClient.GetAsync(absoluteUrl, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
-
-    /// <summary>
-    /// Extracts the JSON content from the Nuxt hydration script tag.
-    /// <para>
-    /// <strong>Strategy:</strong>
-    /// Funda uses Nuxt.js, which hydrates the client-side state via a `<script type="application/json">` tag.
-    /// Instead of using a greedy regex (which is prone to catastrophic backtracking on large HTML),
-    /// we iterate over all matching script tags and inspect their content for known keywords
-    /// like "cachedListingData" or "features" + "media".
-    /// </para>
-    /// </summary>
-    private string? ExtractNuxtJson(string html)
-    {
-        // Simple regex to find the script content. 
-        // We look for script type="application/json" and iterate over them to find the one with the data.
-        // This is safer than a greedy regex which might capture multiple script tags.
-
-        var matches = NuxtScriptRegex().Matches(html);
-        foreach (System.Text.RegularExpressions.Match m in matches)
-        {
-             var content = m.Groups[1].Value;
-             // Check for key identifiers of the Nuxt hydration state
-             if (content.Contains("cachedListingData") || (content.Contains("features") && content.Contains("media")))
-             {
-                 return content;
-             }
-        }
-
-        return null;
-    }
-
-    private FundaNuxtListingData? ParseNuxtState(string json)
-    {
-        return FundaNuxtJsonParser.Parse(json, _logger);
-    }
-
-    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
-    private static partial Regex NuxtScriptRegex();
 }

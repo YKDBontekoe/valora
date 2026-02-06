@@ -287,11 +287,11 @@ public class FundaMapperTests
     }
 
     [Fact]
-    public void ParseFirstNumber_ParsesCorrectly()
+    public void FundaValueParser_ParseInt_ParsesCorrectly()
     {
-        Assert.Equal(123, FundaMapper.ParseFirstNumber("123 m²"));
-        Assert.Equal(50, FundaMapper.ParseFirstNumber("€ 50.000"));
-        Assert.Null(FundaMapper.ParseFirstNumber("Geen cijfers"));
+        Assert.Equal(123, FundaValueParser.ParseInt("123 m²"));
+        Assert.Equal(50, FundaValueParser.ParseInt("€ 50.000"));
+        Assert.Null(FundaValueParser.ParseInt("Geen cijfers"));
     }
 
     [Fact]
