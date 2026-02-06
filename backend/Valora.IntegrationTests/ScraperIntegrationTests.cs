@@ -30,12 +30,15 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
         var price = 500000;
 
         // Mock API Response (FundaApiClient uses POST to /api/topposition/v2/search)
+        // Note: We force Dutch format (dots for thousands) because FundaValueParser expects it.
+        // Hardcoded to ensure test stability across different environments (CI/Local)
+        var priceString = "500.000";
         var apiResponseJson = $@"
         {{
             ""listings"": [
                 {{
                     ""globalId"": {fundaId},
-                    ""price"": ""€ {price:N0} k.k."",
+                    ""price"": ""€ {priceString} k.k."",
                     ""isSinglePrice"": true,
                     ""listingUrl"": ""/koop/amsterdam/huis-{fundaId}-test-street-1/"",
                     ""image"": {{

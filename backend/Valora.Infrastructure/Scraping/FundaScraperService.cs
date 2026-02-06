@@ -113,9 +113,7 @@ public class FundaScraperService : IFundaScraperService
         }
 
         // Optimization: Fetch all existing listings in one query to avoid N+1
-        var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
-        var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
-        var existingListingsMap = existingListings.ToDictionary(l => l.FundaId, l => l);
+        var existingListingsMap = await GetExistingListingsMapAsync(apiListings, cancellationToken);
 
         foreach (var apiListing in apiListings)
         {
@@ -138,6 +136,17 @@ public class FundaScraperService : IFundaScraperService
         }
     }
     
+    private async Task<Dictionary<string, Listing>> GetExistingListingsMapAsync(List<FundaApiListing> apiListings, CancellationToken cancellationToken)
+    {
+        var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
+        var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
+
+        // Handle duplicates by taking the first one found
+        return existingListings
+            .GroupBy(l => l.FundaId)
+            .ToDictionary(g => g.Key, g => g.First());
+    }
+
     private async Task<List<FundaApiListing>> FetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
     {
         var maxPages = limit.HasValue ? Math.Max(1, limit.Value / 10) : 3;
@@ -191,61 +200,67 @@ public class FundaScraperService : IFundaScraperService
     /// </summary>
     private async Task EnrichListingAsync(Listing listing, FundaApiListing apiListing, CancellationToken cancellationToken)
     {
-        // 1. Enrich with Summary API (includes publicationDate, sold status, labels, postal code)
+        await EnrichWithSummaryAsync(listing, apiListing.GlobalId, cancellationToken);
+        await EnrichWithNuxtDataAsync(listing, cancellationToken);
+        await EnrichWithContactDetailsAsync(listing, apiListing.GlobalId, cancellationToken);
+        await EnrichWithFiberAsync(listing, cancellationToken);
+    }
+
+    private async Task EnrichWithSummaryAsync(Listing listing, int globalId, CancellationToken cancellationToken)
+    {
         try
         {
-            var summary = await _apiClient.GetListingSummaryAsync(apiListing.GlobalId, cancellationToken);
+            var summary = await _apiClient.GetListingSummaryAsync(globalId, cancellationToken);
             if (summary != null)
             {
                 FundaMapper.EnrichListingWithSummary(listing, summary);
             }
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch summary for {FundaId}", listing.FundaId);
         }
+    }
 
-        // 2. Enrich with HTML/Nuxt data (rich features, description, photos)
-        if (!string.IsNullOrEmpty(listing.Url))
-        {
-            try 
-            {
-                var richData = await _apiClient.GetListingDetailsAsync(listing.Url, cancellationToken);
-                if (richData != null)
-                {
-                    FundaMapper.EnrichListingWithNuxtData(listing, richData);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to fetch rich details for {FundaId}", listing.FundaId);
-            }
-        }
+    private async Task EnrichWithNuxtDataAsync(Listing listing, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(listing.Url)) return;
 
-        // 3. Enrich with Contact Details API (broker phone, logo, association)
         try
         {
-            var contacts = await _apiClient.GetContactDetailsAsync(apiListing.GlobalId, cancellationToken);
-            if (contacts?.ContactDetails?.Count > 0)
+            var richData = await _apiClient.GetListingDetailsAsync(listing.Url, cancellationToken);
+            if (richData != null)
             {
-                var primary = contacts.ContactDetails[0];
-                listing.BrokerOfficeId = primary.Id;
-                listing.BrokerPhone = primary.PhoneNumber;
-                listing.BrokerLogoUrl = primary.LogoUrl;
-                listing.BrokerAssociationCode = primary.AssociationCode;
-                // Update agent name if we have better info
-                if (!string.IsNullOrEmpty(primary.DisplayName))
-                {
-                    listing.AgentName = primary.DisplayName;
-                }
+                FundaMapper.EnrichListingWithNuxtData(listing, richData);
             }
         }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch rich details for {FundaId}", listing.FundaId);
+        }
+    }
+
+    private async Task EnrichWithContactDetailsAsync(Listing listing, int globalId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var contacts = await _apiClient.GetContactDetailsAsync(globalId, cancellationToken);
+            if (contacts != null)
+            {
+                FundaMapper.EnrichListingWithContactDetails(listing, contacts);
+            }
+        }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Failed to fetch contact details for {FundaId}", listing.FundaId);
         }
+    }
 
-        // 4. Check Fiber Availability (requires full postal code)
+    private async Task EnrichWithFiberAsync(Listing listing, CancellationToken cancellationToken)
+    {
         if (!string.IsNullOrEmpty(listing.PostalCode) && listing.PostalCode.Length >= 6)
         {
             try
@@ -256,6 +271,7 @@ public class FundaScraperService : IFundaScraperService
                     listing.FiberAvailable = fiber.Availability;
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogDebug(ex, "Failed to check fiber availability for {FundaId}", listing.FundaId);

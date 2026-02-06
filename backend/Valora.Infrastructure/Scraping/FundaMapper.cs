@@ -1,10 +1,9 @@
-using System.Text.RegularExpressions;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-internal static partial class FundaMapper
+internal static class FundaMapper
 {
     private const string ProjectType = "Nieuwbouwproject";
     private const string HouseType = "Woonhuis";
@@ -16,7 +15,7 @@ internal static partial class FundaMapper
             ? apiListing.ListingUrl
             : $"https://www.funda.nl{listingUrl}";
 
-        var price = ParsePriceFromApi(apiListing.Price);
+        var price = FundaValueParser.ParsePrice(apiListing.Price);
 
         // Note: API provides limited details compared to HTML scraping.
         // We initialize with nulls where data is missing in API, and fill it later.
@@ -56,16 +55,49 @@ internal static partial class FundaMapper
                 .ToList();
         }
 
-        // Extract postal code from address if available
-        if (!string.IsNullOrEmpty(summary.Address?.PostalCode))
+        // Address from summary (more reliable than search result)
+        if (summary.Address != null)
         {
-            listing.PostalCode = summary.Address.PostalCode;
+            if (!string.IsNullOrWhiteSpace(summary.Address.Street))
+            {
+                listing.Address = summary.Address.Street;
+            }
+
+            if (!string.IsNullOrEmpty(summary.Address.PostalCode))
+            {
+                listing.PostalCode = summary.Address.PostalCode;
+            }
+
+            if (!string.IsNullOrEmpty(summary.Address.City))
+            {
+                listing.City = summary.Address.City;
+            }
         }
 
-        // City from address
-        if (!string.IsNullOrEmpty(summary.Address?.City))
+        // Price from summary
+        if (summary.Price != null)
         {
-            listing.City = summary.Address.City;
+            var price = FundaValueParser.ParsePrice(summary.Price.SellingPrice);
+            if (price.HasValue) listing.Price = price;
+        }
+
+        // FastView data (Living area, bedrooms, energy label)
+        if (summary.FastView != null)
+        {
+            if (!listing.LivingAreaM2.HasValue && !string.IsNullOrEmpty(summary.FastView.LivingArea))
+                listing.LivingAreaM2 = FundaValueParser.ParseInt(summary.FastView.LivingArea);
+
+            if (!listing.Bedrooms.HasValue && !string.IsNullOrEmpty(summary.FastView.NumberOfBedrooms))
+                listing.Bedrooms = FundaValueParser.ParseInt(summary.FastView.NumberOfBedrooms);
+
+            if (string.IsNullOrEmpty(listing.EnergyLabel))
+                listing.EnergyLabel = summary.FastView.EnergyLabel;
+        }
+
+        // Broker info
+        if (string.IsNullOrEmpty(listing.AgentName) && summary.Brokers?.Count > 0)
+        {
+            listing.AgentName = summary.Brokers[0].Name;
         }
 
         // Status inference from tracking (most reliable source)
@@ -108,6 +140,23 @@ internal static partial class FundaMapper
         }
     }
 
+    public static void EnrichListingWithContactDetails(Listing listing, FundaContactDetailsResponse contacts)
+    {
+        if (contacts.ContactDetails.Count == 0) return;
+
+        var primary = contacts.ContactDetails[0];
+        listing.BrokerOfficeId = primary.Id;
+        listing.BrokerPhone = primary.PhoneNumber;
+        listing.BrokerLogoUrl = primary.LogoUrl;
+        listing.BrokerAssociationCode = primary.AssociationCode;
+
+        // Update agent name if we have better info
+        if (!string.IsNullOrEmpty(primary.DisplayName))
+        {
+            listing.AgentName = primary.DisplayName;
+        }
+    }
+
     private static void EnrichFeatures(Listing listing, FundaNuxtListingData data)
     {
         if (data.Features == null) return;
@@ -138,20 +187,20 @@ internal static partial class FundaMapper
     private static void EnrichAreasFromMap(Listing listing, Dictionary<string, string> featureMap)
     {
         if (!listing.LivingAreaM2.HasValue && featureMap.TryGetValue("Wonen", out var livingArea))
-            listing.LivingAreaM2 = ParseFirstNumber(livingArea);
+            listing.LivingAreaM2 = FundaValueParser.ParseInt(livingArea);
 
         if (!listing.PlotAreaM2.HasValue && featureMap.TryGetValue("Perceel", out var plotArea))
-            listing.PlotAreaM2 = ParseFirstNumber(plotArea);
+            listing.PlotAreaM2 = FundaValueParser.ParseInt(plotArea);
 
-        if (featureMap.TryGetValue("Gebouwgebonden buitenruimte", out var balcony)) listing.BalconyM2 = ParseFirstNumber(balcony);
-        if (featureMap.TryGetValue("Externe bergruimte", out var storage)) listing.ExternalStorageM2 = ParseFirstNumber(storage);
-        if (featureMap.TryGetValue("Inhoud", out var volume)) listing.VolumeM3 = ParseFirstNumber(volume);
+        if (featureMap.TryGetValue("Gebouwgebonden buitenruimte", out var balcony)) listing.BalconyM2 = FundaValueParser.ParseInt(balcony);
+        if (featureMap.TryGetValue("Externe bergruimte", out var storage)) listing.ExternalStorageM2 = FundaValueParser.ParseInt(storage);
+        if (featureMap.TryGetValue("Inhoud", out var volume)) listing.VolumeM3 = FundaValueParser.ParseInt(volume);
 
         foreach(var kvp in featureMap)
         {
            if (kvp.Key.Contains("tuin", StringComparison.OrdinalIgnoreCase) && kvp.Value.Contains("m²"))
            {
-               var area = ParseFirstNumber(kvp.Value);
+               var area = FundaValueParser.ParseInt(kvp.Value);
                if (area.HasValue && area > (listing.GardenM2 ?? 0))
                {
                    listing.GardenM2 = area;
@@ -164,19 +213,11 @@ internal static partial class FundaMapper
     {
         if (featureMap.TryGetValue("Aantal kamers", out var rooms))
         {
-            var bedroomMatch = BedroomRegex().Match(rooms);
-            if (bedroomMatch.Success && int.TryParse(bedroomMatch.Groups[1].Value, out var bedrooms))
-            {
-                listing.Bedrooms = bedrooms;
-            }
-            else
-            {
-                listing.Bedrooms = ParseFirstNumber(rooms);
-            }
+            listing.Bedrooms = FundaValueParser.ParseBedrooms(rooms);
         }
 
         if (featureMap.TryGetValue("Aantal badkamers", out var bathrooms))
-            listing.Bathrooms = ParseFirstNumber(bathrooms);
+            listing.Bathrooms = FundaValueParser.ParseInt(bathrooms);
     }
 
     private static void EnrichEnergyAndConstruction(Listing listing, Dictionary<string, string> featureMap)
@@ -184,13 +225,12 @@ internal static partial class FundaMapper
         if (featureMap.TryGetValue("Energielabel", out var label)) listing.EnergyLabel = label.Trim();
         if (featureMap.TryGetValue("Isolatie", out var insulation)) listing.InsulationType = insulation;
         if (featureMap.TryGetValue("Verwarming", out var heating)) listing.HeatingType = heating;
-        if (featureMap.TryGetValue("Bouwjaar", out var year)) listing.YearBuilt = ParseFirstNumber(year);
+        if (featureMap.TryGetValue("Bouwjaar", out var year)) listing.YearBuilt = FundaValueParser.ParseInt(year);
         if (featureMap.TryGetValue("Eigendomssituatie", out var ownership)) listing.OwnershipType = ownership;
 
         if (featureMap.TryGetValue("Bijdrage VvE", out var vveRaw))
         {
-             var vveClean = PriceCleanupRegex().Replace(vveRaw, "");
-             if (decimal.TryParse(vveClean, out var vveCost)) listing.VVEContribution = vveCost;
+             listing.VVEContribution = FundaValueParser.ParsePrice(vveRaw);
         }
     }
 
@@ -304,20 +344,13 @@ internal static partial class FundaMapper
     {
         if (featureMap.TryGetValue("Daktype", out var roofType)) listing.RoofType = roofType;
         if (featureMap.TryGetValue("Dak", out var roof)) listing.RoofType ??= roof;
-        if (featureMap.TryGetValue("Aantal woonlagen", out var floors)) listing.NumberOfFloors = ParseFirstNumber(floors);
+        if (featureMap.TryGetValue("Aantal woonlagen", out var floors)) listing.NumberOfFloors = FundaValueParser.ParseInt(floors);
         if (featureMap.TryGetValue("Bouwperiode", out var period)) listing.ConstructionPeriod = period;
         if (featureMap.TryGetValue("CV-ketel", out var cvKetel))
         {
-            var cvMatch = CVBoilerRegex().Match(cvKetel);
-            if (cvMatch.Success)
-            {
-                listing.CVBoilerBrand = cvMatch.Groups[1].Value.Trim();
-                if (int.TryParse(cvMatch.Groups[2].Value, out var cvYear)) listing.CVBoilerYear = cvYear;
-            }
-            else
-            {
-                listing.CVBoilerBrand = cvKetel;
-            }
+            var (brand, year) = FundaValueParser.ParseCVBoiler(cvKetel);
+            listing.CVBoilerBrand = brand;
+            if (year.HasValue) listing.CVBoilerYear = year;
         }
     }
 
@@ -337,7 +370,25 @@ internal static partial class FundaMapper
         if (source.FiberAvailable.HasValue) target.FiberAvailable = source.FiberAvailable;
         if (source.PublicationDate.HasValue) target.PublicationDate = source.PublicationDate;
 
-        target.IsSoldOrRented = source.IsSoldOrRented;
+        // Logic for IsSoldOrRented:
+        // Source is typically a "new" listing object from API search results or summary enrichment.
+        // If source comes from API search results (MapApiListingToDomain), IsSoldOrRented is default false.
+        // We only want to overwrite if source has some indication of status, or if we know source is authoritative.
+        // Heuristic: If source.Status is populated, or source.IsSoldOrRented is true, then update.
+        // If source.Status is null and IsSoldOrRented is false, it might be a weak source (search result), so be careful.
+        // However, if a house IS sold, we want to know.
+        // If we are merging FROM a search result, and the house was sold previously, the search result might say "Verkocht" in status?
+        // MapApiListingToDomain leaves Status null.
+        // So if source.Status is null, and source.IsSoldOrRented is false, we should probably SKIP overwriting target.IsSoldOrRented if target is true.
+        // But if house is back on market, we want to set it to false.
+        // But Search Results don't reliably tell us "Back on market" except by absence of "Verkocht".
+        // SAFETY: Only overwrite if source.IsSoldOrRented is true, OR if source.Status is present.
+        // If source is just a search result, it has no status info usually.
+
+        if (source.IsSoldOrRented || !string.IsNullOrEmpty(source.Status))
+        {
+            target.IsSoldOrRented = source.IsSoldOrRented;
+        }
 
         if (source.Labels != null && source.Labels.Count > 0) target.Labels = source.Labels;
         if (!string.IsNullOrEmpty(source.PostalCode)) target.PostalCode = source.PostalCode;
@@ -374,40 +425,4 @@ internal static partial class FundaMapper
             }
         }
     }
-
-    public static int? ParseFirstNumber(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return null;
-        var match = NumberRegex().Match(text);
-        if (match.Success && int.TryParse(match.Value, out var num))
-        {
-            return num;
-        }
-        return null;
-    }
-
-    private static decimal? ParsePriceFromApi(string? priceText)
-    {
-        if (string.IsNullOrEmpty(priceText)) return null;
-
-        // Remove currency symbol, periods (thousands separator), and suffixes like "k.k."
-        var cleaned = PriceCleanupRegex().Replace(priceText, "");
-        if (decimal.TryParse(cleaned, out var price))
-        {
-            return price;
-        }
-        return null;
-    }
-
-    [GeneratedRegex(@"(\d+)\s*slaapkamer", RegexOptions.IgnoreCase)]
-    private static partial Regex BedroomRegex();
-
-    [GeneratedRegex(@"\d+")]
-    private static partial Regex NumberRegex();
-
-    [GeneratedRegex(@"(.+?)\s*\((\d{4})\)")]
-    private static partial Regex CVBoilerRegex();
-
-    [GeneratedRegex(@"[^\d]")]
-    private static partial Regex PriceCleanupRegex();
 }
