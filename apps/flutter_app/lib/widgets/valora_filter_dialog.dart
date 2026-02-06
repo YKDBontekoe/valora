@@ -250,6 +250,20 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                   if (selected) _updateSort('livingarea', 'desc');
                 },
               ),
+              ValoraChip(
+                label: 'City: A-Z',
+                isSelected: _sortBy == 'city' && _sortOrder == 'asc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('city', 'asc');
+                },
+              ),
+              ValoraChip(
+                label: 'City: Z-A',
+                isSelected: _sortBy == 'city' && _sortOrder == 'desc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('city', 'desc');
+                },
+              ),
             ],
           ),
         ],
