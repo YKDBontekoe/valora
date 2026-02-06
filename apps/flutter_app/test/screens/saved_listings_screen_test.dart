@@ -161,6 +161,7 @@ void main() {
   group('SavedListingsScreen', () {
     testWidgets('Shows saved listings and icons', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1000)); // Larger screen
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createSavedListingsScreen());
       // Wait for image loading to replace shimmer (finite pump)
       await tester.pump();
@@ -173,6 +174,7 @@ void main() {
 
     testWidgets('Filters listings by search query', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -185,6 +187,7 @@ void main() {
 
     testWidgets('Shows no matches found state and clears filters', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -206,6 +209,7 @@ void main() {
 
     testWidgets('Sorts listings by price low to high', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -230,6 +234,7 @@ void main() {
 
     testWidgets('Sorts listings by Newest', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -260,6 +265,7 @@ void main() {
 
     testWidgets('Sorts listings by City', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -292,6 +298,7 @@ void main() {
 
     testWidgets('Removes favorite after confirmation', (WidgetTester tester) async {
        await tester.binding.setSurfaceSize(const Size(1000, 1000));
+       addTearDown(() => tester.binding.setSurfaceSize(null));
        await tester.pumpWidget(createSavedListingsScreen());
        await tester.pump(const Duration(seconds: 1));
 

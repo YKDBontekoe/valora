@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError
 import time
 
 def run():
@@ -14,7 +14,7 @@ def run():
         try:
             page.wait_for_selector("flt-glass-pane", timeout=30000)
             print("Flutter loaded.")
-        except:
+        except TimeoutError:
             print("Timeout waiting for Flutter. Taking screenshot anyway.")
 
         # Give it a bit more time to render initial frame

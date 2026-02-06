@@ -91,6 +91,8 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
       ),
     );
 
+    if (!mounted) return;
+
     if (result != null) {
       setState(() {
         _minPrice = result['minPrice'];
@@ -123,6 +125,28 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
       _minLivingArea = null;
       _maxLivingArea = null;
     });
+  }
+
+  String _getPriceLabel() {
+    if (_minPrice != null && _maxPrice != null) {
+      return 'Price: €${_minPrice!.toInt()} - €${_maxPrice!.toInt()}';
+    } else if (_minPrice != null) {
+      return 'Price: from €${_minPrice!.toInt()}';
+    } else if (_maxPrice != null) {
+      return 'Price: up to €${_maxPrice!.toInt()}';
+    }
+    return 'Price';
+  }
+
+  String _getLivingAreaLabel() {
+    if (_minLivingArea != null && _maxLivingArea != null) {
+      return '${_minLivingArea} - ${_maxLivingArea} m²';
+    } else if (_minLivingArea != null) {
+      return 'from ${_minLivingArea} m²';
+    } else if (_maxLivingArea != null) {
+      return 'up to ${_maxLivingArea} m²';
+    }
+    return 'Living Area';
   }
 
   @override
@@ -272,7 +296,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(right: 8),
                                 child: ValoraChip(
-                                  label: 'Price: €${_minPrice?.toInt() ?? 0} - ${_maxPrice != null ? '€${_maxPrice!.toInt()}' : 'Any'}',
+                                  label: _getPriceLabel(),
                                   isSelected: true,
                                   onSelected: (_) => _openFilterDialog(),
                                 ),
@@ -295,11 +319,11 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                                   onSelected: (_) => _openFilterDialog(),
                                 ),
                               ),
-                             if (_minLivingArea != null)
+                             if (_minLivingArea != null || _maxLivingArea != null)
                                Padding(
                                 padding: const EdgeInsets.only(right: 8),
                                 child: ValoraChip(
-                                  label: '$_minLivingArea+ m²',
+                                  label: _getLivingAreaLabel(),
                                   isSelected: true,
                                   onSelected: (_) => _openFilterDialog(),
                                 ),
