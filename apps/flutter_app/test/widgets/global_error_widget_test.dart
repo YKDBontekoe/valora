@@ -50,7 +50,7 @@ void main() {
           find.text(
               'Please restart the application. If the problem persists, contact support.'),
           findsOneWidget);
-      expect(find.text('Restart Application'), findsOneWidget);
+      expect(find.text('Restart'), findsOneWidget);
     });
 
     testWidgets('Restart button navigates to StartupScreen', (tester) async {
@@ -66,7 +66,7 @@ void main() {
       );
 
       // Trigger the restart
-      await tester.tap(find.text('Restart Application'));
+      await tester.tap(find.text('Restart'));
 
       // Pump to process navigation but don't settle animations (StartupScreen navigates away after animation)
       await tester.pump();

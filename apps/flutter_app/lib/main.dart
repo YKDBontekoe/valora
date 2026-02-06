@@ -16,55 +16,100 @@ Future<void> main() async {
   // Ensure binding is initialized before using PlatformDispatcher
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables. In production/CI, we often rely on build arguments or
-  // the .env.example file being bundled if a specific .env isn't provided.
-  // Since .env is gitignored and not guaranteed to exist in CI, we load .env.example
-  // which is safe to commit.
-  await dotenv.load(fileName: ".env.example");
+  try {
+    // Load environment variables. In production/CI, we often rely on build arguments or
+    // the .env.example file being bundled if a specific .env isn't provided.
+    // Since .env is gitignored and not guaranteed to exist in CI, we load .env.example
+    // which is safe to commit.
+    await dotenv.load(fileName: ".env.example");
 
-  // Catch Flutter framework errors
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    debugPrint('Flutter Error: ${details.exception}');
-    // TODO: Send to crash reporting service
-  };
+    // Catch Flutter framework errors
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      debugPrint('Flutter Error: ${details.exception}');
+      // TODO: Send to crash reporting service
+    };
 
-  // Catch asynchronous errors
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Async Error: $error');
-    // TODO: Send to crash reporting service
-    return true; // Prevent app from crashing
-  };
+    // Catch asynchronous errors
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('Async Error: $error');
+      // TODO: Send to crash reporting service
+      return true; // Prevent app from crashing
+    };
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ThemeProvider>(
-          create: (_) => ThemeProvider(),
-        ),
-        ChangeNotifierProvider<FavoritesProvider>(
-          create: (_) => FavoritesProvider(),
-        ),
-        Provider<AuthService>(
-          create: (_) => AuthService(),
-        ),
-        ChangeNotifierProxyProvider<AuthService, AuthProvider>(
-          create: (context) => AuthProvider(authService: context.read<AuthService>()),
-          update: (context, authService, previous) =>
-              previous ?? AuthProvider(authService: authService),
-        ),
-        ProxyProvider2<AuthService, AuthProvider, ApiService>(
-          update: (context, authService, authProvider, _) => ApiService(
-            authToken: authProvider.token,
-            refreshTokenCallback: authProvider.refreshSession,
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ThemeProvider>(
+            create: (_) => ThemeProvider(),
           ),
-        ),
-      ],
-      child: const ValoraApp(),
-    ),
-  );
+          ChangeNotifierProvider<FavoritesProvider>(
+            create: (_) => FavoritesProvider(),
+          ),
+          Provider<AuthService>(
+            create: (_) => AuthService(),
+          ),
+          ChangeNotifierProxyProvider<AuthService, AuthProvider>(
+            create: (context) => AuthProvider(authService: context.read<AuthService>()),
+            update: (context, authService, previous) =>
+                previous ?? AuthProvider(authService: authService),
+          ),
+          ProxyProvider2<AuthService, AuthProvider, ApiService>(
+            update: (context, authService, authProvider, _) => ApiService(
+              authToken: authProvider.token,
+              refreshTokenCallback: authProvider.refreshSession,
+            ),
+          ),
+        ],
+        child: const ValoraApp(),
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('Initialization Error: $e');
+    runApp(InitializationErrorApp(error: e, stackTrace: stack));
+  }
 }
 // coverage:ignore-end
+
+class InitializationErrorApp extends StatelessWidget {
+  final Object error;
+  final StackTrace? stackTrace;
+
+  const InitializationErrorApp({super.key, required this.error, this.stackTrace});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 24),
+                const Text(
+                  'Application Initialization Failed',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  error.toString(),
+                  style: const TextStyle(color: Colors.black54),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class ValoraApp extends StatelessWidget {
   const ValoraApp({super.key});
