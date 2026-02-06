@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:valora_app/core/theme/valora_colors.dart';
 import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/widgets/common/valora_button.dart';
