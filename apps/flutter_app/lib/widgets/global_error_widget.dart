@@ -62,21 +62,32 @@ class GlobalErrorWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: details.exception.toString()));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Error copied to clipboard')),
-                      );
-                    },
-                    icon: const Icon(Icons.copy_rounded),
-                    label: const Text('Copy Error'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
-                      side: const BorderSide(color: Colors.redAccent),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  if (kDebugMode)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        try {
+                          await Clipboard.setData(ClipboardData(text: details.exception.toString()));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Error copied to clipboard')),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to copy error')),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.copy_rounded),
+                      label: const Text('Copy Error'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(color: Colors.redAccent),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 32),

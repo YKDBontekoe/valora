@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/valora_theme.dart';
@@ -26,13 +27,17 @@ Future<void> main() async {
     // Catch Flutter framework errors
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      debugPrint('Flutter Error: ${details.exception}');
+      if (kDebugMode) {
+        debugPrint('Flutter Error: ${details.exception}');
+      }
       // TODO: Send to crash reporting service
     };
 
     // Catch asynchronous errors
     PlatformDispatcher.instance.onError = (error, stack) {
-      debugPrint('Async Error: $error');
+      if (kDebugMode) {
+        debugPrint('Async Error: $error');
+      }
       // TODO: Send to crash reporting service
       return true; // Prevent app from crashing
     };
@@ -65,7 +70,9 @@ Future<void> main() async {
       ),
     );
   } catch (e, stack) {
-    debugPrint('Initialization Error: $e');
+    if (kDebugMode) {
+      debugPrint('Initialization Error: $e');
+    }
     runApp(InitializationErrorApp(error: e, stackTrace: stack));
   }
 }
@@ -97,11 +104,18 @@ class InitializationErrorApp extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  error.toString(),
-                  style: const TextStyle(color: Colors.black54),
-                  textAlign: TextAlign.center,
-                ),
+                if (kDebugMode)
+                  Text(
+                    error.toString(),
+                    style: const TextStyle(color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  )
+                else
+                  const Text(
+                    'Please restart the application or contact support.',
+                    style: TextStyle(color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
               ],
             ),
           ),

@@ -4,8 +4,16 @@ namespace Valora.Infrastructure.Scraping;
 
 public interface IFundaApiClient
 {
+    /// <summary>
+    /// Fetches listing summary. Returns null if not found (404). Throws HttpRequestException on connectivity/server errors.
+    /// </summary>
     Task<FundaApiListingSummary?> GetListingSummaryAsync(int globalId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Fetches contact details. Returns null if not found (404). Throws HttpRequestException on connectivity/server errors.
+    /// </summary>
     Task<FundaContactDetailsResponse?> GetContactDetailsAsync(int globalId, CancellationToken cancellationToken = default);
+
     Task<FundaFiberResponse?> GetFiberAvailabilityAsync(string postalCode, CancellationToken cancellationToken = default);
     Task<FundaApiResponse?> SearchBuyAsync(string geoInfo, int page = 1, int? minPrice = null, int? maxPrice = null, CancellationToken cancellationToken = default);
     Task<FundaApiResponse?> SearchRentAsync(string geoInfo, int page = 1, int? minPrice = null, int? maxPrice = null, CancellationToken cancellationToken = default);

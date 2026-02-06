@@ -34,7 +34,6 @@ public partial class FundaApiClient : IFundaApiClient
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning("Listing {GlobalId} not found (404).", globalId);
                     return null;
                 }
 
@@ -44,9 +43,8 @@ public partial class FundaApiClient : IFundaApiClient
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaApiListingSummary>(content);
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            _logger.LogError(ex, "HTTP Error fetching summary for listing {GlobalId}", globalId);
             throw;
         }
         catch (Exception ex)
@@ -71,7 +69,6 @@ public partial class FundaApiClient : IFundaApiClient
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    _logger.LogDebug("Contact details not found for listing {GlobalId}", globalId);
                     return null;
                 }
 
@@ -81,9 +78,8 @@ public partial class FundaApiClient : IFundaApiClient
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaContactDetailsResponse>(content);
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            _logger.LogError(ex, "HTTP Error fetching contact details for listing {GlobalId}", globalId);
             throw;
         }
         catch (Exception ex)
