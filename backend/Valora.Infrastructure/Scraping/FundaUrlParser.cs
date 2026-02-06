@@ -4,6 +4,8 @@ namespace Valora.Infrastructure.Scraping;
 
 internal static partial class FundaUrlParser
 {
+    private static readonly string[] AllowedHosts = ["funda.nl", "www.funda.nl"];
+
     public static string? ExtractRegionFromUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url)) return null;
@@ -33,7 +35,7 @@ internal static partial class FundaUrlParser
 
         // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
         // The GlobalId is typically the last numeric segment in the URL path
-        // We look for all matches of /digits and take the last one to avoid other numbers in slug
+        // We look for matches of /digits or -digits and take the last one to avoid other numbers in slug
         var matches = GlobalIdRegex().Matches(url);
         if (matches.Count > 0)
         {
@@ -46,16 +48,26 @@ internal static partial class FundaUrlParser
         return null;
     }
 
+    /// <summary>
+    /// Ensures the URL is absolute and belongs to the Funda domain.
+    /// Returns empty string if invalid or untrusted.
+    /// </summary>
     public static string EnsureAbsoluteUrl(string url)
     {
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
+        Uri? uri;
         // Check if it's already a valid absolute URL
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        if (Uri.TryCreate(url, UriKind.Absolute, out uri))
         {
-            // Optional: enforce funda.nl host if strict security is needed
-            // For now, we trust the input but ensure it's absolute
-            return url;
+            // Security: Enforce allowed hosts to prevent SSRF
+            if (AllowedHosts.Contains(uri.Host.ToLowerInvariant()))
+            {
+                return url;
+            }
+
+            // Reject external domains
+            return string.Empty;
         }
 
         // If it's relative, ensure it starts with /
@@ -70,6 +82,6 @@ internal static partial class FundaUrlParser
     [GeneratedRegex(@"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase)]
     private static partial Regex QueryRegionRegex();
 
-    [GeneratedRegex(@"/(\d{6,})")]
+    [GeneratedRegex(@"[/-](\d{6,})")]
     private static partial Regex GlobalIdRegex();
 }
