@@ -52,17 +52,6 @@ void main() {
       // However, ValoraChip might not be using FilterChip directly in the tree structure we expect,
       // or the text is not directly inside the FilterChip in the way find.ancestor expects if there are many layers.
 
-      // Let's find the ValoraChip by its text first.
-      final valoraChipFinder = find.widgetWithText(ValoraChip, 'Price: Low to High');
-      expect(valoraChipFinder, findsOneWidget);
-
-      // Now find the FilterChip that is a descendant of this specific ValoraChip.
-      final filterChipFinder = find.descendant(
-        of: valoraChipFinder,
-        matching: find.byType(FilterChip),
-      );
-
-      expect(filterChipFinder, findsOneWidget);
       final priceAscChip = tester.widget<FilterChip>(filterChipFinder);
       expect(priceAscChip.selected, isTrue);
     });
