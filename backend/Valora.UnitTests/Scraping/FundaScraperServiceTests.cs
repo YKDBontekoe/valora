@@ -15,7 +15,7 @@ public class FundaScraperServiceTests
     private readonly Mock<IPriceHistoryRepository> _priceHistoryRepoMock;
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
-    private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly FundaScraperService _service;
 
     public FundaScraperServiceTests()
@@ -25,9 +25,8 @@ public class FundaScraperServiceTests
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
-        // Mock FundaApiClient using a loose mock (mocking virtual methods)
-        // We pass dummy dependencies to the base constructor because it's a class mock
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        // Mock FundaApiClient using the new interface
+        _apiClientMock = new Mock<IFundaApiClient>();
 
         // Default setup for GetByFundaIdsAsync to return empty list
         _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))

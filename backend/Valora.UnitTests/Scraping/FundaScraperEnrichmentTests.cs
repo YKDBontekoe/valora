@@ -15,7 +15,7 @@ public class FundaScraperEnrichmentTests
     private readonly Mock<IPriceHistoryRepository> _priceHistoryRepoMock;
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
-    private readonly Mock<FundaApiClient> _apiClientMock;
+    private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly FundaScraperService _service;
 
     public FundaScraperEnrichmentTests()
@@ -25,7 +25,7 @@ public class FundaScraperEnrichmentTests
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
-        _apiClientMock = new Mock<FundaApiClient>(new HttpClient(), Mock.Of<ILogger<FundaApiClient>>());
+        _apiClientMock = new Mock<IFundaApiClient>();
 
         // Default setup for GetByFundaIdsAsync
         _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
