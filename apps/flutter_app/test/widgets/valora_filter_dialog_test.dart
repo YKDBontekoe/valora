@@ -26,9 +26,44 @@ void main() {
 
       // Check chip selection
       // ValoraChip wraps FilterChip
-      final chipFinder = find.widgetWithText(FilterChip, 'Price: Low to High');
-      expect(chipFinder, findsOneWidget);
-      final priceAscChip = tester.widget<FilterChip>(chipFinder);
+      // The text "Price: Low to High" is inside a Text widget which is inside ValoraChip.
+      // FilterChip is an implementation detail of ValoraChip (or its child).
+
+      // Find the ValoraChip that contains the text
+      final valoraChipFinder = find.widgetWithText(ValoraChip, 'Price: Low to High');
+      expect(valoraChipFinder, findsOneWidget);
+
+      // Now find the FilterChip inside that ValoraChip
+      final filterChipFinder = find.descendant(
+        of: valoraChipFinder,
+        matching: find.byType(FilterChip),
+      );
+
+      // Use findsAtLeastNWidgets because the finder might be less specific than we thought
+      // But we just need to verify one is selected.
+      // Actually, since there is only one 'Price: Low to High', let's just grab the first filter chip found in that subtree.
+      // Sometimes descendants can be tricky if intermediate widgets block traversal.
+      // Let's rely on finding by type FilterChip within the whole tree and checking properties.
+      // But there are many FilterChips. We need the one with text "Price: Low to High".
+      // Let's use find.ancestor to go from text to FilterChip.
+
+      // The text "Price: Low to High" is inside a Text widget which is inside ValoraChip.
+      // FilterChip is used internally by ValoraChip.
+      // However, ValoraChip might not be using FilterChip directly in the tree structure we expect,
+      // or the text is not directly inside the FilterChip in the way find.ancestor expects if there are many layers.
+
+      // Let's find the ValoraChip by its text first.
+      final valoraChipFinder = find.widgetWithText(ValoraChip, 'Price: Low to High');
+      expect(valoraChipFinder, findsOneWidget);
+
+      // Now find the FilterChip that is a descendant of this specific ValoraChip.
+      final filterChipFinder = find.descendant(
+        of: valoraChipFinder,
+        matching: find.byType(FilterChip),
+      );
+
+      expect(filterChipFinder, findsOneWidget);
+      final priceAscChip = tester.widget<FilterChip>(filterChipFinder);
       expect(priceAscChip.selected, isTrue);
     });
 
@@ -51,7 +86,10 @@ void main() {
       expect(find.text('Amsterdam'), findsNothing);
 
       // Newest should be selected (default)
-      final chipFinder = find.widgetWithText(FilterChip, 'Newest');
+      final chipTextFinder = find.text('Newest');
+      await tester.scrollUntilVisible(chipTextFinder, 50.0, scrollable: find.byType(Scrollable));
+
+      final chipFinder = find.ancestor(of: chipTextFinder, matching: find.byType(FilterChip));
       final newestChip = tester.widget<FilterChip>(chipFinder);
       expect(newestChip.selected, isTrue);
     });
@@ -63,16 +101,16 @@ void main() {
       await tester.pumpAndSettle(); // Wait for entry animations
 
       // Scroll to "Price: High to Low"
-      final chipFinder = find.widgetWithText(FilterChip, 'Price: High to Low');
-      await tester.ensureVisible(chipFinder);
+      final chipTextFinder = find.text('Price: High to Low');
+      await tester.scrollUntilVisible(chipTextFinder, 50.0, scrollable: find.byType(Scrollable));
       await tester.pumpAndSettle();
 
       // Tap "Price: High to Low"
-      await tester.tap(chipFinder);
+      await tester.tap(chipTextFinder);
       await tester.pumpAndSettle(); // Wait for selection animation
 
-      final chip = tester.widget<FilterChip>(chipFinder);
-      expect(chip.selected, isTrue);
+      final filterChip = tester.widget<FilterChip>(find.ancestor(of: chipTextFinder, matching: find.byType(FilterChip)));
+      expect(filterChip.selected, isTrue);
     });
 
     testWidgets('Returns filter values on Apply', (WidgetTester tester) async {
