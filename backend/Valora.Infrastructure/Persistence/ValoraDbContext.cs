@@ -64,6 +64,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
 
             // Composite indexes for common filters
             entity.HasIndex(e => new { e.City, e.Price });
+            entity.HasIndex(e => new { e.City, e.ListedDate });
             entity.HasIndex(e => new { e.City, e.Bedrooms });
             entity.HasIndex(e => new { e.City, e.LivingAreaM2 });
             entity.HasIndex(e => e.Address);

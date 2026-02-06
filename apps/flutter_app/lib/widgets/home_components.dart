@@ -319,7 +319,8 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image Section
-            Stack(
+            RepaintBoundary(
+              child: Stack(
               children: [
                 Container(
                   height: 180,
@@ -442,6 +443,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                   ),
                 ),
               ],
+            ),
             ),
             // Info Section
             Padding(
@@ -569,7 +571,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
           child: Row(
             children: [
               // Image
-              Stack(
+              RepaintBoundary(
+                child: Stack(
                 children: [
                   Container(
                     width: 96,
@@ -628,6 +631,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                     ),
                   ),
                 ],
+              ),
               ),
               const SizedBox(width: 16),
               // Info

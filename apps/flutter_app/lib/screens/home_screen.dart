@@ -38,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isConnected = false;
   List<Listing> _listings = [];
+  List<Listing> _featuredListings = [];
+  List<Listing> _nearbyListings = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   Object? _error;
@@ -152,6 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             _listings.addAll(response.items);
           }
+          _featuredListings = _listings.take(_featuredCount).toList();
+          _nearbyListings = _listings.skip(_featuredCount).toList();
           _hasNextPage = response.hasNextPage;
           _error = null;
         });
@@ -390,11 +394,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _buildListingSlivers() {
-    final featuredListings = _listings.take(_featuredCount).toList();
-    final nearbyListings = _listings.skip(_featuredCount).toList();
     final List<Widget> slivers = [];
 
-    if (featuredListings.isNotEmpty) {
+    if (_featuredListings.isNotEmpty) {
       slivers.add(SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -438,9 +440,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             scrollDirection: Axis.horizontal,
-            itemCount: featuredListings.length,
+            itemCount: _featuredListings.length,
             itemBuilder: (context, index) {
-              final listing = featuredListings[index];
+              final listing = _featuredListings[index];
               return FeaturedListingCard(
                 key: ValueKey(listing.id),
                 listing: listing,
@@ -452,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ));
     }
 
-    if (nearbyListings.isNotEmpty || _hasNextPage) {
+    if (_nearbyListings.isNotEmpty || _hasNextPage) {
       slivers.add(SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -470,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
         sliver: SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) {
-              if (index == nearbyListings.length) {
+              if (index == _nearbyListings.length) {
                 if (_hasNextPage) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
@@ -483,14 +485,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const SizedBox(height: _bottomListPadding);
               }
 
-              final listing = nearbyListings[index];
+              final listing = _nearbyListings[index];
               return NearbyListingCard(
                 key: ValueKey(listing.id),
                 listing: listing,
                 onTap: () => _onListingTap(listing),
               ).animate().fade(duration: 400.ms).slideY(begin: 0.1, end: 0, delay: (50 * (index % 10)).ms);
             },
-            childCount: nearbyListings.length + 1,
+            childCount: _nearbyListings.length + 1,
           ),
         ),
       ));
