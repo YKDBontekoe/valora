@@ -140,11 +140,11 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
 
   String _getLivingAreaLabel() {
     if (_minLivingArea != null && _maxLivingArea != null) {
-      return '${_minLivingArea} - ${_maxLivingArea} m²';
+      return '$_minLivingArea - $_maxLivingArea m²';
     } else if (_minLivingArea != null) {
-      return 'from ${_minLivingArea} m²';
+      return 'from $_minLivingArea m²';
     } else if (_maxLivingArea != null) {
-      return 'up to ${_maxLivingArea} m²';
+      return 'up to $_maxLivingArea m²';
     }
     return 'Living Area';
   }
