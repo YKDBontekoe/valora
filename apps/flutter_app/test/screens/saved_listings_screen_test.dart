@@ -160,6 +160,7 @@ void main() {
 
   group('SavedListingsScreen', () {
     testWidgets('Shows saved listings and icons', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1000)); // Larger screen
       await tester.pumpWidget(createSavedListingsScreen());
       // Wait for image loading to replace shimmer (finite pump)
       await tester.pump();
@@ -171,6 +172,7 @@ void main() {
     });
 
     testWidgets('Filters listings by search query', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1000));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -181,7 +183,8 @@ void main() {
       expect(find.text('B Street'), findsNothing);
     });
 
-    testWidgets('Shows no matches found state and clears search', (WidgetTester tester) async {
+    testWidgets('Shows no matches found state and clears filters', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1000));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -190,10 +193,10 @@ void main() {
       await tester.pump(const Duration(seconds: 1)); // Wait longer
 
       expect(find.text('No matches found'), findsOneWidget);
-      expect(find.text('Clear Search'), findsOneWidget);
+      expect(find.text('Clear Filters'), findsOneWidget);
 
       // Clear search
-      await tester.tap(find.text('Clear Search'));
+      await tester.tap(find.text('Clear Filters'));
       await tester.pump(); // Start animations/rebuild
       await tester.pump(const Duration(seconds: 2)); // Wait longer for all animations (fade in lists + images)
 
@@ -202,20 +205,21 @@ void main() {
     });
 
     testWidgets('Sorts listings by price low to high', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1000));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      final chipFinder = find.widgetWithText(FilterChip, 'Price: Low to High');
-      final scrollable = find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ).first;
+      // Open Filter Dialog
+      await tester.tap(find.byIcon(Icons.tune_rounded), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 1)); // Wait for dialog animation
 
-      await tester.scrollUntilVisible(chipFinder, 50.0, scrollable: scrollable);
-      await tester.pump(const Duration(milliseconds: 100));
+      // Tap Sort option
+      await tester.tap(find.widgetWithText(ValoraChip, 'Price: Low to High'), warnIfMissed: false);
+      await tester.pump();
 
-      await tester.tap(chipFinder);
-      await tester.pump(const Duration(seconds: 1));
+      // Apply
+      await tester.tap(find.widgetWithText(ValoraButton, 'Apply'), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 1)); // Wait for dialog to close and list to rebuild
 
       final finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
       final cards = tester.widgetList<NearbyListingCard>(finder);
@@ -225,24 +229,25 @@ void main() {
     });
 
     testWidgets('Sorts listings by Newest', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1000));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      // First change to Price sort
-      final priceChip = find.widgetWithText(FilterChip, 'Price: Low to High');
-      final scrollable = find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ).first;
+      // First change to Price sort to ensure order is different
+      // Open Filter Dialog
+      await tester.tap(find.byIcon(Icons.tune_rounded), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 1));
 
-      await tester.scrollUntilVisible(priceChip, 50.0, scrollable: scrollable);
-      await tester.tap(priceChip);
+      await tester.tap(find.widgetWithText(ValoraChip, 'Price: Low to High'), warnIfMissed: false);
+      await tester.tap(find.widgetWithText(ValoraButton, 'Apply'), warnIfMissed: false);
       await tester.pump(const Duration(seconds: 1));
 
       // Now tap Newest
-      final newestChip = find.widgetWithText(FilterChip, 'Newest');
-      await tester.scrollUntilVisible(newestChip, 50.0, scrollable: scrollable);
-      await tester.tap(newestChip);
+      await tester.tap(find.byIcon(Icons.tune_rounded), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.widgetWithText(ValoraChip, 'Newest'), warnIfMissed: false);
+      await tester.tap(find.widgetWithText(ValoraButton, 'Apply'), warnIfMissed: false);
       await tester.pump(const Duration(seconds: 1));
 
       final finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
@@ -254,18 +259,16 @@ void main() {
     });
 
     testWidgets('Sorts listings by City', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1000));
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      final scrollable = find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ).first;
-
       // Sort A-Z (Amsterdam, Rotterdam)
-      final cityAscChip = find.widgetWithText(FilterChip, 'City: A-Z');
-      await tester.scrollUntilVisible(cityAscChip, 50.0, scrollable: scrollable);
-      await tester.tap(cityAscChip);
+      await tester.tap(find.byIcon(Icons.tune_rounded), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.widgetWithText(ValoraChip, 'City: A-Z'), warnIfMissed: false);
+      await tester.tap(find.widgetWithText(ValoraButton, 'Apply'), warnIfMissed: false);
       await tester.pump(const Duration(seconds: 1));
 
       var finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
@@ -274,9 +277,11 @@ void main() {
       expect(cards.last.listing.city, 'Rotterdam');
 
       // Sort Z-A (Rotterdam, Amsterdam)
-      final cityDescChip = find.widgetWithText(FilterChip, 'City: Z-A');
-      await tester.scrollUntilVisible(cityDescChip, 50.0, scrollable: scrollable);
-      await tester.tap(cityDescChip);
+      await tester.tap(find.byIcon(Icons.tune_rounded), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.widgetWithText(ValoraChip, 'City: Z-A'), warnIfMissed: false);
+      await tester.tap(find.widgetWithText(ValoraButton, 'Apply'), warnIfMissed: false);
       await tester.pump(const Duration(seconds: 1));
 
       finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
@@ -286,6 +291,7 @@ void main() {
     });
 
     testWidgets('Removes favorite after confirmation', (WidgetTester tester) async {
+       await tester.binding.setSurfaceSize(const Size(1000, 1000));
        await tester.pumpWidget(createSavedListingsScreen());
        await tester.pump(const Duration(seconds: 1));
 

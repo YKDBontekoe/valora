@@ -6,6 +6,7 @@ import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_filter_dialog.dart';
 import 'listing_detail_screen.dart';
 
 class SavedListingsScreen extends StatefulWidget {
@@ -18,7 +19,18 @@ class SavedListingsScreen extends StatefulWidget {
 class _SavedListingsScreenState extends State<SavedListingsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _sortOrder = 'date_added'; // 'date_added', 'price_asc', 'price_desc'
+
+  // Advanced filters
+  double? _minPrice;
+  double? _maxPrice;
+  String? _city;
+  int? _minBedrooms;
+  int? _minLivingArea;
+  int? _maxLivingArea;
+
+  // Sorting
+  String? _sortBy = 'date';
+  String? _sortOrder = 'desc';
 
   @override
   void initState() {
@@ -64,6 +76,55 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
     }
   }
 
+  Future<void> _openFilterDialog() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => ValoraFilterDialog(
+        initialMinPrice: _minPrice,
+        initialMaxPrice: _maxPrice,
+        initialCity: _city,
+        initialMinBedrooms: _minBedrooms,
+        initialMinLivingArea: _minLivingArea,
+        initialMaxLivingArea: _maxLivingArea,
+        initialSortBy: _sortBy,
+        initialSortOrder: _sortOrder,
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _minPrice = result['minPrice'];
+        _maxPrice = result['maxPrice'];
+        _city = result['city'];
+        _minBedrooms = result['minBedrooms'];
+        _minLivingArea = result['minLivingArea'];
+        _maxLivingArea = result['maxLivingArea'];
+        _sortBy = result['sortBy'];
+        _sortOrder = result['sortOrder'];
+      });
+    }
+  }
+
+  bool get _hasActiveFilters {
+    return _minPrice != null ||
+        _maxPrice != null ||
+        _city != null ||
+        _minBedrooms != null ||
+        _minLivingArea != null ||
+        _maxLivingArea != null;
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _minPrice = null;
+      _maxPrice = null;
+      _city = null;
+      _minBedrooms = null;
+      _minLivingArea = null;
+      _maxLivingArea = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -72,7 +133,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
       builder: (context, favoritesProvider, child) {
         var listings = favoritesProvider.favorites;
 
-        // Filter
+        // 1. Search Filter
         if (_searchQuery.isNotEmpty) {
           listings = listings.where((l) {
             return l.address.toLowerCase().contains(_searchQuery) ||
@@ -81,27 +142,69 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
           }).toList();
         }
 
-        // Sort
-        // Create a copy to sort
-        listings = List.from(listings);
-        switch (_sortOrder) {
-          case 'price_asc':
-            listings.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));
+        // 2. Advanced Filters
+        if (_minPrice != null) {
+          listings = listings.where((l) => (l.price ?? 0) >= _minPrice!).toList();
+        }
+        if (_maxPrice != null) {
+          listings = listings.where((l) => (l.price ?? 0) <= _maxPrice!).toList();
+        }
+        if (_city != null && _city!.isNotEmpty) {
+          listings = listings.where((l) => l.city?.toLowerCase().contains(_city!.toLowerCase()) ?? false).toList();
+        }
+        if (_minBedrooms != null) {
+          listings = listings.where((l) => (l.bedrooms ?? 0) >= _minBedrooms!).toList();
+        }
+        if (_minLivingArea != null) {
+          listings = listings.where((l) => (l.livingAreaM2 ?? 0) >= _minLivingArea!).toList();
+        }
+        if (_maxLivingArea != null) {
+          listings = listings.where((l) => (l.livingAreaM2 ?? 0) <= _maxLivingArea!).toList();
+        }
+
+        // 3. Sort
+        listings = List.from(listings); // Copy to sort
+
+        switch (_sortBy) {
+          case 'price':
+            listings.sort((a, b) {
+              final priceA = a.price ?? 0;
+              final priceB = b.price ?? 0;
+              return _sortOrder == 'asc'
+                  ? priceA.compareTo(priceB)
+                  : priceB.compareTo(priceA);
+            });
             break;
-          case 'price_desc':
-            listings.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
+
+          case 'livingarea':
+            listings.sort((a, b) {
+              final areaA = a.livingAreaM2 ?? 0;
+              final areaB = b.livingAreaM2 ?? 0;
+              return _sortOrder == 'asc'
+                  ? areaA.compareTo(areaB)
+                  : areaB.compareTo(areaA);
+            });
             break;
-          case 'city_asc':
-            listings.sort((a, b) => (a.city ?? '').compareTo(b.city ?? ''));
+
+          case 'city':
+            listings.sort((a, b) {
+              final cityA = a.city ?? '';
+              final cityB = b.city ?? '';
+              return _sortOrder == 'asc'
+                  ? cityA.compareTo(cityB)
+                  : cityB.compareTo(cityA);
+            });
             break;
-          case 'city_desc':
-            listings.sort((a, b) => (b.city ?? '').compareTo(a.city ?? ''));
-            break;
-          case 'date_added':
+
+          case 'date':
           default:
             // Assuming the list from provider is already in order of addition (or reverse)
-            // If provider appends, then last is newest. Let's assume we want newest first.
-             listings = listings.reversed.toList();
+            // If provider appends, then last is newest.
+            // If we sort by 'desc' (newest), we reverse the list.
+            if (_sortOrder == 'desc') {
+               listings = listings.reversed.toList();
+            }
+            // If 'asc' (oldest), we keep original order.
             break;
         }
 
@@ -121,6 +224,31 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                 ),
               ),
               centerTitle: false,
+              actions: [
+                Stack(
+                  children: [
+                    IconButton(
+                      onPressed: _openFilterDialog,
+                      icon: const Icon(Icons.tune_rounded),
+                      tooltip: 'Filters',
+                    ),
+                    if (_hasActiveFilters)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: ValoraColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+              ],
             ),
              SliverToBoxAdapter(
               child: Padding(
@@ -133,23 +261,66 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                       hint: 'Search saved listings...',
                       prefixIcon: Icons.search_rounded,
                     ),
-                    const SizedBox(height: 12),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildSortChip('Newest', 'date_added'),
-                          const SizedBox(width: 8),
-                          _buildSortChip('Price: Low to High', 'price_asc'),
-                          const SizedBox(width: 8),
-                          _buildSortChip('Price: High to Low', 'price_desc'),
-                          const SizedBox(width: 8),
-                          _buildSortChip('City: A-Z', 'city_asc'),
-                          const SizedBox(width: 8),
-                          _buildSortChip('City: Z-A', 'city_desc'),
-                        ],
+                    if (_hasActiveFilters) ...[
+                      const SizedBox(height: 12),
+                       SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            if (_minPrice != null || _maxPrice != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ValoraChip(
+                                  label: 'Price: €${_minPrice?.toInt() ?? 0} - ${_maxPrice != null ? '€${_maxPrice!.toInt()}' : 'Any'}',
+                                  isSelected: true,
+                                  onSelected: (_) => _openFilterDialog(),
+                                ),
+                              ),
+                            if (_city != null)
+                               Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ValoraChip(
+                                  label: 'City: $_city',
+                                  isSelected: true,
+                                  onSelected: (_) => _openFilterDialog(),
+                                ),
+                              ),
+                             if (_minBedrooms != null)
+                               Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ValoraChip(
+                                  label: '$_minBedrooms+ Beds',
+                                  isSelected: true,
+                                  onSelected: (_) => _openFilterDialog(),
+                                ),
+                              ),
+                             if (_minLivingArea != null)
+                               Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ValoraChip(
+                                  label: '$_minLivingArea+ m²',
+                                  isSelected: true,
+                                  onSelected: (_) => _openFilterDialog(),
+                                ),
+                              ),
+                             Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: IconButton(
+                                  icon: const Icon(Icons.clear_all_rounded, size: 20),
+                                  tooltip: 'Clear Filters',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: isDark
+                                      ? ValoraColors.surfaceVariantDark
+                                      : ValoraColors.surfaceVariantLight,
+                                  ),
+                                  onPressed: _clearFilters,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -165,16 +336,19 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                 hasScrollBody: false,
                 child: Center(
                   child: ValoraEmptyState(
-                    icon: _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.favorite_border_rounded,
-                    title: _searchQuery.isNotEmpty ? 'No matches found' : 'No saved listings',
-                    subtitle: _searchQuery.isNotEmpty
-                        ? 'Try adjusting your search terms.'
+                    icon: _searchQuery.isNotEmpty || _hasActiveFilters ? Icons.search_off_rounded : Icons.favorite_border_rounded,
+                    title: _searchQuery.isNotEmpty || _hasActiveFilters ? 'No matches found' : 'No saved listings',
+                    subtitle: _searchQuery.isNotEmpty || _hasActiveFilters
+                        ? 'Try adjusting your filters or search terms.'
                         : 'Listings you save will appear here.',
-                     action: _searchQuery.isNotEmpty
+                     action: _searchQuery.isNotEmpty || _hasActiveFilters
                         ? ValoraButton(
-                            label: 'Clear Search',
+                            label: 'Clear Filters',
                             variant: ValoraButtonVariant.secondary,
-                            onPressed: () => _searchController.clear(),
+                            onPressed: () {
+                              _searchController.clear();
+                              _clearFilters();
+                            },
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -208,20 +382,6 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
              const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         );
-      },
-    );
-  }
-
-  Widget _buildSortChip(String label, String value) {
-    return ValoraChip(
-      label: label,
-      isSelected: _sortOrder == value,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _sortOrder = value;
-          });
-        }
       },
     );
   }
