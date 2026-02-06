@@ -84,6 +84,13 @@ public partial class FundaApiClient
         // Format postal code: 1234AB (remove space)
         var cleanPostalCode = postalCode.Replace(" ", "").ToUpperInvariant();
 
+        // Security: Validate format to prevent path traversal or injection
+        if (!Regex.IsMatch(cleanPostalCode, "^[1-9][0-9]{3}[A-Z]{2}$"))
+        {
+            _logger.LogWarning("Invalid postal code format blocked: {PostalCode}", postalCode);
+            return null;
+        }
+
         try
         {
             var url = $"https://kpnopticfiber.funda.io/api/v1/{cleanPostalCode}";
@@ -289,14 +296,40 @@ public partial class FundaApiClient
     {
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
+        Uri? requestUri = null;
+
         // Ensure we have a valid Absolute URL
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        // Check relative path first because Uri.TryCreate(..., Absolute) might interpret "/path" as file:// on some systems
+        if (url.StartsWith("/"))
         {
-             // Try to construct if it's relative? Funda usually gives us full URLs.
-             if (url.StartsWith("/")) url = "https://www.funda.nl" + url;
+             var absoluteUrl = "https://www.funda.nl" + url;
+             if (Uri.TryCreate(absoluteUrl, UriKind.Absolute, out var constructedUri))
+             {
+                 requestUri = constructedUri;
+             }
+             else
+             {
+                 _logger.LogWarning("Failed to create absolute URI from relative URL: {Url}", url);
+                 return string.Empty;
+             }
+        }
+        else if (Uri.TryCreate(url, UriKind.Absolute, out var validUri))
+        {
+            requestUri = validUri;
         }
 
-        var response = await _httpClient.GetAsync(url, cancellationToken);
+        // Security: SSRF Protection
+        // Only allow requests to funda.nl and subdomains, and only HTTPS
+        if (requestUri == null ||
+            !requestUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ||
+            !(requestUri.Host.Equals("www.funda.nl", StringComparison.OrdinalIgnoreCase) || requestUri.Host.EndsWith(".funda.nl", StringComparison.OrdinalIgnoreCase)))
+        {
+             _logger.LogWarning("Blocked potential SSRF attempt. Original: {Url}, Parsed: {ParsedUrl}, Scheme: {Scheme}, Host: {Host}",
+                 url, requestUri?.ToString() ?? "null", requestUri?.Scheme ?? "null", requestUri?.Host ?? "null");
+             return string.Empty;
+        }
+
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }

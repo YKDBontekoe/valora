@@ -23,7 +23,14 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 8;
+    })
     .AddEntityFrameworkStores<ValoraDbContext>()
     .AddDefaultTokenProviders();
 
@@ -39,22 +46,12 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
     .Configure<IConfiguration, IWebHostEnvironment, ILogger<Program>>((options, configuration, env, logger) =>
     {
         // JWT Secret configuration is critical.
-        // In Production, we enforce providing a strong secret via environment variables.
-        // In Development, we allow a fallback to a hardcoded secret to simplify onboarding,
-        // but we log a warning to ensure developers are aware of this.
+        // We enforce providing a strong secret via environment variables in all environments.
         var secret = configuration["JWT_SECRET"];
 
         if (string.IsNullOrEmpty(secret))
         {
-            if (env.IsDevelopment())
-            {
-                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-                logger.LogWarning("WARNING: JWT Secret is not configured. Using temporary development key.");
-            }
-            else
-            {
-                throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
-            }
+            throw new InvalidOperationException("JWT Secret is missing in configuration.");
         }
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -184,6 +181,16 @@ if (!app.Environment.IsEnvironment("Testing"))
 }
 
 app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
+
+// Security Headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self';");
+    await next();
+});
 
 app.UseCors();
 
