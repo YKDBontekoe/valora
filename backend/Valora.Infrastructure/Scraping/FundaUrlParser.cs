@@ -6,6 +6,8 @@ internal static partial class FundaUrlParser
 {
     public static string? ExtractRegionFromUrl(string url)
     {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+
         var decodedUrl = Uri.UnescapeDataString(url);
 
         // URL format: https://www.funda.nl/koop/amsterdam/ or https://www.funda.nl/zoeken/koop?selected_area=...
@@ -27,12 +29,19 @@ internal static partial class FundaUrlParser
 
     public static int? ExtractGlobalIdFromUrl(string url)
     {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+
         // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
         // The GlobalId is typically the last numeric segment in the URL path
-        var match = GlobalIdRegex().Match(url);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out var id))
+        // We look for all matches of /digits and take the last one to avoid other numbers in slug
+        var matches = GlobalIdRegex().Matches(url);
+        if (matches.Count > 0)
         {
-            return id;
+            var match = matches[^1]; // Last match
+            if (int.TryParse(match.Groups[1].Value, out var id))
+            {
+                return id;
+            }
         }
         return null;
     }
@@ -41,17 +50,18 @@ internal static partial class FundaUrlParser
     {
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
-        // Ensure we have a valid Absolute URL
-        if (!Uri.TryCreate(url, UriKind.Absolute, out _))
+        // Check if it's already a valid absolute URL
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
-            // Try to construct if it's relative? Funda usually gives us full URLs.
-            if (url.StartsWith("/"))
-            {
-                return "https://www.funda.nl" + url;
-            }
+            // Optional: enforce funda.nl host if strict security is needed
+            // For now, we trust the input but ensure it's absolute
+            return url;
         }
 
-        return url;
+        // If it's relative, ensure it starts with /
+        var path = url.StartsWith("/") ? url : "/" + url;
+
+        return "https://www.funda.nl" + path;
     }
 
     [GeneratedRegex(@"funda\.nl/(?:koop|huur)/([^/]+)", RegexOptions.IgnoreCase)]
@@ -60,6 +70,6 @@ internal static partial class FundaUrlParser
     [GeneratedRegex(@"selected_area=.*?""([^""]+)""", RegexOptions.IgnoreCase)]
     private static partial Regex QueryRegionRegex();
 
-    [GeneratedRegex(@"/(\d{6,})", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"/(\d{6,})")]
     private static partial Regex GlobalIdRegex();
 }

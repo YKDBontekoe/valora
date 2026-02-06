@@ -19,9 +19,18 @@ internal static partial class FundaValueParser
     {
         if (string.IsNullOrEmpty(priceText)) return null;
 
-        // Remove currency symbol, periods (thousands separator), and suffixes like "k.k."
-        var cleaned = PriceCleanupRegex().Replace(priceText, "");
-        if (decimal.TryParse(cleaned, out var price) && price > 0)
+        // Dutch format: € 500.000 k.k. -> 500000
+        // € 1.250,50 -> 1250.50
+
+        // 1. Remove everything except digits, dots, commas
+        var cleaned = PriceCleanupRegex().Replace(priceText, "").Trim();
+
+        // 2. Handle Dutch formatting:
+        //    - Remove thousands separators (dots)
+        //    - Replace decimal separator (comma) with dot
+        cleaned = cleaned.Replace(".", "").Replace(",", ".");
+
+        if (decimal.TryParse(cleaned, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var price) && price > 0)
         {
             return price;
         }
@@ -41,7 +50,7 @@ internal static partial class FundaValueParser
         return ParseInt(text);
     }
 
-    public static (string Brand, int? Year) ParseCVBoiler(string text)
+    public static (string Brand, int? Year) ParseCVBoiler(string? text)
     {
          if (string.IsNullOrEmpty(text)) return (string.Empty, null);
 
@@ -69,6 +78,6 @@ internal static partial class FundaValueParser
     [GeneratedRegex(@"(.+?)\s*\((\d{4})\)")]
     private static partial Regex CVBoilerRegex();
 
-    [GeneratedRegex(@"[^\d]")]
+    [GeneratedRegex(@"[^\d.,]")]
     private static partial Regex PriceCleanupRegex();
 }

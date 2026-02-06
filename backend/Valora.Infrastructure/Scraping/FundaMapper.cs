@@ -55,16 +55,23 @@ internal static class FundaMapper
                 .ToList();
         }
 
-        // Extract postal code from address if available
-        if (!string.IsNullOrEmpty(summary.Address?.PostalCode))
+        // Address from summary (more reliable than search result)
+        if (summary.Address != null)
         {
-            listing.PostalCode = summary.Address.PostalCode;
-        }
+            if (!string.IsNullOrWhiteSpace(summary.Address.Street))
+            {
+                listing.Address = summary.Address.Street;
+            }
 
-        // City from address
-        if (!string.IsNullOrEmpty(summary.Address?.City))
-        {
-            listing.City = summary.Address.City;
+            if (!string.IsNullOrEmpty(summary.Address.PostalCode))
+            {
+                listing.PostalCode = summary.Address.PostalCode;
+            }
+
+            if (!string.IsNullOrEmpty(summary.Address.City))
+            {
+                listing.City = summary.Address.City;
+            }
         }
 
         // Price from summary
@@ -130,6 +137,23 @@ internal static class FundaMapper
         if (listing.Features != null)
         {
             EnrichConstructionDetails(listing, listing.Features);
+        }
+    }
+
+    public static void EnrichListingWithContactDetails(Listing listing, FundaContactDetailsResponse contacts)
+    {
+        if (contacts.ContactDetails.Count == 0) return;
+
+        var primary = contacts.ContactDetails[0];
+        listing.BrokerOfficeId = primary.Id;
+        listing.BrokerPhone = primary.PhoneNumber;
+        listing.BrokerLogoUrl = primary.LogoUrl;
+        listing.BrokerAssociationCode = primary.AssociationCode;
+
+        // Update agent name if we have better info
+        if (!string.IsNullOrEmpty(primary.DisplayName))
+        {
+            listing.AgentName = primary.DisplayName;
         }
     }
 
@@ -346,7 +370,25 @@ internal static class FundaMapper
         if (source.FiberAvailable.HasValue) target.FiberAvailable = source.FiberAvailable;
         if (source.PublicationDate.HasValue) target.PublicationDate = source.PublicationDate;
 
-        target.IsSoldOrRented = source.IsSoldOrRented;
+        // Logic for IsSoldOrRented:
+        // Source is typically a "new" listing object from API search results or summary enrichment.
+        // If source comes from API search results (MapApiListingToDomain), IsSoldOrRented is default false.
+        // We only want to overwrite if source has some indication of status, or if we know source is authoritative.
+        // Heuristic: If source.Status is populated, or source.IsSoldOrRented is true, then update.
+        // If source.Status is null and IsSoldOrRented is false, it might be a weak source (search result), so be careful.
+        // However, if a house IS sold, we want to know.
+        // If we are merging FROM a search result, and the house was sold previously, the search result might say "Verkocht" in status?
+        // MapApiListingToDomain leaves Status null.
+        // So if source.Status is null, and source.IsSoldOrRented is false, we should probably SKIP overwriting target.IsSoldOrRented if target is true.
+        // But if house is back on market, we want to set it to false.
+        // But Search Results don't reliably tell us "Back on market" except by absence of "Verkocht".
+        // SAFETY: Only overwrite if source.IsSoldOrRented is true, OR if source.Status is present.
+        // If source is just a search result, it has no status info usually.
+
+        if (source.IsSoldOrRented || !string.IsNullOrEmpty(source.Status))
+        {
+            target.IsSoldOrRented = source.IsSoldOrRented;
+        }
 
         if (source.Labels != null && source.Labels.Count > 0) target.Labels = source.Labels;
         if (!string.IsNullOrEmpty(source.PostalCode)) target.PostalCode = source.PostalCode;

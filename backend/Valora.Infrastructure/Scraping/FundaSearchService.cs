@@ -236,6 +236,8 @@ public partial class FundaSearchService : IFundaSearchService
         {
             listing = existing;
             // Update basic fields from API
+            // Note: We manually update these fields because MergeListingDetails handles enrichment data
+            // and we want to ensure these basic fields are updated from the latest search result.
             listing.Price = newListingData.Price;
             listing.ImageUrl = newListingData.ImageUrl;
             listing.Url = newListingData.Url;

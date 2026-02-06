@@ -38,7 +38,7 @@ public class FundaMapperTests
             PublicationDate = new DateTime(2023, 1, 1),
             IsSoldOrRented = true,
             Labels = [ new() { Text = "Nieuw" } ],
-            Address = new FundaApiSummaryAddress { PostalCode = "1234AB", City = "TestCity" },
+            Address = new FundaApiSummaryAddress { Street="New Street", PostalCode = "1234AB", City = "TestCity" },
             Tracking = new FundaApiTracking { Values = new FundaApiTrackingValues { Status = "verkocht" } }
         };
 
@@ -51,6 +51,7 @@ public class FundaMapperTests
         Assert.Equal("1234AB", listing.PostalCode);
         Assert.Equal("TestCity", listing.City);
         Assert.Equal("Verkocht", listing.Status);
+        Assert.Equal("New Street", listing.Address); // Verify address update
     }
 
     [Fact]
@@ -272,6 +273,10 @@ public class FundaMapperTests
         Assert.Equal(3, target.Bedrooms);
         Assert.Equal("Verkocht", target.Status);
         Assert.Equal("0612345678", target.BrokerPhone);
+        // Price is manually updated in service, not merge, but wait...
+        // MergeListingDetails DOES NOT merge Price/ImageUrl/Url intentionally.
+        // The service updates them. So Price should remain 100000 in target if not touched?
+        // Let's check MergeListingDetails code... it does NOT copy Price.
         Assert.Equal(100000, target.Price);
     }
 
@@ -287,11 +292,46 @@ public class FundaMapperTests
     }
 
     [Fact]
+    public void MergeListingDetails_DoesNotOverwriteStatus_IfSourceWeak()
+    {
+        var target = new Listing { FundaId = "1", Address = "Test", IsSoldOrRented = true, Status = "Verkocht" };
+        // Source is weak (API search result): Status null, IsSoldOrRented false
+        var source = new Listing { FundaId = "1", Address = "Test", IsSoldOrRented = false, Status = null };
+
+        FundaMapper.MergeListingDetails(target, source);
+
+        // Should preserve target's sold status
+        Assert.True(target.IsSoldOrRented);
+        Assert.Equal("Verkocht", target.Status);
+    }
+
+    [Fact]
+    public void MergeListingDetails_OverwritesStatus_IfSourceStrong()
+    {
+        var target = new Listing { FundaId = "1", Address = "Test", IsSoldOrRented = false, Status = "Beschikbaar" };
+        // Source is strong (Summary API): Status null (maybe), but IsSoldOrRented true
+        var source = new Listing { FundaId = "1", Address = "Test", IsSoldOrRented = true, Status = "Verkocht" };
+
+        FundaMapper.MergeListingDetails(target, source);
+
+        Assert.True(target.IsSoldOrRented);
+        Assert.Equal("Verkocht", target.Status);
+    }
+
+    [Fact]
     public void FundaValueParser_ParseInt_ParsesCorrectly()
     {
         Assert.Equal(123, FundaValueParser.ParseInt("123 m²"));
         Assert.Equal(50, FundaValueParser.ParseInt("€ 50.000"));
         Assert.Null(FundaValueParser.ParseInt("Geen cijfers"));
+    }
+
+    [Fact]
+    public void FundaValueParser_ParsePrice_ParsesDutchFormat()
+    {
+        Assert.Equal(500000m, FundaValueParser.ParsePrice("€ 500.000 k.k."));
+        Assert.Equal(1250.50m, FundaValueParser.ParsePrice("€ 1.250,50"));
+        Assert.Equal(500m, FundaValueParser.ParsePrice("500"));
     }
 
     [Fact]
@@ -313,11 +353,6 @@ public class FundaMapperTests
                         new() { Label = "Ligging", Value = "Aan water" },
                         new() { Label = "Garage", Value = "Aangebouwd steen" },
                         new() { Label = "Parkeerfaciliteiten", Value = "Openbaar parkeren" },
-                        // Cadastral logic: key.Any(char.IsUpper) && key.Any(char.IsDigit) && key.Length > 5
-                        // && !key.Contains("kamers") && !key.Contains("bouw")
-                        // AND value is empty or "Title"
-                        // "Kadastrale kaart 12345" has no Upper char! Let's fix that. "Kadastrale Kaart 12345"
-                        // Also FlattenFeatures ignores empty values, so use "Title" which is the other condition
                         new() { Label = "Kadastrale Kaart 12345", Value = "Title" }
                     ]
                 }

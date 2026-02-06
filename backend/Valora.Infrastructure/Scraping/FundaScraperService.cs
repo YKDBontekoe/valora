@@ -140,7 +140,11 @@ public class FundaScraperService : IFundaScraperService
     {
         var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
         var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
-        return existingListings.ToDictionary(l => l.FundaId, l => l);
+
+        // Handle duplicates by taking the first one found
+        return existingListings
+            .GroupBy(l => l.FundaId)
+            .ToDictionary(g => g.Key, g => g.First());
     }
 
     private async Task<List<FundaApiListing>> FetchFromApiAsync(string region, int? limit, CancellationToken cancellationToken)
@@ -212,6 +216,7 @@ public class FundaScraperService : IFundaScraperService
                 FundaMapper.EnrichListingWithSummary(listing, summary);
             }
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch summary for {FundaId}", listing.FundaId);
@@ -230,6 +235,7 @@ public class FundaScraperService : IFundaScraperService
                 FundaMapper.EnrichListingWithNuxtData(listing, richData);
             }
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch rich details for {FundaId}", listing.FundaId);
@@ -241,20 +247,12 @@ public class FundaScraperService : IFundaScraperService
         try
         {
             var contacts = await _apiClient.GetContactDetailsAsync(globalId, cancellationToken);
-            if (contacts?.ContactDetails?.Count > 0)
+            if (contacts != null)
             {
-                var primary = contacts.ContactDetails[0];
-                listing.BrokerOfficeId = primary.Id;
-                listing.BrokerPhone = primary.PhoneNumber;
-                listing.BrokerLogoUrl = primary.LogoUrl;
-                listing.BrokerAssociationCode = primary.AssociationCode;
-                // Update agent name if we have better info
-                if (!string.IsNullOrEmpty(primary.DisplayName))
-                {
-                    listing.AgentName = primary.DisplayName;
-                }
+                FundaMapper.EnrichListingWithContactDetails(listing, contacts);
             }
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Failed to fetch contact details for {FundaId}", listing.FundaId);
@@ -273,6 +271,7 @@ public class FundaScraperService : IFundaScraperService
                     listing.FiberAvailable = fiber.Availability;
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogDebug(ex, "Failed to check fiber availability for {FundaId}", listing.FundaId);

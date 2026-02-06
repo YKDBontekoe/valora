@@ -81,12 +81,14 @@ internal static partial class FundaNuxtJsonParser
     /// </summary>
     public static string? ExtractNuxtJson(string html)
     {
+        if (string.IsNullOrEmpty(html)) return null;
+
         // Simple regex to find the script content.
         // We look for script type="application/json" and iterate over them to find the one with the data.
         // This is safer than a greedy regex which might capture multiple script tags.
 
         var matches = NuxtScriptRegex().Matches(html);
-        foreach (System.Text.RegularExpressions.Match m in matches)
+        foreach (Match m in matches)
         {
              var content = m.Groups[1].Value;
              // Check for key identifiers of the Nuxt hydration state
