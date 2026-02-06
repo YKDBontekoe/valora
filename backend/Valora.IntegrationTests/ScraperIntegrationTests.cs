@@ -63,7 +63,7 @@ public class ScraperIntegrationTests : BaseIntegrationTest, IDisposable
             builder.ConfigureTestServices(services =>
             {
                 // Intercept HttpClient for FundaApiClient
-                services.AddHttpClient<FundaApiClient>()
+                services.AddHttpClient<IFundaApiClient, FundaApiClient>()
                         .ConfigurePrimaryHttpMessageHandler(() => new RedirectHandler(_server.Urls[0]));
             });
         });
