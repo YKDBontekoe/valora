@@ -112,7 +112,10 @@ public class FundaScraperService : IFundaScraperService
             await _notificationService.NotifyProgressAsync($"Found {apiListings.Count} listings. Processing...");
         }
 
-        // Optimization: Fetch all existing listings in one query to avoid N+1
+        // Optimization: Batch Fetching
+        // Instead of querying the database for each listing inside the loop (which would cause N+1 query problem),
+        // we fetch all potentially existing listings in a single round-trip.
+        // This significantly reduces database load when processing pages with many items.
         var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
         var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
         var existingListingsMap = existingListings.ToDictionary(l => l.FundaId, l => l);
@@ -178,15 +181,18 @@ public class FundaScraperService : IFundaScraperService
     /// Orchestrates the enrichment of a basic listing with detailed data from multiple sources.
     /// <para>
     /// <strong>Why multiple steps?</strong>
-    /// Funda's data is fragmented across different endpoints and HTML structures:
+    /// Funda's data is fragmented across different endpoints and HTML structures. A single source is not enough.
+    /// We must stitch together data from:
     /// 1. <strong>Summary API</strong>: Provides status (sold/rented), publication date, and accurate postal code.
-    /// 2. <strong>Nuxt/HTML</strong>: Provides rich descriptions, media URLs, and extended features (energy label, year built).
-    /// 3. <strong>Contact API</strong>: Provides broker details (phone, logo) which are dynamic.
+    /// 2. <strong>Nuxt/HTML</strong>: The "Gold Mine". Provides rich descriptions, media URLs, and extended features.
+    /// 3. <strong>Contact API</strong>: Provides broker details (phone, logo).
     /// 4. <strong>Fiber API</strong>: Provides internet availability (requires full postal code from step 1).
     /// </para>
     /// <para>
-    /// Each step is wrapped in a try-catch block to ensure that a failure in one auxiliary data source
-    /// does not prevent the listing from being saved (Graceful Degradation).
+    /// <strong>Graceful Degradation Strategy:</strong>
+    /// Each enrichment step is isolated in its own try-catch block.
+    /// If the Contact API is down, or the Fiber check fails, we *still* save the listing with whatever data we managed to get.
+    /// It is better to have a listing without a broker phone number than no listing at all.
     /// </para>
     /// </summary>
     private async Task EnrichListingAsync(Listing listing, FundaApiListing apiListing, CancellationToken cancellationToken)

@@ -9,12 +9,20 @@ internal static class FundaNuxtJsonParser
     /// <summary>
     /// Parses the raw Nuxt JSON state to find the listing data.
     /// <para>
-    /// <strong>Why BFS?</strong>
-    /// The structure of the Nuxt hydration state is highly volatile and deeply nested.
-    /// The actual listing data might be at different depths depending on the page type (Project vs Listing)
-    /// or A/B tests. Instead of hardcoding a path (e.g., `payload.data.listing`), we use a
-    /// Breadth-First Search (BFS) to traverse the JSON object graph until we find an object
-    /// that contains the signature keys: `features`, `media`, and `description`.
+    /// <strong>Why Breadth-First Search (BFS)?</strong>
+    /// The Nuxt hydration JSON is a massive, deeply nested object that represents the entire application state.
+    /// The location of the actual listing data changes frequently due to:
+    /// 1. <strong>A/B Testing:</strong> Funda often changes the nesting structure (e.g., `payload.data` vs `payload.state.listing`).
+    /// 2. <strong>Page Type:</strong> "Project" pages (new construction) have a different structure than "Resale" pages.
+    /// </para>
+    /// <para>
+    /// <strong>The Solution: Signature Matching</strong>
+    /// Instead of hardcoding a fragile path like `root.payload.data.listing`, we search for a "Fingerprint".
+    /// We assume that any object containing *all three* of these keys is the listing object we want:
+    /// - `features` (e.g. Energy Label, Year Built)
+    /// - `media` (Photos, Videos)
+    /// - `description` (The main text)
+    /// This makes the parser incredibly robust to structural changes.
     /// </para>
     /// </summary>
     public static FundaNuxtListingData? Parse(string json, ILogger? logger = null)
