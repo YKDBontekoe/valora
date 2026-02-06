@@ -131,9 +131,11 @@ public partial class FundaApiClient : IFundaApiClient
         int? maxPrice = null,
         CancellationToken cancellationToken = default)
     {
-        // Note: Rent requests also seem to accept "SalePrice" as the range type in this specific API,
-        // or effectively ignore the type mismatch if the bounds are numeric.
-        // We use the generic SearchAsync which defaults to SalePrice for now as it's proven to work.
+        // API Quirk Explanation:
+        // Even for rental listings ("offeringType": "rent"), the Funda Topposition API seems to expect
+        // the price range type to be "SalePrice" or simply ignores the label as long as the bounds are numeric integers.
+        // Sending "RentPrice" or similar often results in 0 matches or bad requests in this specific API version (v2).
+        // Therefore, we reuse the generic SearchAsync which defaults to "SalePrice".
         return await SearchAsync(
             geoInfo, 
             offeringType: "rent", 
@@ -263,7 +265,15 @@ public partial class FundaApiClient : IFundaApiClient
     }
     /// <summary>
     /// Fetches the details page HTML and extracts the Nuxt hydration state to get rich data.
-    /// This includes full description, multiple photos, bathrooms, etc.
+    /// <para>
+    /// <strong>Why parse Nuxt state instead of HTML scraping?</strong>
+    /// Scraping raw HTML (e.g. finding divs with class 'listing-description') is brittle.
+    /// Classes change frequently.
+    /// Funda is a Nuxt.js app, which means it delivers the *entire* initial state as a JSON blob
+    /// inside a specific `&lt;script&gt;` tag to "hydrate" the client-side Vue app.
+    /// This JSON is a structured, typed source of truth. It's much more stable and contains
+    /// data that isn't even rendered on screen (like hidden metadata).
+    /// </para>
     /// </summary>
     public virtual async Task<FundaNuxtListingData?> GetListingDetailsAsync(string url, CancellationToken cancellationToken = default)
     {
@@ -272,8 +282,7 @@ public partial class FundaApiClient : IFundaApiClient
         if (string.IsNullOrEmpty(html)) return null;
 
         // 2. Extract JSON content from script
-        // Look for <script type="application/json" ...> that *looks* like it has the data
-        // The Nuxt script typically starts with [ followed by some meta keys
+        // We look for the <script type="application/json"> tag that Nuxt uses for hydration.
         var jsonContent = ExtractNuxtJson(html);
         if (string.IsNullOrEmpty(jsonContent))
         {

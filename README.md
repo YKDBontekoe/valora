@@ -1,24 +1,69 @@
-# Valora
+# Valora 🏠
 
-House listing scraper and tracker for funda.nl.
+**Valora** is a powerful, self-hosted real estate tracker for [funda.nl](https://www.funda.nl). It automates the search for your dream home by scraping listings, enriching them with detailed data, and tracking price changes over time.
 
-## Stack
+> **Mission:** Ensure every developer understands exactly how this system works within 10 minutes.
 
-- **Backend**: .NET 10 (Minimal APIs, EF Core, Clean Architecture)
-- **Frontend**: Flutter (Web, iOS, Android, Desktop)
-- **Database**: PostgreSQL
-- **Orchestration**: Docker Compose
-- **Background Jobs**: Hangfire
+---
 
-## Documentation
+## 🚀 Quick Start (5 Minutes)
 
-- **[Onboarding Guide](docs/onboarding.md)**: Start here! Data flow walkthroughs and first steps.
-- [User Guide](docs/user-guide.md): How to use the application.
-- [Developer Guide](docs/developer-guide.md): Deep dive into architecture and implementation.
+Get the system running locally to see it in action.
 
-## Architecture Overview
+### Prerequisites
+- Docker Desktop
+- .NET 10 SDK (Backend)
+- Flutter SDK (Frontend)
 
-Valora follows **Clean Architecture** principles to ensure maintainability and testability.
+### 1. Start Infrastructure
+Launch PostgreSQL and Redis (if used) via Docker Compose.
+```bash
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+### 2. Run Backend
+The API handles scraping, data persistence, and business logic.
+```bash
+cd backend
+cp .env.example .env
+dotnet run --project Valora.Api
+```
+*Server starts at `http://localhost:5000`*
+
+### 3. Run Frontend
+The Flutter app provides a beautiful interface to view and manage listings.
+```bash
+cd apps/flutter_app
+cp .env.example .env
+flutter pub get
+flutter run
+```
+
+---
+
+## 🗺️ Project Map
+
+Where everything lives.
+
+```
+valora/
+├── apps/
+│   └── flutter_app/       # 📱 Frontend: Flutter application (Web/Mobile/Desktop)
+├── backend/               # ⚙️ Backend: .NET 10 Solution
+│   ├── Valora.Api/            # Entry Point: Configuration, Endpoints, DI
+│   ├── Valora.Application/    # Core Logic: Interfaces, Use Cases, DTOs
+│   ├── Valora.Domain/         # Business Rules: Entities (Listing, PriceHistory)
+│   ├── Valora.Infrastructure/ # Heavy Lifting: EF Core, Scraper, Funda API Client
+│   └── Valora.UnitTests/      # Verification: Unit tests
+├── docker/                # 🐳 Infrastructure: Docker Compose files
+└── docs/                  # 📚 Documentation: Guides and reference
+```
+
+---
+
+## 🏗️ Architecture Overview
+
+Valora follows **Clean Architecture** principles to keep the core logic independent of external frameworks.
 
 ```mermaid
 graph TD
@@ -29,79 +74,63 @@ graph TD
     Infra -->|Implements| App
     Infra -->|EF Core| DB[(PostgreSQL)]
     Infra -->|Http| Funda[Funda.nl]
-    Infra -->|Background Jobs| Hangfire
+
+    subgraph "Core Domain"
+        Domain
+    end
+
+    subgraph "Business Logic"
+        App
+    end
+
+    subgraph "Implementation Details"
+        Infra
+    end
 ```
 
-- **Valora.Domain**: The core. Contains entities (`Listing`) and business rules. No dependencies.
-- **Valora.Application**: The logic. Defines interfaces (`IListingRepository`), use cases, and DTOs. Depends only on Domain.
-- **Valora.Infrastructure**: The machinery. Implements interfaces (EF Core, Funda Scraper). Depends on Application and Domain.
-- **Valora.Api**: The entry point. Configures DI and maps HTTP endpoints. Depends on Application and Infrastructure.
+- **Domain**: Pure C# classes. No dependencies.
+- **Application**: The "What". Defines *what* the system does (interfaces).
+- **Infrastructure**: The "How". Implements the interfaces (scraping, database).
+- **API**: The "Entry". Wires everything together.
 
-## Structure
+---
 
-```
-valora/
-├── apps/flutter_app/     # Flutter app
-├── backend/              # .NET 10 API
-│   ├── Valora.Api/            # Entry point & Endpoints
-│   ├── Valora.Application/    # Business Logic & Interfaces
-│   ├── Valora.Domain/         # Entities
-│   ├── Valora.Infrastructure/ # Implementation (EF, Scraper)
-│   └── Valora.UnitTests/      # Unit Tests
-└── docker/               # Docker Compose
-```
+## ⚙️ How it Works
 
-## Quick Start
+The system operates in two main modes:
 
-Get up and running in minutes.
+### 1. The Scraper Loop (Write)
+A background job (`FundaScraperJob`) runs periodically:
+1.  **Search**: Queries Funda's hidden API for listings in target regions.
+2.  **Filter**: Identifies new or updated listings.
+3.  **Enrich**: Fetches detailed data (photos, description, broker info) by parsing the listing's HTML page (specifically the Nuxt.js hydration state).
+4.  **Store**: Saves the rich data to PostgreSQL.
 
-### Prerequisites
+### 2. The User Loop (Read)
+The user interacts with the Flutter app:
+1.  **Request**: App sends `GET /api/listings`.
+2.  **Query**: API queries the database using efficient filters.
+3.  **Response**: Returns a lightweight summary of listings.
 
-- Docker Desktop
-- .NET 10 SDK (for backend dev)
-- Flutter SDK (for frontend dev)
+---
 
-### 1. Start Infrastructure
+## 📚 Documentation
 
-Start PostgreSQL and other services:
+Dive deeper into specific topics:
 
-```bash
-docker-compose -f docker/docker-compose.yml up -d
-```
+- **[Onboarding Guide](docs/onboarding.md)**: **Start here!** detailed data flow walkthroughs and first-day tasks.
+- **[Developer Guide](docs/developer-guide.md)**: Deep dive into technical decisions and patterns.
+- **[User Guide](docs/user-guide.md)**: How to use the application features.
 
-### 2. Run Backend
+## 🛠️ Key Commands
 
-```bash
-cd backend
-cp .env.example .env
-dotnet run --project Valora.Api
-```
-*Server starts at `http://localhost:5000`*
+| Action | Command |
+|--------|---------|
+| **Run Tests** | `dotnet test backend/Valora.UnitTests` |
+| **Add Migration** | `dotnet ef migrations add <Name> --project Valora.Infrastructure --startup-project Valora.Api` |
+| **Update DB** | `dotnet ef database update --project Valora.Infrastructure --startup-project Valora.Api` |
+| **Trigger Scrape** | `POST /api/scraper/trigger` (via Postman/Curl) |
 
-### 3. Run Frontend
+---
 
-```bash
-cd apps/flutter_app
-cp .env.example .env
-flutter pub get
-flutter run
-```
-
-## API Reference
-
-The backend provides the following key endpoints (see `Valora.Api/Program.cs` for full list):
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| `GET` | `/api/health` | Health check | No |
-| `POST` | `/api/auth/login` | Login and get JWT | No |
-| `POST` | `/api/auth/register` | Create a new user | No |
-| `GET` | `/api/listings` | Get paginated listings | Yes |
-| `GET` | `/api/listings/{id}` | Get listing details | Yes |
-| `POST` | `/api/scraper/trigger` | Trigger manual scrape | Yes |
-
-## Troubleshooting
-
-- **Backend not connected**: Check if `http://localhost:5000/api/health` returns `200 OK`.
-- **JWT Secret is missing**: Set `JWT_SECRET` in `backend/.env` (use any string for dev).
-- **Database connection failed**: Ensure Docker is running (`docker ps`).
+*Made with ❤️ by the Valora Team.*
