@@ -92,6 +92,11 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CVBoilerBrand).HasMaxLength(100);
             entity.Property(e => e.BrokerPhone).HasMaxLength(50);
             entity.Property(e => e.BrokerAssociationCode).HasMaxLength(20);
+            entity.Property(e => e.Description).HasMaxLength(10000);
+            entity.Property(e => e.VideoUrl).HasMaxLength(500);
+            entity.Property(e => e.VirtualTourUrl).HasMaxLength(500);
+            entity.Property(e => e.BrochureUrl).HasMaxLength(500);
+            entity.Property(e => e.BrokerLogoUrl).HasMaxLength(500);
 
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
             // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)

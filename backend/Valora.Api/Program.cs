@@ -1,9 +1,12 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.RateLimiting;
 using System.Text;
 using Valora.Application;
 using Valora.Infrastructure;
@@ -46,15 +49,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
 
         if (string.IsNullOrEmpty(secret))
         {
-            if (env.IsDevelopment())
-            {
-                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-                logger.LogWarning("WARNING: JWT Secret is not configured. Using temporary development key.");
-            }
-            else
-            {
-                throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
-            }
+             throw new InvalidOperationException("JWT Secret is missing in configuration. Please set JWT_SECRET environment variable.");
         }
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -90,6 +85,33 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+// Configure Forwarded Headers for correct IP resolution behind Load Balancers
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Clearing known networks/proxies to trust all upstream proxies.
+    // In a specific production environment, this should be restricted to the LB's IP/Network.
+    options.KnownNetworks.Clear();
+    // options.KnownIPNetworks.Clear(); // TODO: Switch to KnownIPNetworks when stable/confirmed
+    options.KnownProxies.Clear();
+});
+
+// Add Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("fixed", httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 2,
+                QueueLimit = 0
+            }));
+});
+
 // Add SignalR
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
@@ -113,17 +135,34 @@ if (hangfireEnabled)
 }
 
 // Add CORS for Flutter
+var corsOrigins = builder.Configuration["CORS_ORIGINS"];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (!string.IsNullOrEmpty(corsOrigins))
+        {
+            policy.WithOrigins(corsOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
     });
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
+
+if (string.IsNullOrEmpty(corsOrigins))
+{
+    app.Logger.LogWarning("WARNING: CORS_ORIGINS is not configured. Allowing any origin (unsafe for production).");
+}
 
 // Apply database migrations
 if (!app.Environment.IsEnvironment("Testing"))
@@ -186,6 +225,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
 
 app.UseCors();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -205,7 +245,10 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new [] { new Valora.Api.Middleware.HangfireAuthorizationFilter() }
+    });
 
     // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(
@@ -215,7 +258,7 @@ if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 }
 
 // API Endpoints
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
