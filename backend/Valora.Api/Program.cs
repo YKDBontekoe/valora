@@ -134,7 +134,10 @@ if (!app.Environment.IsEnvironment("Testing"))
         var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
         try
         {
-            dbContext.Database.Migrate();
+            if (dbContext.Database.IsRelational())
+            {
+                dbContext.Database.Migrate();
+            }
 
             // Seed Admin User
             var adminEmail = app.Configuration["ADMIN_EMAIL"];
