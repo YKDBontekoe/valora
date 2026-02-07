@@ -243,14 +243,16 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("BrochureUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("BrokerAssociationCode")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<string>("BrokerLogoUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int?>("BrokerOfficeId")
                         .HasColumnType("integer");
@@ -282,7 +284,8 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)");
 
                     b.Property<string>("EnergyLabel")
                         .HasMaxLength(20)
@@ -415,13 +418,15 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("VideoUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int?>("ViewCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("VirtualTourUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int?>("VolumeM3")
                         .HasColumnType("integer");

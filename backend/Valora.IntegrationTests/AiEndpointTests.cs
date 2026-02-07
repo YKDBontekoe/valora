@@ -89,6 +89,34 @@ public class AiEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Chat_ReturnsBadRequest_WhenPromptIsTooLong()
+    {
+        // Arrange
+        await AuthenticateAsync();
+        var request = new AiChatRequest { Prompt = new string('a', 5001), Model = "gpt-4" };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/ai/chat", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Chat_ReturnsBadRequest_WhenModelIsTooLong()
+    {
+        // Arrange
+        await AuthenticateAsync();
+        var request = new AiChatRequest { Prompt = "Valid", Model = new string('a', 101) };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/ai/chat", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // Helper record
     record AiChatResponse(string Response);
 }
