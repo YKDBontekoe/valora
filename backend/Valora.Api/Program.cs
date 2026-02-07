@@ -118,9 +118,22 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            var allowedOrigins = builder.Configuration["ALLOWED_ORIGINS"];
+            if (!string.IsNullOrEmpty(allowedOrigins))
+            {
+                policy.WithOrigins(allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+        }
     });
 });
 
@@ -209,7 +222,10 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new Valora.Api.Filters.HangfireAuthorizationFilter() }
+    });
 
     // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(
@@ -372,9 +388,12 @@ api.MapPost("/ai/chat", async (
     IAiService aiService,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Prompt))
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(request);
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+
+    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(request, validationContext, validationResults, true))
     {
-        return Results.BadRequest(new { error = "Prompt is required" });
+        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
     }
 
     try
