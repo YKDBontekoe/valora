@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const CODE_RABBIT_LOGIN = 'coderabbitai';
 const QODO_LOGIN = 'qodo-free-for-open-source-projects';
@@ -332,7 +334,11 @@ async function main() {
   });
 }
 
-if (process.env.GITHUB_EVENT_PATH) {
+const isEntrypointScript =
+  process.argv[1] != null &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isEntrypointScript && process.env.GITHUB_EVENT_PATH) {
   main().catch((error) => {
     logEvent('error', 'repost-failed', {
       message: error?.message ?? String(error),

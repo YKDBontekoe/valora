@@ -252,39 +252,37 @@ class ListingDetailScreen extends StatelessWidget {
         const SizedBox(width: 8),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: Hero(
-          tag: listing.id,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (images.isNotEmpty)
-                PageView.builder(
-                  itemCount: images.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => FullScreenGallery(
-                              imageUrls: images,
-                              initialIndex: index,
-                            ),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (images.isNotEmpty)
+              PageView.builder(
+                itemCount: images.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FullScreenGallery(
+                            imageUrls: images,
+                            initialIndex: index,
                           ),
-                        );
-                      },
-                      child: CachedNetworkImage(
-                        imageUrl: images[index],
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            _buildPlaceholder(isDark, isLoading: true),
-                        errorWidget: (context, url, error) =>
-                            _buildPlaceholder(isDark),
-                      ),
-                    );
-                  },
-                )
-              else
-                _buildPlaceholder(isDark),
+                        ),
+                      );
+                    },
+                    child: CachedNetworkImage(
+                      imageUrl: images[index],
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          _buildPlaceholder(isDark, isLoading: true),
+                      errorWidget: (context, url, error) =>
+                          _buildPlaceholder(isDark),
+                    ),
+                  );
+                },
+              )
+            else
+              _buildPlaceholder(isDark),
                 
               // Gradient overlay for text readability
               DecoratedBox(
@@ -333,8 +331,7 @@ class ListingDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-            ],
-          ),
+          ],
         ),
       ),
     );
