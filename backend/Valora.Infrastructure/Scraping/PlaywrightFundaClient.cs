@@ -20,12 +20,16 @@ namespace Valora.Infrastructure.Scraping;
 public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
 {
     private readonly ILogger<PlaywrightFundaClient> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly SemaphoreSlim _browserLock = new(1, 1);
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private bool _disposed;
     private const int ChallengePollIntervalMs = 1_000;
     private const int ChallengeMaxWaitMs = 30_000;
+    
+    // Updated to a newer Chrome version on Linux for better stealth/compatibility
+    private const string DefaultUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
     // Reuse JSON options for parsing
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -33,9 +37,10 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         PropertyNameCaseInsensitive = true
     };
 
-    public PlaywrightFundaClient(ILogger<PlaywrightFundaClient> logger)
+    public PlaywrightFundaClient(ILogger<PlaywrightFundaClient> logger, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     /// <summary>
@@ -47,7 +52,12 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
     {
         if (_browser != null) return _browser;
 
-        await _browserLock.WaitAsync();
+        // Add timeout to prevent indefinite hanging
+        if (!await _browserLock.WaitAsync(TimeSpan.FromSeconds(60)))
+        {
+            throw new TimeoutException("Timed out waiting for browser initialization lock.");
+        }
+
         IPlaywright? playwright = null;
         try
         {
@@ -56,19 +66,34 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             playwright = await Playwright.CreateAsync();
             IBrowser? browser = null;
 
+            var launchOptions = new BrowserTypeLaunchOptions
+            {
+                // Use standard Headless=true for containers.
+                // Modern Playwright uses "new" headless by default when Headless=true.
+                Headless = true,
+                Args = new[]
+                {
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-infobars",
+                    "--window-position=0,0",
+                    "--disable-dev-shm-usage", // Crucial for Docker
+                    "--disable-gpu",
+                    $"--user-agent={DefaultUserAgent}"
+                }
+            };
+
             try
             {
                 // Try using Chrome channel (system-installed Chrome) first.
-                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+                var chromeOptions = new BrowserTypeLaunchOptions
                 {
+                    Channel = "chrome",
                     Headless = true,
-                    Channel = "chrome", // Use system Chrome
-                    Args = new[]
-                    {
-                        "--disable-blink-features=AutomationControlled",
-                        "--no-sandbox"
-                    }
-                });
+                    Args = launchOptions.Args
+                };
+                browser = await playwright.Chromium.LaunchAsync(chromeOptions);
                 _logger.LogInformation("Playwright initialized with system Chrome");
             }
             catch (PlaywrightException firstLaunchException)
@@ -76,15 +101,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                 try
                 {
                     // Fall back to bundled Chromium if system Chrome is not available.
-                    browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-                    {
-                        Headless = true,
-                        Args = new[]
-                        {
-                            "--disable-blink-features=AutomationControlled",
-                            "--no-sandbox"
-                        }
-                    });
+                    browser = await playwright.Chromium.LaunchAsync(launchOptions);
                     _logger.LogInformation("Playwright initialized with bundled Chromium");
                 }
                 catch (Exception secondLaunchException)
@@ -130,13 +147,67 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
     private async Task<IBrowserContext> CreateContextAsync()
     {
         var browser = await GetBrowserAsync();
-        return await browser.NewContextAsync(new BrowserNewContextOptions
+        var context = await browser.NewContextAsync(new BrowserNewContextOptions
         {
-            UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            UserAgent = DefaultUserAgent,
             Locale = "nl-NL",
             TimezoneId = "Europe/Amsterdam",
-            ViewportSize = new ViewportSize { Width = 1920, Height = 1080 }
+            ViewportSize = new ViewportSize { Width = 1920, Height = 1080 },
+            JavaScriptEnabled = true,
+            HasTouch = false,
+            IsMobile = false
+            // Geolocation permission removed to avoid fingerprinting signals
         });
+
+        // Inject stealth scripts to mask automation indicators
+        // Improved to be safer and more realistic based on review feedback
+        await context.AddInitScriptAsync(@"
+            try {
+                // Mask webdriver
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+
+                // Mock languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['nl-NL', 'nl', 'en-US', 'en']
+                });
+
+                // Mock plugins (return realistic object structure)
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => {
+                        const plugin1 = { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' };
+                        const plugin2 = { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' };
+                        const plugins = [plugin1, plugin2];
+                        plugins.item = (i) => plugins[i];
+                        plugins.namedItem = (name) => plugins.find(p => p.name === name);
+                        return plugins;
+                    }
+                });
+
+                // Hardware concurrency
+                Object.defineProperty(navigator, 'hardwareConcurrency', {
+                    get: () => 4
+                });
+                
+                // Safe WebGL spoofing
+                if (window.WebGLRenderingContext) {
+                    const getParameter = WebGLRenderingContext.prototype.getParameter;
+                    WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                        // UNMASKED_VENDOR_WEBGL = 37445
+                        if (parameter === 37445) return 'Intel Inc.';
+                        // UNMASKED_RENDERER_WEBGL = 37446
+                        if (parameter === 37446) return 'Intel(R) Iris(TM) Plus Graphics 640';
+                        
+                        return getParameter.call(this, parameter);
+                    };
+                }
+            } catch (e) {
+                console.debug('Stealth script error:', e);
+            }
+        ");
+
+        return context;
     }
 
     public async Task<FundaApiResponse?> SearchBuyAsync(
@@ -222,8 +293,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             _logger.LogDebug("Page loaded - URL: {Url}, Title: {Title}", actualUrl, title);
 
             // Check if we landed on a challenge page
-            if (title.Contains("bijna op de pagina", StringComparison.OrdinalIgnoreCase) ||
-                title.Contains("challenge", StringComparison.OrdinalIgnoreCase))
+            if (IsChallengeTitle(title))
             {
                 _logger.LogWarning("Detected bot challenge page, waiting for resolution...");
                 var resolved = await WaitForChallengeResolutionAsync(pageObj, cancellationToken);
@@ -573,6 +643,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                                 container = container.parentElement;
                             }
                             // Alternative: look for any element with € symbol
+                            container = el; // Reset container to start from the element again
                             for (let i = 0; i < 6 && container; i++) {
                                 const text = container.innerText;
                                 const match = text.match(/€\s*[\d.,]+(?:\s*(?:k\.k\.|v\.o\.n\.))?/);
@@ -612,20 +683,26 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         return listings;
     }
 
+    [GeneratedRegex( @"/(\d{6,})/?$")]
+    private static partial Regex NewUrlFormatRegex();
+
+    [GeneratedRegex( @"-(\d{6,})")]
+    private static partial Regex OldUrlFormatRegex();
+
     private static int ExtractGlobalIdFromUrl(string url)
     {
         // Updated URL format: /detail/koop/amsterdam/appartement-name/43239385/
         // Global ID is now found as the last numeric segment before trailing slash
         
         // Try new format first: /detail/.../ID/
-        var newMatch = Regex.Match(url, @"/(\d{6,})/?$");
+        var newMatch = NewUrlFormatRegex().Match(url);
         if (newMatch.Success && int.TryParse(newMatch.Groups[1].Value, out var newId))
         {
             return newId;
         }
         
         // Fallback to old format: /koop/amsterdam/huis-12345678-address/
-        var oldMatch = Regex.Match(url, @"-(\d{6,})");
+        var oldMatch = OldUrlFormatRegex().Match(url);
         return oldMatch.Success && int.TryParse(oldMatch.Groups[1].Value, out var oldId) ? oldId : 0;
     }
 
@@ -959,21 +1036,33 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
 
     // These APIs work without bot protection, so we delegate to HTTP client
 
-    private readonly HttpClient _httpClient = new();
-
     public async Task<FundaApiListingSummary?> GetListingSummaryAsync(
         int globalId,
         CancellationToken cancellationToken = default)
     {
+        using var client = _httpClientFactory.CreateClient();
+        
         try
         {
             var url = $"https://www.funda.nl/api/detail-summary/v2/getsummary/{globalId}";
-            var response = await _httpClient.GetAsync(url, cancellationToken);
+            var response = await client.GetAsync(url, cancellationToken);
 
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+
+                response.EnsureSuccessStatusCode();
+            }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaApiListingSummary>(content, JsonOptions);
+        }
+        catch (HttpRequestException)
+        {
+            throw; // Respect interface contract
         }
         catch (Exception ex)
         {
@@ -986,15 +1075,29 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         int globalId,
         CancellationToken cancellationToken = default)
     {
+        using var client = _httpClientFactory.CreateClient();
+
         try
         {
             var url = $"https://contacts-bff.funda.io/api/v3/listings/{globalId}/contact-details?website=1";
-            var response = await _httpClient.GetAsync(url, cancellationToken);
+            var response = await client.GetAsync(url, cancellationToken);
 
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+
+                response.EnsureSuccessStatusCode();
+            }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaContactDetailsResponse>(content, JsonOptions);
+        }
+        catch (HttpRequestException)
+        {
+            throw; // Respect interface contract
         }
         catch (Exception ex)
         {
@@ -1010,11 +1113,12 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         if (string.IsNullOrWhiteSpace(postalCode)) return null;
 
         var cleanPostalCode = postalCode.Replace(" ", "").ToUpperInvariant();
+        using var client = _httpClientFactory.CreateClient();
 
         try
         {
             var url = $"https://kpnopticfiber.funda.io/api/v1/{cleanPostalCode}";
-            var response = await _httpClient.GetAsync(url, cancellationToken);
+            var response = await client.GetAsync(url, cancellationToken);
 
             if (!response.IsSuccessStatusCode) return null;
 
@@ -1041,7 +1145,6 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
 
         _playwright?.Dispose();
         _playwright = null;
-        _httpClient.Dispose();
         _browserLock.Dispose();
 
         GC.SuppressFinalize(this);

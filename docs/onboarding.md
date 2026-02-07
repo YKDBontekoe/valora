@@ -11,9 +11,9 @@ Before diving into code, complete these steps to verify your environment and see
 - [ ] **1. Start the Stack**: Run `docker-compose -f docker/docker-compose.yml up -d`.
       - *Verify*: `docker ps` shows postgres, redis (optional), and hangfire (if enabled).
 - [ ] **2. Run the Backend**: In `backend/`, run `dotnet run --project Valora.Api`.
-      - *Verify*: Open `http://localhost:5000/api/health` in your browser. Expect `{"status":"healthy"}`.
+      - *Verify*: Open `http://localhost:5001/api/health` in your browser. Expect `{"status":"healthy"}`.
 - [ ] **3. Trigger a Scrape (Magic Time)**:
-      - We need data! Using Postman or Curl: `POST http://localhost:5000/api/scraper/trigger` (You might need a token if Auth is on, or use the `--environment Development` flag to bypass strict checks if configured).
+      - We need data! Using Postman or Curl: `POST http://localhost:5001/api/scraper/trigger` (You might need a token if Auth is on, or use the `--environment Development` flag to bypass strict checks if configured).
       - *Verify*: Watch the terminal logs. You should see "Starting funda.nl scrape job" and "Found X listings".
 - [ ] **4. Run the Frontend**: In `apps/flutter_app/`, run `flutter run`.
       - *Verify*: You see the dashboard populated with the data you just scraped.

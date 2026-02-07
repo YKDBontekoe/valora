@@ -75,11 +75,34 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddInfrastructure_RegistersHttpFundaClient_ByDefault()
+    public void AddInfrastructure_RegistersPlaywrightClient_ByDefault()
     {
         var configData = new Dictionary<string, string?>
         {
             { "DATABASE_URL", "Host=localhost;Database=valora" }
+        };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configData)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(configuration);
+        var provider = services.BuildServiceProvider();
+
+        var client = provider.GetRequiredService<IFundaApiClient>();
+
+        Assert.IsType<PlaywrightFundaClient>(client);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersHttpClient_WhenPlaywrightDisabled()
+    {
+        var configData = new Dictionary<string, string?>
+        {
+            { "DATABASE_URL", "Host=localhost;Database=valora" },
+            { "SCRAPER_USE_PLAYWRIGHT", "false" }
         };
 
         var configuration = new ConfigurationBuilder()
