@@ -30,7 +30,7 @@ void main() {
       dotenv.env.clear();
 
       try {
-        expect(ApiService.baseUrl, 'http://localhost:5000/api');
+        expect(ApiService.baseUrl, 'http://localhost:5001/api');
       } finally {
         // Restore
         dotenv.env.addAll(backup);

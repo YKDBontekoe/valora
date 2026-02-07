@@ -45,6 +45,8 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
 
         // Scraper services
+        services.AddHttpClient();
+
         // Choose between Playwright (browser automation) and HTTP client.
         // Default is true for robustness against bot protection.
         var usePlaywright = configuration.GetValue("SCRAPER_USE_PLAYWRIGHT", true);

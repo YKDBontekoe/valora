@@ -1,5 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using System.Net.Http;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
 
@@ -19,7 +21,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_ParsesListingsFromSearchResultsPath()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), new Mock<IHttpClientFactory>().Object);
         const string json = """
         {
           "searchResults": {
@@ -55,7 +57,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_UsesFallbackFields()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), new Mock<IHttpClientFactory>().Object);
         const string json = """
         {
           "listings": [
@@ -83,7 +85,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_ReturnsEmpty_OnInvalidJson()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), new Mock<IHttpClientFactory>().Object);
 
         var listings = (List<FundaApiListing>)ParseSearchResultsJsonMethod.Invoke(client, ["{not valid json"])!;
 
@@ -93,7 +95,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_SkipsItemsWithoutGlobalId()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), new Mock<IHttpClientFactory>().Object);
         const string json = """
         {
           "searchResults": {
@@ -125,7 +127,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public async Task DisposeAsync_IsIdempotent_WhenNoBrowserWasCreated()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), new Mock<IHttpClientFactory>().Object);
 
         await client.DisposeAsync();
         await client.DisposeAsync();

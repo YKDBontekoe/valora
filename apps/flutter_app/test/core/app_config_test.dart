@@ -13,7 +13,7 @@ void main() {
       dotenv.env.clear();
 
       try {
-        expect(AppConfig.apiUrl, 'http://localhost:5000/api');
+        expect(AppConfig.apiUrl, 'http://localhost:5001/api');
         expect(AppConfig.isUsingFallbackApiUrl, isTrue);
       } finally {
         dotenv.env
