@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_typography.dart';
 import '../services/api_service.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
@@ -38,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isConnected = false;
   List<Listing> _listings = [];
+  List<Listing> _featuredListings = [];
+  List<Listing> _nearbyListings = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   Object? _error;
@@ -152,6 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             _listings.addAll(response.items);
           }
+          _featuredListings = _listings.take(_featuredCount).toList();
+          _nearbyListings = _listings.skip(_featuredCount).toList();
           _hasNextPage = response.hasNextPage;
           _error = null;
         });
@@ -390,109 +392,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _buildListingSlivers() {
-    final featuredListings = _listings.take(_featuredCount).toList();
-    final nearbyListings = _listings.skip(_featuredCount).toList();
     final List<Widget> slivers = [];
 
-    if (featuredListings.isNotEmpty) {
-      slivers.add(SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Featured for You',
-                    style: ValoraTypography.titleLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Curated by Valora AI based on your taste',
-                    style: ValoraTypography.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'See All',
-                style: ValoraTypography.labelSmall.copyWith(
-                  color: ValoraColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ).animate().fade().slideX(begin: -0.2, end: 0, duration: 400.ms),
-        ),
-      ));
-
-      slivers.add(SliverToBoxAdapter(
-        child: SizedBox(
-          height: 320,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            scrollDirection: Axis.horizontal,
-            itemCount: featuredListings.length,
-            itemBuilder: (context, index) {
-              final listing = featuredListings[index];
-              return FeaturedListingCard(
-                key: ValueKey(listing.id),
-                listing: listing,
-                onTap: () => _onListingTap(listing),
-              ).animate().fade(duration: 400.ms).slideX(begin: 0.1, end: 0, delay: (50 * index).ms);
-            },
-          ),
-        ),
+    if (_featuredListings.isNotEmpty) {
+      slivers.add(FeaturedListingsSection(
+        listings: _featuredListings,
+        onTap: _onListingTap,
       ));
     }
 
-    if (nearbyListings.isNotEmpty || _hasNextPage) {
-      slivers.add(SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-          child: Text(
-            'Nearby Listings',
-            style: ValoraTypography.titleLarge.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ).animate().fade().slideY(begin: 0.2, end: 0, delay: 200.ms),
-        ),
-      ));
-
-      slivers.add(SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index == nearbyListings.length) {
-                if (_hasNextPage) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: _bottomListPadding),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  );
-                }
-                  return const SizedBox(height: _bottomListPadding);
-              }
-
-              final listing = nearbyListings[index];
-              return NearbyListingCard(
-                key: ValueKey(listing.id),
-                listing: listing,
-                onTap: () => _onListingTap(listing),
-              ).animate().fade(duration: 400.ms).slideY(begin: 0.1, end: 0, delay: (50 * (index % 10)).ms);
-            },
-            childCount: nearbyListings.length + 1,
-          ),
-        ),
+    if (_nearbyListings.isNotEmpty || _hasNextPage) {
+      slivers.add(const NearbyListingsHeader());
+      slivers.add(NearbyListingsList(
+        listings: _nearbyListings,
+        hasNextPage: _hasNextPage,
+        bottomPadding: _bottomListPadding,
+        onTap: _onListingTap,
       ));
     }
     return slivers;

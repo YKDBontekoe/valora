@@ -157,10 +157,26 @@ public class ListingRepository : IListingRepository
         return listing;
     }
 
+    public async Task AddRangeAsync(IEnumerable<Listing> listings, CancellationToken cancellationToken = default)
+    {
+        await _context.Listings.AddRangeAsync(listings, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default)
     {
         listing.UpdatedAt = DateTime.UtcNow;
         _context.Listings.Update(listing);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateRangeAsync(IEnumerable<Listing> listings, CancellationToken cancellationToken = default)
+    {
+        foreach (var listing in listings)
+        {
+            listing.UpdatedAt = DateTime.UtcNow;
+        }
+        _context.Listings.UpdateRange(listings);
         await _context.SaveChangesAsync(cancellationToken);
     }
 

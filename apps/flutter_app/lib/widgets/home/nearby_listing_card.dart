@@ -47,9 +47,10 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
           child: Row(
             children: [
               // Image
-              Stack(
-                children: [
-                  Container(
+              RepaintBoundary(
+                child: Stack(
+                  children: [
+                    Container(
                     width: 96,
                     height: 96,
                     decoration: BoxDecoration(
@@ -102,10 +103,11 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             .scale(end: const Offset(1, 1)),
                           ),
                         );
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: ValoraSpacing.md),
               // Info

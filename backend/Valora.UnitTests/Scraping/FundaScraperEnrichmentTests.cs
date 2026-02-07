@@ -68,10 +68,12 @@ public class FundaScraperEnrichmentTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        _listingRepoMock.Verify(x => x.AddAsync(It.Is<Listing>(l => 
-            l.PublicationDate == new DateTime(2023, 1, 1) &&
-            l.IsSoldOrRented == true &&
-            l.Labels.Contains("Sold")
+        _listingRepoMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Listing>>(list =>
+            list.Any(l =>
+                l.PublicationDate == new DateTime(2023, 1, 1) &&
+                l.IsSoldOrRented == true &&
+                l.Labels.Contains("Sold")
+            )
         ), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -101,11 +103,13 @@ public class FundaScraperEnrichmentTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        _listingRepoMock.Verify(x => x.AddAsync(It.Is<Listing>(l => 
-            l.BrokerOfficeId == 100 &&
-            l.BrokerPhone == "0612345678" &&
-            l.BrokerLogoUrl == "logo.png" &&
-            l.AgentName == "Top Makelaar"
+        _listingRepoMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Listing>>(list =>
+            list.Any(l =>
+                l.BrokerOfficeId == 100 &&
+                l.BrokerPhone == "0612345678" &&
+                l.BrokerLogoUrl == "logo.png" &&
+                l.AgentName == "Top Makelaar"
+            )
         ), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -129,8 +133,8 @@ public class FundaScraperEnrichmentTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        _listingRepoMock.Verify(x => x.AddAsync(It.Is<Listing>(l => 
-            l.FiberAvailable == true
+        _listingRepoMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Listing>>(list =>
+            list.Any(l => l.FiberAvailable == true)
         ), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

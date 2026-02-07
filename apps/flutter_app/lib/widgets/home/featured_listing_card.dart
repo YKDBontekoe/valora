@@ -54,9 +54,10 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image Section
-              Stack(
-                children: [
-                  Container(
+              RepaintBoundary(
+                child: Stack(
+                  children: [
+                    Container(
                     height: 180,
                     color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
                     child: widget.listing.imageUrl != null
@@ -172,10 +173,11 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                             .scale(end: const Offset(1, 1)),
                           ),
                         );
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               // Info Section
               Padding(

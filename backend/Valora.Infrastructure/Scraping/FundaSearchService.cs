@@ -194,6 +194,19 @@ public partial class FundaSearchService : IFundaSearchService
 
         _logger.LogInformation("Found {Count} listings from Funda API", apiListings.Listings.Count);
 
+        // Optimization: Batch Check
+        var globalIds = apiListings.Listings
+            .Where(l => l.GlobalId > 0)
+            .Select(l => l.GlobalId.ToString())
+            .Distinct()
+            .ToList();
+
+        var existingListings = await _listingRepository.GetByFundaIdsAsync(globalIds, ct);
+        var existingMap = existingListings.ToDictionary(l => l.FundaId, l => l);
+
+        var listingsToAdd = new List<Listing>();
+        var listingsToUpdate = new List<Listing>();
+
         foreach (var apiListing in apiListings.Listings)
         {
             if (apiListing.GlobalId <= 0 || string.IsNullOrEmpty(apiListing.ListingUrl))
@@ -203,7 +216,13 @@ public partial class FundaSearchService : IFundaSearchService
 
             try
             {
-                await ProcessApiListingAsync(apiListing, ct);
+                existingMap.TryGetValue(apiListing.GlobalId.ToString(), out var existing);
+                await ProcessApiListingAsync(
+                    apiListing,
+                    existing,
+                    listingsToAdd,
+                    listingsToUpdate,
+                    ct);
                 
                 // Small delay to be respectful to Funda
                 await Task.Delay(100, ct);
@@ -213,12 +232,29 @@ public partial class FundaSearchService : IFundaSearchService
                 _logger.LogError(ex, "Failed to process listing {GlobalId}", apiListing.GlobalId);
             }
         }
+
+        // Batch Writes
+        if (listingsToAdd.Count > 0)
+        {
+            await _listingRepository.AddRangeAsync(listingsToAdd, ct);
+            _logger.LogDebug("Added {Count} new listings", listingsToAdd.Count);
+        }
+
+        if (listingsToUpdate.Count > 0)
+        {
+            await _listingRepository.UpdateRangeAsync(listingsToUpdate, ct);
+            _logger.LogDebug("Updated {Count} existing listings", listingsToUpdate.Count);
+        }
     }
 
-    private async Task ProcessApiListingAsync(FundaApiListing apiListing, CancellationToken ct)
+    private async Task ProcessApiListingAsync(
+        FundaApiListing apiListing,
+        Listing? existing,
+        List<Listing> listingsToAdd,
+        List<Listing> listingsToUpdate,
+        CancellationToken ct)
     {
         var fundaId = apiListing.GlobalId.ToString();
-        var existing = await _listingRepository.GetByFundaIdAsync(fundaId, ct);
 
         // Skip if we have fresh data
         if (existing != null && IsFresh(existing))
@@ -262,13 +298,11 @@ public partial class FundaSearchService : IFundaSearchService
 
         if (existing == null)
         {
-            await _listingRepository.AddAsync(listing, ct);
-            _logger.LogDebug("Added new listing: {FundaId}", fundaId);
+            listingsToAdd.Add(listing);
         }
         else
         {
-            await _listingRepository.UpdateAsync(listing, ct);
-            _logger.LogDebug("Updated listing: {FundaId}", fundaId);
+            listingsToUpdate.Add(listing);
         }
     }
 

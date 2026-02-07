@@ -30,6 +30,10 @@ public class FundaSearchServiceTests
         _configMock.Setup(x => x.GetSection("CACHE_FRESHNESS_MINUTES")).Returns(configSectionMock.Object);
         _configMock.Setup(x => x.GetSection("SEARCH_CACHE_MINUTES")).Returns(configSectionMock.Object);
 
+        // Default setup for GetByFundaIdsAsync
+        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Listing>());
+
         _service = new FundaSearchService(
             _apiClientMock.Object,
             _listingRepoMock.Object,
@@ -61,9 +65,16 @@ public class FundaSearchServiceTests
 
         // Assert
         Assert.Single(result.Items);
+        // FromCache refers to whether the search *operation* was cached (i.e. skipped API),
+        // OR if the items themselves came from DB.
+        // In this case, we called API, so FromCache should be false for the *search result meta*,
+        // even if we return items from DB afterwards.
         Assert.False(result.FromCache);
+
         _apiClientMock.Verify(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
-        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify batch add
+        _listingRepoMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Listing>>(l => l.Count() == 1), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -134,6 +145,7 @@ public class FundaSearchServiceTests
         Assert.NotNull(result);
         Assert.Equal("42424242", result.FundaId);
         _apiClientMock.Verify(x => x.GetListingSummaryAsync(42424242, It.IsAny<CancellationToken>()), Times.Once);
+        // GetByFundaUrlAsync still uses AddAsync (single), so we verify AddAsync here
         _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
