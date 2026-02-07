@@ -11,6 +11,9 @@ public static class ListingQueryExtensions
         if (string.IsNullOrWhiteSpace(filter.SearchTerm))
             return query;
 
+        // PostgreSQL's LIKE is case-sensitive by default, so we use ILike.
+        // Other providers (like SQL Server or InMemory for tests) often default to case-insensitive,
+        // or we handle it manually with ToLower().
         if (isPostgres)
         {
             var escapedTerm = EscapeLikePattern(filter.SearchTerm);

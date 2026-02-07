@@ -23,6 +23,9 @@ public class ListingRepository : IListingRepository
 
         query = ApplyFilters(query, filter, isPostgres);
 
+        // Optimization: Projection to DTO
+        // We project directly to the DTO in the database query.
+        // This prevents fetching unnecessary columns and avoids the overhead of change tracking.
         var dtoQuery = query.Select(l => new ListingDto(
             l.Id,
             l.FundaId,

@@ -6,6 +6,17 @@
 
 ---
 
+## 🏁 Start Here
+
+New to the project? **Read the [Onboarding Guide](docs/onboarding.md) first.**
+
+It contains:
+- A "First 10 Minutes" checklist.
+- Detailed data flow diagrams.
+- Instructions for your first contribution.
+
+---
+
 ## 🚀 Quick Start (5 Minutes)
 
 Get the system running locally to see it in action.
@@ -97,10 +108,33 @@ graph TD
 
 ## ⚙️ How it Works
 
-The system operates in two main modes:
+The system operates in two main modes.
 
 ### 1. The Scraper Loop (Write)
-A background job (`FundaScraperJob`) runs periodically:
+A background job (`FundaScraperJob`) runs periodically to fetch and update listings.
+
+```mermaid
+sequenceDiagram
+    participant Job as Hangfire Job
+    participant Service as Scraper Service
+    participant API as Funda API
+    participant DB as Database
+
+    Job->>Service: Start Job
+    Service->>API: Search("Amsterdam")
+    API-->>Service: List of Listings (Basic)
+
+    loop For Each Listing
+        Service->>API: Get Details (HTML/Nuxt)
+        API-->>Service: Rich Data (Photos, Desc)
+        Service->>DB: Save/Update Listing
+
+        opt Price Changed
+            Service->>DB: Add Price History
+        end
+    end
+```
+
 1.  **Search**: Queries Funda's hidden API for listings in target regions.
 2.  **Filter**: Identifies new or updated listings.
 3.  **Enrich**: Fetches detailed data (photos, description, broker info) by parsing the listing's HTML page (specifically the Nuxt.js hydration state).
@@ -114,11 +148,27 @@ The user interacts with the Flutter app:
 
 ---
 
+## 📡 Key API Endpoints
+
+The backend exposes a REST API built with .NET Minimal APIs.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/listings` | Get paginated, filtered listings. |
+| `GET` | `/api/listings/{id}` | Get full details for a single listing. |
+| `POST` | `/api/scraper/trigger` | Manually trigger a full scrape (Admin only). |
+| `POST` | `/api/auth/login` | Authenticate and receive JWT token. |
+| `GET` | `/api/health` | Check system status. |
+
+See [Developer Guide](docs/developer-guide.md) for full API documentation.
+
+---
+
 ## 📚 Documentation
 
 Dive deeper into specific topics:
 
-- **[Onboarding Guide](docs/onboarding.md)**: **Start here!** detailed data flow walkthroughs and first-day tasks.
+- **[Onboarding Guide](docs/onboarding.md)**: Detailed data flow walkthroughs and first-day tasks.
 - **[Developer Guide](docs/developer-guide.md)**: Deep dive into technical decisions and patterns.
 - **[User Guide](docs/user-guide.md)**: How to use the application features.
 
