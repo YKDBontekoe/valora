@@ -21,7 +21,7 @@ class ValoraChip extends StatefulWidget {
 
   final String label;
   final bool isSelected;
-  final ValueChanged<bool> onSelected;
+  final ValueChanged<bool>? onSelected;
   final IconData? icon;
   final Color? backgroundColor;
   final Color? textColor;
@@ -53,7 +53,10 @@ class _ValoraChipState extends State<ValoraChip> {
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onExit: (_) => setState(() {
+        _isHovered = false;
+        _isPressed = false;
+      }),
       child: Listener(
         onPointerDown: (_) => setState(() => _isPressed = true),
         onPointerUp: (_) => setState(() => _isPressed = false),
@@ -74,10 +77,12 @@ class _ValoraChipState extends State<ValoraChip> {
               side: BorderSide(color: border),
             ),
             child: InkWell(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                widget.onSelected(!widget.isSelected);
-              },
+              onTap: widget.onSelected != null
+                  ? () {
+                      HapticFeedback.selectionClick();
+                      widget.onSelected!(!widget.isSelected);
+                    }
+                  : null,
               borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
               child: Padding(
                 padding: const EdgeInsets.symmetric(

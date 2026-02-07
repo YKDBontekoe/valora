@@ -119,7 +119,10 @@ class _ValoraButtonState extends State<ValoraButton> {
     if (effectiveOnPressed != null) {
       button = MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
+        onExit: (_) => setState(() {
+          _isHovered = false;
+          _isPressed = false; // Ensure pressed state is cleared if dragged out
+        }),
         child: Listener(
           onPointerDown: (_) => setState(() => _isPressed = true),
           onPointerUp: (_) => setState(() => _isPressed = false),

@@ -15,12 +15,16 @@ class FeaturedListingCard extends StatefulWidget {
   final Listing listing;
   final VoidCallback onTap;
   final VoidCallback? onFavoriteTap;
+  final int matchPercentage;
+  final int priceChangePercent;
 
   const FeaturedListingCard({
     super.key,
     required this.listing,
     required this.onTap,
     this.onFavoriteTap,
+    this.matchPercentage = 98,
+    this.priceChangePercent = -2,
   });
 
   @override
@@ -130,7 +134,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                '98% Match',
+                                '${widget.matchPercentage}% Match',
                                 style: ValoraTypography.labelSmall.copyWith(
                                   color: Colors.white,
                                   fontSize: 10,
@@ -209,10 +213,14 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.trending_down_rounded, size: 14, color: ValoraColors.primary),
+                              Icon(
+                                widget.priceChangePercent < 0 ? Icons.trending_down_rounded : Icons.trending_up_rounded,
+                                size: 14,
+                                color: ValoraColors.primary,
+                              ),
                               const SizedBox(width: 4),
                               Text(
-                                '-2%',
+                                '${widget.priceChangePercent > 0 ? '+' : ''}${widget.priceChangePercent}%',
                                 style: ValoraTypography.labelSmall.copyWith(
                                   color: ValoraColors.primary,
                                   fontSize: 12,

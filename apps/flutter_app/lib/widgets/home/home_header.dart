@@ -193,7 +193,7 @@ class _HomeHeaderState extends State<HomeHeader> {
       icon: icon,
       label: label,
       isSelected: isActive,
-      onSelected: (_) {}, // Static for now
+      onSelected: null, // Static for now, disable tap feedback
       backgroundColor: backgroundColor,
       textColor: textColor,
     );

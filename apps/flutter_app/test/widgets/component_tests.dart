@@ -134,7 +134,7 @@ void main() {
     });
   });
 
-   group('NearbyListingCard', () {
+  group('NearbyListingCard', () {
     testWidgets('renders listing info', (WidgetTester tester) async {
       final listing = Listing(
         id: '1',
