@@ -117,7 +117,19 @@ public static class DependencyInjection
 
     private static void BindJwtOptions(JwtOptions options, IConfiguration configuration)
     {
-        options.Secret = configuration["JWT_SECRET"] ?? string.Empty;
+        var secret = configuration["JWT_SECRET"];
+
+        // Fallback for Development environment to match Program.cs behavior
+        if (string.IsNullOrEmpty(secret))
+        {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
+            {
+                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
+            }
+        }
+
+        options.Secret = secret ?? string.Empty;
         options.Issuer = configuration["JWT_ISSUER"];
         options.Audience = configuration["JWT_AUDIENCE"];
 
