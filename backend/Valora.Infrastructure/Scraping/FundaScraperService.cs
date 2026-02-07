@@ -116,17 +116,23 @@ public class FundaScraperService : IFundaScraperService
         // Instead of querying the database for each listing inside the loop (which would cause N+1 query problem),
         // we fetch all potentially existing listings in a single round-trip.
         // This significantly reduces database load when processing pages with many items.
-        var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
+        var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).Distinct().ToList();
         var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
         var existingListingsMap = existingListings.ToDictionary(l => l.FundaId, l => l);
+        var processedIds = new HashSet<string>();
 
         foreach (var apiListing in apiListings)
         {
+            var fundaId = apiListing.GlobalId.ToString();
+            if (processedIds.Contains(fundaId)) continue;
+
             try
             {
-                existingListingsMap.TryGetValue(apiListing.GlobalId.ToString(), out var existingListing);
+                existingListingsMap.TryGetValue(fundaId, out var existingListing);
                 await ProcessListingAsync(apiListing, existingListing, shouldNotify, cancellationToken);
                 
+                processedIds.Add(fundaId);
+
                 // Rate limiting delay
                 await Task.Delay(_options.DelayBetweenRequestsMs, cancellationToken);
             }
