@@ -24,6 +24,8 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private bool _disposed;
+    private const int ChallengePollIntervalMs = 1_000;
+    private const int ChallengeMaxWaitMs = 30_000;
 
     // Reuse JSON options for parsing
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -46,17 +48,18 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         if (_browser != null) return _browser;
 
         await _browserLock.WaitAsync();
+        IPlaywright? playwright = null;
         try
         {
             if (_browser != null) return _browser;
 
-            _playwright = await Playwright.CreateAsync();
-            
-            // Try using Chrome channel (system-installed Chrome) first
-            // This avoids browser version mismatch issues with the NuGet package
+            playwright = await Playwright.CreateAsync();
+            IBrowser? browser = null;
+
             try
             {
-                _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+                // Try using Chrome channel (system-installed Chrome) first.
+                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
                 {
                     Headless = true,
                     Channel = "chrome", // Use system Chrome
@@ -68,22 +71,51 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                 });
                 _logger.LogInformation("Playwright initialized with system Chrome");
             }
-            catch (PlaywrightException)
+            catch (PlaywrightException firstLaunchException)
             {
-                // Fall back to bundled Chromium if system Chrome not available
-                _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+                try
                 {
-                    Headless = true,
-                    Args = new[]
+                    // Fall back to bundled Chromium if system Chrome is not available.
+                    browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
                     {
-                        "--disable-blink-features=AutomationControlled",
-                        "--no-sandbox"
-                    }
-                });
-                _logger.LogInformation("Playwright initialized with bundled Chromium");
+                        Headless = true,
+                        Args = new[]
+                        {
+                            "--disable-blink-features=AutomationControlled",
+                            "--no-sandbox"
+                        }
+                    });
+                    _logger.LogInformation("Playwright initialized with bundled Chromium");
+                }
+                catch (Exception secondLaunchException)
+                {
+                    _logger.LogError(
+                        secondLaunchException,
+                        "Playwright browser launch failed for both Chrome channel and bundled Chromium");
+                    throw new InvalidOperationException(
+                        "Unable to launch Playwright browser.",
+                        new AggregateException(firstLaunchException, secondLaunchException));
+                }
             }
 
-            return _browser;
+            if (browser == null)
+            {
+                throw new InvalidOperationException("Unable to initialize Playwright browser.");
+            }
+
+            _playwright = playwright;
+            _browser = browser;
+            return browser;
+        }
+        catch
+        {
+            if (_browser == null && playwright != null)
+            {
+                playwright.Dispose();
+            }
+
+            _playwright = null;
+            throw;
         }
         finally
         {
@@ -114,7 +146,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         int? maxPrice = null,
         CancellationToken cancellationToken = default)
     {
-        return await SearchWithPlaywrightAsync(geoInfo, "koop", page, cancellationToken);
+        return await SearchWithPlaywrightAsync(geoInfo, "koop", page, minPrice, maxPrice, cancellationToken);
     }
 
     public async Task<FundaApiResponse?> SearchRentAsync(
@@ -124,7 +156,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         int? maxPrice = null,
         CancellationToken cancellationToken = default)
     {
-        return await SearchWithPlaywrightAsync(geoInfo, "huur", page, cancellationToken);
+        return await SearchWithPlaywrightAsync(geoInfo, "huur", page, minPrice, maxPrice, cancellationToken);
     }
 
     public async Task<FundaApiResponse?> SearchProjectsAsync(
@@ -134,7 +166,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         int? maxPrice = null,
         CancellationToken cancellationToken = default)
     {
-        return await SearchWithPlaywrightAsync(geoInfo, "nieuwbouw", page, cancellationToken);
+        return await SearchWithPlaywrightAsync(geoInfo, "nieuwbouw", page, minPrice, maxPrice, cancellationToken);
     }
 
     /// <summary>
@@ -144,10 +176,28 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
         string geoInfo,
         string searchType,
         int page,
+        int? minPrice,
+        int? maxPrice,
         CancellationToken cancellationToken)
     {
         var url = $"https://www.funda.nl/{searchType}/{geoInfo.ToLowerInvariant()}/";
-        if (page > 1) url += $"p{page}/";
+        if (page > 1)
+        {
+            url += $"p{page}/";
+        }
+
+        var queryParams = new List<string>();
+        if (minPrice.HasValue || maxPrice.HasValue)
+        {
+            var min = minPrice?.ToString() ?? "0";
+            var max = maxPrice?.ToString() ?? string.Empty;
+            queryParams.Add($"price={min}-{max}");
+        }
+
+        if (queryParams.Count > 0)
+        {
+            url += $"?{string.Join("&", queryParams)}";
+        }
 
         _logger.LogDebug("Playwright navigating to {Url}", url);
 
@@ -176,13 +226,17 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                 title.Contains("challenge", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("Detected bot challenge page, waiting for resolution...");
-                // Wait longer for challenge to resolve
-                await Task.Delay(5000, cancellationToken);
+                var resolved = await WaitForChallengeResolutionAsync(pageObj, cancellationToken);
+                if (!resolved)
+                {
+                    _logger.LogWarning("Challenge page did not resolve within timeout for {Url}", url);
+                    return null;
+                }
             }
 
             // Extract listing data from the page
             var listings = await ExtractListingsFromPageAsync(pageObj, cancellationToken);
-
+            listings = ApplyPriceFilter(listings, minPrice, maxPrice);
 
             return new FundaApiResponse
             {
@@ -195,6 +249,84 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             _logger.LogError(ex, "Playwright navigation failed for {Url}", url);
             return null;
         }
+    }
+
+    private static List<FundaApiListing> ApplyPriceFilter(List<FundaApiListing> listings, int? minPrice, int? maxPrice)
+    {
+        if (!minPrice.HasValue && !maxPrice.HasValue)
+        {
+            return listings;
+        }
+
+        return listings
+            .Where(listing =>
+            {
+                var parsed = ParsePriceValue(listing.Price);
+                if (!parsed.HasValue)
+                {
+                    // Keep listings with unparseable price to avoid dropping valid objects.
+                    return true;
+                }
+
+                if (minPrice.HasValue && parsed.Value < minPrice.Value)
+                {
+                    return false;
+                }
+
+                if (maxPrice.HasValue && parsed.Value > maxPrice.Value)
+                {
+                    return false;
+                }
+
+                return true;
+            })
+            .ToList();
+    }
+
+    private static decimal? ParsePriceValue(string? price)
+    {
+        if (string.IsNullOrWhiteSpace(price))
+        {
+            return null;
+        }
+
+        var digitsOnly = new string(price.Where(char.IsDigit).ToArray());
+        if (string.IsNullOrEmpty(digitsOnly))
+        {
+            return null;
+        }
+
+        return decimal.TryParse(digitsOnly, out var parsed) ? parsed : null;
+    }
+
+    private static bool IsChallengeTitle(string title) =>
+        title.Contains("bijna op de pagina", StringComparison.OrdinalIgnoreCase) ||
+        title.Contains("challenge", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<bool> WaitForChallengeResolutionAsync(IPage page, CancellationToken cancellationToken)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(ChallengeMaxWaitMs);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var currentTitle = await page.TitleAsync();
+            if (!IsChallengeTitle(currentTitle))
+            {
+                return true;
+            }
+
+            var listingLinks = await page.QuerySelectorAllAsync("[data-testid='listingDetailsAddress']");
+            if (listingLinks.Count > 0)
+            {
+                return true;
+            }
+
+            await Task.Delay(ChallengePollIntervalMs, cancellationToken);
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -572,7 +704,10 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                     await Task.Delay(500, cancellationToken);
                 }
             }
-            catch { /* No consent popup */ }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Cookie consent dismissal failed for {Url}", url);
+            }
 
             // Log page title for debugging
             var title = await page.TitleAsync();
@@ -602,7 +737,10 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                 await page.EvaluateAsync("window.scrollTo(0, document.body.scrollHeight / 2)");
                 await Task.Delay(500, cancellationToken);
             }
-            catch { /* Scroll failed */ }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Scroll step failed for {Url}", url);
+            }
 
             // Extract characteristics using data-testid categories
             var characteristics = await ExtractCharacteristicsAsync(page);
@@ -672,7 +810,10 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                     return container?.textContent?.trim() || null;
                 }");
             }
-            catch { /* Optional field */ }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Description extraction failed for {Url}", url);
+            }
 
             // Extract photo URLs - Try to get ALL photos from __NUXT_DATA__ script first
             var mediaItems = new List<FundaNuxtMediaItem>();
@@ -743,8 +884,10 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
 
             var totalFeatures = indelingItems.Count + afmetingenItems.Count + energieItems.Count + bouwItems.Count;
             _logger.LogDebug("Extracted {Count} features from detail page", totalFeatures);
-            
-            return totalFeatures > 0 ? result : null;
+
+            return totalFeatures > 0 || mediaItems.Count > 0 || !string.IsNullOrEmpty(descriptionText)
+                ? result
+                : null;
         }
         catch (PlaywrightException ex)
         {

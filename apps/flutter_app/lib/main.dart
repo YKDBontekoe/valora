@@ -18,8 +18,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Load committed env defaults; avoids requiring gitignored local assets in CI/CD.
-    await dotenv.load(fileName: ".env");
+    // Prefer local overrides when available, but always fall back to committed defaults.
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (_) {
+      await dotenv.load(fileName: ".env.example");
+    }
 
     // Catch Flutter framework errors
     FlutterError.onError = (FlutterErrorDetails details) {

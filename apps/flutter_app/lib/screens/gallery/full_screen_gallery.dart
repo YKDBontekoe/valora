@@ -27,8 +27,15 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: widget.initialIndex);
+    if (widget.imageUrls.isEmpty) {
+      _currentIndex = 0;
+      _pageController = PageController(initialPage: 0);
+      return;
+    }
+
+    final safeIndex = widget.initialIndex.clamp(0, widget.imageUrls.length - 1).toInt();
+    _currentIndex = safeIndex;
+    _pageController = PageController(initialPage: safeIndex);
   }
 
   @override
@@ -39,6 +46,22 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.imageUrls.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: const Center(
+          child: Text(
+            'No images available',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(

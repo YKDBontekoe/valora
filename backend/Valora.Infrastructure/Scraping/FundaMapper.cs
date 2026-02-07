@@ -264,7 +264,18 @@ internal static partial class FundaMapper
         {
             listing.FloorPlanUrls = data.FloorPlans
                 .Where(fp => !string.IsNullOrEmpty(fp.Url) || !string.IsNullOrEmpty(fp.Id))
-                .Select(fp => fp.Url ?? (fp.Id != null && fp.Id.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? fp.Id : $"https://cloud.funda.nl/valentina_media/{fp.Id}_720.jpg"))
+                .Select(fp =>
+                {
+                    if (!string.IsNullOrEmpty(fp.Url))
+                    {
+                        return fp.Url;
+                    }
+
+                    var id = fp.Id!;
+                    return id.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? id
+                        : $"https://cloud.funda.nl/valentina_media/{id}_720.jpg";
+                })
                 .ToList();
         }
 

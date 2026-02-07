@@ -4,6 +4,11 @@ const CODE_RABBIT_LOGIN = 'coderabbitai';
 const QODO_LOGIN = 'qodo-free-for-open-source-projects';
 const REPOST_MARKER_VERSION = 'v1';
 const SUPPORTED_BOTS = new Set([CODE_RABBIT_LOGIN, QODO_LOGIN]);
+const REQUEST_TIMEOUT_MS = 30_000;
+
+function logEvent(level, event, details = {}) {
+  console.log(JSON.stringify({ level, event, ...details }));
+}
 
 function normalizeLogin(login) {
   if (!login) {
@@ -175,6 +180,7 @@ async function githubRequest({ token, method, path, body }) {
       'Content-Type': 'application/json',
     },
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -192,8 +198,9 @@ async function githubRequest({ token, method, path, body }) {
 async function getAllIssueComments({ token, owner, repo, issueNumber }) {
   const comments = [];
   let page = 1;
+  const maxPages = 10;
 
-  while (true) {
+  while (page <= maxPages) {
     const pageComments = await githubRequest({
       token,
       method: 'GET',
@@ -207,6 +214,10 @@ async function getAllIssueComments({ token, owner, repo, issueNumber }) {
     }
 
     page += 1;
+  }
+
+  if (page > maxPages) {
+    logEvent('warn', 'comments-pagination-capped', { issueNumber, maxPages });
   }
 
   return comments;
@@ -265,18 +276,18 @@ async function main() {
   const payload = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
   const source = extractSourceFromPayload(payload);
   if (!source) {
-    console.log('Skipping: unsupported webhook payload type.');
+    logEvent('info', 'skip-unsupported-webhook-payload');
     return;
   }
 
   const normalizedSourceLogin = normalizeLogin(source.sourceLogin);
   if (!SUPPORTED_BOTS.has(normalizedSourceLogin)) {
-    console.log(`Skipping: unsupported source login '${source.sourceLogin || 'unknown'}'.`);
+    logEvent('info', 'skip-unsupported-source-login', { sourceLogin: source.sourceLogin || 'unknown' });
     return;
   }
 
   if (!source.issueNumber || !source.isPullRequest) {
-    console.log('Skipping: comment is not on a pull request.');
+    logEvent('info', 'skip-not-pull-request-comment');
     return;
   }
 
@@ -291,7 +302,7 @@ async function main() {
   const alreadyReposted = existingComments.some((comment) => comment.body?.includes(marker));
 
   if (alreadyReposted) {
-    console.log(`Skipping: source comment ${source.sourceId} already reposted.`);
+    logEvent('info', 'skip-already-reposted', { sourceId: source.sourceId });
     return;
   }
 
@@ -303,7 +314,7 @@ async function main() {
   });
 
   if (!repostBody) {
-    console.log('No repostable actionable content found in this bot comment.');
+    logEvent('info', 'skip-no-actionable-content', { sourceId: source.sourceId });
     return;
   }
 
@@ -314,12 +325,18 @@ async function main() {
     body: { body: repostBody },
   });
 
-  console.log(`Reposted actionable content from ${source.sourceLogin} on PR #${source.issueNumber}.`);
+  logEvent('info', 'repost-created', {
+    sourceLogin: source.sourceLogin,
+    issueNumber: source.issueNumber,
+    sourceId: source.sourceId,
+  });
 }
 
 if (process.env.GITHUB_EVENT_PATH) {
   main().catch((error) => {
-    console.error(error);
+    logEvent('error', 'repost-failed', {
+      message: error?.message ?? String(error),
+    });
     process.exit(1);
   });
 }

@@ -260,9 +260,6 @@ class ListingDetailScreen extends StatelessWidget {
               if (images.isNotEmpty)
                 PageView.builder(
                   itemCount: images.length,
-                  onPageChanged: (index) {
-                    // Start pre-caching next image?
-                  },
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () {

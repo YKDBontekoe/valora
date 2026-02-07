@@ -350,4 +350,32 @@ public class FundaMapperTests
         Assert.Single(listing.FloorPlanUrls);
         Assert.Equal("https://example.com/floorplan.jpg", listing.FloorPlanUrls[0]);
     }
+
+    [Fact]
+    public void EnrichListingWithNuxtData_UsesAbsoluteMediaAndFloorPlanIds_WhenProvided()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+            Media = new FundaNuxtMedia
+            {
+                Items =
+                [
+                    new() { Id = "https://cdn.example.com/image.jpg", Type = 1 }
+                ]
+            },
+            FloorPlans =
+            [
+                new() { Id = "https://cdn.example.com/floorplan.jpg" }
+            ]
+        };
+
+        FundaMapper.EnrichListingWithNuxtData(listing, data);
+
+        Assert.Single(listing.ImageUrls);
+        Assert.Equal("https://cdn.example.com/image.jpg", listing.ImageUrls[0]);
+        Assert.Equal("https://cdn.example.com/image.jpg", listing.ImageUrl);
+        Assert.Single(listing.FloorPlanUrls);
+        Assert.Equal("https://cdn.example.com/floorplan.jpg", listing.FloorPlanUrls[0]);
+    }
 }
