@@ -859,7 +859,7 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                     
                     if (visiblePhotoUrls?.Length > 0)
                     {
-                        mediaItems = visiblePhotoUrls.Distinct().Select(url => new FundaNuxtMediaItem { Id = url, Type = 1 }).ToList();
+                        mediaItems = visiblePhotoUrls.Distinct().Select(photoUrl => new FundaNuxtMediaItem { Id = photoUrl, Type = 1 }).ToList();
                         _logger.LogDebug("Extracted {Count} photos from DOM fallback", mediaItems.Count);
                     }
                 }
