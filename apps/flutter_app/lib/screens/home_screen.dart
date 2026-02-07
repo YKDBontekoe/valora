@@ -17,6 +17,8 @@ import '../widgets/home/home_sliver_app_bar.dart';
 import '../widgets/home/home_status_views.dart';
 import '../widgets/home/nearby_listing_card.dart';
 import '../widgets/valora_filter_dialog.dart';
+import '../services/notification_service.dart';
+import '../widgets/notifications/notification_sheet.dart';
 import 'listing_detail_screen.dart';
 import 'saved_listings_screen.dart';
 import 'search_screen.dart';
@@ -43,11 +45,16 @@ class _HomeScreenState extends State<HomeScreen> {
   HomeListingsProvider? _homeProvider;
   int _currentNavIndex = 0;
 
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationService>().startPolling();
+    });
   }
+
 
   @override
   void didChangeDependencies() {
@@ -204,42 +211,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return _defaultScrapeRegion;
   }
 
+
   Future<void> _openNotifications(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Notifications',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
-              SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.auto_awesome_rounded),
-                title: Text('AI insights are enabled'),
-                subtitle: Text('You will see new recommendation updates here.'),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.trending_down_rounded),
-                title: Text('Price drop alerts are on'),
-                subtitle: Text(
-                  'Saved listings with price drops will appear here.',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => const NotificationSheet(),
     );
   }
+
 
   void _onListingTap(Listing listing) {
     Navigator.push(
@@ -297,14 +280,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeView() {
-    return Consumer<HomeListingsProvider>(
-      builder: (context, provider, _) {
+    return Consumer2<HomeListingsProvider, NotificationService>(
+      builder: (context, provider, notificationService, _) {
         final List<Widget> slivers = [
           HomeSliverAppBar(
             searchController: _searchController,
             onSearchChanged: _onSearchChanged,
             onFilterPressed: _openFilterDialog,
             activeFilterCount: provider.activeFilterCount,
+            unreadCount: notificationService.unreadCount,
             onNotificationsPressed: () => _openNotifications(context),
             userInitials: _userInitials(context),
           ),

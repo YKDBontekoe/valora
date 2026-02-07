@@ -14,6 +14,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Listing> Listings => Set<Listing>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -142,5 +143,19 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                   .HasForeignKey(e => e.ListingId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.IsRead);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Body).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.ActionUrl).HasMaxLength(500);
+        });
+
     }
 }

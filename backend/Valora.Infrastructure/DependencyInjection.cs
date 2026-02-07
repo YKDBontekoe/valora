@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Scraping;
+using Valora.Application.Services;
 using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         // Configuration
         services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
