@@ -12,11 +12,13 @@ class ValoraChip extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onSelected,
+    this.onDeleted,
   });
 
   final String label;
   final bool isSelected;
   final ValueChanged<bool> onSelected;
+  final VoidCallback? onDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,15 @@ class ValoraChip extends StatelessWidget {
         label: Text(label),
         selected: isSelected,
         onSelected: onSelected,
+        onDeleted: onDeleted,
+        deleteIcon: onDeleted != null
+          ? Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant
+            )
+          : null,
+        deleteIconColor: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
         checkmarkColor: isSelected ? Colors.white : null,
         labelStyle: ValoraTypography.labelMedium.copyWith(
           color: isSelected

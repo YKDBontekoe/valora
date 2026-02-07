@@ -332,4 +332,88 @@ void main() {
       expect(find.text('Try adjusting filters'), findsOneWidget);
     });
   });
+
+  group('ValoraChip Tests', () {
+    testWidgets('renders label', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraChip(
+              label: 'Test Chip',
+              isSelected: false,
+              onSelected: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Test Chip'), findsOneWidget);
+    });
+
+    testWidgets('calls onSelected when tapped', (WidgetTester tester) async {
+      bool selected = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraChip(
+              label: 'Test Chip',
+              isSelected: false,
+              onSelected: (val) => selected = val,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilterChip));
+      await tester.pumpAndSettle();
+
+      expect(selected, isTrue);
+    });
+
+    testWidgets('renders delete icon when onDeleted is provided', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraChip(
+              label: 'Test Chip',
+              isSelected: true,
+              onSelected: (_) {},
+              onDeleted: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+    });
+
+    testWidgets('calls onDeleted when delete icon is tapped', (WidgetTester tester) async {
+      bool deleted = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraChip(
+              label: 'Test Chip',
+              isSelected: true,
+              onSelected: (_) {},
+              onDeleted: () => deleted = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap the delete icon (usually in trailing position of FilterChip)
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+
+      expect(deleted, isTrue);
+    });
+  });
 }
