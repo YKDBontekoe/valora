@@ -144,6 +144,14 @@ class MockAuthProvider extends _i1.Mock implements _i5.AuthProvider {
           as _i4.Future<void>);
 
   @override
+  _i4.Future<String?> refreshSession() =>
+      (super.noSuchMethod(
+            Invocation.method(#refreshSession, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
   void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
@@ -183,6 +191,11 @@ class MockThemeProvider extends _i1.Mock implements _i7.ThemeProvider {
             returnValue: _i8.ThemeMode.system,
           )
           as _i8.ThemeMode);
+
+  @override
+  bool get isInitialized =>
+      (super.noSuchMethod(Invocation.getter(#isInitialized), returnValue: false)
+          as bool);
 
   @override
   bool get isDarkMode =>

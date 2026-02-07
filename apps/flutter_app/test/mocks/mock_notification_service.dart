@@ -5,19 +5,34 @@ import 'package:valora_app/models/notification.dart';
 
 class MockNotificationService extends Mock implements NotificationService {
   @override
-  List<ValoraNotification> get notifications => [];
+  List<ValoraNotification> get notifications => super.noSuchMethod(
+        Invocation.getter(#notifications),
+        returnValue: <ValoraNotification>[],
+      );
 
   @override
-  int get unreadCount => 0;
+  int get unreadCount => super.noSuchMethod(
+        Invocation.getter(#unreadCount),
+        returnValue: 0,
+      );
 
   @override
-  bool get isLoading => false;
+  bool get isLoading => super.noSuchMethod(
+        Invocation.getter(#isLoading),
+        returnValue: false,
+      );
 
   @override
-  String? get error => null;
+  String? get error => super.noSuchMethod(
+        Invocation.getter(#error),
+        returnValue: null,
+      );
 
   @override
-  bool get hasListeners => false;
+  bool get hasListeners => super.noSuchMethod(
+        Invocation.getter(#hasListeners),
+        returnValue: false,
+      );
 
   @override
   void addListener(VoidCallback? listener) {
@@ -42,6 +57,11 @@ class MockNotificationService extends Mock implements NotificationService {
   @override
   Future<void> fetchNotifications({bool refresh = false}) async {
     return super.noSuchMethod(Invocation.method(#fetchNotifications, [], {#refresh: refresh}), returnValue: Future.value(null));
+  }
+
+  @override
+  Future<void> markAllAsRead() async {
+    return super.noSuchMethod(Invocation.method(#markAllAsRead, []), returnValue: Future.value(null));
   }
 
   @override

@@ -52,6 +52,11 @@ class MockFavoritesProvider extends _i1.Mock implements _i2.FavoritesProvider {
           as bool);
 
   @override
+  DateTime? savedAtFor(String? listingId) =>
+      (super.noSuchMethod(Invocation.method(#savedAtFor, [listingId]))
+          as DateTime?);
+
+  @override
   _i4.Future<void> loadFavorites() =>
       (super.noSuchMethod(
             Invocation.method(#loadFavorites, []),
