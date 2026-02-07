@@ -102,6 +102,7 @@ internal static partial class FundaMapper
         EnrichInsights(listing, data);
         EnrichMiscellaneous(listing, data);
 
+        // Additional enrichment if features are present
         if (listing.Features != null)
         {
             EnrichConstructionDetails(listing, listing.Features);
@@ -121,21 +122,23 @@ internal static partial class FundaMapper
 
         var featureMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        if (data.Features.Indeling != null) FlattenFeatures(data.Features.Indeling.KenmerkenList, featureMap);
-        if (data.Features.Afmetingen != null) FlattenFeatures(data.Features.Afmetingen.KenmerkenList, featureMap);
-        if (data.Features.Energie != null) FlattenFeatures(data.Features.Energie.KenmerkenList, featureMap);
-        if (data.Features.Bouw != null) FlattenFeatures(data.Features.Bouw.KenmerkenList, featureMap);
+        // Populate map from various feature groups
+        if (data.Features.Indeling != null) PopulateFeatureMap(data.Features.Indeling.KenmerkenList, featureMap);
+        if (data.Features.Afmetingen != null) PopulateFeatureMap(data.Features.Afmetingen.KenmerkenList, featureMap);
+        if (data.Features.Energie != null) PopulateFeatureMap(data.Features.Energie.KenmerkenList, featureMap);
+        if (data.Features.Bouw != null) PopulateFeatureMap(data.Features.Bouw.KenmerkenList, featureMap);
 
         listing.Features = featureMap;
 
-        EnrichAreasFromMap(listing, featureMap);
-        EnrichRoomsAndBathrooms(listing, featureMap);
-        EnrichEnergyAndConstruction(listing, featureMap);
-        EnrichGardenAndParking(listing, featureMap);
-        EnrichCadastral(listing, featureMap);
+        // Extract specific attributes from the flat map
+        SetAreasFromFeatures(listing, featureMap);
+        SetRoomsAndBathrooms(listing, featureMap);
+        SetEnergyAndConstruction(listing, featureMap);
+        SetGardenAndParking(listing, featureMap);
+        SetCadastralDesignation(listing, featureMap);
     }
 
-    private static void EnrichAreasFromMap(Listing listing, Dictionary<string, string> featureMap)
+    private static void SetAreasFromFeatures(Listing listing, Dictionary<string, string> featureMap)
     {
         if (!listing.LivingAreaM2.HasValue && featureMap.TryGetValue("Wonen", out var livingArea))
             listing.LivingAreaM2 = ParseFirstNumber(livingArea);
@@ -143,10 +146,16 @@ internal static partial class FundaMapper
         if (!listing.PlotAreaM2.HasValue && featureMap.TryGetValue("Perceel", out var plotArea))
             listing.PlotAreaM2 = ParseFirstNumber(plotArea);
 
-        if (featureMap.TryGetValue("Gebouwgebonden buitenruimte", out var balcony)) listing.BalconyM2 = ParseFirstNumber(balcony);
-        if (featureMap.TryGetValue("Externe bergruimte", out var storage)) listing.ExternalStorageM2 = ParseFirstNumber(storage);
-        if (featureMap.TryGetValue("Inhoud", out var volume)) listing.VolumeM3 = ParseFirstNumber(volume);
+        if (featureMap.TryGetValue("Gebouwgebonden buitenruimte", out var balcony))
+            listing.BalconyM2 = ParseFirstNumber(balcony);
 
+        if (featureMap.TryGetValue("Externe bergruimte", out var storage))
+            listing.ExternalStorageM2 = ParseFirstNumber(storage);
+
+        if (featureMap.TryGetValue("Inhoud", out var volume))
+            listing.VolumeM3 = ParseFirstNumber(volume);
+
+        // Garden Area Logic: Find largest area mentioned in "Tuin" related keys
         foreach(var kvp in featureMap)
         {
            if (kvp.Key.Contains("tuin", StringComparison.OrdinalIgnoreCase) && kvp.Value.Contains("m²"))
@@ -160,7 +169,7 @@ internal static partial class FundaMapper
         }
     }
 
-    private static void EnrichRoomsAndBathrooms(Listing listing, Dictionary<string, string> featureMap)
+    private static void SetRoomsAndBathrooms(Listing listing, Dictionary<string, string> featureMap)
     {
         if (featureMap.TryGetValue("Aantal kamers", out var rooms))
         {
@@ -179,7 +188,7 @@ internal static partial class FundaMapper
             listing.Bathrooms = ParseFirstNumber(bathrooms);
     }
 
-    private static void EnrichEnergyAndConstruction(Listing listing, Dictionary<string, string> featureMap)
+    private static void SetEnergyAndConstruction(Listing listing, Dictionary<string, string> featureMap)
     {
         if (featureMap.TryGetValue("Energielabel", out var label)) listing.EnergyLabel = label.Trim();
         if (featureMap.TryGetValue("Isolatie", out var insulation)) listing.InsulationType = insulation;
@@ -194,7 +203,7 @@ internal static partial class FundaMapper
         }
     }
 
-    private static void EnrichGardenAndParking(Listing listing, Dictionary<string, string> featureMap)
+    private static void SetGardenAndParking(Listing listing, Dictionary<string, string> featureMap)
     {
         foreach (var kvp in featureMap)
         {
@@ -214,12 +223,30 @@ internal static partial class FundaMapper
         }
     }
 
-    private static void EnrichCadastral(Listing listing, Dictionary<string, string> featureMap)
+    /// <summary>
+    /// Attempts to extract the cadastral designation (e.g., "A 1234") from feature keys.
+    /// <para>
+    /// <strong>Heuristic:</strong>
+    /// Cadastral data often appears as a key in the feature list where the key itself contains the data
+    /// (e.g., "Section A 1234") and the value is empty or generic (e.g., "Title").
+    /// We look for keys that:
+    /// - Contain uppercase letters and digits.
+    /// - Are longer than 5 chars (to avoid noise).
+    /// - Do NOT contain common words like "kamers" or "bouw".
+    /// </para>
+    /// </summary>
+    private static void SetCadastralDesignation(Listing listing, Dictionary<string, string> featureMap)
     {
         foreach (var key in featureMap.Keys)
         {
-            if (key.Any(char.IsUpper) && key.Any(char.IsDigit) && key.Length > 5 && !key.Contains("kamers") && !key.Contains("bouw"))
+            // Heuristic check for cadastral string pattern
+            if (key.Any(char.IsUpper) &&
+                key.Any(char.IsDigit) &&
+                key.Length > 5 &&
+                !key.Contains("kamers", StringComparison.OrdinalIgnoreCase) &&
+                !key.Contains("bouw", StringComparison.OrdinalIgnoreCase))
             {
+                 // Check if the value suggests the key holds the information
                  if (featureMap.TryGetValue(key, out var val) && (string.IsNullOrEmpty(val) || val == "Title"))
                  {
                      listing.CadastralDesignation = key;
@@ -344,7 +371,7 @@ internal static partial class FundaMapper
         if (!string.IsNullOrEmpty(source.AgentName)) target.AgentName = source.AgentName;
     }
 
-    private static void FlattenFeatures(List<FundaNuxtFeatureItem>? items, Dictionary<string, string> map)
+    private static void PopulateFeatureMap(List<FundaNuxtFeatureItem>? items, Dictionary<string, string> map)
     {
         if (items == null) return;
 
@@ -356,21 +383,20 @@ internal static partial class FundaMapper
                 if (!string.IsNullOrEmpty(item.Value))
                 {
                     // Clean up label to be more standard key if needed, or just use as is
-                    // Funda labels: "Aantal kamers", "Wonen", "Perceel", "Energielabel"
                     map.TryAdd(item.Label.Trim(), item.Value.Trim());
                 }
 
                 // Recurse (e.g., specific dimensions under a room, or cadastral details)
                 if (item.KenmerkenList != null && item.KenmerkenList.Count > 0)
                 {
-                    FlattenFeatures(item.KenmerkenList, map);
+                    PopulateFeatureMap(item.KenmerkenList, map);
                 }
             }
             else if (item.KenmerkenList != null)
             {
                 // Sometimes label is on the group (Title) but here we process items.
                 // If checking FeatureGroup.Title is needed, it must be passed down.
-                FlattenFeatures(item.KenmerkenList, map);
+                PopulateFeatureMap(item.KenmerkenList, map);
             }
         }
     }
@@ -398,6 +424,8 @@ internal static partial class FundaMapper
         }
         return null;
     }
+
+    // --- Regex Patterns ---
 
     [GeneratedRegex(@"(\d+)\s*slaapkamer", RegexOptions.IgnoreCase)]
     private static partial Regex BedroomRegex();
