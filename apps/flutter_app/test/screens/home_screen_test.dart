@@ -14,6 +14,9 @@ import 'package:valora_app/widgets/valora_filter_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:retry/retry.dart';
+import '../mocks/mock_notification_service.dart';
+import 'package:valora_app/services/notification_service.dart';
+
 
 void main() {
   setUpAll(() async {
@@ -27,6 +30,9 @@ void main() {
       providers: [
         ChangeNotifierProvider<FavoritesProvider>(
           create: (_) => FavoritesProvider(),
+        ),
+        ChangeNotifierProvider<NotificationService>.value(
+          value: MockNotificationService(),
         ),
       ],
       child: MaterialApp(home: HomeScreen(apiService: apiService)),
