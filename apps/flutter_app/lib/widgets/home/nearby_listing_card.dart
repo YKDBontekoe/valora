@@ -36,21 +36,17 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.02 : 1.0,
-        duration: ValoraAnimations.normal,
-        curve: ValoraAnimations.standard,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
-          child: ValoraCard(
-            onTap: widget.onTap,
-            padding: const EdgeInsets.all(ValoraSpacing.sm),
-            borderRadius: ValoraSpacing.radiusLg,
-            // Let ValoraCard handle interactive elevation
-            elevation: ValoraSpacing.elevationSm,
-            child: Row(
-              children: [
-                // Image
+      child: Container(
+        margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
+        child: ValoraCard(
+          onTap: widget.onTap,
+          padding: const EdgeInsets.all(ValoraSpacing.sm),
+          borderRadius: ValoraSpacing.radiusLg,
+          // Let ValoraCard handle interactive elevation
+          elevation: ValoraSpacing.elevationSm,
+          child: Row(
+            children: [
+              // Image
                 Stack(
                   children: [
                     Container(
@@ -232,7 +228,6 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                 ),
               ),
             ],
-            ),
           ),
         ),
       ),

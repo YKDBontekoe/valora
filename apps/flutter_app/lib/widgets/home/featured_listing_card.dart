@@ -41,23 +41,19 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.02 : 1.0,
-        duration: ValoraAnimations.normal,
-        curve: ValoraAnimations.standard,
-        child: Container(
-          width: 280,
-          margin: const EdgeInsets.only(right: ValoraSpacing.lg),
-          child: ValoraCard(
-            padding: EdgeInsets.zero,
-            onTap: widget.onTap,
-            borderRadius: ValoraSpacing.radiusXl,
-            // Let ValoraCard handle elevation changes based on hover/press
-            elevation: ValoraSpacing.elevationMd,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image Section
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: ValoraSpacing.lg),
+        child: ValoraCard(
+          padding: EdgeInsets.zero,
+          onTap: widget.onTap,
+          borderRadius: ValoraSpacing.radiusXl,
+          // Let ValoraCard handle elevation changes based on hover/press
+          elevation: ValoraSpacing.elevationMd,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section
                 Stack(
                   children: [
                     Container(
@@ -327,7 +323,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildFeature(BuildContext context, IconData icon, String label) {
