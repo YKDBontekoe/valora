@@ -1,6 +1,8 @@
+using System.Net;
 using System.Reflection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Moq.Protected;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
 
@@ -17,10 +19,15 @@ public class PlaywrightFundaClientTests
     private static readonly MethodInfo ApplyPriceFilterMethod =
         typeof(PlaywrightFundaClient).GetMethod("ApplyPriceFilter", BindingFlags.Static | BindingFlags.NonPublic)!;
 
-    private PlaywrightFundaClient CreateClient()
+    private PlaywrightFundaClient CreateClient(Mock<HttpMessageHandler>? handler = null)
     {
         var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient());
+        handler ??= new Mock<HttpMessageHandler>();
+
+        // Return a fresh HttpClient with the mocked handler
+        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>()))
+                   .Returns(() => new HttpClient(handler.Object));
+
         return new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), factoryMock.Object);
     }
 
@@ -126,8 +133,6 @@ public class PlaywrightFundaClientTests
     [InlineData("/detail/koop/amsterdam/no-id/", 0)]
     public void ExtractGlobalIdFromUrl_ParsesExpectedId(string url, int expected)
     {
-        // Static method invocation, instance not needed but method is on class
-        // Invoke(null, ...) works for static methods
         var globalId = (int)ExtractGlobalIdFromUrlMethod.Invoke(null, [url])!;
         Assert.Equal(expected, globalId);
     }
@@ -146,7 +151,6 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ApplyPriceFilter_FiltersOutsideRequestedRange()
     {
-        // Static method
         var listings = new List<FundaApiListing>
         {
             new() { Price = "€ 300.000", ListingUrl = "/a" },
@@ -163,7 +167,6 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ApplyPriceFilter_KeepsListingsWithUnparseablePrice()
     {
-        // Static method
         var listings = new List<FundaApiListing>
         {
             new() { Price = "Prijs op aanvraag", ListingUrl = "/unknown-price" },
@@ -174,5 +177,97 @@ public class PlaywrightFundaClientTests
 
         Assert.Single(filtered);
         Assert.Equal("/unknown-price", filtered[0].ListingUrl);
+    }
+
+    [Fact]
+    public async Task GetListingSummaryAsync_ReturnsSummary_OnSuccess()
+    {
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(@"{""identifiers"": { ""globalId"": 123 }, ""price"": { ""sellingPrice"": ""100000"" }}")
+            });
+
+        var client = CreateClient(handler);
+        var result = await client.GetListingSummaryAsync(123);
+
+        Assert.NotNull(result);
+        Assert.Equal(123, result.Identifiers?.GlobalId);
+        Assert.Equal("100000", result.Price?.SellingPrice);
+    }
+
+    [Fact]
+    public async Task GetListingSummaryAsync_ReturnsNull_OnNotFound()
+    {
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.NotFound
+            });
+
+        var client = CreateClient(handler);
+        var result = await client.GetListingSummaryAsync(999);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetContactDetailsAsync_ReturnsDetails_OnSuccess()
+    {
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(@"{""contactBlockDetails"": [{ ""displayName"": ""Test Broker"" }]}")
+            });
+
+        var client = CreateClient(handler);
+        var result = await client.GetContactDetailsAsync(123);
+
+        Assert.NotNull(result);
+        Assert.Equal("Test Broker", result.ContactDetails.FirstOrDefault()?.DisplayName);
+    }
+
+    [Fact]
+    public async Task GetFiberAvailabilityAsync_ReturnsResponse_OnSuccess()
+    {
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(@"{""availability"": true, ""postalCode"": ""1234AB""}")
+            });
+
+        var client = CreateClient(handler);
+        var result = await client.GetFiberAvailabilityAsync("1234 AB");
+
+        Assert.NotNull(result);
+        Assert.True(result.Availability);
+        Assert.Equal("1234AB", result.PostalCode);
     }
 }
