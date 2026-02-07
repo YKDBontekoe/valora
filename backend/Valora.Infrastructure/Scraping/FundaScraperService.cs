@@ -9,10 +9,8 @@ namespace Valora.Infrastructure.Scraping;
 
 public class FundaScraperService : IFundaScraperService
 {
-    private const string DefaultStatus = "Beschikbaar";
-
     private readonly IListingRepository _listingRepository;
-    private readonly IPriceHistoryRepository _priceHistoryRepository;
+    private readonly IListingService _listingService;
     private readonly IFundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
@@ -20,14 +18,14 @@ public class FundaScraperService : IFundaScraperService
 
     public FundaScraperService(
         IListingRepository listingRepository,
-        IPriceHistoryRepository priceHistoryRepository,
+        IListingService listingService,
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
         IScraperNotificationService notificationService,
         IFundaApiClient apiClient)
     {
         _listingRepository = listingRepository;
-        _priceHistoryRepository = priceHistoryRepository;
+        _listingService = listingService;
         _apiClient = apiClient;
         _options = options.Value;
         _logger = logger;
@@ -113,9 +111,6 @@ public class FundaScraperService : IFundaScraperService
         }
 
         // Optimization: Batch Fetching
-        // Instead of querying the database for each listing inside the loop (which would cause N+1 query problem),
-        // we fetch all potentially existing listings in a single round-trip.
-        // This significantly reduces database load when processing pages with many items.
         var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
         var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
         var existingListingsMap = existingListings.ToDictionary(l => l.FundaId, l => l);
@@ -169,35 +164,30 @@ public class FundaScraperService : IFundaScraperService
 
         if (existingListing == null)
         {
-            await AddNewListingAsync(listing, shouldNotify, cancellationToken);
+            await _listingService.CreateListingAsync(listing, cancellationToken);
+
+            if (shouldNotify)
+            {
+                await NotifyMatchFoundAsync(listing.Address);
+            }
         }
         else
         {
-            await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
+            await _listingService.UpdateListingAsync(existingListing, listing, cancellationToken);
+
+            if (shouldNotify)
+            {
+                await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
+            }
         }
     }
 
     /// <summary>
     /// Orchestrates the enrichment of a basic listing with detailed data from multiple sources.
-    /// <para>
-    /// <strong>Why multiple steps?</strong>
-    /// Funda's data is fragmented across different endpoints and HTML structures. A single source is not enough.
-    /// We must stitch together data from:
-    /// 1. <strong>Summary API</strong>: Provides status (sold/rented), publication date, and accurate postal code.
-    /// 2. <strong>Nuxt/HTML</strong>: The "Gold Mine". Provides rich descriptions, media URLs, and extended features.
-    /// 3. <strong>Contact API</strong>: Provides broker details (phone, logo).
-    /// 4. <strong>Fiber API</strong>: Provides internet availability (requires full postal code from step 1).
-    /// </para>
-    /// <para>
-    /// <strong>Graceful Degradation Strategy:</strong>
-    /// Each enrichment step is isolated in its own try-catch block.
-    /// If the Contact API is down, or the Fiber check fails, we *still* save the listing with whatever data we managed to get.
-    /// It is better to have a listing without a broker phone number than no listing at all.
-    /// </para>
     /// </summary>
     private async Task EnrichListingAsync(Listing listing, FundaApiListing apiListing, CancellationToken cancellationToken)
     {
-        // 1. Enrich with Summary API (includes publicationDate, sold status, labels, postal code)
+        // 1. Enrich with Summary API
         try
         {
             var summary = await _apiClient.GetListingSummaryAsync(apiListing.GlobalId, cancellationToken);
@@ -211,7 +201,7 @@ public class FundaScraperService : IFundaScraperService
             _logger.LogWarning(ex, "Failed to fetch summary for {FundaId}", listing.FundaId);
         }
 
-        // 2. Enrich with HTML/Nuxt data (rich features, description, photos)
+        // 2. Enrich with HTML/Nuxt data
         if (!string.IsNullOrEmpty(listing.Url))
         {
             try 
@@ -228,7 +218,7 @@ public class FundaScraperService : IFundaScraperService
             }
         }
 
-        // 3. Enrich with Contact Details API (broker phone, logo, association)
+        // 3. Enrich with Contact Details API
         try
         {
             var contacts = await _apiClient.GetContactDetailsAsync(apiListing.GlobalId, cancellationToken);
@@ -251,7 +241,7 @@ public class FundaScraperService : IFundaScraperService
             _logger.LogDebug(ex, "Failed to fetch contact details for {FundaId}", listing.FundaId);
         }
 
-        // 4. Check Fiber Availability (requires full postal code)
+        // 4. Check Fiber Availability
         if (!string.IsNullOrEmpty(listing.PostalCode) && listing.PostalCode.Length >= 6)
         {
             try
@@ -266,64 +256,6 @@ public class FundaScraperService : IFundaScraperService
             {
                 _logger.LogDebug(ex, "Failed to check fiber availability for {FundaId}", listing.FundaId);
             }
-        }
-    }
-
-    private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // Set default status for new listings if not present
-        listing.Status ??= DefaultStatus;
-
-        // New listing - add it
-        await _listingRepository.AddAsync(listing, cancellationToken);
-        _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync(listing.Address);
-        }
-
-        // Record initial price
-        if (listing.Price.HasValue)
-        {
-            await _priceHistoryRepository.AddAsync(new PriceHistory
-            {
-                ListingId = listing.Id,
-                Price = listing.Price.Value
-            }, cancellationToken);
-        }
-    }
-
-    private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // Existing listing - check for price changes
-        var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
-
-        if (priceChanged)
-        {
-            _logger.LogInformation(
-                "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
-                listing.FundaId, existingListing.Price, listing.Price);
-
-            await _priceHistoryRepository.AddAsync(new PriceHistory
-            {
-                ListingId = existingListing.Id,
-                Price = listing.Price!.Value
-            }, cancellationToken);
-        }
-
-        // Update listing properties
-        existingListing.Price = listing.Price;
-        existingListing.ImageUrl = listing.ImageUrl;
-        
-        FundaMapper.MergeListingDetails(existingListing, listing);
-
-        await _listingRepository.UpdateAsync(existingListing, cancellationToken);
-        _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
         }
     }
 

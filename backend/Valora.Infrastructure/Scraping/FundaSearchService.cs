@@ -17,25 +17,26 @@ public partial class FundaSearchService : IFundaSearchService
 {
     private readonly IFundaApiClient _apiClient;
     private readonly IListingRepository _listingRepository;
+    private readonly IListingService _listingService;
     private readonly ILogger<FundaSearchService> _logger;
     private readonly TimeSpan _cacheFreshness;
     private readonly TimeSpan _searchCacheFreshness;
     
     // In-memory cache for tracking when regions were last searched
-    // Key: normalized region name, Value: last search time
     private static readonly ConcurrentDictionary<string, DateTime> _regionSearchCache = new();
 
     public FundaSearchService(
         IFundaApiClient apiClient,
         IListingRepository listingRepository,
+        IListingService listingService,
         IConfiguration configuration,
         ILogger<FundaSearchService> logger)
     {
         _apiClient = apiClient;
         _listingRepository = listingRepository;
+        _listingService = listingService;
         _logger = logger;
         
-        // Read cache settings from environment variables with defaults
         _cacheFreshness = TimeSpan.FromMinutes(
             configuration.GetValue<int>("CACHE_FRESHNESS_MINUTES", 60));
         _searchCacheFreshness = TimeSpan.FromMinutes(
@@ -50,7 +51,6 @@ public partial class FundaSearchService : IFundaSearchService
 
         var fromCache = true;
         
-        // Check if we need to refresh data from Funda
         if (ShouldRefreshSearch(normalizedRegion))
         {
             fromCache = false;
@@ -58,7 +58,6 @@ public partial class FundaSearchService : IFundaSearchService
             _regionSearchCache[normalizedRegion] = DateTime.UtcNow;
         }
 
-        // Query from database with filters
         var listings = await QueryDatabaseAsync(query, ct);
         
         return new FundaSearchResult
@@ -73,7 +72,6 @@ public partial class FundaSearchService : IFundaSearchService
 
     public async Task<Listing?> GetByFundaUrlAsync(string fundaUrl, CancellationToken ct = default)
     {
-        // Extract GlobalId from URL
         var globalId = ExtractGlobalIdFromUrl(fundaUrl);
         if (globalId == null)
         {
@@ -83,7 +81,6 @@ public partial class FundaSearchService : IFundaSearchService
 
         var fundaIdStr = globalId.Value.ToString();
         
-        // Check if we have a fresh cached version
         var existing = await _listingRepository.GetByFundaIdAsync(fundaIdStr, ct);
         
         if (existing != null && IsFresh(existing))
@@ -92,7 +89,6 @@ public partial class FundaSearchService : IFundaSearchService
             return existing;
         }
 
-        // Fetch fresh data from Funda
         _logger.LogInformation("Fetching fresh data for listing {FundaId}", fundaIdStr);
         
         try
@@ -101,10 +97,9 @@ public partial class FundaSearchService : IFundaSearchService
             if (summary == null)
             {
                 _logger.LogWarning("Listing {FundaId} not found on Funda", fundaIdStr);
-                return existing; // Return stale data if we have it
+                return existing;
             }
 
-            // Get rich details
             FundaNuxtListingData? richData = null;
             if (!string.IsNullOrEmpty(fundaUrl))
             {
@@ -118,40 +113,37 @@ public partial class FundaSearchService : IFundaSearchService
                 }
             }
 
-            // Create or update listing
-            var listing = existing ?? new Listing
+            // Create a fresh transient listing object from API data
+            var newListing = new Listing
             {
                 FundaId = fundaIdStr,
                 Address = summary.Address?.Street ?? "Unknown Address",
+                Url = fundaUrl,
+                LastFundaFetchUtc = DateTime.UtcNow
             };
 
-            // Update from summary
-            UpdateListingFromSummary(listing, summary);
+            UpdateListingFromSummary(newListing, summary);
             
-            // Enrich with rich data if available
             if (richData != null)
             {
-                EnrichListingWithNuxtData(listing, richData);
+                FundaMapper.EnrichListingWithNuxtData(newListing, richData);
             }
-
-            listing.LastFundaFetchUtc = DateTime.UtcNow;
-            listing.Url = fundaUrl;
 
             if (existing == null)
             {
-                await _listingRepository.AddAsync(listing, ct);
+                await _listingService.CreateListingAsync(newListing, ct);
+                return newListing;
             }
             else
             {
-                await _listingRepository.UpdateAsync(listing, ct);
+                await _listingService.UpdateListingAsync(existing, newListing, ct);
+                return existing;
             }
-
-            return listing;
         }
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Failed to fetch listing {FundaId} from Funda", fundaIdStr);
-            return existing; // Return stale data if available
+            return existing;
         }
     }
 
@@ -205,7 +197,6 @@ public partial class FundaSearchService : IFundaSearchService
             {
                 await ProcessApiListingAsync(apiListing, ct);
                 
-                // Small delay to be respectful to Funda
                 await Task.Delay(100, ct);
             }
             catch (Exception ex)
@@ -220,37 +211,35 @@ public partial class FundaSearchService : IFundaSearchService
         var fundaId = apiListing.GlobalId.ToString();
         var existing = await _listingRepository.GetByFundaIdAsync(fundaId, ct);
 
-        // Skip if we have fresh data
         if (existing != null && IsFresh(existing))
         {
             return;
         }
 
-        var listing = existing ?? new Listing
-        {
-            FundaId = fundaId,
-            Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
-        };
-
-        // Basic data from API response
-        listing.City = apiListing.Address?.City;
-        listing.AgentName = apiListing.AgentName;
-        listing.ImageUrl = apiListing.Image?.Default;
-        listing.Price = ParsePrice(apiListing.Price);
-        listing.PropertyType = apiListing.IsProject ? "Nieuwbouwproject" : "Woonhuis";
-
         var fullUrl = apiListing.ListingUrl!.StartsWith("http")
             ? apiListing.ListingUrl
             : $"https://www.funda.nl{apiListing.ListingUrl}";
-        listing.Url = fullUrl;
 
-        // Try to get rich details (but don't fail if we can't)
+        // Create fresh listing object
+        var newListing = new Listing
+        {
+            FundaId = fundaId,
+            Address = apiListing.Address?.ListingAddress ?? apiListing.Address?.City ?? "Unknown Address",
+            City = apiListing.Address?.City,
+            AgentName = apiListing.AgentName,
+            ImageUrl = apiListing.Image?.Default,
+            Price = ParsePrice(apiListing.Price),
+            PropertyType = apiListing.IsProject ? "Nieuwbouwproject" : "Woonhuis",
+            Url = fullUrl,
+            LastFundaFetchUtc = DateTime.UtcNow
+        };
+
         try
         {
             var richData = await _apiClient.GetListingDetailsAsync(fullUrl, ct);
             if (richData != null)
             {
-                EnrichListingWithNuxtData(listing, richData);
+                FundaMapper.EnrichListingWithNuxtData(newListing, richData);
             }
         }
         catch (Exception ex)
@@ -258,16 +247,14 @@ public partial class FundaSearchService : IFundaSearchService
             _logger.LogDebug(ex, "Could not fetch rich details for {FundaId}", fundaId);
         }
 
-        listing.LastFundaFetchUtc = DateTime.UtcNow;
-
         if (existing == null)
         {
-            await _listingRepository.AddAsync(listing, ct);
+            await _listingService.CreateListingAsync(newListing, ct);
             _logger.LogDebug("Added new listing: {FundaId}", fundaId);
         }
         else
         {
-            await _listingRepository.UpdateAsync(listing, ct);
+            await _listingService.UpdateListingAsync(existing, newListing, ct);
             _logger.LogDebug("Updated listing: {FundaId}", fundaId);
         }
     }
@@ -286,8 +273,6 @@ public partial class FundaSearchService : IFundaSearchService
 
     private static int? ExtractGlobalIdFromUrl(string url)
     {
-        // URL format: https://www.funda.nl/detail/koop/amsterdam/appartement-.../43224373/
-        // The GlobalId is typically the last numeric segment in the URL path
         var match = GlobalIdRegex().Match(url);
         if (match.Success && int.TryParse(match.Groups[1].Value, out var id))
         {
@@ -355,115 +340,6 @@ public partial class FundaSearchService : IFundaSearchService
         }
     }
 
-    // This method mirrors the one in FundaScraperService to maintain consistency
-    private static void EnrichListingWithNuxtData(Listing listing, FundaNuxtListingData data)
-    {
-        // Description
-        listing.Description = data.Description?.Content;
-
-        // Features
-        if (data.Features != null)
-        {
-            if (data.ObjectType?.PropertySpecification != null)
-            {
-                listing.LivingAreaM2 = data.ObjectType.PropertySpecification.SelectedArea;
-                listing.PlotAreaM2 = data.ObjectType.PropertySpecification.SelectedPlotArea;
-            }
-
-            var featureMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            
-            if (data.Features.Indeling != null) FlattenFeatures(data.Features.Indeling.KenmerkenList, featureMap);
-            if (data.Features.Afmetingen != null) FlattenFeatures(data.Features.Afmetingen.KenmerkenList, featureMap);
-            if (data.Features.Energie != null) FlattenFeatures(data.Features.Energie.KenmerkenList, featureMap);
-            if (data.Features.Bouw != null) FlattenFeatures(data.Features.Bouw.KenmerkenList, featureMap);
-
-            listing.Features = featureMap;
-
-            // Extract specific fields from feature map
-            if (!listing.LivingAreaM2.HasValue && featureMap.TryGetValue("Wonen", out var livingArea))
-                listing.LivingAreaM2 = ParseFirstNumber(livingArea);
-            
-            if (!listing.PlotAreaM2.HasValue && featureMap.TryGetValue("Perceel", out var plotArea)) 
-                listing.PlotAreaM2 = ParseFirstNumber(plotArea);
-
-            if (featureMap.TryGetValue("Aantal kamers", out var rooms))
-            {
-                var bedroomMatch = BedroomRegex().Match(rooms);
-                if (bedroomMatch.Success && int.TryParse(bedroomMatch.Groups[1].Value, out var bedrooms))
-                {
-                    listing.Bedrooms = bedrooms;
-                }
-                else
-                {
-                    listing.Bedrooms = ParseFirstNumber(rooms);
-                }
-            }
-
-            if (featureMap.TryGetValue("Aantal badkamers", out var bathrooms))
-                listing.Bathrooms = ParseFirstNumber(bathrooms);
-            
-            if (featureMap.TryGetValue("Energielabel", out var label)) listing.EnergyLabel = label.Trim();
-            if (featureMap.TryGetValue("Bouwjaar", out var year)) listing.YearBuilt = ParseFirstNumber(year);
-        }
-
-        // Images
-        if (data.Media?.Items != null)
-        {
-            listing.ImageUrls = data.Media.Items
-                .Where(x => !string.IsNullOrEmpty(x.Id))
-                .Select(x => $"https://cloud.funda.nl/valentina_media/{x.Id}_720.jpg")
-                .ToList();
-            
-            if (listing.ImageUrls.Count > 0)
-            {
-                listing.ImageUrl = listing.ImageUrls[0];
-            }
-        }
-
-        // Coordinates
-        if (data.Coordinates != null)
-        {
-            listing.Latitude = data.Coordinates.Lat;
-            listing.Longitude = data.Coordinates.Lng;
-        }
-    }
-
-    private static void FlattenFeatures(List<FundaNuxtFeatureItem>? items, Dictionary<string, string> map)
-    {
-        if (items == null) return;
-
-        foreach (var item in items)
-        {
-            if (!string.IsNullOrEmpty(item.Label))
-            {
-                if (!string.IsNullOrEmpty(item.Value))
-                {
-                    map.TryAdd(item.Label.Trim(), item.Value.Trim());
-                }
-                
-                if (item.KenmerkenList != null && item.KenmerkenList.Count > 0)
-                {
-                    FlattenFeatures(item.KenmerkenList, map);
-                }
-            }
-            else if (item.KenmerkenList != null)
-            {
-                FlattenFeatures(item.KenmerkenList, map);
-            }
-        }
-    }
-
-    private static int? ParseFirstNumber(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return null;
-        var match = NumberRegex().Match(text);
-        if (match.Success && int.TryParse(match.Value, out var num))
-        {
-            return num;
-        }
-        return null;
-    }
-
     [GeneratedRegex(@"/(\d{6,})", RegexOptions.IgnoreCase)]
     private static partial Regex GlobalIdRegex();
 
@@ -472,7 +348,4 @@ public partial class FundaSearchService : IFundaSearchService
 
     [GeneratedRegex(@"\d+")]
     private static partial Regex NumberRegex();
-
-    [GeneratedRegex(@"(\d+)\s*slaapkamer", RegexOptions.IgnoreCase)]
-    private static partial Regex BedroomRegex();
 }

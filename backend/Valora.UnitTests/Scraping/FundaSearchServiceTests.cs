@@ -13,6 +13,7 @@ public class FundaSearchServiceTests
 {
     private readonly Mock<IFundaApiClient> _apiClientMock;
     private readonly Mock<IListingRepository> _listingRepoMock;
+    private readonly Mock<IListingService> _listingServiceMock;
     private readonly Mock<ILogger<FundaSearchService>> _loggerMock;
     private readonly Mock<IConfiguration> _configMock;
     private readonly FundaSearchService _service;
@@ -21,6 +22,7 @@ public class FundaSearchServiceTests
     {
         _apiClientMock = new Mock<IFundaApiClient>();
         _listingRepoMock = new Mock<IListingRepository>();
+        _listingServiceMock = new Mock<IListingService>();
         _loggerMock = new Mock<ILogger<FundaSearchService>>();
         _configMock = new Mock<IConfiguration>();
 
@@ -33,6 +35,7 @@ public class FundaSearchServiceTests
         _service = new FundaSearchService(
             _apiClientMock.Object,
             _listingRepoMock.Object,
+            _listingServiceMock.Object,
             _configMock.Object,
             _loggerMock.Object
         );
@@ -63,7 +66,9 @@ public class FundaSearchServiceTests
         Assert.Single(result.Items);
         Assert.False(result.FromCache);
         _apiClientMock.Verify(x => x.SearchBuyAsync("amsterdam", It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
-        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify ListingService CreateListingAsync called
+        _listingServiceMock.Verify(x => x.CreateListingAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -134,7 +139,9 @@ public class FundaSearchServiceTests
         Assert.NotNull(result);
         Assert.Equal("42424242", result.FundaId);
         _apiClientMock.Verify(x => x.GetListingSummaryAsync(42424242, It.IsAny<CancellationToken>()), Times.Once);
-        _listingRepoMock.Verify(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify ListingService CreateListingAsync
+        _listingServiceMock.Verify(x => x.CreateListingAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
