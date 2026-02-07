@@ -334,4 +334,20 @@ public class FundaMapperTests
         Assert.Equal("Openbaar parkeren", listing.ParkingType);
         Assert.Equal("Kadastrale Kaart 12345", listing.CadastralDesignation);
     }
+
+    [Fact]
+    public void EnrichListingWithNuxtData_FloorPlanUrlWithNullId_DoesNotThrow()
+    {
+        var listing = new Listing { FundaId = "1", Address = "Test" };
+        var data = new FundaNuxtListingData
+        {
+            FloorPlans = [ new() { Url = "https://example.com/floorplan.jpg", Id = null } ]
+        };
+
+        var exception = Record.Exception(() => FundaMapper.EnrichListingWithNuxtData(listing, data));
+
+        Assert.Null(exception);
+        Assert.Single(listing.FloorPlanUrls);
+        Assert.Equal("https://example.com/floorplan.jpg", listing.FloorPlanUrls[0]);
+    }
 }

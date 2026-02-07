@@ -1,56 +1,32 @@
-name: Repost CodeRabbit Comments
+name: Repost PR Review Bot Comments
 
 on:
   issue_comment:
     types: [created]
+  pull_request_review:
+    types: [submitted]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
-  repost-coderabbit:
+  repost-review-bot-comments:
     runs-on: ubuntu-latest
-    if: github.event.comment.user.login == 'coderabbitai'
+    if: |
+      (github.event_name == 'issue_comment' && contains(fromJson('["coderabbitai","coderabbitai[bot]","qodo-free-for-open-source-projects","qodo-free-for-open-source-projects[bot]"]'), github.event.comment.user.login)) ||
+      (github.event_name == 'pull_request_review_comment' && contains(fromJson('["coderabbitai","coderabbitai[bot]","qodo-free-for-open-source-projects","qodo-free-for-open-source-projects[bot]"]'), github.event.comment.user.login)) ||
+      (github.event_name == 'pull_request_review' && contains(fromJson('["coderabbitai","coderabbitai[bot]","qodo-free-for-open-source-projects","qodo-free-for-open-source-projects[bot]"]'), github.event.review.user.login))
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
     steps:
-      - name: Repost Comment
-        uses: actions/github-script@v8
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run parser tests
+        run: node --test .github/scripts/repost-review-bot-comments.test.mjs
+
+      - name: Repost actionable PR bot comments
         env:
           VALORA_BOT_PAT: ${{ secrets.VALORA_BOT_PAT }}
-        with:
-          script: |
-            const commentBody = context.payload.comment.body;
-
-            // Regex to find the specific "Fix all issues with AI agents" section
-            // We look for the summary tag containing the text, and capture everything until the closing details tag.
-            const regex = /<details>\s*<summary>.*?Fix all issues with AI agents.*?<\/summary>([\s\S]*?)<\/details>/i;
-            const match = commentBody.match(regex);
-
-            if (match && match[1]) {
-              const contentToRepost = match[1].trim();
-
-              if (!contentToRepost) {
-                console.log('Found the section but it was empty.');
-                return;
-              }
-
-              console.log('Found "Fix all issues with AI agents" section. Reposting...');
-
-              // We need to use the PAT to post as the user, not the github-actions bot.
-              // If the secret is missing, we log a warning but cannot proceed with the specific requirement.
-              const token = process.env.VALORA_BOT_PAT;
-              if (!token) {
-                console.log('::error::VALORA_BOT_PAT secret is missing. Cannot repost comment as user.');
-                return;
-              }
-
-              // Initialize a new octokit instance with the PAT
-              const github = require('@actions/github');
-              const octokit = github.getOctokit(token);
-
-              await octokit.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: `**Reposted from CodeRabbit for Jules:**\n\n${contentToRepost}`
-              });
-
-            } else {
-              console.log('Did not find "Fix all issues with AI agents" section in this CodeRabbit comment.');
-            }
+        run: node .github/scripts/repost-review-bot-comments.mjs

@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Scraping;
 using Valora.Infrastructure;
+using Valora.Infrastructure.Scraping;
 
 namespace Valora.UnitTests.Infrastructure;
 
@@ -70,5 +72,50 @@ public class DependencyInjectionTests
         Assert.Equal(3, options.MaxRetries);
         Assert.Equal("0 */6 * * *", options.CronExpression);
         Assert.Empty(options.SearchUrls);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersHttpFundaClient_ByDefault()
+    {
+        var configData = new Dictionary<string, string?>
+        {
+            { "DATABASE_URL", "Host=localhost;Database=valora" }
+        };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configData)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(configuration);
+        var provider = services.BuildServiceProvider();
+
+        var client = provider.GetRequiredService<IFundaApiClient>();
+
+        Assert.IsType<FundaApiClient>(client);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersPlaywrightClient_WhenEnabled()
+    {
+        var configData = new Dictionary<string, string?>
+        {
+            { "DATABASE_URL", "Host=localhost;Database=valora" },
+            { "SCRAPER_USE_PLAYWRIGHT", "true" }
+        };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configData)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(configuration);
+        var provider = services.BuildServiceProvider();
+
+        var client = provider.GetRequiredService<IFundaApiClient>();
+
+        Assert.IsType<PlaywrightFundaClient>(client);
     }
 }

@@ -12,6 +12,7 @@ import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_glass_container.dart';
+import 'gallery/full_screen_gallery.dart';
 
 class ListingDetailScreen extends StatelessWidget {
   const ListingDetailScreen({
@@ -218,6 +219,11 @@ class ListingDetailScreen extends StatelessWidget {
   }
 
   Widget _buildSliverAppBar(BuildContext context, bool isDark) {
+    // Use imageUrls if available, otherwise fallback to single imageUrl, otherwise empty list
+    final images = listing.imageUrls.isNotEmpty 
+        ? listing.imageUrls 
+        : (listing.imageUrl != null ? [listing.imageUrl!] : <String>[]);
+
     return SliverAppBar(
       expandedHeight: 400,
       pinned: true,
@@ -251,16 +257,38 @@ class ListingDetailScreen extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              listing.imageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: listing.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          _buildPlaceholder(isDark, isLoading: true),
-                      errorWidget: (context, url, error) =>
-                          _buildPlaceholder(isDark),
-                    )
-                  : _buildPlaceholder(isDark),
+              if (images.isNotEmpty)
+                PageView.builder(
+                  itemCount: images.length,
+                  onPageChanged: (index) {
+                    // Start pre-caching next image?
+                  },
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => FullScreenGallery(
+                              imageUrls: images,
+                              initialIndex: index,
+                            ),
+                          ),
+                        );
+                      },
+                      child: CachedNetworkImage(
+                        imageUrl: images[index],
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            _buildPlaceholder(isDark, isLoading: true),
+                        errorWidget: (context, url, error) =>
+                            _buildPlaceholder(isDark),
+                      ),
+                    );
+                  },
+                )
+              else
+                _buildPlaceholder(isDark),
+                
               // Gradient overlay for text readability
               DecoratedBox(
                 decoration: BoxDecoration(
@@ -277,6 +305,37 @@ class ListingDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Photo Counter
+              if (images.length > 1)
+                Positioned(
+                  bottom: ValoraSpacing.lg + 20, // Adjust for rounded corners of body
+                  right: ValoraSpacing.md,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.photo_library_rounded, size: 14, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${images.length} Photos',
+                          style: ValoraTypography.labelMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
