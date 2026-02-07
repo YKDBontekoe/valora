@@ -1,76 +1,35 @@
 import 'package:flutter/foundation.dart';
-import 'package:mockito/mockito.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/models/notification.dart';
 
-class MockNotificationService extends Mock implements NotificationService {
+class MockNotificationService extends ChangeNotifier implements NotificationService {
   @override
-  List<ValoraNotification> get notifications => super.noSuchMethod(
-        Invocation.getter(#notifications),
-        returnValue: <ValoraNotification>[],
-      );
+  List<ValoraNotification> get notifications => [];
 
   @override
-  int get unreadCount => super.noSuchMethod(
-        Invocation.getter(#unreadCount),
-        returnValue: 0,
-      );
+  int get unreadCount => 0;
 
   @override
-  bool get isLoading => super.noSuchMethod(
-        Invocation.getter(#isLoading),
-        returnValue: false,
-      );
+  bool get isLoading => false;
 
   @override
-  String? get error => super.noSuchMethod(
-        Invocation.getter(#error),
-        returnValue: null,
-      );
+  String? get error => null;
 
   @override
-  bool get hasListeners => super.noSuchMethod(
-        Invocation.getter(#hasListeners),
-        returnValue: false,
-      );
+  Future<void> fetchNotifications({bool refresh = false}) async {}
 
   @override
-  void addListener(VoidCallback? listener) {
-    super.noSuchMethod(Invocation.method(#addListener, [listener]));
-  }
+  Future<void> markAsRead(String id) async {}
 
   @override
-  void removeListener(VoidCallback? listener) {
-    super.noSuchMethod(Invocation.method(#removeListener, [listener]));
-  }
+  Future<void> markAllAsRead() async {}
 
   @override
-  void dispose() {
-    super.noSuchMethod(Invocation.method(#dispose, []));
-  }
+  void startPolling() {}
 
   @override
-  void notifyListeners() {
-    super.noSuchMethod(Invocation.method(#notifyListeners, []));
-  }
+  void stopPolling() {}
 
   @override
-  Future<void> fetchNotifications({bool refresh = false}) async {
-    return super.noSuchMethod(Invocation.method(#fetchNotifications, [], {#refresh: refresh}), returnValue: Future.value(null));
-  }
-
-  @override
-  Future<void> markAllAsRead() async {
-    return super.noSuchMethod(Invocation.method(#markAllAsRead, []), returnValue: Future.value(null));
-  }
-
-  @override
-  void startPolling() {
-    super.noSuchMethod(Invocation.method(#startPolling, []));
-  }
-
-  @override
-  void stopPolling() {
-    super.noSuchMethod(Invocation.method(#stopPolling, []));
-  }
+  void update(dynamic apiService) {}
 }

@@ -12,6 +12,9 @@ import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'mocks/mock_notification_service.dart';
+import 'package:valora_app/services/notification_service.dart';
+
 
 class MockAuthService extends AuthService {
   @override
@@ -51,6 +54,9 @@ void main() {
             ),
             ProxyProvider<AuthProvider, ApiService>(
               update: (context, auth, _) => ApiService(authToken: auth.token),
+            ),
+            ChangeNotifierProvider<NotificationService>.value(
+              value: MockNotificationService(),
             ),
           ],
           child: const ValoraApp(),
