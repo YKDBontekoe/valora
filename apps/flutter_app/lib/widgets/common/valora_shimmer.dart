@@ -19,23 +19,25 @@ class ValoraShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor =
-        isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100;
+    final baseColor = isDark
+        ? ValoraColors.surfaceVariantDark
+        : ValoraColors.neutral100;
 
     // flutter_animate's shimmer is easier to use
     return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: baseColor,
-        borderRadius: BorderRadius.circular(
-          borderRadius ?? ValoraSpacing.radiusMd,
-        ),
-      ),
-    ).animate(onPlay: (controller) => controller.repeat())
-     .shimmer(
-       duration: 1500.ms,
-       color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral50,
-     );
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(
+              borderRadius ?? ValoraSpacing.radiusMd,
+            ),
+          ),
+        )
+        .animate(onPlay: (controller) => controller.repeat())
+        .shimmer(
+          duration: 1500.ms,
+          color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral50,
+        );
   }
 }

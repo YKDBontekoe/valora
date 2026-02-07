@@ -39,7 +39,9 @@ void main() {
   );
 
   group('HomeHeader Tests', () {
-    testWidgets('Search bar focus changes decoration', (WidgetTester tester) async {
+    testWidgets('Search bar focus changes decoration', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -56,10 +58,12 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // Find the AnimatedContainer wrapping the TextField
-      find.descendant(
-        of: find.byType(HomeHeader),
-        matching: find.byType(AnimatedContainer),
-      ).first;
+      find
+          .descendant(
+            of: find.byType(HomeHeader),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first;
 
       // Tap to focus
       await tester.tap(find.byType(TextField));
@@ -72,16 +76,15 @@ void main() {
   });
 
   group('FeaturedListingCard Tests', () {
-    testWidgets('Renders with correct base elevation', (WidgetTester tester) async {
+    testWidgets('Renders with correct base elevation', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ChangeNotifierProvider<FavoritesProvider>.value(
               value: mockFavoritesProvider,
-              child: FeaturedListingCard(
-                listing: dummyListing,
-                onTap: () {},
-              ),
+              child: FeaturedListingCard(listing: dummyListing, onTap: () {}),
             ),
           ),
         ),
@@ -100,16 +103,15 @@ void main() {
   });
 
   group('NearbyListingCard Tests', () {
-    testWidgets('Renders with correct base elevation', (WidgetTester tester) async {
+    testWidgets('Renders with correct base elevation', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ChangeNotifierProvider<FavoritesProvider>.value(
               value: mockFavoritesProvider,
-              child: NearbyListingCard(
-                listing: dummyListing,
-                onTap: () {},
-              ),
+              child: NearbyListingCard(listing: dummyListing, onTap: () {}),
             ),
           ),
         ),

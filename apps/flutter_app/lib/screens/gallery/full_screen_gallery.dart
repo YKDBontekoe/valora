@@ -5,7 +5,6 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 
-
 class FullScreenGallery extends StatefulWidget {
   const FullScreenGallery({
     super.key,
@@ -33,7 +32,9 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
       return;
     }
 
-    final safeIndex = widget.initialIndex.clamp(0, widget.imageUrls.length - 1).toInt();
+    final safeIndex = widget.initialIndex
+        .clamp(0, widget.imageUrls.length - 1)
+        .toInt();
     _currentIndex = safeIndex;
     _pageController = PageController(initialPage: safeIndex);
   }
@@ -107,12 +108,16 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
                 // Close Button
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
-                
+
                 // Counter
                 Container(
                   padding: const EdgeInsets.symmetric(

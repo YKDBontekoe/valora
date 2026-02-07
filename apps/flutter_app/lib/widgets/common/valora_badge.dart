@@ -8,12 +8,7 @@ import '../../core/theme/valora_animations.dart';
 
 /// Badge component for status indicators.
 class ValoraBadge extends StatelessWidget {
-  const ValoraBadge({
-    super.key,
-    required this.label,
-    this.color,
-    this.icon,
-  });
+  const ValoraBadge({super.key, required this.label, this.color, this.icon});
 
   /// Badge text
   final String label;

@@ -16,7 +16,9 @@ import 'package:valora_app/screens/listing_detail_screen.dart';
 import 'listing_detail_screen_test.mocks.dart';
 
 // Mock UrlLauncherPlatform
-class MockUrlLauncher extends Fake with MockPlatformInterfaceMixin implements UrlLauncherPlatform {
+class MockUrlLauncher extends Fake
+    with MockPlatformInterfaceMixin
+    implements UrlLauncherPlatform {
   @override
   Future<bool> launchUrl(String url, LaunchOptions options) async {
     if (url.contains('fail')) {
@@ -55,11 +57,73 @@ class _MockHttpClientRequest extends Mock implements HttpClientRequest {
 
 class _MockHttpClientResponse extends Mock implements HttpClientResponse {
   final List<int> _imageBytes = [
-    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-    0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
-    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
-    0x42, 0x60, 0x82
+    0x89,
+    0x50,
+    0x4E,
+    0x47,
+    0x0D,
+    0x0A,
+    0x1A,
+    0x0A,
+    0x00,
+    0x00,
+    0x00,
+    0x0D,
+    0x49,
+    0x48,
+    0x44,
+    0x52,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x08,
+    0x06,
+    0x00,
+    0x00,
+    0x00,
+    0x1F,
+    0x15,
+    0xC4,
+    0x89,
+    0x00,
+    0x00,
+    0x00,
+    0x0A,
+    0x49,
+    0x44,
+    0x41,
+    0x54,
+    0x78,
+    0x9C,
+    0x63,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x05,
+    0x00,
+    0x01,
+    0x0D,
+    0x0A,
+    0x2D,
+    0xB4,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x49,
+    0x45,
+    0x4E,
+    0x44,
+    0xAE,
+    0x42,
+    0x60,
+    0x82,
   ];
 
   @override
@@ -69,11 +133,16 @@ class _MockHttpClientResponse extends Mock implements HttpClientResponse {
   int get contentLength => _imageBytes.length;
 
   @override
-  HttpClientResponseCompressionState get compressionState => HttpClientResponseCompressionState.notCompressed;
+  HttpClientResponseCompressionState get compressionState =>
+      HttpClientResponseCompressionState.notCompressed;
 
   @override
-  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+  StreamSubscription<List<int>> listen(
+    void Function(List<int> event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
     onData?.call(_imageBytes);
     onDone?.call();
     return Stream<List<int>>.fromIterable([_imageBytes]).listen(null);
@@ -93,45 +162,53 @@ void main() {
   Widget createWidgetUnderTest(Listing listing) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<FavoritesProvider>.value(value: mockFavoritesProvider),
+        ChangeNotifierProvider<FavoritesProvider>.value(
+          value: mockFavoritesProvider,
+        ),
       ],
-      child: MaterialApp(
-        home: ListingDetailScreen(listing: listing),
-      ),
+      child: MaterialApp(home: ListingDetailScreen(listing: listing)),
     );
   }
 
-  testWidgets('ListingDetailScreen shows "Contact Broker" button when phone is present', (WidgetTester tester) async {
+  testWidgets(
+    'ListingDetailScreen shows "Contact Broker" button when phone is present',
+    (WidgetTester tester) async {
+      final listing = Listing(
+        id: '1',
+        fundaId: '123',
+        address: 'Test Address',
+        brokerPhone: '+1234567890',
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest(listing));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Contact Broker'), findsOneWidget);
+      expect(find.byIcon(Icons.phone_rounded), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'ListingDetailScreen hides "Contact Broker" button when phone is missing',
+    (WidgetTester tester) async {
+      final listing = Listing(
+        id: '1',
+        fundaId: '123',
+        address: 'Test Address',
+        brokerPhone: null,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest(listing));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Contact Broker'), findsNothing);
+    },
+  );
+
+  testWidgets('ListingDetailScreen shows broker section if logo present', (
+    WidgetTester tester,
+  ) async {
     final listing = Listing(
-      id: '1',
-      fundaId: '123',
-      address: 'Test Address',
-      brokerPhone: '+1234567890',
-    );
-
-    await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Contact Broker'), findsOneWidget);
-    expect(find.byIcon(Icons.phone_rounded), findsOneWidget);
-  });
-
-  testWidgets('ListingDetailScreen hides "Contact Broker" button when phone is missing', (WidgetTester tester) async {
-    final listing = Listing(
-      id: '1',
-      fundaId: '123',
-      address: 'Test Address',
-      brokerPhone: null,
-    );
-
-    await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Contact Broker'), findsNothing);
-  });
-
-  testWidgets('ListingDetailScreen shows broker section if logo present', (WidgetTester tester) async {
-     final listing = Listing(
       id: '1',
       fundaId: '123',
       address: 'Test Address',
@@ -184,7 +261,9 @@ void main() {
     await tester.tap(find.text('View on Funda'));
     // Pump to start snackbar animation, but don't settle (which might wait for it to close)
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500)); // Wait a bit for entrance
+    await tester.pump(
+      const Duration(milliseconds: 500),
+    ); // Wait a bit for entrance
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Could not open'), findsOneWidget);

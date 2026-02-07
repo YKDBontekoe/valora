@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/config/app_config.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/favorites_provider.dart';
@@ -10,6 +11,7 @@ import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
+import 'services/crash_reporting_service.dart';
 import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
@@ -31,7 +33,11 @@ Future<void> main() async {
       if (kDebugMode) {
         debugPrint('Flutter Error: ${details.exception}');
       }
-      // TODO: Send to crash reporting service
+      CrashReportingService.captureException(
+        details.exception,
+        stackTrace: details.stack,
+        context: const <String, dynamic>{'source': 'flutter_error'},
+      );
     };
 
     // Catch asynchronous errors
@@ -39,24 +45,27 @@ Future<void> main() async {
       if (kDebugMode) {
         debugPrint('Async Error: $error');
       }
-      // TODO: Send to crash reporting service
+      CrashReportingService.captureException(
+        error,
+        stackTrace: stack,
+        context: const <String, dynamic>{'source': 'async_error'},
+      );
       return true; // Prevent app from crashing
     };
+
+    await CrashReportingService.initialize();
 
     runApp(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider<ThemeProvider>(
-            create: (_) => ThemeProvider(),
-          ),
+          ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),
-          Provider<AuthService>(
-            create: (_) => AuthService(),
-          ),
+          Provider<AuthService>(create: (_) => AuthService()),
           ChangeNotifierProxyProvider<AuthService, AuthProvider>(
-            create: (context) => AuthProvider(authService: context.read<AuthService>()),
+            create: (context) =>
+                AuthProvider(authService: context.read<AuthService>()),
             update: (context, authService, previous) =>
                 previous ?? AuthProvider(authService: authService),
           ),
@@ -83,7 +92,11 @@ class InitializationErrorApp extends StatelessWidget {
   final Object error;
   final StackTrace? stackTrace;
 
-  const InitializationErrorApp({super.key, required this.error, this.stackTrace});
+  const InitializationErrorApp({
+    super.key,
+    required this.error,
+    this.stackTrace,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -145,10 +158,50 @@ class ValoraApp extends StatelessWidget {
             ErrorWidget.builder = (FlutterErrorDetails details) {
               return GlobalErrorWidget(details: details);
             };
-            return child!;
+            if (!AppConfig.isUsingFallbackApiUrl) {
+              return child!;
+            }
+
+            return Stack(
+              children: [
+                child!,
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: _ConfigWarningBanner(),
+                ),
+              ],
+            );
           },
         );
       },
+    );
+  }
+}
+
+class _ConfigWarningBanner extends StatelessWidget {
+  const _ConfigWarningBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    return SafeArea(
+      bottom: false,
+      child: Material(
+        color: colorScheme.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            'API_URL is not configured. Using fallback: ${AppConfig.apiUrl}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colorScheme.onErrorContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

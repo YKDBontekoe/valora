@@ -14,9 +14,7 @@ class AuthWrapper extends StatelessWidget {
         // If still loading after StartupScreen, show loader
         if (auth.isLoading) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
         return auth.isAuthenticated ? const HomeScreen() : const LoginScreen();

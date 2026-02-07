@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/widgets/home_components.dart';
 
 void main() {
-  testWidgets('HomeBottomNavBar renders and handles taps', (WidgetTester tester) async {
+  testWidgets('HomeBottomNavBar renders and handles taps', (
+    WidgetTester tester,
+  ) async {
     int selectedIndex = 0;
 
     await tester.pumpWidget(
@@ -13,7 +15,7 @@ void main() {
             builder: (context, setState) {
               return Stack(
                 children: [
-                   HomeBottomNavBar(
+                  HomeBottomNavBar(
                     currentIndex: selectedIndex,
                     onTap: (index) {
                       setState(() {

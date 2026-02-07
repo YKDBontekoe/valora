@@ -13,56 +13,56 @@ abstract final class ValoraTheme {
   // ============================================
 
   static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: _lightColorScheme,
-        textTheme: _textTheme,
-        appBarTheme: _lightAppBarTheme,
-        cardTheme: _lightCardTheme,
-        elevatedButtonTheme: _elevatedButtonTheme,
-        outlinedButtonTheme: _outlinedButtonTheme,
-        textButtonTheme: _textButtonTheme,
-        floatingActionButtonTheme: _lightFabTheme,
-        inputDecorationTheme: _lightInputTheme,
-        iconTheme: _lightIconTheme,
-        dividerTheme: _lightDividerTheme,
-        scaffoldBackgroundColor: ValoraColors.backgroundLight,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: ZoomPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-      );
+    useMaterial3: true,
+    brightness: Brightness.light,
+    colorScheme: _lightColorScheme,
+    textTheme: _textTheme,
+    appBarTheme: _lightAppBarTheme,
+    cardTheme: _lightCardTheme,
+    elevatedButtonTheme: _elevatedButtonTheme,
+    outlinedButtonTheme: _outlinedButtonTheme,
+    textButtonTheme: _textButtonTheme,
+    floatingActionButtonTheme: _lightFabTheme,
+    inputDecorationTheme: _lightInputTheme,
+    iconTheme: _lightIconTheme,
+    dividerTheme: _lightDividerTheme,
+    scaffoldBackgroundColor: ValoraColors.backgroundLight,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      },
+    ),
+  );
 
   // ============================================
   // DARK THEME
   // ============================================
 
   static ThemeData get dark => ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: _darkColorScheme,
-        textTheme: _textTheme,
-        appBarTheme: _darkAppBarTheme,
-        cardTheme: _darkCardTheme,
-        elevatedButtonTheme: _elevatedButtonTheme,
-        outlinedButtonTheme: _outlinedButtonTheme,
-        textButtonTheme: _textButtonTheme,
-        floatingActionButtonTheme: _darkFabTheme,
-        inputDecorationTheme: _darkInputTheme,
-        iconTheme: _darkIconTheme,
-        dividerTheme: _darkDividerTheme,
-        scaffoldBackgroundColor: ValoraColors.backgroundDark,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: ZoomPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-      );
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    colorScheme: _darkColorScheme,
+    textTheme: _textTheme,
+    appBarTheme: _darkAppBarTheme,
+    cardTheme: _darkCardTheme,
+    elevatedButtonTheme: _elevatedButtonTheme,
+    outlinedButtonTheme: _outlinedButtonTheme,
+    textButtonTheme: _textButtonTheme,
+    floatingActionButtonTheme: _darkFabTheme,
+    inputDecorationTheme: _darkInputTheme,
+    iconTheme: _darkIconTheme,
+    dividerTheme: _darkDividerTheme,
+    scaffoldBackgroundColor: ValoraColors.backgroundDark,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      },
+    ),
+  );
 
   // ============================================
   // COLOR SCHEMES
@@ -144,9 +144,11 @@ abstract final class ValoraTheme {
 
   static const AppBarTheme _lightAppBarTheme = AppBarTheme(
     elevation: 0,
-    scrolledUnderElevation: 0, // Disable color change on scroll for cleaner look
+    scrolledUnderElevation:
+        0, // Disable color change on scroll for cleaner look
     centerTitle: false,
-    backgroundColor: Colors.transparent, // Transparent by default for glass effect
+    backgroundColor:
+        Colors.transparent, // Transparent by default for glass effect
     foregroundColor: ValoraColors.onSurfaceLight,
     surfaceTintColor: Colors.transparent,
     titleTextStyle: ValoraTypography.titleLarge,
@@ -169,28 +171,28 @@ abstract final class ValoraTheme {
   // ============================================
 
   static CardThemeData get _lightCardTheme => CardThemeData(
-        elevation: 0, // Minimal elevation
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-          side: const BorderSide(color: ValoraColors.neutral200, width: 1),
-        ),
-        color: ValoraColors.surfaceLight,
-        surfaceTintColor: Colors.transparent,
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-      );
+    elevation: 0, // Minimal elevation
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+      side: const BorderSide(color: ValoraColors.neutral200, width: 1),
+    ),
+    color: ValoraColors.surfaceLight,
+    surfaceTintColor: Colors.transparent,
+    margin: EdgeInsets.zero,
+    clipBehavior: Clip.antiAlias,
+  );
 
   static CardThemeData get _darkCardTheme => CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-          side: const BorderSide(color: ValoraColors.neutral800, width: 1),
-        ),
-        color: ValoraColors.surfaceDark,
-        surfaceTintColor: Colors.transparent,
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-      );
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+      side: const BorderSide(color: ValoraColors.neutral800, width: 1),
+    ),
+    color: ValoraColors.surfaceDark,
+    surfaceTintColor: Colors.transparent,
+    margin: EdgeInsets.zero,
+    clipBehavior: Clip.antiAlias,
+  );
 
   // ============================================
   // BUTTON THEMES
@@ -205,7 +207,9 @@ abstract final class ValoraTheme {
             vertical: ValoraSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull), // More rounded
+            borderRadius: BorderRadius.circular(
+              ValoraSpacing.radiusFull,
+            ), // More rounded
           ),
           textStyle: ValoraTypography.labelLarge,
           minimumSize: const Size(0, ValoraSpacing.buttonHeightMd),
@@ -228,17 +232,17 @@ abstract final class ValoraTheme {
       );
 
   static TextButtonThemeData get _textButtonTheme => TextButtonThemeData(
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(
-            horizontal: ValoraSpacing.md,
-            vertical: ValoraSpacing.sm,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          ),
-          textStyle: ValoraTypography.labelLarge,
-        ),
-      );
+    style: TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ValoraSpacing.md,
+        vertical: ValoraSpacing.sm,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      ),
+      textStyle: ValoraTypography.labelLarge,
+    ),
+  );
 
   // ============================================
   // FAB THEME
@@ -269,73 +273,72 @@ abstract final class ValoraTheme {
   // ============================================
 
   static InputDecorationTheme get _lightInputTheme => InputDecorationTheme(
-        filled: true,
-        fillColor: ValoraColors.glassWhite, // Glass effect base
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ValoraSpacing.lg, // More breathing room
-          vertical: ValoraSpacing.md,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull), // Pill shape
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide: const BorderSide(color: ValoraColors.neutral200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide: const BorderSide(color: ValoraColors.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide: const BorderSide(color: ValoraColors.error, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide: const BorderSide(color: ValoraColors.error, width: 2),
-        ),
-        hintStyle: ValoraTypography.bodyMedium.copyWith(
-          color: ValoraColors.neutral400,
-        ),
-        labelStyle: ValoraTypography.bodyMedium,
-      );
+    filled: true,
+    fillColor: ValoraColors.glassWhite, // Glass effect base
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: ValoraSpacing.lg, // More breathing room
+      vertical: ValoraSpacing.md,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(
+        ValoraSpacing.radiusFull,
+      ), // Pill shape
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.neutral200),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.primary, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.error, width: 1),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.error, width: 2),
+    ),
+    hintStyle: ValoraTypography.bodyMedium.copyWith(
+      color: ValoraColors.neutral400,
+    ),
+    labelStyle: ValoraTypography.bodyMedium,
+  );
 
   static InputDecorationTheme get _darkInputTheme => InputDecorationTheme(
-        filled: true,
-        fillColor: ValoraColors.glassBlack, // Glass effect base
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ValoraSpacing.lg,
-          vertical: ValoraSpacing.md,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide: const BorderSide(color: ValoraColors.neutral700),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide:
-              const BorderSide(color: ValoraColors.primaryLight, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide:
-              const BorderSide(color: ValoraColors.errorLight, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-          borderSide:
-              const BorderSide(color: ValoraColors.errorLight, width: 2),
-        ),
-        hintStyle: ValoraTypography.bodyMedium.copyWith(
-          color: ValoraColors.neutral500,
-        ),
-        labelStyle: ValoraTypography.bodyMedium,
-      );
+    filled: true,
+    fillColor: ValoraColors.glassBlack, // Glass effect base
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: ValoraSpacing.lg,
+      vertical: ValoraSpacing.md,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.neutral700),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.primaryLight, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.errorLight, width: 1),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+      borderSide: const BorderSide(color: ValoraColors.errorLight, width: 2),
+    ),
+    hintStyle: ValoraTypography.bodyMedium.copyWith(
+      color: ValoraColors.neutral500,
+    ),
+    labelStyle: ValoraTypography.bodyMedium,
+  );
 
   // ============================================
   // ICON THEME

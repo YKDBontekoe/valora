@@ -50,10 +50,8 @@ class _ValoraButtonState extends State<ValoraButton> {
       duration: ValoraAnimations.normal,
       switchInCurve: ValoraAnimations.emphatic,
       switchOutCurve: ValoraAnimations.acceleration,
-      transitionBuilder: (child, animation) => ScaleTransition(
-        scale: animation,
-        child: child,
-      ),
+      transitionBuilder: (child, animation) =>
+          ScaleTransition(scale: animation, child: child),
       child: widget.isLoading
           ? SizedBox(
               key: const ValueKey('loading'),
@@ -70,7 +68,9 @@ class _ValoraButtonState extends State<ValoraButton> {
             )
           : Row(
               key: const ValueKey('content'),
-              mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisSize: widget.isFullWidth
+                  ? MainAxisSize.max
+                  : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (widget.icon != null) ...[
@@ -97,22 +97,13 @@ class _ValoraButtonState extends State<ValoraButton> {
         );
         break;
       case ValoraButtonVariant.secondary:
-        button = ElevatedButton(
-          onPressed: effectiveOnPressed,
-          child: child,
-        );
+        button = ElevatedButton(onPressed: effectiveOnPressed, child: child);
         break;
       case ValoraButtonVariant.outline:
-        button = OutlinedButton(
-          onPressed: effectiveOnPressed,
-          child: child,
-        );
+        button = OutlinedButton(onPressed: effectiveOnPressed, child: child);
         break;
       case ValoraButtonVariant.ghost:
-        button = TextButton(
-          onPressed: effectiveOnPressed,
-          child: child,
-        );
+        button = TextButton(onPressed: effectiveOnPressed, child: child);
         break;
     }
 

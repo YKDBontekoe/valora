@@ -44,16 +44,21 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
   void initState() {
     super.initState();
     _minPriceController = TextEditingController(
-        text: widget.initialMinPrice?.toStringAsFixed(0) ?? '');
+      text: widget.initialMinPrice?.toStringAsFixed(0) ?? '',
+    );
     _maxPriceController = TextEditingController(
-        text: widget.initialMaxPrice?.toStringAsFixed(0) ?? '');
+      text: widget.initialMaxPrice?.toStringAsFixed(0) ?? '',
+    );
     _cityController = TextEditingController(text: widget.initialCity ?? '');
     _minBedroomsController = TextEditingController(
-        text: widget.initialMinBedrooms?.toString() ?? '');
+      text: widget.initialMinBedrooms?.toString() ?? '',
+    );
     _minLivingAreaController = TextEditingController(
-        text: widget.initialMinLivingArea?.toString() ?? '');
+      text: widget.initialMinLivingArea?.toString() ?? '',
+    );
     _maxLivingAreaController = TextEditingController(
-        text: widget.initialMaxLivingArea?.toString() ?? '');
+      text: widget.initialMaxLivingArea?.toString() ?? '',
+    );
     _sortBy = widget.initialSortBy ?? 'date';
     _sortOrder = widget.initialSortOrder ?? 'desc';
   }
@@ -72,22 +77,29 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
   void _apply() {
     final minPrice = double.tryParse(_minPriceController.text);
     final maxPrice = double.tryParse(_maxPriceController.text);
-    final city =
-        _cityController.text.trim().isEmpty ? null : _cityController.text.trim();
+    final city = _cityController.text.trim().isEmpty
+        ? null
+        : _cityController.text.trim();
     final minBedrooms = int.tryParse(_minBedroomsController.text);
     final minLivingArea = int.tryParse(_minLivingAreaController.text);
     final maxLivingArea = int.tryParse(_maxLivingAreaController.text);
 
     if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Min price cannot be greater than Max price')),
+        const SnackBar(
+          content: Text('Min price cannot be greater than Max price'),
+        ),
       );
       return;
     }
 
-    if (minLivingArea != null && maxLivingArea != null && minLivingArea > maxLivingArea) {
+    if (minLivingArea != null &&
+        maxLivingArea != null &&
+        minLivingArea > maxLivingArea) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Min area cannot be greater than Max area')),
+        const SnackBar(
+          content: Text('Min area cannot be greater than Max area'),
+        ),
       );
       return;
     }

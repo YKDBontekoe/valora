@@ -36,10 +36,7 @@ class GlobalErrorWidget extends StatelessWidget {
               const SizedBox(height: 12),
               const Text(
                 'Please restart the application. If the problem persists, contact support.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -49,7 +46,9 @@ class GlobalErrorWidget extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const StartupScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const StartupScreen(),
+                        ),
                         (route) => false,
                       );
                     },
@@ -58,7 +57,10 @@ class GlobalErrorWidget extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -66,16 +68,22 @@ class GlobalErrorWidget extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () async {
                         try {
-                          await Clipboard.setData(ClipboardData(text: details.exception.toString()));
+                          await Clipboard.setData(
+                            ClipboardData(text: details.exception.toString()),
+                          );
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Error copied to clipboard')),
+                              const SnackBar(
+                                content: Text('Error copied to clipboard'),
+                              ),
                             );
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Failed to copy error')),
+                              const SnackBar(
+                                content: Text('Failed to copy error'),
+                              ),
                             );
                           }
                         }
@@ -85,14 +93,17 @@ class GlobalErrorWidget extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.redAccent,
                         side: const BorderSide(color: Colors.redAccent),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 32),
               if (kDebugMode) ...[
-                 Container(
+                Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -104,11 +115,15 @@ class GlobalErrorWidget extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: Text(
                       details.exception.toString(),
-                      style: const TextStyle(fontFamily: 'Courier', fontSize: 12, color: Colors.red),
+                      style: const TextStyle(
+                        fontFamily: 'Courier',
+                        fontSize: 12,
+                        color: Colors.red,
+                      ),
                     ),
                   ),
-                 ),
-                 const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
               ],
             ],
           ),

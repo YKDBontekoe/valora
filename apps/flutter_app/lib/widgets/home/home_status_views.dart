@@ -24,38 +24,39 @@ class HomeLoadingSliver extends StatelessWidget {
             SizedBox(
               height: 300,
               child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 2,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const ValoraShimmer(
-                            width: 260,
-                            height: 180,
-                            borderRadius: ValoraSpacing.radiusXl,
-                          ),
-                          const SizedBox(height: ValoraSpacing.md),
-                          const ValoraShimmer(width: 120, height: 20),
-                          const SizedBox(height: ValoraSpacing.xs),
-                          const ValoraShimmer(width: 180, height: 16),
-                          const SizedBox(height: ValoraSpacing.sm),
-                          Row(
-                            children: const [
-                              ValoraShimmer(width: 40, height: 16),
-                              SizedBox(width: 8),
-                              ValoraShimmer(width: 40, height: 16),
-                              SizedBox(width: 8),
-                              ValoraShimmer(width: 60, height: 16),
-                            ],
-                          )
-                        ],
-                      ),
-                    );
-                  }),
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 2,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const ValoraShimmer(
+                          width: 260,
+                          height: 180,
+                          borderRadius: ValoraSpacing.radiusXl,
+                        ),
+                        const SizedBox(height: ValoraSpacing.md),
+                        const ValoraShimmer(width: 120, height: 20),
+                        const SizedBox(height: ValoraSpacing.xs),
+                        const ValoraShimmer(width: 180, height: 16),
+                        const SizedBox(height: ValoraSpacing.sm),
+                        Row(
+                          children: const [
+                            ValoraShimmer(width: 40, height: 16),
+                            SizedBox(width: 8),
+                            ValoraShimmer(width: 40, height: 16),
+                            SizedBox(width: 8),
+                            ValoraShimmer(width: 60, height: 16),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: ValoraSpacing.xl),
 
@@ -95,15 +96,15 @@ class HomeLoadingSliver extends StatelessWidget {
                                 SizedBox(width: 8),
                                 ValoraShimmer(width: 50, height: 12),
                               ],
-                            )
+                            ),
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 );
               },
-            )
+            ),
           ],
         ),
       ),
@@ -141,17 +142,18 @@ class HomeErrorSliver extends StatelessWidget {
   final Object error;
   final VoidCallback onRetry;
 
-  const HomeErrorSliver({super.key, required this.error, required this.onRetry});
+  const HomeErrorSliver({
+    super.key,
+    required this.error,
+    required this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SliverFillRemaining(
       hasScrollBody: false,
       child: Center(
-        child: ValoraErrorState(
-          error: error,
-          onRetry: onRetry,
-        ),
+        child: ValoraErrorState(error: error, onRetry: onRetry),
       ),
     );
   }

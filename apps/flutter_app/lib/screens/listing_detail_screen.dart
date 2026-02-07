@@ -15,28 +15,14 @@ import '../widgets/valora_glass_container.dart';
 import 'gallery/full_screen_gallery.dart';
 
 class ListingDetailScreen extends StatelessWidget {
-  const ListingDetailScreen({
-    super.key,
-    required this.listing,
-  });
+  const ListingDetailScreen({super.key, required this.listing});
 
   final Listing listing;
 
   Future<void> _openExternalLink(BuildContext context) async {
     final url = listing.url;
     if (url != null) {
-      final uri = Uri.parse(url);
-      try {
-        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-          if (context.mounted) {
-            _showErrorSnackBar(context, 'Could not open $url');
-          }
-        }
-      } catch (e) {
-        if (context.mounted) {
-          _showErrorSnackBar(context, 'Error launching URL: $e');
-        }
-      }
+      await _openUrl(context, url);
     }
   }
 
@@ -59,7 +45,9 @@ class ListingDetailScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context, true),
             ),
           ],
-          child: Text('Do you want to call ${listing.agentName ?? 'the broker'} at $phone?'),
+          child: Text(
+            'Do you want to call ${listing.agentName ?? 'the broker'} at $phone?',
+          ),
         ),
       );
 
@@ -68,7 +56,7 @@ class ListingDetailScreen extends StatelessWidget {
       final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^0-9+]'), '')}');
       try {
         if (!await launchUrl(uri)) {
-           if (context.mounted) {
+          if (context.mounted) {
             _showErrorSnackBar(context, 'Could not launch dialer');
           }
         }
@@ -82,11 +70,56 @@ class ListingDetailScreen extends StatelessWidget {
 
   void _showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: ValoraColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: ValoraColors.error),
     );
+  }
+
+  Future<void> _openMap(BuildContext context) async {
+    final Uri uri;
+    if (listing.latitude != null && listing.longitude != null) {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}',
+      );
+    } else {
+      final String query = '${listing.address} ${listing.city ?? ''}'.trim();
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
+      );
+    }
+
+    await _openUrl(context, uri.toString());
+  }
+
+  Future<void> _openVirtualTour(BuildContext context) async {
+    if (listing.virtualTourUrl != null) {
+      await _openUrl(context, listing.virtualTourUrl!);
+    }
+  }
+
+  Future<void> _openVideo(BuildContext context) async {
+    if (listing.videoUrl != null) {
+      await _openUrl(context, listing.videoUrl!);
+    }
+  }
+
+  Future<void> _openFirstFloorPlan(BuildContext context) async {
+    if (listing.floorPlanUrls.isNotEmpty) {
+      await _openUrl(context, listing.floorPlanUrls.first);
+    }
+  }
+
+  Future<void> _openUrl(BuildContext context, String url) async {
+    final Uri uri = Uri.parse(url);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
+          context.mounted) {
+        _showErrorSnackBar(context, 'Could not open $url');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showErrorSnackBar(context, 'Error launching URL: $e');
+      }
+    }
   }
 
   @override
@@ -107,107 +140,184 @@ class ListingDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(colorScheme),
-                  const SizedBox(height: ValoraSpacing.lg),
-                  _buildAddressSection(colorScheme),
-                  const SizedBox(height: ValoraSpacing.lg),
-                  Divider(color: colorScheme.outlineVariant),
-                  const SizedBox(height: ValoraSpacing.lg),
-                  _buildMainSpecsGrid(context, colorScheme),
-                  const SizedBox(height: ValoraSpacing.xl),
-                  
-                  // Description
-                  if (listing.description != null) ...[
-                     Text(
-                      'About this home',
-                      style: ValoraTypography.titleLarge.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: ValoraSpacing.sm),
-                    Text(
-                      listing.description!,
-                      style: ValoraTypography.bodyMedium.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: ValoraSpacing.xl),
-                  ],
+                children:
+                    [
+                          _buildHeader(colorScheme),
+                          const SizedBox(height: ValoraSpacing.lg),
+                          _buildAddressSection(colorScheme),
+                          const SizedBox(height: ValoraSpacing.lg),
+                          Divider(color: colorScheme.outlineVariant),
+                          const SizedBox(height: ValoraSpacing.lg),
+                          _buildMainSpecsGrid(context, colorScheme),
+                          const SizedBox(height: ValoraSpacing.xl),
 
-                  // Key Features Grid
-                  _buildKeyFeaturesGrid(context, colorScheme),
-                  const SizedBox(height: ValoraSpacing.xl),
-
-                  // Technical Details
-                  _buildTechnicalDetails(context, colorScheme),
-                  const SizedBox(height: ValoraSpacing.xl),
-
-                  // Features List
-                  if (listing.features.isNotEmpty) ...[
-                    Text(
-                      'Features',
-                      style: ValoraTypography.titleLarge.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: ValoraSpacing.md),
-                    ...listing.features.entries.map((e) => Padding(
-                      padding: const EdgeInsets.only(bottom: ValoraSpacing.sm),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.check_circle_outline_rounded, size: 20, color: colorScheme.primary),
-                          const SizedBox(width: ValoraSpacing.sm),
-                          Expanded(
-                            child: RichText(
-                              text: TextSpan(
-                                style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurface),
-                                children: [
-                                  TextSpan(text: '${e.key}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  TextSpan(text: e.value),
-                                ],
+                          // Description
+                          if (listing.description != null) ...[
+                            Text(
+                              'About this home',
+                              style: ValoraTypography.titleLarge.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    )),
-                    const SizedBox(height: ValoraSpacing.xl),
-                  ],
-                  
-                  // Broker Section
-                  if (listing.brokerLogoUrl != null || listing.brokerPhone != null) ...[
-                    _buildBrokerSection(colorScheme),
-                    const SizedBox(height: ValoraSpacing.md),
-                  ],
+                            const SizedBox(height: ValoraSpacing.sm),
+                            Text(
+                              listing.description!,
+                              style: ValoraTypography.bodyMedium.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: ValoraSpacing.xl),
+                          ],
 
-                  if (listing.url != null) ...[
-                    const SizedBox(height: ValoraSpacing.sm),
-                    ValoraButton(
-                      label: 'View on Funda',
-                      icon: Icons.open_in_new_rounded,
-                      isFullWidth: true,
-                      onPressed: () => _openExternalLink(context),
-                    ),
-                  ],
+                          // Key Features Grid
+                          _buildKeyFeaturesGrid(context, colorScheme),
+                          const SizedBox(height: ValoraSpacing.xl),
 
-                  if (listing.brokerPhone != null) ...[
-                    const SizedBox(height: ValoraSpacing.md),
-                    ValoraButton(
-                      label: 'Contact Broker',
-                      icon: Icons.phone_rounded,
-                      variant: ValoraButtonVariant.outline,
-                      isFullWidth: true,
-                      onPressed: () => _contactBroker(context),
-                    ),
-                  ],
+                          // Technical Details
+                          _buildTechnicalDetails(context, colorScheme),
+                          const SizedBox(height: ValoraSpacing.xl),
 
-                  const SizedBox(height: ValoraSpacing.xl),
-                ].animate(interval: 50.ms).fade(duration: ValoraAnimations.slow).slideY(begin: 0.1, end: 0, curve: ValoraAnimations.deceleration),
+                          if (listing.virtualTourUrl != null ||
+                              listing.videoUrl != null ||
+                              listing.floorPlanUrls.isNotEmpty ||
+                              listing.latitude != null ||
+                              listing.longitude != null) ...[
+                            Text(
+                              'Explore',
+                              style: ValoraTypography.titleLarge.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: ValoraSpacing.md),
+                            Wrap(
+                              spacing: ValoraSpacing.sm,
+                              runSpacing: ValoraSpacing.sm,
+                              children: [
+                                if (listing.latitude != null ||
+                                    listing.longitude != null)
+                                  ValoraButton(
+                                    label: 'Open Map',
+                                    icon: Icons.map_rounded,
+                                    variant: ValoraButtonVariant.secondary,
+                                    onPressed: () => _openMap(context),
+                                  ),
+                                if (listing.virtualTourUrl != null)
+                                  ValoraButton(
+                                    label: 'Virtual Tour',
+                                    icon: Icons.view_in_ar_rounded,
+                                    variant: ValoraButtonVariant.secondary,
+                                    onPressed: () => _openVirtualTour(context),
+                                  ),
+                                if (listing.videoUrl != null)
+                                  ValoraButton(
+                                    label: 'Watch Video',
+                                    icon: Icons.play_circle_outline_rounded,
+                                    variant: ValoraButtonVariant.secondary,
+                                    onPressed: () => _openVideo(context),
+                                  ),
+                                if (listing.floorPlanUrls.isNotEmpty)
+                                  ValoraButton(
+                                    label: 'Floorplan',
+                                    icon: Icons.map_outlined,
+                                    variant: ValoraButtonVariant.secondary,
+                                    onPressed: () =>
+                                        _openFirstFloorPlan(context),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: ValoraSpacing.xl),
+                          ],
+
+                          // Features List
+                          if (listing.features.isNotEmpty) ...[
+                            Text(
+                              'Features',
+                              style: ValoraTypography.titleLarge.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: ValoraSpacing.md),
+                            ...listing.features.entries.map(
+                              (e) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: ValoraSpacing.sm,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_outline_rounded,
+                                      size: 20,
+                                      color: colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: ValoraSpacing.sm),
+                                    Expanded(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: ValoraTypography.bodyMedium
+                                              .copyWith(
+                                                color: colorScheme.onSurface,
+                                              ),
+                                          children: [
+                                            TextSpan(
+                                              text: '${e.key}: ',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            TextSpan(text: e.value),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: ValoraSpacing.xl),
+                          ],
+
+                          // Broker Section
+                          if (listing.brokerLogoUrl != null ||
+                              listing.brokerPhone != null) ...[
+                            _buildBrokerSection(colorScheme),
+                            const SizedBox(height: ValoraSpacing.md),
+                          ],
+
+                          if (listing.url != null) ...[
+                            const SizedBox(height: ValoraSpacing.sm),
+                            ValoraButton(
+                              label: 'View on Funda',
+                              icon: Icons.open_in_new_rounded,
+                              isFullWidth: true,
+                              onPressed: () => _openExternalLink(context),
+                            ),
+                          ],
+
+                          if (listing.brokerPhone != null) ...[
+                            const SizedBox(height: ValoraSpacing.md),
+                            ValoraButton(
+                              label: 'Contact Broker',
+                              icon: Icons.phone_rounded,
+                              variant: ValoraButtonVariant.outline,
+                              isFullWidth: true,
+                              onPressed: () => _contactBroker(context),
+                            ),
+                          ],
+
+                          const SizedBox(height: ValoraSpacing.xl),
+                        ]
+                        .animate(interval: 50.ms)
+                        .fade(duration: ValoraAnimations.slow)
+                        .slideY(
+                          begin: 0.1,
+                          end: 0,
+                          curve: ValoraAnimations.deceleration,
+                        ),
               ),
             ),
           ),
@@ -220,8 +330,8 @@ class ListingDetailScreen extends StatelessWidget {
 
   Widget _buildSliverAppBar(BuildContext context, bool isDark) {
     // Use imageUrls if available, otherwise fallback to single imageUrl, otherwise empty list
-    final images = listing.imageUrls.isNotEmpty 
-        ? listing.imageUrls 
+    final images = listing.imageUrls.isNotEmpty
+        ? listing.imageUrls
         : (listing.imageUrl != null ? [listing.imageUrl!] : <String>[]);
 
     return SliverAppBar(
@@ -283,54 +393,59 @@ class ListingDetailScreen extends StatelessWidget {
               )
             else
               _buildPlaceholder(isDark),
-                
-              // Gradient overlay for text readability
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.6),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
+
+            // Gradient overlay for text readability
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                  stops: const [0.0, 0.3, 0.7, 1.0],
+                ),
+              ),
+            ),
+
+            // Photo Counter
+            if (images.length > 1)
+              Positioned(
+                bottom:
+                    ValoraSpacing.lg + 20, // Adjust for rounded corners of body
+                right: ValoraSpacing.md,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.photo_library_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${images.length} Photos',
+                        style: ValoraTypography.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
-                    stops: const [0.0, 0.3, 0.7, 1.0],
                   ),
                 ),
               ),
-
-              // Photo Counter
-              if (images.length > 1)
-                Positioned(
-                  bottom: ValoraSpacing.lg + 20, // Adjust for rounded corners of body
-                  right: ValoraSpacing.md,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.photo_library_rounded, size: 14, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${images.length} Photos',
-                          style: ValoraTypography.labelMedium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
           ],
         ),
       ),
@@ -363,10 +478,7 @@ class ListingDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (listing.price != null)
-          ValoraPrice(
-            price: listing.price!,
-            size: ValoraPriceSize.large,
-          ),
+          ValoraPrice(price: listing.price!, size: ValoraPriceSize.large),
         if (listing.status != null)
           ValoraBadge(
             label: listing.status!.toUpperCase(),
@@ -401,39 +513,47 @@ class ListingDetailScreen extends StatelessWidget {
     final specs = <Widget>[];
 
     if (listing.bedrooms != null) {
-      specs.add(_buildSpecItem(
-        Icons.bed_rounded,
-        'Bedrooms',
-        '${listing.bedrooms}',
-        colorScheme,
-      ));
+      specs.add(
+        _buildSpecItem(
+          Icons.bed_rounded,
+          'Bedrooms',
+          '${listing.bedrooms}',
+          colorScheme,
+        ),
+      );
     }
 
     if (listing.bathrooms != null) {
-      specs.add(_buildSpecItem(
-        Icons.shower_rounded,
-        'Bathrooms',
-        '${listing.bathrooms}',
-        colorScheme,
-      ));
+      specs.add(
+        _buildSpecItem(
+          Icons.shower_rounded,
+          'Bathrooms',
+          '${listing.bathrooms}',
+          colorScheme,
+        ),
+      );
     }
 
     if (listing.livingAreaM2 != null) {
-      specs.add(_buildSpecItem(
-        Icons.square_foot_rounded,
-        'Living Area',
-        '${listing.livingAreaM2} m²',
-        colorScheme,
-      ));
+      specs.add(
+        _buildSpecItem(
+          Icons.square_foot_rounded,
+          'Living Area',
+          '${listing.livingAreaM2} m²',
+          colorScheme,
+        ),
+      );
     }
 
     if (listing.plotAreaM2 != null) {
-      specs.add(_buildSpecItem(
-        Icons.landscape_rounded,
-        'Plot Size',
-        '${listing.plotAreaM2} m²',
-        colorScheme,
-      ));
+      specs.add(
+        _buildSpecItem(
+          Icons.landscape_rounded,
+          'Plot Size',
+          '${listing.plotAreaM2} m²',
+          colorScheme,
+        ),
+      );
     }
 
     if (specs.isEmpty) return const SizedBox.shrink();
@@ -442,10 +562,14 @@ class ListingDetailScreen extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.none,
       child: Row(
-        children: specs.map((widget) => Padding(
-          padding: const EdgeInsets.only(right: ValoraSpacing.lg),
-          child: widget,
-        )).toList(),
+        children: specs
+            .map(
+              (widget) => Padding(
+                padding: const EdgeInsets.only(right: ValoraSpacing.lg),
+                child: widget,
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -454,19 +578,45 @@ class ListingDetailScreen extends StatelessWidget {
     final features = <Widget>[];
 
     if (listing.energyLabel != null) {
-      features.add(_buildFeatureChip(Icons.energy_savings_leaf_rounded, 'Label ${listing.energyLabel}', colorScheme));
+      features.add(
+        _buildFeatureChip(
+          Icons.energy_savings_leaf_rounded,
+          'Label ${listing.energyLabel}',
+          colorScheme,
+        ),
+      );
     }
     if (listing.yearBuilt != null) {
-      features.add(_buildFeatureChip(Icons.calendar_today_rounded, 'Built ${listing.yearBuilt}', colorScheme));
+      features.add(
+        _buildFeatureChip(
+          Icons.calendar_today_rounded,
+          'Built ${listing.yearBuilt}',
+          colorScheme,
+        ),
+      );
     }
     if (listing.ownershipType != null) {
-      features.add(_buildFeatureChip(Icons.gavel_rounded, listing.ownershipType!, colorScheme));
+      features.add(
+        _buildFeatureChip(
+          Icons.gavel_rounded,
+          listing.ownershipType!,
+          colorScheme,
+        ),
+      );
     }
     if (listing.heatingType != null) {
-      features.add(_buildFeatureChip(Icons.thermostat_rounded, listing.heatingType!, colorScheme));
+      features.add(
+        _buildFeatureChip(
+          Icons.thermostat_rounded,
+          listing.heatingType!,
+          colorScheme,
+        ),
+      );
     }
     if (listing.hasGarage) {
-      features.add(_buildFeatureChip(Icons.garage_rounded, 'Garage', colorScheme));
+      features.add(
+        _buildFeatureChip(Icons.garage_rounded, 'Garage', colorScheme),
+      );
     }
 
     if (features.isEmpty) return const SizedBox.shrink();
@@ -478,13 +628,19 @@ class ListingDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureChip(IconData icon, String label, ColorScheme colorScheme) {
+  Widget _buildFeatureChip(
+    IconData icon,
+    String label,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -493,7 +649,9 @@ class ListingDetailScreen extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: ValoraTypography.labelLarge.copyWith(color: colorScheme.onSecondaryContainer),
+            style: ValoraTypography.labelLarge.copyWith(
+              color: colorScheme.onSecondaryContainer,
+            ),
           ),
         ],
       ),
@@ -531,32 +689,36 @@ class ListingDetailScreen extends StatelessWidget {
         Wrap(
           spacing: ValoraSpacing.md,
           runSpacing: ValoraSpacing.md,
-          children: validDetails.map((e) => ValoraGlassContainer(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ValoraSpacing.md,
-              vertical: ValoraSpacing.sm,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  e.key,
-                  style: ValoraTypography.labelSmall.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+          children: validDetails
+              .map(
+                (e) => ValoraGlassContainer(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: ValoraSpacing.md,
+                    vertical: ValoraSpacing.sm,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        e.key,
+                        style: ValoraTypography.labelSmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        e.value!,
+                        style: ValoraTypography.bodyMedium.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  e.value!,
-                  style: ValoraTypography.bodyMedium.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         ),
       ],
     );
@@ -573,18 +735,18 @@ class ListingDetailScreen extends StatelessWidget {
       child: Row(
         children: [
           if (listing.brokerLogoUrl != null)
-             Container(
-               width: 50,
-               height: 50,
-               decoration: BoxDecoration(
-                 color: Colors.white,
-                 borderRadius: BorderRadius.circular(8),
-                 image: DecorationImage(
-                   image: NetworkImage(listing.brokerLogoUrl!),
-                   fit: BoxFit.contain,
-                 ),
-               ),
-             )
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: NetworkImage(listing.brokerLogoUrl!),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            )
           else
             Container(
               width: 50,
@@ -602,12 +764,14 @@ class ListingDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   'Broker',
-                  style: ValoraTypography.labelMedium.copyWith(color: colorScheme.primary),
+                  style: ValoraTypography.labelMedium.copyWith(
+                    color: colorScheme.primary,
+                  ),
                 ),
                 Text(
-                 // Use agentName if available as falback or specific broker name field if added later
-                 // For now, assume agentName might be person, not company. 
-                 // If no specific broker name field, we might just show "Contact Broker"
+                  // Use agentName if available as falback or specific broker name field if added later
+                  // For now, assume agentName might be person, not company.
+                  // If no specific broker name field, we might just show "Contact Broker"
                   listing.agentName ?? 'Real Estate Agent',
                   style: ValoraTypography.titleMedium.copyWith(
                     color: colorScheme.onSurface,
@@ -617,7 +781,9 @@ class ListingDetailScreen extends StatelessWidget {
                 if (listing.brokerPhone != null)
                   Text(
                     listing.brokerPhone!,
-                    style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: ValoraTypography.bodyMedium.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
               ],
             ),
@@ -651,11 +817,7 @@ class ListingDetailScreen extends StatelessWidget {
               color: colorScheme.surface,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: colorScheme.primary,
-            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
           ),
           const SizedBox(width: ValoraSpacing.md),
           Column(

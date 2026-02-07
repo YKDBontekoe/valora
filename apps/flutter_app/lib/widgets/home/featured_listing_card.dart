@@ -57,29 +57,46 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
               Stack(
                 children: [
                   Container(
-                    height: 180,
-                    color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
-                    child: widget.listing.imageUrl != null
-                        ? Hero(
-                            tag: widget.listing.id,
-                            child: CachedNetworkImage(
-                              imageUrl: widget.listing.imageUrl!,
-                              memCacheWidth: 800,
-                              width: double.infinity,
-                              height: 180,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const ValoraShimmer(width: double.infinity, height: 180),
-                              errorWidget: (context, url, error) => Center(
-                                child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
+                        height: 180,
+                        color: isDark
+                            ? ValoraColors.neutral700
+                            : ValoraColors.neutral200,
+                        child: widget.listing.imageUrl != null
+                            ? Hero(
+                                tag: widget.listing.id,
+                                child: CachedNetworkImage(
+                                  imageUrl: widget.listing.imageUrl!,
+                                  memCacheWidth: 800,
+                                  width: double.infinity,
+                                  height: 180,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) =>
+                                      const ValoraShimmer(
+                                        width: double.infinity,
+                                        height: 180,
+                                      ),
+                                  errorWidget: (context, url, error) => Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      color: ValoraColors.neutral400,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Icon(
+                                  Icons.home,
+                                  size: 48,
+                                  color: ValoraColors.neutral400,
+                                ),
                               ),
-                            ),
-                          )
-                        : Center(
-                            child: Icon(Icons.home, size: 48, color: ValoraColors.neutral400),
-                          ),
-                  )
-                  .animate(target: _isHovered ? 1 : 0)
-                  .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.slow, curve: ValoraAnimations.deceleration),
+                      )
+                      .animate(target: _isHovered ? 1 : 0)
+                      .scale(
+                        end: const Offset(1.05, 1.05),
+                        duration: ValoraAnimations.slow,
+                        curve: ValoraAnimations.deceleration,
+                      ),
                   // Gradient Overlay
                   Positioned.fill(
                     child: DecoratedBox(
@@ -101,14 +118,23 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                     top: 12,
                     left: 12,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                      borderRadius: BorderRadius.circular(
+                        ValoraSpacing.radiusMd,
+                      ),
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: ValoraColors.glassBlack.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                            color: ValoraColors.glassBlack.withValues(
+                              alpha: 0.4,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              ValoraSpacing.radiusMd,
+                            ),
                             border: Border.all(
                               color: ValoraColors.glassBorderDark,
                               width: 1,
@@ -152,24 +178,40 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                     right: 12,
                     child: Consumer<FavoritesProvider>(
                       builder: (context, favoritesProvider, child) {
-                        final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
+                        final isFavorite = favoritesProvider.isFavorite(
+                          widget.listing.id,
+                        );
                         return GestureDetector(
-                          onTap: widget.onFavoriteTap ?? () => favoritesProvider.toggleFavorite(widget.listing),
+                          onTap:
+                              widget.onFavoriteTap ??
+                              () => favoritesProvider.toggleFavorite(
+                                widget.listing,
+                              ),
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                              color: (isDark ? Colors.black : Colors.white)
+                                  .withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                              size: 18,
-                              color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                            )
-                            .animate(target: isFavorite ? 1 : 0)
-                            .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
-                            .then()
-                            .scale(end: const Offset(1, 1)),
+                            child:
+                                Icon(
+                                      isFavorite
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      size: 18,
+                                      color: isFavorite
+                                          ? ValoraColors.error
+                                          : ValoraColors.neutral400,
+                                    )
+                                    .animate(target: isFavorite ? 1 : 0)
+                                    .scale(
+                                      begin: const Offset(1, 1),
+                                      end: const Offset(1.2, 1.2),
+                                      curve: Curves.elasticOut,
+                                    )
+                                    .then()
+                                    .scale(end: const Offset(1, 1)),
                           ),
                         );
                       },
@@ -190,9 +232,13 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.listing.price != null ? '\$${widget.listing.price!.toStringAsFixed(0)}' : 'Price on request',
+                              widget.listing.price != null
+                                  ? '\$${widget.listing.price!.toStringAsFixed(0)}'
+                                  : 'Price on request',
                               style: ValoraTypography.titleLarge.copyWith(
-                                color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                                color: isDark
+                                    ? ValoraColors.neutral50
+                                    : ValoraColors.neutral900,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -200,13 +246,18 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                             Text(
                               widget.listing.city ?? widget.listing.address,
                               style: ValoraTypography.bodySmall.copyWith(
-                                color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                                color: isDark
+                                    ? ValoraColors.neutral400
+                                    : ValoraColors.neutral500,
                               ),
                             ),
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: ValoraColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -214,7 +265,9 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           child: Row(
                             children: [
                               Icon(
-                                widget.priceChangePercent < 0 ? Icons.trending_down_rounded : Icons.trending_up_rounded,
+                                widget.priceChangePercent < 0
+                                    ? Icons.trending_down_rounded
+                                    : Icons.trending_up_rounded,
                                 size: 14,
                                 color: ValoraColors.primary,
                               ),
@@ -233,15 +286,32 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                       ],
                     ),
                     const SizedBox(height: ValoraSpacing.sm),
-                    Divider(height: 1, color: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100),
+                    Divider(
+                      height: 1,
+                      color: isDark
+                          ? ValoraColors.neutral800
+                          : ValoraColors.neutral100,
+                    ),
                     const SizedBox(height: ValoraSpacing.sm),
                     Row(
                       children: [
-                        _buildFeature(context, Icons.bed_rounded, '${widget.listing.bedrooms ?? 0} Bd'),
+                        _buildFeature(
+                          context,
+                          Icons.bed_rounded,
+                          '${widget.listing.bedrooms ?? 0} Bd',
+                        ),
                         const SizedBox(width: ValoraSpacing.sm),
-                        _buildFeature(context, Icons.shower_rounded, '${widget.listing.bathrooms ?? 0} Ba'),
+                        _buildFeature(
+                          context,
+                          Icons.shower_rounded,
+                          '${widget.listing.bathrooms ?? 0} Ba',
+                        ),
                         const SizedBox(width: ValoraSpacing.sm),
-                        _buildFeature(context, Icons.square_foot_rounded, '${widget.listing.livingAreaM2 ?? 0} m²'),
+                        _buildFeature(
+                          context,
+                          Icons.square_foot_rounded,
+                          '${widget.listing.livingAreaM2 ?? 0} m²',
+                        ),
                       ],
                     ),
                   ],
@@ -258,7 +328,11 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, size: 16, color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+        Icon(
+          icon,
+          size: 16,
+          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+        ),
         const SizedBox(width: 4),
         Text(
           label,

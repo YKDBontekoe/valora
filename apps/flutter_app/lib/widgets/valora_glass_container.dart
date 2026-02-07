@@ -32,9 +32,13 @@ class ValoraGlassContainer extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Default values based on theme
-    final effectiveColor = color ?? (isDark ? ValoraColors.glassBlack : ValoraColors.glassWhite);
-    final effectiveBorderColor = borderColor ?? (isDark ? ValoraColors.glassBorderDark : ValoraColors.glassBorderLight);
-    final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(ValoraSpacing.radiusLg);
+    final effectiveColor =
+        color ?? (isDark ? ValoraColors.glassBlack : ValoraColors.glassWhite);
+    final effectiveBorderColor =
+        borderColor ??
+        (isDark ? ValoraColors.glassBorderDark : ValoraColors.glassBorderLight);
+    final effectiveBorderRadius =
+        borderRadius ?? BorderRadius.circular(ValoraSpacing.radiusLg);
 
     return Container(
       width: width,
@@ -49,10 +53,7 @@ class ValoraGlassContainer extends StatelessWidget {
             decoration: BoxDecoration(
               color: effectiveColor,
               borderRadius: effectiveBorderRadius,
-              border: Border.all(
-                color: effectiveBorderColor,
-                width: 1.0,
-              ),
+              border: Border.all(color: effectiveBorderColor, width: 1.0),
             ),
             child: child,
           ),

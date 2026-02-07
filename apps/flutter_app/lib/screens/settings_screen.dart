@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/valora_colors.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
@@ -7,6 +8,29 @@ import '../widgets/valora_widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _openExternal(BuildContext context, Uri uri) async {
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
+        context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to open link right now.'),
+          backgroundColor: ValoraColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openSupportEmail(BuildContext context) async {
+    final Uri supportUri = Uri(
+      scheme: 'mailto',
+      path: 'support@valora.nl',
+      queryParameters: const <String, String>{
+        'subject': 'Valora Support Request',
+      },
+    );
+    await _openExternal(context, supportUri);
+  }
 
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -38,11 +62,21 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Access theme mode to conditionally render UI
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? ValoraColors.backgroundDark : ValoraColors.backgroundLight;
-    final surfaceColor = isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight;
-    final textColor = isDark ? ValoraColors.onBackgroundDark : ValoraColors.onBackgroundLight;
-    final subtextColor = isDark ? ValoraColors.neutral400 : ValoraColors.neutral500;
-    final borderColor = isDark ? ValoraColors.neutral800 : ValoraColors.neutral200;
+    final backgroundColor = isDark
+        ? ValoraColors.backgroundDark
+        : ValoraColors.backgroundLight;
+    final surfaceColor = isDark
+        ? ValoraColors.surfaceDark
+        : ValoraColors.surfaceLight;
+    final textColor = isDark
+        ? ValoraColors.onBackgroundDark
+        : ValoraColors.onBackgroundLight;
+    final subtextColor = isDark
+        ? ValoraColors.neutral400
+        : ValoraColors.neutral500;
+    final borderColor = isDark
+        ? ValoraColors.neutral800
+        : ValoraColors.neutral200;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -75,11 +109,15 @@ class SettingsScreen extends StatelessWidget {
                         themeProvider.toggleTheme();
                       },
                       icon: Icon(
-                        isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        isDarkMode
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
                         color: subtextColor,
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100,
+                        backgroundColor: isDark
+                            ? ValoraColors.neutral800
+                            : ValoraColors.neutral100,
                         shape: const CircleBorder(),
                       ),
                     ),
@@ -92,11 +130,20 @@ class SettingsScreen extends StatelessWidget {
           // Content
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 children: [
                   // Profile Section
-                  _buildProfileCard(context, surfaceColor, borderColor, textColor, subtextColor),
+                  _buildProfileCard(
+                    context,
+                    surfaceColor,
+                    borderColor,
+                    textColor,
+                    subtextColor,
+                  ),
 
                   const SizedBox(height: 24),
 
@@ -109,7 +156,7 @@ class SettingsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: borderColor),
                       boxShadow: [
-                         BoxShadow(
+                        BoxShadow(
                           color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -126,6 +173,10 @@ class SettingsScreen extends StatelessWidget {
                           title: 'Smart Alerts',
                           subtitle: 'Instant updates on price drops',
                           showDivider: true,
+                          onTap: () => _openExternal(
+                            context,
+                            Uri.parse('https://valora.nl/preferences/alerts'),
+                          ),
                         ),
                         _buildSettingsTile(
                           context,
@@ -135,6 +186,10 @@ class SettingsScreen extends StatelessWidget {
                           title: 'Search Preferences',
                           subtitle: 'Location, Price, Amenities',
                           showDivider: true,
+                          onTap: () => _openExternal(
+                            context,
+                            Uri.parse('https://valora.nl/preferences/search'),
+                          ),
                         ),
                         _buildSettingsTile(
                           context,
@@ -145,7 +200,7 @@ class SettingsScreen extends StatelessWidget {
                           subtitle: 'Theme & Display settings',
                           showDivider: false,
                           onTap: () {
-                             context.read<ThemeProvider>().toggleTheme();
+                            context.read<ThemeProvider>().toggleTheme();
                           },
                         ),
                       ],
@@ -163,7 +218,7 @@ class SettingsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: borderColor),
                       boxShadow: [
-                         BoxShadow(
+                        BoxShadow(
                           color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -176,11 +231,17 @@ class SettingsScreen extends StatelessWidget {
                           context,
                           icon: Icons.card_membership_rounded,
                           iconColor: ValoraColors.success,
-                          iconBgColor: ValoraColors.success.withValues(alpha: 0.1),
+                          iconBgColor: ValoraColors.success.withValues(
+                            alpha: 0.1,
+                          ),
                           title: 'Subscription',
                           subtitle: 'Pro Plan Active',
                           subtitleColor: ValoraColors.success,
                           showDivider: true,
+                          onTap: () => _openExternal(
+                            context,
+                            Uri.parse('https://valora.nl/account/subscription'),
+                          ),
                         ),
                         _buildSettingsTile(
                           context,
@@ -190,6 +251,10 @@ class SettingsScreen extends StatelessWidget {
                           title: 'Privacy & Security',
                           subtitle: 'Password, FaceID',
                           showDivider: false,
+                          onTap: () => _openExternal(
+                            context,
+                            Uri.parse('https://valora.nl/privacy'),
+                          ),
                         ),
                       ],
                     ),
@@ -201,9 +266,13 @@ class SettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: ValoraColors.primary.withValues(alpha: isDark ? 0.1 : 0.05),
+                      color: ValoraColors.primary.withValues(
+                        alpha: isDark ? 0.1 : 0.05,
+                      ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: ValoraColors.primary.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: ValoraColors.primary.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -214,7 +283,9 @@ class SettingsScreen extends StatelessWidget {
                             Text(
                               'Need Help?',
                               style: TextStyle(
-                                color: isDark ? ValoraColors.primaryLight : ValoraColors.primary,
+                                color: isDark
+                                    ? ValoraColors.primaryLight
+                                    : ValoraColors.primary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
@@ -230,7 +301,7 @@ class SettingsScreen extends StatelessWidget {
                           ],
                         ),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => _openSupportEmail(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: surfaceColor,
                             foregroundColor: textColor,
@@ -239,7 +310,10 @@ class SettingsScreen extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                           ),
                           child: const Text('Contact Us'),
                         ),
@@ -254,17 +328,22 @@ class SettingsScreen extends StatelessWidget {
                     onPressed: () => _confirmLogout(context),
                     icon: const Icon(Icons.logout_rounded, size: 20),
                     label: const Text('Log Out'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: subtextColor,
-                      textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                    ).copyWith(
-                      foregroundColor: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.hovered)) {
-                          return ValoraColors.error;
-                        }
-                        return subtextColor;
-                      }),
-                    ),
+                    style:
+                        TextButton.styleFrom(
+                          foregroundColor: subtextColor,
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ).copyWith(
+                          foregroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.hovered)) {
+                              return ValoraColors.error;
+                            }
+                            return subtextColor;
+                          }),
+                        ),
                   ),
 
                   const SizedBox(height: 16),
@@ -277,7 +356,9 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 100), // Bottom padding for navigation bar
+                  const SizedBox(
+                    height: 100,
+                  ), // Bottom padding for navigation bar
                 ],
               ),
             ),
@@ -292,11 +373,14 @@ class SettingsScreen extends StatelessWidget {
     Color surfaceColor,
     Color borderColor,
     Color textColor,
-    Color subtextColor
+    Color subtextColor,
   ) {
     // Get user info from AuthProvider
     final authProvider = context.watch<AuthProvider>();
-    final userEmail = authProvider.email ?? 'Sarah Jenkins';
+    final userEmail = authProvider.email ?? 'Unknown user';
+    final initials = userEmail.trim().isNotEmpty
+        ? userEmail.substring(0, userEmail.length >= 2 ? 2 : 1).toUpperCase()
+        : 'U';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -321,6 +405,7 @@ class SettingsScreen extends StatelessWidget {
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: ValoraColors.primary.withValues(alpha: 0.12),
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
@@ -328,9 +413,15 @@ class SettingsScreen extends StatelessWidget {
                       blurRadius: 4,
                     ),
                   ],
-                  image: const DecorationImage(
-                    image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuA_N6zTnBIJCnQ4m57PnuQ3vepBXgE963RqsOtZ8U__dK-SeyyNEKhYXfT8xMZ_zbNcxVTCBAoiIA4CAhtAjj_NpOmqW8b5KLbQRV0epA2Ox2qy5hd0NR_9iE89TKdnZ50Lv9LGcuDUZu5S40EgHl7y6LI-rgA2yVPbmb__Y-RhTj9qK4CcBSsiOfFBfbh0VLn0F3Fl22CovkUemlxRYH3yovoEozDtSiKGQpoUIAkH3oXb7Tc9MpxohjfbfcvyWHCUWLjoOsa37zM'),
-                    fit: BoxFit.cover,
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: ValoraColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
                   ),
                 ),
               ),
@@ -365,10 +456,7 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   'Premium Member',
-                  style: TextStyle(
-                    color: subtextColor,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: subtextColor, fontSize: 14),
                 ),
               ],
             ),
@@ -423,9 +511,15 @@ class SettingsScreen extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? ValoraColors.onSurfaceDark : ValoraColors.onSurfaceLight;
-    final subtextColor = subtitleColor ?? (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
-    final dividerColor = isDark ? ValoraColors.neutral800 : ValoraColors.neutral100;
+    final textColor = isDark
+        ? ValoraColors.onSurfaceDark
+        : ValoraColors.onSurfaceLight;
+    final subtextColor =
+        subtitleColor ??
+        (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
+    final dividerColor = isDark
+        ? ValoraColors.neutral800
+        : ValoraColors.neutral100;
 
     return InkWell(
       onTap: onTap ?? () {},
@@ -460,17 +554,16 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          color: subtextColor,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: subtextColor, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral300,
+                  color: isDark
+                      ? ValoraColors.neutral500
+                      : ValoraColors.neutral300,
                 ),
               ],
             ),

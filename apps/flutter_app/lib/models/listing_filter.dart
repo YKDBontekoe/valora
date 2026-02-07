@@ -62,14 +62,30 @@ class ListingFilter {
     if (searchTerm != null && searchTerm!.isNotEmpty) {
       params['searchTerm'] = searchTerm!;
     }
-    if (minPrice != null) params['minPrice'] = minPrice.toString();
-    if (maxPrice != null) params['maxPrice'] = maxPrice.toString();
-    if (city != null && city!.isNotEmpty) params['city'] = city!;
-    if (minBedrooms != null) params['minBedrooms'] = minBedrooms.toString();
-    if (minLivingArea != null) params['minLivingArea'] = minLivingArea.toString();
-    if (maxLivingArea != null) params['maxLivingArea'] = maxLivingArea.toString();
-    if (sortBy != null && sortBy!.isNotEmpty) params['sortBy'] = sortBy!;
-    if (sortOrder != null && sortOrder!.isNotEmpty) params['sortOrder'] = sortOrder!;
+    if (minPrice != null) {
+      params['minPrice'] = minPrice.toString();
+    }
+    if (maxPrice != null) {
+      params['maxPrice'] = maxPrice.toString();
+    }
+    if (city != null && city!.isNotEmpty) {
+      params['city'] = city!;
+    }
+    if (minBedrooms != null) {
+      params['minBedrooms'] = minBedrooms.toString();
+    }
+    if (minLivingArea != null) {
+      params['minLivingArea'] = minLivingArea.toString();
+    }
+    if (maxLivingArea != null) {
+      params['maxLivingArea'] = maxLivingArea.toString();
+    }
+    if (sortBy != null && sortBy!.isNotEmpty) {
+      params['sortBy'] = sortBy!;
+    }
+    if (sortOrder != null && sortOrder!.isNotEmpty) {
+      params['sortOrder'] = sortOrder!;
+    }
 
     return params;
   }

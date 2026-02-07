@@ -27,7 +27,11 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   Future<void> logout() async {}
 
   @override
-  Future<void> register(String email, String password, String confirmPassword) async {}
+  Future<void> register(
+    String email,
+    String password,
+    String confirmPassword,
+  ) async {}
 
   @override
   Future<String?> refreshSession() async {
@@ -36,7 +40,9 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
 }
 
 void main() {
-  testWidgets('RegisterScreen has AutofillGroup and correct hints', (WidgetTester tester) async {
+  testWidgets('RegisterScreen has AutofillGroup and correct hints', (
+    WidgetTester tester,
+  ) async {
     final authProvider = MockAuthProvider();
 
     await tester.pumpWidget(
@@ -67,7 +73,10 @@ void main() {
     );
     expect(passwordFieldFinder, findsOneWidget);
     final passwordTextField = tester.widget<TextField>(passwordFieldFinder);
-    expect(passwordTextField.autofillHints, contains(AutofillHints.newPassword));
+    expect(
+      passwordTextField.autofillHints,
+      contains(AutofillHints.newPassword),
+    );
 
     // Verify Confirm Password field hints
     final confirmPasswordFieldFinder = find.descendant(
@@ -75,7 +84,12 @@ void main() {
       matching: find.byType(TextField),
     );
     expect(confirmPasswordFieldFinder, findsOneWidget);
-    final confirmPasswordTextField = tester.widget<TextField>(confirmPasswordFieldFinder);
-    expect(confirmPasswordTextField.autofillHints, contains(AutofillHints.newPassword));
+    final confirmPasswordTextField = tester.widget<TextField>(
+      confirmPasswordFieldFinder,
+    );
+    expect(
+      confirmPasswordTextField.autofillHints,
+      contains(AutofillHints.newPassword),
+    );
   });
 }

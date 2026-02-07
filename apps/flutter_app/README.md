@@ -24,6 +24,9 @@ Multi-platform client for valora (iOS, Android, Web, Desktop).
 
 ## API Configuration
 
-The backend API runs at `http://localhost:5000/api`.
+The app reads API configuration from environment files:
 
-Update `lib/config.dart` with your API base URL for different environments.
+1. Create `.env` from `.env.example`.
+2. Set `API_URL` to your backend base URL (for example: `http://localhost:5000/api`).
+
+If `API_URL` is missing, the app falls back to `http://localhost:5000/api` and shows a startup warning banner.

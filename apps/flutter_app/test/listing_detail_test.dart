@@ -11,8 +11,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('ListingDetailScreen displays listing details',
-      (WidgetTester tester) async {
+  testWidgets('ListingDetailScreen displays listing details', (
+    WidgetTester tester,
+  ) async {
     final listing = Listing(
       id: '1',
       fundaId: '123',
@@ -38,9 +39,7 @@ void main() {
             create: (_) => FavoritesProvider(),
           ),
         ],
-        child: MaterialApp(
-          home: ListingDetailScreen(listing: listing),
-        ),
+        child: MaterialApp(home: ListingDetailScreen(listing: listing)),
       ),
     );
     // Use finite pump instead of pumpAndSettle to avoid timeouts with infinite animations (like shimmer)
@@ -68,7 +67,9 @@ void main() {
     expect(find.text('View on Funda'), findsOneWidget);
   });
 
-  testWidgets('Contact Broker triggers confirmation dialog', (WidgetTester tester) async {
+  testWidgets('Contact Broker triggers confirmation dialog', (
+    WidgetTester tester,
+  ) async {
     final listing = Listing(
       id: '1',
       fundaId: '123',
@@ -84,9 +85,7 @@ void main() {
             create: (_) => FavoritesProvider(),
           ),
         ],
-        child: MaterialApp(
-          home: ListingDetailScreen(listing: listing),
-        ),
+        child: MaterialApp(home: ListingDetailScreen(listing: listing)),
       ),
     );
     await tester.pump();
@@ -103,7 +102,11 @@ void main() {
 
     final contactButton = find.text('Contact Broker');
     // Ensure button is visible before tapping
-    await tester.scrollUntilVisible(contactButton, 200, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(
+      contactButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(contactButton, findsOneWidget);
 
     await tester.tap(contactButton);
@@ -111,7 +114,10 @@ void main() {
 
     // Verify dialog appears
     expect(find.text('Call Broker?'), findsOneWidget);
-    expect(find.text('Do you want to call Test Agent at +31612345678?'), findsOneWidget);
+    expect(
+      find.text('Do you want to call Test Agent at +31612345678?'),
+      findsOneWidget,
+    );
 
     // Cancel
     await tester.tap(find.text('Cancel'));

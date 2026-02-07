@@ -19,8 +19,12 @@ class HomeBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final glassColor = isDark ? ValoraColors.glassBlack.withValues(alpha: 0.8) : ValoraColors.glassWhite.withValues(alpha: 0.85);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4);
+    final glassColor = isDark
+        ? ValoraColors.glassBlack.withValues(alpha: 0.8)
+        : ValoraColors.glassWhite.withValues(alpha: 0.85);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.white.withValues(alpha: 0.4);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -36,7 +40,10 @@ class HomeBottomNavBar extends StatelessWidget {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: glassColor,
                   borderRadius: BorderRadius.circular(32),
@@ -96,7 +103,9 @@ class _GlassNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final unselectedColor = isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.5);
+    final unselectedColor = isDark
+        ? Colors.white.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.5);
 
     return GestureDetector(
       onTap: () {
@@ -107,23 +116,33 @@ class _GlassNavItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: ValoraAnimations.medium,
         curve: ValoraAnimations.emphatic,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 20 : 16, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 20 : 16,
+          vertical: 12,
+        ),
         decoration: BoxDecoration(
-          color: isSelected ? ValoraColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected
+              ? ValoraColors.primary.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon,
-              size: 24,
-              color: isSelected ? ValoraColors.primary : unselectedColor,
-            )
-            .animate(target: isSelected ? 1 : 0)
-            .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: ValoraAnimations.fast, curve: ValoraAnimations.emphatic)
-            .then()
-            .scale(end: const Offset(1.0, 1.0)),
+                  icon,
+                  size: 24,
+                  color: isSelected ? ValoraColors.primary : unselectedColor,
+                )
+                .animate(target: isSelected ? 1 : 0)
+                .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.1, 1.1),
+                  duration: ValoraAnimations.fast,
+                  curve: ValoraAnimations.emphatic,
+                )
+                .then()
+                .scale(end: const Offset(1.0, 1.0)),
 
             AnimatedSize(
               duration: ValoraAnimations.medium,

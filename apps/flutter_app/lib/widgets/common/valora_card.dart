@@ -88,7 +88,8 @@ class _ValoraCardState extends State<ValoraCard> {
     }
 
     Widget cardContent = Container(
-      padding: widget.padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
+      padding:
+          widget.padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
       decoration: widget.gradient != null
           ? BoxDecoration(
               gradient: widget.gradient,
@@ -120,8 +121,7 @@ class _ValoraCardState extends State<ValoraCard> {
         color: Colors.transparent,
         child: InkWell(
           onTap: widget.onTap,
-          onHover: (isHovering) =>
-              setState(() => _isHovered = isHovering),
+          onHover: (isHovering) => setState(() => _isHovered = isHovering),
           onTapDown: (_) => setState(() => _isPressed = true),
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
@@ -132,30 +132,32 @@ class _ValoraCardState extends State<ValoraCard> {
     // No MouseRegion hover effect when non-interactive
 
     return AnimatedContainer(
-      duration: ValoraAnimations.normal,
-      curve: ValoraAnimations.standard,
-      margin: widget.margin,
-      decoration: BoxDecoration(
-        color: widget.gradient == null
-            ? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight)
-            : null,
-        borderRadius: BorderRadius.circular(cardRadius),
-        boxShadow: currentShadows,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: cardContent,
-    )
-    .animate(target: _isPressed ? 1 : 0) // Press scale
-    .scale(
-      end: const Offset(0.98, 0.98),
-      duration: ValoraAnimations.fast,
-      curve: ValoraAnimations.standard,
-    )
-    .animate(target: _isHovered && !_isPressed ? 1 : 0) // Hover lift
-    .scale(
-      end: const Offset(1.02, 1.02),
-      duration: ValoraAnimations.normal,
-      curve: ValoraAnimations.standard,
-    );
+          duration: ValoraAnimations.normal,
+          curve: ValoraAnimations.standard,
+          margin: widget.margin,
+          decoration: BoxDecoration(
+            color: widget.gradient == null
+                ? (isDark
+                      ? ValoraColors.surfaceDark
+                      : ValoraColors.surfaceLight)
+                : null,
+            borderRadius: BorderRadius.circular(cardRadius),
+            boxShadow: currentShadows,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: cardContent,
+        )
+        .animate(target: _isPressed ? 1 : 0) // Press scale
+        .scale(
+          end: const Offset(0.98, 0.98),
+          duration: ValoraAnimations.fast,
+          curve: ValoraAnimations.standard,
+        )
+        .animate(target: _isHovered && !_isPressed ? 1 : 0) // Hover lift
+        .scale(
+          end: const Offset(1.02, 1.02),
+          duration: ValoraAnimations.normal,
+          curve: ValoraAnimations.standard,
+        );
   }
 }

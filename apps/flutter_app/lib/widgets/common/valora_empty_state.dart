@@ -50,23 +50,40 @@ class ValoraEmptyState extends StatelessWidget {
             ).animate().fade().scale(curve: ValoraAnimations.emphatic),
             const SizedBox(height: ValoraSpacing.lg),
             Text(
-              title,
-              style: textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ).animate().fade(delay: 100.ms).slideY(begin: 0.2, end: 0, curve: ValoraAnimations.deceleration),
+                  title,
+                  style: textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                )
+                .animate()
+                .fade(delay: 100.ms)
+                .slideY(
+                  begin: 0.2,
+                  end: 0,
+                  curve: ValoraAnimations.deceleration,
+                ),
             if (subtitle != null) ...[
               const SizedBox(height: ValoraSpacing.sm),
               Text(
-                subtitle!,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ).animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0, curve: ValoraAnimations.deceleration),
+                    subtitle!,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  )
+                  .animate()
+                  .fade(delay: 200.ms)
+                  .slideY(
+                    begin: 0.2,
+                    end: 0,
+                    curve: ValoraAnimations.deceleration,
+                  ),
             ],
             if (action != null) ...[
               const SizedBox(height: ValoraSpacing.lg),
-              action!.animate().fade(delay: 300.ms).scale(curve: ValoraAnimations.emphatic),
+              action!
+                  .animate()
+                  .fade(delay: 300.ms)
+                  .scale(curve: ValoraAnimations.emphatic),
             ],
           ],
         ),

@@ -21,10 +21,8 @@ class ValoraPrice extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? ValoraColors.priceTagDark : ValoraColors.priceTag;
 
-    final formattedPrice = '€ ${price.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]}.',
-        )}';
+    final formattedPrice =
+        '€ ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
 
     TextStyle style;
     switch (size) {
@@ -39,10 +37,7 @@ class ValoraPrice extends StatelessWidget {
         break;
     }
 
-    return Text(
-      formattedPrice,
-      style: style.copyWith(color: color),
-    );
+    return Text(formattedPrice, style: style.copyWith(color: color));
   }
 }
 

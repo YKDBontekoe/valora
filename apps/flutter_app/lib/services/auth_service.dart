@@ -15,8 +15,8 @@ class AuthService {
   String get baseUrl => ApiService.baseUrl;
 
   AuthService({FlutterSecureStorage? storage, http.Client? client})
-      : _storage = storage ?? const FlutterSecureStorage(),
-        _client = client ?? http.Client();
+    : _storage = storage ?? const FlutterSecureStorage(),
+      _client = client ?? http.Client();
 
   Future<String?> getToken() async {
     return await _storage.read(key: _tokenKey);
@@ -38,11 +38,13 @@ class AuthService {
     }
 
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      ).timeout(ApiService.timeoutDuration);
+      final response = await _client
+          .post(
+            Uri.parse('$baseUrl/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(ApiService.timeoutDuration);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -78,11 +80,13 @@ class AuthService {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      ).timeout(ApiService.timeoutDuration);
+      final response = await _client
+          .post(
+            Uri.parse('$baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(ApiService.timeoutDuration);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -90,7 +94,10 @@ class AuthService {
           await saveToken(data['token']);
         }
         if (data['refreshToken'] != null) {
-          await _storage.write(key: _refreshTokenKey, value: data['refreshToken']);
+          await _storage.write(
+            key: _refreshTokenKey,
+            value: data['refreshToken'],
+          );
         }
         return data;
       } else {
@@ -102,17 +109,23 @@ class AuthService {
     }
   }
 
-  Future<void> register(String email, String password, String confirmPassword) async {
+  Future<void> register(
+    String email,
+    String password,
+    String confirmPassword,
+  ) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-          'confirmPassword': confirmPassword,
-        }),
-      ).timeout(ApiService.timeoutDuration);
+      final response = await _client
+          .post(
+            Uri.parse('$baseUrl/auth/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+              'confirmPassword': confirmPassword,
+            }),
+          )
+          .timeout(ApiService.timeoutDuration);
 
       if (response.statusCode != 200) {
         throw _handleError(response);
@@ -131,16 +144,19 @@ class AuthService {
         // Identity errors are often array of objects with Code and Description
         if (body is List) {
           return ValidationException(
-              body.map((e) => e['description'] ?? e.toString()).join('\n'));
+            body.map((e) => e['description'] ?? e.toString()).join('\n'),
+          );
         }
 
         // Validation dictionary: { "errors": { "Email": ["Required"] } }
         if (body is Map && body.containsKey('errors')) {
           final errors = body['errors'];
           if (errors is Map) {
-            return ValidationException(errors.values
-                .map((v) => (v is List) ? v.join(', ') : v.toString())
-                .join('\n'));
+            return ValidationException(
+              errors.values
+                  .map((v) => (v is List) ? v.join(', ') : v.toString())
+                  .join('\n'),
+            );
           }
         }
 

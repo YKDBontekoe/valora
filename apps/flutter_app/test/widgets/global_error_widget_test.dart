@@ -25,7 +25,11 @@ class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
   Future<void> login(String email, String password) async {}
 
   @override
-  Future<void> register(String email, String password, String confirmPassword) async {}
+  Future<void> register(
+    String email,
+    String password,
+    String confirmPassword,
+  ) async {}
 
   @override
   Future<void> logout() async {}
@@ -41,15 +45,17 @@ void main() {
     testWidgets('displays user friendly error message', (tester) async {
       final details = FlutterErrorDetails(exception: Exception('Boom'));
 
-      await tester.pumpWidget(MaterialApp(
-        home: GlobalErrorWidget(details: details),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(home: GlobalErrorWidget(details: details)),
+      );
 
       expect(find.text("We're sorry, something went wrong"), findsOneWidget);
       expect(
-          find.text(
-              'Please restart the application. If the problem persists, contact support.'),
-          findsOneWidget);
+        find.text(
+          'Please restart the application. If the problem persists, contact support.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Restart'), findsOneWidget);
     });
 
@@ -58,9 +64,7 @@ void main() {
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => FakeAuthProvider(),
           child: MaterialApp(
-            routes: {
-              '/': (context) => const GlobalErrorWidgetWrapper(),
-            },
+            routes: {'/': (context) => const GlobalErrorWidgetWrapper()},
           ),
         ),
       );
@@ -77,11 +81,13 @@ void main() {
     });
 
     testWidgets('shows debug info in debug mode', (tester) async {
-      final details = FlutterErrorDetails(exception: Exception('Secret Stack Trace'));
+      final details = FlutterErrorDetails(
+        exception: Exception('Secret Stack Trace'),
+      );
 
-      await tester.pumpWidget(MaterialApp(
-        home: GlobalErrorWidget(details: details),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(home: GlobalErrorWidget(details: details)),
+      );
 
       // In test environment, kDebugMode is true
       expect(find.text('Exception: Secret Stack Trace'), findsOneWidget);
@@ -94,6 +100,8 @@ class GlobalErrorWidgetWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlobalErrorWidget(details: FlutterErrorDetails(exception: Exception('Test')));
+    return GlobalErrorWidget(
+      details: FlutterErrorDetails(exception: Exception('Test')),
+    );
   }
 }

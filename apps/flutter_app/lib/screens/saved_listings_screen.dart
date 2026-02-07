@@ -37,7 +37,10 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
   }
 
   Future<void> _confirmRemove(BuildContext context, Listing listing) async {
-    final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: false);
+    final favoritesProvider = Provider.of<FavoritesProvider>(
+      context,
+      listen: false,
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -55,7 +58,9 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
             onPressed: () => Navigator.pop(context, true),
           ),
         ],
-        child: const Text('Are you sure you want to remove this listing from your saved items?'),
+        child: const Text(
+          'Are you sure you want to remove this listing from your saved items?',
+        ),
       ),
     );
 
@@ -76,8 +81,8 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
         if (_searchQuery.isNotEmpty) {
           listings = listings.where((l) {
             return l.address.toLowerCase().contains(_searchQuery) ||
-                   (l.city?.toLowerCase().contains(_searchQuery) ?? false) ||
-                   (l.postalCode?.toLowerCase().contains(_searchQuery) ?? false);
+                (l.city?.toLowerCase().contains(_searchQuery) ?? false) ||
+                (l.postalCode?.toLowerCase().contains(_searchQuery) ?? false);
           }).toList();
         }
 
@@ -99,9 +104,15 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
             break;
           case 'date_added':
           default:
-            // Assuming the list from provider is already in order of addition (or reverse)
-            // If provider appends, then last is newest. Let's assume we want newest first.
-             listings = listings.reversed.toList();
+            listings.sort((a, b) {
+              final DateTime aDate =
+                  favoritesProvider.savedAtFor(a.id) ??
+                  DateTime.fromMillisecondsSinceEpoch(0);
+              final DateTime bDate =
+                  favoritesProvider.savedAtFor(b.id) ??
+                  DateTime.fromMillisecondsSinceEpoch(0);
+              return bDate.compareTo(aDate);
+            });
             break;
         }
 
@@ -116,13 +127,15 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
               title: Text(
                 'Saved Listings',
                 style: ValoraTypography.headlineMedium.copyWith(
-                  color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                  color: isDark
+                      ? ValoraColors.neutral50
+                      : ValoraColors.neutral900,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               centerTitle: false,
             ),
-             SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
                 child: Column(
@@ -156,21 +169,23 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
             ),
             if (favoritesProvider.isLoading)
               const SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               )
             else if (listings.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: Center(
                   child: ValoraEmptyState(
-                    icon: _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.favorite_border_rounded,
-                    title: _searchQuery.isNotEmpty ? 'No matches found' : 'No saved listings',
+                    icon: _searchQuery.isNotEmpty
+                        ? Icons.search_off_rounded
+                        : Icons.favorite_border_rounded,
+                    title: _searchQuery.isNotEmpty
+                        ? 'No matches found'
+                        : 'No saved listings',
                     subtitle: _searchQuery.isNotEmpty
                         ? 'Try adjusting your search terms.'
                         : 'Listings you save will appear here.',
-                     action: _searchQuery.isNotEmpty
+                    action: _searchQuery.isNotEmpty
                         ? ValoraButton(
                             label: 'Clear Search',
                             variant: ValoraButtonVariant.secondary,
@@ -182,30 +197,31 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final listing = listings[index];
-                      return NearbyListingCard(
-                        listing: listing,
-                        onFavoriteTap: () => _confirmRemove(context, listing),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ListingDetailScreen(listing: listing),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    childCount: listings.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final listing = listings[index];
+                    return NearbyListingCard(
+                      listing: listing,
+                      onFavoriteTap: () => _confirmRemove(context, listing),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ListingDetailScreen(listing: listing),
+                          ),
+                        );
+                      },
+                    );
+                  }, childCount: listings.length),
                 ),
               ),
             // Add extra padding at bottom
-             const SliverToBoxAdapter(child: SizedBox(height: 80)),
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         );
       },

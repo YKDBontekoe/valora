@@ -35,50 +35,65 @@ void main() {
         'token': 'access_token',
         'refreshToken': 'refresh_token',
         'email': 'test@test.com',
-        'userId': '123'
+        'userId': '123',
       };
 
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response(jsonEncode(mockResponse), 200));
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response(jsonEncode(mockResponse), 200));
 
       // Mock storage write (return void)
-      when(mockStorage.write(key: anyNamed('key'), value: anyNamed('value')))
-          .thenAnswer((_) async => {});
+      when(
+        mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+      ).thenAnswer((_) async => {});
 
       final result = await authService.login('test@test.com', 'password');
 
-      verify(mockStorage.write(key: 'auth_token', value: 'access_token'))
-          .called(1);
-      verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token'))
-          .called(1);
+      verify(
+        mockStorage.write(key: 'auth_token', value: 'access_token'),
+      ).called(1);
+      verify(
+        mockStorage.write(key: 'refresh_token', value: 'refresh_token'),
+      ).called(1);
       expect(result['token'], 'access_token');
     });
 
     test('login failure parses error', () async {
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer(
-          (_) async => http.Response(jsonEncode({'detail': 'Failed'}), 400));
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(jsonEncode({'detail': 'Failed'}), 400),
+      );
 
-      expect(() => authService.login('test@test.com', 'password'),
-          throwsA(isA<ValidationException>()));
+      expect(
+        () => authService.login('test@test.com', 'password'),
+        throwsA(isA<ValidationException>()),
+      );
     });
 
     test('login failure with errors dictionary parses error', () async {
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response(
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(
           jsonEncode({
-            'errors': {'Field': 'Invalid'}
+            'errors': {'Field': 'Invalid'},
           }),
-          400));
+          400,
+        ),
+      );
 
       try {
         await authService.login('test@test.com', 'password');
@@ -89,15 +104,20 @@ void main() {
     });
 
     test('login failure with errors list parses error', () async {
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response(
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(
           jsonEncode([
-            {'description': 'Error 1'}
+            {'description': 'Error 1'},
           ]),
-          400));
+          400,
+        ),
+      );
 
       try {
         await authService.login('test@test.com', 'password');
@@ -108,25 +128,30 @@ void main() {
     });
 
     test('register success', () async {
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response('', 200));
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response('', 200));
 
       await authService.register('test@test.com', 'password', 'password');
     });
 
     test('register throws exception on failure', () async {
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response('Server Error', 500));
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response('Server Error', 500));
 
       expect(
-          () => authService.register('test@test.com', 'password', 'password'),
-          throwsA(isA<ServerException>()));
+        () => authService.register('test@test.com', 'password', 'password'),
+        throwsA(isA<ServerException>()),
+      );
     });
 
     test('refreshToken returns new token on success', () async {
@@ -134,49 +159,66 @@ void main() {
         'token': 'new_access_token',
         'refreshToken': 'refresh_token',
         'email': 'test@test.com',
-        'userId': '123'
+        'userId': '123',
       };
 
-      when(mockStorage.read(key: 'refresh_token'))
-          .thenAnswer((_) async => 'valid_refresh_token');
+      when(
+        mockStorage.read(key: 'refresh_token'),
+      ).thenAnswer((_) async => 'valid_refresh_token');
 
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response(jsonEncode(mockResponse), 200));
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response(jsonEncode(mockResponse), 200));
 
-       when(mockStorage.write(key: anyNamed('key'), value: anyNamed('value')))
-          .thenAnswer((_) async => {});
+      when(
+        mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+      ).thenAnswer((_) async => {});
 
       final result = await authService.refreshToken();
 
       expect(result, 'new_access_token');
-      verify(mockStorage.write(key: 'auth_token', value: 'new_access_token')).called(1);
-      verify(mockStorage.write(key: 'refresh_token', value: 'refresh_token')).called(1);
+      verify(
+        mockStorage.write(key: 'auth_token', value: 'new_access_token'),
+      ).called(1);
+      verify(
+        mockStorage.write(key: 'refresh_token', value: 'refresh_token'),
+      ).called(1);
     });
 
     test('refreshToken throws if no refresh token stored', () async {
-      when(mockStorage.read(key: 'refresh_token'))
-          .thenAnswer((_) async => null);
+      when(
+        mockStorage.read(key: 'refresh_token'),
+      ).thenAnswer((_) async => null);
 
       expect(
         () => authService.refreshToken(),
         throwsA(isA<RefreshTokenInvalidException>()),
       );
       verifyNever(
-          mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')));
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      );
     });
 
     test('refreshToken throws on invalid refresh token', () async {
-      when(mockStorage.read(key: 'refresh_token'))
-          .thenAnswer((_) async => 'valid_refresh_token');
+      when(
+        mockStorage.read(key: 'refresh_token'),
+      ).thenAnswer((_) async => 'valid_refresh_token');
 
-      when(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response('Unauthorized', 401));
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response('Unauthorized', 401));
 
       expect(
         () => authService.refreshToken(),
@@ -185,8 +227,9 @@ void main() {
     });
 
     test('deleteToken removes both tokens', () async {
-      when(mockStorage.delete(key: anyNamed('key')))
-          .thenAnswer((_) async => {});
+      when(
+        mockStorage.delete(key: anyNamed('key')),
+      ).thenAnswer((_) async => {});
 
       await authService.deleteToken();
 

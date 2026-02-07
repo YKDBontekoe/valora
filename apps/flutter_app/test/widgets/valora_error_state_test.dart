@@ -6,14 +6,16 @@ import 'package:valora_app/widgets/valora_error_state.dart';
 void main() {
   group('ValoraErrorState', () {
     testWidgets('displays NetworkException correctly', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraErrorState(
-            error: NetworkException('No internet'),
-            onRetry: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: NetworkException('No internet'),
+              onRetry: () {},
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('No Connection'), findsOneWidget);
@@ -22,14 +24,16 @@ void main() {
     });
 
     testWidgets('displays ServerException correctly', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraErrorState(
-            error: ServerException('Server failed'),
-            onRetry: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: ServerException('Server failed'),
+              onRetry: () {},
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Server Error'), findsOneWidget);
@@ -38,14 +42,16 @@ void main() {
     });
 
     testWidgets('displays NotFoundException correctly', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraErrorState(
-            error: NotFoundException('Item not found'),
-            onRetry: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: NotFoundException('Item not found'),
+              onRetry: () {},
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Not Found'), findsOneWidget);
@@ -54,14 +60,16 @@ void main() {
     });
 
     testWidgets('displays ValidationException correctly', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraErrorState(
-            error: ValidationException('Bad request'),
-            onRetry: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: ValidationException('Bad request'),
+              onRetry: () {},
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Invalid Request'), findsOneWidget);
@@ -70,14 +78,16 @@ void main() {
     });
 
     testWidgets('displays generic AppException correctly', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraErrorState(
-            error: AppException('Generic error'),
-            onRetry: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: AppException('Generic error'),
+              onRetry: () {},
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Something went wrong'), findsOneWidget);
@@ -87,14 +97,16 @@ void main() {
 
     testWidgets('retry callback is called when button pressed', (tester) async {
       bool retried = false;
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraErrorState(
-            error: Exception('Boom'),
-            onRetry: () => retried = true,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: Exception('Boom'),
+              onRetry: () => retried = true,
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Try Again'));

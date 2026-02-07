@@ -126,8 +126,8 @@ abstract final class ValoraColors {
   );
 
   static const LinearGradient darkBackgroundGradient = LinearGradient(
-     begin: Alignment.topCenter,
-     end: Alignment.bottomCenter,
-     colors: [Color(0xFF0F172A), Color(0xFF020617)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF0F172A), Color(0xFF020617)],
   );
 }

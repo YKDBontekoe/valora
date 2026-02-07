@@ -50,56 +50,90 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
               Stack(
                 children: [
                   Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                      color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: widget.listing.imageUrl != null
-                        ? Hero(
-                            tag: widget.listing.id,
-                            child: CachedNetworkImage(
-                              imageUrl: widget.listing.imageUrl!,
-                              memCacheWidth: 300,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const ValoraShimmer(width: 96, height: 96),
-                              errorWidget: (context, url, error) => Center(
-                                child: Icon(Icons.image_not_supported, color: ValoraColors.neutral400),
-                              ),
-                            ),
-                          )
-                        : Center(
-                            child: Icon(Icons.home, color: ValoraColors.neutral400),
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            ValoraSpacing.radiusMd,
                           ),
-                  )
-                  .animate(target: _isHovered ? 1 : 0)
-                  .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.slow, curve: ValoraAnimations.deceleration),
+                          color: isDark
+                              ? ValoraColors.neutral700
+                              : ValoraColors.neutral200,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: widget.listing.imageUrl != null
+                            ? Hero(
+                                tag: widget.listing.id,
+                                child: CachedNetworkImage(
+                                  imageUrl: widget.listing.imageUrl!,
+                                  memCacheWidth: 300,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) =>
+                                      const ValoraShimmer(
+                                        width: 96,
+                                        height: 96,
+                                      ),
+                                  errorWidget: (context, url, error) => Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      color: ValoraColors.neutral400,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Icon(
+                                  Icons.home,
+                                  color: ValoraColors.neutral400,
+                                ),
+                              ),
+                      )
+                      .animate(target: _isHovered ? 1 : 0)
+                      .scale(
+                        end: const Offset(1.05, 1.05),
+                        duration: ValoraAnimations.slow,
+                        curve: ValoraAnimations.deceleration,
+                      ),
 
                   Positioned(
                     top: 4,
                     right: 4,
                     child: Consumer<FavoritesProvider>(
                       builder: (context, favoritesProvider, child) {
-                        final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
+                        final isFavorite = favoritesProvider.isFavorite(
+                          widget.listing.id,
+                        );
                         return GestureDetector(
-                          onTap: widget.onFavoriteTap ?? () => favoritesProvider.toggleFavorite(widget.listing),
+                          onTap:
+                              widget.onFavoriteTap ??
+                              () => favoritesProvider.toggleFavorite(
+                                widget.listing,
+                              ),
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
+                              color: (isDark ? Colors.black : Colors.white)
+                                  .withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                              size: 14,
-                              color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
-                            )
-                            .animate(target: isFavorite ? 1 : 0)
-                            .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), curve: Curves.elasticOut)
-                            .then()
-                            .scale(end: const Offset(1, 1)),
+                            child:
+                                Icon(
+                                      isFavorite
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      size: 14,
+                                      color: isFavorite
+                                          ? ValoraColors.error
+                                          : ValoraColors.neutral400,
+                                    )
+                                    .animate(target: isFavorite ? 1 : 0)
+                                    .scale(
+                                      begin: const Offset(1, 1),
+                                      end: const Offset(1.2, 1.2),
+                                      curve: Curves.elasticOut,
+                                    )
+                                    .then()
+                                    .scale(end: const Offset(1, 1)),
                           ),
                         );
                       },
@@ -120,18 +154,27 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                         children: [
                           Expanded(
                             child: Text(
-                              widget.listing.price != null ? '\$${widget.listing.price!.toStringAsFixed(0)}' : 'Price on request',
+                              widget.listing.price != null
+                                  ? '\$${widget.listing.price!.toStringAsFixed(0)}'
+                                  : 'Price on request',
                               style: ValoraTypography.titleMedium.copyWith(
-                                color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                                color: isDark
+                                    ? ValoraColors.neutral50
+                                    : ValoraColors.neutral900,
                                 fontWeight: FontWeight.bold,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: ValoraColors.success.withValues(alpha: 0.1),
+                              color: ValoraColors.success.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -149,7 +192,9 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                       Text(
                         widget.listing.address,
                         style: ValoraTypography.bodySmall.copyWith(
-                          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                          color: isDark
+                              ? ValoraColors.neutral400
+                              : ValoraColors.neutral500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -157,11 +202,23 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          _buildFeature(context, Icons.bed_rounded, '${widget.listing.bedrooms ?? 0}'),
+                          _buildFeature(
+                            context,
+                            Icons.bed_rounded,
+                            '${widget.listing.bedrooms ?? 0}',
+                          ),
                           const SizedBox(width: 8),
-                          _buildFeature(context, Icons.shower_rounded, '${widget.listing.bathrooms ?? 0}'),
+                          _buildFeature(
+                            context,
+                            Icons.shower_rounded,
+                            '${widget.listing.bathrooms ?? 0}',
+                          ),
                           const SizedBox(width: 8),
-                          _buildFeature(context, Icons.square_foot_rounded, '${widget.listing.livingAreaM2 ?? 0}'),
+                          _buildFeature(
+                            context,
+                            Icons.square_foot_rounded,
+                            '${widget.listing.livingAreaM2 ?? 0}',
+                          ),
                         ],
                       ),
                     ],
@@ -171,14 +228,19 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
             ],
           ),
         ),
-    ));
+      ),
+    );
   }
 
   Widget _buildFeature(BuildContext context, IconData icon, String label) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, size: 14, color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+        Icon(
+          icon,
+          size: 14,
+          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+        ),
         const SizedBox(width: 4),
         Text(
           label,

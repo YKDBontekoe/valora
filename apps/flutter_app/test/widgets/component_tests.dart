@@ -15,7 +15,9 @@ void main() {
   });
 
   group('ValoraButton', () {
-    testWidgets('renders correctly and handles taps', (WidgetTester tester) async {
+    testWidgets('renders correctly and handles taps', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -58,7 +60,9 @@ void main() {
   });
 
   group('ValoraChip', () {
-    testWidgets('renders correctly and handles selection', (WidgetTester tester) async {
+    testWidgets('renders correctly and handles selection', (
+      WidgetTester tester,
+    ) async {
       bool isSelected = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -112,10 +116,7 @@ void main() {
           ],
           child: MaterialApp(
             home: Scaffold(
-              body: FeaturedListingCard(
-                listing: listing,
-                onTap: () {},
-              ),
+              body: FeaturedListingCard(listing: listing, onTap: () {}),
             ),
           ),
         ),
@@ -155,10 +156,7 @@ void main() {
           ],
           child: MaterialApp(
             home: Scaffold(
-              body: NearbyListingCard(
-                listing: listing,
-                onTap: () {},
-              ),
+              body: NearbyListingCard(listing: listing, onTap: () {}),
             ),
           ),
         ),
