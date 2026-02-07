@@ -85,7 +85,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                           : (isDark
                                 ? ValoraColors.neutral700
                                 : ValoraColors.neutral200),
-                      width: _isSearchFocused ? 1.5 : 1,
+                      width: _isSearchFocused ? 2 : 1,
                     ),
                   ),
                   child: TextField(
@@ -157,7 +157,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: ValoraColors.error,
+                                color: ValoraColors.accent,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: isDark
@@ -224,7 +224,7 @@ class _HomeHeaderState extends State<HomeHeader> {
       icon: icon,
       label: label,
       isSelected: isActive,
-      onSelected: null, // Static for now, disable tap feedback
+      onSelected: (_) {}, // Enable tap feedback
       backgroundColor: backgroundColor,
       textColor: textColor,
     );

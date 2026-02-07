@@ -20,11 +20,11 @@ class HomeBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final glassColor = isDark
-        ? ValoraColors.glassBlack.withValues(alpha: 0.8)
-        : ValoraColors.glassWhite.withValues(alpha: 0.85);
+        ? ValoraColors.glassBlack.withValues(alpha: 0.9)
+        : ValoraColors.glassWhite.withValues(alpha: 0.9);
     final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.white.withValues(alpha: 0.4);
+        ? ValoraColors.glassBorderDark
+        : ValoraColors.glassBorderLight.withValues(alpha: 0.5);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -104,8 +104,8 @@ class _GlassNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unselectedColor = isDark
-        ? Colors.white.withValues(alpha: 0.5)
-        : Colors.black.withValues(alpha: 0.5);
+        ? ValoraColors.neutral400
+        : ValoraColors.neutral500;
 
     return GestureDetector(
       onTap: () {
