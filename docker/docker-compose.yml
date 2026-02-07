@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_v18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U valora"]
       interval: 5s
@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile
     container_name: valora-api
     ports:
-      - "5000:80"
+      - "5001:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
@@ -34,6 +34,7 @@ services:
       - SCRAPER_DELAY_MS=2000
       - SCRAPER_MAX_RETRIES=3
       - SCRAPER_CRON=0 */6 * * *
+      - SCRAPER_USE_PLAYWRIGHT=true
       - HANGFIRE_ENABLED=true
       - JWT_SECRET=DevSecretKey_ChangeMe_In_Production_Configuration_123!
       - JWT_ISSUER=ValoraApi
@@ -47,4 +48,4 @@ services:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  postgres_data_v18:

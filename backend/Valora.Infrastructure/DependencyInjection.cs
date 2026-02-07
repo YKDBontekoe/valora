@@ -46,8 +46,8 @@ public static class DependencyInjection
 
         // Scraper services
         // Choose between Playwright (browser automation) and HTTP client.
-        // Default is false for broader environment compatibility (e.g. containers without browser deps).
-        var usePlaywright = configuration.GetValue("SCRAPER_USE_PLAYWRIGHT", false);
+        // Default is true for robustness against bot protection.
+        var usePlaywright = configuration.GetValue("SCRAPER_USE_PLAYWRIGHT", true);
 
         if (usePlaywright)
         {

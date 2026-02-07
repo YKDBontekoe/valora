@@ -56,36 +56,46 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             playwright = await Playwright.CreateAsync();
             IBrowser? browser = null;
 
+            var launchOptions = new BrowserTypeLaunchOptions
+            {
+                // Setting Headless = false and using --headless=new in Args is a known
+                // stealth technique to bypass detection.
+                Headless = false,
+                Args = new[]
+                {
+                    "--headless=new", 
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-infobars",
+                    "--window-position=0,0",
+                    "--ignore-certificate-errors",
+                    "--ignore-certificate-errors-spki-list",
+                    "--disable-dev-shm-usage", // Crucial for Docker
+                    "--disable-gpu",
+                    "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                }
+            };
+
             try
             {
                 // Try using Chrome channel (system-installed Chrome) first.
-                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+                var chromeOptions = new BrowserTypeLaunchOptions
                 {
-                    Headless = true,
-                    Channel = "chrome", // Use system Chrome
-                    Args = new[]
-                    {
-                        "--disable-blink-features=AutomationControlled",
-                        "--no-sandbox"
-                    }
-                });
-                _logger.LogInformation("Playwright initialized with system Chrome");
+                    Headless = false,
+                    Channel = "chrome",
+                    Args = launchOptions.Args
+                };
+                browser = await playwright.Chromium.LaunchAsync(chromeOptions);
+                _logger.LogInformation("Playwright initialized with system Chrome (Stealth Mode)");
             }
             catch (PlaywrightException firstLaunchException)
             {
                 try
                 {
                     // Fall back to bundled Chromium if system Chrome is not available.
-                    browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-                    {
-                        Headless = true,
-                        Args = new[]
-                        {
-                            "--disable-blink-features=AutomationControlled",
-                            "--no-sandbox"
-                        }
-                    });
-                    _logger.LogInformation("Playwright initialized with bundled Chromium");
+                    browser = await playwright.Chromium.LaunchAsync(launchOptions);
+                    _logger.LogInformation("Playwright initialized with bundled Chromium (Stealth Mode)");
                 }
                 catch (Exception secondLaunchException)
                 {
@@ -130,13 +140,46 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
     private async Task<IBrowserContext> CreateContextAsync()
     {
         var browser = await GetBrowserAsync();
-        return await browser.NewContextAsync(new BrowserNewContextOptions
+        var context = await browser.NewContextAsync(new BrowserNewContextOptions
         {
-            UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            // Use Linux UA to match Docker container environment
+            UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             Locale = "nl-NL",
             TimezoneId = "Europe/Amsterdam",
-            ViewportSize = new ViewportSize { Width = 1920, Height = 1080 }
+            ViewportSize = new ViewportSize { Width = 1920, Height = 1080 },
+            JavaScriptEnabled = true,
+            HasTouch = false,
+            IsMobile = false,
+            Permissions = new[] { "geolocation" }
         });
+
+        // Inject stealth scripts to mask automation indicators
+        await context.AddInitScriptAsync(@"
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['nl-NL', 'nl', 'en-US', 'en']
+            });
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+            Object.defineProperty(navigator, 'hardwareConcurrency', {
+                get: () => 4
+            });
+            
+            // Simple WebGL spoofing
+            const getParameter = WebGLRenderingContext.prototype.getParameter;
+            WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                // UNMASKED_VENDOR_WEBGL
+                if (parameter === 37445) return 'Intel Inc.';
+                // UNMASKED_RENDERER_WEBGL
+                if (parameter === 37446) return 'Intel(R) Iris(TM) Plus Graphics 640';
+                return getParameter(parameter);
+            };
+        ");
+
+        return context;
     }
 
     public async Task<FundaApiResponse?> SearchBuyAsync(
