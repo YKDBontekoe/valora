@@ -227,6 +227,71 @@ class _SearchScreenState extends State<SearchScreen> {
         _maxLivingArea != null;
   }
 
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      useRootNavigator: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Text(
+                  'Sort By',
+                  style: ValoraTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              _buildSortOption('Newest', 'date', 'desc'),
+              _buildSortOption('Price: Low to High', 'price', 'asc'),
+              _buildSortOption('Price: High to Low', 'price', 'desc'),
+              _buildSortOption('Area: Small to Large', 'livingarea', 'asc'),
+              _buildSortOption('Area: Large to Small', 'livingarea', 'desc'),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(String label, String sortBy, String sortOrder) {
+    bool selected = false;
+    if (_sortBy == null && sortBy == 'date' && sortOrder == 'desc') {
+      selected = true;
+    } else if (_sortBy == sortBy && _sortOrder == sortOrder) {
+      selected = true;
+    }
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      title: Text(
+        label,
+        style: ValoraTypography.bodyLarge.copyWith(
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          color: selected ? ValoraColors.primary : Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      trailing: selected ? const Icon(Icons.check_rounded, color: ValoraColors.primary) : null,
+      onTap: () {
+        setState(() {
+          _sortBy = sortBy;
+          _sortOrder = sortOrder;
+        });
+        Navigator.pop(context);
+        _loadListings(refresh: true);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -253,6 +318,11 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             centerTitle: false,
             actions: [
+              IconButton(
+                onPressed: _showSortOptions,
+                icon: const Icon(Icons.sort_rounded),
+                tooltip: 'Sort',
+              ),
               Stack(
                 children: [
                   IconButton(
@@ -306,6 +376,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                 label: 'Price: €${_minPrice?.toInt() ?? 0} - ${_maxPrice != null ? '€${_maxPrice!.toInt()}' : 'Any'}',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
+                                onDeleted: () {
+                                  setState(() {
+                                    _minPrice = null;
+                                    _maxPrice = null;
+                                  });
+                                  _loadListings(refresh: true);
+                                },
                               ),
                             ),
                           if (_city != null)
@@ -315,6 +392,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                 label: 'City: $_city',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
+                                onDeleted: () {
+                                  setState(() {
+                                    _city = null;
+                                  });
+                                  _loadListings(refresh: true);
+                                },
                               ),
                             ),
                            if (_minBedrooms != null)
@@ -324,6 +407,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                 label: '$_minBedrooms+ Beds',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
+                                onDeleted: () {
+                                  setState(() {
+                                    _minBedrooms = null;
+                                  });
+                                  _loadListings(refresh: true);
+                                },
                               ),
                             ),
                            if (_minLivingArea != null)
@@ -333,6 +422,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                 label: '$_minLivingArea+ m²',
                                 isSelected: true,
                                 onSelected: (_) => _openFilterDialog(),
+                                onDeleted: () {
+                                  setState(() {
+                                    _minLivingArea = null;
+                                  });
+                                  _loadListings(refresh: true);
+                                },
                               ),
                             ),
                             if (_hasActiveFilters)
