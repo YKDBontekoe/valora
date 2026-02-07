@@ -18,11 +18,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Load environment variables. In production/CI, we often rely on build arguments or
-    // the .env.example file being bundled if a specific .env isn't provided.
-    // Since .env is gitignored and not guaranteed to exist in CI, we load .env.example
-    // which is safe to commit.
-    await dotenv.load(fileName: ".env.example");
+    // Prefer local overrides when available, but always fall back to committed defaults.
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (_) {
+      await dotenv.load(fileName: ".env.example");
+    }
 
     // Catch Flutter framework errors
     FlutterError.onError = (FlutterErrorDetails details) {

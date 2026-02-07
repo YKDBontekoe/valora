@@ -235,7 +235,13 @@ internal static partial class FundaMapper
         {
             listing.ImageUrls = data.Media.Items
                 .Where(x => !string.IsNullOrEmpty(x.Id))
-                .Select(x => $"https://cloud.funda.nl/valentina_media/{x.Id}_720.jpg")
+                .Select(x =>
+                {
+                    var mediaId = x.Id!;
+                    return mediaId.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? mediaId
+                        : $"https://cloud.funda.nl/valentina_media/{mediaId}_720.jpg";
+                })
                 .ToList();
 
             if (listing.ImageUrls.Count > 0)
@@ -258,7 +264,18 @@ internal static partial class FundaMapper
         {
             listing.FloorPlanUrls = data.FloorPlans
                 .Where(fp => !string.IsNullOrEmpty(fp.Url) || !string.IsNullOrEmpty(fp.Id))
-                .Select(fp => fp.Url ?? $"https://cloud.funda.nl/valentina_media/{fp.Id}_720.jpg")
+                .Select(fp =>
+                {
+                    if (!string.IsNullOrEmpty(fp.Url))
+                    {
+                        return fp.Url;
+                    }
+
+                    var id = fp.Id!;
+                    return id.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? id
+                        : $"https://cloud.funda.nl/valentina_media/{id}_720.jpg";
+                })
                 .ToList();
         }
 

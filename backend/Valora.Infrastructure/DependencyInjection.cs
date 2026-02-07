@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Scraping;
@@ -44,22 +45,43 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
 
         // Scraper services
-        // FundaApiClient uses Funda's Topposition API for more reliable listing discovery
-        services.AddHttpClient<IFundaApiClient, FundaApiClient>()
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-            .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
-            .AddTransientHttpErrorPolicy(builder =>
-                builder.WaitAndRetryAsync(
-                    3,
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    onRetry: (outcome, timespan, retryAttempt, context) =>
-                    {
-                        Console.WriteLine($"[Polly] Retrying Funda API request. Attempt {retryAttempt}. Delay: {timespan.TotalSeconds}s. Error: {outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString()}");
-                    }));
+        // Choose between Playwright (browser automation) and HTTP client.
+        // Default is false for broader environment compatibility (e.g. containers without browser deps).
+        var usePlaywright = configuration.GetValue("SCRAPER_USE_PLAYWRIGHT", false);
+
+        if (usePlaywright)
+        {
+            // Playwright-based client for environments with bot protection
+            services.AddSingleton<IFundaApiClient, PlaywrightFundaClient>();
+        }
+        else
+        {
+            // HTTP-based client (faster, but may get 403 from Funda)
+            services.AddHttpClient<IFundaApiClient, FundaApiClient>()
+                .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+                .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
+                .AddPolicyHandler((serviceProvider, _) =>
+                    HttpPolicyExtensions
+                        .HandleTransientHttpError()
+                        .WaitAndRetryAsync(
+                        3,
+                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        onRetry: (outcome, timespan, retryAttempt, context) =>
+                        {
+                            var logger = serviceProvider.GetRequiredService<ILogger<FundaApiClient>>();
+                            logger.LogWarning(
+                                outcome.Exception,
+                                "Retrying Funda API request. Attempt {RetryAttempt}. DelaySeconds {DelaySeconds}. StatusCode {StatusCode}",
+                                retryAttempt,
+                                timespan.TotalSeconds,
+                                outcome.Result?.StatusCode);
+                        }));
+        }
 
         services.AddScoped<IFundaScraperService, FundaScraperService>();
         services.AddScoped<IFundaSearchService, FundaSearchService>();
         services.AddScoped<FundaScraperJob>();
+
 
         return services;
     }

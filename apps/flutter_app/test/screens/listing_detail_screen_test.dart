@@ -155,7 +155,8 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.scrollUntilVisible(find.text('View on Funda'), 500);
     await tester.pumpAndSettle();
