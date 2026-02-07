@@ -1,7 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
-  static const String _fallbackApiUrl = 'http://localhost:5000/api';
+  static const String _fallbackApiUrl = 'http://localhost:5001/api';
 
   static String get apiUrl {
     final configured = dotenv.env['API_URL']?.trim();

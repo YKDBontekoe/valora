@@ -36,13 +36,13 @@ services:
       - SCRAPER_CRON=0 */6 * * *
       - SCRAPER_USE_PLAYWRIGHT=true
       - HANGFIRE_ENABLED=true
-      - JWT_SECRET=DevSecretKey_ChangeMe_In_Production_Configuration_123!
+      - JWT_SECRET=${JWT_SECRET:-DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!}
       - JWT_ISSUER=ValoraApi
       - JWT_AUDIENCE=ValoraApp
       - JWT_EXPIRY_MINUTES=60
       - ENABLE_HTTPS_REDIRECTION=false
       - ADMIN_EMAIL=admin@example.com
-      - ADMIN_PASSWORD=SecurePassword123!
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-SecurePassword123!}
     depends_on:
       postgres:
         condition: service_healthy

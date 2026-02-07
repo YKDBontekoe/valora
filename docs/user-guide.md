@@ -19,7 +19,7 @@ The backend handles scraping and data storage.
    ```bash
    dotnet run --project Valora.Api
    ```
-   The server will start on `http://localhost:5000`.
+   The server will start on `http://localhost:5001`.
 
 ### 2. Start the Frontend
 
@@ -46,4 +46,4 @@ The frontend is the user interface.
 ### "Backend not connected"
 If you see this message, it means the frontend cannot talk to the backend.
 - Ensure the backend server is running (Step 1).
-- Check if `http://localhost:5000/api/health` works in your browser.
+- Check if `http://localhost:5001/api/health` works in your browser.
