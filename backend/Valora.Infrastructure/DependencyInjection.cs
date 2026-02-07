@@ -50,7 +50,7 @@ public static class DependencyInjection
         var usePlaywright = configuration.GetValue("SCRAPER_USE_PLAYWRIGHT", false);
 
         // Define retry policy used by both clients
-        IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(IServiceProvider sp) =>
+        IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(IServiceProvider sp, string loggerCategory) =>
             HttpPolicyExtensions
                 .HandleTransientHttpError()
                 .WaitAndRetryAsync(
@@ -58,7 +58,8 @@ public static class DependencyInjection
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     onRetry: (outcome, timespan, retryAttempt, context) =>
                     {
-                        var logger = sp.GetRequiredService<ILogger<FundaApiClient>>();
+                        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                        var logger = loggerFactory.CreateLogger(loggerCategory);
                         logger.LogWarning(
                             outcome.Exception,
                             "Retrying Funda API request. Attempt {RetryAttempt}. DelaySeconds {DelaySeconds}. StatusCode {StatusCode}",
@@ -72,7 +73,7 @@ public static class DependencyInjection
         services.AddHttpClient("FundaHttpClient")
             .SetHandlerLifetime(TimeSpan.FromMinutes(5))
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
-            .AddPolicyHandler((sp, _) => GetRetryPolicy(sp));
+            .AddPolicyHandler((sp, _) => GetRetryPolicy(sp, "Valora.Infrastructure.Scraping.FundaHttpClient"));
 
         if (usePlaywright)
         {
@@ -85,7 +86,7 @@ public static class DependencyInjection
             services.AddHttpClient<IFundaApiClient, FundaApiClient>()
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
                 .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
-                .AddPolicyHandler((sp, _) => GetRetryPolicy(sp));
+                .AddPolicyHandler((sp, _) => GetRetryPolicy(sp, "Valora.Infrastructure.Scraping.FundaApiClient"));
         }
 
         services.AddScoped<IFundaScraperService, FundaScraperService>();

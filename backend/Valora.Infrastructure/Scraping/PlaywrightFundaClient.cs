@@ -270,11 +270,19 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
                 await action();
                 return; // Success
             }
-            catch (Exception ex) when (attempt <= maxRetries && !cancellationToken.IsCancellationRequested)
+            catch (Exception ex) when (attempt <= maxRetries && !cancellationToken.IsCancellationRequested && (ex is PlaywrightException || ex is TimeoutException))
             {
                 var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt)); // 2s, 4s, 8s
                 _logger.LogWarning(ex, "Retry {Attempt}/{MaxRetries} for {Operation}. Waiting {Delay}s.", attempt, maxRetries, operationName, delay.TotalSeconds);
                 await Task.Delay(delay, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                if (attempt > maxRetries)
+                {
+                    _logger.LogError(ex, "Max retries exceeded for {Operation}.", operationName);
+                }
+                throw;
             }
         }
     }
@@ -1001,7 +1009,11 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             using var client = _httpClientFactory.CreateClient("FundaHttpClient");
             var response = await client.GetAsync(url, cancellationToken);
 
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to fetch summary for {GlobalId}. Status: {StatusCode}", globalId, response.StatusCode);
+                return null;
+            }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaApiListingSummary>(content, JsonOptions);
@@ -1023,7 +1035,11 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             using var client = _httpClientFactory.CreateClient("FundaHttpClient");
             var response = await client.GetAsync(url, cancellationToken);
 
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to fetch contact details for {GlobalId}. Status: {StatusCode}", globalId, response.StatusCode);
+                return null;
+            }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaContactDetailsResponse>(content, JsonOptions);
@@ -1049,14 +1065,18 @@ public partial class PlaywrightFundaClient : IFundaApiClient, IAsyncDisposable
             using var client = _httpClientFactory.CreateClient("FundaHttpClient");
             var response = await client.GetAsync(url, cancellationToken);
 
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to check fiber for postal code {PostalCodeHash}. Status: {StatusCode}", cleanPostalCode.GetHashCode(), response.StatusCode);
+                return null;
+            }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaFiberResponse>(content, JsonOptions);
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to check fiber for {PostalCode}", cleanPostalCode);
+            _logger.LogDebug(ex, "Failed to check fiber for postal code hash {PostalCodeHash}", cleanPostalCode.GetHashCode());
             return null;
         }
     }
