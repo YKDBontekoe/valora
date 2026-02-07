@@ -205,7 +205,7 @@ void main() {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      final chipFinder = find.widgetWithText(FilterChip, 'Price: Low to High');
+      final chipFinder = find.text('Price: Low to High');
       final scrollable = find.descendant(
         of: find.byType(SingleChildScrollView),
         matching: find.byType(Scrollable),
@@ -229,7 +229,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // First change to Price sort
-      final priceChip = find.widgetWithText(FilterChip, 'Price: Low to High');
+      final priceChip = find.text('Price: Low to High');
       final scrollable = find.descendant(
         of: find.byType(SingleChildScrollView),
         matching: find.byType(Scrollable),
@@ -240,7 +240,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // Now tap Newest
-      final newestChip = find.widgetWithText(FilterChip, 'Newest');
+      final newestChip = find.text('Newest');
       await tester.scrollUntilVisible(newestChip, 50.0, scrollable: scrollable);
       await tester.tap(newestChip);
       await tester.pump(const Duration(seconds: 1));
@@ -263,7 +263,7 @@ void main() {
       ).first;
 
       // Sort A-Z (Amsterdam, Rotterdam)
-      final cityAscChip = find.widgetWithText(FilterChip, 'City: A-Z');
+      final cityAscChip = find.text('City: A-Z');
       await tester.scrollUntilVisible(cityAscChip, 50.0, scrollable: scrollable);
       await tester.tap(cityAscChip);
       await tester.pump(const Duration(seconds: 1));
@@ -274,7 +274,7 @@ void main() {
       expect(cards.last.listing.city, 'Rotterdam');
 
       // Sort Z-A (Rotterdam, Amsterdam)
-      final cityDescChip = find.widgetWithText(FilterChip, 'City: Z-A');
+      final cityDescChip = find.text('City: Z-A');
       await tester.scrollUntilVisible(cityDescChip, 50.0, scrollable: scrollable);
       await tester.tap(cityDescChip);
       await tester.pump(const Duration(seconds: 1));

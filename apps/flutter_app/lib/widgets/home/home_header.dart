@@ -7,6 +7,7 @@ import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 import '../../core/theme/valora_shadows.dart';
 import '../valora_glass_container.dart';
+import '../valora_widgets.dart';
 
 class HomeHeader extends StatefulWidget {
   final TextEditingController searchController;
@@ -188,88 +189,13 @@ class _HomeHeaderState extends State<HomeHeader> {
     Color? backgroundColor,
     Color? textColor,
   }) {
-    return _FilterChip(
+    return ValoraChip(
       icon: icon,
       label: label,
-      isActive: isActive,
+      isSelected: isActive,
+      onSelected: null, // Static for now, disable tap feedback
       backgroundColor: backgroundColor,
       textColor: textColor,
     );
-  }
-}
-
-class _FilterChip extends StatefulWidget {
-  final IconData? icon;
-  final String label;
-  final bool isActive;
-  final Color? backgroundColor;
-  final Color? textColor;
-
-  const _FilterChip({
-    this.icon,
-    required this.label,
-    this.isActive = false,
-    this.backgroundColor,
-    this.textColor,
-  });
-
-  @override
-  State<_FilterChip> createState() => _FilterChipState();
-}
-
-class _FilterChipState extends State<_FilterChip> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = widget.backgroundColor ?? (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
-    final text = widget.textColor ?? (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
-    final border = widget.isActive ? Colors.transparent : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
-
-    return Listener(
-      onPointerDown: (_) => setState(() => _isPressed = true),
-      onPointerUp: (_) => setState(() => _isPressed = false),
-      onPointerCancel: (_) => setState(() => _isPressed = false),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(100),
-          boxShadow: widget.isActive
-              ? ValoraShadows.primary
-              : ValoraShadows.sm,
-        ),
-        child: Material(
-          color: bg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
-            side: BorderSide(color: border),
-          ),
-          child: InkWell(
-            onTap: () => HapticFeedback.selectionClick(),
-            borderRadius: BorderRadius.circular(100),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.icon != null) ...[
-                    Icon(widget.icon, size: 16, color: text),
-                    const SizedBox(width: 6),
-                  ],
-                  Text(
-                    widget.label,
-                    style: ValoraTypography.labelSmall.copyWith(
-                      color: text,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    ).animate(target: _isPressed ? 1 : 0)
-     .scale(end: const Offset(0.95, 0.95), duration: ValoraAnimations.fast);
   }
 }

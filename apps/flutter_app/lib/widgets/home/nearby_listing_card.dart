@@ -37,7 +37,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
         child: ValoraCard(
           onTap: widget.onTap,
           padding: const EdgeInsets.all(ValoraSpacing.sm),
@@ -107,7 +107,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                   ),
                 ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: ValoraSpacing.md),
               // Info
               Expanded(
                 child: Padding(
@@ -134,9 +134,9 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                               color: ValoraColors.success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Active',
-                              style: TextStyle(
+                              style: ValoraTypography.labelSmall.copyWith(
                                 color: ValoraColors.success,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
