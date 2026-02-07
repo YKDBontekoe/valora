@@ -152,13 +152,13 @@ The user interacts with the Flutter app:
 
 The backend exposes a REST API built with .NET Minimal APIs.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/listings` | Get paginated, filtered listings. |
-| `GET` | `/api/listings/{id}` | Get full details for a single listing. |
-| `POST` | `/api/scraper/trigger` | Manually trigger a full scrape (Admin only). |
-| `POST` | `/api/auth/login` | Authenticate and receive JWT token. |
-| `GET` | `/api/health` | Check system status. |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/listings` | 🔒 | Get paginated, filtered listings. |
+| `GET` | `/api/listings/{id}` | 🔒 | Get full details for a single listing. |
+| `POST` | `/api/scraper/trigger` | 🔒 | Manually trigger a full scrape (Admin only). |
+| `POST` | `/api/auth/login` | 🔓 | Authenticate and receive JWT token. |
+| `GET` | `/api/health` | 🔓 | Check system status. |
 
 See [Developer Guide](docs/developer-guide.md) for full API documentation.
 

@@ -136,7 +136,7 @@ sequenceDiagram
 
 Watch out for these common issues:
 
-- **Rate Limiting**: Funda will block your IP if you scrape too aggressively. Use the `DELAY_BETWEEN_REQUESTS_MS` setting (default 1000ms) or use a proxy.
+- **Rate Limiting**: Funda will block your IP if you scrape too aggressively. Use the `SCRAPER_DELAY_MS` setting (default 2000ms) or use a proxy.
 - **Database Migrations**: If you change the `Listing` entity, you **must** create a migration. Failing to do so will cause runtime errors.
 - **Environment Variables**: Ensure `JWT_SECRET` is set in production. In development, a fallback is used, but don't rely on it.
 - **PostgreSQL Connection**: If Docker fails to start, check if port 5432 is already in use by another local Postgres instance.
