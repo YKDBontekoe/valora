@@ -241,6 +241,19 @@ void main() {
       );
     });
 
+    test('getListing throws ValidationException on invalid id', () async {
+      final client = MockClient((request) async {
+        return http.Response('Not Found', 404);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+
+      expect(
+        () => apiService.getListing('bad/id'),
+        throwsA(isA<ValidationException>()),
+      );
+    });
+
     test('triggerLimitedScrape makes correct request', () async {
       final client = MockClient((request) async {
         expect(request.url.path, '/api/scraper/trigger-limited');

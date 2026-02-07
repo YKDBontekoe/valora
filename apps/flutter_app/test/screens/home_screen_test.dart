@@ -183,7 +183,7 @@ void main() {
 
       expect(find.byType(SnackBar), findsOneWidget);
       expect(
-        find.text('Server error (500). Please try again later.'),
+        find.text('Unable to load more listings right now.'),
         findsOneWidget,
       );
     });

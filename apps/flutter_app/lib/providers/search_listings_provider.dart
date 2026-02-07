@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
@@ -88,17 +89,12 @@ class SearchListingsProvider extends ChangeNotifier {
       _listings.addAll(response.items);
       _hasNextPage = response.hasNextPage;
       _error = null;
-    } catch (e, stackTrace) {
+    } catch (e) {
       if (requestId != _requestSequence) {
         return;
       }
       _error = e is AppException ? e.message : 'Failed to load more items';
-      developer.log(
-        'Pagination failed',
-        name: 'SearchListingsProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logProviderFailure(operation: 'pagination', error: e);
     } finally {
       if (requestId == _requestSequence) {
         _isLoadingMore = false;
@@ -178,17 +174,12 @@ class SearchListingsProvider extends ChangeNotifier {
         ..addAll(response.items);
       _hasNextPage = response.hasNextPage;
       _error = null;
-    } catch (e, stackTrace) {
+    } catch (e) {
       if (requestId != _requestSequence) {
         return;
       }
       _error = e is AppException ? e.message : 'Failed to search listings';
-      developer.log(
-        'Search failed',
-        name: 'SearchListingsProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logProviderFailure(operation: 'search', error: e);
     } finally {
       if (requestId == _requestSequence) {
         _isLoading = false;
@@ -211,6 +202,18 @@ class SearchListingsProvider extends ChangeNotifier {
       maxLivingArea: _maxLivingArea,
       sortBy: _sortBy,
       sortOrder: _sortOrder,
+    );
+  }
+
+  void _logProviderFailure({required String operation, required Object error}) {
+    developer.log(
+      jsonEncode(<String, String>{
+        'event': 'provider_failure',
+        'provider': 'SearchListingsProvider',
+        'operation': operation,
+        'errorType': error.runtimeType.toString(),
+      }),
+      name: 'SearchListingsProvider',
     );
   }
 }

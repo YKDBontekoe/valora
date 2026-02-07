@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
@@ -110,17 +111,12 @@ class HomeListingsProvider extends ChangeNotifier {
       _listings.addAll(response.items);
       _hasNextPage = response.hasNextPage;
       _error = null;
-    } catch (e, stackTrace) {
+    } catch (e) {
       if (requestId != _requestSequence) {
         return;
       }
       _error = e;
-      developer.log(
-        'Home pagination failed',
-        name: 'HomeListingsProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logProviderFailure(operation: 'pagination', error: e);
     } finally {
       if (requestId == _requestSequence) {
         _isLoadingMore = false;
@@ -203,17 +199,12 @@ class HomeListingsProvider extends ChangeNotifier {
         ..addAll(response.items);
       _hasNextPage = response.hasNextPage;
       _error = null;
-    } catch (e, stackTrace) {
+    } catch (e) {
       if (requestId != _requestSequence) {
         return;
       }
       _error = e;
-      developer.log(
-        'Home listings load failed',
-        name: 'HomeListingsProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logProviderFailure(operation: 'refresh', error: e);
     } finally {
       if (requestId == _requestSequence) {
         _isLoading = false;
@@ -236,6 +227,18 @@ class HomeListingsProvider extends ChangeNotifier {
       maxLivingArea: _maxLivingArea,
       sortBy: _sortBy,
       sortOrder: _sortOrder,
+    );
+  }
+
+  void _logProviderFailure({required String operation, required Object error}) {
+    developer.log(
+      jsonEncode(<String, String>{
+        'event': 'provider_failure',
+        'provider': 'HomeListingsProvider',
+        'operation': operation,
+        'errorType': error.runtimeType.toString(),
+      }),
+      name: 'HomeListingsProvider',
     );
   }
 }

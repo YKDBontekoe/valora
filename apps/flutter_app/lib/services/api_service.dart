@@ -113,10 +113,19 @@ class ApiService {
 
   Future<Listing?> getListing(String id) async {
     try {
+      final String sanitizedId = _sanitizeListingId(id);
+      final Uri baseUri = Uri.parse(baseUrl);
+      final Uri listingUri = baseUri.replace(
+        pathSegments: <String>[
+          ...baseUri.pathSegments.where((segment) => segment.isNotEmpty),
+          'listings',
+          sanitizedId,
+        ],
+      );
+
       final response = await _authenticatedRequest(
-        (headers) => _client
-            .get(Uri.parse('$baseUrl/listings/$id'), headers: headers)
-            .timeout(timeoutDuration),
+        (headers) =>
+            _client.get(listingUri, headers: headers).timeout(timeoutDuration),
       );
 
       return await _handleResponse(
@@ -221,6 +230,14 @@ class ApiService {
       // Ignore parsing errors
     }
     return null;
+  }
+
+  String _sanitizeListingId(String id) {
+    final String sanitized = id.trim();
+    if (sanitized.isEmpty || sanitized.contains(RegExp(r'[/?#]'))) {
+      throw ValidationException('Invalid listing identifier');
+    }
+    return sanitized;
   }
 }
 

@@ -65,7 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
-    _homeProvider?.dispose();
     super.dispose();
   }
 
@@ -90,12 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (provider.error != null && provider.error != previousError) {
-      final String message = provider.error is AppException
-          ? (provider.error! as AppException).message
-          : provider.error.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: const Text('Unable to load more listings right now.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

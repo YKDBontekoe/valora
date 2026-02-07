@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -33,10 +34,12 @@ Future<void> main() async {
       if (kDebugMode) {
         debugPrint('Flutter Error: ${details.exception}');
       }
-      CrashReportingService.captureException(
-        details.exception,
-        stackTrace: details.stack,
-        context: const <String, dynamic>{'source': 'flutter_error'},
+      unawaited(
+        _reportCrash(
+          details.exception,
+          stackTrace: details.stack,
+          context: const <String, dynamic>{'source': 'flutter_error'},
+        ),
       );
     };
 
@@ -45,10 +48,12 @@ Future<void> main() async {
       if (kDebugMode) {
         debugPrint('Async Error: $error');
       }
-      CrashReportingService.captureException(
-        error,
-        stackTrace: stack,
-        context: const <String, dynamic>{'source': 'async_error'},
+      unawaited(
+        _reportCrash(
+          error,
+          stackTrace: stack,
+          context: const <String, dynamic>{'source': 'async_error'},
+        ),
       );
       return true; // Prevent app from crashing
     };
@@ -87,6 +92,22 @@ Future<void> main() async {
   }
 }
 // coverage:ignore-end
+
+Future<void> _reportCrash(
+  Object error, {
+  StackTrace? stackTrace,
+  Map<String, dynamic>? context,
+}) async {
+  try {
+    await CrashReportingService.captureException(
+      error,
+      stackTrace: stackTrace,
+      context: context,
+    );
+  } catch (_) {
+    // Never let crash reporting throw into app error handlers.
+  }
+}
 
 class InitializationErrorApp extends StatelessWidget {
   final Object error;

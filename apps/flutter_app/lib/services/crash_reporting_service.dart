@@ -14,12 +14,15 @@ class CrashReportingService {
       return;
     }
 
-    await SentryFlutter.init((options) {
-      options.dsn = dsn;
-      options.tracesSampleRate = kDebugMode ? 0 : 0.1;
-    });
-
-    _initialized = true;
+    try {
+      await SentryFlutter.init((options) {
+        options.dsn = dsn;
+        options.tracesSampleRate = kDebugMode ? 0 : 0.1;
+      });
+      _initialized = true;
+    } catch (_) {
+      _initialized = false;
+    }
   }
 
   static Future<void> captureException(
@@ -31,16 +34,20 @@ class CrashReportingService {
       return;
     }
 
-    await Sentry.captureException(
-      error,
-      stackTrace: stackTrace,
-      withScope: (scope) {
-        if (context != null) {
-          for (final entry in context.entries) {
-            scope.setTag(entry.key, entry.value.toString());
+    try {
+      await Sentry.captureException(
+        error,
+        stackTrace: stackTrace,
+        withScope: (scope) {
+          if (context != null) {
+            for (final entry in context.entries) {
+              scope.setTag(entry.key, entry.value.toString());
+            }
           }
-        }
-      },
-    );
+        },
+      );
+    } catch (_) {
+      // Swallow reporting errors to avoid cascading failures during exception handling.
+    }
   }
 }
