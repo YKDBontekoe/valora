@@ -30,11 +30,14 @@ HttpClient _createMockImageHttpClient(SecurityContext? context) {
   when(request.close()).thenAnswer((_) async => response);
   when(response.contentLength).thenReturn(_transparentImage.length);
   when(response.statusCode).thenReturn(HttpStatus.ok);
-  when(response.compressionState).thenReturn(HttpClientResponseCompressionState.notCompressed);
+  when(
+    response.compressionState,
+  ).thenReturn(HttpClientResponseCompressionState.notCompressed);
   when(response.listen(any)).thenAnswer((Invocation invocation) {
     final void Function(List<int>) onData = invocation.positionalArguments[0];
     final void Function() onDone = invocation.namedArguments[#onDone];
-    final void Function(Object, [StackTrace]) onError = invocation.namedArguments[#onError];
+    final void Function(Object, [StackTrace]) onError =
+        invocation.namedArguments[#onError];
     final bool cancelOnError = invocation.namedArguments[#cancelOnError];
 
     return Stream<List<int>>.fromIterable([_transparentImage]).listen(
@@ -49,51 +52,125 @@ HttpClient _createMockImageHttpClient(SecurityContext? context) {
 }
 
 const List<int> _transparentImage = <int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
-  0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44,
-  0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D,
-  0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42,
-  0x60, 0x82,
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  0x0D,
+  0x0A,
+  0x1A,
+  0x0A,
+  0x00,
+  0x00,
+  0x00,
+  0x0D,
+  0x49,
+  0x48,
+  0x44,
+  0x52,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x1F,
+  0x15,
+  0xC4,
+  0x89,
+  0x00,
+  0x00,
+  0x00,
+  0x0A,
+  0x49,
+  0x44,
+  0x41,
+  0x54,
+  0x78,
+  0x9C,
+  0x63,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01,
+  0x0D,
+  0x0A,
+  0x2D,
+  0xB4,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x49,
+  0x45,
+  0x4E,
+  0x44,
+  0xAE,
+  0x42,
+  0x60,
+  0x82,
 ];
 
 class MockHttpClient extends Mock implements HttpClient {
   @override
   Future<HttpClientRequest> getUrl(Uri? url) => super.noSuchMethod(
-        Invocation.method(#getUrl, [url]),
-        returnValue: Future.value(MockHttpClientRequest()),
-      );
+    Invocation.method(#getUrl, [url]),
+    returnValue: Future.value(MockHttpClientRequest()),
+  );
 }
 
 class MockHttpClientRequest extends Mock implements HttpClientRequest {
   @override
   HttpHeaders get headers => super.noSuchMethod(
-        Invocation.getter(#headers),
-        returnValue: MockHttpHeaders(),
-      );
+    Invocation.getter(#headers),
+    returnValue: MockHttpHeaders(),
+  );
 
   @override
   Future<HttpClientResponse> close() => super.noSuchMethod(
-        Invocation.method(#close, []),
-        returnValue: Future.value(MockHttpClientResponse()),
-      );
+    Invocation.method(#close, []),
+    returnValue: Future.value(MockHttpClientResponse()),
+  );
 }
 
 class MockHttpClientResponse extends Mock implements HttpClientResponse {
   @override
-  int get contentLength => super.noSuchMethod(Invocation.getter(#contentLength), returnValue: 0);
+  int get contentLength =>
+      super.noSuchMethod(Invocation.getter(#contentLength), returnValue: 0);
   @override
-  int get statusCode => super.noSuchMethod(Invocation.getter(#statusCode), returnValue: 200);
+  int get statusCode =>
+      super.noSuchMethod(Invocation.getter(#statusCode), returnValue: 200);
   @override
-  HttpClientResponseCompressionState get compressionState =>
-      super.noSuchMethod(Invocation.getter(#compressionState), returnValue: HttpClientResponseCompressionState.notCompressed);
+  HttpClientResponseCompressionState get compressionState => super.noSuchMethod(
+    Invocation.getter(#compressionState),
+    returnValue: HttpClientResponseCompressionState.notCompressed,
+  );
 
   @override
-  StreamSubscription<List<int>> listen(void Function(List<int> event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+  StreamSubscription<List<int>> listen(
+    void Function(List<int> event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
     return super.noSuchMethod(
-        Invocation.method(#listen, [onData], {#onError: onError, #onDone: onDone, #cancelOnError: cancelOnError}),
-        returnValue: Stream<List<int>>.empty().listen(null));
+      Invocation.method(
+        #listen,
+        [onData],
+        {#onError: onError, #onDone: onDone, #cancelOnError: cancelOnError},
+      ),
+      returnValue: Stream<List<int>>.empty().listen(null),
+    );
   }
 }
 
@@ -116,7 +193,7 @@ void main() {
     "url": "http://test",
     "imageUrl": "http://test",
     "listedDate": "2023-01-01T00:00:00Z",
-    "createdAt": "2023-01-01T00:00:00Z"
+    "createdAt": "2023-01-01T00:00:00Z",
   };
 
   final listing2 = {
@@ -135,14 +212,14 @@ void main() {
     "url": "http://test",
     "imageUrl": "http://test",
     "listedDate": "2023-01-02T00:00:00Z",
-    "createdAt": "2023-01-02T00:00:00Z"
+    "createdAt": "2023-01-02T00:00:00Z",
   };
 
   setUp(() {
-     SharedPreferences.setMockInitialValues({
-       'favorite_listings': [json.encode(listing1), json.encode(listing2)]
-     });
-     HttpOverrides.global = TestHttpOverrides();
+    SharedPreferences.setMockInitialValues({
+      'favorite_listings': [json.encode(listing1), json.encode(listing2)],
+    });
+    HttpOverrides.global = TestHttpOverrides();
   });
 
   Widget createSavedListingsScreen() {
@@ -152,9 +229,7 @@ void main() {
           create: (_) => FavoritesProvider(),
         ),
       ],
-      child: const MaterialApp(
-        home: Scaffold(body: SavedListingsScreen()),
-      ),
+      child: const MaterialApp(home: Scaffold(body: SavedListingsScreen())),
     );
   }
 
@@ -170,7 +245,9 @@ void main() {
       expect(find.byType(Icon), findsWidgets);
     });
 
-    testWidgets('Filters listings by search query', (WidgetTester tester) async {
+    testWidgets('Filters listings by search query', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -181,7 +258,9 @@ void main() {
       expect(find.text('B Street'), findsNothing);
     });
 
-    testWidgets('Shows no matches found state and clears search', (WidgetTester tester) async {
+    testWidgets('Shows no matches found state and clears search', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
@@ -195,21 +274,27 @@ void main() {
       // Clear search
       await tester.tap(find.text('Clear Search'));
       await tester.pump(); // Start animations/rebuild
-      await tester.pump(const Duration(seconds: 2)); // Wait longer for all animations (fade in lists + images)
+      await tester.pump(
+        const Duration(seconds: 2),
+      ); // Wait longer for all animations (fade in lists + images)
 
       expect(find.text('A Street'), findsOneWidget);
       expect(find.text('B Street'), findsOneWidget);
     });
 
-    testWidgets('Sorts listings by price low to high', (WidgetTester tester) async {
+    testWidgets('Sorts listings by price low to high', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
       final chipFinder = find.text('Price: Low to High');
-      final scrollable = find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ).first;
+      final scrollable = find
+          .descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
 
       await tester.scrollUntilVisible(chipFinder, 50.0, scrollable: scrollable);
       await tester.pump(const Duration(milliseconds: 100));
@@ -217,7 +302,10 @@ void main() {
       await tester.tap(chipFinder);
       await tester.pump(const Duration(seconds: 1));
 
-      final finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
+      final finder = find.descendant(
+        of: find.byType(SliverList),
+        matching: find.byType(NearbyListingCard),
+      );
       final cards = tester.widgetList<NearbyListingCard>(finder);
 
       expect(cards.first.listing.price, 300000.0);
@@ -230,10 +318,12 @@ void main() {
 
       // First change to Price sort
       final priceChip = find.text('Price: Low to High');
-      final scrollable = find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ).first;
+      final scrollable = find
+          .descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
 
       await tester.scrollUntilVisible(priceChip, 50.0, scrollable: scrollable);
       await tester.tap(priceChip);
@@ -245,7 +335,10 @@ void main() {
       await tester.tap(newestChip);
       await tester.pump(const Duration(seconds: 1));
 
-      final finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
+      final finder = find.descendant(
+        of: find.byType(SliverList),
+        matching: find.byType(NearbyListingCard),
+      );
       final cards = tester.widgetList<NearbyListingCard>(finder);
 
       // Default is reversed (LIFO): B Street (added 2nd) should be first
@@ -257,64 +350,84 @@ void main() {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      final scrollable = find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ).first;
+      final scrollable = find
+          .descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
 
       // Sort A-Z (Amsterdam, Rotterdam)
       final cityAscChip = find.text('City: A-Z');
-      await tester.scrollUntilVisible(cityAscChip, 50.0, scrollable: scrollable);
+      await tester.scrollUntilVisible(
+        cityAscChip,
+        50.0,
+        scrollable: scrollable,
+      );
       await tester.tap(cityAscChip);
       await tester.pump(const Duration(seconds: 1));
 
-      var finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
+      var finder = find.descendant(
+        of: find.byType(SliverList),
+        matching: find.byType(NearbyListingCard),
+      );
       var cards = tester.widgetList<NearbyListingCard>(finder);
       expect(cards.first.listing.city, 'Amsterdam');
       expect(cards.last.listing.city, 'Rotterdam');
 
       // Sort Z-A (Rotterdam, Amsterdam)
       final cityDescChip = find.text('City: Z-A');
-      await tester.scrollUntilVisible(cityDescChip, 50.0, scrollable: scrollable);
+      await tester.scrollUntilVisible(
+        cityDescChip,
+        50.0,
+        scrollable: scrollable,
+      );
       await tester.tap(cityDescChip);
       await tester.pump(const Duration(seconds: 1));
 
-      finder = find.descendant(of: find.byType(SliverList), matching: find.byType(NearbyListingCard));
+      finder = find.descendant(
+        of: find.byType(SliverList),
+        matching: find.byType(NearbyListingCard),
+      );
       cards = tester.widgetList<NearbyListingCard>(finder);
       expect(cards.first.listing.city, 'Rotterdam');
       expect(cards.last.listing.city, 'Amsterdam');
     });
 
-    testWidgets('Removes favorite after confirmation', (WidgetTester tester) async {
-       await tester.pumpWidget(createSavedListingsScreen());
-       await tester.pump(const Duration(seconds: 1));
+    testWidgets('Removes favorite after confirmation', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createSavedListingsScreen());
+      await tester.pump(const Duration(seconds: 1));
 
-       // Use find.byIcon to find the favorite icon
-       final favIcon = find.byIcon(Icons.favorite_rounded);
-       if (favIcon.evaluate().isNotEmpty) {
-          await tester.tap(favIcon.first);
-       } else {
-          // Fallback if icon differs in test env
-          final borderIcon = find.byIcon(Icons.favorite_border_rounded);
-          if (borderIcon.evaluate().isNotEmpty) {
-             await tester.tap(borderIcon.first);
-          } else {
-             // Hard fallback: find ANY icon in the card
-             final firstCard = find.byType(NearbyListingCard).first;
-             final anyIcon = find.descendant(of: firstCard, matching: find.byType(Icon)).first;
-             await tester.tap(anyIcon);
-          }
-       }
+      // Use find.byIcon to find the favorite icon
+      final favIcon = find.byIcon(Icons.favorite_rounded);
+      if (favIcon.evaluate().isNotEmpty) {
+        await tester.tap(favIcon.first);
+      } else {
+        // Fallback if icon differs in test env
+        final borderIcon = find.byIcon(Icons.favorite_border_rounded);
+        if (borderIcon.evaluate().isNotEmpty) {
+          await tester.tap(borderIcon.first);
+        } else {
+          // Hard fallback: find ANY icon in the card
+          final firstCard = find.byType(NearbyListingCard).first;
+          final anyIcon = find
+              .descendant(of: firstCard, matching: find.byType(Icon))
+              .first;
+          await tester.tap(anyIcon);
+        }
+      }
 
-       await tester.pump(const Duration(seconds: 1)); // Dialog animation
+      await tester.pump(const Duration(seconds: 1)); // Dialog animation
 
-       // Verify Dialog
-       if (find.text('Remove Favorite?').evaluate().isNotEmpty) {
-         expect(find.text('Remove Favorite?'), findsOneWidget);
-         await tester.tap(find.text('Remove'));
-         await tester.pump(const Duration(seconds: 1)); // Animation
-         expect(find.byType(NearbyListingCard), findsOneWidget);
-       }
+      // Verify Dialog
+      if (find.text('Remove Favorite?').evaluate().isNotEmpty) {
+        expect(find.text('Remove Favorite?'), findsOneWidget);
+        await tester.tap(find.text('Remove'));
+        await tester.pump(const Duration(seconds: 1)); // Animation
+        expect(find.byType(NearbyListingCard), findsOneWidget);
+      }
     });
   });
 }

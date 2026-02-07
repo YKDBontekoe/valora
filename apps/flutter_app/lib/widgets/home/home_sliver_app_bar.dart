@@ -8,6 +8,7 @@ class HomeSliverAppBar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onFilterPressed;
   final int activeFilterCount;
+  final VoidCallback? onNotificationsPressed;
   final VoidCallback? onProfilePressed;
   final String? userInitials;
 
@@ -17,6 +18,7 @@ class HomeSliverAppBar extends StatelessWidget {
     required this.onSearchChanged,
     required this.onFilterPressed,
     this.activeFilterCount = 0,
+    this.onNotificationsPressed,
     this.onProfilePressed,
     this.userInitials,
   });
@@ -27,7 +29,9 @@ class HomeSliverAppBar extends StatelessWidget {
 
     return SliverAppBar(
       pinned: true,
-      backgroundColor: isDark ? ValoraColors.backgroundDark.withValues(alpha: 0.95) : ValoraColors.backgroundLight.withValues(alpha: 0.95),
+      backgroundColor: isDark
+          ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
+          : ValoraColors.backgroundLight.withValues(alpha: 0.95),
       surfaceTintColor: Colors.transparent,
       titleSpacing: 24,
       toolbarHeight: 70, // Height for the top row (Title + Profile)
@@ -45,10 +49,12 @@ class HomeSliverAppBar extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: null, // TODO: Implement notifications
+                onPressed: onNotificationsPressed,
                 icon: Icon(
                   Icons.notifications_none_rounded,
-                  color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500
+                  color: isDark
+                      ? ValoraColors.neutral400
+                      : ValoraColors.neutral500,
                 ),
               ),
               const SizedBox(width: 8),
@@ -65,8 +71,11 @@ class HomeSliverAppBar extends StatelessWidget {
                       end: Alignment.topRight,
                     ),
                     border: Border.all(
-                        color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-                        width: 2),
+                      color: isDark
+                          ? ValoraColors.surfaceDark
+                          : ValoraColors.surfaceLight,
+                      width: 2,
+                    ),
                   ),
                   child: Center(
                     child: Text(

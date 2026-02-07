@@ -37,11 +37,14 @@ HttpClient _createMockImageHttpClient(SecurityContext? context) {
   when(request.close()).thenAnswer((_) async => response);
   when(response.contentLength).thenReturn(_transparentImage.length);
   when(response.statusCode).thenReturn(HttpStatus.ok);
-  when(response.compressionState).thenReturn(HttpClientResponseCompressionState.notCompressed);
+  when(
+    response.compressionState,
+  ).thenReturn(HttpClientResponseCompressionState.notCompressed);
   when(response.listen(any)).thenAnswer((Invocation invocation) {
     final void Function(List<int>) onData = invocation.positionalArguments[0];
     final void Function() onDone = invocation.namedArguments[#onDone];
-    final void Function(Object, [StackTrace]) onError = invocation.namedArguments[#onError];
+    final void Function(Object, [StackTrace]) onError =
+        invocation.namedArguments[#onError];
     final bool cancelOnError = invocation.namedArguments[#cancelOnError];
 
     return Stream<List<int>>.fromIterable([_transparentImage]).listen(
@@ -56,12 +59,73 @@ HttpClient _createMockImageHttpClient(SecurityContext? context) {
 }
 
 const List<int> _transparentImage = <int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
-  0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44,
-  0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D,
-  0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42,
-  0x60, 0x82,
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  0x0D,
+  0x0A,
+  0x1A,
+  0x0A,
+  0x00,
+  0x00,
+  0x00,
+  0x0D,
+  0x49,
+  0x48,
+  0x44,
+  0x52,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x1F,
+  0x15,
+  0xC4,
+  0x89,
+  0x00,
+  0x00,
+  0x00,
+  0x0A,
+  0x49,
+  0x44,
+  0x41,
+  0x54,
+  0x78,
+  0x9C,
+  0x63,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01,
+  0x0D,
+  0x0A,
+  0x2D,
+  0xB4,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x49,
+  0x45,
+  0x4E,
+  0x44,
+  0xAE,
+  0x42,
+  0x60,
+  0x82,
 ];
 
 void main() {
@@ -85,20 +149,25 @@ void main() {
         ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
         ChangeNotifierProvider<ThemeProvider>.value(value: mockThemeProvider),
       ],
-      child: const MaterialApp(
-        home: SettingsScreen(),
-      ),
+      child: const MaterialApp(home: SettingsScreen()),
     );
   }
 
-  testWidgets('SettingsScreen displays user email', (WidgetTester tester) async {
+  testWidgets('SettingsScreen displays user email', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(createWidgetUnderTest());
 
     expect(find.text('test@example.com'), findsOneWidget);
   });
 
-  testWidgets('SettingsScreen shows logout confirmation dialog', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1080, 2400); // Set large screen to avoid scrolling
+  testWidgets('SettingsScreen shows logout confirmation dialog', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(
+      1080,
+      2400,
+    ); // Set large screen to avoid scrolling
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest());
@@ -114,7 +183,9 @@ void main() {
     addTearDown(() => tester.view.resetPhysicalSize());
   });
 
-  testWidgets('SettingsScreen calls logout on confirmation', (WidgetTester tester) async {
+  testWidgets('SettingsScreen calls logout on confirmation', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
 

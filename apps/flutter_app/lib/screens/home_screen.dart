@@ -1,17 +1,22 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+
 import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
-import '../services/api_service.dart';
 import '../models/listing.dart';
-import '../models/listing_filter.dart';
-import '../widgets/valora_filter_dialog.dart';
-import '../widgets/home_components.dart';
+import '../providers/auth_provider.dart';
+import '../providers/home_listings_provider.dart';
+import '../services/api_service.dart';
+import '../widgets/home/featured_listing_card.dart';
+import '../widgets/home/home_bottom_nav_bar.dart';
 import '../widgets/home/home_sliver_app_bar.dart';
 import '../widgets/home/home_status_views.dart';
+import '../widgets/home/nearby_listing_card.dart';
+import '../widgets/valora_filter_dialog.dart';
 import 'listing_detail_screen.dart';
 import 'saved_listings_screen.dart';
 import 'search_screen.dart';
@@ -27,41 +32,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const int _pageSize = 10;
-  static const String _defaultScrapeRegion = 'amsterdam';
   static const int _featuredCount = 5;
   static const double _bottomListPadding = 160.0;
+  static const String _defaultScrapeRegion = 'amsterdam';
 
-  late ApiService _apiService;
   late final ScrollController _scrollController;
-  bool _isInit = false;
-
-  bool _isConnected = false;
-  List<Listing> _listings = [];
-  bool _isLoading = true;
-  bool _isLoadingMore = false;
-  Object? _error;
-
-  // Pagination
-  int _currentPage = 1;
-  bool _hasNextPage = true;
-
-  // Filters
-  String _searchTerm = '';
-  double? _minPrice;
-  double? _maxPrice;
-  String? _city;
-  int? _minBedrooms;
-  int? _minLivingArea;
-  int? _maxLivingArea;
-  String? _sortBy;
-  String? _sortOrder;
-
-  // Search
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
 
-  // Navigation
+  HomeListingsProvider? _homeProvider;
   int _currentNavIndex = 0;
 
   @override
@@ -73,10 +52,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isInit) {
-      _apiService = widget.apiService ?? Provider.of<ApiService>(context, listen: false);
-      _checkConnection();
-      _isInit = true;
+    if (_homeProvider == null) {
+      final ApiService apiService =
+          widget.apiService ?? context.read<ApiService>();
+      _homeProvider = HomeListingsProvider(apiService: apiService);
+      _homeProvider!.initialize();
     }
   }
 
@@ -89,181 +69,176 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoadingMore &&
-        _hasNextPage &&
-        _error == null) {
+    final HomeListingsProvider provider = _homeProvider!;
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !provider.isLoadingMore &&
+        provider.hasNextPage &&
+        provider.error == null) {
       _loadMoreListings();
     }
   }
 
-  Future<void> _checkConnection() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    final connected = await _apiService.healthCheck();
-    if (mounted) {
-      setState(() {
-        _isConnected = connected;
-      });
-      if (connected) {
-        _loadListings(refresh: true);
-      } else {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _loadListings({bool refresh = false}) async {
-    if (!mounted) return;
-
-    if (refresh) {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-        _currentPage = 1;
-        _listings = [];
-        _hasNextPage = true;
-      });
-    }
-
-    try {
-      final response = await _apiService.getListings(
-        ListingFilter(
-          page: _currentPage,
-          pageSize: _pageSize,
-          searchTerm: _searchTerm,
-          minPrice: _minPrice,
-          maxPrice: _maxPrice,
-          city: _city,
-          minBedrooms: _minBedrooms,
-          minLivingArea: _minLivingArea,
-          maxLivingArea: _maxLivingArea,
-          sortBy: _sortBy,
-          sortOrder: _sortOrder,
-        )
-      );
-
-      if (mounted) {
-        setState(() {
-          if (refresh) {
-            _listings = response.items;
-          } else {
-            _listings.addAll(response.items);
-          }
-          _hasNextPage = response.hasNextPage;
-          _error = null;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e;
-        });
-
-        if (_listings.isNotEmpty) {
-           String message = e is AppException ? e.message : e.toString().replaceAll('Exception: ', '');
-           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              action: SnackBarAction(
-                label: 'Retry',
-                textColor: Colors.white,
-                onPressed: () => _loadListings(refresh: refresh),
-              ),
-            ),
-          );
-        }
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      }
-    }
-  }
-
   Future<void> _loadMoreListings() async {
-    if (_isLoadingMore) return;
-    setState(() => _isLoadingMore = true);
-    _currentPage++;
-    await _loadListings();
+    final HomeListingsProvider provider = _homeProvider!;
+    final Object? previousError = provider.error;
+    await provider.loadMore();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (provider.error != null && provider.error != previousError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Unable to load more listings right now.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    if (_debounce?.isActive ?? false) {
+      _debounce!.cancel();
+    }
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      setState(() {
-        _searchTerm = query;
-      });
-      _loadListings(refresh: true);
+      _homeProvider!.setSearchTerm(query);
     });
   }
 
   Future<void> _openFilterDialog() async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final HomeListingsProvider provider = _homeProvider!;
+
+    final Map<String, dynamic>? result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => ValoraFilterDialog(
-        initialMinPrice: _minPrice,
-        initialMaxPrice: _maxPrice,
-        initialCity: _city,
-        initialMinBedrooms: _minBedrooms,
-        initialMinLivingArea: _minLivingArea,
-        initialMaxLivingArea: _maxLivingArea,
-        initialSortBy: _sortBy,
-        initialSortOrder: _sortOrder,
+        initialMinPrice: provider.minPrice,
+        initialMaxPrice: provider.maxPrice,
+        initialCity: provider.city,
+        initialMinBedrooms: provider.minBedrooms,
+        initialMinLivingArea: provider.minLivingArea,
+        initialMaxLivingArea: provider.maxLivingArea,
+        initialSortBy: provider.sortBy,
+        initialSortOrder: provider.sortOrder,
       ),
     );
 
-    if (result != null) {
-      setState(() {
-        _minPrice = result['minPrice'];
-        _maxPrice = result['maxPrice'];
-        _city = result['city'];
-        _minBedrooms = result['minBedrooms'];
-        _minLivingArea = result['minLivingArea'];
-        _maxLivingArea = result['maxLivingArea'];
-        _sortBy = result['sortBy'];
-        _sortOrder = result['sortOrder'];
-      });
-      _loadListings(refresh: true);
+    if (result == null) {
+      return;
     }
+
+    await provider.applyFilters(
+      minPrice: result['minPrice'] as double?,
+      maxPrice: result['maxPrice'] as double?,
+      city: result['city'] as String?,
+      minBedrooms: result['minBedrooms'] as int?,
+      minLivingArea: result['minLivingArea'] as int?,
+      maxLivingArea: result['maxLivingArea'] as int?,
+      sortBy: result['sortBy'] as String?,
+      sortOrder: result['sortOrder'] as String?,
+    );
   }
 
   Future<void> _triggerScrape() async {
-    setState(() => _isLoading = true);
+    final HomeListingsProvider provider = _homeProvider!;
+    final _ScrapeSettings? scrapeSettings = await showDialog<_ScrapeSettings>(
+      context: context,
+      builder: (context) =>
+          _ScrapeDialog(initialRegion: _deriveDefaultRegion(provider)),
+    );
+
+    if (scrapeSettings == null) {
+      return;
+    }
+
+    setState(() {});
+
     try {
-      await _apiService.triggerLimitedScrape(_defaultScrapeRegion, 10);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Scraping started... Please wait a moment.'),
-          duration: Duration(seconds: 2),
-        ),
+      await provider.triggerScrape(
+        region: scrapeSettings.region,
+        limit: scrapeSettings.limit,
       );
 
-      await Future.delayed(const Duration(seconds: 3));
-
-      if (mounted) {
-        _loadListings(refresh: true);
+      if (!mounted) {
+        return;
       }
-    } catch (e) {
-      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to trigger scrape: ${e is AppException ? e.message : e}'),
+          content: Text(
+            'Scraping started for ${scrapeSettings.region}. Refreshing shortly...',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+      await provider.refresh();
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      final String message = e is AppException ? e.message : e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to trigger scrape: $message'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-      setState(() => _isLoading = false);
     }
+  }
+
+  String _deriveDefaultRegion(HomeListingsProvider provider) {
+    if (provider.city != null && provider.city!.trim().isNotEmpty) {
+      return provider.city!.trim().toLowerCase();
+    }
+
+    if (provider.searchTerm.trim().isNotEmpty) {
+      final String normalized = provider.searchTerm.trim().toLowerCase();
+      final List<String> words = normalized.split(RegExp(r'\s+'));
+      return words.first;
+    }
+
+    return _defaultScrapeRegion;
+  }
+
+  Future<void> _openNotifications(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Notifications',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.auto_awesome_rounded),
+                title: Text('AI insights are enabled'),
+                subtitle: Text('You will see new recommendation updates here.'),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.trending_down_rounded),
+                title: Text('Price drop alerts are on'),
+                subtitle: Text(
+                  'Saved listings with price drops will appear here.',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _onListingTap(Listing listing) {
@@ -277,37 +252,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the bottom padding from the safe area (including gesture navigation bar)
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    final double fabBottomOffset = 70.0 + bottomPadding + 28.0;
 
-    // Calculate the total offset needed for the FAB:
-    // Nav bar height (~70) + bottom padding + margin (12) + extra spacing (16)
-    final fabBottomOffset = 70.0 + bottomPadding + 28.0;
-
-    return Scaffold(
-      extendBody: true,
-      bottomNavigationBar: HomeBottomNavBar(
-        currentIndex: _currentNavIndex,
-        onTap: (index) => setState(() => _currentNavIndex = index),
-      ),
-      body: _buildBody(),
-      floatingActionButton: _currentNavIndex == 0
-          ? Padding(
-              padding: EdgeInsets.only(bottom: fabBottomOffset),
-              child: FloatingActionButton.extended(
-                onPressed: _triggerScrape,
-                backgroundColor: ValoraColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 8,
-                icon: const Icon(Icons.auto_awesome_rounded),
-                label: Row(
-                  children: const [
-                    Text('Compare with AI'),
-                  ],
+    return ChangeNotifierProvider<HomeListingsProvider>.value(
+      value: _homeProvider!,
+      child: Scaffold(
+        extendBody: true,
+        bottomNavigationBar: HomeBottomNavBar(
+          currentIndex: _currentNavIndex,
+          onTap: (index) => setState(() => _currentNavIndex = index),
+        ),
+        body: _buildBody(),
+        floatingActionButton: _currentNavIndex == 0
+            ? Padding(
+                padding: EdgeInsets.only(bottom: fabBottomOffset),
+                child: FloatingActionButton.extended(
+                  onPressed: _triggerScrape,
+                  backgroundColor: ValoraColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 8,
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: const Text('Fetch Listings'),
                 ),
-              ),
-            )
-          : null,
+              )
+            : null,
+      ),
     );
   }
 
@@ -327,151 +297,149 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeView() {
-    int activeFilters = 0;
-    if (_minPrice != null) activeFilters++;
-    if (_maxPrice != null) activeFilters++;
-    if (_city != null) activeFilters++;
-    if (_minBedrooms != null) activeFilters++;
-    if (_minLivingArea != null) activeFilters++;
-    if (_maxLivingArea != null) activeFilters++;
+    return Consumer<HomeListingsProvider>(
+      builder: (context, provider, _) {
+        final List<Widget> slivers = [
+          HomeSliverAppBar(
+            searchController: _searchController,
+            onSearchChanged: _onSearchChanged,
+            onFilterPressed: _openFilterDialog,
+            activeFilterCount: provider.activeFilterCount,
+            onNotificationsPressed: () => _openNotifications(context),
+            userInitials: _userInitials(context),
+          ),
+        ];
 
-    final bool hasFilters = activeFilters > 0 || _searchTerm.isNotEmpty;
+        if (provider.isLoading && provider.listings.isEmpty) {
+          slivers.add(const HomeLoadingSliver());
+        } else if (!provider.isConnected) {
+          slivers.add(
+            HomeDisconnectedSliver(onRetry: provider.checkConnectionAndLoad),
+          );
+        } else if (provider.listings.isEmpty && provider.error != null) {
+          slivers.add(
+            HomeErrorSliver(error: provider.error!, onRetry: provider.refresh),
+          );
+        } else if (provider.listings.isEmpty) {
+          slivers.add(
+            HomeEmptySliver(
+              hasFilters: provider.hasFilters,
+              onScrape: _triggerScrape,
+              onClearFilters: () {
+                _searchController.clear();
+                provider.clearFiltersAndSearch();
+              },
+            ),
+          );
+        } else {
+          slivers.addAll(_buildListingSlivers(provider));
+        }
 
-    List<Widget> slivers = [
-      HomeSliverAppBar(
-        searchController: _searchController,
-        onSearchChanged: _onSearchChanged,
-        onFilterPressed: _openFilterDialog,
-        activeFilterCount: activeFilters,
-        userInitials: null,
-      ),
-    ];
-
-    if (_isLoading && _listings.isEmpty) {
-      slivers.add(const HomeLoadingSliver());
-    } else if (!_isConnected) {
-      slivers.add(HomeDisconnectedSliver(onRetry: _checkConnection));
-    } else if (_listings.isEmpty && _error != null) {
-      slivers.add(HomeErrorSliver(
-        error: _error!,
-        onRetry: () => _loadListings(refresh: true),
-      ));
-    } else if (_listings.isEmpty) {
-      slivers.add(HomeEmptySliver(
-        hasFilters: hasFilters,
-        onScrape: _triggerScrape,
-        onClearFilters: () {
-          setState(() {
-            _minPrice = null;
-            _maxPrice = null;
-            _city = null;
-            _minBedrooms = null;
-            _minLivingArea = null;
-            _maxLivingArea = null;
-            _searchTerm = '';
-            _searchController.clear();
-          });
-          _loadListings(refresh: true);
-        },
-      ));
-    } else {
-      slivers.addAll(_buildListingSlivers());
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => _loadListings(refresh: true),
-      color: ValoraColors.primary,
-      edgeOffset: 120,
-      child: CustomScrollView(
-        controller: _scrollController,
-        slivers: slivers,
-      ),
+        return RefreshIndicator(
+          onRefresh: provider.refresh,
+          color: ValoraColors.primary,
+          edgeOffset: 120,
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: slivers,
+          ),
+        );
+      },
     );
   }
 
-  List<Widget> _buildListingSlivers() {
-    final featuredListings = _listings.take(_featuredCount).toList();
-    final nearbyListings = _listings.skip(_featuredCount).toList();
+  List<Widget> _buildListingSlivers(HomeListingsProvider provider) {
+    final featuredListings = provider.listings.take(_featuredCount).toList();
+    final nearbyListings = provider.listings.skip(_featuredCount).toList();
     final List<Widget> slivers = [];
 
     if (featuredListings.isNotEmpty) {
-      slivers.add(SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Featured for You',
-                    style: ValoraTypography.titleLarge.copyWith(
-                      fontWeight: FontWeight.bold,
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Featured for You',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Curated by Valora AI based on your taste',
-                    style: ValoraTypography.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Curated by Valora AI based on your taste',
+                      style: ValoraTypography.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Text(
-                'See All',
-                style: ValoraTypography.labelSmall.copyWith(
-                  color: ValoraColors.primary,
-                  fontWeight: FontWeight.bold,
+                  ],
                 ),
-              ),
-            ],
-          ).animate().fade().slideX(begin: -0.2, end: 0, duration: 400.ms),
-        ),
-      ));
-
-      slivers.add(SliverToBoxAdapter(
-        child: SizedBox(
-          height: 320,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            scrollDirection: Axis.horizontal,
-            itemCount: featuredListings.length,
-            itemBuilder: (context, index) {
-              final listing = featuredListings[index];
-              return FeaturedListingCard(
-                key: ValueKey(listing.id),
-                listing: listing,
-                onTap: () => _onListingTap(listing),
-              ).animate().fade(duration: 400.ms).slideX(begin: 0.1, end: 0, delay: (50 * index).ms);
-            },
+                Text(
+                  'See All',
+                  style: ValoraTypography.labelSmall.copyWith(
+                    color: ValoraColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ).animate().fade().slideX(begin: -0.2, end: 0, duration: 400.ms),
           ),
         ),
-      ));
+      );
+
+      slivers.add(
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 320,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              scrollDirection: Axis.horizontal,
+              itemCount: featuredListings.length,
+              itemBuilder: (context, index) {
+                final listing = featuredListings[index];
+                return FeaturedListingCard(
+                      key: ValueKey(listing.id),
+                      listing: listing,
+                      onTap: () => _onListingTap(listing),
+                    )
+                    .animate()
+                    .fade(duration: 400.ms)
+                    .slideX(begin: 0.1, end: 0, delay: (50 * index).ms);
+              },
+            ),
+          ),
+        ),
+      );
     }
 
-    if (nearbyListings.isNotEmpty || _hasNextPage) {
-      slivers.add(SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-          child: Text(
-            'Nearby Listings',
-            style: ValoraTypography.titleLarge.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ).animate().fade().slideY(begin: 0.2, end: 0, delay: 200.ms),
+    if (nearbyListings.isNotEmpty || provider.hasNextPage) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+            child: Text(
+              'Nearby Listings',
+              style: ValoraTypography.titleLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ).animate().fade().slideY(begin: 0.2, end: 0, delay: 200.ms),
+          ),
         ),
-      ));
+      );
 
-      slivers.add(SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
+      slivers.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
               if (index == nearbyListings.length) {
-                if (_hasNextPage) {
+                if (provider.hasNextPage) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Padding(
@@ -480,21 +448,129 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 }
-                  return const SizedBox(height: _bottomListPadding);
+                return const SizedBox(height: _bottomListPadding);
               }
 
               final listing = nearbyListings[index];
               return NearbyListingCard(
-                key: ValueKey(listing.id),
-                listing: listing,
-                onTap: () => _onListingTap(listing),
-              ).animate().fade(duration: 400.ms).slideY(begin: 0.1, end: 0, delay: (50 * (index % 10)).ms);
-            },
-            childCount: nearbyListings.length + 1,
+                    key: ValueKey(listing.id),
+                    listing: listing,
+                    onTap: () => _onListingTap(listing),
+                  )
+                  .animate()
+                  .fade(duration: 400.ms)
+                  .slideY(begin: 0.1, end: 0, delay: (50 * (index % 10)).ms);
+            }, childCount: nearbyListings.length + 1),
           ),
         ),
-      ));
+      );
     }
+
     return slivers;
   }
+
+  String? _userInitials(BuildContext context) {
+    final AuthProvider? authProvider = Provider.of<AuthProvider?>(
+      context,
+      listen: false,
+    );
+    final String? email = authProvider?.email;
+    if (email == null || email.trim().isEmpty) {
+      return null;
+    }
+
+    final String localPart = email.split('@').first;
+    final List<String> names = localPart.split(RegExp(r'[._-]+'));
+    if (names.length >= 2) {
+      return '${names[0][0]}${names[1][0]}'.toUpperCase();
+    }
+
+    return localPart.substring(0, localPart.length >= 2 ? 2 : 1).toUpperCase();
+  }
+}
+
+class _ScrapeDialog extends StatefulWidget {
+  const _ScrapeDialog({required this.initialRegion});
+
+  final String initialRegion;
+
+  @override
+  State<_ScrapeDialog> createState() => _ScrapeDialogState();
+}
+
+class _ScrapeDialogState extends State<_ScrapeDialog> {
+  late TextEditingController _regionController;
+  int _limit = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _regionController = TextEditingController(text: widget.initialRegion);
+  }
+
+  @override
+  void dispose() {
+    _regionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Fetch listings'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _regionController,
+            decoration: const InputDecoration(
+              labelText: 'Region',
+              hintText: 'e.g. amsterdam',
+            ),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<int>(
+            initialValue: _limit,
+            decoration: const InputDecoration(labelText: 'Number of listings'),
+            items: const [
+              DropdownMenuItem(value: 10, child: Text('10')),
+              DropdownMenuItem(value: 25, child: Text('25')),
+              DropdownMenuItem(value: 50, child: Text('50')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _limit = value);
+              }
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final String region = _regionController.text.trim().toLowerCase();
+            if (region.isEmpty) {
+              return;
+            }
+            Navigator.pop(
+              context,
+              _ScrapeSettings(region: region, limit: _limit),
+            );
+          },
+          child: const Text('Start'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ScrapeSettings {
+  const _ScrapeSettings({required this.region, required this.limit});
+
+  final String region;
+  final int limit;
 }

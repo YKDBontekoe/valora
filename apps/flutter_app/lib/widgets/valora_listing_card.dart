@@ -78,8 +78,7 @@ class ValoraListingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Price
-                if (listing.price != null)
-                  ValoraPrice(price: listing.price!),
+                if (listing.price != null) ValoraPrice(price: listing.price!),
                 const SizedBox(height: ValoraSpacing.sm),
 
                 // Address
@@ -199,10 +198,7 @@ class _Placeholder extends StatelessWidget {
 }
 
 class _FavoriteButton extends StatelessWidget {
-  const _FavoriteButton({
-    required this.isFavorite,
-    this.onFavorite,
-  });
+  const _FavoriteButton({required this.isFavorite, this.onFavorite});
 
   final bool isFavorite;
   final VoidCallback? onFavorite;
@@ -224,19 +220,19 @@ class _FavoriteButton extends StatelessWidget {
             },
             child: isFavorite
                 ? Icon(
-                    Icons.favorite,
-                    key: const ValueKey(true),
-                    size: ValoraSpacing.iconSizeMd,
-                    color: ValoraColors.error,
-                  )
-                    .animate()
-                    .scale(
-                      duration: 400.ms,
-                      curve: Curves.elasticOut,
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1, 1),
-                    )
-                    .shimmer(delay: 200.ms, duration: 600.ms)
+                        Icons.favorite,
+                        key: const ValueKey(true),
+                        size: ValoraSpacing.iconSizeMd,
+                        color: ValoraColors.error,
+                      )
+                      .animate()
+                      .scale(
+                        duration: 400.ms,
+                        curve: Curves.elasticOut,
+                        begin: const Offset(0.5, 0.5),
+                        end: const Offset(1, 1),
+                      )
+                      .shimmer(delay: 200.ms, duration: 600.ms)
                 : Icon(
                     Icons.favorite_border,
                     key: const ValueKey(false),
@@ -270,35 +266,23 @@ class _ListingSpecs extends StatelessWidget {
     final specs = <Widget>[];
 
     if (bedrooms != null) {
-      specs.add(_buildSpec(
-        Icons.bed_outlined,
-        '$bedrooms',
-        colorScheme,
-      ));
+      specs.add(_buildSpec(Icons.bed_outlined, '$bedrooms', colorScheme));
     }
 
     if (bathrooms != null) {
-      specs.add(_buildSpec(
-        Icons.bathtub_outlined,
-        '$bathrooms',
-        colorScheme,
-      ));
+      specs.add(_buildSpec(Icons.bathtub_outlined, '$bathrooms', colorScheme));
     }
 
     if (livingAreaM2 != null) {
-      specs.add(_buildSpec(
-        Icons.square_foot_outlined,
-        '$livingAreaM2 m²',
-        colorScheme,
-      ));
+      specs.add(
+        _buildSpec(Icons.square_foot_outlined, '$livingAreaM2 m²', colorScheme),
+      );
     }
 
     if (plotAreaM2 != null) {
-      specs.add(_buildSpec(
-        Icons.landscape_outlined,
-        '$plotAreaM2 m²',
-        colorScheme,
-      ));
+      specs.add(
+        _buildSpec(Icons.landscape_outlined, '$plotAreaM2 m²', colorScheme),
+      );
     }
 
     if (specs.isEmpty) {

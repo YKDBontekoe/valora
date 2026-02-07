@@ -19,9 +19,7 @@ class ListingResponse {
 
   factory ListingResponse.fromJson(Map<String, dynamic> json) {
     return ListingResponse(
-      items: (json['items'] as List)
-          .map((i) => Listing.fromJson(i))
-          .toList(),
+      items: (json['items'] as List).map((i) => Listing.fromJson(i)).toList(),
       pageIndex: json['pageIndex'],
       totalPages: json['totalPages'],
       totalCount: json['totalCount'],

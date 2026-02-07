@@ -20,8 +20,12 @@ void main() {
 
   group('AuthProvider', () {
     test('checkAuth should set email from valid token', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'test@example.com', 'sub': '123'})));
+      final header = base64Url.encode(
+        utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+      );
+      final payload = base64Url.encode(
+        utf8.encode(json.encode({'email': 'test@example.com', 'sub': '123'})),
+      );
       final token = '$header.$payload.signature';
 
       when(mockAuthService.getToken()).thenAnswer((_) async => token);
@@ -41,14 +45,17 @@ void main() {
       expect(authProvider.email, null);
     });
 
-    test('checkAuth should set isAuthenticated to false if token is null', () async {
-      when(mockAuthService.getToken()).thenAnswer((_) async => null);
+    test(
+      'checkAuth should set isAuthenticated to false if token is null',
+      () async {
+        when(mockAuthService.getToken()).thenAnswer((_) async => null);
 
-      await authProvider.checkAuth();
+        await authProvider.checkAuth();
 
-      expect(authProvider.isAuthenticated, false);
-      expect(authProvider.email, null);
-    });
+        expect(authProvider.isAuthenticated, false);
+        expect(authProvider.email, null);
+      },
+    );
 
     test('checkAuth catches exception from authService', () async {
       when(mockAuthService.getToken()).thenThrow(Exception('Storage error'));
@@ -60,12 +67,17 @@ void main() {
     });
 
     test('login should set email from returned token', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'login@example.com'})));
+      final header = base64Url.encode(
+        utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+      );
+      final payload = base64Url.encode(
+        utf8.encode(json.encode({'email': 'login@example.com'})),
+      );
       final token = '$header.$payload.signature';
 
-      when(mockAuthService.login('login@example.com', 'password'))
-          .thenAnswer((_) async => {'token': token});
+      when(
+        mockAuthService.login('login@example.com', 'password'),
+      ).thenAnswer((_) async => {'token': token});
 
       await authProvider.login('login@example.com', 'password');
 
@@ -74,9 +86,14 @@ void main() {
     });
 
     test('login propagates exception', () async {
-      when(mockAuthService.login(any, any)).thenThrow(Exception('Login failed'));
+      when(
+        mockAuthService.login(any, any),
+      ).thenThrow(Exception('Login failed'));
 
-      expect(() => authProvider.login('test@example.com', 'password'), throwsException);
+      expect(
+        () => authProvider.login('test@example.com', 'password'),
+        throwsException,
+      );
     });
 
     test('register calls authService register', () async {
@@ -84,18 +101,29 @@ void main() {
 
       await authProvider.register('new@example.com', 'password', 'password');
 
-      verify(mockAuthService.register('new@example.com', 'password', 'password')).called(1);
+      verify(
+        mockAuthService.register('new@example.com', 'password', 'password'),
+      ).called(1);
     });
 
     test('register propagates exception', () async {
-       when(mockAuthService.register(any, any, any)).thenThrow(Exception('Registration failed'));
+      when(
+        mockAuthService.register(any, any, any),
+      ).thenThrow(Exception('Registration failed'));
 
-       expect(() => authProvider.register('new@example.com', 'pass', 'pass'), throwsException);
+      expect(
+        () => authProvider.register('new@example.com', 'pass', 'pass'),
+        throwsException,
+      );
     });
 
     test('logout should clear token and email', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'test@example.com'})));
+      final header = base64Url.encode(
+        utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+      );
+      final payload = base64Url.encode(
+        utf8.encode(json.encode({'email': 'test@example.com'})),
+      );
       final token = '$header.$payload.signature';
       when(mockAuthService.getToken()).thenAnswer((_) async => token);
       await authProvider.checkAuth();
@@ -110,8 +138,12 @@ void main() {
     });
 
     test('refreshSession should update token and email on success', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'refresh@example.com'})));
+      final header = base64Url.encode(
+        utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+      );
+      final payload = base64Url.encode(
+        utf8.encode(json.encode({'email': 'refresh@example.com'})),
+      );
       final token = '$header.$payload.signature';
 
       when(mockAuthService.refreshToken()).thenAnswer((_) async => token);
@@ -123,38 +155,52 @@ void main() {
       expect(authProvider.email, 'refresh@example.com');
     });
 
-    test('refreshSession should clear state on invalid refresh token', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'stale@example.com'})));
-      final token = '$header.$payload.signature';
+    test(
+      'refreshSession should clear state on invalid refresh token',
+      () async {
+        final header = base64Url.encode(
+          utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+        );
+        final payload = base64Url.encode(
+          utf8.encode(json.encode({'email': 'stale@example.com'})),
+        );
+        final token = '$header.$payload.signature';
 
-      when(mockAuthService.getToken()).thenAnswer((_) async => token);
-      when(mockAuthService.deleteToken()).thenAnswer((_) async {});
+        when(mockAuthService.getToken()).thenAnswer((_) async => token);
+        when(mockAuthService.deleteToken()).thenAnswer((_) async {});
 
-      await authProvider.checkAuth();
-      expect(authProvider.isAuthenticated, true);
-      expect(authProvider.email, 'stale@example.com');
+        await authProvider.checkAuth();
+        expect(authProvider.isAuthenticated, true);
+        expect(authProvider.email, 'stale@example.com');
 
-      when(mockAuthService.refreshToken())
-          .thenThrow(RefreshTokenInvalidException('Invalid refresh'));
+        when(
+          mockAuthService.refreshToken(),
+        ).thenThrow(RefreshTokenInvalidException('Invalid refresh'));
 
-      final result = await authProvider.refreshSession();
+        final result = await authProvider.refreshSession();
 
-      expect(result, isNull);
-      expect(authProvider.isAuthenticated, false);
-      expect(authProvider.email, null);
-      verify(mockAuthService.deleteToken()).called(1);
-    });
+        expect(result, isNull);
+        expect(authProvider.isAuthenticated, false);
+        expect(authProvider.email, null);
+        verify(mockAuthService.deleteToken()).called(1);
+      },
+    );
 
     test('refreshSession should keep state on transient failure', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'keep@example.com'})));
+      final header = base64Url.encode(
+        utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+      );
+      final payload = base64Url.encode(
+        utf8.encode(json.encode({'email': 'keep@example.com'})),
+      );
       final token = '$header.$payload.signature';
 
       when(mockAuthService.getToken()).thenAnswer((_) async => token);
       await authProvider.checkAuth();
 
-      when(mockAuthService.refreshToken()).thenThrow(NetworkException('Timeout'));
+      when(
+        mockAuthService.refreshToken(),
+      ).thenThrow(NetworkException('Timeout'));
 
       final result = await authProvider.refreshSession();
 
@@ -165,12 +211,12 @@ void main() {
     });
 
     test('checkAuth catches exception during parsing', () async {
-       final token = 'header.invalid_base64.sig';
-       when(mockAuthService.getToken()).thenAnswer((_) async => token);
+      final token = 'header.invalid_base64.sig';
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
 
-       await authProvider.checkAuth();
-       expect(authProvider.isAuthenticated, true);
-       expect(authProvider.email, null);
+      await authProvider.checkAuth();
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, null);
     });
   });
 }

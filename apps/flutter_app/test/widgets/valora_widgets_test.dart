@@ -10,11 +10,7 @@ void main() {
     testWidgets('renders child content', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: ValoraCard(
-              child: Text('Test Child'),
-            ),
-          ),
+          home: Scaffold(body: ValoraCard(child: Text('Test Child'))),
         ),
       );
 
@@ -42,7 +38,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('handles mouse hover for default elevation (Sm)', (WidgetTester tester) async {
+    testWidgets('handles mouse hover for default elevation (Sm)', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -72,7 +70,9 @@ void main() {
       expect(hoveredDecoration.boxShadow, ValoraShadows.md);
     });
 
-    testWidgets('handles elevationNone (no shadows)', (WidgetTester tester) async {
+    testWidgets('handles elevationNone (no shadows)', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -123,7 +123,9 @@ void main() {
       expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
     });
 
-    testWidgets('handles elevationLg (fallthrough else case)', (WidgetTester tester) async {
+    testWidgets('handles elevationLg (fallthrough else case)', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -154,7 +156,9 @@ void main() {
       expect(hoveredDecoration.boxShadow, ValoraShadows.xl);
     });
 
-    testWidgets('handles press state (reverts to base shadow)', (WidgetTester tester) async {
+    testWidgets('handles press state (reverts to base shadow)', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -237,7 +241,9 @@ void main() {
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
 
-    testWidgets('shows loading indicator when isLoading is true', (WidgetTester tester) async {
+    testWidgets('shows loading indicator when isLoading is true', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -262,7 +268,9 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('does not call onPressed when isLoading is true', (WidgetTester tester) async {
+    testWidgets('does not call onPressed when isLoading is true', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -296,10 +304,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: ValoraBadge(
-              label: 'New',
-              icon: Icons.star,
-            ),
+            body: ValoraBadge(label: 'New', icon: Icons.star),
           ),
         ),
       );
@@ -312,7 +317,9 @@ void main() {
   });
 
   group('ValoraEmptyState Tests', () {
-    testWidgets('renders icon, title, and subtitle', (WidgetTester tester) async {
+    testWidgets('renders icon, title, and subtitle', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

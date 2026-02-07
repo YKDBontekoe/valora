@@ -6,16 +6,17 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
 import '../core/exceptions/app_exceptions.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../core/config/app_config.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
 
 typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
-typedef ComputeRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message);
+typedef ComputeRunner =
+    Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message);
 
 class ApiService {
-  static String get baseUrl => dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
+  static String get baseUrl => AppConfig.apiUrl;
   static const Duration timeoutDuration = Duration(seconds: 30);
 
   final http.Client _client;
@@ -30,20 +31,25 @@ class ApiService {
     Future<String?> Function()? refreshTokenCallback,
     RetryOptions? retryOptions,
     ComputeRunner? runner,
-  })  : _client = client ?? http.Client(),
-        _authToken = authToken,
-        _refreshTokenCallback = refreshTokenCallback,
-        _retryOptions = retryOptions ??
-            const RetryOptions(maxAttempts: 3, delayFactor: Duration(seconds: 1)),
-        _runner = runner ?? compute;
+  }) : _client = client ?? http.Client(),
+       _authToken = authToken,
+       _refreshTokenCallback = refreshTokenCallback,
+       _retryOptions =
+           retryOptions ??
+           const RetryOptions(
+             maxAttempts: 3,
+             delayFactor: Duration(seconds: 1),
+           ),
+       _runner = runner ?? compute;
 
   Map<String, String> get _headers => {
-        if (_authToken != null) 'Authorization': 'Bearer $_authToken',
-        'Content-Type': 'application/json',
-      };
+    if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+    'Content-Type': 'application/json',
+  };
 
   Future<http.Response> _authenticatedRequest(
-      Future<http.Response> Function(Map<String, String> headers) request) async {
+    Future<http.Response> Function(Map<String, String> headers) request,
+  ) async {
     return await _retryOptions.retry(
       () async {
         final response = await request(_headers);
@@ -59,7 +65,8 @@ class ApiService {
         // Force retry on server errors
         if (response.statusCode >= 500) {
           throw ServerException(
-              'Server error (${response.statusCode}). Please try again later.');
+            'Server error (${response.statusCode}). Please try again later.',
+          );
         }
 
         return response;
@@ -86,12 +93,19 @@ class ApiService {
 
   Future<ListingResponse> getListings(ListingFilter filter) async {
     try {
-      final uri = Uri.parse('$baseUrl/listings').replace(queryParameters: filter.toQueryParameters());
+      final uri = Uri.parse(
+        '$baseUrl/listings',
+      ).replace(queryParameters: filter.toQueryParameters());
 
-      final response = await _authenticatedRequest((headers) =>
-          _client.get(uri, headers: headers).timeout(timeoutDuration));
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
 
-      return await _handleResponse(response, (body) => _runner(_parseListingResponse, body));
+      return await _handleResponse(
+        response,
+        (body) => _runner(_parseListingResponse, body),
+      );
     } catch (e) {
       throw _handleException(e);
     }
@@ -99,10 +113,25 @@ class ApiService {
 
   Future<Listing?> getListing(String id) async {
     try {
-      final response = await _authenticatedRequest((headers) =>
-          _client.get(Uri.parse('$baseUrl/listings/$id'), headers: headers).timeout(timeoutDuration));
+      final String sanitizedId = _sanitizeListingId(id);
+      final Uri baseUri = Uri.parse(baseUrl);
+      final Uri listingUri = baseUri.replace(
+        pathSegments: <String>[
+          ...baseUri.pathSegments.where((segment) => segment.isNotEmpty),
+          'listings',
+          sanitizedId,
+        ],
+      );
 
-      return await _handleResponse(response, (body) => _runner(_parseListing, body));
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(listingUri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return await _handleResponse(
+        response,
+        (body) => _runner(_parseListing, body),
+      );
     } catch (e) {
       throw _handleException(e);
     }
@@ -115,10 +144,14 @@ class ApiService {
         'limit': limit.toString(),
       };
 
-      final uri = Uri.parse('$baseUrl/scraper/trigger-limited').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$baseUrl/scraper/trigger-limited',
+      ).replace(queryParameters: queryParams);
 
-      final response = await _authenticatedRequest((headers) =>
-          _client.post(uri, headers: headers).timeout(timeoutDuration));
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.post(uri, headers: headers).timeout(timeoutDuration),
+      );
 
       await _handleResponse(response, (_) => null);
     } catch (e) {
@@ -138,16 +171,22 @@ class ApiService {
 
     switch (response.statusCode) {
       case 400:
-        throw ValidationException(_parseErrorMessage(response.body) ?? 'Invalid request');
+        throw ValidationException(
+          _parseErrorMessage(response.body) ?? 'Invalid request',
+        );
       case 404:
         throw NotFoundException('Resource not found');
       case 500:
       case 502:
       case 503:
       case 504:
-        throw ServerException('Server error (${response.statusCode}). Please try again later.');
+        throw ServerException(
+          'Server error (${response.statusCode}). Please try again later.',
+        );
       default:
-        throw UnknownException('Request failed with status: ${response.statusCode}');
+        throw UnknownException(
+          'Request failed with status: ${response.statusCode}',
+        );
     }
   }
 
@@ -191,6 +230,14 @@ class ApiService {
       // Ignore parsing errors
     }
     return null;
+  }
+
+  String _sanitizeListingId(String id) {
+    final String sanitized = id.trim();
+    if (sanitized.isEmpty || sanitized.contains(RegExp(r'[/?#]'))) {
+      throw ValidationException('Invalid listing identifier');
+    }
+    return sanitized;
   }
 }
 

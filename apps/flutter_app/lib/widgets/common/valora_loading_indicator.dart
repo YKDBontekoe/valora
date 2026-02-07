@@ -5,10 +5,7 @@ import '../../core/theme/valora_animations.dart';
 
 /// Loading indicator with optional message.
 class ValoraLoadingIndicator extends StatelessWidget {
-  const ValoraLoadingIndicator({
-    super.key,
-    this.message,
-  });
+  const ValoraLoadingIndicator({super.key, this.message});
 
   /// Optional loading message
   final String? message;
@@ -34,8 +31,8 @@ class ValoraLoadingIndicator extends StatelessWidget {
             Text(
               message!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ).animate().fade().shimmer(duration: ValoraAnimations.verySlow),
           ],
         ],

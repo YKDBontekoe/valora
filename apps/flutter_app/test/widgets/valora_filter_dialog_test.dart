@@ -6,17 +6,19 @@ import 'package:valora_app/widgets/valora_widgets.dart';
 void main() {
   group('ValoraFilterDialog', () {
     testWidgets('Populates initial values', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraFilterDialog(
-            initialMinPrice: 1000,
-            initialMaxPrice: 2000,
-            initialCity: 'Amsterdam',
-            initialSortBy: 'price',
-            initialSortOrder: 'asc',
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraFilterDialog(
+              initialMinPrice: 1000,
+              initialMaxPrice: 2000,
+              initialCity: 'Amsterdam',
+              initialSortBy: 'price',
+              initialSortOrder: 'asc',
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle(); // Wait for entry animations
 
       // Check text fields contain the values
@@ -26,26 +28,33 @@ void main() {
 
       // Check chip selection
       // Use .first to ensure we have a unique candidate
-      final chipFinder = find.widgetWithText(ValoraChip, 'Price: Low to High').first;
+      final chipFinder = find
+          .widgetWithText(ValoraChip, 'Price: Low to High')
+          .first;
 
       expect(chipFinder, findsOneWidget);
       final priceAscChip = tester.widget<ValoraChip>(chipFinder);
       expect(priceAscChip.isSelected, isTrue);
     });
 
-    testWidgets('Clears filters when "Clear All" is pressed', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ValoraFilterDialog(
-            initialMinPrice: 1000,
-            initialCity: 'Amsterdam',
+    testWidgets('Clears filters when "Clear All" is pressed', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraFilterDialog(
+              initialMinPrice: 1000,
+              initialCity: 'Amsterdam',
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle(); // Wait for entry animations
 
       await tester.tap(find.text('Clear All'));
-      await tester.pumpAndSettle(); // Wait for animations (chip selection change)
+      await tester
+          .pumpAndSettle(); // Wait for animations (chip selection change)
 
       // Values should be cleared (gone)
       expect(find.text('1000'), findsNothing);
@@ -57,32 +66,46 @@ void main() {
 
       // Find the Main Scrollable (first one inside ValoraFilterDialog)
       // This avoids matching Scrollables inside TextFields
-      final scrollableFinder = find.descendant(
-        of: find.byType(ValoraFilterDialog),
-        matching: find.byType(Scrollable),
-      ).first;
+      final scrollableFinder = find
+          .descendant(
+            of: find.byType(ValoraFilterDialog),
+            matching: find.byType(Scrollable),
+          )
+          .first;
 
-      await tester.scrollUntilVisible(chipFinder, 50.0, scrollable: scrollableFinder);
+      await tester.scrollUntilVisible(
+        chipFinder,
+        50.0,
+        scrollable: scrollableFinder,
+      );
 
       final newestChip = tester.widget<ValoraChip>(chipFinder);
       expect(newestChip.isSelected, isTrue);
     });
 
     testWidgets('Updates sort selection', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: ValoraFilterDialog()),
-      ));
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: ValoraFilterDialog())),
+      );
       await tester.pumpAndSettle(); // Wait for entry animations
 
       // Scroll to "Price: High to Low"
-      final chipFinder = find.widgetWithText(ValoraChip, 'Price: High to Low').first;
+      final chipFinder = find
+          .widgetWithText(ValoraChip, 'Price: High to Low')
+          .first;
 
-      final scrollableFinder = find.descendant(
-        of: find.byType(ValoraFilterDialog),
-        matching: find.byType(Scrollable),
-      ).first;
+      final scrollableFinder = find
+          .descendant(
+            of: find.byType(ValoraFilterDialog),
+            matching: find.byType(Scrollable),
+          )
+          .first;
 
-      await tester.scrollUntilVisible(chipFinder, 50.0, scrollable: scrollableFinder);
+      await tester.scrollUntilVisible(
+        chipFinder,
+        50.0,
+        scrollable: scrollableFinder,
+      );
       await tester.pumpAndSettle();
 
       // Tap "Price: High to Low"
@@ -96,28 +119,33 @@ void main() {
     testWidgets('Returns filter values on Apply', (WidgetTester tester) async {
       Map<String, dynamic>? result;
 
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                result = await showDialog(
-                  context: context,
-                  builder: (_) => const ValoraFilterDialog(),
-                );
-              },
-              child: const Text('Open'),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  result = await showDialog(
+                    context: context,
+                    builder: (_) => const ValoraFilterDialog(),
+                  );
+                },
+                child: const Text('Open'),
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
       // Find TextField by label 'Min Price'
-      final minPriceContainer = find.widgetWithText(ValoraTextField, 'Min Price');
+      final minPriceContainer = find.widgetWithText(
+        ValoraTextField,
+        'Min Price',
+      );
       final minPriceField = find.descendant(
         of: minPriceContainer,
         matching: find.byType(TextField),
@@ -139,33 +167,43 @@ void main() {
       expect(result!['city'], 'TestCity');
     });
 
-    testWidgets('Shows error when Min Price > Max Price', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => const ValoraFilterDialog(),
+    testWidgets('Shows error when Min Price > Max Price', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const ValoraFilterDialog(),
+                ),
+                child: const Text('Open'),
               ),
-              child: const Text('Open'),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      final minPriceContainer = find.widgetWithText(ValoraTextField, 'Min Price');
+      final minPriceContainer = find.widgetWithText(
+        ValoraTextField,
+        'Min Price',
+      );
       final minPriceField = find.descendant(
         of: minPriceContainer,
         matching: find.byType(TextField),
       );
       await tester.enterText(minPriceField, '1000');
 
-      final maxPriceContainer = find.widgetWithText(ValoraTextField, 'Max Price');
+      final maxPriceContainer = find.widgetWithText(
+        ValoraTextField,
+        'Max Price',
+      );
       final maxPriceField = find.descendant(
         of: maxPriceContainer,
         matching: find.byType(TextField),
@@ -175,23 +213,30 @@ void main() {
       await tester.tap(find.text('Apply'));
       await tester.pump(); // Start snackbar animation
 
-      expect(find.text('Min price cannot be greater than Max price'), findsOneWidget);
+      expect(
+        find.text('Min price cannot be greater than Max price'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('Shows error when Min Area > Max Area', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => const ValoraFilterDialog(),
+    testWidgets('Shows error when Min Area > Max Area', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const ValoraFilterDialog(),
+                ),
+                child: const Text('Open'),
               ),
-              child: const Text('Open'),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Open'));
@@ -216,7 +261,10 @@ void main() {
       await tester.tap(find.text('Apply'));
       await tester.pump(); // Start snackbar animation
 
-      expect(find.text('Min area cannot be greater than Max area'), findsOneWidget);
+      expect(
+        find.text('Min area cannot be greater than Max area'),
+        findsOneWidget,
+      );
     });
   });
 }

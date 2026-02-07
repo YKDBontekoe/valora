@@ -42,11 +42,14 @@ HttpClient _createMockImageHttpClient(SecurityContext? context) {
   when(request.close()).thenAnswer((_) async => response);
   when(response.contentLength).thenReturn(_transparentImage.length);
   when(response.statusCode).thenReturn(HttpStatus.ok);
-  when(response.compressionState).thenReturn(HttpClientResponseCompressionState.notCompressed);
+  when(
+    response.compressionState,
+  ).thenReturn(HttpClientResponseCompressionState.notCompressed);
   when(response.listen(any)).thenAnswer((Invocation invocation) {
     final void Function(List<int>) onData = invocation.positionalArguments[0];
     final void Function() onDone = invocation.namedArguments[#onDone];
-    final void Function(Object, [StackTrace]) onError = invocation.namedArguments[#onError];
+    final void Function(Object, [StackTrace]) onError =
+        invocation.namedArguments[#onError];
     final bool cancelOnError = invocation.namedArguments[#cancelOnError];
 
     return Stream<List<int>>.fromIterable([_transparentImage]).listen(
@@ -61,12 +64,73 @@ HttpClient _createMockImageHttpClient(SecurityContext? context) {
 }
 
 const List<int> _transparentImage = <int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
-  0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44,
-  0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D,
-  0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42,
-  0x60, 0x82,
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  0x0D,
+  0x0A,
+  0x1A,
+  0x0A,
+  0x00,
+  0x00,
+  0x00,
+  0x0D,
+  0x49,
+  0x48,
+  0x44,
+  0x52,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x1F,
+  0x15,
+  0xC4,
+  0x89,
+  0x00,
+  0x00,
+  0x00,
+  0x0A,
+  0x49,
+  0x44,
+  0x41,
+  0x54,
+  0x78,
+  0x9C,
+  0x63,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01,
+  0x0D,
+  0x0A,
+  0x2D,
+  0xB4,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x49,
+  0x45,
+  0x4E,
+  0x44,
+  0xAE,
+  0x42,
+  0x60,
+  0x82,
 ];
 
 void main() {
@@ -89,15 +153,17 @@ void main() {
     return MultiProvider(
       providers: [
         Provider<ApiService>.value(value: mockApiService),
-        ChangeNotifierProvider<FavoritesProvider>.value(value: mockFavoritesProvider),
+        ChangeNotifierProvider<FavoritesProvider>.value(
+          value: mockFavoritesProvider,
+        ),
       ],
-      child: const MaterialApp(
-        home: SearchScreen(),
-      ),
+      child: const MaterialApp(home: SearchScreen()),
     );
   }
 
-  testWidgets('SearchScreen shows empty state initially', (WidgetTester tester) async {
+  testWidgets('SearchScreen shows empty state initially', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle(); // Wait for entry animations
 
@@ -106,7 +172,9 @@ void main() {
     expect(find.byType(ValoraTextField), findsOneWidget);
   });
 
-  testWidgets('SearchScreen clears listings when query is cleared', (WidgetTester tester) async {
+  testWidgets('SearchScreen clears listings when query is cleared', (
+    WidgetTester tester,
+  ) async {
     final listing = Listing(
       id: '1',
       fundaId: '123',
@@ -149,7 +217,9 @@ void main() {
     expect(find.text('Test Address'), findsNothing);
   });
 
-  testWidgets('SearchScreen displays listings after successful search', (WidgetTester tester) async {
+  testWidgets('SearchScreen displays listings after successful search', (
+    WidgetTester tester,
+  ) async {
     final listing = Listing(
       id: '1',
       fundaId: '123',
@@ -181,9 +251,18 @@ void main() {
     expect(find.text('Test Address'), findsOneWidget);
   });
 
-  testWidgets('SearchScreen opens filter dialog and updates filters', (WidgetTester tester) async {
-     when(mockApiService.getListings(any)).thenAnswer((_) async {
-      return ListingResponse(items: [], pageIndex: 1, totalPages: 1, totalCount: 0, hasNextPage: false, hasPreviousPage: false);
+  testWidgets('SearchScreen opens filter dialog and updates filters', (
+    WidgetTester tester,
+  ) async {
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
@@ -197,23 +276,33 @@ void main() {
 
     // Enter Min Price
     await tester.enterText(
-        find.descendant(
-            of: find.widgetWithText(ValoraTextField, 'Min Price'),
-            matching: find.byType(TextField)),
-        '100000');
+      find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'Min Price'),
+        matching: find.byType(TextField),
+      ),
+      '100000',
+    );
 
     // Tap Apply
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
 
     // Verify filters applied (should trigger search with new filter)
-    verify(mockApiService.getListings(argThat(predicate((filter) {
-        if (filter is! ListingFilter) return false;
-        return filter.minPrice == 100000.0;
-    })))).called(1);
+    verify(
+      mockApiService.getListings(
+        argThat(
+          predicate((filter) {
+            if (filter is! ListingFilter) return false;
+            return filter.minPrice == 100000.0;
+          }),
+        ),
+      ),
+    ).called(1);
   });
 
-  testWidgets('SearchScreen handles error state with generic exception', (WidgetTester tester) async {
+  testWidgets('SearchScreen handles error state with generic exception', (
+    WidgetTester tester,
+  ) async {
     when(mockApiService.getListings(any)).thenThrow(Exception('Network error'));
 
     await tester.pumpWidget(createWidgetUnderTest());
@@ -229,8 +318,10 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('SearchScreen handles pagination error', (WidgetTester tester) async {
-     final listing = Listing(
+  testWidgets('SearchScreen handles pagination error', (
+    WidgetTester tester,
+  ) async {
+    final listing = Listing(
       id: '1',
       fundaId: '123',
       address: 'Test Address',
@@ -240,19 +331,27 @@ void main() {
     );
 
     // First page success
-    when(mockApiService.getListings(argThat(predicate((f) => (f as ListingFilter).page == 1))))
-        .thenAnswer((_) async => ListingResponse(
-          items: List.generate(10, (i) => listing),
-          pageIndex: 1,
-          totalPages: 2,
-          totalCount: 20,
-          hasNextPage: true,
-          hasPreviousPage: false,
-        ));
+    when(
+      mockApiService.getListings(
+        argThat(predicate((f) => (f as ListingFilter).page == 1)),
+      ),
+    ).thenAnswer(
+      (_) async => ListingResponse(
+        items: List.generate(10, (i) => listing),
+        pageIndex: 1,
+        totalPages: 2,
+        totalCount: 20,
+        hasNextPage: true,
+        hasPreviousPage: false,
+      ),
+    );
 
     // Second page fails
-    when(mockApiService.getListings(argThat(predicate((f) => (f as ListingFilter).page == 2))))
-        .thenThrow(Exception('Pagination Error'));
+    when(
+      mockApiService.getListings(
+        argThat(predicate((f) => (f as ListingFilter).page == 2)),
+      ),
+    ).thenThrow(Exception('Pagination Error'));
 
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
@@ -269,7 +368,9 @@ void main() {
     // Scroll to bottom
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -2000));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100)); // Debounce scroll? Or just wait for listener
+    await tester.pump(
+      const Duration(milliseconds: 100),
+    ); // Debounce scroll? Or just wait for listener
 
     // Wait for error handling. Using pump instead of pumpAndSettle to avoid timeout if spinner persists.
     await tester.pump(const Duration(seconds: 1));
@@ -279,7 +380,9 @@ void main() {
     expect(find.text('Failed to load more items'), findsOneWidget);
   });
 
-  testWidgets('SearchScreen clears filters via Clear button', (WidgetTester tester) async {
+  testWidgets('SearchScreen clears filters via Clear button', (
+    WidgetTester tester,
+  ) async {
     when(mockApiService.getListings(any)).thenAnswer((_) async {
       return ListingResponse(
         items: [],
@@ -304,10 +407,12 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-        find.descendant(
-            of: find.widgetWithText(ValoraTextField, 'City'),
-            matching: find.byType(TextField)),
-        'FilterCity');
+      find.descendant(
+        of: find.widgetWithText(ValoraTextField, 'City'),
+        matching: find.byType(TextField),
+      ),
+      'FilterCity',
+    );
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
 
@@ -326,13 +431,21 @@ void main() {
     expect(find.text('City: FilterCity'), findsNothing);
 
     // Verify reload triggered with empty filters
-    verify(mockApiService.getListings(argThat(predicate((filter) {
-        if (filter is! ListingFilter) return false;
-        return filter.city == null;
-    })))).called(greaterThan(1)); // Initial load + apply filter + clear filter
+    verify(
+      mockApiService.getListings(
+        argThat(
+          predicate((filter) {
+            if (filter is! ListingFilter) return false;
+            return filter.city == null;
+          }),
+        ),
+      ),
+    ).called(greaterThan(1)); // Initial load + apply filter + clear filter
   });
 
-  testWidgets('SearchScreen refreshes on pull down', (WidgetTester tester) async {
+  testWidgets('SearchScreen refreshes on pull down', (
+    WidgetTester tester,
+  ) async {
     when(mockApiService.getListings(any)).thenAnswer((_) async {
       return ListingResponse(
         items: [],

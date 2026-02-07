@@ -54,7 +54,9 @@ class _HomeHeaderState extends State<HomeHeader> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ValoraGlassContainer(
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(ValoraSpacing.radiusXl)),
+      borderRadius: const BorderRadius.vertical(
+        bottom: Radius.circular(ValoraSpacing.radiusXl),
+      ),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -68,13 +70,21 @@ class _HomeHeaderState extends State<HomeHeader> {
                   curve: ValoraAnimations.standard,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-                    boxShadow: _isSearchFocused ? ValoraShadows.lg : ValoraShadows.sm,
+                    color: isDark
+                        ? ValoraColors.surfaceDark
+                        : ValoraColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(
+                      ValoraSpacing.radiusFull,
+                    ),
+                    boxShadow: _isSearchFocused
+                        ? ValoraShadows.lg
+                        : ValoraShadows.sm,
                     border: Border.all(
                       color: _isSearchFocused
                           ? ValoraColors.primary
-                          : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+                          : (isDark
+                                ? ValoraColors.neutral700
+                                : ValoraColors.neutral200),
                       width: _isSearchFocused ? 1.5 : 1,
                     ),
                   ),
@@ -83,21 +93,30 @@ class _HomeHeaderState extends State<HomeHeader> {
                     focusNode: _searchFocusNode,
                     onChanged: widget.onSearchChanged,
                     style: ValoraTypography.bodyMedium.copyWith(
-                      color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+                      color: isDark
+                          ? ValoraColors.neutral50
+                          : ValoraColors.neutral900,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search city, zip, or address...',
                       hintStyle: ValoraTypography.bodyMedium.copyWith(
-                        color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+                        color: isDark
+                            ? ValoraColors.neutral500
+                            : ValoraColors.neutral400,
                       ),
                       prefixIcon: Icon(
                         Icons.search_rounded,
                         color: _isSearchFocused
                             ? ValoraColors.primary
-                            : (isDark ? ValoraColors.neutral500 : ValoraColors.neutral400),
+                            : (isDark
+                                  ? ValoraColors.neutral500
+                                  : ValoraColors.neutral400),
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -116,7 +135,9 @@ class _HomeHeaderState extends State<HomeHeader> {
                     height: 52,
                     decoration: BoxDecoration(
                       color: ValoraColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                      borderRadius: BorderRadius.circular(
+                        ValoraSpacing.radiusLg,
+                      ),
                       border: Border.all(
                         color: ValoraColors.primary.withValues(alpha: 0.2),
                       ),
@@ -139,7 +160,9 @@ class _HomeHeaderState extends State<HomeHeader> {
                                 color: ValoraColors.error,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
+                                  color: isDark
+                                      ? ValoraColors.surfaceDark
+                                      : ValoraColors.surfaceLight,
                                   width: 1.5,
                                 ),
                               ),
@@ -158,22 +181,30 @@ class _HomeHeaderState extends State<HomeHeader> {
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
             child: Row(
-              children: [
-                _buildFilterChip(
-                  context,
-                  icon: Icons.auto_awesome,
-                  label: 'AI Pick',
-                  isActive: true,
-                  backgroundColor: ValoraColors.primary,
-                  textColor: Colors.white,
-                ),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, label: 'Under \$500k'),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, label: '3+ Beds'),
-                const SizedBox(width: 8),
-                _buildFilterChip(context, label: 'Near Schools'),
-              ].animate(interval: 50.ms).fade().slideX(begin: 0.2, end: 0, curve: ValoraAnimations.deceleration),
+              children:
+                  [
+                        _buildFilterChip(
+                          context,
+                          icon: Icons.auto_awesome,
+                          label: 'AI Pick',
+                          isActive: true,
+                          backgroundColor: ValoraColors.primary,
+                          textColor: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildFilterChip(context, label: 'Under \$500k'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip(context, label: '3+ Beds'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip(context, label: 'Near Schools'),
+                      ]
+                      .animate(interval: 50.ms)
+                      .fade()
+                      .slideX(
+                        begin: 0.2,
+                        end: 0,
+                        curve: ValoraAnimations.deceleration,
+                      ),
             ),
           ),
         ],

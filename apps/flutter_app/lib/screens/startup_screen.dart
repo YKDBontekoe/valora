@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -16,6 +18,8 @@ class _StartupScreenState extends State<StartupScreen>
   late Animation<double> _iconScaleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _textSlideAnimation;
+  late Future<void> _authCheckFuture;
+  final Completer<void> _authCheckCompleter = Completer<void>();
 
   @override
   void initState() {
@@ -23,7 +27,7 @@ class _StartupScreenState extends State<StartupScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 1200),
     );
 
     // Icon pops in with an elastic effect
@@ -43,19 +47,23 @@ class _StartupScreenState extends State<StartupScreen>
     );
 
     // Text slides up gently
-    _textSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
+    _textSlideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+          ),
+        );
 
-    // Start auth check in background
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().checkAuth();
+    _authCheckFuture = _authCheckCompleter.future;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await context.read<AuthProvider>().checkAuth();
+      } finally {
+        if (!_authCheckCompleter.isCompleted) {
+          _authCheckCompleter.complete();
+        }
+      }
     });
 
     _startAnimation();
@@ -63,7 +71,10 @@ class _StartupScreenState extends State<StartupScreen>
 
   Future<void> _startAnimation() async {
     try {
-      await _controller.forward().orCancel;
+      await Future.wait<void>([
+        _controller.forward().orCancel,
+        _authCheckFuture,
+      ]);
       if (!mounted) return;
       _navigateToHome();
     } on TickerCanceled {
@@ -77,10 +88,7 @@ class _StartupScreenState extends State<StartupScreen>
         pageBuilder: (context, animation, secondaryAnimation) =>
             const AuthWrapper(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 800),
       ),

@@ -68,7 +68,8 @@ void main() {
         throw TimeoutException('Timed out');
       });
 
-      final apiService = ApiService(runner: syncRunner,
+      final apiService = ApiService(
+        runner: syncRunner,
         client: client,
         retryOptions: const RetryOptions(maxAttempts: 1),
       );
@@ -84,7 +85,8 @@ void main() {
         throw http.ClientException('Client error');
       });
 
-      final apiService = ApiService(runner: syncRunner,
+      final apiService = ApiService(
+        runner: syncRunner,
         client: client,
         retryOptions: const RetryOptions(maxAttempts: 1),
       );
@@ -110,7 +112,10 @@ void main() {
 
     test('getListings throws ValidationException on 400 with detail', () async {
       final client = MockClient((request) async {
-        return http.Response(json.encode({'detail': 'Some detailed error'}), 400);
+        return http.Response(
+          json.encode({'detail': 'Some detailed error'}),
+          400,
+        );
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
@@ -123,29 +128,32 @@ void main() {
       }
     });
 
-    test('getListings throws ValidationException on 400 with errors dictionary',
-        () async {
-      final client = MockClient((request) async {
-        return http.Response(
+    test(
+      'getListings throws ValidationException on 400 with errors dictionary',
+      () async {
+        final client = MockClient((request) async {
+          return http.Response(
             json.encode({
               'errors': {
                 'Field1': ['Error 1', 'Error 2'],
-                'Field2': 'Error 3'
-              }
+                'Field2': 'Error 3',
+              },
             }),
-            400);
-      });
+            400,
+          );
+        });
 
-      final apiService = ApiService(runner: syncRunner, client: client);
+        final apiService = ApiService(runner: syncRunner, client: client);
 
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ValidationException catch (e) {
-        expect(e.message, contains('Error 1, Error 2'));
-        expect(e.message, contains('Error 3'));
-      }
-    });
+        try {
+          await apiService.getListings(const ListingFilter());
+          fail('Should have thrown');
+        } on ValidationException catch (e) {
+          expect(e.message, contains('Error 1, Error 2'));
+          expect(e.message, contains('Error 3'));
+        }
+      },
+    );
 
     test('getListings throws ValidationException on 400 with title', () async {
       final client = MockClient((request) async {
@@ -158,24 +166,27 @@ void main() {
         await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
       } on ValidationException catch (e) {
-         expect(e.message, 'Invalid input');
+        expect(e.message, 'Invalid input');
       }
     });
 
-    test('getListings throws ValidationException on 400 with default message on parsing fail', () async {
-      final client = MockClient((request) async {
-        return http.Response('Not JSON', 400);
-      });
+    test(
+      'getListings throws ValidationException on 400 with default message on parsing fail',
+      () async {
+        final client = MockClient((request) async {
+          return http.Response('Not JSON', 400);
+        });
 
-      final apiService = ApiService(runner: syncRunner, client: client);
+        final apiService = ApiService(runner: syncRunner, client: client);
 
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ValidationException catch (e) {
-        expect(e.message, 'Invalid request');
-      }
-    });
+        try {
+          await apiService.getListings(const ListingFilter());
+          fail('Should have thrown');
+        } on ValidationException catch (e) {
+          expect(e.message, 'Invalid request');
+        }
+      },
+    );
 
     test('getListings returns data on 200', () async {
       final mockResponse = {
@@ -184,7 +195,7 @@ void main() {
         'totalPages': 1,
         'totalCount': 0,
         'hasNextPage': false,
-        'hasPreviousPage': false
+        'hasPreviousPage': false,
       };
 
       final client = MockClient((request) async {
@@ -207,7 +218,7 @@ void main() {
     });
 
     test('getListing throws NotFoundException on 404', () async {
-       final client = MockClient((request) async {
+      final client = MockClient((request) async {
         return http.Response('Not Found', 404);
       });
 
@@ -218,15 +229,28 @@ void main() {
       );
     });
 
-     test('getListing throws ServerException on 500', () async {
-       final client = MockClient((request) async {
+    test('getListing throws ServerException on 500', () async {
+      final client = MockClient((request) async {
         return http.Response('Error', 500);
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
-       expect(
+      expect(
         () => apiService.getListing('123'),
         throwsA(isA<ServerException>()),
+      );
+    });
+
+    test('getListing throws ValidationException on invalid id', () async {
+      final client = MockClient((request) async {
+        return http.Response('Not Found', 404);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+
+      expect(
+        () => apiService.getListing('bad/id'),
+        throwsA(isA<ValidationException>()),
       );
     });
 
@@ -263,7 +287,7 @@ void main() {
         'totalPages': 1,
         'totalCount': 0,
         'hasNextPage': false,
-        'hasPreviousPage': false
+        'hasPreviousPage': false,
       };
 
       final client = MockClient((request) async {
@@ -279,7 +303,8 @@ void main() {
         return http.Response('Unauthorized', 401);
       });
 
-      final apiService = ApiService(runner: syncRunner,
+      final apiService = ApiService(
+        runner: syncRunner,
         client: client,
         authToken: 'old_token',
         refreshTokenCallback: () async => 'new_token',
@@ -295,7 +320,8 @@ void main() {
         return http.Response('Unauthorized', 401);
       });
 
-      final apiService = ApiService(runner: syncRunner,
+      final apiService = ApiService(
+        runner: syncRunner,
         client: client,
         authToken: 'old_token',
         refreshTokenCallback: () async => null,

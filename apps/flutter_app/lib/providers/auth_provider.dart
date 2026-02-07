@@ -17,7 +17,7 @@ class AuthProvider extends ChangeNotifier {
   String? get email => _email;
 
   AuthProvider({AuthService? authService})
-      : _authService = authService ?? AuthService();
+    : _authService = authService ?? AuthService();
 
   Future<void> checkAuth() async {
     _isLoading = true;
@@ -56,7 +56,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> register(String email, String password, String confirmPassword) async {
+  Future<void> register(
+    String email,
+    String password,
+    String confirmPassword,
+  ) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -125,7 +129,10 @@ class AuthProvider extends ChangeNotifier {
 
       // Try standard claims for email/username
       if (payloadMap is Map<String, dynamic>) {
-        _email = payloadMap['email'] ?? payloadMap['unique_name'] ?? payloadMap['sub'];
+        _email =
+            payloadMap['email'] ??
+            payloadMap['unique_name'] ??
+            payloadMap['sub'];
       }
     } catch (e) {
       debugPrint('Error parsing JWT: $e');
@@ -135,10 +142,16 @@ class AuthProvider extends ChangeNotifier {
   String _decodeBase64(String str) {
     String output = str.replaceAll('-', '+').replaceAll('_', '/');
     switch (output.length % 4) {
-      case 0: break;
-      case 2: output += '=='; break;
-      case 3: output += '='; break;
-      default: throw Exception('Illegal base64url string!"');
+      case 0:
+        break;
+      case 2:
+        output += '==';
+        break;
+      case 3:
+        output += '=';
+        break;
+      default:
+        throw Exception('Illegal base64url string!"');
     }
     return utf8.decode(base64.decode(output));
   }
