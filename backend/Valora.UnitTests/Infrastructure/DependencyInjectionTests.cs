@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Valora.Application.Common.Models;
 using Valora.Application.Scraping;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Scraping;
@@ -141,5 +142,72 @@ public class DependencyInjectionTests
 
         Assert.Equal(2000, options.DelayBetweenRequestsMs);
         Assert.Equal(3, options.MaxRetries);
+    }
+
+    [Fact]
+    public void AddInfrastructure_UsesJwtSecretFromConfiguration_WhenPresent()
+    {
+        // Arrange
+        var configData = new Dictionary<string, string?>
+        {
+            { "DATABASE_URL", "Host=localhost;Database=valora" },
+            { "JWT_SECRET", "my-secret-key" },
+            { "JWT_ISSUER", "valora" },
+            { "JWT_AUDIENCE", "valora" }
+        };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configData)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddInfrastructure(configuration);
+        var provider = services.BuildServiceProvider();
+
+        // Act
+        var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
+
+        // Assert
+        Assert.Equal("my-secret-key", options.Secret);
+        Assert.Equal("valora", options.Issuer);
+        Assert.Equal("valora", options.Audience);
+    }
+
+    [Fact]
+    public void AddInfrastructure_FallsBackToDevSecret_WhenJwtSecretMissing_AndInDevelopment()
+    {
+        // Arrange
+        var configData = new Dictionary<string, string?>
+        {
+            { "DATABASE_URL", "Host=localhost;Database=valora" },
+            // Missing JWT_SECRET
+            { "JWT_ISSUER", "valora" },
+            { "JWT_AUDIENCE", "valora" }
+        };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configData)
+            .Build();
+
+        // Simulate Development environment
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddInfrastructure(configuration);
+            var provider = services.BuildServiceProvider();
+
+            // Act
+            var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
+
+            // Assert
+            Assert.Equal("DevSecretKey_ChangeMe_In_Production_Configuration_123!", options.Secret);
+        }
+        finally
+        {
+            // Cleanup
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
+        }
     }
 }
