@@ -6,6 +6,8 @@ namespace Valora.Infrastructure.Scraping;
 
 internal static class FundaNuxtJsonParser
 {
+    private const int MaxBfsIterations = 10000;
+
     /// <summary>
     /// Parses the raw Nuxt JSON state to find the listing data.
     /// <para>
@@ -35,15 +37,13 @@ internal static class FundaNuxtJsonParser
             queue.Enqueue(doc.RootElement);
 
             int safetyCounter = 0;
-            while (queue.Count > 0 && safetyCounter++ < 10000)
+            while (queue.Count > 0 && safetyCounter++ < MaxBfsIterations)
             {
                 var current = queue.Dequeue();
 
                 if (current.ValueKind == JsonValueKind.Object)
                 {
-                    if (current.TryGetProperty("features", out _) &&
-                        current.TryGetProperty("media", out _) &&
-                        current.TryGetProperty("description", out _))
+                    if (IsListingObject(current))
                     {
                         return current.Deserialize<FundaNuxtListingData>();
                     }
@@ -74,5 +74,12 @@ internal static class FundaNuxtJsonParser
         }
 
         return null;
+    }
+
+    private static bool IsListingObject(JsonElement element)
+    {
+        return element.TryGetProperty("features", out _) &&
+               element.TryGetProperty("media", out _) &&
+               element.TryGetProperty("description", out _);
     }
 }

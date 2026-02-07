@@ -197,10 +197,17 @@ public class FundaScraperService : IFundaScraperService
     /// </summary>
     private async Task EnrichListingAsync(Listing listing, FundaApiListing apiListing, CancellationToken cancellationToken)
     {
-        // 1. Enrich with Summary API (includes publicationDate, sold status, labels, postal code)
+        await EnrichWithSummaryApiAsync(listing, apiListing.GlobalId, cancellationToken);
+        await EnrichWithNuxtDataAsync(listing, cancellationToken);
+        await EnrichWithContactDetailsAsync(listing, apiListing.GlobalId, cancellationToken);
+        await EnrichWithFiberAvailabilityAsync(listing, cancellationToken);
+    }
+
+    private async Task EnrichWithSummaryApiAsync(Listing listing, int globalId, CancellationToken cancellationToken)
+    {
         try
         {
-            var summary = await _apiClient.GetListingSummaryAsync(apiListing.GlobalId, cancellationToken);
+            var summary = await _apiClient.GetListingSummaryAsync(globalId, cancellationToken);
             if (summary != null)
             {
                 FundaMapper.EnrichListingWithSummary(listing, summary);
@@ -210,28 +217,31 @@ public class FundaScraperService : IFundaScraperService
         {
             _logger.LogWarning(ex, "Failed to fetch summary for {FundaId}", listing.FundaId);
         }
+    }
 
-        // 2. Enrich with HTML/Nuxt data (rich features, description, photos)
-        if (!string.IsNullOrEmpty(listing.Url))
-        {
-            try 
-            {
-                var richData = await _apiClient.GetListingDetailsAsync(listing.Url, cancellationToken);
-                if (richData != null)
-                {
-                    FundaMapper.EnrichListingWithNuxtData(listing, richData);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to fetch rich details for {FundaId}", listing.FundaId);
-            }
-        }
+    private async Task EnrichWithNuxtDataAsync(Listing listing, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(listing.Url)) return;
 
-        // 3. Enrich with Contact Details API (broker phone, logo, association)
         try
         {
-            var contacts = await _apiClient.GetContactDetailsAsync(apiListing.GlobalId, cancellationToken);
+            var richData = await _apiClient.GetListingDetailsAsync(listing.Url, cancellationToken);
+            if (richData != null)
+            {
+                FundaMapper.EnrichListingWithNuxtData(listing, richData);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch rich details for {FundaId}", listing.FundaId);
+        }
+    }
+
+    private async Task EnrichWithContactDetailsAsync(Listing listing, int globalId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var contacts = await _apiClient.GetContactDetailsAsync(globalId, cancellationToken);
             if (contacts?.ContactDetails?.Count > 0)
             {
                 var primary = contacts.ContactDetails[0];
@@ -250,22 +260,23 @@ public class FundaScraperService : IFundaScraperService
         {
             _logger.LogDebug(ex, "Failed to fetch contact details for {FundaId}", listing.FundaId);
         }
+    }
 
-        // 4. Check Fiber Availability (requires full postal code)
-        if (!string.IsNullOrEmpty(listing.PostalCode) && listing.PostalCode.Length >= 6)
+    private async Task EnrichWithFiberAvailabilityAsync(Listing listing, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(listing.PostalCode) || listing.PostalCode.Length < 6) return;
+
+        try
         {
-            try
+            var fiber = await _apiClient.GetFiberAvailabilityAsync(listing.PostalCode, cancellationToken);
+            if (fiber != null)
             {
-                var fiber = await _apiClient.GetFiberAvailabilityAsync(listing.PostalCode, cancellationToken);
-                if (fiber != null)
-                {
-                    listing.FiberAvailable = fiber.Availability;
-                }
+                listing.FiberAvailable = fiber.Availability;
             }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to check fiber availability for {FundaId}", listing.FundaId);
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to check fiber availability for {FundaId}", listing.FundaId);
         }
     }
 
