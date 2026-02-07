@@ -10,6 +10,7 @@ import '../core/config/app_config.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
+import '../models/notification.dart';
 
 typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
 typedef ComputeRunner =
@@ -159,6 +160,78 @@ class ApiService {
     }
   }
 
+  Future<List<ValoraNotification>> getNotifications({
+    bool unreadOnly = false,
+    int limit = 50,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/notifications').replace(
+        queryParameters: {
+          'unreadOnly': unreadOnly.toString(),
+          'limit': limit.toString(),
+        },
+      );
+
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return await _handleResponse(
+        response,
+        (body) => _runner(_parseNotifications, body),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<int> getUnreadNotificationCount() async {
+    try {
+      final uri = Uri.parse('$baseUrl/notifications/unread-count');
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return await _handleResponse(
+        response,
+        (body) {
+          final jsonBody = json.decode(body);
+          return jsonBody['count'] as int;
+        },
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<void> markNotificationAsRead(String id) async {
+    try {
+      final uri = Uri.parse('$baseUrl/notifications/$id/read');
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.post(uri, headers: headers).timeout(timeoutDuration),
+      );
+      await _handleResponse(response, (_) => null);
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      final uri = Uri.parse('$baseUrl/notifications/read-all');
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.post(uri, headers: headers).timeout(timeoutDuration),
+      );
+      await _handleResponse(response, (_) => null);
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);
@@ -248,4 +321,9 @@ ListingResponse _parseListingResponse(String body) {
 
 Listing _parseListing(String body) {
   return Listing.fromJson(json.decode(body));
+}
+
+List<ValoraNotification> _parseNotifications(String body) {
+  final List<dynamic> list = json.decode(body);
+  return list.map((e) => ValoraNotification.fromJson(e)).toList();
 }

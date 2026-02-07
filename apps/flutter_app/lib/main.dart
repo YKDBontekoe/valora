@@ -13,6 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
+import 'services/notification_service.dart';
 import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
@@ -79,6 +80,11 @@ Future<void> main() async {
               authToken: authProvider.token,
               refreshTokenCallback: authProvider.refreshSession,
             ),
+          ),
+          ChangeNotifierProxyProvider<ApiService, NotificationService>(
+            create: (context) => NotificationService(context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? NotificationService(apiService))..update(apiService),
           ),
         ],
         child: const ValoraApp(),

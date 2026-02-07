@@ -201,6 +201,7 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 
 // Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
+app.MapNotificationEndpoints();
 
 // Map Hubs
 app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();

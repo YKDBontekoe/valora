@@ -8,6 +8,7 @@ class HomeSliverAppBar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onFilterPressed;
   final int activeFilterCount;
+  final int unreadCount;
   final VoidCallback? onNotificationsPressed;
   final VoidCallback? onProfilePressed;
   final String? userInitials;
@@ -18,6 +19,7 @@ class HomeSliverAppBar extends StatelessWidget {
     required this.onSearchChanged,
     required this.onFilterPressed,
     this.activeFilterCount = 0,
+    this.unreadCount = 0,
     this.onNotificationsPressed,
     this.onProfilePressed,
     this.userInitials,
@@ -48,14 +50,31 @@ class HomeSliverAppBar extends StatelessWidget {
           ),
           Row(
             children: [
-              IconButton(
-                onPressed: onNotificationsPressed,
-                icon: Icon(
-                  Icons.notifications_none_rounded,
-                  color: isDark
-                      ? ValoraColors.neutral400
-                      : ValoraColors.neutral500,
-                ),
+              Stack(
+                children: [
+                  IconButton(
+                    onPressed: onNotificationsPressed,
+                    icon: Icon(
+                      Icons.notifications_none_rounded,
+                      color: isDark
+                          ? ValoraColors.neutral400
+                          : ValoraColors.neutral500,
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: ValoraColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 8),
               GestureDetector(
