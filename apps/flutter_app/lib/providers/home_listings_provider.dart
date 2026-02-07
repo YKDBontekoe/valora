@@ -89,11 +89,12 @@ class HomeListingsProvider extends ChangeNotifier {
   }
 
   Future<void> loadMore() async {
-    if (_isLoading || _isLoadingMore || !_hasNextPage || _error != null) {
+    if (_isLoading || _isLoadingMore || !_hasNextPage) {
       return;
     }
 
     _isLoadingMore = true;
+    _error = null;
     notifyListeners();
 
     final int nextPage = _currentPage + 1;

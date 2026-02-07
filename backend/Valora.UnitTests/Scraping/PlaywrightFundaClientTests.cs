@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Scraping.Models;
 
@@ -16,10 +17,17 @@ public class PlaywrightFundaClientTests
     private static readonly MethodInfo ApplyPriceFilterMethod =
         typeof(PlaywrightFundaClient).GetMethod("ApplyPriceFilter", BindingFlags.Static | BindingFlags.NonPublic)!;
 
+    private PlaywrightFundaClient CreateClient()
+    {
+        var factoryMock = new Mock<IHttpClientFactory>();
+        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient());
+        return new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>(), factoryMock.Object);
+    }
+
     [Fact]
     public void ParseSearchResultsJson_ParsesListingsFromSearchResultsPath()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = CreateClient();
         const string json = """
         {
           "searchResults": {
@@ -55,7 +63,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_UsesFallbackFields()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = CreateClient();
         const string json = """
         {
           "listings": [
@@ -83,7 +91,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_ReturnsEmpty_OnInvalidJson()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = CreateClient();
 
         var listings = (List<FundaApiListing>)ParseSearchResultsJsonMethod.Invoke(client, ["{not valid json"])!;
 
@@ -93,7 +101,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ParseSearchResultsJson_SkipsItemsWithoutGlobalId()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = CreateClient();
         const string json = """
         {
           "searchResults": {
@@ -118,6 +126,8 @@ public class PlaywrightFundaClientTests
     [InlineData("/detail/koop/amsterdam/no-id/", 0)]
     public void ExtractGlobalIdFromUrl_ParsesExpectedId(string url, int expected)
     {
+        // Static method invocation, instance not needed but method is on class
+        // Invoke(null, ...) works for static methods
         var globalId = (int)ExtractGlobalIdFromUrlMethod.Invoke(null, [url])!;
         Assert.Equal(expected, globalId);
     }
@@ -125,7 +135,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public async Task DisposeAsync_IsIdempotent_WhenNoBrowserWasCreated()
     {
-        var client = new PlaywrightFundaClient(new NullLogger<PlaywrightFundaClient>());
+        var client = CreateClient();
 
         await client.DisposeAsync();
         await client.DisposeAsync();
@@ -136,6 +146,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ApplyPriceFilter_FiltersOutsideRequestedRange()
     {
+        // Static method
         var listings = new List<FundaApiListing>
         {
             new() { Price = "€ 300.000", ListingUrl = "/a" },
@@ -152,6 +163,7 @@ public class PlaywrightFundaClientTests
     [Fact]
     public void ApplyPriceFilter_KeepsListingsWithUnparseablePrice()
     {
+        // Static method
         var listings = new List<FundaApiListing>
         {
             new() { Price = "Prijs op aanvraag", ListingUrl = "/unknown-price" },

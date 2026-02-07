@@ -439,6 +439,29 @@ class _HomeScreenState extends State<HomeScreen> {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               if (index == nearbyListings.length) {
+                if (provider.error != null) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: _bottomListPadding),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Unable to load more listings',
+                            style: ValoraTypography.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: provider.loadMore,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 if (provider.hasNextPage) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
