@@ -101,7 +101,8 @@ class _SearchScreenState extends State<SearchScreen> {
     // Don't search if query is empty and no filters are set
     // Exception: If we just want to explore listings, we might allow empty search
     // But typically search screen starts empty.
-    if (_currentQuery.isEmpty && !_hasActiveFilters) {
+    // Also check if sort is applied, as user might want to see "Newest" listings.
+    if (_currentQuery.isEmpty && !_hasActiveFilters && _sortBy == null) {
       setState(() {
         _listings = [];
         _isLoading = false;
@@ -286,7 +287,7 @@ class _SearchScreenState extends State<SearchScreen> {
           _sortBy = sortBy;
           _sortOrder = sortOrder;
         });
-        Navigator.pop(context);
+        Navigator.of(context, rootNavigator: true).pop();
         _loadListings(refresh: true);
       },
     );

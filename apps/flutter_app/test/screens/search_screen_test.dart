@@ -360,4 +360,121 @@ void main() {
     // Verify reload triggered
     verify(mockApiService.getListings(any)).called(greaterThan(1));
   });
+
+  testWidgets('SearchScreen shows sort options bottom sheet', (WidgetTester tester) async {
+    // Increase surface size to avoid overflow in bottom sheet
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Tap Sort button
+    await tester.tap(find.byTooltip('Sort'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sort By'), findsOneWidget);
+    expect(find.text('Newest'), findsOneWidget);
+    expect(find.text('Price: Low to High'), findsOneWidget);
+  });
+
+  testWidgets('SearchScreen applies sort option', (WidgetTester tester) async {
+    // Increase surface size to avoid overflow in bottom sheet
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Tap Sort button
+    await tester.tap(find.byTooltip('Sort'));
+    await tester.pumpAndSettle();
+
+    // Tap a sort option
+    await tester.tap(find.text('Price: Low to High'));
+    await tester.pumpAndSettle();
+
+    // Verify API called with sort params
+    verify(mockApiService.getListings(argThat(predicate((filter) {
+        if (filter is! ListingFilter) return false;
+        return filter.sortBy == 'price' && filter.sortOrder == 'asc';
+    })))).called(greaterThan(0));
+  });
+
+  testWidgets('SearchScreen removes filter via chip delete icon', (WidgetTester tester) async {
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Enter a query so that removing filter still triggers search
+    await tester.enterText(find.byType(TextField), 'test');
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+
+    // Set a filter
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.descendant(
+            of: find.widgetWithText(ValoraTextField, 'City'),
+            matching: find.byType(TextField)),
+        'FilterCity');
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    // Verify chip exists with delete icon
+    expect(find.text('City: FilterCity'), findsOneWidget);
+    expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+
+    // Tap delete icon
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+
+    // Verify chip removed
+    expect(find.text('City: FilterCity'), findsNothing);
+
+    // Verify API called with null city AND search term
+    verify(mockApiService.getListings(argThat(predicate((filter) {
+        if (filter is! ListingFilter) return false;
+        // The last call should have city null and searchTerm 'test'
+        return filter.city == null && filter.searchTerm == 'test';
+    })))).called(greaterThan(0));
+  });
 }
