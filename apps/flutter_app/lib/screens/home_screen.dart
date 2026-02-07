@@ -398,6 +398,10 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers.add(FeaturedListingsSection(
         listings: _featuredListings,
         onTap: _onListingTap,
+        onSeeAllTap: () {
+          // Navigate to see all featured listings
+          // For now, this could just print or perform a specific search
+        },
       ));
     }
 

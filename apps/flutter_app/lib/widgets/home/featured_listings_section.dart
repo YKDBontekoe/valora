@@ -8,11 +8,13 @@ import 'featured_listing_card.dart';
 class FeaturedListingsSection extends StatelessWidget {
   final List<Listing> listings;
   final Function(Listing) onTap;
+  final VoidCallback? onSeeAllTap;
 
   const FeaturedListingsSection({
     super.key,
     required this.listings,
     required this.onTap,
+    this.onSeeAllTap,
   });
 
   @override
@@ -29,29 +31,34 @@ class FeaturedListingsSection extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Featured for You',
-                      style: ValoraTypography.titleLarge.copyWith(
-                        fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Featured for You',
+                        style: ValoraTypography.titleLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Curated by Valora AI based on your taste',
-                      style: ValoraTypography.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 4),
+                      Text(
+                        'Curated by Valora AI based on your taste',
+                        style: ValoraTypography.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                Text(
-                  'See All',
-                  style: ValoraTypography.labelSmall.copyWith(
-                    color: ValoraColors.primary,
-                    fontWeight: FontWeight.bold,
+                GestureDetector(
+                  onTap: onSeeAllTap,
+                  child: Text(
+                    'See All',
+                    style: ValoraTypography.labelSmall.copyWith(
+                      color: ValoraColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
