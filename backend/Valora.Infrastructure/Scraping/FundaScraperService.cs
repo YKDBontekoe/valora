@@ -119,12 +119,17 @@ public class FundaScraperService : IFundaScraperService
         var fundaIds = apiListings.Select(l => l.GlobalId.ToString()).ToList();
         var existingListings = await _listingRepository.GetByFundaIdsAsync(fundaIds, cancellationToken);
         var existingListingsMap = existingListings.ToDictionary(l => l.FundaId, l => l);
+        var processedIds = new HashSet<string>();
 
         foreach (var apiListing in apiListings)
         {
+            var fundaId = apiListing.GlobalId.ToString();
+            if (processedIds.Contains(fundaId)) continue;
+            processedIds.Add(fundaId);
+
             try
             {
-                existingListingsMap.TryGetValue(apiListing.GlobalId.ToString(), out var existingListing);
+                existingListingsMap.TryGetValue(fundaId, out var existingListing);
                 await ProcessListingAsync(apiListing, existingListing, shouldNotify, cancellationToken);
                 
                 // Rate limiting delay
