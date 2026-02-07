@@ -116,6 +116,6 @@ class _ValoraChipState extends State<ValoraChip> {
     .animate(target: widget.isSelected ? 1 : 0) // Pulse on selection
     .scale(end: const Offset(1.05, 1.05), duration: ValoraAnimations.normal, curve: ValoraAnimations.emphatic)
     .then()
-    .scale(end: const Offset(1.0, 1.0), duration: ValoraAnimations.normal);
+    .scale(begin: const Offset(1.05, 1.05), end: const Offset(1.0, 1.0), duration: ValoraAnimations.normal);
   }
 }
