@@ -47,21 +47,21 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
           child: Row(
             children: [
               // Image
-              Stack(
-                children: [
-                  Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            ValoraSpacing.radiusMd,
+                Stack(
+                  children: [
+                    Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              ValoraSpacing.radiusMd,
+                            ),
+                            color: isDark
+                                ? ValoraColors.neutral700
+                                : ValoraColors.neutral200,
                           ),
-                          color: isDark
-                              ? ValoraColors.neutral700
-                              : ValoraColors.neutral200,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: widget.listing.imageUrl != null
+                          clipBehavior: Clip.antiAlias,
+                          child: widget.listing.imageUrl != null
                             ? Hero(
                                 tag: widget.listing.id,
                                 child: CachedNetworkImage(
@@ -112,7 +112,9 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: (isDark ? Colors.black : Colors.white)
+                              color: (isDark
+                                      ? ValoraColors.surfaceDark
+                                      : ValoraColors.surfaceLight)
                                   .withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),

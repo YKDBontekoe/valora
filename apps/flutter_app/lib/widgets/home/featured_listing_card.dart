@@ -54,66 +54,66 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image Section
-              Stack(
-                children: [
-                  Container(
-                        height: 180,
-                        color: isDark
-                            ? ValoraColors.neutral700
-                            : ValoraColors.neutral200,
-                        child: widget.listing.imageUrl != null
-                            ? Hero(
-                                tag: widget.listing.id,
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.listing.imageUrl!,
-                                  memCacheWidth: 800,
-                                  width: double.infinity,
-                                  height: 180,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      const ValoraShimmer(
-                                        width: double.infinity,
-                                        height: 180,
+                Stack(
+                  children: [
+                    Container(
+                          height: 180,
+                          color: isDark
+                              ? ValoraColors.neutral700
+                              : ValoraColors.neutral200,
+                          child: widget.listing.imageUrl != null
+                              ? Hero(
+                                  tag: widget.listing.id,
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.listing.imageUrl!,
+                                    memCacheWidth: 800,
+                                    width: double.infinity,
+                                    height: 180,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const ValoraShimmer(
+                                          width: double.infinity,
+                                          height: 180,
+                                        ),
+                                    errorWidget: (context, url, error) => Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: ValoraColors.neutral400,
                                       ),
-                                  errorWidget: (context, url, error) => Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      color: ValoraColors.neutral400,
                                     ),
                                   ),
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.home,
+                                    size: 48,
+                                    color: ValoraColors.neutral400,
+                                  ),
                                 ),
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.home,
-                                  size: 48,
-                                  color: ValoraColors.neutral400,
-                                ),
-                              ),
-                      )
-                      .animate(target: _isHovered ? 1 : 0)
-                      .scale(
-                        end: const Offset(1.05, 1.05),
-                        duration: ValoraAnimations.slow,
-                        curve: ValoraAnimations.deceleration,
-                      ),
-                  // Gradient Overlay
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.4),
-                            Colors.transparent,
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
+                        )
+                        .animate(target: _isHovered ? 1 : 0)
+                        .scale(
+                          end: const Offset(1.05, 1.05),
+                          duration: ValoraAnimations.slow,
+                          curve: ValoraAnimations.deceleration,
+                        ),
+                    // Gradient Overlay
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              ValoraColors.neutral900.withValues(alpha: 0.4),
+                              Colors.transparent,
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   Positioned(
                     top: 12,
                     left: 12,
@@ -190,7 +190,9 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: (isDark ? Colors.black : Colors.white)
+                              color: (isDark
+                                      ? ValoraColors.surfaceDark
+                                      : ValoraColors.surfaceLight)
                                   .withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),
