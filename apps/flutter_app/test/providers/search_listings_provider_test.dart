@@ -118,4 +118,62 @@ void main() {
     expect(provider.listings, hasLength(1));
     expect(provider.error, isNotNull);
   });
+
+  test('clearing specific filter resets value and refreshes', () async {
+    final MockClient client = MockClient((request) async {
+      return _listingResponse(items: <Map<String, dynamic>>[], hasNextPage: false);
+    });
+
+    final ApiService apiService = ApiService(
+      client: client,
+      runner: syncRunner,
+      retryOptions: const RetryOptions(maxAttempts: 1),
+    );
+
+    final SearchListingsProvider provider = SearchListingsProvider(
+      apiService: apiService,
+    );
+
+    // Initial state with filters
+    await provider.applyFilters(
+      minPrice: 100,
+      maxPrice: 200,
+      city: 'Amsterdam',
+      minBedrooms: 2,
+      minLivingArea: 50,
+      maxLivingArea: 100,
+      sortBy: 'price',
+      sortOrder: 'asc',
+    );
+
+    expect(provider.minPrice, 100);
+    expect(provider.city, 'Amsterdam');
+    expect(provider.minBedrooms, 2);
+    expect(provider.minLivingArea, 50);
+    expect(provider.sortBy, 'price');
+
+    // Clear Price
+    await provider.clearPriceFilter();
+    expect(provider.minPrice, isNull);
+    expect(provider.maxPrice, isNull);
+    expect(provider.city, 'Amsterdam'); // Others remain
+
+    // Clear City
+    await provider.clearCityFilter();
+    expect(provider.city, isNull);
+
+    // Clear Bedrooms
+    await provider.clearBedroomsFilter();
+    expect(provider.minBedrooms, isNull);
+
+    // Clear Living Area
+    await provider.clearLivingAreaFilter();
+    expect(provider.minLivingArea, isNull);
+    expect(provider.maxLivingArea, isNull);
+
+    // Clear Sort
+    await provider.clearSort();
+    expect(provider.sortBy, isNull);
+    expect(provider.sortOrder, isNull);
+  });
 }
