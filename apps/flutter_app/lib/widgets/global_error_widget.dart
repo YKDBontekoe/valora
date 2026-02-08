@@ -120,7 +120,7 @@ class GlobalErrorWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: ValoraSpacing.lg),
               ],
             ],
           ),

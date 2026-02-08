@@ -83,13 +83,13 @@ class _StartupScreenState extends State<StartupScreen>
     try {
       final List<Future<void>> startupFutures = <Future<void>>[
         _authCheckFuture,
+        Future<void>.delayed(_minimumStartupDuration),
       ];
 
       if (_disableAnimations) {
         _controller.value = 1;
       } else {
         startupFutures.add(_controller.forward().orCancel);
-        startupFutures.add(Future<void>.delayed(_minimumStartupDuration));
       }
 
       await Future.wait<void>(startupFutures);

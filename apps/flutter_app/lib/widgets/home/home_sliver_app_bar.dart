@@ -80,16 +80,13 @@ class HomeSliverAppBar extends StatelessWidget {
               const SizedBox(width: 8),
               Tooltip(
                 message: 'Profile',
-                child: Semantics(
-                  button: true,
-                  label: 'Profile',
-                  child: Material(
-                    color: Colors.transparent,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      onTap: onProfilePressed,
-                      customBorder: const CircleBorder(),
-                      child: Ink(
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: onProfilePressed,
+                    customBorder: const CircleBorder(),
+                    child: Ink(
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
@@ -122,7 +119,6 @@ class HomeSliverAppBar extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
               ),
             ],
           ),

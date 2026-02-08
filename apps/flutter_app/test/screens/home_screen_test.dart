@@ -40,6 +40,27 @@ void main() {
     );
   }
 
+  MockClient createSuccessMockClient() {
+    return MockClient((request) async {
+      if (request.url.toString().contains('health')) {
+        return http.Response('OK', 200);
+      }
+      if (request.url.toString().contains('listings')) {
+        return http.Response('''
+              {
+                "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
+                "pageIndex": 1,
+                "totalPages": 1,
+                "totalCount": 1,
+                "hasNextPage": false,
+                "hasPreviousPage": false
+              }
+              ''', 200);
+      }
+      return http.Response('Not Found', 404);
+    });
+  }
+
   group('HomeScreen', () {
     testWidgets('Shows offline state when health check fails', (
       WidgetTester tester,
@@ -67,24 +88,7 @@ void main() {
     testWidgets('Shows listings when connection succeeds', (
       WidgetTester tester,
     ) async {
-      final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health')) {
-          return http.Response('OK', 200);
-        }
-        if (request.url.toString().contains('listings')) {
-          return http.Response('''
-              {
-                "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
-                "pageIndex": 1,
-                "totalPages": 1,
-                "totalCount": 1,
-                "hasNextPage": false,
-                "hasPreviousPage": false
-              }
-              ''', 200);
-        }
-        return http.Response('Not Found', 404);
-      });
+      final mockClient = createSuccessMockClient();
       final apiService = ApiService(
         runner: syncRunner,
         client: mockClient,
@@ -104,24 +108,7 @@ void main() {
     });
 
     testWidgets('See All opens Search tab', (WidgetTester tester) async {
-      final mockClient = MockClient((request) async {
-        if (request.url.toString().contains('health')) {
-          return http.Response('OK', 200);
-        }
-        if (request.url.toString().contains('listings')) {
-          return http.Response('''
-              {
-                "items": [{"id": "00000000-0000-0000-0000-000000000000", "fundaId": "1", "address": "Test Street 1", "city": "Test City", "postalCode": "1234AB", "price": 100000, "bedrooms": 2, "bathrooms": 1, "livingAreaM2": 100, "plotAreaM2": 100, "propertyType": "House", "status": "Available", "url": "http://test", "imageUrl": "http://test", "listedDate": "2023-01-01T00:00:00Z", "createdAt": "2023-01-01T00:00:00Z"}],
-                "pageIndex": 1,
-                "totalPages": 1,
-                "totalCount": 1,
-                "hasNextPage": false,
-                "hasPreviousPage": false
-              }
-              ''', 200);
-        }
-        return http.Response('Not Found', 404);
-      });
+      final mockClient = createSuccessMockClient();
       final apiService = ApiService(
         runner: syncRunner,
         client: mockClient,

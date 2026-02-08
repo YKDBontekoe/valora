@@ -140,6 +140,7 @@ class _GlassNavItem extends StatelessWidget {
                   Icon(
                         icon,
                         size: 24,
+                        semanticLabel: null,
                         color: isSelected
                             ? ValoraColors.primary
                             : unselectedColor,
@@ -159,17 +160,21 @@ class _GlassNavItem extends StatelessWidget {
                     curve: ValoraAnimations.emphatic,
                     child: SizedBox(
                       width: isSelected ? null : 0,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Text(
-                          label,
-                          style: const TextStyle(
-                            color: ValoraColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                      child: ExcludeSemantics(
+                        child: Padding(
+                          padding: isSelected
+                              ? const EdgeInsets.only(left: 8)
+                              : EdgeInsets.zero,
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              color: ValoraColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),

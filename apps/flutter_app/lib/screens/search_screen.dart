@@ -240,6 +240,13 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  String _priceChipLabel(double? minPrice, double? maxPrice) {
+    final min = CurrencyFormatter.formatEur(minPrice ?? 0);
+    final max =
+        maxPrice != null ? CurrencyFormatter.formatEur(maxPrice) : 'Any';
+    return 'Price: $min - $max';
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -332,11 +339,22 @@ class _SearchScreenState extends State<SearchScreen> {
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label:
-                                            'Price: ${provider.minPrice != null ? CurrencyFormatter.formatEur(provider.minPrice!) : CurrencyFormatter.formatEur(0)} - ${provider.maxPrice != null ? CurrencyFormatter.formatEur(provider.maxPrice!) : 'Any'}',
+                                        label: _priceChipLabel(
+                                            provider.minPrice, provider.maxPrice),
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearPriceFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearPriceFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear price filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.city != null)
@@ -346,7 +364,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: 'City: ${provider.city}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearCityFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearCityFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear city filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.minBedrooms != null)
@@ -356,7 +385,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minBedrooms}+ Beds',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearBedroomsFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearBedroomsFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear bedrooms filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.minLivingArea != null)
@@ -366,7 +406,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minLivingArea}+ m²',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearLivingAreaFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearLivingAreaFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear area filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.isSortActive)
@@ -380,7 +431,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                                 : 'Sort'),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
-                                        onDeleted: () => provider.clearSort().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearSort()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear sort')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.hasActiveFiltersOrSort)

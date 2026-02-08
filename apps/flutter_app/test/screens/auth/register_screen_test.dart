@@ -67,23 +67,29 @@ void main() {
     expect(emailTextField.autofillHints, contains(AutofillHints.email));
 
     // Verify Password field hints
-    final passwordFieldFinder = find
-        .widgetWithText(TextField, '••••••••')
-        .first;
-    expect(passwordFieldFinder, findsOneWidget);
-    final passwordTextField = tester.widget<TextField>(passwordFieldFinder);
+    final passwordFormFieldFinder = find.byKey(const Key('password_field'));
+    expect(passwordFormFieldFinder, findsOneWidget);
+    final passwordTextField = tester.widget<TextField>(
+      find.descendant(
+        of: passwordFormFieldFinder,
+        matching: find.byType(TextField),
+      ),
+    );
     expect(
       passwordTextField.autofillHints,
       contains(AutofillHints.newPassword),
     );
 
     // Verify Confirm Password field hints
-    final confirmPasswordFieldFinder = find
-        .widgetWithText(TextField, '••••••••')
-        .last;
-    expect(confirmPasswordFieldFinder, findsOneWidget);
+    final confirmPasswordFormFieldFinder = find.byKey(
+      const Key('confirm_password_field'),
+    );
+    expect(confirmPasswordFormFieldFinder, findsOneWidget);
     final confirmPasswordTextField = tester.widget<TextField>(
-      confirmPasswordFieldFinder,
+      find.descendant(
+        of: confirmPasswordFormFieldFinder,
+        matching: find.byType(TextField),
+      ),
     );
     expect(
       confirmPasswordTextField.autofillHints,
@@ -105,14 +111,14 @@ void main() {
       ),
     );
 
-    final Finder passwordTextFields = find.widgetWithText(
-      TextField,
-      '••••••••',
-    );
-    expect(passwordTextFields, findsNWidgets(2));
+    final passwordFormFieldFinder = find.byKey(const Key('password_field'));
+    expect(passwordFormFieldFinder, findsOneWidget);
 
     final TextField passwordFieldBefore = tester.widget<TextField>(
-      passwordTextFields.first,
+      find.descendant(
+        of: passwordFormFieldFinder,
+        matching: find.byType(TextField),
+      ),
     );
     expect(passwordFieldBefore.obscureText, isTrue);
 
@@ -120,7 +126,10 @@ void main() {
     await tester.pumpAndSettle();
 
     final TextField passwordFieldAfter = tester.widget<TextField>(
-      find.widgetWithText(TextField, '••••••••').first,
+      find.descendant(
+        of: passwordFormFieldFinder,
+        matching: find.byType(TextField),
+      ),
     );
     expect(passwordFieldAfter.obscureText, isFalse);
   });

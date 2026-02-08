@@ -120,6 +120,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
                               tooltip: isFavorite
                                   ? 'Remove from saved'
                                   : 'Save listing',

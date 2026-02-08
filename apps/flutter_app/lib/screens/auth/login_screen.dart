@@ -197,7 +197,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: _openForgotPassword,
                           style: TextButton.styleFrom(
-                            minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -362,7 +361,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                           style: TextButton.styleFrom(
-                            minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
