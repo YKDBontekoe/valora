@@ -1,7 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
-using Valora.Application.DTOs;
-using Valora.Application.Scraping;
 using Xunit;
 
 namespace Valora.IntegrationTests;

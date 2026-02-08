@@ -1,138 +1,105 @@
 # Valora Developer Guide
 
-This guide explains the technical architecture and implementation details of Valora.
+## Overview
 
-## Architecture Overview
+Valora is an enrichment backend + Flutter client. It does not scrape listing sites. It builds context reports from public APIs at request time.
 
-Valora follows a **Clean Architecture** approach. This ensures separation of concerns, testability, and independence from external frameworks.
+## Clean Architecture Layers
 
-### Layers
+1. `Valora.Domain`
+- Pure entities and domain concerns.
+- No dependencies on external packages/layers.
 
-1.  **Valora.Domain**
-    *   **Responsibility**: Defines the core business entities and logic.
-    *   **Dependencies**: None.
-    *   **Key Classes**: `Listing`, `PriceHistory`, `ApplicationUser`.
+2. `Valora.Application`
+- Interfaces and DTO contracts for use cases.
+- Key contracts include `IContextReportService`, `ILocationResolver`, and source client interfaces.
 
-2.  **Valora.Application**
-    *   **Responsibility**: Defines application use cases, interfaces, and DTOs.
-    *   **Dependencies**: `Valora.Domain`.
-    *   **Key Interfaces**: `IListingRepository`, `IFundaScraperService`, `IAuthService`.
+3. `Valora.Infrastructure`
+- Implements application interfaces.
+- Handles EF Core persistence and HTTP connectors for external/public data sources.
 
-3.  **Valora.Infrastructure**
-    *   **Responsibility**: Implements interfaces defined in the Application layer. interacting with external systems (Database, Funda.nl, Hangfire).
-    *   **Dependencies**: `Valora.Application`, `Valora.Domain`.
-    *   **Key Components**: `ValoraDbContext` (EF Core), `FundaScraperService`, `TokenService`.
+4. `Valora.Api`
+- Minimal APIs for auth, health, and context report generation.
+- No business logic in endpoints.
 
-4.  **Valora.Api**
-    *   **Responsibility**: The entry point of the application. Handles HTTP requests, dependency injection, and configuration.
-    *   **Dependencies**: `Valora.Application`, `Valora.Infrastructure`.
-    *   **Key Components**: `Program.cs` (Minimal APIs), `AuthEndpoints`.
+## Context Report Flow
 
-### Class Diagram
+1. Receive input (`address` or `listing link`).
+2. Resolve location (PDOK): display address, coordinates, admin codes.
+3. Query enrichment clients in parallel (CBS, Overpass, Luchtmeetnet, etc.).
+4. Build normalized metrics and composite score.
+5. Return report with source attribution and warnings for missing sources.
 
-```mermaid
-classDiagram
-    class Listing {
-        +Guid Id
-        +string FundaId
-        +string Address
-        +decimal? Price
-        +List~PriceHistory~ PriceHistories
-    }
+## Key Endpoint
 
-    class IListingRepository {
-        <<interface>>
-        +GetByIdAsync(id)
-        +GetAllAsync(filter)
-    }
+### `POST /api/context/report`
 
-    class ListingRepository {
-        -ValoraDbContext _context
-        +GetByIdAsync(id)
-        +GetAllAsync(filter)
-    }
+Auth required.
 
-    class FundaScraperService {
-        -IListingRepository _repo
-        -HttpClient _http
-        +ScrapeAndStoreAsync()
-    }
+Request:
 
-    ListingRepository ..|> IListingRepository
-    FundaScraperService --> IListingRepository
-    ListingRepository --> Listing
+```json
+{
+  "input": "Damrak 1 Amsterdam",
+  "radiusMeters": 1000
+}
 ```
 
-## Onboarding: Data Flow
+Response includes:
 
-> **Note:** The detailed data flow guide has been moved to the [Onboarding Guide](onboarding.md).
-
-## API Documentation
-
-The backend exposes a REST API via Minimal APIs in `Valora.Api`.
-
-### Authentication
-
-*   **Register**
-    *   `POST /api/auth/register`
-    *   Body: `{ "email": "user@example.com", "password": "Password123!" }`
-    *   Response: `200 OK`
-
-*   **Login**
-    *   `POST /api/auth/login`
-    *   Body: `{ "email": "user@example.com", "password": "Password123!" }`
-    *   Response: `{ "accessToken": "...", "refreshToken": "...", "expiresIn": 3600 }`
-
-*   **Refresh Token**
-    *   `POST /api/auth/refresh`
-    *   Body: `{ "refreshToken": "..." }`
-    *   Response: `{ "accessToken": "...", "refreshToken": "..." }`
-
-### Listings
-
-*   `GET /api/listings`
-    *   Headers: `Authorization: Bearer <token>`
-    *   Query Params: `pageIndex`, `pageSize`, `minPrice`, `maxPrice`, `city`
-    *   Response: Paged list of listings.
-
-*   `GET /api/listings/{id}`
-    *   Headers: `Authorization: Bearer <token>`
-    *   Response: Detailed listing DTO.
-
-### Scraper
-
-*   `POST /api/scraper/trigger`
-    *   Headers: `Authorization: Bearer <token>`
-    *   Triggers the `FundaScraperJob` immediately via Hangfire.
+- `location`
+- `socialMetrics`
+- `safetyMetrics`
+- `amenityMetrics`
+- `environmentMetrics`
+- `compositeScore`
+- `sources`
+- `warnings`
 
 ## Configuration
 
-Configuration is managed entirely via **Environment Variables**. There is no `appsettings.json`.
+Core environment variables:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `Host=localhost;Database=valora;Username=postgres;Password=postgres` |
-| `JWT_SECRET` | Secret for signing tokens | `SuperSecretKeyForDevelopmentOnly123!` |
-| `SCRAPER_SEARCH_URLS` | Semicolon-separated Funda URLs | `https://www.funda.nl/koop/amsterdam/` |
-| `HANGFIRE_ENABLED` | Enable background jobs | `true` |
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | JWT signing secret |
+| `JWT_ISSUER` | JWT issuer |
+| `JWT_AUDIENCE` | JWT audience |
+| `API_URL` | Flutter app backend URL (`apps/flutter_app/.env`) |
+| `CONTEXT_PDOK_BASE_URL` | Optional PDOK base URL override |
+| `CONTEXT_CBS_BASE_URL` | Optional CBS base URL override |
+| `CONTEXT_OVERPASS_BASE_URL` | Optional Overpass base URL override |
+| `CONTEXT_LUCHTMEETNET_BASE_URL` | Optional Luchtmeetnet base URL override |
+| `CONTEXT_*_CACHE_MINUTES` | Per-source cache TTL tuning |
+
+API key expectations:
+
+- No key required by default for PDOK, CBS StatLine, Overpass, and Luchtmeetnet base connectors.
+- `OPENROUTER_API_KEY` is required only for AI chat endpoints.
+- Optional future connectors may require keys (for example ORS/KNMI/DUO); keep those values in `.env` and never commit secrets.
 
 ## Testing
 
 ### Backend
-
-Uses xUnit and Testcontainers for integration testing.
 
 ```bash
 cd backend
 dotnet test
 ```
 
-**Note**: Docker must be running for integration tests to pass.
+Integration tests use EF Core InMemory in this environment.
 
-### Manual Verification
+### Frontend
 
-To manually verify the scraper:
-1.  Ensure Backend and Database are running.
-2.  Login via Postman or the Frontend to get a token.
-3.  Call `POST /api/scraper/trigger` with the token.
-4.  Check the logs or `http://localhost:5001/hangfire` to see the job processing.
+```bash
+cd apps/flutter_app
+flutter analyze
+flutter test
+```
+
+## Coding Notes
+
+- Keep source connectors isolated behind application interfaces.
+- Favor graceful degradation: missing source data should return warnings, not 500.
+- Keep scoring explainable with clear metric/source mapping.

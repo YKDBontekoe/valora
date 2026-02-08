@@ -10,6 +10,7 @@ import '../core/config/app_config.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
+import '../models/context_report.dart';
 import '../models/notification.dart';
 
 typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
@@ -138,23 +139,27 @@ class ApiService {
     }
   }
 
-  Future<void> triggerLimitedScrape(String region, int limit) async {
+  Future<ContextReport> getContextReport(
+    String input, {
+    int radiusMeters = 1000,
+  }) async {
     try {
-      final queryParams = <String, String>{
-        'region': region,
-        'limit': limit.toString(),
-      };
-
-      final uri = Uri.parse(
-        '$baseUrl/scraper/trigger-limited',
-      ).replace(queryParameters: queryParams);
+      final uri = Uri.parse('$baseUrl/context/report');
+      final payload = json.encode(<String, dynamic>{
+        'input': input,
+        'radiusMeters': radiusMeters,
+      });
 
       final response = await _authenticatedRequest(
-        (headers) =>
-            _client.post(uri, headers: headers).timeout(timeoutDuration),
+        (headers) => _client
+            .post(uri, headers: headers, body: payload)
+            .timeout(timeoutDuration),
       );
 
-      await _handleResponse(response, (_) => null);
+      return await _handleResponse(
+        response,
+        (body) => _runner(_parseContextReport, body),
+      );
     } catch (e) {
       throw _handleException(e);
     }
@@ -326,4 +331,8 @@ Listing _parseListing(String body) {
 List<ValoraNotification> _parseNotifications(String body) {
   final List<dynamic> list = json.decode(body);
   return list.map((e) => ValoraNotification.fromJson(e)).toList();
+}
+
+ContextReport _parseContextReport(String body) {
+  return ContextReport.fromJson(json.decode(body));
 }

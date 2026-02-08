@@ -25,7 +25,6 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 { "DATABASE_URL", _connectionString },
-                { "HANGFIRE_ENABLED", "false" },
                 { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
                 { "JWT_ISSUER", "ValoraTest" },
                 { "JWT_AUDIENCE", "ValoraTest" },
@@ -80,16 +79,6 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
 
-            // Remove Hangfire hosted services
-            var hostedServices = services.Where(d =>
-                d.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService) &&
-                d.ImplementationType?.FullName?.Contains("Hangfire") == true)
-                .ToList();
-
-            foreach (var descriptor in hostedServices)
-            {
-                services.Remove(descriptor);
-            }
         });
     }
 }

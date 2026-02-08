@@ -167,13 +167,6 @@ class HomeListingsProvider extends ChangeNotifier {
     await refresh();
   }
 
-  Future<void> triggerScrape({
-    required String region,
-    required int limit,
-  }) async {
-    await _apiService.triggerLimitedScrape(region, limit);
-  }
-
   Future<void> _loadListings({required bool refresh}) async {
     if (refresh) {
       _isLoading = true;

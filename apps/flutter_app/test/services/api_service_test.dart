@@ -21,7 +21,7 @@ void main() {
 
   group('ApiService', () {
     test('baseUrl uses dotenv', () {
-      expect(ApiService.baseUrl, 'https://valora-ylpr.onrender.com/api');
+      expect(ApiService.baseUrl, 'http://localhost:5001/api');
     });
 
     test('baseUrl falls back to default if dotenv missing', () {
@@ -254,27 +254,50 @@ void main() {
       );
     });
 
-    test('triggerLimitedScrape makes correct request', () async {
+    test('getContextReport makes correct request', () async {
       final client = MockClient((request) async {
-        expect(request.url.path, '/api/scraper/trigger-limited');
-        expect(request.url.queryParameters['region'], 'amsterdam');
-        expect(request.url.queryParameters['limit'], '10');
+        expect(request.url.path, '/api/context/report');
         expect(request.method, 'POST');
-        return http.Response(json.encode({'message': 'Queued'}), 200);
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        expect(body['input'], 'Damrak 1 Amsterdam');
+        expect(body['radiusMeters'], 900);
+        return http.Response(
+          json.encode({
+            'location': {
+              'query': 'Damrak 1 Amsterdam',
+              'displayAddress': 'Damrak 1, 1012LG Amsterdam',
+              'latitude': 52.3771,
+              'longitude': 4.8980,
+            },
+            'socialMetrics': [],
+            'safetyMetrics': [],
+            'amenityMetrics': [],
+            'environmentMetrics': [],
+            'compositeScore': 78.4,
+            'sources': [],
+            'warnings': [],
+          }),
+          200,
+        );
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
-      await apiService.triggerLimitedScrape('amsterdam', 10);
+      final report = await apiService.getContextReport(
+        'Damrak 1 Amsterdam',
+        radiusMeters: 900,
+      );
+      expect(report.location.displayAddress, 'Damrak 1, 1012LG Amsterdam');
+      expect(report.compositeScore, 78.4);
     });
 
-    test('triggerLimitedScrape throws ServerException on failure', () async {
+    test('getContextReport throws ServerException on failure', () async {
       final client = MockClient((request) async {
         return http.Response('Error', 500);
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
       expect(
-        () => apiService.triggerLimitedScrape('amsterdam', 10),
+        () => apiService.getContextReport('Damrak 1 Amsterdam'),
         throwsA(isA<ServerException>()),
       );
     });
