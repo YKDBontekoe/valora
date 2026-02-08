@@ -9,6 +9,7 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
+using Polly;
 
 namespace Valora.Infrastructure;
 
@@ -47,19 +48,30 @@ public static class DependencyInjection
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddTransientHttpErrorPolicy(builder =>
+            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddTransientHttpErrorPolicy(builder =>
+            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+        .AddTransientHttpErrorPolicy(builder =>
+            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+        .AddTransientHttpErrorPolicy(builder =>
+            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
 
         return services;
