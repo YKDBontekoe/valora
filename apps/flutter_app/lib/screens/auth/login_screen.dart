@@ -194,8 +194,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildLabel('Password'),
-                        GestureDetector(
-                          onTap: _openForgotPassword,
+                        TextButton(
+                          onPressed: _openForgotPassword,
+                          style: TextButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                          ),
                           child: Text(
                             'Forgot?',
                             style: ValoraTypography.labelSmall.copyWith(
@@ -344,8 +351,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : ValoraColors.neutral500,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
+                        TextButton(
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -353,6 +360,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                           },
+                          style: TextButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                          ),
                           child: Text(
                             'Create Account',
                             style: ValoraTypography.bodyMedium.copyWith(

@@ -70,4 +70,26 @@ void main() {
 
     expect(find.text('Welcome Back'), findsOneWidget);
   });
+
+  testWidgets('Startup keeps splash visible briefly when auth is immediate', (
+    WidgetTester tester,
+  ) async {
+    final DelayedAuthProvider provider = DelayedAuthProvider(
+      delay: Duration.zero,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AuthProvider>.value(
+        value: provider,
+        child: const MaterialApp(home: StartupScreen()),
+      ),
+    );
+
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Find your dream home'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome Back'), findsOneWidget);
+  });
 }

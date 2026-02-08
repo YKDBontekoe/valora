@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../core/formatters/currency_formatter.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -173,7 +174,9 @@ class _SearchScreenState extends State<SearchScreen> {
     String? currentSortBy,
     String? currentSortOrder,
   ) {
-    final isSelected = currentSortBy == sortBy && currentSortOrder == sortOrder;
+    final effectiveSortBy = currentSortBy ?? 'date';
+    final effectiveSortOrder = currentSortOrder ?? 'desc';
+    final isSelected = effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
 
     return ListTile(
       title: Text(
@@ -235,6 +238,13 @@ class _SearchScreenState extends State<SearchScreen> {
       sortBy: result['sortBy'] as String?,
       sortOrder: result['sortOrder'] as String?,
     );
+  }
+
+  String _priceChipLabel(double? minPrice, double? maxPrice) {
+    final min = CurrencyFormatter.formatEur(minPrice ?? 0);
+    final max =
+        maxPrice != null ? CurrencyFormatter.formatEur(maxPrice) : 'Any';
+    return 'Price: $min - $max';
   }
 
   @override
@@ -329,11 +339,22 @@ class _SearchScreenState extends State<SearchScreen> {
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label:
-                                            'Price: €${provider.minPrice?.toInt() ?? 0} - ${provider.maxPrice != null ? '€${provider.maxPrice!.toInt()}' : 'Any'}',
+                                        label: _priceChipLabel(
+                                            provider.minPrice, provider.maxPrice),
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearPriceFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearPriceFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear price filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.city != null)
@@ -343,7 +364,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: 'City: ${provider.city}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearCityFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearCityFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear city filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.minBedrooms != null)
@@ -353,7 +385,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minBedrooms}+ Beds',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearBedroomsFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearBedroomsFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear bedrooms filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.minLivingArea != null)
@@ -363,7 +406,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minLivingArea}+ m²',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider.clearLivingAreaFilter().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearLivingAreaFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear area filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.isSortActive)
@@ -377,7 +431,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                                 : 'Sort'),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
-                                        onDeleted: () => provider.clearSort().catchError((_) {}),
+                                        onDeleted: () => provider
+                                            .clearSort()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Failed to clear sort')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.hasActiveFiltersOrSort)

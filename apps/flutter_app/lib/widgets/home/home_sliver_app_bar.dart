@@ -60,6 +60,7 @@ class HomeSliverAppBar extends StatelessWidget {
                           ? ValoraColors.neutral400
                           : ValoraColors.neutral500,
                     ),
+                    tooltip: 'Notifications',
                   ),
                   if (unreadCount > 0)
                     Positioned(
@@ -77,36 +78,47 @@ class HomeSliverAppBar extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onProfilePressed,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [ValoraColors.primary, ValoraColors.primaryLight],
-                      begin: Alignment.bottomLeft,
-                      end: Alignment.topRight,
-                    ),
-                    border: Border.all(
-                      color: isDark
-                          ? ValoraColors.surfaceDark
-                          : ValoraColors.surfaceLight,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      userInitials ?? '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+              Tooltip(
+                message: 'Profile',
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: onProfilePressed,
+                    customBorder: const CircleBorder(),
+                    child: Ink(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [
+                              ValoraColors.primary,
+                              ValoraColors.primaryLight,
+                            ],
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                          ),
+                          border: Border.all(
+                            color: isDark
+                                ? ValoraColors.surfaceDark
+                                : ValoraColors.surfaceLight,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            userInitials ?? '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
               ),
             ],
           ),

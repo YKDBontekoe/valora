@@ -61,6 +61,7 @@ class AuthProvider extends ChangeNotifier {
     String password,
     String confirmPassword,
   ) async {
+    if (_isLoading) return;
     _isLoading = true;
     notifyListeners();
     try {

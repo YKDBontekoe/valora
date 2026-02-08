@@ -14,20 +14,30 @@ class StartupScreen extends StatefulWidget {
 
 class _StartupScreenState extends State<StartupScreen>
     with SingleTickerProviderStateMixin {
+  static const Duration _animatedSplashDuration = Duration(milliseconds: 900);
+  static const Duration _minimumStartupDuration = Duration(milliseconds: 500);
+
   late AnimationController _controller;
   late Animation<double> _iconScaleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _textSlideAnimation;
   late Future<void> _authCheckFuture;
+  late bool _disableAnimations;
   final Completer<void> _authCheckCompleter = Completer<void>();
 
   @override
   void initState() {
     super.initState();
 
+    _disableAnimations = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
+
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: _disableAnimations ? Duration.zero : _animatedSplashDuration,
     );
 
     // Icon pops in with an elastic effect
@@ -71,10 +81,18 @@ class _StartupScreenState extends State<StartupScreen>
 
   Future<void> _startAnimation() async {
     try {
-      await Future.wait<void>([
-        _controller.forward().orCancel,
+      final List<Future<void>> startupFutures = <Future<void>>[
         _authCheckFuture,
-      ]);
+        Future<void>.delayed(_minimumStartupDuration),
+      ];
+
+      if (_disableAnimations) {
+        _controller.value = 1;
+      } else {
+        startupFutures.add(_controller.forward().orCancel);
+      }
+
+      await Future.wait<void>(startupFutures);
       if (!mounted) return;
       _navigateToHome();
     } on TickerCanceled {

@@ -364,11 +364,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                Text(
-                  'See All',
-                  style: ValoraTypography.labelSmall.copyWith(
-                    color: ValoraColors.primary,
-                    fontWeight: FontWeight.bold,
+                TextButton(
+                  onPressed: () => setState(() => _currentNavIndex = 1),
+                  style: TextButton.styleFrom(
+                    foregroundColor: ValoraColors.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'See All',
+                    style: ValoraTypography.labelSmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

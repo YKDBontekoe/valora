@@ -107,64 +107,82 @@ class _GlassNavItem extends StatelessWidget {
         ? ValoraColors.neutral400
         : ValoraColors.neutral500;
 
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: ValoraAnimations.medium,
-        curve: ValoraAnimations.emphatic,
-        padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 20 : 16,
-          vertical: 12,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? ValoraColors.primary.withValues(alpha: 0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-                  icon,
-                  size: 24,
-                  color: isSelected ? ValoraColors.primary : unselectedColor,
-                )
-                .animate(target: isSelected ? 1 : 0)
-                .scale(
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.1, 1.1),
-                  duration: ValoraAnimations.fast,
-                  curve: ValoraAnimations.emphatic,
-                )
-                .then()
-                .scale(end: const Offset(1.0, 1.0)),
-
-            AnimatedSize(
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$label tab',
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedContainer(
               duration: ValoraAnimations.medium,
               curve: ValoraAnimations.emphatic,
-              child: SizedBox(
-                width: isSelected ? null : 0,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: ValoraColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+              padding: EdgeInsets.symmetric(
+                horizontal: isSelected ? 20 : 16,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? ValoraColors.primary.withValues(alpha: 0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                        icon,
+                        size: 24,
+                        semanticLabel: null,
+                        color: isSelected
+                            ? ValoraColors.primary
+                            : unselectedColor,
+                      )
+                      .animate(target: isSelected ? 1 : 0)
+                      .scale(
+                        begin: const Offset(1, 1),
+                        end: const Offset(1.1, 1.1),
+                        duration: ValoraAnimations.fast,
+                        curve: ValoraAnimations.emphatic,
+                      )
+                      .then()
+                      .scale(end: const Offset(1.0, 1.0)),
+
+                  AnimatedSize(
+                    duration: ValoraAnimations.medium,
+                    curve: ValoraAnimations.emphatic,
+                    child: SizedBox(
+                      width: isSelected ? null : 0,
+                      child: ExcludeSemantics(
+                        child: Padding(
+                          padding: isSelected
+                              ? const EdgeInsets.only(left: 8)
+                              : EdgeInsets.zero,
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              color: ValoraColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../../core/formatters/currency_formatter.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
@@ -47,21 +48,21 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
           child: Row(
             children: [
               // Image
-                Stack(
-                  children: [
-                    Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              ValoraSpacing.radiusMd,
-                            ),
-                            color: isDark
-                                ? ValoraColors.neutral700
-                                : ValoraColors.neutral200,
+              Stack(
+                children: [
+                  Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            ValoraSpacing.radiusMd,
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: widget.listing.imageUrl != null
+                          color: isDark
+                              ? ValoraColors.neutral700
+                              : ValoraColors.neutral200,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: widget.listing.imageUrl != null
                             ? Hero(
                                 tag: widget.listing.id,
                                 child: CachedNetworkImage(
@@ -103,39 +104,51 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                         final isFavorite = favoritesProvider.isFavorite(
                           widget.listing.id,
                         );
-                        return GestureDetector(
-                          onTap:
-                              widget.onFavoriteTap ??
-                              () => favoritesProvider.toggleFavorite(
-                                widget.listing,
-                              ),
+                        return Semantics(
+                          button: true,
+                          toggled: isFavorite,
+                          label: isFavorite
+                              ? 'Remove from saved listings'
+                              : 'Save listing',
                           child: Container(
-                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: (isDark
-                                      ? ValoraColors.surfaceDark
-                                      : ValoraColors.surfaceLight)
-                                  .withValues(alpha: 0.9),
+                              color:
+                                  (isDark
+                                          ? ValoraColors.surfaceDark
+                                          : ValoraColors.surfaceLight)
+                                      .withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),
-                            child:
-                                Icon(
-                                      isFavorite
-                                          ? Icons.favorite_rounded
-                                          : Icons.favorite_border_rounded,
-                                      size: 14,
-                                      color: isFavorite
-                                          ? ValoraColors.error
-                                          : ValoraColors.neutral400,
-                                    )
-                                    .animate(target: isFavorite ? 1 : 0)
-                                    .scale(
-                                      begin: const Offset(1, 1),
-                                      end: const Offset(1.2, 1.2),
-                                      curve: Curves.elasticOut,
-                                    )
-                                    .then()
-                                    .scale(end: const Offset(1, 1)),
+                            child: IconButton(
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              tooltip: isFavorite
+                                  ? 'Remove from saved'
+                                  : 'Save listing',
+                              onPressed:
+                                  widget.onFavoriteTap ??
+                                  () => favoritesProvider.toggleFavorite(
+                                    widget.listing,
+                                  ),
+                              icon:
+                                  Icon(
+                                        isFavorite
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                        size: 14,
+                                        color: isFavorite
+                                            ? ValoraColors.error
+                                            : ValoraColors.neutral400,
+                                      )
+                                      .animate(target: isFavorite ? 1 : 0)
+                                      .scale(
+                                        begin: const Offset(1, 1),
+                                        end: const Offset(1.2, 1.2),
+                                        curve: Curves.elasticOut,
+                                      )
+                                      .then()
+                                      .scale(end: const Offset(1, 1)),
+                            ),
                           ),
                         );
                       },
@@ -157,7 +170,9 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                           Expanded(
                             child: Text(
                               widget.listing.price != null
-                                  ? '\$${widget.listing.price!.toStringAsFixed(0)}'
+                                  ? CurrencyFormatter.formatEur(
+                                      widget.listing.price!,
+                                    )
                                   : 'Price on request',
                               style: ValoraTypography.titleMedium.copyWith(
                                 color: isDark
