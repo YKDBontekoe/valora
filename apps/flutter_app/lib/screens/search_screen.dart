@@ -102,7 +102,7 @@ class _SearchScreenState extends State<SearchScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => ValoraGlassContainer(
-        borderRadius: const BorderRadius.vertical(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(ValoraSpacing.radiusXl),
         ),
         child: Column(
@@ -110,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.all(ValoraSpacing.lg),
+              padding: EdgeInsets.all(ValoraSpacing.lg),
               child: Text(
                 'Sort By',
                 style: ValoraTypography.titleLarge,
@@ -157,7 +157,7 @@ class _SearchScreenState extends State<SearchScreen> {
               provider.sortBy,
               provider.sortOrder,
             ),
-            const SizedBox(height: ValoraSpacing.xl),
+            SizedBox(height: ValoraSpacing.xl),
           ],
         ),
       ),

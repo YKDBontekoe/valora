@@ -1501,19 +1501,19 @@ warning • The method doesn't override an inherited method • apps/flutter_app
   error • The method 'showModalBottomSheet' isn't defined for the type '_SearchScreenState' • apps/flutter_app/lib/screens/search_screen.dart:101:5 • undefined_method
   error • Undefined name 'context' • apps/flutter_app/lib/screens/search_screen.dart:102:16 • undefined_identifier
   error • Undefined name 'Colors' • apps/flutter_app/lib/screens/search_screen.dart:103:24 • undefined_identifier
-  error • Undefined name 'BorderRadius' • apps/flutter_app/lib/screens/search_screen.dart:105:29 • undefined_identifier
+  error • Undefined name 'BorderRadius' • apps/flutter_app/lib/screens/search_screen.dart:105:23 • undefined_identifier
   error • Undefined name 'Radius' • apps/flutter_app/lib/screens/search_screen.dart:106:16 • undefined_identifier
   error • Undefined name 'ValoraSpacing' • apps/flutter_app/lib/screens/search_screen.dart:106:32 • undefined_identifier
   error • The method 'Column' isn't defined for the type '_SearchScreenState' • apps/flutter_app/lib/screens/search_screen.dart:108:16 • undefined_method
   error • Undefined name 'MainAxisSize' • apps/flutter_app/lib/screens/search_screen.dart:109:25 • undefined_identifier
   error • Undefined name 'CrossAxisAlignment' • apps/flutter_app/lib/screens/search_screen.dart:110:31 • undefined_identifier
   error • The method 'Padding' isn't defined for the type '_SearchScreenState' • apps/flutter_app/lib/screens/search_screen.dart:112:13 • undefined_method
-  error • Undefined name 'EdgeInsets' • apps/flutter_app/lib/screens/search_screen.dart:113:30 • undefined_identifier
-  error • Undefined name 'ValoraSpacing' • apps/flutter_app/lib/screens/search_screen.dart:113:45 • undefined_identifier
+  error • Undefined name 'EdgeInsets' • apps/flutter_app/lib/screens/search_screen.dart:113:24 • undefined_identifier
+  error • Undefined name 'ValoraSpacing' • apps/flutter_app/lib/screens/search_screen.dart:113:39 • undefined_identifier
   error • The method 'Text' isn't defined for the type '_SearchScreenState' • apps/flutter_app/lib/screens/search_screen.dart:114:22 • undefined_method
   error • Undefined name 'TextAlign' • apps/flutter_app/lib/screens/search_screen.dart:117:28 • undefined_identifier
-  error • The name 'SizedBox' isn't a class • apps/flutter_app/lib/screens/search_screen.dart:160:19 • creation_with_non_type
-  error • Undefined name 'ValoraSpacing' • apps/flutter_app/lib/screens/search_screen.dart:160:36 • undefined_identifier
+  error • The method 'SizedBox' isn't defined for the type '_SearchScreenState' • apps/flutter_app/lib/screens/search_screen.dart:160:13 • undefined_method
+  error • Undefined name 'ValoraSpacing' • apps/flutter_app/lib/screens/search_screen.dart:160:30 • undefined_identifier
   error • Undefined class 'Widget' • apps/flutter_app/lib/screens/search_screen.dart:167:3 • undefined_class
   error • Undefined class 'BuildContext' • apps/flutter_app/lib/screens/search_screen.dart:168:5 • undefined_class
   error • The method 'ListTile' isn't defined for the type '_SearchScreenState' • apps/flutter_app/lib/screens/search_screen.dart:182:12 • undefined_method
@@ -6290,4 +6290,4 @@ warning • The getter doesn't override an inherited getter • apps/flutter_app
   error • Undefined name 'find' • apps/flutter_app/test/widgets/valora_widgets_test.dart:339:14 • undefined_identifier
   error • Undefined name 'findsOneWidget' • apps/flutter_app/test/widgets/valora_widgets_test.dart:339:50 • undefined_identifier
 
-6289 issues found. (ran in 2.4s)
+6289 issues found. (ran in 2.7s)
