@@ -29,6 +29,10 @@ public sealed class PdokLocationResolver : ILocationResolver
         _logger = logger;
     }
 
+    /// <summary>
+    /// Resolves a location string (address or listing URL) to a structured location object.
+    /// Uses PDOK Locatieserver (Dutch National Geo-Data) to find coordinates and admin hierarchy.
+    /// </summary>
     public async Task<ResolvedLocationDto?> ResolveAsync(string input, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -95,6 +99,11 @@ public sealed class PdokLocationResolver : ILocationResolver
         return result;
     }
 
+    /// <summary>
+    /// Normalizes user input.
+    /// Specifically handles Funda URLs by extracting the last path segment (which usually contains the address).
+    /// Example: `.../huis-424242-damrak-1` -> `huis 424242 damrak 1` (PDOK is smart enough to match this).
+    /// </summary>
     private static string NormalizeInput(string input)
     {
         if (Uri.TryCreate(input, UriKind.Absolute, out var uri) &&

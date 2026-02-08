@@ -36,6 +36,13 @@ public sealed class ContextReportService : IContextReportService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Orchestrates the context report generation process.
+    /// 1. Resolves location from input (address or URL).
+    /// 2. Fetches data from CBS, Overpass, and Luchtmeetnet in parallel.
+    /// 3. Normalizes and scores the data.
+    /// 4. Compiles the final report with attribution and warnings.
+    /// </summary>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Input))
@@ -221,6 +228,12 @@ public sealed class ContextReportService : IContextReportService
         return sources;
     }
 
+    /// <summary>
+    /// Calculates the final composite score based on category weights.
+    /// Social: 45% - Heaviest weight as it reflects long-term stability/demographics.
+    /// Amenity: 35% - Reflects convenience and lifestyle.
+    /// Environment: 20% - Reflects health and air quality.
+    /// </summary>
     private static double ComputeCompositeScore(
         IReadOnlyList<ContextMetricDto> socialMetrics,
         IReadOnlyList<ContextMetricDto> amenityMetrics,
@@ -256,6 +269,12 @@ public sealed class ContextReportService : IContextReportService
         return values.Average();
     }
 
+    /// <summary>
+    /// Scores population density (people/km2).
+    /// Optimized for "Urban Residential" appeal.
+    /// 1500-3500 is considered the sweet spot (100 pts).
+    /// Too sparse (<=500) or too dense (>7000) receive lower scores.
+    /// </summary>
     private static double? ScoreDensity(int? density)
     {
         if (!density.HasValue)
@@ -299,6 +318,11 @@ public sealed class ContextReportService : IContextReportService
         return Clamp(total * 5, 0, 100);
     }
 
+    /// <summary>
+    /// Scores the proximity to the nearest key amenity (school, supermarket, etc.).
+    /// Walkable (<250m) gets max score.
+    /// > 2km is considered poor accessibility (25 pts).
+    /// </summary>
     private static double? ScoreAmenityProximity(double? nearestDistanceMeters)
     {
         if (!nearestDistanceMeters.HasValue)
@@ -317,6 +341,11 @@ public sealed class ContextReportService : IContextReportService
         };
     }
 
+    /// <summary>
+    /// Scores air quality based on PM2.5 concentration (µg/m3).
+    /// WHO guidelines suggest < 5 is optimal.
+    /// > 35 is considered poor.
+    /// </summary>
     private static double? ScorePm25(double? pm25)
     {
         if (!pm25.HasValue)
