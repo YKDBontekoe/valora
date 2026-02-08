@@ -53,8 +53,8 @@ class HomeBottomNavBar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _GlassNavItem(
-                      icon: Icons.home_rounded,
-                      label: 'Home',
+                      icon: Icons.analytics_rounded,
+                      label: 'Report',
                       isSelected: currentIndex == 0,
                       onTap: () => onTap(0),
                     ),

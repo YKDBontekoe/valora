@@ -1,5 +1,3 @@
-using Hangfire;
-using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,14 +5,12 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Valora.Application;
 using Valora.Infrastructure;
-using Valora.Infrastructure.Jobs;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Api.Endpoints;
-using Valora.Api.Hubs;
-using Valora.Api.Services;
 using Valora.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -90,28 +86,6 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
     });
 
 builder.Services.AddAuthorization();
-
-// Add SignalR
-builder.Services.AddSignalR();
-builder.Services.AddScoped<IScraperNotificationService, SignalRNotificationService>();
-
-// Add Hangfire with PostgreSQL storage
-// We manually parse the connection string because we might receive a raw URL (postgres://...)
-// from cloud providers (e.g., Heroku, Fly.io) or a standard ADO.NET connection string.
-// ConnectionStringParser handles this normalization.
-var rawConnectionString = builder.Configuration["DATABASE_URL"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
-var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
-var hangfireEnabled = builder.Configuration.GetValue<bool>("HANGFIRE_ENABLED");
-
-if (hangfireEnabled)
-{
-    // Configure Hangfire to use PostgreSQL for job storage.
-    // This allows jobs to persist across restarts.
-    builder.Services.AddHangfire(config =>
-        config.UsePostgreSqlStorage(options =>
-            options.UseNpgsqlConnection(connectionString)));
-    builder.Services.AddHangfireServer();
-}
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -203,22 +177,6 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
 
-// Map Hubs
-app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
-
-// Re-check configuration from built app to ensure test overrides are respected
-if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
-{
-    // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
-
-    // Configure recurring job for scraping
-    RecurringJob.AddOrUpdate<FundaScraperJob>(
-        "funda-scraper",
-        job => job.ExecuteAsync(CancellationToken.None),
-        builder.Configuration["SCRAPER_CRON"] ?? "0 */6 * * *"); // Default: every 6 hours
-}
-
 // API Endpoints
 var api = app.MapGroup("/api");
 
@@ -285,86 +243,29 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     return Results.Ok(dto);
 }).RequireAuthorization();
 
-/// <summary>
-/// Manually triggers a full scraping job via Hangfire.
-/// Requires 'Admin' role.
-/// </summary>
-api.MapPost("/scraper/trigger", (FundaScraperJob job, CancellationToken ct) =>
-{
-    if (!hangfireEnabled) return Results.StatusCode(503);
-    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteAsync(ct));
-    return Results.Ok(new { message = "Scraper job queued" });
-}).RequireAuthorization(policy => policy.RequireRole("Admin"));
-
-// Limited trigger endpoint
-api.MapPost("/scraper/trigger-limited", (string region, int limit, FundaScraperJob job, CancellationToken ct) =>
-{
-    if (!hangfireEnabled) return Results.StatusCode(503);
-    BackgroundJob.Enqueue<FundaScraperJob>(j => j.ExecuteLimitedAsync(region, limit, ct));
-    return Results.Ok(new { message = $"Limited scraper job queued for {region} (limit {limit})" });
-}).RequireAuthorization(policy => policy.RequireRole("Admin"));
-
-// Seed endpoint
-api.MapPost("/scraper/seed", async (string region, IListingRepository repo, CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(region))
-    {
-        return Results.BadRequest("Region is required");
-    }
-
-    if (!hangfireEnabled) return Results.StatusCode(503);
-
-    var count = await repo.CountAsync(ct);
-    if (count > 0)
-    {
-        // "skip" if data exists as per requirements
-        return Results.Ok(new { message = "Data already exists, skipping seed", skipped = true });
-    }
-
-    BackgroundJob.Enqueue<FundaSeedJob>(j => j.ExecuteAsync(region, CancellationToken.None));
-    return Results.Ok(new { message = $"Seed job queued for {region}", skipped = false });
-}).RequireAuthorization(policy => policy.RequireRole("Admin"));
-
-// Dynamic Funda search - cache-through pattern
-// Searches Funda on-demand, caching results in the database
-api.MapGet("/search", async (
-    [AsParameters] Valora.Application.Scraping.FundaSearchQuery query,
-    Valora.Application.Scraping.IFundaSearchService searchService,
+api.MapPost("/context/report", async (
+    ContextReportRequestDto request,
+    IContextReportService contextReportService,
     CancellationToken ct) =>
 {
-    // Explicit fallback validation to ensure constraints are respected even if attribute validation behaves unexpectedly
-    if (!Valora.Application.Validators.SearchQueryValidator.IsValid(query, out var validationError))
+    if (string.IsNullOrWhiteSpace(request.Input))
     {
-        return Results.BadRequest(new { error = validationError });
+        return Results.BadRequest(new { error = "Input is required" });
     }
-    
-    var result = await searchService.SearchAsync(query, ct);
-    return Results.Ok(new
-    {
-        result.Items,
-        result.TotalCount,
-        result.Page,
-        result.PageSize,
-        result.FromCache
-    });
-}).RequireAuthorization();
 
-// Lookup a specific Funda listing by URL
-// Fetches from Funda if not cached or stale
-api.MapGet("/lookup", async (
-    string url,
-    Valora.Application.Scraping.IFundaSearchService searchService,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(url))
+    try
     {
-        return Results.BadRequest(new { error = "URL is required" });
+        var report = await contextReportService.BuildAsync(request, ct);
+        return Results.Ok(report);
     }
-    
-    var listing = await searchService.GetByFundaUrlAsync(url, ct);
-    return listing is null 
-        ? Results.NotFound(new { error = "Listing not found" }) 
-        : Results.Ok(listing);
+    catch (ValidationException ex)
+    {
+        return Results.BadRequest(new
+        {
+            error = "Validation failed",
+            errors = ex.Errors
+        });
+    }
 }).RequireAuthorization();
 
 // AI Chat Endpoint

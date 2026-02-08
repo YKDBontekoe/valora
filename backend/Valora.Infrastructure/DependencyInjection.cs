@@ -1,18 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
-using Valora.Application.Scraping;
+using Valora.Application.Enrichment;
 using Valora.Application.Services;
-using Valora.Infrastructure.Jobs;
+using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
-using Valora.Infrastructure.Scraping;
 using Valora.Infrastructure.Services;
-using Polly;
-using Polly.Extensions.Http;
 
 namespace Valora.Infrastructure;
 
@@ -37,82 +33,36 @@ public static class DependencyInjection
 
         // Services
         services.AddSingleton(TimeProvider.System);
+        services.AddMemoryCache();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IContextReportService, ContextReportService>();
 
         // Configuration
-        services.Configure<ScraperOptions>(options => BindScraperOptions(options, configuration));
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
-
-        // Scraper services
+        services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
-
-        // Choose between Playwright (browser automation) and HTTP client.
-        // Default is true for robustness against bot protection.
-        var usePlaywright = configuration.GetValue("SCRAPER_USE_PLAYWRIGHT", true);
-
-        if (usePlaywright)
+        services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
-            // Playwright-based client for environments with bot protection
-            services.AddSingleton<IFundaApiClient, PlaywrightFundaClient>();
-        }
-        else
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+        services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
-            // HTTP-based client (faster, but may get 403 from Funda)
-            services.AddHttpClient<IFundaApiClient, FundaApiClient>()
-                .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30))
-                .AddPolicyHandler((serviceProvider, _) =>
-                    HttpPolicyExtensions
-                        .HandleTransientHttpError()
-                        .WaitAndRetryAsync(
-                        3,
-                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                        onRetry: (outcome, timespan, retryAttempt, context) =>
-                        {
-                            var logger = serviceProvider.GetRequiredService<ILogger<FundaApiClient>>();
-                            logger.LogWarning(
-                                outcome.Exception,
-                                "Retrying Funda API request. Attempt {RetryAttempt}. DelaySeconds {DelaySeconds}. StatusCode {StatusCode}",
-                                retryAttempt,
-                                timespan.TotalSeconds,
-                                outcome.Result?.StatusCode);
-                        }));
-        }
-
-        services.AddScoped<IFundaScraperService, FundaScraperService>();
-        services.AddScoped<IFundaSearchService, FundaSearchService>();
-        services.AddScoped<FundaScraperJob>();
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+        services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
 
         return services;
-    }
-
-    private static void BindScraperOptions(ScraperOptions options, IConfiguration configuration)
-    {
-        var searchUrls = configuration["SCRAPER_SEARCH_URLS"];
-        if (!string.IsNullOrEmpty(searchUrls))
-        {
-            options.SearchUrls = searchUrls.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
-        }
-
-        if (int.TryParse(configuration["SCRAPER_DELAY_MS"], out var delay))
-        {
-            options.DelayBetweenRequestsMs = delay;
-        }
-
-        if (int.TryParse(configuration["SCRAPER_MAX_RETRIES"], out var retries))
-        {
-            options.MaxRetries = retries;
-        }
-
-        var cron = configuration["SCRAPER_CRON"];
-        if (!string.IsNullOrEmpty(cron))
-        {
-            options.CronExpression = cron;
-        }
     }
 
     private static void BindJwtOptions(JwtOptions options, IConfiguration configuration)
@@ -136,6 +86,39 @@ public static class DependencyInjection
         if (double.TryParse(configuration["JWT_EXPIRY_MINUTES"], out var expiry))
         {
             options.ExpiryMinutes = expiry;
+        }
+    }
+
+    private static void BindContextEnrichmentOptions(ContextEnrichmentOptions options, IConfiguration configuration)
+    {
+        options.PdokBaseUrl = configuration["CONTEXT_PDOK_BASE_URL"] ?? options.PdokBaseUrl;
+        options.CbsBaseUrl = configuration["CONTEXT_CBS_BASE_URL"] ?? options.CbsBaseUrl;
+        options.OverpassBaseUrl = configuration["CONTEXT_OVERPASS_BASE_URL"] ?? options.OverpassBaseUrl;
+        options.LuchtmeetnetBaseUrl = configuration["CONTEXT_LUCHTMEETNET_BASE_URL"] ?? options.LuchtmeetnetBaseUrl;
+
+        if (int.TryParse(configuration["CONTEXT_RESOLVER_CACHE_MINUTES"], out var resolverMinutes))
+        {
+            options.ResolverCacheMinutes = resolverMinutes;
+        }
+
+        if (int.TryParse(configuration["CONTEXT_CBS_CACHE_MINUTES"], out var cbsMinutes))
+        {
+            options.CbsCacheMinutes = cbsMinutes;
+        }
+
+        if (int.TryParse(configuration["CONTEXT_AMENITIES_CACHE_MINUTES"], out var amenitiesMinutes))
+        {
+            options.AmenitiesCacheMinutes = amenitiesMinutes;
+        }
+
+        if (int.TryParse(configuration["CONTEXT_AIR_CACHE_MINUTES"], out var airMinutes))
+        {
+            options.AirQualityCacheMinutes = airMinutes;
+        }
+
+        if (int.TryParse(configuration["CONTEXT_REPORT_CACHE_MINUTES"], out var reportMinutes))
+        {
+            options.ReportCacheMinutes = reportMinutes;
         }
     }
 }

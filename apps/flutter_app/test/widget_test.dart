@@ -15,7 +15,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'mocks/mock_notification_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 
-
 class MockAuthService extends AuthService {
   @override
   Future<String?> getToken() async => "fake_token";
@@ -65,9 +64,8 @@ void main() {
       // Pump to allow animations and auth check to complete
       await tester.pumpAndSettle();
 
-      // Should find Valora text (on Home Screen or Startup Screen)
-      // Since token is returned, it should go to Home Screen.
-      expect(find.text('Valora'), findsOneWidget);
+      // With a token, app should navigate to Home and show the default Report tab.
+      expect(find.text('Location Context'), findsOneWidget);
     } finally {
       // Restore the original builder to avoid polluting other tests
       ErrorWidget.builder = originalBuilder;

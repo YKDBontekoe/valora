@@ -98,23 +98,11 @@ void main() {
     expect(provider.listings.first.address, 'New Home');
   });
 
-  test('triggerScrape posts selected region and limit', () async {
-    String? seenPath;
-    String? seenRegion;
-    String? seenLimit;
-
+  test('clearFiltersAndSearch resets filters and search', () async {
     final MockClient client = MockClient((request) async {
       if (request.url.path.endsWith('/health')) {
         return http.Response('ok', 200);
       }
-
-      if (request.url.path.endsWith('/scraper/trigger-limited')) {
-        seenPath = request.url.path;
-        seenRegion = request.url.queryParameters['region'];
-        seenLimit = request.url.queryParameters['limit'];
-        return http.Response('{}', 200);
-      }
-
       return _response(<Map<String, dynamic>>[]);
     });
 
@@ -126,10 +114,25 @@ void main() {
       ),
     );
 
-    await provider.triggerScrape(region: 'utrecht', limit: 25);
+    await provider.applyFilters(
+      minPrice: 100000,
+      maxPrice: 300000,
+      city: 'Amsterdam',
+      minBedrooms: 2,
+      minLivingArea: 50,
+      maxLivingArea: 120,
+      sortBy: 'price',
+      sortOrder: 'asc',
+    );
+    await provider.setSearchTerm('damrak');
+    await provider.clearFiltersAndSearch();
 
-    expect(seenPath, endsWith('/scraper/trigger-limited'));
-    expect(seenRegion, 'utrecht');
-    expect(seenLimit, '25');
+    expect(provider.searchTerm, '');
+    expect(provider.minPrice, isNull);
+    expect(provider.maxPrice, isNull);
+    expect(provider.city, isNull);
+    expect(provider.minBedrooms, isNull);
+    expect(provider.minLivingArea, isNull);
+    expect(provider.maxLivingArea, isNull);
   });
 }

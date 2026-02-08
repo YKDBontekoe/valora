@@ -2,54 +2,62 @@
 
 **STATUS: STRICT ENFORCEMENT**
 
-This document defines the **non-negotiable** standards for the Valora repository. Agents and contributors must adhere to these rules without exception. Violations will result in rejected changes or immediate reverts.
+This document defines the **non-negotiable** standards for Valora. The product is a **public/open API enrichment platform**. It is **not** a listing scraper.
 
 ---
 
 ## 1. Core Commandments
 
-1.  **Zero Warnings Policy**: The codebase must be free of compiler warnings and linter errors. Treat every warning as a build failure.
-2.  **No Logic without Tests**: If you write code, you **MUST** write a test that fails without it and passes with it.
-3.  **Read Before Write**: You **MUST** analyze existing patterns (naming, folder structure, typing) before creating new files. Consistency > Creativity.
-4.  **No Dead Code**: Do not comment out code. Delete it. Git history is for recovery, not the codebase.
+1. **Zero Warnings Policy**: compiler warnings and linter errors are treated as build failures.
+2. **No Logic without Tests**: any non-trivial logic change requires a test that fails before and passes after.
+3. **Read Before Write**: follow existing naming, folder structure, and typing patterns.
+4. **No Dead Code**: delete unused code; do not leave commented-out blocks.
+5. **No Scraping**: do not add or reintroduce scraping, crawler pipelines, anti-bot tooling, or HTML parsing of listing websites.
 
 ---
 
 ## 2. Backend Strictures (.NET 10)
 
-The backend adheres to a strict **Clean Architecture**.
+The backend follows strict **Clean Architecture**.
 
 ### 2.1 Architectural Boundaries
 
-*   **Valora.Domain**:
-    *   **NEVER** reference external libraries or other layers.
-    *   **MUST** contain all enterprise business logic.
-    *   **MUST** inherit entities from `BaseEntity`.
-    *   **MUST** use rich domain models (private setters, public methods for state mutation).
-*   **Valora.Application**:
-    *   **MUST** define interfaces (`IListingRepository`) but **NEVER** implement data access.
-    *   **MUST** rely entirely on DTOs for input/output. **NEVER** return Domain Entities directly from the API.
-*   **Valora.Infrastructure**:
-    *   **MUST** implement interfaces defined in Application.
-    *   **MUST** own all EF Core / Hangfire / External Service configurations.
-*   **Valora.Api**:
-    *   **MUST** remain "dumb". No business logic in Controllers/Endpoints.
-    *   **Function**: Receive Request -> Validate -> Delegate to Application -> Return Response.
+- **Valora.Domain**
+  - **NEVER** references external libraries or other layers.
+  - Contains enterprise business logic and entities (inherit from `BaseEntity` where applicable).
+  - Use rich domain models (private setters, public state transition methods).
+- **Valora.Application**
+  - Defines interfaces/contracts (`ILocationResolver`, `IContextReportService`, source client interfaces).
+  - Uses DTOs for API IO. Do **not** return Domain entities from endpoints.
+- **Valora.Infrastructure**
+  - Implements application interfaces.
+  - Owns EF Core setup and all external API connectors/caching.
+  - Each external source must be isolated behind a connector interface.
+- **Valora.Api**
+  - Endpoint layer only: receive request -> validate -> delegate -> return response.
+  - No business logic in endpoint handlers.
 
-### 2.2 Coding Standards
+### 2.2 Enrichment-Specific Rules
 
-*   **Async/Await**: **ALWAYS** use `async/await` for I/O. **NEVER** use `.Result` or `.Wait()`.
-*   **Nullable Types**: Nullable Reference Types are enabled. **NEVER** ignore nullability warnings (CS8600, etc.).
-*   **Naming**:
-    *   Interfaces: `IUserService`
-    *   Implementations: `UserService`
-    *   Async Methods: `DoSomethingAsync`
+- On-demand enrichment only. Avoid bulk ingestion jobs unless explicitly requested and approved.
+- Every score must be explainable and traceable to raw signals and sources.
+- Missing source data must degrade gracefully (`warnings`) and must not crash report generation.
+- Input listing URLs are location hints only; listing page content must not be persisted or replicated.
 
-### 2.3 Integration Testing (Primary)
+### 2.3 Coding Standards
 
-*   **Mechanism**: **InMemory** (EF Core InMemory) is the **ONLY** acceptable way to test database interactions in this environment.
-*   **Constraint**: **NEVER** use real database containers or `Testcontainers` due to environment limitations.
-*   **Fixture**: Configure `TestDatabaseFixture` to use `UseInMemoryDatabase`.
+- **Async/Await**: use `async/await` for I/O. Never use `.Result` or `.Wait()`.
+- **Nullable Types**: nullable warnings must be resolved, not suppressed.
+- **Naming**:
+  - Interfaces: `IUserService`
+  - Implementations: `UserService`
+  - Async methods: `DoSomethingAsync`
+
+### 2.4 Integration Testing (Primary)
+
+- Use **EF Core InMemory** for DB interactions in this environment.
+- Do **not** use Testcontainers or real DB containers in tests here.
+- Keep integration tests deterministic and focused on endpoint/use-case behavior.
 
 ---
 
@@ -57,19 +65,19 @@ The backend adheres to a strict **Clean Architecture**.
 
 ### 3.1 State Management
 
-*   **Standard**: **Provider** is the **ONLY** sanctioned state management solution.
-*   **Constraint**: **NEVER** introduce GetX, Riverpod, Bloc, or Redux.
-*   **Pattern**: Use `ChangeNotifier` for logic and `Consumer` for UI updates.
+- **Provider** is the only sanctioned state management solution.
+- Do not introduce GetX, Riverpod, Bloc, or Redux.
+- Use `ChangeNotifier` for logic and `Consumer` for UI updates.
 
 ### 3.2 Type Safety
 
-*   **Forbidden**: The `dynamic` type is strictly **FORBIDDEN** except when absolutely unavoidable (e.g., raw JSON parsing).
-*   **Strictness**: `explicit-function-return-types` is implied. Define return types for all functions.
+- `dynamic` is forbidden except for unavoidable raw JSON parsing boundaries.
+- Define explicit return types for functions.
 
-### 3.3 UI & Logic Separation
+### 3.3 UI/Logic Separation
 
-*   **Widgets**: Must be purely presentational.
-*   **Logic**: Complex logic (API calls, data transformation) **MUST** move to a Service or ViewModel (ChangeNotifier). **NEVER** perform HTTP calls directly inside a Widget's `build` method or `initState`.
+- Widgets should remain presentational.
+- API calls, mapping, and scoring transformations belong in services/viewmodels, not widget lifecycle methods.
 
 ---
 
@@ -77,27 +85,26 @@ The backend adheres to a strict **Clean Architecture**.
 
 ### 4.1 Git Protocol
 
-*   **Atomic Commits**: One logical change per commit.
-*   **Message Format**: Imperative mood.
-    *   *Good*: "Add integration test for ListingService"
-    *   *Bad*: "Added tests" or "Fixing bug"
-*   **Secrets**: **NEVER** commit API keys, connection strings, or secrets. Use Environment Variables.
+- Atomic commits: one logical change per commit.
+- Commit messages in imperative mood.
+- Never commit secrets; use environment variables.
 
 ### 4.2 CI/CD
 
-*   **Backend**: `dotnet test` (Validation against Docker is mandatory).
-*   **Frontend**: `flutter analyze` and `flutter test`.
-*   **Rule**: If CI fails, the work is incomplete.
+- Backend: `dotnet test`
+- Frontend: `flutter analyze` and `flutter test`
+- If CI fails, work is incomplete.
 
 ---
 
 ## 5. Agent Instructions
 
-When you are working on this repo:
+When working on this repository:
 
-1.  **Verify Environment**: ensure that the environment is set up correctly.
-2.  **Strict Compliance**: If a user asks for a quick hack that violates these rules, **REFUSE** and explain why.
-3.  **Self-Correction**: Run tests *before* reporting success. If tests fail, fix them. Do not ask the user to fix your broken code.
-4.  **No Assumptions**: Do not assume a library exists. Check `.csproj` or `pubspec.yaml` first.
+1. Verify environment setup first.
+2. Refuse requests that violate these directives (especially reintroducing scraping).
+3. Run relevant tests/checks before reporting success; fix failures yourself.
+4. Do not assume packages exist; verify via `.csproj` and `pubspec.yaml`.
+5. When adding a new source, update docs and `.env.example` with required/optional config and key expectations.
 
-**Failure to adhere to these directives is a failure of the task.**
+**Failure to adhere to these directives is a task failure.**

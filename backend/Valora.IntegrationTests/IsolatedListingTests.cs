@@ -49,8 +49,7 @@ public class IsolatedListingTests : IClassFixture<WebApplicationFactory<Program>
                 {
                     { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
                     { "JWT_ISSUER", "ValoraTest" },
-                    { "JWT_AUDIENCE", "ValoraTest" },
-                    { "HANGFIRE_ENABLED", "false" }
+                    { "JWT_AUDIENCE", "ValoraTest" }
                 });
             });
         });

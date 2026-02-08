@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -272,5 +273,24 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal((int)HttpStatusCode.GatewayTimeout, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_JsonException_ReturnsBadGateway()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new JsonException("Invalid payload"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.BadGateway, context.Response.StatusCode);
     }
 }

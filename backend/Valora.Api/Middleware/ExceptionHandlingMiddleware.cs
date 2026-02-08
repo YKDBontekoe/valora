@@ -89,6 +89,11 @@ public class ExceptionHandlingMiddleware
                 title = "Request Timeout";
                 detail = "The request timed out waiting for an upstream service.";
                 break;
+            case JsonException:
+                statusCode = (int)HttpStatusCode.BadGateway;
+                title = "Upstream Response Error";
+                detail = "An external service returned an unexpected payload.";
+                break;
         }
 
         context.Response.StatusCode = statusCode;

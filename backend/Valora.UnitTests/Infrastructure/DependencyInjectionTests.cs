@@ -1,27 +1,31 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
-using Valora.Application.Scraping;
+using Valora.Application.Enrichment;
 using Valora.Infrastructure;
-using Valora.Infrastructure.Scraping;
+using Valora.Infrastructure.Enrichment;
 
 namespace Valora.UnitTests.Infrastructure;
 
 public class DependencyInjectionTests
 {
     [Fact]
-    public void AddInfrastructure_ConfiguresScraperOptions_FromEnvironmentVariables()
+    public void AddInfrastructure_ConfiguresContextOptions_FromEnvironmentVariables()
     {
-        // Arrange
         var configData = new Dictionary<string, string?>
         {
             { "DATABASE_URL", "Host=localhost;Database=valora" },
-            { "SCRAPER_SEARCH_URLS", "http://url1.com;http://url2.com" },
-            { "SCRAPER_DELAY_MS", "5000" },
-            { "SCRAPER_MAX_RETRIES", "10" },
-            { "SCRAPER_CRON", "0 0 * * *" }
+            { "CONTEXT_PDOK_BASE_URL", "https://pdok.example" },
+            { "CONTEXT_CBS_BASE_URL", "https://cbs.example" },
+            { "CONTEXT_OVERPASS_BASE_URL", "https://overpass.example" },
+            { "CONTEXT_LUCHTMEETNET_BASE_URL", "https://lucht.example" },
+            { "CONTEXT_RESOLVER_CACHE_MINUTES", "10" },
+            { "CONTEXT_CBS_CACHE_MINUTES", "20" },
+            { "CONTEXT_AMENITIES_CACHE_MINUTES", "30" },
+            { "CONTEXT_AIR_CACHE_MINUTES", "40" },
+            { "CONTEXT_REPORT_CACHE_MINUTES", "50" }
         };
 
         var configuration = new ConfigurationBuilder()
@@ -29,148 +33,48 @@ public class DependencyInjectionTests
             .Build();
 
         var services = new ServiceCollection();
-
-        // Act
         services.AddInfrastructure(configuration);
         var provider = services.BuildServiceProvider();
 
-        // Assert
-        var options = provider.GetRequiredService<IOptions<ScraperOptions>>().Value;
+        var options = provider.GetRequiredService<IOptions<ContextEnrichmentOptions>>().Value;
 
-        Assert.Equal(2, options.SearchUrls.Count);
-        Assert.Contains("http://url1.com", options.SearchUrls);
-        Assert.Contains("http://url2.com", options.SearchUrls);
-        Assert.Equal(5000, options.DelayBetweenRequestsMs);
-        Assert.Equal(10, options.MaxRetries);
-        Assert.Equal("0 0 * * *", options.CronExpression);
+        Assert.Equal("https://pdok.example", options.PdokBaseUrl);
+        Assert.Equal("https://cbs.example", options.CbsBaseUrl);
+        Assert.Equal("https://overpass.example", options.OverpassBaseUrl);
+        Assert.Equal("https://lucht.example", options.LuchtmeetnetBaseUrl);
+        Assert.Equal(10, options.ResolverCacheMinutes);
+        Assert.Equal(20, options.CbsCacheMinutes);
+        Assert.Equal(30, options.AmenitiesCacheMinutes);
+        Assert.Equal(40, options.AirQualityCacheMinutes);
+        Assert.Equal(50, options.ReportCacheMinutes);
     }
 
     [Fact]
-    public void AddInfrastructure_ConfiguresScraperOptions_WithDefaults_WhenEnvVarsMissing()
+    public void AddInfrastructure_RegistersContextServices()
     {
-        // Arrange
-        var configData = new Dictionary<string, string?>
-        {
-            { "DATABASE_URL", "Host=localhost;Database=valora" }
-            // Missing Scraper vars
-        };
-
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
-
-        var services = new ServiceCollection();
-
-        // Act
-        services.AddInfrastructure(configuration);
-        var provider = services.BuildServiceProvider();
-
-        // Assert
-        var options = provider.GetRequiredService<IOptions<ScraperOptions>>().Value;
-
-        // Verify defaults (from ScraperOptions class definition)
-        Assert.Equal(2000, options.DelayBetweenRequestsMs);
-        Assert.Equal(3, options.MaxRetries);
-        Assert.Equal("0 */6 * * *", options.CronExpression);
-        Assert.Empty(options.SearchUrls);
-    }
-
-    [Fact]
-    public void AddInfrastructure_RegistersPlaywrightClient_ByDefault()
-    {
-        var configData = new Dictionary<string, string?>
-        {
-            { "DATABASE_URL", "Host=localhost;Database=valora" }
-        };
-
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "DATABASE_URL", "Host=localhost;Database=valora" }
+            })
             .Build();
 
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddInfrastructure(configuration);
+
         var provider = services.BuildServiceProvider();
 
-        var client = provider.GetRequiredService<IFundaApiClient>();
-
-        Assert.IsType<PlaywrightFundaClient>(client);
-    }
-
-    [Fact]
-    public void AddInfrastructure_RegistersHttpClient_WhenPlaywrightDisabled()
-    {
-        var configData = new Dictionary<string, string?>
-        {
-            { "DATABASE_URL", "Host=localhost;Database=valora" },
-            { "SCRAPER_USE_PLAYWRIGHT", "false" }
-        };
-
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
-
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddInfrastructure(configuration);
-        var provider = services.BuildServiceProvider();
-
-        var client = provider.GetRequiredService<IFundaApiClient>();
-
-        Assert.IsType<FundaApiClient>(client);
-    }
-
-    [Fact]
-    public void AddInfrastructure_RegistersPlaywrightClient_WhenEnabled()
-    {
-        var configData = new Dictionary<string, string?>
-        {
-            { "DATABASE_URL", "Host=localhost;Database=valora" },
-            { "SCRAPER_USE_PLAYWRIGHT", "true" }
-        };
-
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
-
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddInfrastructure(configuration);
-        var provider = services.BuildServiceProvider();
-
-        var client = provider.GetRequiredService<IFundaApiClient>();
-
-        Assert.IsType<PlaywrightFundaClient>(client);
-    }
-
-    [Fact]
-    public void AddInfrastructure_KeepsDefaults_WhenScraperNumbersAreInvalid()
-    {
-        var configData = new Dictionary<string, string?>
-        {
-            { "DATABASE_URL", "Host=localhost;Database=valora" },
-            { "SCRAPER_DELAY_MS", "not-a-number" },
-            { "SCRAPER_MAX_RETRIES", "also-invalid" }
-        };
-
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
-
-        var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
-        var provider = services.BuildServiceProvider();
-
-        var options = provider.GetRequiredService<IOptions<ScraperOptions>>().Value;
-
-        Assert.Equal(2000, options.DelayBetweenRequestsMs);
-        Assert.Equal(3, options.MaxRetries);
+        Assert.IsType<ContextReportService>(provider.GetRequiredService<IContextReportService>());
+        Assert.IsType<PdokLocationResolver>(provider.GetRequiredService<ILocationResolver>());
+        Assert.IsType<CbsNeighborhoodStatsClient>(provider.GetRequiredService<ICbsNeighborhoodStatsClient>());
+        Assert.IsType<OverpassAmenityClient>(provider.GetRequiredService<IAmenityClient>());
+        Assert.IsType<LuchtmeetnetAirQualityClient>(provider.GetRequiredService<IAirQualityClient>());
     }
 
     [Fact]
     public void AddInfrastructure_UsesJwtSecretFromConfiguration_WhenPresent()
     {
-        // Arrange
         var configData = new Dictionary<string, string?>
         {
             { "DATABASE_URL", "Host=localhost;Database=valora" },
@@ -187,10 +91,8 @@ public class DependencyInjectionTests
         services.AddInfrastructure(configuration);
         var provider = services.BuildServiceProvider();
 
-        // Act
         var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
 
-        // Assert
         Assert.Equal("my-secret-key", options.Secret);
         Assert.Equal("valora", options.Issuer);
         Assert.Equal("valora", options.Audience);
@@ -199,11 +101,9 @@ public class DependencyInjectionTests
     [Fact]
     public void AddInfrastructure_FallsBackToDevSecret_WhenJwtSecretMissing_AndInDevelopment()
     {
-        // Arrange
         var configData = new Dictionary<string, string?>
         {
             { "DATABASE_URL", "Host=localhost;Database=valora" },
-            // Missing JWT_SECRET
             { "JWT_ISSUER", "valora" },
             { "JWT_AUDIENCE", "valora" }
         };
@@ -212,7 +112,6 @@ public class DependencyInjectionTests
             .AddInMemoryCollection(configData)
             .Build();
 
-        // Simulate Development environment
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
         try
@@ -221,15 +120,12 @@ public class DependencyInjectionTests
             services.AddInfrastructure(configuration);
             var provider = services.BuildServiceProvider();
 
-            // Act
             var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
 
-            // Assert
             Assert.Equal("DevSecretKey_ChangeMe_In_Production_Configuration_123!", options.Secret);
         }
         finally
         {
-            // Cleanup
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
         }
     }

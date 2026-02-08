@@ -1,49 +1,43 @@
 # Valora User Guide
 
-Valora is a tool to track real estate listings from funda.nl. It scrapes listings based on your configuration and allows you to view them in a clean interface.
+## What Valora Does
 
-## Getting Started
+Valora helps you evaluate a location by generating a context report from public data.
 
-To use Valora, you need to run both the backend server and the frontend application.
+You can paste:
 
-### 1. Start the Backend
+- an address, or
+- a listing link
 
-The backend handles scraping and data storage.
+Valora resolves the location and returns metrics for neighborhood context.
 
-1. Open your terminal.
-2. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-3. Run the application:
-   ```bash
-   dotnet run --project Valora.Api
-   ```
-   The server will start on `http://localhost:5001`.
+## Main Flow
 
-### 2. Start the Frontend
+1. Sign in.
+2. Open `Report` tab.
+3. Enter an address or listing URL.
+4. Select radius.
+5. Tap `Generate Report`.
 
-The frontend is the user interface.
+## What You Get
 
-1. Open a new terminal window.
-2. Navigate to the frontend directory:
-   ```bash
-   cd apps/flutter_app
-   ```
-3. Run the app:
-   ```bash
-   flutter run
-   ```
-
-## Features
-
-- **View Listings**: Browse scraped real estate listings.
-- **Refresh**: Pull the latest data from the backend.
-- **Background Scraping**: The backend automatically scrapes Funda every 6 hours (configurable).
+- Location details (resolved address/area)
+- Social indicators
+- Amenities summary
+- Environment signals
+- Composite score
+- Data source attribution
+- Warnings when a source is temporarily unavailable
 
 ## Troubleshooting
 
-### "Backend not connected"
-If you see this message, it means the frontend cannot talk to the backend.
-- Ensure the backend server is running (Step 1).
-- Check if `http://localhost:5001/api/health` works in your browser.
+### Backend not connected
+
+- Ensure backend is running.
+- Check: `http://localhost:5001/api/health`
+
+### Report fails
+
+- Confirm you are logged in.
+- Try a clear NL address format.
+- If partial data appears, check report warnings.

@@ -34,12 +34,12 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify initial state
-    expect(find.byIcon(Icons.home_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.analytics_rounded), findsOneWidget);
     expect(find.byIcon(Icons.search_rounded), findsOneWidget);
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
     expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
-    expect(find.byTooltip('Home'), findsOneWidget);
+    expect(find.byTooltip('Report'), findsOneWidget);
     expect(find.byTooltip('Search'), findsOneWidget);
     expect(find.byTooltip('Saved'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
@@ -62,8 +62,8 @@ void main() {
 
     expect(selectedIndex, 3);
 
-    // Tap Home (index 0)
-    await tester.tap(find.byTooltip('Home'));
+    // Tap Report (index 0)
+    await tester.tap(find.byTooltip('Report'));
     await tester.pumpAndSettle();
 
     expect(selectedIndex, 0);

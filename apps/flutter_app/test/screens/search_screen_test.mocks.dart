@@ -125,15 +125,6 @@ class MockApiService extends _i1.Mock implements _i7.ApiService {
           as _i6.Future<_i9.Listing?>);
 
   @override
-  _i6.Future<void> triggerLimitedScrape(String? region, int? limit) =>
-      (super.noSuchMethod(
-            Invocation.method(#triggerLimitedScrape, [region, limit]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
-          )
-          as _i6.Future<void>);
-
-  @override
   _i6.Future<List<_i10.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
