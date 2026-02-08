@@ -180,6 +180,8 @@ class SearchListingsProvider extends ChangeNotifier {
   }
 
   Future<void> _loadListings({required bool refresh}) async {
+    final int requestId = ++_requestSequence;
+
     if (refresh) {
       _isLoading = true;
       _error = null;
@@ -189,7 +191,9 @@ class SearchListingsProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    if (_query.isEmpty && !hasActiveFilters) {
+    if (_query.isEmpty && !hasActiveFiltersOrSort) {
+      if (requestId != _requestSequence) return;
+
       _isLoading = false;
       _isLoadingMore = false;
       _error = null;
@@ -199,8 +203,6 @@ class SearchListingsProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-
-    final int requestId = ++_requestSequence;
 
     try {
       final response = await _apiService.getListings(
