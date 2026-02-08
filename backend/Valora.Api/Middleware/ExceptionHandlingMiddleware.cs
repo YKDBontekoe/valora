@@ -60,9 +60,18 @@ public class ExceptionHandlingMiddleware
                 break;
             case TaskCanceledException:
             case OperationCanceledException:
-                statusCode = 499; // Client Closed Request
-                title = "Request Cancelled";
-                detail = "The request was cancelled.";
+                if (context.RequestAborted.IsCancellationRequested)
+                {
+                    statusCode = 499; // Client Closed Request
+                    title = "Request Cancelled";
+                    detail = "The request was cancelled by the client.";
+                }
+                else
+                {
+                    statusCode = (int)HttpStatusCode.GatewayTimeout;
+                    title = "Request Timeout";
+                    detail = "The request timed out.";
+                }
                 break;
             case DbUpdateConcurrencyException:
                 statusCode = (int)HttpStatusCode.Conflict;

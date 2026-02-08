@@ -45,33 +45,39 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
+        var jitter = new Random();
+
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
         .AddTransientHttpErrorPolicy(builder =>
-            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            builder.WaitAndRetryAsync(2, retryAttempt =>
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 100))));
 
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
         .AddTransientHttpErrorPolicy(builder =>
-            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            builder.WaitAndRetryAsync(2, retryAttempt =>
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 100))));
 
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         })
         .AddTransientHttpErrorPolicy(builder =>
-            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            builder.WaitAndRetryAsync(2, retryAttempt =>
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 100))));
 
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         })
         .AddTransientHttpErrorPolicy(builder =>
-            builder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            builder.WaitAndRetryAsync(2, retryAttempt =>
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 100))));
 
 
         return services;

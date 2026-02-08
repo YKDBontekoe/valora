@@ -61,7 +61,7 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_TaskCanceledException_Returns499()
+    public async Task InvokeAsync_TaskCanceledException_ClientCancelled_Returns499()
     {
         // Arrange
         var middleware = new ExceptionHandlingMiddleware(
@@ -72,11 +72,36 @@ public class ExceptionHandlingMiddlewareTests
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
+        // Simulate client cancellation
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+        context.RequestAborted = cts.Token;
+
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
         Assert.Equal(499, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_TaskCanceledException_Timeout_Returns504()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new TaskCanceledException(),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+        // Default context.RequestAborted is not cancelled
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.GatewayTimeout, context.Response.StatusCode);
     }
 
     [Fact]
