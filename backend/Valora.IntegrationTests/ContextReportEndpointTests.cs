@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -43,6 +44,23 @@ public class ContextReportEndpointTests
         var response = await client.PostAsJsonAsync("/api/context/report", new { input = "Damrak 1 Amsterdam" });
 
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Post_ContextReport_WhenServiceThrowsValidationException_ReturnsBadRequest()
+    {
+        await using var factory = new ThrowingContextReportTestWebAppFactory("InMemory:ContextReportValidation");
+        var client = factory.CreateClient();
+
+        await AuthenticateAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/context/report", new
+        {
+            input = "unknown address",
+            radiusMeters = 800
+        });
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private static async Task AuthenticateAsync(HttpClient client)
@@ -89,6 +107,22 @@ public class ContextReportEndpointTests
         }
     }
 
+    private sealed class ThrowingContextReportTestWebAppFactory : IntegrationTestWebAppFactory
+    {
+        public ThrowingContextReportTestWebAppFactory(string connectionString) : base(connectionString)
+        {
+        }
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddScoped<IContextReportService, ThrowingContextReportService>();
+            });
+        }
+    }
+
     private sealed class FakeContextReportService : IContextReportService
     {
         public Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
@@ -119,6 +153,14 @@ public class ContextReportEndpointTests
                 Warnings: []);
 
             return Task.FromResult(report);
+        }
+    }
+
+    private sealed class ThrowingContextReportService : IContextReportService
+    {
+        public Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
+        {
+            throw new ValidationException(new[] { "Could not resolve input to a Dutch address." });
         }
     }
 }

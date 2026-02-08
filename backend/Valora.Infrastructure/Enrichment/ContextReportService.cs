@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
@@ -15,6 +16,7 @@ public sealed class ContextReportService : IContextReportService
     private readonly IAirQualityClient _airQualityClient;
     private readonly IMemoryCache _cache;
     private readonly ContextEnrichmentOptions _options;
+    private readonly ILogger<ContextReportService> _logger;
 
     public ContextReportService(
         ILocationResolver locationResolver,
@@ -22,7 +24,8 @@ public sealed class ContextReportService : IContextReportService
         IAmenityClient amenityClient,
         IAirQualityClient airQualityClient,
         IMemoryCache cache,
-        IOptions<ContextEnrichmentOptions> options)
+        IOptions<ContextEnrichmentOptions> options,
+        ILogger<ContextReportService> logger)
     {
         _locationResolver = locationResolver;
         _cbsClient = cbsClient;
@@ -30,6 +33,7 @@ public sealed class ContextReportService : IContextReportService
         _airQualityClient = airQualityClient;
         _cache = cache;
         _options = options.Value;
+        _logger = logger;
     }
 
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
@@ -53,15 +57,24 @@ public sealed class ContextReportService : IContextReportService
             throw new ValidationException(new[] { "Could not resolve input to a Dutch address." });
         }
 
-        var cbsTask = _cbsClient.GetStatsAsync(location, cancellationToken);
-        var amenitiesTask = _amenityClient.GetAmenitiesAsync(location, normalizedRadius, cancellationToken);
-        var airQualityTask = _airQualityClient.GetSnapshotAsync(location, cancellationToken);
+        var cbsTask = TryGetSourceAsync(
+            sourceName: "CBS",
+            sourceCall: token => _cbsClient.GetStatsAsync(location, token),
+            cancellationToken);
+        var amenitiesTask = TryGetSourceAsync(
+            sourceName: "Overpass",
+            sourceCall: token => _amenityClient.GetAmenitiesAsync(location, normalizedRadius, token),
+            cancellationToken);
+        var airQualityTask = TryGetSourceAsync(
+            sourceName: "Luchtmeetnet",
+            sourceCall: token => _airQualityClient.GetSnapshotAsync(location, token),
+            cancellationToken);
 
         await Task.WhenAll(cbsTask, amenitiesTask, airQualityTask);
 
-        var cbs = cbsTask.Result;
-        var amenities = amenitiesTask.Result;
-        var air = airQualityTask.Result;
+        var cbs = await cbsTask;
+        var amenities = await amenitiesTask;
+        var air = await airQualityTask;
 
         var warnings = new List<string>();
 
@@ -96,6 +109,26 @@ public sealed class ContextReportService : IContextReportService
 
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
         return report;
+    }
+
+    private async Task<T?> TryGetSourceAsync<T>(
+        string sourceName,
+        Func<CancellationToken, Task<T?>> sourceCall,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await sourceCall(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Context source {SourceName} failed; report will continue with partial data", sourceName);
+            return default;
+        }
     }
 
     private static List<ContextMetricDto> BuildSocialMetrics(NeighborhoodStatsDto? cbs, List<string> warnings)

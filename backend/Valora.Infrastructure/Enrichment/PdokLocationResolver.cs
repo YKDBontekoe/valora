@@ -50,7 +50,7 @@ public sealed class PdokLocationResolver : ILocationResolver
         using var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("PDOK resolve failed for query {Query} with status {StatusCode}", normalizedInput, response.StatusCode);
+            _logger.LogWarning("PDOK resolve failed with status {StatusCode}", response.StatusCode);
             return null;
         }
 
@@ -72,7 +72,7 @@ public sealed class PdokLocationResolver : ILocationResolver
 
         if (pointLl is null)
         {
-            _logger.LogWarning("PDOK response did not include valid coordinates for query {Query}", normalizedInput);
+            _logger.LogWarning("PDOK response did not include valid coordinates");
             return null;
         }
 

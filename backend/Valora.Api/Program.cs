@@ -7,6 +7,7 @@ using Valora.Application;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Api.Endpoints;
@@ -252,8 +253,19 @@ api.MapPost("/context/report", async (
         return Results.BadRequest(new { error = "Input is required" });
     }
 
-    var report = await contextReportService.BuildAsync(request, ct);
-    return Results.Ok(report);
+    try
+    {
+        var report = await contextReportService.BuildAsync(request, ct);
+        return Results.Ok(report);
+    }
+    catch (ValidationException ex)
+    {
+        return Results.BadRequest(new
+        {
+            error = "Validation failed",
+            errors = ex.Errors
+        });
+    }
 }).RequireAuthorization();
 
 // AI Chat Endpoint

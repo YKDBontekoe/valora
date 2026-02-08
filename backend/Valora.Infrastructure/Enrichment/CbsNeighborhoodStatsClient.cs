@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
@@ -13,12 +14,18 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
     private readonly ContextEnrichmentOptions _options;
+    private readonly ILogger<CbsNeighborhoodStatsClient> _logger;
 
-    public CbsNeighborhoodStatsClient(HttpClient httpClient, IMemoryCache cache, IOptions<ContextEnrichmentOptions> options)
+    public CbsNeighborhoodStatsClient(
+        HttpClient httpClient,
+        IMemoryCache cache,
+        IOptions<ContextEnrichmentOptions> options,
+        ILogger<CbsNeighborhoodStatsClient> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
         _options = options.Value;
+        _logger = logger;
     }
 
     public async Task<NeighborhoodStatsDto?> GetStatsAsync(ResolvedLocationDto location, CancellationToken cancellationToken = default)
@@ -56,33 +63,46 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
         using var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
+            _logger.LogWarning("CBS lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
             return null;
         }
 
-        using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-
-        if (!document.RootElement.TryGetProperty("value", out var values) ||
-            values.ValueKind != JsonValueKind.Array ||
-            values.GetArrayLength() == 0)
+        JsonDocument document;
+        try
         {
-            _cache.Set(cacheKey, null as NeighborhoodStatsDto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+            document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "CBS lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
             return null;
         }
 
-        var row = values[0];
+        using (document)
+        {
+            if (!document.RootElement.TryGetProperty("value", out var values) ||
+                values.ValueKind != JsonValueKind.Array ||
+                values.GetArrayLength() == 0)
+            {
+                _cache.Set(cacheKey, null as NeighborhoodStatsDto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+                return null;
+            }
 
-        var result = new NeighborhoodStatsDto(
-            RegionCode: GetString(row, "WijkenEnBuurten")?.Trim() ?? regionCode.Trim(),
-            RegionType: GetString(row, "SoortRegio_2")?.Trim() ?? "Onbekend",
-            Residents: GetInt(row, "AantalInwoners_5"),
-            PopulationDensity: GetInt(row, "Bevolkingsdichtheid_33"),
-            AverageWozValueKeur: GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_35"),
-            LowIncomeHouseholdsPercent: GetDouble(row, "HuishoudensMetEenLaagInkomen_72"),
-            RetrievedAtUtc: DateTimeOffset.UtcNow);
+            var row = values[0];
 
-        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
-        return result;
+            var result = new NeighborhoodStatsDto(
+                RegionCode: GetString(row, "WijkenEnBuurten")?.Trim() ?? regionCode.Trim(),
+                RegionType: GetString(row, "SoortRegio_2")?.Trim() ?? "Onbekend",
+                Residents: GetInt(row, "AantalInwoners_5"),
+                PopulationDensity: GetInt(row, "Bevolkingsdichtheid_33"),
+                AverageWozValueKeur: GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_35"),
+                LowIncomeHouseholdsPercent: GetDouble(row, "HuishoudensMetEenLaagInkomen_72"),
+                RetrievedAtUtc: DateTimeOffset.UtcNow);
+
+            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+            return result;
+        }
     }
 
     private static IEnumerable<string> BuildCandidates(ResolvedLocationDto location)
