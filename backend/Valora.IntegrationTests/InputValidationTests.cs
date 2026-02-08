@@ -24,4 +24,58 @@ public class InputValidationTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SearchListings_WithNegativePrice_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var query = "minPrice=-100";
+        var response = await Client.GetAsync($"/api/listings?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SearchListings_WithNegativeBedrooms_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var query = "minBedrooms=-1";
+        var response = await Client.GetAsync($"/api/listings?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SearchListings_WithNegativeLivingArea_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var query = "minLivingArea=-1";
+        var response = await Client.GetAsync($"/api/listings?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FundaSearch_WithNegativePrice_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var query = "region=amsterdam&minPrice=-100";
+        var response = await Client.GetAsync($"/api/search?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FundaSearch_WithNegativeBedrooms_ReturnsBadRequest()
+    {
+        await AuthenticateAsync();
+
+        var query = "region=amsterdam&minBedrooms=-1";
+        var response = await Client.GetAsync($"/api/search?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
