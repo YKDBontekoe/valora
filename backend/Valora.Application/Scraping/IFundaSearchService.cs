@@ -25,13 +25,14 @@ public interface IFundaSearchService
 /// Query parameters for Funda search.
 /// </summary>
 public record FundaSearchQuery(
-    [MaxLength(100)] string Region,
-    [Range(0, int.MaxValue)] int? MinPrice = null,
-    [Range(0, int.MaxValue)] int? MaxPrice = null,
-    [Range(0, int.MaxValue)] int? MinBedrooms = null,
-    [RegularExpression("(?i)^(buy|rent|project)$")] string OfferingType = "buy",
-    [Range(1, 100)] int PageSize = 20,
-    [Range(1, 10000)] int Page = 1
+    [property: Required]
+    [property: MaxLength(100)] string Region,
+    [property: Range(0, int.MaxValue)] int? MinPrice = null,
+    [property: Range(0, int.MaxValue)] int? MaxPrice = null,
+    [property: Range(0, int.MaxValue)] int? MinBedrooms = null,
+    [property: RegularExpression("(?i)^(buy|rent|project)$")] string OfferingType = "buy",
+    [property: Range(1, 100)] int PageSize = 20,
+    [property: Range(1, 10000)] int Page = 1
 );
 
 /// <summary>

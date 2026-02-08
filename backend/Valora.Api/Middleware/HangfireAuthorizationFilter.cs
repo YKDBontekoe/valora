@@ -1,3 +1,4 @@
+using Hangfire;
 using Hangfire.Dashboard;
 
 namespace Valora.Api.Middleware;

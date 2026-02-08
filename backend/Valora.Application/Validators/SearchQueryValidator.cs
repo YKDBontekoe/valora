@@ -34,6 +34,15 @@ public static class SearchQueryValidator
             return false;
         }
 
+        // Also run attribute validation to catch Range attributes on other properties
+        var context = new System.ComponentModel.DataAnnotations.ValidationContext(query);
+        var results = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(query, context, results, true))
+        {
+            error = results.FirstOrDefault()?.ErrorMessage ?? "Validation failed";
+            return false;
+        }
+
         return true;
     }
 }

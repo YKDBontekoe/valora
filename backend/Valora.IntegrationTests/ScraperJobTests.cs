@@ -18,10 +18,10 @@ public class ScraperJobTests : IAsyncLifetime
 {
     private readonly TestDatabaseFixture _fixture;
     private readonly WireMockServer _server;
-    private IServiceScope _scope;
-    private ValoraDbContext _context;
-    private IFundaScraperService _scraperService;
-    private IDisposable _clientFactory;
+    private IServiceScope? _scope;
+    private ValoraDbContext? _context;
+    private IFundaScraperService? _scraperService;
+    private IDisposable? _clientFactory;
 
     public ScraperJobTests(TestDatabaseFixture fixture)
     {
@@ -143,10 +143,10 @@ public class ScraperJobTests : IAsyncLifetime
         SetupMockSearchResponse("rotterdam", "1002", "Rotterdam St 2");
 
         // Act
-        await _scraperService.ScrapeAndStoreAsync(CancellationToken.None);
+        await _scraperService!.ScrapeAndStoreAsync(CancellationToken.None);
 
         // Assert
-        var listings = await _context.Listings.ToListAsync();
+        var listings = await _context!.Listings.ToListAsync();
         Assert.Equal(2, listings.Count);
         Assert.Contains(listings, l => l.FundaId == "1001");
         Assert.Contains(listings, l => l.FundaId == "1002");
@@ -163,10 +163,10 @@ public class ScraperJobTests : IAsyncLifetime
         SetupMockFailure("rotterdam");
 
         // Act
-        await _scraperService.ScrapeAndStoreAsync(CancellationToken.None);
+        await _scraperService!.ScrapeAndStoreAsync(CancellationToken.None);
 
         // Assert
-        var listings = await _context.Listings.ToListAsync();
+        var listings = await _context!.Listings.ToListAsync();
         Assert.Single(listings);
         Assert.Contains(listings, l => l.FundaId == "1001");
     }
