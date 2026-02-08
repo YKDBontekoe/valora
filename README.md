@@ -4,16 +4,91 @@ Valora is a public-context intelligence platform for residential locations in th
 
 The app accepts a listing link or plain address as input, resolves it to a location, and generates a context report using public/open APIs (CBS, PDOK, OSM/Overpass, Luchtmeetnet, and others as configured).
 
-## Product Direction
+## Project Philosophy
 
-- Input: listing URL or address text
-- Resolution: normalized address + coordinates + admin codes
-- Enrichment: public API connectors queried on demand
-- Output: explainable context report (social, amenities, environment, accessibility-ready)
+Valora is built on the principle of **Public-Context Intelligence**.
 
-## What Changed
+*   **No Scraping**: We do not harvest listing content. Listing links are treated merely as location hints.
+*   **On-Demand Enrichment**: Context reports are generated in real-time by querying public APIs.
+*   **Explainable Scoring**: Every score (Social, Amenity, Environment) is traceable to raw data points.
+*   **Privacy First**: We do not store user search history or listing details beyond what is needed for the report cache.
 
-Valora no longer runs a Funda scraper pipeline. Scraping jobs and scraper endpoints were removed.
+## High-Level Architecture
+
+```mermaid
+graph TD
+    User[User / Flutter App] -->|Request| API[Valora.Api]
+    API -->|Delegate| Service[ContextReportService]
+    Service -->|Resolve Location| PDOK[PDOK Locatieserver]
+    Service -->|Get Stats| CBS[CBS StatLine]
+    Service -->|Get Amenities| OSM[OpenStreetMap / Overpass]
+    Service -->|Get Air Quality| Air[Luchtmeetnet]
+
+    subgraph "Valora Backend"
+        API
+        Service
+        DB[(PostgreSQL)]
+    end
+
+    Service -->|Cache/Persist| DB
+```
+
+## Directory Structure
+
+*   `apps/flutter_app`: The Flutter frontend application.
+*   `backend`: The .NET 10 backend solution following Clean Architecture.
+    *   `Valora.Api`: Minimal API entry points.
+    *   `Valora.Application`: Core business logic and interfaces.
+    *   `Valora.Domain`: Pure domain entities.
+    *   `Valora.Infrastructure`: External integrations (EF Core, API clients).
+*   `docker`: Docker Compose configuration for local development.
+*   `docs`: Detailed documentation for developers and users.
+
+## Quick Start
+
+### Prerequisites
+
+Ensure you have the following installed:
+
+*   **Docker Desktop**: Required for the database.
+    *   Verify: `docker --version`
+*   **.NET 10 SDK**: Required for the backend.
+    *   Verify: `dotnet --version`
+*   **Flutter SDK**: Required for the frontend.
+    *   Verify: `flutter --version`
+
+### 1. Start Infrastructure
+
+Start the PostgreSQL database:
+
+```bash
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+*Troubleshooting*: If you see "Port already in use", check if another Postgres instance is running on port 5432. You can stop it or change the port mapping in `docker-compose.yml`.
+
+### 2. Run Backend
+
+Navigate to the backend directory and start the API:
+
+```bash
+cd backend
+cp .env.example .env
+dotnet run --project Valora.Api
+```
+
+*Verify*: Open http://localhost:5001/api/health in your browser. You should see `{"status":"healthy"}`.
+
+### 3. Run Frontend
+
+Open a new terminal, navigate to the app directory, and run the Flutter app:
+
+```bash
+cd apps/flutter_app
+cp .env.example .env
+flutter pub get
+flutter run
+```
 
 ## Configuration and API Keys
 
@@ -54,43 +129,6 @@ Optional cache tuning:
 - `API_URL` (required)
 - `SENTRY_DSN` (optional)
 
-## Quick Start
-
-### Prerequisites
-
-- Docker Desktop
-- .NET 10 SDK
-- Flutter SDK
-
-### 1. Start infrastructure
-
-```bash
-docker-compose -f docker/docker-compose.yml up -d
-```
-
-### 2. Run backend
-
-```bash
-cd backend
-cp .env.example .env
-dotnet run --project Valora.Api
-```
-
-Backend health check:
-
-```bash
-curl http://localhost:5001/api/health
-```
-
-### 3. Run frontend
-
-```bash
-cd apps/flutter_app
-cp .env.example .env
-flutter pub get
-flutter run
-```
-
 ## Core API Endpoints
 
 | Method | Endpoint | Auth | Description |
@@ -101,19 +139,18 @@ flutter run
 | `POST` | `/api/auth/refresh` | No | Refresh token |
 | `POST` | `/api/context/report` | Yes | Generate enrichment report from link/address |
 
-## Architecture
+## Architecture Details
 
-Valora follows Clean Architecture:
+Valora follows **Clean Architecture**:
 
-- `Valora.Domain`: entities and core business concepts
-- `Valora.Application`: interfaces, DTOs, use case contracts
-- `Valora.Infrastructure`: EF Core, external API connectors, service implementations
-- `Valora.Api`: Minimal API entrypoint, auth, endpoint wiring
+- **Valora.Domain**: Entities and core business concepts (e.g., `ContextReport`, `User`). No external dependencies.
+- **Valora.Application**: Interfaces (`IContextReportService`), DTOs, and Use Cases. Depends only on Domain.
+- **Valora.Infrastructure**: Implementation of interfaces (EF Core, `PdokLocationResolver`, `CbsNeighborhoodStatsClient`). Depends on Application.
+- **Valora.Api**: Entry point, Controllers/Endpoints, Middleware. Depends on Application and Infrastructure.
 
 ## Documentation
 
-- `docs/onboarding.md`
-- `docs/developer-guide.md`
-- `docs/user-guide.md`
-- `backend/README.md`
-- `apps/flutter_app/README.md`
+*   [Onboarding Guide](docs/onboarding.md) - detailed setup and walkthrough.
+*   [Developer Guide](docs/developer-guide.md) - API reference and internals.
+*   [User Guide](docs/user-guide.md) - how to use the app.
+*   [Architecture Overview](docs/architecture.md) - deep dive into the system design.

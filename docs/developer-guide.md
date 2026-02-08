@@ -22,39 +22,124 @@ Valora is an enrichment backend + Flutter client. It does not scrape listing sit
 - Minimal APIs for auth, health, and context report generation.
 - No business logic in endpoints.
 
-## Context Report Flow
+## Enrichment Class Diagram
 
-1. Receive input (`address` or `listing link`).
-2. Resolve location (PDOK): display address, coordinates, admin codes.
-3. Query enrichment clients in parallel (CBS, Overpass, Luchtmeetnet, etc.).
-4. Build normalized metrics and composite score.
-5. Return report with source attribution and warnings for missing sources.
+```mermaid
+classDiagram
+    class IContextReportService {
+        <<interface>>
+        +BuildAsync(ContextReportRequestDto request) Task~ContextReportDto~
+    }
+    class ContextReportService {
+        -ILocationResolver _locationResolver
+        -ICbsNeighborhoodStatsClient _cbsClient
+        -IAmenityClient _amenityClient
+        -IAirQualityClient _airQualityClient
+        +BuildAsync(ContextReportRequestDto request) Task~ContextReportDto~
+    }
+    class ILocationResolver {
+        <<interface>>
+        +ResolveAsync(string input) Task~ResolvedLocationDto~
+    }
+    class PdokLocationResolver {
+        +ResolveAsync(string input) Task~ResolvedLocationDto~
+    }
+    class ICbsNeighborhoodStatsClient {
+        <<interface>>
+        +GetStatsAsync(ResolvedLocationDto location) Task~NeighborhoodStatsDto~
+    }
 
-## Key Endpoint
+    IContextReportService <|.. ContextReportService
+    ILocationResolver <|.. PdokLocationResolver
+    ContextReportService --> ILocationResolver
+    ContextReportService --> ICbsNeighborhoodStatsClient
+```
+
+## Key Endpoint: Context Report
 
 ### `POST /api/context/report`
 
-Auth required.
+Generates a full context report for a given location. Requires Authentication (Bearer Token).
 
-Request:
+**Request Body**:
 
 ```json
 {
-  "input": "Damrak 1 Amsterdam",
+  "input": "Damrak 1, Amsterdam",
   "radiusMeters": 1000
 }
 ```
 
-Response includes:
+- `input`: Plain address string or a listing URL (e.g., funda.nl).
+- `radiusMeters`: Integer between 200 and 5000 (clamped by server).
 
-- `location`
-- `socialMetrics`
-- `safetyMetrics`
-- `amenityMetrics`
-- `environmentMetrics`
-- `compositeScore`
-- `sources`
-- `warnings`
+**Response Body**:
+
+```json
+{
+  "location": {
+    "query": "Damrak 1, Amsterdam",
+    "displayAddress": "Damrak 1, 1012LG Amsterdam",
+    "latitude": 52.375,
+    "longitude": 4.896,
+    "neighborhoodName": "Burgwallen-Oude Zijde"
+  },
+  "compositeScore": 8.5,
+  "socialMetrics": [
+    {
+      "key": "population_density",
+      "label": "Population Density",
+      "value": 15000,
+      "unit": "people/km2",
+      "score": 50,
+      "source": "CBS StatLine 83765NED"
+    }
+  ],
+  "amenityMetrics": [],
+  "environmentMetrics": [],
+  "sources": [
+    {
+      "source": "PDOK Locatieserver",
+      "url": "https://api.pdok.nl",
+      "license": "Publiek",
+      "retrievedAtUtc": "2023-10-27T10:00:00Z"
+    }
+  ],
+  "warnings": []
+}
+```
+
+## Scoring Logic
+
+The `ContextReportService` calculates scores based on raw data. Scores range from 0 to 100.
+
+### Composite Score
+The final score is a weighted average of three categories:
+
+| Category | Weight |
+|---|---|
+| **Social** | 45% |
+| **Amenity** | 35% |
+| **Environment** | 20% |
+
+### Individual Metric Scoring
+
+*   **Population Density**:
+    *   <= 500: 65 (Too sparse)
+    *   <= 1500: 85 (Good)
+    *   <= 3500: 100 (Optimal urban)
+    *   <= 7000: 70 (Dense)
+    *   > 7000: 50 (Very dense)
+
+*   **Amenity Proximity** (Distance to nearest amenity):
+    *   <= 250m: 100
+    *   <= 500m: 85
+    *   ... decays to 25 at > 2km.
+
+*   **Air Quality (PM2.5)**:
+    *   <= 5 µg/m3: 100 (Excellent)
+    *   <= 10: 85
+    *   ... decays to 10 at > 35 µg/m3.
 
 ## Configuration
 
