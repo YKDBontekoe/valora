@@ -173,12 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
     String? currentSortBy,
     String? currentSortOrder,
   ) {
-    final isSelected = (currentSortBy == sortBy &&
-            currentSortOrder == sortOrder) ||
-        (sortBy == 'date' &&
-            sortOrder == 'desc' &&
-            (currentSortBy == null || currentSortBy == 'date') &&
-            (currentSortOrder == null || currentSortOrder == 'desc'));
+    final isSelected = currentSortBy == sortBy && currentSortOrder == sortOrder;
 
     return ListTile(
       title: Text(
@@ -338,7 +333,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                             'Price: €${provider.minPrice?.toInt() ?? 0} - ${provider.maxPrice != null ? '€${provider.maxPrice!.toInt()}' : 'Any'}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: provider.clearPriceFilter,
+                                        onDeleted: () => provider.clearPriceFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.city != null)
@@ -348,7 +343,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: 'City: ${provider.city}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: provider.clearCityFilter,
+                                        onDeleted: () => provider.clearCityFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.minBedrooms != null)
@@ -358,7 +353,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minBedrooms}+ Beds',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: provider.clearBedroomsFilter,
+                                        onDeleted: () => provider.clearBedroomsFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.minLivingArea != null)
@@ -368,7 +363,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minLivingArea}+ m²',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: provider.clearLivingAreaFilter,
+                                        onDeleted: () => provider.clearLivingAreaFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.isSortActive)
@@ -382,7 +377,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                                 : 'Sort'),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
-                                        onDeleted: provider.clearSort,
+                                        onDeleted: () => provider.clearSort().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.hasActiveFiltersOrSort)
