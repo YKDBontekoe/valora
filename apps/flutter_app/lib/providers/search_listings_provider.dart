@@ -58,6 +58,14 @@ class SearchListingsProvider extends ChangeNotifier {
         _maxLivingArea != null;
   }
 
+  bool get hasActiveFiltersOrSort {
+    return hasActiveFilters || isSortActive;
+  }
+
+  bool get isSortActive {
+    return _sortBy != null && (_sortBy != 'date' || _sortOrder != 'desc');
+  }
+
   void setQuery(String value) {
     _query = value;
   }
@@ -121,6 +129,39 @@ class SearchListingsProvider extends ChangeNotifier {
     _maxLivingArea = maxLivingArea;
     _sortBy = sortBy;
     _sortOrder = sortOrder;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearPriceFilter() async {
+    _minPrice = null;
+    _maxPrice = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearCityFilter() async {
+    _city = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearBedroomsFilter() async {
+    _minBedrooms = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearLivingAreaFilter() async {
+    _minLivingArea = null;
+    _maxLivingArea = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearSort() async {
+    _sortBy = null;
+    _sortOrder = null;
     notifyListeners();
     await refresh();
   }
