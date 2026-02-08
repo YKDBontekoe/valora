@@ -1,7 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Valora.Infrastructure.Scraping.Models;
 
@@ -11,7 +9,6 @@ public partial class FundaApiClient : IFundaApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FundaApiClient> _logger;
-    private const string ToppositionApiUrl = "https://www.funda.nl/api/topposition/v2/search";
 
     public FundaApiClient(HttpClient httpClient, ILogger<FundaApiClient> logger)
     {
@@ -27,7 +24,7 @@ public partial class FundaApiClient : IFundaApiClient
     {
         try
         {
-            var url = $"https://www.funda.nl/api/detail-summary/v2/getsummary/{globalId}";
+            var url = $"{FundaApiConstants.SummaryApiBaseUrl}{globalId}";
             var response = await _httpClient.GetAsync(url, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -62,7 +59,7 @@ public partial class FundaApiClient : IFundaApiClient
     {
         try
         {
-            var url = $"https://contacts-bff.funda.io/api/v3/listings/{globalId}/contact-details?website=1";
+            var url = $"{FundaApiConstants.ContactApiBaseUrl}{globalId}/contact-details?website=1";
             var response = await _httpClient.GetAsync(url, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -102,7 +99,7 @@ public partial class FundaApiClient : IFundaApiClient
 
         try
         {
-            var url = $"https://kpnopticfiber.funda.io/api/v1/{cleanPostalCode}";
+            var url = $"{FundaApiConstants.FiberApiBaseUrl}{cleanPostalCode}";
             var response = await _httpClient.GetAsync(url, cancellationToken);
 
             if (!response.IsSuccessStatusCode) return null;
@@ -112,7 +109,8 @@ public partial class FundaApiClient : IFundaApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to check fiber availability for postal code {PostalCode}", cleanPostalCode);
+            // Do not log the full postal code
+            _logger.LogDebug(ex, "Failed to check fiber availability for postal code.");
             return null;
         }
     }
@@ -129,8 +127,8 @@ public partial class FundaApiClient : IFundaApiClient
     {
         return await SearchAsync(
             geoInfo, 
-            offeringType: "buy", 
-            aggregationType: "listing", 
+            offeringType: FundaApiConstants.OfferingTypeBuy,
+            aggregationType: FundaApiConstants.AggregationTypeListing,
             page: page, 
             minPrice: minPrice, 
             maxPrice: maxPrice, 
@@ -154,8 +152,8 @@ public partial class FundaApiClient : IFundaApiClient
         // Therefore, we reuse the generic SearchAsync which defaults to "SalePrice".
         return await SearchAsync(
             geoInfo, 
-            offeringType: "rent", 
-            aggregationType: "listing", 
+            offeringType: FundaApiConstants.OfferingTypeRent,
+            aggregationType: FundaApiConstants.AggregationTypeListing,
             page: page, 
             minPrice: minPrice, 
             maxPrice: maxPrice, 
@@ -174,8 +172,8 @@ public partial class FundaApiClient : IFundaApiClient
     {
         return await SearchAsync(
             geoInfo, 
-            offeringType: "buy", 
-            aggregationType: "project", 
+            offeringType: FundaApiConstants.OfferingTypeBuy,
+            aggregationType: FundaApiConstants.AggregationTypeProject,
             page: page, 
             minPrice: minPrice, 
             maxPrice: maxPrice, 
@@ -197,7 +195,7 @@ public partial class FundaApiClient : IFundaApiClient
         var request = new FundaApiRequest
         {
             AggregationType = [aggregationType],
-            CultureInfo = "nl",
+            CultureInfo = FundaApiConstants.CultureNl,
             GeoInformation = geoInfo.ToLowerInvariant(),
             OfferingType = [offeringType],
             Page = page,
@@ -205,16 +203,16 @@ public partial class FundaApiClient : IFundaApiClient
             {
                 LowerBound = minPrice ?? 0,
                 // Empirical testing shows "SalePrice" works for Rent/Projects too in this API
-                PriceRangeType = "SalePrice",
+                PriceRangeType = FundaApiConstants.PriceTypeSale,
                 UpperBound = maxPrice
             },
-            Zoning = ["residential"]
+            Zoning = [FundaApiConstants.ZoningResidential]
         };
 
         _logger.LogDebug("Fetching {Aggregation} ({Offering}) from Funda API for {GeoInfo}, page {Page}",
             aggregationType, offeringType, geoInfo, page);
 
-        var response = await _httpClient.PostAsJsonAsync(ToppositionApiUrl, request, cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync(FundaApiConstants.ToppositionApiUrl, request, cancellationToken);
 
         // Throw on error so Polly can handle retries
         response.EnsureSuccessStatusCode();
@@ -299,7 +297,7 @@ public partial class FundaApiClient : IFundaApiClient
 
         // 2. Extract JSON content from script
         // We look for the <script type="application/json"> tag that Nuxt uses for hydration.
-        var jsonContent = ExtractNuxtJson(html);
+        var jsonContent = FundaNuxtJsonParser.ExtractJsonFromHtml(html);
         if (string.IsNullOrEmpty(jsonContent))
         {
             _logger.LogWarning("Could not find Nuxt state JSON in page: {Url}", url);
@@ -307,7 +305,7 @@ public partial class FundaApiClient : IFundaApiClient
         }
 
         // 3. Parse and find the listing data node
-        return ParseNuxtState(jsonContent);
+        return FundaNuxtJsonParser.Parse(jsonContent, _logger);
     }
     
     private async Task<string> GetListingDetailHtmlAsync(string url, CancellationToken cancellationToken)
@@ -315,52 +313,25 @@ public partial class FundaApiClient : IFundaApiClient
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
         // Ensure we have a valid Absolute URL
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        Uri? uri;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
         {
              // Try to construct if it's relative? Funda usually gives us full URLs.
              if (url.StartsWith("/")) url = "https://www.funda.nl" + url;
-        }
 
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Extracts the JSON content from the Nuxt hydration script tag.
-    /// <para>
-    /// <strong>Strategy:</strong>
-    /// Funda uses Nuxt.js, which hydrates the client-side state via a `<script type="application/json">` tag.
-    /// Instead of using a greedy regex (which is prone to catastrophic backtracking on large HTML),
-    /// we iterate over all matching script tags and inspect their content for known keywords
-    /// like "cachedListingData" or "features" + "media".
-    /// </para>
-    /// </summary>
-    private string? ExtractNuxtJson(string html)
-    {
-        // Simple regex to find the script content. 
-        // We look for script type="application/json" and iterate over them to find the one with the data.
-        // This is safer than a greedy regex which might capture multiple script tags.
-
-        var matches = NuxtScriptRegex().Matches(html);
-        foreach (System.Text.RegularExpressions.Match m in matches)
-        {
-             var content = m.Groups[1].Value;
-             // Check for key identifiers of the Nuxt hydration state
-             if (content.Contains("cachedListingData") || (content.Contains("features") && content.Contains("media")))
+             if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
              {
-                 return content;
+                 throw new ArgumentException("Invalid URL", nameof(url));
              }
         }
 
-        return null;
-    }
+        if (uri.Host != "www.funda.nl" && uri.Host != "funda.nl")
+        {
+            throw new ArgumentException("Invalid host", nameof(url));
+        }
 
-    private FundaNuxtListingData? ParseNuxtState(string json)
-    {
-        return FundaNuxtJsonParser.Parse(json, _logger);
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
     }
-
-    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
-    private static partial Regex NuxtScriptRegex();
 }

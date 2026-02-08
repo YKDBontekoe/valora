@@ -1,10 +1,11 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
-internal static class FundaNuxtJsonParser
+internal static partial class FundaNuxtJsonParser
 {
     /// <summary>
     /// Parses the raw Nuxt JSON state to find the listing data.
@@ -75,4 +76,25 @@ internal static class FundaNuxtJsonParser
 
         return null;
     }
+
+    /// <summary>
+    /// Extracts the JSON content from the Nuxt hydration script tag in the HTML.
+    /// </summary>
+    public static string? ExtractJsonFromHtml(string html)
+    {
+        var matches = NuxtScriptRegex().Matches(html);
+        foreach (Match m in matches)
+        {
+             var content = m.Groups[1].Value;
+             // Check for key identifiers of the Nuxt hydration state
+             if (content.Contains("cachedListingData") || (content.Contains("features") && content.Contains("media")))
+             {
+                 return content;
+             }
+        }
+        return null;
+    }
+
+    [GeneratedRegex(@"<script type=""application/json""[^>]*>(.*?)</script>", RegexOptions.Singleline)]
+    private static partial Regex NuxtScriptRegex();
 }
