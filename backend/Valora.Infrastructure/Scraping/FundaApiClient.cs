@@ -40,6 +40,10 @@ public partial class FundaApiClient : IFundaApiClient
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaApiListingSummary>(content);
         }
+        catch (HttpRequestException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching summary for listing {GlobalId}", globalId);
@@ -71,6 +75,10 @@ public partial class FundaApiClient : IFundaApiClient
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<FundaContactDetailsResponse>(content);
         }
+        catch (HttpRequestException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching contact details for listing {GlobalId}", globalId);
@@ -101,7 +109,8 @@ public partial class FundaApiClient : IFundaApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to check fiber availability for postal code {PostalCode}", cleanPostalCode);
+            // Do not log the full postal code
+            _logger.LogDebug(ex, "Failed to check fiber availability for postal code.");
             return null;
         }
     }
@@ -304,13 +313,24 @@ public partial class FundaApiClient : IFundaApiClient
         if (string.IsNullOrEmpty(url)) return string.Empty;
 
         // Ensure we have a valid Absolute URL
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        Uri? uri;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
         {
              // Try to construct if it's relative? Funda usually gives us full URLs.
              if (url.StartsWith("/")) url = "https://www.funda.nl" + url;
+
+             if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
+             {
+                 throw new ArgumentException("Invalid URL", nameof(url));
+             }
         }
 
-        var response = await _httpClient.GetAsync(url, cancellationToken);
+        if (uri.Host != "www.funda.nl" && uri.Host != "funda.nl")
+        {
+            throw new ArgumentException("Invalid host", nameof(url));
+        }
+
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
