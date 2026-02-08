@@ -97,6 +97,10 @@ void main() {
     });
 
     test('register calls authService register', () async {
+      // Ensure provider is not loading
+      when(mockAuthService.getToken()).thenAnswer((_) async => null);
+      await authProvider.checkAuth();
+
       when(mockAuthService.register(any, any, any)).thenAnswer((_) async {});
 
       await authProvider.register('new@example.com', 'password', 'password');
@@ -107,6 +111,10 @@ void main() {
     });
 
     test('register propagates exception', () async {
+      // Ensure provider is not loading
+      when(mockAuthService.getToken()).thenAnswer((_) async => null);
+      await authProvider.checkAuth();
+
       when(
         mockAuthService.register(any, any, any),
       ).thenThrow(Exception('Registration failed'));
