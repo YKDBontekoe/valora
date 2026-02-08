@@ -11,8 +11,7 @@ namespace Valora.UnitTests.Scraping;
 
 public class FundaScraperEnrichmentTests
 {
-    private readonly Mock<IListingRepository> _listingRepoMock;
-    private readonly Mock<IPriceHistoryRepository> _priceHistoryRepoMock;
+    private readonly Mock<IListingService> _listingServiceMock;
     private readonly Mock<IScraperNotificationService> _notificationServiceMock;
     private readonly Mock<ILogger<FundaScraperService>> _loggerMock;
     private readonly Mock<IFundaApiClient> _apiClientMock;
@@ -20,15 +19,14 @@ public class FundaScraperEnrichmentTests
 
     public FundaScraperEnrichmentTests()
     {
-        _listingRepoMock = new Mock<IListingRepository>();
-        _priceHistoryRepoMock = new Mock<IPriceHistoryRepository>();
+        _listingServiceMock = new Mock<IListingService>();
         _notificationServiceMock = new Mock<IScraperNotificationService>();
         _loggerMock = new Mock<ILogger<FundaScraperService>>();
         
         _apiClientMock = new Mock<IFundaApiClient>();
 
-        // Default setup for GetByFundaIdsAsync
-        _listingRepoMock.Setup(x => x.GetByFundaIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+        // Default setup for GetListingsByFundaIdsAsync
+        _listingServiceMock.Setup(x => x.GetListingsByFundaIdsAsync(It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Listing>());
 
         var options = Options.Create(new ScraperOptions
@@ -38,8 +36,7 @@ public class FundaScraperEnrichmentTests
         });
 
         _service = new FundaScraperService(
-            _listingRepoMock.Object,
-            _priceHistoryRepoMock.Object,
+            _listingServiceMock.Object,
             options,
             _loggerMock.Object,
             _notificationServiceMock.Object,
@@ -68,11 +65,11 @@ public class FundaScraperEnrichmentTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        _listingRepoMock.Verify(x => x.AddAsync(It.Is<Listing>(l => 
+        _listingServiceMock.Verify(x => x.SaveListingAsync(It.Is<Listing>(l =>
             l.PublicationDate == new DateTime(2023, 1, 1) &&
             l.IsSoldOrRented == true &&
             l.Labels.Contains("Sold")
-        ), It.IsAny<CancellationToken>()), Times.Once);
+        ), null, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -101,12 +98,12 @@ public class FundaScraperEnrichmentTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        _listingRepoMock.Verify(x => x.AddAsync(It.Is<Listing>(l => 
+        _listingServiceMock.Verify(x => x.SaveListingAsync(It.Is<Listing>(l =>
             l.BrokerOfficeId == 100 &&
             l.BrokerPhone == "0612345678" &&
             l.BrokerLogoUrl == "logo.png" &&
             l.AgentName == "Top Makelaar"
-        ), It.IsAny<CancellationToken>()), Times.Once);
+        ), null, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -129,8 +126,8 @@ public class FundaScraperEnrichmentTests
         await _service.ScrapeLimitedAsync("amsterdam", 1);
 
         // Assert
-        _listingRepoMock.Verify(x => x.AddAsync(It.Is<Listing>(l => 
+        _listingServiceMock.Verify(x => x.SaveListingAsync(It.Is<Listing>(l =>
             l.FiberAvailable == true
-        ), It.IsAny<CancellationToken>()), Times.Once);
+        ), null, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
