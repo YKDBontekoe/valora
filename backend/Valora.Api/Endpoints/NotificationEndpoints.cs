@@ -58,22 +58,5 @@ public static class NotificationEndpoints
             await service.MarkAllAsReadAsync(userId);
             return Results.Ok();
         });
-
-        // Temporary endpoint to trigger a test notification
-        group.MapPost("/test", async (
-            INotificationService service,
-            ClaimsPrincipal user) =>
-        {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
-
-            await service.CreateNotificationAsync(
-                userId,
-                "Welcome to Notifications!",
-                "This is a test notification to verify the system works.",
-                NotificationType.Info
-            );
-            return Results.Ok();
-        });
     }
 }
