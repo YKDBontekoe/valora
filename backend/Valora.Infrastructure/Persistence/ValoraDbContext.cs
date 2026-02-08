@@ -95,6 +95,14 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.BrokerAssociationCode).HasMaxLength(20);
 
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Listing_Price_NonNegative", "\"Price\" >= 0");
+                t.HasCheckConstraint("CK_Listing_Bedrooms_NonNegative", "\"Bedrooms\" >= 0");
+                t.HasCheckConstraint("CK_Listing_LivingAreaM2_NonNegative", "\"LivingAreaM2\" >= 0");
+            });
+
             // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)
             entity.Property(e => e.Features)
                 .HasColumnType("jsonb") // Hint for Postgres
@@ -142,6 +150,11 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(l => l.PriceHistory)
                   .HasForeignKey(e => e.ListingId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_PriceHistory_Price_NonNegative", "\"Price\" >= 0");
+            });
         });
 
         modelBuilder.Entity<Notification>(entity =>

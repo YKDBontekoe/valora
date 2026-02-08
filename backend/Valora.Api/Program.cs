@@ -116,11 +116,31 @@ if (hangfireEnabled)
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration["ALLOWED_ORIGINS"]?.Split(';', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins.Any())
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+             // Production safe default: block unless configured
+             // Use SetIsOriginAllowed(_ => false) to explicitly deny all if not configured.
+             // WithOrigins() with no arguments might throw or behave unexpectedly in some versions.
+             policy.SetIsOriginAllowed(_ => false)
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        }
     });
 });
 
@@ -210,7 +230,11 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
+    var dashboardLogger = app.Services.GetRequiredService<ILogger<Valora.Api.Middleware.HangfireAuthorizationFilter>>();
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new Valora.Api.Middleware.HangfireAuthorizationFilter(dashboardLogger) }
+    });
 
     // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(
@@ -373,9 +397,12 @@ api.MapPost("/ai/chat", async (
     IAiService aiService,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Prompt))
+    // Manual validation since minimal APIs don't always do this automatically without [AsParameters]
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(request);
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(request, validationContext, validationResults, true))
     {
-        return Results.BadRequest(new { error = "Prompt is required" });
+        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
     }
 
     try

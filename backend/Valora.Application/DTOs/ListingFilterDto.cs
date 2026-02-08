@@ -6,13 +6,23 @@ public class ListingFilterDto
 {
     [MaxLength(100)]
     public string? SearchTerm { get; set; }
+
+    [Range(0, double.MaxValue)]
     public decimal? MinPrice { get; set; }
+
+    [Range(0, double.MaxValue)]
     public decimal? MaxPrice { get; set; }
 
     [MaxLength(100)]
     public string? City { get; set; }
+
+    [Range(0, int.MaxValue)]
     public int? MinBedrooms { get; set; }
+
+    [Range(0, int.MaxValue)]
     public int? MinLivingArea { get; set; }
+
+    [Range(0, int.MaxValue)]
     public int? MaxLivingArea { get; set; }
 
     [RegularExpression("(?i)^(Price|Date|LivingArea|City)$", ErrorMessage = "Invalid SortBy value.")]

@@ -108,7 +108,7 @@ void main() {
 
     test('register propagates exception', () async {
       when(
-        mockAuthService.register(any, any, any),
+        mockAuthService.register('new@example.com', 'pass', 'pass'),
       ).thenThrow(Exception('Registration failed'));
 
       expect(
