@@ -84,7 +84,7 @@ Generates a full context report for a given location. Requires Authentication (B
     "longitude": 4.896,
     "neighborhoodName": "Burgwallen-Oude Zijde"
   },
-  "compositeScore": 8.5,
+  "compositeScore": 85.0,
   "socialMetrics": [
     {
       "key": "population_density",

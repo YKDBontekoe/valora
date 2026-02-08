@@ -64,9 +64,11 @@ The application is containerized using Docker.
 graph TD
     Client[Flutter Client] -->|HTTPS| API[Valora API Container]
     API -->|TCP/5432| DB[(PostgreSQL Container)]
+    API -->|In-Process| Cache[(MemoryCache)]
 
     subgraph "Docker Network"
         API
+        Cache
         DB
     end
 
@@ -78,11 +80,11 @@ graph TD
 
 ## Key Components
 
-### Context Report Service (`Valora.Application.Enrichment.ContextReportService`)
-This service is the heart of the enrichment logic. It orchestrates calls to multiple external providers (PDOK, CBS, OSM, Luchtmeetnet) to gather data about a location. It then normalizes this data into a standardized `ContextReportDto` with scores for Social, Amenity, and Environment metrics.
+### Context Report Service (`Valora.Infrastructure.Enrichment.ContextReportService`)
+This service is the heart of the enrichment logic. It orchestrates calls to multiple external providers (PDOK, CBS, OSM, Luchtmeetnet) to gather data about a location. It then normalizes this data into a standardized `ContextReportDto` with scores for Social, Amenity, and Environment metrics. It uses `IMemoryCache` to store reports temporarily for performance.
 
 ### Location Resolver (`Valora.Infrastructure.Enrichment.PdokLocationResolver`)
 Responsible for converting user input (address or listing URL) into a precise geographic location (Latitude/Longitude) and administrative context (Municipality, Neighborhood codes). It handles the normalization of input strings to ensure reliable querying against the PDOK Locatieserver.
 
 ### Data Persistence (`Valora.Infrastructure.Persistence.ValoraDbContext`)
-Uses Entity Framework Core to persist user data, saved reports, and listings. In development, it connects to a local PostgreSQL container. In testing, it uses the In-Memory provider for speed and isolation.
+Uses Entity Framework Core to persist user data and listings. Context reports are currently cached in-memory but can be persisted if needed. In development, it connects to a local PostgreSQL container. In testing, it uses the In-Memory provider for speed and isolation.

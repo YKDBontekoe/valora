@@ -8,10 +8,10 @@ The app accepts a listing link or plain address as input, resolves it to a locat
 
 Valora is built on the principle of **Public-Context Intelligence**.
 
-*   **No Scraping**: We do not harvest listing content. Listing links are treated merely as location hints.
+*   **No Scraping**: We do not harvest *external* listing content. Listing links are treated merely as location hints.
 *   **On-Demand Enrichment**: Context reports are generated in real-time by querying public APIs.
 *   **Explainable Scoring**: Every score (Social, Amenity, Environment) is traceable to raw data points.
-*   **Privacy First**: We do not store user search history or listing details beyond what is needed for the report cache.
+*   **Data Persistence**: Valora stores user accounts and may persist user-submitted listings or generated reports for caching and history purposes, but it does not scrape or mass-archive external listing sites.
 
 ## High-Level Architecture
 
@@ -30,7 +30,8 @@ graph TD
         DB[(PostgreSQL)]
     end
 
-    Service -->|Cache/Persist| DB
+    Service -->|Cache| Cache[(MemoryCache)]
+    Service -.->|Persist History| DB
 ```
 
 ## Directory Structure
