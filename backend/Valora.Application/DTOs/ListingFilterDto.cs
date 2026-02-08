@@ -15,8 +15,15 @@ public class ListingFilterDto
     public int? MinLivingArea { get; set; }
     public int? MaxLivingArea { get; set; }
 
-    [RegularExpression("(?i)^(Price|Date|LivingArea|City)$", ErrorMessage = "Invalid SortBy value.")]
-    public string? SortBy { get; set; } // "Price", "Date", "LivingArea", "City"
+    // Phase 5: Context Filters
+    [Range(0, 100)]
+    public double? MinSafetyScore { get; set; }
+
+    [Range(0, 100)]
+    public double? MinCompositeScore { get; set; }
+
+    [RegularExpression("(?i)^(Price|Date|LivingArea|City|ContextCompositeScore|ContextSafetyScore)$", ErrorMessage = "Invalid SortBy value.")]
+    public string? SortBy { get; set; } // "Price", "Date", "LivingArea", "City", "ContextCompositeScore", "ContextSafetyScore"
 
     [RegularExpression("(?i)^(asc|desc)$", ErrorMessage = "Invalid SortOrder value.")]
     public string? SortOrder { get; set; } // "asc", "desc"

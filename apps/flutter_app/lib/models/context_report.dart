@@ -2,20 +2,24 @@ class ContextReport {
   ContextReport({
     required this.location,
     required this.socialMetrics,
-    required this.safetyMetrics,
+    required this.crimeMetrics,
+    required this.demographicsMetrics,
     required this.amenityMetrics,
     required this.environmentMetrics,
     required this.compositeScore,
+    required this.categoryScores,
     required this.sources,
     required this.warnings,
   });
 
   final ContextLocation location;
   final List<ContextMetric> socialMetrics;
-  final List<ContextMetric> safetyMetrics;
+  final List<ContextMetric> crimeMetrics;
+  final List<ContextMetric> demographicsMetrics;
   final List<ContextMetric> amenityMetrics;
   final List<ContextMetric> environmentMetrics;
   final double compositeScore;
+  final Map<String, double> categoryScores;
   final List<SourceAttribution> sources;
   final List<String> warnings;
 
@@ -23,10 +27,12 @@ class ContextReport {
     return ContextReport(
       location: ContextLocation.fromJson(json['location'] as Map<String, dynamic>),
       socialMetrics: _parseMetrics(json['socialMetrics']),
-      safetyMetrics: _parseMetrics(json['safetyMetrics']),
+      crimeMetrics: _parseMetrics(json['crimeMetrics']),
+      demographicsMetrics: _parseMetrics(json['demographicsMetrics']),
       amenityMetrics: _parseMetrics(json['amenityMetrics']),
       environmentMetrics: _parseMetrics(json['environmentMetrics']),
       compositeScore: (json['compositeScore'] as num?)?.toDouble() ?? 0,
+      categoryScores: _parseCategoryScores(json['categoryScores']),
       sources: (json['sources'] as List<dynamic>? ?? <dynamic>[])
           .whereType<Map<String, dynamic>>()
           .map(SourceAttribution.fromJson)
@@ -43,6 +49,12 @@ class ContextReport {
         .whereType<Map<String, dynamic>>()
         .map(ContextMetric.fromJson)
         .toList();
+  }
+
+  static Map<String, double> _parseCategoryScores(dynamic value) {
+    if (value == null) return {};
+    final Map<String, dynamic> map = value as Map<String, dynamic>;
+    return map.map((key, value) => MapEntry(key, (value as num?)?.toDouble() ?? 0));
   }
 }
 

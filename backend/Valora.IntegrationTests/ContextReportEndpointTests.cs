@@ -142,13 +142,24 @@ public class ContextReportEndpointTests
                 NeighborhoodName: "Nieuwendijk-Noord",
                 PostalCode: "1012LG");
 
+            var categoryScores = new Dictionary<string, double>
+            {
+                ["Social"] = 80,
+                ["Safety"] = 75,
+                ["Demographics"] = 70,
+                ["Amenities"] = 85,
+                ["Environment"] = 72
+            };
+
             var report = new ContextReportDto(
                 Location: location,
                 SocialMetrics: [],
-                SafetyMetrics: [],
+                CrimeMetrics: [],
+                DemographicsMetrics: [],
                 AmenityMetrics: [],
                 EnvironmentMetrics: [],
                 CompositeScore: 75,
+                CategoryScores: categoryScores,
                 Sources: [],
                 Warnings: []);
 

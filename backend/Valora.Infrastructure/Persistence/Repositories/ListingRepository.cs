@@ -60,7 +60,9 @@ public class ListingRepository : IListingRepository
             // Infra
             l.FiberAvailable,
             // Status
-            l.PublicationDate, l.IsSoldOrRented, l.Labels
+            l.PublicationDate, l.IsSoldOrRented, l.Labels,
+            // Context
+            l.ContextCompositeScore, l.ContextSafetyScore, l.ContextReport
         ));
 
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
@@ -127,6 +129,16 @@ public class ListingRepository : IListingRepository
         if (filter.MaxLivingArea.HasValue)
         {
             query = query.Where(l => l.LivingAreaM2 <= filter.MaxLivingArea.Value);
+        }
+
+        if (filter.MinSafetyScore.HasValue)
+        {
+            query = query.Where(l => l.ContextSafetyScore >= filter.MinSafetyScore.Value);
+        }
+
+        if (filter.MinCompositeScore.HasValue)
+        {
+            query = query.Where(l => l.ContextCompositeScore >= filter.MinCompositeScore.Value);
         }
 
         query = query.ApplySorting(filter.SortBy, filter.SortOrder);

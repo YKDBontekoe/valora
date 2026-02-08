@@ -31,6 +31,8 @@ class SearchListingsProvider extends ChangeNotifier {
   int? _minBedrooms;
   int? _minLivingArea;
   int? _maxLivingArea;
+  double? _minCompositeScore;
+  double? _minSafetyScore;
   String? _sortBy;
   String? _sortOrder;
 
@@ -46,6 +48,8 @@ class SearchListingsProvider extends ChangeNotifier {
   int? get minBedrooms => _minBedrooms;
   int? get minLivingArea => _minLivingArea;
   int? get maxLivingArea => _maxLivingArea;
+  double? get minCompositeScore => _minCompositeScore;
+  double? get minSafetyScore => _minSafetyScore;
   String? get sortBy => _sortBy;
   String? get sortOrder => _sortOrder;
 
@@ -55,7 +59,9 @@ class SearchListingsProvider extends ChangeNotifier {
         _city != null ||
         _minBedrooms != null ||
         _minLivingArea != null ||
-        _maxLivingArea != null;
+        _maxLivingArea != null ||
+        _minCompositeScore != null ||
+        _minSafetyScore != null;
   }
 
   bool get hasActiveFiltersOrSort {
@@ -68,6 +74,11 @@ class SearchListingsProvider extends ChangeNotifier {
 
   void setQuery(String value) {
     _query = value;
+  }
+
+  void setCity(String? value) {
+    _city = value;
+    notifyListeners();
   }
 
   Future<void> refresh() async {
@@ -118,6 +129,8 @@ class SearchListingsProvider extends ChangeNotifier {
     required int? minBedrooms,
     required int? minLivingArea,
     required int? maxLivingArea,
+    required double? minCompositeScore,
+    required double? minSafetyScore,
     required String? sortBy,
     required String? sortOrder,
   }) async {
@@ -127,6 +140,8 @@ class SearchListingsProvider extends ChangeNotifier {
     _minBedrooms = minBedrooms;
     _minLivingArea = minLivingArea;
     _maxLivingArea = maxLivingArea;
+    _minCompositeScore = minCompositeScore;
+    _minSafetyScore = minSafetyScore;
     _sortBy = sortBy;
     _sortOrder = sortOrder;
     notifyListeners();
@@ -159,6 +174,18 @@ class SearchListingsProvider extends ChangeNotifier {
     await refresh();
   }
 
+  Future<void> clearCompositeScoreFilter() async {
+    _minCompositeScore = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearSafetyScoreFilter() async {
+    _minSafetyScore = null;
+    notifyListeners();
+    await refresh();
+  }
+
   Future<void> clearSort() async {
     _sortBy = null;
     _sortOrder = null;
@@ -173,6 +200,8 @@ class SearchListingsProvider extends ChangeNotifier {
     _minBedrooms = null;
     _minLivingArea = null;
     _maxLivingArea = null;
+    _minCompositeScore = null;
+    _minSafetyScore = null;
     _sortBy = null;
     _sortOrder = null;
     notifyListeners();
@@ -243,6 +272,8 @@ class SearchListingsProvider extends ChangeNotifier {
       minBedrooms: _minBedrooms,
       minLivingArea: _minLivingArea,
       maxLivingArea: _maxLivingArea,
+      minSafetyScore: _minSafetyScore,
+      minCompositeScore: _minCompositeScore,
       sortBy: _sortBy,
       sortOrder: _sortOrder,
     );

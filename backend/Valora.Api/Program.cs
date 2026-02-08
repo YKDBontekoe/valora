@@ -268,6 +268,69 @@ api.MapPost("/context/report", async (
     }
 }).RequireAuthorization();
 
+api.MapPost("/listings/{id:guid}/enrich", async (
+    Guid id,
+    IListingRepository repo,
+    IContextReportService contextReportService,
+    CancellationToken ct) =>
+{
+    var listing = await repo.GetByIdAsync(id, ct);
+    if (listing is null) return Results.NotFound();
+
+    // 1. Generate Report
+    ContextReportRequestDto request = new(Input: listing.Address); // Default 1km radius
+    
+    try 
+    {
+        // We use the application DTO for the service call...
+        var reportDto = await contextReportService.BuildAsync(request, ct);
+
+        // ...and map it to the Domain model for storage
+        // Note: In a real app we'd use AutoMapper, but manual mapping is fine here given the structure match
+        var contextReportModel = new Valora.Domain.Models.ContextReportModel(
+            new Valora.Domain.Models.ResolvedLocationModel(
+                reportDto.Location.Query, reportDto.Location.DisplayAddress,
+                reportDto.Location.Latitude, reportDto.Location.Longitude,
+                reportDto.Location.RdX, reportDto.Location.RdY,
+                reportDto.Location.MunicipalityCode, reportDto.Location.MunicipalityName,
+                reportDto.Location.DistrictCode, reportDto.Location.DistrictName,
+                reportDto.Location.NeighborhoodCode, reportDto.Location.NeighborhoodName,
+                reportDto.Location.PostalCode),
+            reportDto.SocialMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
+            reportDto.CrimeMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
+            reportDto.DemographicsMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
+            reportDto.AmenityMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
+            reportDto.EnvironmentMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
+            reportDto.CompositeScore,
+            reportDto.CategoryScores.ToDictionary(k => k.Key, k => k.Value),
+            reportDto.Sources.Select(s => new Valora.Domain.Models.SourceAttributionModel(s.Source, s.Url, s.License, s.RetrievedAtUtc)).ToList(),
+            reportDto.Warnings.ToList()
+        );
+
+        // 2. Update Entity
+        listing.ContextReport = contextReportModel;
+        listing.ContextCompositeScore = reportDto.CompositeScore;
+        
+        if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
+        if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Safety" to "Safety" score
+        if (reportDto.CategoryScores.TryGetValue("Demographics", out var demo)) { /* No specific column yet */ }
+        if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
+        if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
+
+        // 3. Save
+        await repo.UpdateAsync(listing, ct);
+
+        return Results.Ok(new { message = "Listing enriched successfully", compositeScore = reportDto.CompositeScore });
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Failed to enrich listing {ListingId}", id);
+        return Results.Problem("Failed to enrich listing. Please try again later.");
+    }
+
+}).RequireAuthorization();
+
 // AI Chat Endpoint
 api.MapPost("/ai/chat", async (
     AiChatRequest request,

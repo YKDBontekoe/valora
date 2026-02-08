@@ -11,26 +11,30 @@ public static class ListingQueryExtensions
         if (string.IsNullOrWhiteSpace(filter.SearchTerm))
             return query;
 
-        // PostgreSQL's LIKE is case-sensitive by default, so we use ILike.
-        // Other providers (like SQL Server or InMemory for tests) often default to case-insensitive,
-        // or we handle it manually with ToLower().
-        if (isPostgres)
+        var terms = filter.SearchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var term in terms)
         {
-            var escapedTerm = EscapeLikePattern(filter.SearchTerm);
-            var search = $"%{escapedTerm}%";
-            return query.Where(l =>
-                EF.Functions.ILike(l.Address, search, @"\") ||
-                (l.City != null && EF.Functions.ILike(l.City, search, @"\")) ||
-                (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search, @"\")));
+            if (isPostgres)
+            {
+                var escapedTerm = EscapeLikePattern(term);
+                var search = $"%{escapedTerm}%";
+                query = query.Where(l =>
+                    EF.Functions.ILike(l.Address, search, @"\") ||
+                    (l.City != null && EF.Functions.ILike(l.City, search, @"\")) ||
+                    (l.PostalCode != null && EF.Functions.ILike(l.PostalCode, search, @"\")));
+            }
+            else
+            {
+                var search = term.ToLower();
+                query = query.Where(l =>
+                    l.Address.ToLower().Contains(search) ||
+                    (l.City != null && l.City.ToLower().Contains(search)) ||
+                    (l.PostalCode != null && l.PostalCode.ToLower().Contains(search)));
+            }
         }
-        else
-        {
-            var search = filter.SearchTerm.ToLower();
-            return query.Where(l =>
-                l.Address.ToLower().Contains(search) ||
-                (l.City != null && l.City.ToLower().Contains(search)) ||
-                (l.PostalCode != null && l.PostalCode.ToLower().Contains(search)));
-        }
+
+        return query;
     }
 
     public static IQueryable<Listing> ApplyCityFilter(this IQueryable<Listing> query, string? city, bool isPostgres)
@@ -51,7 +55,10 @@ public static class ListingQueryExtensions
 
     public static IQueryable<Listing> ApplySorting(this IQueryable<Listing> query, string? sortBy, string? sortOrder)
     {
-        return (sortBy?.ToLower(), sortOrder?.ToLower()) switch
+        var sortField = sortBy?.ToLowerInvariant();
+        var order = sortOrder?.ToLowerInvariant();
+
+        return (sortField, order) switch
         {
             ("price", "desc") => query.OrderByDescending(l => l.Price),
             ("price", "asc") => query.OrderBy(l => l.Price),
@@ -61,6 +68,10 @@ public static class ListingQueryExtensions
             ("livingarea", "desc") => query.OrderByDescending(l => l.LivingAreaM2),
             ("city", "asc") => query.OrderBy(l => l.City),
             ("city", "desc") => query.OrderByDescending(l => l.City),
+            ("contextcompositescore", "asc") => query.OrderBy(l => l.ContextCompositeScore),
+            ("contextcompositescore", "desc") => query.OrderByDescending(l => l.ContextCompositeScore.HasValue).ThenByDescending(l => l.ContextCompositeScore),
+            ("contextsafetyscore", "asc") => query.OrderBy(l => l.ContextSafetyScore),
+            ("contextsafetyscore", "desc") => query.OrderByDescending(l => l.ContextSafetyScore.HasValue).ThenByDescending(l => l.ContextSafetyScore),
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
     }

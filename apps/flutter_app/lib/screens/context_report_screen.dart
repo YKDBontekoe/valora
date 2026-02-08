@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_typography.dart';
 import '../models/context_report.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/report/report_widgets.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key});
@@ -31,101 +30,23 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
         builder: (context, provider, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Location Context'),
+              title: const Text('Property Analytics'),
               actions: [
-                IconButton(
-                  tooltip: 'Clear',
-                  onPressed: provider.clear,
-                  icon: const Icon(Icons.refresh_rounded),
-                ),
+                if (provider.report != null)
+                  IconButton(
+                    tooltip: 'New Report',
+                    onPressed: provider.clear,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
               ],
             ),
             body: SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    'Paste any address or listing link to generate public-data context.',
-                    style: ValoraTypography.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+              child: provider.report != null
+                  ? _ReportContent(report: provider.report!)
+                  : _InputForm(
+                      controller: _inputController,
+                      provider: provider,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _inputController,
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. Damrak 1 Amsterdam or listing URL',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.location_on_rounded),
-                    ),
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => provider.generate(_inputController.text),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Radius: ${provider.radiusMeters}m',
-                    style: ValoraTypography.labelLarge,
-                  ),
-                  Slider(
-                    min: 200,
-                    max: 5000,
-                    divisions: 24,
-                    value: provider.radiusMeters.toDouble(),
-                    onChanged: (value) => provider.setRadiusMeters(value.round()),
-                  ),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
-                    onPressed: provider.isLoading ? null : () => provider.generate(_inputController.text),
-                    icon: provider.isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.analytics_rounded),
-                    label: Text(provider.isLoading ? 'Generating...' : 'Generate Report'),
-                  ),
-                  if (provider.error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      provider.error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ],
-                  if (provider.report != null) ...[
-                    const SizedBox(height: 20),
-                    _LocationCard(location: provider.report!.location, score: provider.report!.compositeScore),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Social', metrics: provider.report!.socialMetrics),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Safety', metrics: provider.report!.safetyMetrics),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Amenities', metrics: provider.report!.amenityMetrics),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Environment', metrics: provider.report!.environmentMetrics),
-                    if (provider.report!.warnings.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Warnings', style: ValoraTypography.titleSmall),
-                              const SizedBox(height: 8),
-                              for (final warning in provider.report!.warnings)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text('• $warning'),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ],
-              ),
             ),
           );
         },
@@ -134,86 +55,385 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   }
 }
 
-class _LocationCard extends StatelessWidget {
-  const _LocationCard({required this.location, required this.score});
+class _InputForm extends StatelessWidget {
+  const _InputForm({
+    required this.controller,
+    required this.provider,
+  });
 
-  final ContextLocation location;
-  final double score;
+  final TextEditingController controller;
+  final ContextReportProvider provider;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: ValoraColors.primary.withValues(alpha: 0.08),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(location.displayAddress, style: ValoraTypography.titleMedium),
-            const SizedBox(height: 8),
-            Text('Composite score: ${score.toStringAsFixed(1)} / 100'),
-            if (location.neighborhoodName != null)
-              Text('Neighborhood: ${location.neighborhoodName}'),
-            if (location.municipalityName != null)
-              Text('Municipality: ${location.municipalityName}'),
-          ],
+    final theme = Theme.of(context);
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // Hero section
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primaryContainer,
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.analytics_rounded,
+                size: 48,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Neighborhood Analytics',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Get comprehensive insights about any Dutch address including demographics, safety, amenities, and environmental data.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        // Search field
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            return TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: 'Enter address (e.g. Damrak 1 Amsterdam)',
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerLow,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: value.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded),
+                        onPressed: () => controller.clear(),
+                      )
+                    : null,
+              ),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => provider.generate(controller.text),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        // Radius slider
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Search Radius',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                  Text(
+                    '${provider.radiusMeters}m',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 6,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                ),
+                child: Slider(
+                  min: 200,
+                  max: 5000,
+                  divisions: 24,
+                  value: provider.radiusMeters.toDouble(),
+                  onChanged: (value) => provider.setRadiusMeters(value.round()),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        // Generate button
+        SizedBox(
+          height: 56,
+          child: FilledButton.icon(
+            onPressed: provider.isLoading
+                ? null
+                : () => provider.generate(controller.text),
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: provider.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.search_rounded),
+            label: Text(
+              provider.isLoading ? 'Analyzing...' : 'Generate Report',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+        if (provider.error != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: theme.colorScheme.error),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    provider.error!,
+                    style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
 
-class _MetricSection extends StatelessWidget {
-  const _MetricSection({required this.title, required this.metrics});
+class _ReportContent extends StatelessWidget {
+  const _ReportContent({required this.report});
 
-  final String title;
-  final List<ContextMetric> metrics;
+  final ContextReport report;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: ValoraTypography.titleSmall),
-            const SizedBox(height: 8),
-            if (metrics.isEmpty)
-              Text(
-                'No data available.',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              )
-            else
-              for (final metric in metrics)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          metric.label,
-                          style: ValoraTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                        ),
+    final theme = Theme.of(context);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Header with address
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primaryContainer,
+                theme.colorScheme.secondaryContainer,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_rounded,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      report.location.displayAddress,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 8),
-                      Text(_valueText(metric)),
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+              if (report.location.neighborhoodName != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  [report.location.neighborhoodName, report.location.municipalityName]
+                      .where((s) => s != null && s.isNotEmpty)
+                      .join(', '),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        // Score overview
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Main gauge
+            Expanded(
+              child: Center(
+                child: ScoreGauge(
+                  score: report.compositeScore,
+                  size: 160,
+                  strokeWidth: 14,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Radar chart
+            if (report.categoryScores.isNotEmpty)
+              Expanded(
+                child: CategoryRadar(
+                  categoryScores: report.categoryScores,
+                  size: 160,
+                ),
+              ),
           ],
         ),
-      ),
+        const SizedBox(height: 24),
+        // Category cards
+        if (report.socialMetrics.isNotEmpty)
+          MetricCategoryCard(
+            title: 'Social',
+            icon: Icons.people_rounded,
+            metrics: report.socialMetrics,
+            score: report.categoryScores['Social'],
+            accentColor: const Color(0xFF3B82F6),
+            initiallyExpanded: true,
+          ),
+        if (report.crimeMetrics.isNotEmpty)
+          MetricCategoryCard(
+            title: 'Safety',
+            icon: Icons.shield_rounded,
+            metrics: report.crimeMetrics,
+            score: report.categoryScores['Safety'],
+            accentColor: const Color(0xFF10B981),
+          ),
+        if (report.demographicsMetrics.isNotEmpty)
+          MetricCategoryCard(
+            title: 'Demographics',
+            icon: Icons.family_restroom_rounded,
+            metrics: report.demographicsMetrics,
+            score: report.categoryScores['Demographics'],
+            accentColor: const Color(0xFF8B5CF6),
+          ),
+        if (report.amenityMetrics.isNotEmpty)
+          MetricCategoryCard(
+            title: 'Amenities',
+            icon: Icons.store_rounded,
+            metrics: report.amenityMetrics,
+            score: report.categoryScores['Amenities'],
+            accentColor: const Color(0xFFF59E0B),
+          ),
+        if (report.environmentMetrics.isNotEmpty)
+          MetricCategoryCard(
+            title: 'Environment',
+            icon: Icons.eco_rounded,
+            metrics: report.environmentMetrics,
+            score: report.categoryScores['Environment'],
+            accentColor: const Color(0xFF22C55E),
+          ),
+        // Warnings
+        if (report.warnings.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 20,
+                      color: theme.colorScheme.tertiary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Data Notes',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...report.warnings.map(
+                  (warning) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '• $warning',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        // Source attributions
+        const SizedBox(height: 16),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: Text(
+            'Data Sources',
+            style: theme.textTheme.labelLarge,
+          ),
+          children: report.sources
+              .map(
+                (source) => ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(source.source),
+                  subtitle: Text('License: ${source.license}'),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
-  }
-
-  String _valueText(ContextMetric metric) {
-    if (metric.value == null) {
-      return metric.note ?? '-';
-    }
-
-    final String numeric = metric.value!.toStringAsFixed(metric.value! % 1 == 0 ? 0 : 1);
-    return metric.unit == null ? numeric : '$numeric ${metric.unit}';
   }
 }

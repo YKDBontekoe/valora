@@ -94,4 +94,15 @@ public class Listing : BaseEntity
     /// Used for cache invalidation in dynamic search.
     /// </summary>
     public DateTime? LastFundaFetchUtc { get; set; }
+
+    // Phase 5: Context Scores & Report
+    // Scores are stored as separate columns to enable efficient filtering and sorting
+    public double? ContextCompositeScore { get; set; }
+    public double? ContextSafetyScore { get; set; }
+    public double? ContextSocialScore { get; set; }
+    public double? ContextAmenitiesScore { get; set; }
+    public double? ContextEnvironmentScore { get; set; }
+
+    // Full report stored as JSONB for detailed display without joins
+    public Valora.Domain.Models.ContextReportModel? ContextReport { get; set; }
 }

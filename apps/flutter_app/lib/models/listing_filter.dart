@@ -8,6 +8,8 @@ class ListingFilter {
   final int? minBedrooms;
   final int? minLivingArea;
   final int? maxLivingArea;
+  final double? minSafetyScore;
+  final double? minCompositeScore;
   final String? sortBy;
   final String? sortOrder;
 
@@ -21,6 +23,8 @@ class ListingFilter {
     this.minBedrooms,
     this.minLivingArea,
     this.maxLivingArea,
+    this.minSafetyScore,
+    this.minCompositeScore,
     this.sortBy,
     this.sortOrder,
   });
@@ -35,6 +39,8 @@ class ListingFilter {
     int? minBedrooms,
     int? minLivingArea,
     int? maxLivingArea,
+    double? minSafetyScore,
+    double? minCompositeScore,
     String? sortBy,
     String? sortOrder,
   }) {
@@ -48,6 +54,8 @@ class ListingFilter {
       minBedrooms: minBedrooms ?? this.minBedrooms,
       minLivingArea: minLivingArea ?? this.minLivingArea,
       maxLivingArea: maxLivingArea ?? this.maxLivingArea,
+      minSafetyScore: minSafetyScore ?? this.minSafetyScore,
+      minCompositeScore: minCompositeScore ?? this.minCompositeScore,
       sortBy: sortBy ?? this.sortBy,
       sortOrder: sortOrder ?? this.sortOrder,
     );
@@ -79,6 +87,12 @@ class ListingFilter {
     }
     if (maxLivingArea != null) {
       params['maxLivingArea'] = maxLivingArea.toString();
+    }
+    if (minSafetyScore != null) {
+      params['minSafetyScore'] = minSafetyScore.toString();
+    }
+    if (minCompositeScore != null) {
+      params['minCompositeScore'] = minCompositeScore.toString();
     }
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['sortBy'] = sortBy!;

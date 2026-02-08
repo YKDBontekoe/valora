@@ -28,7 +28,9 @@ public static class ListingMapper
             // Infra
             listing.FiberAvailable,
             // Status
-            listing.PublicationDate, listing.IsSoldOrRented, listing.Labels
+            listing.PublicationDate, listing.IsSoldOrRented, listing.Labels,
+            // Phase 5: Context
+            listing.ContextCompositeScore, listing.ContextSafetyScore, listing.ContextReport
         );
     }
 }

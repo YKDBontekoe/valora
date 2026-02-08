@@ -24,6 +24,8 @@ class ValoraShimmer extends StatelessWidget {
         : ValoraColors.neutral100;
 
     // flutter_animate's shimmer is easier to use
+    const bool isTest = bool.fromEnvironment('FLUTTER_TEST');
+
     return Container(
           width: width,
           height: height,
@@ -34,7 +36,11 @@ class ValoraShimmer extends StatelessWidget {
             ),
           ),
         )
-        .animate(onPlay: (controller) => controller.repeat())
+        .animate(onPlay: (controller) {
+          if (!isTest) {
+            controller.repeat();
+          }
+        })
         .shimmer(
           duration: 1500.ms,
           color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral50,

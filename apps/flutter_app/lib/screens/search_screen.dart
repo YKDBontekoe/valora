@@ -14,10 +14,13 @@ import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_glass_container.dart';
 import '../widgets/valora_widgets.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final PdokService? pdokService;
+  const SearchScreen({super.key, this.pdokService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -26,13 +29,16 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final PdokService _pdokService;
   Timer? _debounce;
 
   SearchListingsProvider? _searchProvider;
+  bool _ownsProvider = false;
 
   @override
   void initState() {
     super.initState();
+    _pdokService = widget.pdokService ?? PdokService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -40,9 +46,15 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _searchProvider ??= SearchListingsProvider(
-      apiService: context.read<ApiService>(),
-    );
+    try {
+      _searchProvider ??= context.read<SearchListingsProvider>();
+    } catch (_) {
+      final created = SearchListingsProvider(
+        apiService: context.read<ApiService>(),
+      );
+      _searchProvider ??= created;
+      _ownsProvider = true;
+    }
   }
 
   @override
@@ -50,7 +62,9 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.dispose();
     _scrollController.dispose();
     _debounce?.cancel();
-    _searchProvider?.dispose();
+    if (_ownsProvider) {
+      _searchProvider?.dispose();
+    }
     super.dispose();
   }
 
@@ -77,7 +91,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_debounce?.isActive ?? false) {
       _debounce!.cancel();
     }
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 750), () {
       _searchProvider!.refresh();
     });
   }
@@ -159,6 +173,22 @@ class _SearchScreenState extends State<SearchScreen> {
               provider.sortBy,
               provider.sortOrder,
             ),
+            _buildSortOption(
+              context,
+              'Composite Score: High to Low',
+              'contextcompositescore',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            _buildSortOption(
+              context,
+              'Safety Score: High to Low',
+              'contextsafetyscore',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
             SizedBox(height: ValoraSpacing.xl),
           ],
         ),
@@ -199,6 +229,8 @@ class _SearchScreenState extends State<SearchScreen> {
           minBedrooms: _searchProvider!.minBedrooms,
           minLivingArea: _searchProvider!.minLivingArea,
           maxLivingArea: _searchProvider!.maxLivingArea,
+          minSafetyScore: _searchProvider!.minSafetyScore,
+          minCompositeScore: _searchProvider!.minCompositeScore,
           sortBy: sortBy,
           sortOrder: sortOrder,
         );
@@ -219,6 +251,8 @@ class _SearchScreenState extends State<SearchScreen> {
         initialMinBedrooms: provider.minBedrooms,
         initialMinLivingArea: provider.minLivingArea,
         initialMaxLivingArea: provider.maxLivingArea,
+        initialMinSafetyScore: provider.minSafetyScore,
+        initialMinCompositeScore: provider.minCompositeScore,
         initialSortBy: provider.sortBy,
         initialSortOrder: provider.sortOrder,
       ),
@@ -235,6 +269,8 @@ class _SearchScreenState extends State<SearchScreen> {
       minBedrooms: result['minBedrooms'] as int?,
       minLivingArea: result['minLivingArea'] as int?,
       maxLivingArea: result['maxLivingArea'] as int?,
+      minSafetyScore: result['minSafetyScore'] as double?,
+      minCompositeScore: result['minCompositeScore'] as double?,
       sortBy: result['sortBy'] as String?,
       sortOrder: result['sortOrder'] as String?,
     );
@@ -245,6 +281,21 @@ class _SearchScreenState extends State<SearchScreen> {
     final max =
         maxPrice != null ? CurrencyFormatter.formatEur(maxPrice) : 'Any';
     return 'Price: $min - $max';
+  }
+
+  String _sortChipLabel(String? sortBy, String? sortOrder) {
+    switch (sortBy) {
+      case 'price':
+        return 'Price: ${sortOrder == 'asc' ? 'Low to High' : 'High to Low'}';
+      case 'livingarea':
+        return 'Area: ${sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}';
+      case 'contextcompositescore':
+        return 'Composite';
+      case 'contextsafetyscore':
+        return 'Safety';
+      default:
+        return 'Sort';
+    }
   }
 
   @override
@@ -317,12 +368,52 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                            child: ValoraTextField(
+                            child: TypeAheadField<PdokSuggestion>(
                               controller: _searchController,
-                              label: '',
-                              hint: 'City, address, or zip code...',
-                              prefixIcon: Icons.search_rounded,
-                              textInputAction: TextInputAction.search,
+                              debounceDuration: const Duration(milliseconds: 400),
+                              suggestionsCallback: (pattern) async {
+                                return await _pdokService.search(pattern);
+                              },
+                              builder: (context, controller, focusNode) {
+                                return ValoraTextField(
+                                  controller: controller,
+                                  focusNode: focusNode,
+                                  label: '',
+                                  hint: 'City, address, or zip code...',
+                                  prefixIcon: Icons.search_rounded,
+                                  textInputAction: TextInputAction.search,
+                                  onSubmitted: (_) {
+                                    _debounce?.cancel();
+                                    _searchProvider!.refresh();
+                                  },
+                                );
+                              },
+                              itemBuilder: (context, suggestion) {
+                                return ListTile(
+                                  leading: const Icon(Icons.location_on_outlined),
+                                  title: Text(suggestion.displayName),
+                                  subtitle: Text(suggestion.type),
+                                );
+                              },
+                              onSelected: (suggestion) {
+                                _debounce?.cancel();
+                                // Temporarily remove listener to avoid triggering _onSearchChanged
+                                _searchController.removeListener(_onSearchChanged);
+                                _searchController.text = suggestion.displayName;
+                                _searchController.addListener(_onSearchChanged);
+
+                                if (suggestion.type == 'woonplaats') {
+                                  _searchProvider!.setCity(suggestion.displayName);
+                                  _searchController.clear();
+                                } else {
+                                  _searchProvider!.setQuery(suggestion.displayName);
+                                }
+                                _searchProvider!.refresh();
+                              },
+                              emptyBuilder: (context) => const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text('No address found'),
+                              ),
                             ),
                           ),
                           if (provider.hasActiveFiltersOrSort)
@@ -420,15 +511,47 @@ class _SearchScreenState extends State<SearchScreen> {
                                         }),
                                       ),
                                     ),
+                                  if (provider.minCompositeScore != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ValoraChip(
+                                        label: 'Composite: ${provider.minCompositeScore}+',
+                                        isSelected: true,
+                                        onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider
+                                            .clearCompositeScoreFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Failed to clear composite score filter')),
+                                            );
+                                          }
+                                        }),
+                                      ),
+                                    ),
+                                  if (provider.minSafetyScore != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ValoraChip(
+                                        label: 'Safety: ${provider.minSafetyScore}+',
+                                        isSelected: true,
+                                        onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider
+                                            .clearSafetyScoreFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Failed to clear safety score filter')),
+                                            );
+                                          }
+                                        }),
+                                      ),
+                                    ),
                                   if (provider.isSortActive)
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label: provider.sortBy == 'price'
-                                            ? 'Price: ${provider.sortOrder == 'asc' ? 'Low to High' : 'High to Low'}'
-                                            : (provider.sortBy == 'livingarea'
-                                                ? 'Area: ${provider.sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}'
-                                                : 'Sort'),
+                                        label: _sortChipLabel(provider.sortBy, provider.sortOrder),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
                                         onDeleted: () => provider
@@ -460,7 +583,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                               : ValoraColors
                                                     .surfaceVariantLight,
                                         ),
-                                        onPressed: provider.clearFilters,
+                                        onPressed: () => provider.clearFilters(),
                                       ),
                                     ),
                                 ],

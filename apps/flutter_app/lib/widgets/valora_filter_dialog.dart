@@ -11,6 +11,8 @@ class ValoraFilterDialog extends StatefulWidget {
   final int? initialMinBedrooms;
   final int? initialMinLivingArea;
   final int? initialMaxLivingArea;
+  final double? initialMinSafetyScore;
+  final double? initialMinCompositeScore;
   final String? initialSortBy;
   final String? initialSortOrder;
 
@@ -22,6 +24,8 @@ class ValoraFilterDialog extends StatefulWidget {
     this.initialMinBedrooms,
     this.initialMinLivingArea,
     this.initialMaxLivingArea,
+    this.initialMinSafetyScore,
+    this.initialMinCompositeScore,
     this.initialSortBy,
     this.initialSortOrder,
   });
@@ -37,6 +41,8 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
   late TextEditingController _minBedroomsController;
   late TextEditingController _minLivingAreaController;
   late TextEditingController _maxLivingAreaController;
+  late TextEditingController _minCompositeScoreController;
+  late TextEditingController _minSafetyScoreController;
   String? _sortBy;
   String? _sortOrder;
 
@@ -59,6 +65,12 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     _maxLivingAreaController = TextEditingController(
       text: widget.initialMaxLivingArea?.toString() ?? '',
     );
+    _minCompositeScoreController = TextEditingController(
+      text: widget.initialMinCompositeScore?.toString() ?? '',
+    );
+    _minSafetyScoreController = TextEditingController(
+      text: widget.initialMinSafetyScore?.toString() ?? '',
+    );
     _sortBy = widget.initialSortBy ?? 'date';
     _sortOrder = widget.initialSortOrder ?? 'desc';
   }
@@ -71,6 +83,8 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     _minBedroomsController.dispose();
     _minLivingAreaController.dispose();
     _maxLivingAreaController.dispose();
+    _minCompositeScoreController.dispose();
+    _minSafetyScoreController.dispose();
     super.dispose();
   }
 
@@ -83,6 +97,18 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     final minBedrooms = int.tryParse(_minBedroomsController.text);
     final minLivingArea = int.tryParse(_minLivingAreaController.text);
     final maxLivingArea = int.tryParse(_maxLivingAreaController.text);
+    final minCompositeScore = double.tryParse(_minCompositeScoreController.text);
+    final minSafetyScore = double.tryParse(_minSafetyScoreController.text);
+
+    if ((minCompositeScore != null && (minCompositeScore < 0 || minCompositeScore > 100)) ||
+        (minSafetyScore != null && (minSafetyScore < 0 || minSafetyScore > 100))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Score must be between 0 and 100'),
+        ),
+      );
+      return;
+    }
 
     if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -111,6 +137,8 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
       'minBedrooms': minBedrooms,
       'minLivingArea': minLivingArea,
       'maxLivingArea': maxLivingArea,
+      'minCompositeScore': minCompositeScore,
+      'minSafetyScore': minSafetyScore,
       'sortBy': _sortBy,
       'sortOrder': _sortOrder,
     });
@@ -124,6 +152,8 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
       _minBedroomsController.clear();
       _minLivingAreaController.clear();
       _maxLivingAreaController.clear();
+      _minCompositeScoreController.clear();
+      _minSafetyScoreController.clear();
       _sortBy = 'date';
       _sortOrder = 'desc';
     });
@@ -261,6 +291,42 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                 onSelected: (selected) {
                   if (selected) _updateSort('livingarea', 'desc');
                 },
+              ),
+              ValoraChip(
+                label: 'Composite Score: High to Low',
+                isSelected: _sortBy == 'contextcompositescore' && _sortOrder == 'desc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('contextcompositescore', 'desc');
+                },
+              ),
+              ValoraChip(
+                label: 'Safety Score: High to Low',
+                isSelected: _sortBy == 'contextsafetyscore' && _sortOrder == 'desc',
+                onSelected: (selected) {
+                  if (selected) _updateSort('contextsafetyscore', 'desc');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: ValoraSpacing.lg),
+          Text('Context Scores (0-100)', style: ValoraTypography.titleMedium),
+          const SizedBox(height: ValoraSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: ValoraTextField(
+                  controller: _minCompositeScoreController,
+                  label: 'Min Composite',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+              ),
+              const SizedBox(width: ValoraSpacing.md),
+              Expanded(
+                child: ValoraTextField(
+                  controller: _minSafetyScoreController,
+                  label: 'Min Safety',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
               ),
             ],
           ),

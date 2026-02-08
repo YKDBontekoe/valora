@@ -60,6 +60,14 @@ public static class DependencyInjection
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+        services.AddHttpClient<IDemographicsClient, CbsDemographicsClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
 
         return services;

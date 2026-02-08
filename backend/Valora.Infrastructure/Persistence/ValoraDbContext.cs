@@ -62,6 +62,8 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.Bedrooms);
             entity.HasIndex(e => e.LivingAreaM2);
             entity.HasIndex(e => e.LastFundaFetchUtc);
+            entity.HasIndex(e => e.ContextCompositeScore);
+            entity.HasIndex(e => e.ContextSafetyScore);
 
             // Composite indexes for common filters
             entity.HasIndex(e => new { e.City, e.Price });
@@ -132,6 +134,19 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
                 .Metadata.SetValueComparer(stringListComparer);
+
+            // Phase 5: Context Report JSONB
+            var contextReportComparer = new ValueComparer<Valora.Domain.Models.ContextReportModel>(
+                (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
+                c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
+                c => c == null ? null : JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(JsonHelper.Serialize(c))!);
+
+            entity.Property(e => e.ContextReport)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(v))
+                .Metadata.SetValueComparer(contextReportComparer);
         });
 
         modelBuilder.Entity<PriceHistory>(entity =>
