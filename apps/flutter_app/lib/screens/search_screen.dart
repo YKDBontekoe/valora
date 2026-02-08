@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../core/formatters/currency_formatter.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -173,7 +174,9 @@ class _SearchScreenState extends State<SearchScreen> {
     String? currentSortBy,
     String? currentSortOrder,
   ) {
-    final isSelected = currentSortBy == sortBy && currentSortOrder == sortOrder;
+    final effectiveSortBy = currentSortBy ?? 'date';
+    final effectiveSortOrder = currentSortOrder ?? 'desc';
+    final isSelected = effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
 
     return ListTile(
       title: Text(
@@ -330,7 +333,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
                                         label:
-                                            'Price: €${provider.minPrice?.toInt() ?? 0} - ${provider.maxPrice != null ? '€${provider.maxPrice!.toInt()}' : 'Any'}',
+                                            'Price: ${provider.minPrice != null ? CurrencyFormatter.formatEur(provider.minPrice!) : CurrencyFormatter.formatEur(0)} - ${provider.maxPrice != null ? CurrencyFormatter.formatEur(provider.maxPrice!) : 'Any'}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
                                         onDeleted: () => provider.clearPriceFilter().catchError((_) {}),

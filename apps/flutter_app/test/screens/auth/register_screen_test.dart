@@ -58,19 +58,18 @@ void main() {
     expect(find.byType(AutofillGroup), findsOneWidget);
 
     // Verify Email field hints
-    final emailFieldFinder = find.descendant(
-      of: find.widgetWithText(TextFormField, 'Email'),
-      matching: find.byType(TextField),
+    final emailFieldFinder = find.widgetWithText(
+      TextField,
+      'hello@example.com',
     );
     expect(emailFieldFinder, findsOneWidget);
     final emailTextField = tester.widget<TextField>(emailFieldFinder);
     expect(emailTextField.autofillHints, contains(AutofillHints.email));
 
     // Verify Password field hints
-    final passwordFieldFinder = find.descendant(
-      of: find.widgetWithText(TextFormField, 'Password'),
-      matching: find.byType(TextField),
-    );
+    final passwordFieldFinder = find
+        .widgetWithText(TextField, '••••••••')
+        .first;
     expect(passwordFieldFinder, findsOneWidget);
     final passwordTextField = tester.widget<TextField>(passwordFieldFinder);
     expect(
@@ -79,10 +78,9 @@ void main() {
     );
 
     // Verify Confirm Password field hints
-    final confirmPasswordFieldFinder = find.descendant(
-      of: find.widgetWithText(TextFormField, 'Confirm Password'),
-      matching: find.byType(TextField),
-    );
+    final confirmPasswordFieldFinder = find
+        .widgetWithText(TextField, '••••••••')
+        .last;
     expect(confirmPasswordFieldFinder, findsOneWidget);
     final confirmPasswordTextField = tester.widget<TextField>(
       confirmPasswordFieldFinder,
@@ -91,5 +89,39 @@ void main() {
       confirmPasswordTextField.autofillHints,
       contains(AutofillHints.newPassword),
     );
+  });
+
+  testWidgets('RegisterScreen toggles password visibility', (
+    WidgetTester tester,
+  ) async {
+    final authProvider = MockAuthProvider();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<AuthProvider>.value(
+          value: authProvider,
+          child: const RegisterScreen(),
+        ),
+      ),
+    );
+
+    final Finder passwordTextFields = find.widgetWithText(
+      TextField,
+      '••••••••',
+    );
+    expect(passwordTextFields, findsNWidgets(2));
+
+    final TextField passwordFieldBefore = tester.widget<TextField>(
+      passwordTextFields.first,
+    );
+    expect(passwordFieldBefore.obscureText, isTrue);
+
+    await tester.tap(find.byIcon(Icons.visibility_off_outlined).first);
+    await tester.pumpAndSettle();
+
+    final TextField passwordFieldAfter = tester.widget<TextField>(
+      find.widgetWithText(TextField, '••••••••').first,
+    );
+    expect(passwordFieldAfter.obscureText, isFalse);
   });
 }

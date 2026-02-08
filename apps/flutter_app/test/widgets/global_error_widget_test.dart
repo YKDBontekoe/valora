@@ -78,6 +78,9 @@ void main() {
 
       // Verify we are on StartupScreen
       expect(find.byType(StartupScreen), findsOneWidget);
+
+      // Let StartupScreen minimum delay timer complete to avoid pending timers.
+      await tester.pump(const Duration(milliseconds: 600));
     });
 
     testWidgets('shows debug info in debug mode', (tester) async {

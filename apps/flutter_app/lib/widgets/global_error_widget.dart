@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_typography.dart';
 import '../screens/startup_screen.dart';
 
 class GlobalErrorWidget extends StatelessWidget {
@@ -10,36 +12,39 @@ class GlobalErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(ValoraSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
                 size: 64,
-                color: Colors.redAccent,
+                color: colorScheme.error,
               ),
-              const SizedBox(height: 24),
-              const Text(
+              const SizedBox(height: ValoraSpacing.lg),
+              Text(
                 "We're sorry, something went wrong",
-                style: TextStyle(
-                  fontSize: 24,
+                style: ValoraTypography.headlineSmall.copyWith(
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
-              const Text(
+              const SizedBox(height: ValoraSpacing.sm),
+              Text(
                 'Please restart the application. If the problem persists, contact support.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: ValoraTypography.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: ValoraSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -54,16 +59,8 @@ class GlobalErrorWidget extends StatelessWidget {
                     },
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('Restart'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: ValoraSpacing.md),
                   if (kDebugMode)
                     OutlinedButton.icon(
                       onPressed: () async {
@@ -91,8 +88,8 @@ class GlobalErrorWidget extends StatelessWidget {
                       icon: const Icon(Icons.copy_rounded),
                       label: const Text('Copy Error'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
-                        side: const BorderSide(color: Colors.redAccent),
+                        foregroundColor: colorScheme.error,
+                        side: BorderSide(color: colorScheme.error),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -101,24 +98,24 @@ class GlobalErrorWidget extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: ValoraSpacing.xl),
               if (kDebugMode) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                    border: Border.all(color: colorScheme.outlineVariant),
                   ),
                   height: 200,
                   width: double.infinity,
                   child: SingleChildScrollView(
                     child: Text(
                       details.exception.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Courier',
                         fontSize: 12,
-                        color: Colors.red,
+                        color: colorScheme.error,
                       ),
                     ),
                   ),

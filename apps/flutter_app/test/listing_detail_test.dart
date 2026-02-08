@@ -52,8 +52,8 @@ void main() {
     // Verify city and postal code
     expect(find.text('Test City 1234 AB'), findsOneWidget);
 
-    // Verify price (assuming ValoraPrice formatting '€ 500.000')
-    expect(find.textContaining('€ 500.000'), findsOneWidget);
+    // Verify price with centralized euro formatter
+    expect(find.textContaining('€500.000'), findsOneWidget);
 
     // Verify specs
     expect(find.text('Bedrooms'), findsOneWidget);

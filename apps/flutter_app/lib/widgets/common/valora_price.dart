@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/formatters/currency_formatter.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
 
@@ -21,8 +22,7 @@ class ValoraPrice extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? ValoraColors.priceTagDark : ValoraColors.priceTag;
 
-    final formattedPrice =
-        '€ ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+    final formattedPrice = CurrencyFormatter.formatEur(price);
 
     TextStyle style;
     switch (size) {
