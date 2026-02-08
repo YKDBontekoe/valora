@@ -254,6 +254,8 @@ class ApiService {
         );
       case 404:
         throw NotFoundException('Resource not found');
+      case 499:
+        throw NetworkException('Request was cancelled.');
       case 500:
       case 502:
       case 503:

@@ -253,19 +253,8 @@ api.MapPost("/context/report", async (
         return Results.BadRequest(new { error = "Input is required" });
     }
 
-    try
-    {
-        var report = await contextReportService.BuildAsync(request, ct);
-        return Results.Ok(report);
-    }
-    catch (ValidationException ex)
-    {
-        return Results.BadRequest(new
-        {
-            error = "Validation failed",
-            errors = ex.Errors
-        });
-    }
+    var report = await contextReportService.BuildAsync(request, ct);
+    return Results.Ok(report);
 }).RequireAuthorization();
 
 // AI Chat Endpoint
@@ -279,16 +268,8 @@ api.MapPost("/ai/chat", async (
         return Results.BadRequest(new { error = "Prompt is required" });
     }
 
-    try
-    {
-        var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
-        return Results.Ok(new { response });
-    }
-    catch (Exception ex)
-    {
-        // Log error
-        return Results.Problem(detail: ex.Message, statusCode: 500);
-    }
+    var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
+    return Results.Ok(new { response });
 }).RequireAuthorization();
 
 app.Run();

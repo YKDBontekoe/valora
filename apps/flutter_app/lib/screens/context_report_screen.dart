@@ -6,6 +6,7 @@ import '../core/theme/valora_typography.dart';
 import '../models/context_report.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/valora_widgets.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key});
@@ -86,10 +87,15 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                     label: Text(provider.isLoading ? 'Generating...' : 'Generate Report'),
                   ),
                   if (provider.error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      provider.error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    const SizedBox(height: 24),
+                    ValoraEmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Report Generation Failed',
+                      subtitle: provider.error,
+                      action: ValoraButton(
+                        label: 'Retry',
+                        onPressed: () => provider.generate(_inputController.text),
+                      ),
                     ),
                   ],
                   if (provider.report != null) ...[

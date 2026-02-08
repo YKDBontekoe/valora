@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 
+import '../core/exceptions/app_exceptions.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../services/api_service.dart';
@@ -39,6 +40,15 @@ class HomeListingsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   Object? get error => _error;
+
+  String? get errorMessage {
+    if (_error == null) return null;
+    if (_error is AppException) {
+      return (_error as AppException).message;
+    }
+    return 'An unexpected error occurred. Please try again.';
+  }
+
   bool get hasNextPage => _hasNextPage;
   String get searchTerm => _searchTerm;
   double? get minPrice => _minPrice;
