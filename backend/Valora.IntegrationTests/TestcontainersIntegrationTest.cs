@@ -68,6 +68,7 @@ public class TestcontainersIntegrationTest : IAsyncLifetime
     public virtual Task DisposeAsync()
     {
         _scope?.Dispose();
+        Client?.Dispose();
         return Task.CompletedTask;
     }
 

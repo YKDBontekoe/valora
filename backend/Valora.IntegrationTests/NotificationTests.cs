@@ -34,9 +34,8 @@ public class NotificationTests : TestcontainersIntegrationTest
     public async Task CreateNotification_And_GetNotifications_ReturnsNotification()
     {
         // Act
-        // Use the test endpoint to create a notification
-        var createResponse = await Client.PostAsync("/api/notifications/test", null);
-        createResponse.EnsureSuccessStatusCode();
+        // Use helper to create a notification
+        await CreateNotificationInDbAsync("Welcome to Notifications!");
 
         var response = await Client.GetAsync("/api/notifications?unreadOnly=false&limit=50");
 
@@ -113,7 +112,8 @@ public class NotificationTests : TestcontainersIntegrationTest
         // Verify via DB for direct side-effect check
         DbContext.ChangeTracker.Clear();
         var updatedNotification = await DbContext.Notifications.FindAsync(notification.Id);
-        Assert.True(updatedNotification!.IsRead);
+        Assert.NotNull(updatedNotification);
+        Assert.True(updatedNotification.IsRead);
     }
 
     [Fact]
@@ -131,7 +131,8 @@ public class NotificationTests : TestcontainersIntegrationTest
 
         var response = await Client.GetAsync("/api/notifications/unread-count");
         var result = await response.Content.ReadFromJsonAsync<UnreadCountResponse>();
-        Assert.Equal(0, result!.Count);
+        Assert.NotNull(result);
+        Assert.Equal(0, result.Count);
     }
 
     private async Task<Notification> CreateNotificationInDbAsync(string title)
