@@ -230,6 +230,10 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
     });
 }).RequireAuthorization();
 
+/// <summary>
+/// Looks up property details from PDOK by ID and enriches with neighborhood analytics.
+/// Requires Authentication.
+/// </summary>
 api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(id)) return Results.BadRequest("ID is required");
@@ -296,26 +300,7 @@ api.MapPost("/listings/{id:guid}/enrich", async (
         var reportDto = await contextReportService.BuildAsync(request, ct);
 
         // ...and map it to the Domain model for storage
-        // Note: In a real app we'd use AutoMapper, but manual mapping is fine here given the structure match
-        var contextReportModel = new Valora.Domain.Models.ContextReportModel(
-            new Valora.Domain.Models.ResolvedLocationModel(
-                reportDto.Location.Query, reportDto.Location.DisplayAddress,
-                reportDto.Location.Latitude, reportDto.Location.Longitude,
-                reportDto.Location.RdX, reportDto.Location.RdY,
-                reportDto.Location.MunicipalityCode, reportDto.Location.MunicipalityName,
-                reportDto.Location.DistrictCode, reportDto.Location.DistrictName,
-                reportDto.Location.NeighborhoodCode, reportDto.Location.NeighborhoodName,
-                reportDto.Location.PostalCode),
-            reportDto.SocialMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.CrimeMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.DemographicsMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.AmenityMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.EnvironmentMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.CompositeScore,
-            reportDto.CategoryScores.ToDictionary(k => k.Key, k => k.Value),
-            reportDto.Sources.Select(s => new Valora.Domain.Models.SourceAttributionModel(s.Source, s.Url, s.License, s.RetrievedAtUtc)).ToList(),
-            reportDto.Warnings.ToList()
-        );
+        var contextReportModel = ListingMapper.MapToDomain(reportDto);
 
         // 2. Update Entity
         listing.ContextReport = contextReportModel;

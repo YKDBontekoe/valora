@@ -397,38 +397,54 @@ class _SearchScreenState extends State<SearchScreen> {
                               },
                               onSelected: (suggestion) async {
                                 _debounce?.cancel();
+                                
+                                // Temporarily remove listener to avoid triggering _onSearchChanged
+                                _searchController.removeListener(_onSearchChanged);
                                 _searchController.text = suggestion.displayName;
+                                _searchController.addListener(_onSearchChanged);
 
                                 // If it is a specific address (bucket 'adres'), lookup directly
                                 if (suggestion.type == 'adres') {
+                                  // Show loading indicator
+                                  if (!mounted) return;
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => const Center(
+                                      child: ValoraLoadingIndicator(message: 'Loading property details...'),
+                                    ),
+                                  );
+
                                   try {
                                     final listing = await context.read<ApiService>().getListingFromPdok(suggestion.id);
-                                    if (listing != null && context.mounted) {
+                                    
+                                    if (!mounted) return;
+                                    Navigator.pop(context); // Remove loading indicator
+
+                                    if (listing != null) {
                                        Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) => ListingDetailScreen(listing: listing),
                                         ),
                                       );
-                                    } else if (context.mounted) {
+                                    } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Could not load property details')),
                                       );
                                     }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error: $e')),
-                                      );
-                                    }
+                                  } catch (e, stack) {
+                                    if (!mounted) return;
+                                    Navigator.pop(context); // Remove loading indicator
+                                    
+                                    debugPrint('Error loading PDOK listing: $e\n$stack');
+                                    
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Something went wrong. Please try again.')),
+                                    );
                                   }
                                 } 
-                                // Otherwise (city, street, etc), just fall back to existing search behavior (if we want to keep it for browsing)
-                                // or maybe just focus on address lookup as requested? 
-                                // The user said "replace the listing with public dutch goverment data", 
-                                // implying the old "browse all listings" might be less relevant or empty.
-                                // But let's keep the fallback for 'woonplaats' to show "No results" or whatever, 
-                                // or if we want to implement a "search by city" later using PDOK + something else.
+                                // Otherwise (city, street, etc), just fall back to existing search behavior
                                 else {
                                   if (suggestion.type == 'woonplaats') {
                                     _searchProvider!.setCity(suggestion.displayName);

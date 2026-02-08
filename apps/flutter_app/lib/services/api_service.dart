@@ -156,6 +156,8 @@ class ApiService {
         response,
         (body) => _runner(_parseListing, body),
       );
+    } on NotFoundException {
+      return null;
     } catch (e) {
       throw _handleException(e, uri);
     }

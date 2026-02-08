@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/context_report.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
-import '../widgets/report/report_widgets.dart';
 import '../widgets/report/context_report_view.dart';
 
 class ContextReportScreen extends StatefulWidget {

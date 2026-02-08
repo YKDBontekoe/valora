@@ -128,6 +128,9 @@ class ListingDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
+    final contextReport = listing.contextReport != null
+        ? ContextReport.fromJson(listing.contextReport!)
+        : null;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -181,7 +184,7 @@ class ListingDetailScreen extends StatelessWidget {
                           _buildTechnicalDetails(context, colorScheme),
                           const SizedBox(height: ValoraSpacing.xl),
 
-                          if (listing.contextReport != null) ...[
+                          if (contextReport != null) ...[
                              Text(
                               'Neighborhood Analytics',
                               style: ValoraTypography.titleLarge.copyWith(
@@ -191,7 +194,7 @@ class ListingDetailScreen extends StatelessWidget {
                              ),
                              const SizedBox(height: ValoraSpacing.md),
                              ContextReportView(
-                               report: ContextReport.fromJson(listing.contextReport!),
+                               report: contextReport,
                                showHeader: false,
                              ),
                              const SizedBox(height: ValoraSpacing.xl),
@@ -509,21 +512,24 @@ class ListingDetailScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (listing.price != null)
-          ValoraPrice(price: listing.price!, size: ValoraPriceSize.large)
-        else
-           Text(
-            'Check Report',
-             style: ValoraTypography.headlineMedium.copyWith(
-               color: colorScheme.primary,
-               fontWeight: FontWeight.bold,
-             ),
-           ),
-        if (listing.status != null)
+        Expanded(
+          child: listing.price != null
+              ? ValoraPrice(price: listing.price!, size: ValoraPriceSize.large)
+              : Text(
+                  'Check Report',
+                  style: ValoraTypography.headlineMedium.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+        if (listing.status != null) ...[
+          const SizedBox(width: ValoraSpacing.md),
           ValoraBadge(
             label: listing.status!.toUpperCase(),
             color: _getStatusColor(listing.status!),
           ),
+        ],
       ],
     );
   }

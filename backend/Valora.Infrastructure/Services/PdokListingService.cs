@@ -1,4 +1,3 @@
-
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -6,8 +5,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
-using Valora.Infrastructure.Enrichment; // For ContextEnrichmentOptions
+using Valora.Application.Enrichment;
 
 namespace Valora.Infrastructure.Services;
 
@@ -44,7 +44,8 @@ public class PdokListingService : IPdokListingService
         try
         {
             // 1. Lookup address details
-            var lookupUrl = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/lookup?id={pdokId}&fl=*";
+            var encodedId = Uri.EscapeDataString(pdokId);
+            var lookupUrl = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/lookup?id={encodedId}&fl=*";
             var response = await _httpClient.GetFromJsonAsync<JsonElement>(lookupUrl, cancellationToken);
             
             if (!response.TryGetProperty("response", out var responseObj) || 
@@ -58,10 +59,6 @@ public class PdokListingService : IPdokListingService
 
             // 2. Extract Basic Info
             var address = GetString(doc, "weergavenaam");
-            var street = GetString(doc, "straatnaam");
-            var number = GetString(doc, "huisnummer");
-            // var letter = GetString(doc, "huisletter"); 
-            // var addition = GetString(doc, "huisnummertoevoeging");
             var city = GetString(doc, "woonplaatsnaam");
             var postcode = GetString(doc, "postcode");
             var lat = TryParseCoordinate(GetString(doc, "centroide_ll"), true);
@@ -89,35 +86,17 @@ public class PdokListingService : IPdokListingService
                     if (reportDto.CategoryScores.TryGetValue("Safety", out var sScore)) safetyScore = sScore;
 
                     // Map DTO to Domain Model
-                     contextReport = new Valora.Domain.Models.ContextReportModel(
-                        new Valora.Domain.Models.ResolvedLocationModel(
-                            reportDto.Location.Query, reportDto.Location.DisplayAddress,
-                            reportDto.Location.Latitude, reportDto.Location.Longitude,
-                            reportDto.Location.RdX, reportDto.Location.RdY,
-                            reportDto.Location.MunicipalityCode, reportDto.Location.MunicipalityName,
-                            reportDto.Location.DistrictCode, reportDto.Location.DistrictName,
-                            reportDto.Location.NeighborhoodCode, reportDto.Location.NeighborhoodName,
-                            reportDto.Location.PostalCode),
-                        reportDto.SocialMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-                        reportDto.CrimeMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-                        reportDto.DemographicsMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-                        reportDto.AmenityMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-                        reportDto.EnvironmentMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-                        reportDto.CompositeScore,
-                        reportDto.CategoryScores.ToDictionary(k => k.Key, k => k.Value),
-                        reportDto.Sources.Select(s => new Valora.Domain.Models.SourceAttributionModel(s.Source, s.Url, s.License, s.RetrievedAtUtc)).ToList(),
-                        reportDto.Warnings.ToList()
-                    );
+                    contextReport = ListingMapper.MapToDomain(reportDto);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to fetch context report for PDOK listing: {Address}", address);
+                    _logger.LogWarning(ex, "Failed to fetch context report for PDOK listing: {PdokId}", pdokId);
                 }
             }
 
             // 5. Map to ListingDto
             var listing = new ListingDto(
-                Id: Guid.NewGuid(), 
+                Id: GenerateStableId(pdokId), 
                 FundaId: pdokId, // Store PDOK ID here for reference
                 Address: address ?? "Unknown Address",
                 City: city,
@@ -133,7 +112,7 @@ public class PdokListingService : IPdokListingService
                 ImageUrl: null, 
                 ListedDate: DateTime.UtcNow,
                 CreatedAt: DateTime.UtcNow,
-                Description: $"Built in {yearBuilt}. Usage: {usage}.",
+                Description: BuildDescription(yearBuilt, usage),
                 EnergyLabel: null,
                 YearBuilt: yearBuilt,
                 ImageUrls: new List<string>(),
@@ -173,14 +152,30 @@ public class PdokListingService : IPdokListingService
                 ContextReport: contextReport
             );
 
-            _cache.Set(cacheKey, listing, TimeSpan.FromMinutes(60));
+            _cache.Set(cacheKey, listing, TimeSpan.FromMinutes(_options.PdokListingCacheMinutes));
             return listing;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to fetch PDOK listing details for {Id}", pdokId);
-            return null;
+            throw;
         }
+    }
+
+    private static string? BuildDescription(int? yearBuilt, string? usage)
+    {
+        var parts = new List<string>();
+        if (yearBuilt.HasValue)
+        {
+            parts.Add($"Built in {yearBuilt}");
+        }
+        if (!string.IsNullOrWhiteSpace(usage))
+        {
+            parts.Add($"Usage: {usage}");
+        }
+
+        if (parts.Count == 0) return null;
+        return string.Join(". ", parts) + ".";
     }
 
     private string? GetString(JsonElement doc, string key)
@@ -212,5 +207,12 @@ public class PdokListingService : IPdokListingService
             return coord;
         }
         return null;
+    }
+
+    private static Guid GenerateStableId(string input)
+    {
+        using var md5 = System.Security.Cryptography.MD5.Create();
+        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
     }
 }

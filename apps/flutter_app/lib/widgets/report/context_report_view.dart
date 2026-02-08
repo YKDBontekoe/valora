@@ -89,13 +89,15 @@ class ContextReportView extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             // Radar chart
-            if (report.categoryScores.isNotEmpty)
+            if (report.categoryScores.isNotEmpty) ...[
+              const SizedBox(width: 16),
               Expanded(
                 child: CategoryRadar(
                   categoryScores: report.categoryScores,
                   size: 160,
                 ),
               ),
+            ],
           ],
         ),
         const SizedBox(height: 24),

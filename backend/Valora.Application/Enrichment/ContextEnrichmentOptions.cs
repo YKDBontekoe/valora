@@ -11,4 +11,5 @@ public class ContextEnrichmentOptions
     public int AmenitiesCacheMinutes { get; set; } = 360;
     public int AirQualityCacheMinutes { get; set; } = 30;
     public int ReportCacheMinutes { get; set; } = 60;
+    public int PdokListingCacheMinutes { get; set; } = 60;
 }
