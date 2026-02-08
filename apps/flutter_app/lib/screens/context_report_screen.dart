@@ -112,26 +112,31 @@ class _InputForm extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         // Search field
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: 'Enter address (e.g. Damrak 1 Amsterdam)',
-            filled: true,
-            fillColor: theme.colorScheme.surfaceContainerLow,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-            prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear_rounded),
-                    onPressed: () => controller.clear(),
-                  )
-                : null,
-          ),
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => provider.generate(controller.text),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            return TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: 'Enter address (e.g. Damrak 1 Amsterdam)',
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerLow,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: value.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded),
+                        onPressed: () => controller.clear(),
+                      )
+                    : null,
+              ),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => provider.generate(controller.text),
+            );
+          },
         ),
         const SizedBox(height: 20),
         // Radius slider
@@ -281,7 +286,9 @@ class _ReportContent extends StatelessWidget {
               if (report.location.neighborhoodName != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  '${report.location.neighborhoodName}, ${report.location.municipalityName ?? ''}',
+                  [report.location.neighborhoodName, report.location.municipalityName]
+                      .where((s) => s != null && s.isNotEmpty)
+                      .join(', '),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -421,7 +428,6 @@ class _ReportContent extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   title: Text(source.source),
                   subtitle: Text('License: ${source.license}'),
-                  trailing: const Icon(Icons.open_in_new_rounded, size: 18),
                 ),
               )
               .toList(),

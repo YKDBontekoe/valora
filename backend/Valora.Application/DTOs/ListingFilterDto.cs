@@ -16,10 +16,10 @@ public class ListingFilterDto
     public int? MaxLivingArea { get; set; }
 
     // Phase 5: Context Filters
-    [Range(0, 10)]
+    [Range(0, 100)]
     public double? MinSafetyScore { get; set; }
 
-    [Range(0, 10)]
+    [Range(0, 100)]
     public double? MinCompositeScore { get; set; }
 
     [RegularExpression("(?i)^(Price|Date|LivingArea|City|ContextCompositeScore|ContextSafetyScore)$", ErrorMessage = "Invalid SortBy value.")]

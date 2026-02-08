@@ -78,16 +78,6 @@ class ValoraListingCard extends StatelessWidget {
                     icon: Icons.insights,
                   ),
                 ),
-              if (listing.contextCompositeScore != null)
-                Positioned(
-                  bottom: ValoraSpacing.sm,
-                  right: ValoraSpacing.sm,
-                  child: ValoraBadge(
-                    label: listing.contextCompositeScore!.toStringAsFixed(1),
-                    color: _getScoreColor(listing.contextCompositeScore!),
-                    icon: Icons.insights,
-                  ),
-                ),
             ],
           ),
 

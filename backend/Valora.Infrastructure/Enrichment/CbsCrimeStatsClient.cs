@@ -10,7 +10,7 @@ using Valora.Application.Enrichment;
 namespace Valora.Infrastructure.Enrichment;
 
 /// <summary>
-/// Fetches crime statistics from CBS Open Data table 47018NED (Geregistreerde misdrijven; soort misdrijf, regio).
+/// Fetches crime statistics from CBS Open Data table 83765NED (Kerncijfers wijken en buurten).
 /// </summary>
 public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
 {
@@ -127,19 +127,20 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
     private static IEnumerable<string> BuildCandidates(ResolvedLocationDto location)
     {
         // CBS crime data uses GM/WK/BU codes like neighborhood stats
+        // Codes must be padded to 10 characters to match CBS OData format
         if (!string.IsNullOrWhiteSpace(location.NeighborhoodCode))
         {
-            yield return location.NeighborhoodCode.Trim();
+            yield return location.NeighborhoodCode.Trim().PadRight(10);
         }
 
         if (!string.IsNullOrWhiteSpace(location.DistrictCode))
         {
-            yield return location.DistrictCode.Trim();
+            yield return location.DistrictCode.Trim().PadRight(10);
         }
 
         if (!string.IsNullOrWhiteSpace(location.MunicipalityCode))
         {
-            yield return location.MunicipalityCode.Trim();
+            yield return location.MunicipalityCode.Trim().PadRight(10);
         }
     }
 

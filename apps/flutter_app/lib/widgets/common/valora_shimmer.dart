@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -26,7 +25,7 @@ class ValoraShimmer extends StatelessWidget {
         : ValoraColors.neutral100;
 
     // flutter_animate's shimmer is easier to use
-    final bool isTest = kDebugMode && Platform.environment.containsKey('FLUTTER_TEST');
+    const bool isTest = bool.fromEnvironment('FLUTTER_TEST');
 
     return Container(
           width: width,

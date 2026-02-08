@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,7 +14,7 @@ class ValoraLoadingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bool isTest = kDebugMode && Platform.environment.containsKey('FLUTTER_TEST');
+    const bool isTest = bool.fromEnvironment('FLUTTER_TEST');
 
     return Center(
       child: Column(

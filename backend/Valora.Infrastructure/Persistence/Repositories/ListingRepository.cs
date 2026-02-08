@@ -60,7 +60,6 @@ public class ListingRepository : IListingRepository
             // Infra
             l.FiberAvailable,
             // Status
-            // Status
             l.PublicationDate, l.IsSoldOrRented, l.Labels,
             // Context
             l.ContextCompositeScore, l.ContextSafetyScore, l.ContextReport

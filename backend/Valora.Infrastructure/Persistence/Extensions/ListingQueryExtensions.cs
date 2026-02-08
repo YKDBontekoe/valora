@@ -69,9 +69,9 @@ public static class ListingQueryExtensions
             ("city", "asc") => query.OrderBy(l => l.City),
             ("city", "desc") => query.OrderByDescending(l => l.City),
             ("contextcompositescore", "asc") => query.OrderBy(l => l.ContextCompositeScore),
-            ("contextcompositescore", "desc") => query.OrderByDescending(l => l.ContextCompositeScore),
+            ("contextcompositescore", "desc") => query.OrderByDescending(l => l.ContextCompositeScore.HasValue).ThenByDescending(l => l.ContextCompositeScore),
             ("contextsafetyscore", "asc") => query.OrderBy(l => l.ContextSafetyScore),
-            ("contextsafetyscore", "desc") => query.OrderByDescending(l => l.ContextSafetyScore),
+            ("contextsafetyscore", "desc") => query.OrderByDescending(l => l.ContextSafetyScore.HasValue).ThenByDescending(l => l.ContextSafetyScore),
             _ => query.OrderByDescending(l => l.ListedDate) // Default sort by date desc
         };
     }

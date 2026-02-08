@@ -366,13 +366,13 @@ public sealed class ContextReportService : IContextReportService
     private static double? ScoreLowIncome(double? lowIncomePercent)
     {
         if (!lowIncomePercent.HasValue) return null;
-        return Clamp(100 - (lowIncomePercent.Value * 8), 0, 100);
+        return Math.Clamp(100 - (lowIncomePercent.Value * 8), 0, 100);
     }
 
     private static double? ScoreWoz(double? wozKeur)
     {
         if (!wozKeur.HasValue) return null;
-        return Clamp((wozKeur.Value - 150) / 3, 0, 100);
+        return Math.Clamp((wozKeur.Value - 150) / 3, 0, 100);
     }
 
     private static double? ScoreTotalCrime(int? crimesPer1000)
@@ -432,13 +432,13 @@ public sealed class ContextReportService : IContextReportService
         if (demographics.AverageHouseholdSize.HasValue)
             score += (demographics.AverageHouseholdSize.Value - 2) * 15; // Larger households = more families
 
-        return Clamp(score, 0, 100);
+        return Math.Clamp(score, 0, 100);
     }
 
     private static double ScoreAmenityCount(AmenityStatsDto amenities)
     {
         var total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
-        return Clamp(total * 5, 0, 100);
+        return Math.Clamp(total * 5, 0, 100);
     }
 
     private static double? ScoreAmenityProximity(double? nearestDistanceMeters)
@@ -469,12 +469,5 @@ public sealed class ContextReportService : IContextReportService
             <= 35 => 25,
             _ => 10
         };
-    }
-
-    private static double Clamp(double value, double min, double max)
-    {
-        if (value < min) return min;
-        if (value > max) return max;
-        return value;
     }
 }

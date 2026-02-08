@@ -64,9 +64,13 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
   void didUpdateWidget(ValoraTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.focusNode != oldWidget.focusNode) {
-      oldWidget.focusNode?.removeListener(_handleFocusChange);
       if (oldWidget.focusNode == null) {
+        // We were using the internal node, dispose it
+        _focusNode.removeListener(_handleFocusChange);
         _focusNode.dispose();
+      } else {
+        // Remove listener from the old external node
+        oldWidget.focusNode!.removeListener(_handleFocusChange);
       }
       
       _focusNode = widget.focusNode ?? FocusNode();

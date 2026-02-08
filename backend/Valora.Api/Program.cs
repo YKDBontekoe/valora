@@ -266,7 +266,6 @@ api.MapPost("/context/report", async (
             errors = ex.Errors
         });
     }
-    }
 }).RequireAuthorization();
 
 api.MapPost("/listings/{id:guid}/enrich", async (
@@ -313,7 +312,7 @@ api.MapPost("/listings/{id:guid}/enrich", async (
         listing.ContextCompositeScore = reportDto.CompositeScore;
         
         if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
-        if (reportDto.CategoryScores.TryGetValue("Crime", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Crime" to "Safety" score
+        if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Safety" to "Safety" score
         if (reportDto.CategoryScores.TryGetValue("Demographics", out var demo)) { /* No specific column yet */ }
         if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
         if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
@@ -325,7 +324,9 @@ api.MapPost("/listings/{id:guid}/enrich", async (
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Failed to enrich listing: {ex.Message}");
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Failed to enrich listing {ListingId}", id);
+        return Results.Problem("Failed to enrich listing. Please try again later.");
     }
 
 }).RequireAuthorization();

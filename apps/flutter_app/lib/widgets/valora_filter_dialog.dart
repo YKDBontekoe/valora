@@ -100,6 +100,16 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     final minCompositeScore = double.tryParse(_minCompositeScoreController.text);
     final minSafetyScore = double.tryParse(_minSafetyScoreController.text);
 
+    if ((minCompositeScore != null && (minCompositeScore < 0 || minCompositeScore > 100)) ||
+        (minSafetyScore != null && (minSafetyScore < 0 || minSafetyScore > 100))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Score must be between 0 and 100'),
+        ),
+      );
+      return;
+    }
+
     if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -299,7 +309,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
             ],
           ),
           const SizedBox(height: ValoraSpacing.lg),
-          Text('Context Scores (0-10)', style: ValoraTypography.titleMedium),
+          Text('Context Scores (0-100)', style: ValoraTypography.titleMedium),
           const SizedBox(height: ValoraSpacing.sm),
           Row(
             children: [

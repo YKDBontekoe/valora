@@ -45,11 +45,29 @@ namespace Valora.Infrastructure.Migrations
                 table: "Listings",
                 type: "double precision",
                 nullable: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Listings_ContextCompositeScore",
+                table: "Listings",
+                column: "ContextCompositeScore");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Listings_ContextSafetyScore",
+                table: "Listings",
+                column: "ContextSafetyScore");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_Listings_ContextCompositeScore",
+                table: "Listings");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Listings_ContextSafetyScore",
+                table: "Listings");
+
             migrationBuilder.DropColumn(
                 name: "ContextAmenitiesScore",
                 table: "Listings");

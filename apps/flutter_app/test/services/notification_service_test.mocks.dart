@@ -3,14 +3,15 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
+import 'dart:async' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:valora_app/models/listing.dart' as _i6;
-import 'package:valora_app/models/listing_filter.dart' as _i5;
+import 'package:valora_app/models/context_report.dart' as _i3;
+import 'package:valora_app/models/listing.dart' as _i7;
+import 'package:valora_app/models/listing_filter.dart' as _i6;
 import 'package:valora_app/models/listing_response.dart' as _i2;
-import 'package:valora_app/models/notification.dart' as _i7;
-import 'package:valora_app/services/api_service.dart' as _i3;
+import 'package:valora_app/models/notification.dart' as _i8;
+import 'package:valora_app/services/api_service.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -33,45 +34,74 @@ class _FakeListingResponse_0 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
+class _FakeContextReport_1 extends _i1.SmartFake implements _i3.ContextReport {
+  _FakeContextReport_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ApiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockApiService extends _i1.Mock implements _i3.ApiService {
+class MockApiService extends _i1.Mock implements _i4.ApiService {
   MockApiService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<bool> healthCheck() =>
+  _i5.Future<bool> healthCheck() =>
       (super.noSuchMethod(
             Invocation.method(#healthCheck, []),
-            returnValue: _i4.Future<bool>.value(false),
+            returnValue: _i5.Future<bool>.value(false),
           )
-          as _i4.Future<bool>);
+          as _i5.Future<bool>);
 
   @override
-  _i4.Future<_i2.ListingResponse> getListings(_i5.ListingFilter? filter) =>
+  _i5.Future<_i2.ListingResponse> getListings(_i6.ListingFilter? filter) =>
       (super.noSuchMethod(
             Invocation.method(#getListings, [filter]),
-            returnValue: _i4.Future<_i2.ListingResponse>.value(
+            returnValue: _i5.Future<_i2.ListingResponse>.value(
               _FakeListingResponse_0(
                 this,
                 Invocation.method(#getListings, [filter]),
               ),
             ),
           )
-          as _i4.Future<_i2.ListingResponse>);
+          as _i5.Future<_i2.ListingResponse>);
 
   @override
-  _i4.Future<_i6.Listing?> getListing(String? id) =>
+  _i5.Future<_i7.Listing?> getListing(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getListing, [id]),
-            returnValue: _i4.Future<_i6.Listing?>.value(),
+            returnValue: _i5.Future<_i7.Listing?>.value(),
           )
-          as _i4.Future<_i6.Listing?>);
+          as _i5.Future<_i7.Listing?>);
 
   @override
-  _i4.Future<List<_i7.ValoraNotification>> getNotifications({
+  _i5.Future<_i3.ContextReport> getContextReport(
+    String? input, {
+    int? radiusMeters = 1000,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #getContextReport,
+              [input],
+              {#radiusMeters: radiusMeters},
+            ),
+            returnValue: _i5.Future<_i3.ContextReport>.value(
+              _FakeContextReport_1(
+                this,
+                Invocation.method(
+                  #getContextReport,
+                  [input],
+                  {#radiusMeters: radiusMeters},
+                ),
+              ),
+            ),
+          )
+          as _i5.Future<_i3.ContextReport>);
+
+  @override
+  _i5.Future<List<_i8.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
   }) =>
@@ -80,35 +110,35 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
               #unreadOnly: unreadOnly,
               #limit: limit,
             }),
-            returnValue: _i4.Future<List<_i7.ValoraNotification>>.value(
-              <_i7.ValoraNotification>[],
+            returnValue: _i5.Future<List<_i8.ValoraNotification>>.value(
+              <_i8.ValoraNotification>[],
             ),
           )
-          as _i4.Future<List<_i7.ValoraNotification>>);
+          as _i5.Future<List<_i8.ValoraNotification>>);
 
   @override
-  _i4.Future<int> getUnreadNotificationCount() =>
+  _i5.Future<int> getUnreadNotificationCount() =>
       (super.noSuchMethod(
             Invocation.method(#getUnreadNotificationCount, []),
-            returnValue: _i4.Future<int>.value(0),
+            returnValue: _i5.Future<int>.value(0),
           )
-          as _i4.Future<int>);
+          as _i5.Future<int>);
 
   @override
-  _i4.Future<void> markNotificationAsRead(String? id) =>
+  _i5.Future<void> markNotificationAsRead(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#markNotificationAsRead, [id]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<void> markAllNotificationsAsRead() =>
+  _i5.Future<void> markAllNotificationsAsRead() =>
       (super.noSuchMethod(
             Invocation.method(#markAllNotificationsAsRead, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 }

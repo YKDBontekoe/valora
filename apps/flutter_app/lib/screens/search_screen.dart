@@ -19,7 +19,8 @@ import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final PdokService? pdokService;
+  const SearchScreen({super.key, this.pdokService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -28,13 +29,16 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final PdokService _pdokService;
   Timer? _debounce;
 
   SearchListingsProvider? _searchProvider;
+  bool _ownsProvider = false;
 
   @override
   void initState() {
     super.initState();
+    _pdokService = widget.pdokService ?? PdokService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -45,9 +49,11 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       _searchProvider ??= context.read<SearchListingsProvider>();
     } catch (_) {
-      _searchProvider ??= SearchListingsProvider(
+      final created = SearchListingsProvider(
         apiService: context.read<ApiService>(),
       );
+      _searchProvider ??= created;
+      _ownsProvider = true;
     }
   }
 
@@ -56,7 +62,9 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.dispose();
     _scrollController.dispose();
     _debounce?.cancel();
-    _searchProvider?.dispose();
+    if (_ownsProvider) {
+      _searchProvider?.dispose();
+    }
     super.dispose();
   }
 
@@ -83,7 +91,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_debounce?.isActive ?? false) {
       _debounce!.cancel();
     }
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 750), () {
       _searchProvider!.refresh();
     });
   }
@@ -275,6 +283,21 @@ class _SearchScreenState extends State<SearchScreen> {
     return 'Price: $min - $max';
   }
 
+  String _sortChipLabel(String? sortBy, String? sortOrder) {
+    switch (sortBy) {
+      case 'price':
+        return 'Price: ${sortOrder == 'asc' ? 'Low to High' : 'High to Low'}';
+      case 'livingarea':
+        return 'Area: ${sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}';
+      case 'contextcompositescore':
+        return 'Composite';
+      case 'contextsafetyscore':
+        return 'Safety';
+      default:
+        return 'Sort';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -347,8 +370,9 @@ class _SearchScreenState extends State<SearchScreen> {
                             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                             child: TypeAheadField<PdokSuggestion>(
                               controller: _searchController,
+                              debounceDuration: const Duration(milliseconds: 400),
                               suggestionsCallback: (pattern) async {
-                                return await PdokService().search(pattern);
+                                return await _pdokService.search(pattern);
                               },
                               builder: (context, controller, focusNode) {
                                 return ValoraTextField(
@@ -358,23 +382,31 @@ class _SearchScreenState extends State<SearchScreen> {
                                   hint: 'City, address, or zip code...',
                                   prefixIcon: Icons.search_rounded,
                                   textInputAction: TextInputAction.search,
-                                  onSubmitted: (_) => _searchProvider!.refresh(),
+                                  onSubmitted: (_) {
+                                    _debounce?.cancel();
+                                    _searchProvider!.refresh();
+                                  },
                                 );
                               },
                               itemBuilder: (context, suggestion) {
                                 return ListTile(
                                   leading: const Icon(Icons.location_on_outlined),
-                                  title: Text(suggestion.weergavenaam),
+                                  title: Text(suggestion.displayName),
                                   subtitle: Text(suggestion.type),
                                 );
                               },
                               onSelected: (suggestion) {
-                                _searchController.text = suggestion.weergavenaam;
+                                _debounce?.cancel();
+                                // Temporarily remove listener to avoid triggering _onSearchChanged
+                                _searchController.removeListener(_onSearchChanged);
+                                _searchController.text = suggestion.displayName;
+                                _searchController.addListener(_onSearchChanged);
+
                                 if (suggestion.type == 'woonplaats') {
-                                  _searchProvider!.setCity(suggestion.weergavenaam);
+                                  _searchProvider!.setCity(suggestion.displayName);
                                   _searchController.clear();
                                 } else {
-                                  _searchProvider!.setQuery(suggestion.weergavenaam);
+                                  _searchProvider!.setQuery(suggestion.displayName);
                                 }
                                 _searchProvider!.refresh();
                               },
@@ -487,8 +519,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
                                         onDeleted: () => provider
-                                            .clearCompositeScoreFilter() // create this method
-                                            .catchError((_) {}),
+                                            .clearCompositeScoreFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Failed to clear composite score filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.minSafetyScore != null)
@@ -499,23 +537,21 @@ class _SearchScreenState extends State<SearchScreen> {
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
                                         onDeleted: () => provider
-                                            .clearSafetyScoreFilter() // create this method
-                                            .catchError((_) {}),
+                                            .clearSafetyScoreFilter()
+                                            .catchError((_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Failed to clear safety score filter')),
+                                            );
+                                          }
+                                        }),
                                       ),
                                     ),
                                   if (provider.isSortActive)
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label: provider.sortBy == 'price'
-                                            ? 'Price: ${provider.sortOrder == 'asc' ? 'Low to High' : 'High to Low'}'
-                                            : (provider.sortBy == 'livingarea'
-                                                ? 'Area: ${provider.sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}'
-                                                : (provider.sortBy == 'contextcompositescore'
-                                                    ? 'Composite'
-                                                    : (provider.sortBy == 'contextsafetyscore'
-                                                        ? 'Safety'
-                                                        : 'Sort'))),
+                                        label: _sortChipLabel(provider.sortBy, provider.sortOrder),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
                                         onDeleted: () => provider

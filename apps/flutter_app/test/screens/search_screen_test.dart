@@ -14,7 +14,9 @@ import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
-@GenerateMocks([ApiService, FavoritesProvider])
+import 'package:valora_app/services/pdok_service.dart';
+
+@GenerateMocks([ApiService, FavoritesProvider, PdokService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
@@ -140,14 +142,19 @@ const List<int> _transparentImage = <int>[
 void main() {
   late MockApiService mockApiService;
   late MockFavoritesProvider mockFavoritesProvider;
+  late MockPdokService mockPdokService;
 
   setUp(() {
     mockApiService = MockApiService();
     mockFavoritesProvider = MockFavoritesProvider();
+    mockPdokService = MockPdokService();
 
     // Default favorites provider behavior
     when(mockFavoritesProvider.favorites).thenReturn([]);
     when(mockFavoritesProvider.isFavorite(any)).thenReturn(false);
+
+    // Default PDOK service behavior
+    when(mockPdokService.search(any)).thenAnswer((_) async => []);
 
     // Install HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -165,7 +172,7 @@ void main() {
             value: searchProvider,
           ),
       ],
-      child: const MaterialApp(home: SearchScreen()),
+      child: MaterialApp(home: SearchScreen(pdokService: mockPdokService)),
     );
   }
 
@@ -173,7 +180,9 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100)); // Wait for entry animations
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100)); // Wait for entry animations
 
     expect(find.text('Search'), findsOneWidget);
     expect(find.text('Find your home'), findsOneWidget);
@@ -208,7 +217,7 @@ void main() {
 
     // Enter text to load listings
     await tester.enterText(find.byType(TextField), 'Test');
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pump(); // Start fetching
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
@@ -216,7 +225,7 @@ void main() {
 
     // Clear text
     await tester.enterText(find.byType(TextField), '');
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pump(); // Clear state
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
@@ -252,7 +261,7 @@ void main() {
     await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
 
     await tester.enterText(find.byType(TextField), 'Test');
-    await tester.pump(const Duration(milliseconds: 600)); // Debounce
+    await tester.pump(const Duration(milliseconds: 800)); // Debounce
     await tester.pump(); // Start fetch
     await tester.pump(const Duration(milliseconds: 500)); // Wait for animations
 
@@ -320,7 +329,7 @@ void main() {
     await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
 
     await tester.enterText(find.byType(TextField), 'Error');
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pump(); // Start fetch
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
@@ -369,7 +378,7 @@ void main() {
 
     // Load first page
     await tester.enterText(find.byType(TextField), 'Test');
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pump(); // Fetch
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
@@ -391,9 +400,11 @@ void main() {
     expect(find.text('Failed to load more items'), findsOneWidget);
   });
 
-  testWidgets('SearchScreen clears filters via Clear button', (
+  testWidgets('SearchScreen clears filters via provider (manual clear call)', (
     WidgetTester tester,
   ) async {
+    // Note: This test directly calls provider methods because UI interaction for chips/clear buttons
+    // can be flaky in widget tests due to animation timings.
     when(mockApiService.getListings(any)).thenAnswer((_) async {
       return ListingResponse(
         items: [],
@@ -412,7 +423,7 @@ void main() {
 
     // Enter query to ensure API is called
     await tester.enterText(find.byType(TextField), 'test');
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pump();
 
     // Set a filter (e.g. city)
@@ -486,7 +497,7 @@ void main() {
 
     // Enter query
     await tester.enterText(find.byType(TextField), 'test');
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pump();
 
     // Pull down

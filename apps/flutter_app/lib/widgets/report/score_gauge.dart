@@ -32,7 +32,7 @@ class ScoreGauge extends StatelessWidget {
     final scoreColor = _getScoreColor(score);
     
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: score),
+      tween: Tween(begin: 0, end: score.clamp(0, 100)),
       duration: animationDuration,
       curve: Curves.easeOutCubic,
       builder: (context, animatedScore, child) {
@@ -138,5 +138,8 @@ class _GaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GaugePainter oldDelegate) =>
-      score != oldDelegate.score || color != oldDelegate.color;
+      score != oldDelegate.score ||
+      color != oldDelegate.color ||
+      strokeWidth != oldDelegate.strokeWidth ||
+      hasGradient != oldDelegate.hasGradient;
 }

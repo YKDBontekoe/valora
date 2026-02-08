@@ -98,7 +98,7 @@ class _RadarPainter extends CustomPainter {
     final points = <Offset>[];
     for (int i = 0; i < count; i++) {
       final angle = startAngle + angleStep * i;
-      final value = (entries[i].value / 100) * progress;
+      final value = (entries[i].value / 100).clamp(0.0, 1.0) * progress;
       final radius = maxRadius * value;
       points.add(Offset(
         center.dx + radius * math.cos(angle),

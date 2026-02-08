@@ -82,13 +82,14 @@ class ApiService {
   }
 
   Future<bool> healthCheck() async {
+    final uri = Uri.parse('$baseUrl/health');
     try {
       final response = await _client
-          .get(Uri.parse('$baseUrl/health'), headers: _headers)
+          .get(uri, headers: _headers)
           .timeout(timeoutDuration);
       return response.statusCode == 200;
     } catch (e) {
-      developer.log('Health check failed: $e', name: 'ApiService');
+      developer.log('Health check failed for $uri: $e', name: 'ApiService');
       return false;
     }
   }
@@ -109,15 +110,18 @@ class ApiService {
         (body) => _runner(_parseListingResponse, body),
       );
     } catch (e) {
-      throw _handleException(e);
+      final uri = Uri.parse('$baseUrl/listings')
+          .replace(queryParameters: filter.toQueryParameters());
+      throw _handleException(e, uri);
     }
   }
 
   Future<Listing?> getListing(String id) async {
+    Uri? listingUri;
     try {
       final String sanitizedId = _sanitizeListingId(id);
       final Uri baseUri = Uri.parse(baseUrl);
-      final Uri listingUri = baseUri.replace(
+      listingUri = baseUri.replace(
         pathSegments: <String>[
           ...baseUri.pathSegments.where((segment) => segment.isNotEmpty),
           'listings',
@@ -127,7 +131,7 @@ class ApiService {
 
       final response = await _authenticatedRequest(
         (headers) =>
-            _client.get(listingUri, headers: headers).timeout(timeoutDuration),
+            _client.get(listingUri!, headers: headers).timeout(timeoutDuration),
       );
 
       return await _handleResponse(
@@ -135,7 +139,7 @@ class ApiService {
         (body) => _runner(_parseListing, body),
       );
     } catch (e) {
-      throw _handleException(e);
+      throw _handleException(e, listingUri);
     }
   }
 
@@ -143,8 +147,8 @@ class ApiService {
     String input, {
     int radiusMeters = 1000,
   }) async {
+    final uri = Uri.parse('$baseUrl/context/report');
     try {
-      final uri = Uri.parse('$baseUrl/context/report');
       final payload = json.encode(<String, dynamic>{
         'input': input,
         'radiusMeters': radiusMeters,
@@ -161,7 +165,7 @@ class ApiService {
         (body) => _runner(_parseContextReport, body),
       );
     } catch (e) {
-      throw _handleException(e);
+      throw _handleException(e, uri);
     }
   }
 
@@ -169,8 +173,9 @@ class ApiService {
     bool unreadOnly = false,
     int limit = 50,
   }) async {
+    Uri? uri;
     try {
-      final uri = Uri.parse('$baseUrl/notifications').replace(
+      uri = Uri.parse('$baseUrl/notifications').replace(
         queryParameters: {
           'unreadOnly': unreadOnly.toString(),
           'limit': limit.toString(),
@@ -179,7 +184,7 @@ class ApiService {
 
       final response = await _authenticatedRequest(
         (headers) =>
-            _client.get(uri, headers: headers).timeout(timeoutDuration),
+            _client.get(uri!, headers: headers).timeout(timeoutDuration),
       );
 
       return await _handleResponse(
@@ -187,13 +192,13 @@ class ApiService {
         (body) => _runner(_parseNotifications, body),
       );
     } catch (e) {
-      throw _handleException(e);
+      throw _handleException(e, uri);
     }
   }
 
   Future<int> getUnreadNotificationCount() async {
+    final uri = Uri.parse('$baseUrl/notifications/unread-count');
     try {
-      final uri = Uri.parse('$baseUrl/notifications/unread-count');
       final response = await _authenticatedRequest(
         (headers) =>
             _client.get(uri, headers: headers).timeout(timeoutDuration),
@@ -207,33 +212,33 @@ class ApiService {
         },
       );
     } catch (e) {
-      throw _handleException(e);
+      throw _handleException(e, uri);
     }
   }
 
   Future<void> markNotificationAsRead(String id) async {
+    final uri = Uri.parse('$baseUrl/notifications/$id/read');
     try {
-      final uri = Uri.parse('$baseUrl/notifications/$id/read');
       final response = await _authenticatedRequest(
         (headers) =>
             _client.post(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
     } catch (e) {
-      throw _handleException(e);
+      throw _handleException(e, uri);
     }
   }
 
   Future<void> markAllNotificationsAsRead() async {
+    final uri = Uri.parse('$baseUrl/notifications/read-all');
     try {
-      final uri = Uri.parse('$baseUrl/notifications/read-all');
       final response = await _authenticatedRequest(
         (headers) =>
             _client.post(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
     } catch (e) {
-      throw _handleException(e);
+      throw _handleException(e, uri);
     }
   }
 
@@ -268,17 +273,18 @@ class ApiService {
     }
   }
 
-  Exception _handleException(dynamic error) {
+  Exception _handleException(dynamic error, [Uri? uri]) {
     if (error is AppException) return error;
 
-    developer.log('Network Error: $error', name: 'ApiService');
+    final urlString = uri?.toString() ?? 'unknown URL';
+    developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
     if (error is SocketException) {
-      return NetworkException('No internet connection or server unreachable.');
+      return NetworkException('Server unreachable at $urlString. Please ensure the backend is running.');
     } else if (error is TimeoutException) {
-      return NetworkException('Server request timed out.');
+      return NetworkException('Request to $urlString timed out.');
     } else if (error is http.ClientException) {
-      return NetworkException('Connection failed. Please check your network.');
+      return NetworkException('Connection failed to $urlString. Please check your network.');
     } else if (error is FormatException) {
       return JsonParsingException();
     }
