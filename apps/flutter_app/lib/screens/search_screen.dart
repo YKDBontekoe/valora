@@ -395,24 +395,53 @@ class _SearchScreenState extends State<SearchScreen> {
                                   subtitle: Text(suggestion.type),
                                 );
                               },
-                              onSelected: (suggestion) {
+                              onSelected: (suggestion) async {
                                 _debounce?.cancel();
-                                // Temporarily remove listener to avoid triggering _onSearchChanged
-                                _searchController.removeListener(_onSearchChanged);
                                 _searchController.text = suggestion.displayName;
-                                _searchController.addListener(_onSearchChanged);
 
-                                if (suggestion.type == 'woonplaats') {
-                                  _searchProvider!.setCity(suggestion.displayName);
-                                  _searchController.clear();
-                                } else {
-                                  _searchProvider!.setQuery(suggestion.displayName);
+                                // If it is a specific address (bucket 'adres'), lookup directly
+                                if (suggestion.type == 'adres') {
+                                  try {
+                                    final listing = await context.read<ApiService>().getListingFromPdok(suggestion.id);
+                                    if (listing != null && context.mounted) {
+                                       Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ListingDetailScreen(listing: listing),
+                                        ),
+                                      );
+                                    } else if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Could not load property details')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Error: $e')),
+                                      );
+                                    }
+                                  }
+                                } 
+                                // Otherwise (city, street, etc), just fall back to existing search behavior (if we want to keep it for browsing)
+                                // or maybe just focus on address lookup as requested? 
+                                // The user said "replace the listing with public dutch goverment data", 
+                                // implying the old "browse all listings" might be less relevant or empty.
+                                // But let's keep the fallback for 'woonplaats' to show "No results" or whatever, 
+                                // or if we want to implement a "search by city" later using PDOK + something else.
+                                else {
+                                  if (suggestion.type == 'woonplaats') {
+                                    _searchProvider!.setCity(suggestion.displayName);
+                                    _searchController.clear();
+                                  } else {
+                                    _searchProvider!.setQuery(suggestion.displayName);
+                                  }
+                                  _searchProvider!.refresh();
                                 }
-                                _searchProvider!.refresh();
                               },
                               emptyBuilder: (context) => const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text('No address found'),
+                                padding: EdgeInsets.all(16.0),
+                                child: Text('No address found. Try entering a street and number.'),
                               ),
                             ),
                           ),

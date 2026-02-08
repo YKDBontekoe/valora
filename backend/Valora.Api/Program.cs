@@ -230,6 +230,16 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
     });
 }).RequireAuthorization();
 
+api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(id)) return Results.BadRequest("ID is required");
+    
+    var listing = await pdokService.GetListingDetailsAsync(id, ct);
+    if (listing is null) return Results.NotFound();
+
+    return Results.Ok(listing);
+}).RequireAuthorization();
+
 /// <summary>
 /// Retrieves detailed information for a specific listing by ID.
 /// Requires Authentication.

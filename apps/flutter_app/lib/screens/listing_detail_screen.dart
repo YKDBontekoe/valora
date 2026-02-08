@@ -12,6 +12,8 @@ import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_glass_container.dart';
+import '../models/context_report.dart';
+import '../widgets/report/context_report_view.dart';
 import 'gallery/full_screen_gallery.dart';
 
 class ListingDetailScreen extends StatelessWidget {
@@ -178,6 +180,22 @@ class ListingDetailScreen extends StatelessWidget {
                           // Technical Details
                           _buildTechnicalDetails(context, colorScheme),
                           const SizedBox(height: ValoraSpacing.xl),
+
+                          if (listing.contextReport != null) ...[
+                             Text(
+                              'Neighborhood Analytics',
+                              style: ValoraTypography.titleLarge.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                             ),
+                             const SizedBox(height: ValoraSpacing.md),
+                             ContextReportView(
+                               report: ContextReport.fromJson(listing.contextReport!),
+                               showHeader: false,
+                             ),
+                             const SizedBox(height: ValoraSpacing.xl),
+                          ],
 
                           if (listing.virtualTourUrl != null ||
                               listing.videoUrl != null ||
@@ -460,13 +478,27 @@ class ListingDetailScreen extends StatelessWidget {
         borderRadius: 0,
       );
     }
+    // If we have lat/long, we could show a static map here, but for now a nice icon
+    // showing it's a "Building" record vs a "Sale" record
     return Container(
       color: isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100,
       child: Center(
-        child: Icon(
-          Icons.home_outlined,
-          size: ValoraSpacing.iconSizeXl * 1.5,
-          color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_city_rounded,
+              size: ValoraSpacing.iconSizeXl * 1.5,
+              color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+            ),
+             const SizedBox(height: ValoraSpacing.md),
+             Text(
+              'Property Details',
+              style: ValoraTypography.titleMedium.copyWith(
+                color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+              ),
+             ),
+          ],
         ),
       ),
     );
@@ -478,7 +510,15 @@ class ListingDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (listing.price != null)
-          ValoraPrice(price: listing.price!, size: ValoraPriceSize.large),
+          ValoraPrice(price: listing.price!, size: ValoraPriceSize.large)
+        else
+           Text(
+            'Check Report',
+             style: ValoraTypography.headlineMedium.copyWith(
+               color: colorScheme.primary,
+               fontWeight: FontWeight.bold,
+             ),
+           ),
         if (listing.status != null)
           ValoraBadge(
             label: listing.status!.toUpperCase(),
@@ -725,6 +765,9 @@ class ListingDetailScreen extends StatelessWidget {
   }
 
   Widget _buildBrokerSection(ColorScheme colorScheme) {
+    if (listing.agentName == null && listing.brokerLogoUrl == null && listing.brokerPhone == null) {
+      return const SizedBox.shrink();
+    }
     return Container(
       padding: const EdgeInsets.all(ValoraSpacing.md),
       decoration: BoxDecoration(
@@ -769,9 +812,6 @@ class ListingDetailScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  // Use agentName if available as falback or specific broker name field if added later
-                  // For now, assume agentName might be person, not company.
-                  // If no specific broker name field, we might just show "Contact Broker"
                   listing.agentName ?? 'Real Estate Agent',
                   style: ValoraTypography.titleMedium.copyWith(
                     color: colorScheme.onSurface,

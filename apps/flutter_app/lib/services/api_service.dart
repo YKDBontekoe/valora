@@ -143,6 +143,24 @@ class ApiService {
     }
   }
 
+  Future<Listing?> getListingFromPdok(String id) async {
+    Uri? uri;
+    try {
+      uri = Uri.parse('$baseUrl/listings/lookup').replace(queryParameters: {'id': id});
+      
+      final response = await _authenticatedRequest(
+        (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
+      );
+
+      return await _handleResponse(
+        response,
+        (body) => _runner(_parseListing, body),
+      );
+    } catch (e) {
+      throw _handleException(e, uri);
+    }
+  }
+
   Future<ContextReport> getContextReport(
     String input, {
     int radiusMeters = 1000,
