@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../providers/search_listings_provider.dart';
 import '../services/api_service.dart';
