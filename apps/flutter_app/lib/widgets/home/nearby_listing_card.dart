@@ -34,120 +34,100 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
+    return Container(
+      margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
         child: ValoraCard(
           onTap: widget.onTap,
           padding: const EdgeInsets.all(ValoraSpacing.sm),
           borderRadius: ValoraSpacing.radiusLg,
-          // Let ValoraCard handle interactive elevation
           elevation: ValoraSpacing.elevationSm,
           child: Row(
             children: [
-              // Image
+              // Image Section
               Stack(
                 children: [
-                  Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            ValoraSpacing.radiusMd,
-                          ),
-                          color: isDark
-                              ? ValoraColors.neutral700
-                              : ValoraColors.neutral200,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: widget.listing.imageUrl != null
-                            ? Hero(
-                                tag: widget.listing.id,
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.listing.imageUrl!,
-                                  memCacheWidth: 300,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      const ValoraShimmer(
-                                        width: 96,
-                                        height: 96,
-                                      ),
-                                  errorWidget: (context, url, error) => Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      color: ValoraColors.neutral400,
-                                    ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+                      child: widget.listing.imageUrl != null
+                          ? Hero(
+                              tag: widget.listing.id,
+                              child: CachedNetworkImage(
+                                imageUrl: widget.listing.imageUrl!,
+                                memCacheWidth: 300,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    const ValoraShimmer(width: 96, height: 96),
+                                errorWidget: (context, url, error) => Center(
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    color: ValoraColors.neutral400,
                                   ),
                                 ),
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.home,
-                                  color: ValoraColors.neutral400,
-                                ),
                               ),
-                      )
-                      .animate(target: _isHovered ? 1 : 0)
-                      .scale(
-                        end: const Offset(1.05, 1.05),
-                        duration: ValoraAnimations.slow,
-                        curve: ValoraAnimations.deceleration,
-                      ),
+                            )
+                          : Center(
+                              child: Icon(
+                                Icons.home,
+                                color: ValoraColors.neutral400,
+                              ),
+                            ),
+                    ),
+                  )
+                  .animate(target: _isHovered ? 1 : 0)
+                  .scale(
+                      end: const Offset(1.05, 1.05),
+                      duration: ValoraAnimations.slow,
+                      curve: ValoraAnimations.deceleration,
+                  ),
 
+                  // Favorite Button
                   Positioned(
                     top: 4,
                     right: 4,
                     child: Consumer<FavoritesProvider>(
                       builder: (context, favoritesProvider, child) {
-                        final isFavorite = favoritesProvider.isFavorite(
-                          widget.listing.id,
-                        );
-                        return Semantics(
-                          button: true,
-                          toggled: isFavorite,
-                          label: isFavorite
-                              ? 'Remove from saved listings'
-                              : 'Save listing',
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  (isDark
-                                          ? ValoraColors.surfaceDark
-                                          : ValoraColors.surfaceLight)
-                                      .withValues(alpha: 0.9),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.all(4),
-                              tooltip: isFavorite
-                                  ? 'Remove from saved'
-                                  : 'Save listing',
-                              onPressed:
-                                  widget.onFavoriteTap ??
-                                  () => favoritesProvider.toggleFavorite(
-                                    widget.listing,
-                                  ),
-                              icon:
-                                  Icon(
-                                        isFavorite
-                                            ? Icons.favorite_rounded
-                                            : Icons.favorite_border_rounded,
-                                        size: 14,
-                                        color: isFavorite
-                                            ? ValoraColors.error
-                                            : ValoraColors.neutral400,
-                                      )
-                                      .animate(target: isFavorite ? 1 : 0)
-                                      .scale(
-                                        begin: const Offset(1, 1),
-                                        end: const Offset(1.2, 1.2),
-                                        curve: Curves.elasticOut,
-                                      )
-                                      .then()
-                                      .scale(end: const Offset(1, 1)),
+                        final isFavorite = favoritesProvider.isFavorite(widget.listing.id);
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: widget.onFavoriteTap ??
+                                    () => favoritesProvider.toggleFavorite(widget.listing),
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight)
+                                    .withValues(alpha: 0.9),
+                                shape: BoxShape.circle,
+                                boxShadow: isFavorite
+                                    ? [
+                                        BoxShadow(
+                                          color: ValoraColors.error.withValues(alpha: 0.2),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
+                                        )
+                                      ]
+                                    : null,
+                              ),
+                              child: Icon(
+                                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: isFavorite ? ValoraColors.error : ValoraColors.neutral400,
+                              ).animate(target: isFavorite ? 1 : 0)
+                               .scale(
+                                  begin: const Offset(0.8, 0.8),
+                                  end: const Offset(1, 1),
+                                  curve: Curves.elasticOut,
+                                  duration: ValoraAnimations.normal
+                               ),
                             ),
                           ),
                         );
@@ -157,12 +137,14 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                 ],
               ),
               const SizedBox(width: ValoraSpacing.md),
-              // Info
+
+              // Info Section
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -170,53 +152,31 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                           Expanded(
                             child: Text(
                               widget.listing.price != null
-                                  ? CurrencyFormatter.formatEur(
-                                      widget.listing.price!,
-                                    )
+                                  ? CurrencyFormatter.formatEur(widget.listing.price!)
                                   : 'Price on request',
                               style: ValoraTypography.titleMedium.copyWith(
-                                color: isDark
-                                    ? ValoraColors.neutral50
-                                    : ValoraColors.neutral900,
+                                color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
                                 fontWeight: FontWeight.bold,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ValoraColors.success.withValues(
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Active',
-                              style: ValoraTypography.labelSmall.copyWith(
-                                color: ValoraColors.success,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                          const ValoraBadge(
+                            label: 'Active',
+                            color: ValoraColors.success,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: ValoraSpacing.xs),
                       Text(
                         widget.listing.address,
                         style: ValoraTypography.bodySmall.copyWith(
-                          color: isDark
-                              ? ValoraColors.neutral400
-                              : ValoraColors.neutral500,
+                          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: ValoraSpacing.sm),
                       Row(
                         children: [
                           _buildFeature(
@@ -224,13 +184,13 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             Icons.bed_rounded,
                             '${widget.listing.bedrooms ?? 0}',
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: ValoraSpacing.md),
                           _buildFeature(
                             context,
                             Icons.shower_rounded,
                             '${widget.listing.bathrooms ?? 0}',
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: ValoraSpacing.md),
                           _buildFeature(
                             context,
                             Icons.square_foot_rounded,

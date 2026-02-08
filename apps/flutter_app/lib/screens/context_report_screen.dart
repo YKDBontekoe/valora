@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/context_report.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/valora_widgets.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key});
@@ -42,7 +45,7 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
             ),
             body: SafeArea(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(ValoraSpacing.md),
                 children: [
                   Text(
                     'Paste any address or listing link to generate public-data context.',
@@ -50,21 +53,28 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
+                  const SizedBox(height: ValoraSpacing.md),
+                  ValoraTextField(
                     controller: _inputController,
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. Damrak 1 Amsterdam or listing URL',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.location_on_rounded),
-                    ),
+                    label: 'Address or URL',
+                    hint: 'e.g. Damrak 1 Amsterdam or listing URL',
+                    prefixIcon: Icons.location_on_rounded,
                     textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => provider.generate(_inputController.text),
+                    onFieldSubmitted: (_) => provider.generate(_inputController.text),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Radius: ${provider.radiusMeters}m',
-                    style: ValoraTypography.labelLarge,
+                  const SizedBox(height: ValoraSpacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                       Text(
+                        'Radius',
+                        style: ValoraTypography.labelLarge,
+                      ),
+                      Text(
+                        '${provider.radiusMeters}m',
+                        style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                   Slider(
                     min: 200,
@@ -73,55 +83,71 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                     value: provider.radiusMeters.toDouble(),
                     onChanged: (value) => provider.setRadiusMeters(value.round()),
                   ),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
+                  const SizedBox(height: ValoraSpacing.sm),
+                  ValoraButton(
                     onPressed: provider.isLoading ? null : () => provider.generate(_inputController.text),
-                    icon: provider.isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.analytics_rounded),
-                    label: Text(provider.isLoading ? 'Generating...' : 'Generate Report'),
+                    icon: Icons.analytics_rounded,
+                    label: 'Generate Report',
+                    isLoading: provider.isLoading,
+                    isFullWidth: true,
                   ),
                   if (provider.error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      provider.error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
+                    const SizedBox(height: ValoraSpacing.md),
+                    ValoraCard(
+                      backgroundColor: ValoraColors.error.withValues(alpha: 0.1),
+                      child: Row(
+                         children: [
+                           const Icon(Icons.error_outline_rounded, color: ValoraColors.error),
+                           const SizedBox(width: ValoraSpacing.sm),
+                           Expanded(
+                             child: Text(
+                                provider.error!,
+                                style: TextStyle(color: ValoraColors.errorDark),
+                              ),
+                           ),
+                         ],
+                      )
+                    ).animate().fade().slideY(begin: 0.2, end: 0),
                   ],
                   if (provider.report != null) ...[
-                    const SizedBox(height: 20),
-                    _LocationCard(location: provider.report!.location, score: provider.report!.compositeScore),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Social', metrics: provider.report!.socialMetrics),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Safety', metrics: provider.report!.safetyMetrics),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Amenities', metrics: provider.report!.amenityMetrics),
-                    const SizedBox(height: 12),
-                    _MetricSection(title: 'Environment', metrics: provider.report!.environmentMetrics),
+                    const SizedBox(height: ValoraSpacing.xl),
+                    _LocationCard(location: provider.report!.location, score: provider.report!.compositeScore)
+                        .animate().fade().slideY(begin: 0.1, end: 0, delay: 100.ms),
+                    const SizedBox(height: ValoraSpacing.md),
+                    _MetricSection(title: 'Social', metrics: provider.report!.socialMetrics)
+                        .animate().fade().slideY(begin: 0.1, end: 0, delay: 200.ms),
+                    const SizedBox(height: ValoraSpacing.md),
+                    _MetricSection(title: 'Safety', metrics: provider.report!.safetyMetrics)
+                        .animate().fade().slideY(begin: 0.1, end: 0, delay: 300.ms),
+                    const SizedBox(height: ValoraSpacing.md),
+                    _MetricSection(title: 'Amenities', metrics: provider.report!.amenityMetrics)
+                        .animate().fade().slideY(begin: 0.1, end: 0, delay: 400.ms),
+                    const SizedBox(height: ValoraSpacing.md),
+                    _MetricSection(title: 'Environment', metrics: provider.report!.environmentMetrics)
+                         .animate().fade().slideY(begin: 0.1, end: 0, delay: 500.ms),
                     if (provider.report!.warnings.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Warnings', style: ValoraTypography.titleSmall),
-                              const SizedBox(height: 8),
-                              for (final warning in provider.report!.warnings)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text('• $warning'),
-                                ),
-                            ],
-                          ),
+                      const SizedBox(height: ValoraSpacing.md),
+                      ValoraCard(
+                        padding: const EdgeInsets.all(ValoraSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: ValoraColors.warning),
+                                const SizedBox(width: ValoraSpacing.sm),
+                                Text('Warnings', style: ValoraTypography.titleMedium),
+                              ],
+                            ),
+                            const SizedBox(height: ValoraSpacing.sm),
+                            for (final warning in provider.report!.warnings)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text('• $warning'),
+                              ),
+                          ],
                         ),
-                      ),
+                      ).animate().fade().slideY(begin: 0.1, end: 0, delay: 600.ms),
                     ],
                   ],
                 ],
@@ -142,22 +168,38 @@ class _LocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: ValoraColors.primary.withValues(alpha: 0.08),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(location.displayAddress, style: ValoraTypography.titleMedium),
-            const SizedBox(height: 8),
-            Text('Composite score: ${score.toStringAsFixed(1)} / 100'),
-            if (location.neighborhoodName != null)
-              Text('Neighborhood: ${location.neighborhoodName}'),
-            if (location.municipalityName != null)
-              Text('Municipality: ${location.municipalityName}'),
-          ],
-        ),
+    return ValoraCard(
+      backgroundColor: ValoraColors.primary.withValues(alpha: 0.08),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(location.displayAddress, style: ValoraTypography.titleMedium),
+          const SizedBox(height: ValoraSpacing.sm),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ValoraColors.primary,
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+                ),
+                child: Text(
+                  score.toStringAsFixed(1),
+                  style: ValoraTypography.labelMedium.copyWith(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: ValoraSpacing.sm),
+              Text('Composite Score', style: ValoraTypography.bodyMedium),
+            ],
+          ),
+          if (location.neighborhoodName != null || location.municipalityName != null) ...[
+             const SizedBox(height: ValoraSpacing.md),
+             if (location.neighborhoodName != null)
+              Text('Neighborhood: ${location.neighborhoodName}', style: ValoraTypography.bodySmall),
+             if (location.municipalityName != null)
+              Text('Municipality: ${location.municipalityName}', style: ValoraTypography.bodySmall),
+          ]
+        ],
       ),
     );
   }
@@ -171,39 +213,36 @@ class _MetricSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: ValoraTypography.titleSmall),
-            const SizedBox(height: 8),
-            if (metrics.isEmpty)
-              Text(
-                'No data available.',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              )
-            else
-              for (final metric in metrics)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          metric.label,
-                          style: ValoraTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                        ),
+    return ValoraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: ValoraTypography.titleMedium),
+          const SizedBox(height: ValoraSpacing.md),
+          if (metrics.isEmpty)
+            Text(
+              'No data available.',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            )
+          else
+            for (final metric in metrics)
+              Padding(
+                padding: const EdgeInsets.only(bottom: ValoraSpacing.sm),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        metric.label,
+                        style: ValoraTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(width: 8),
-                      Text(_valueText(metric)),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: ValoraSpacing.md),
+                    Text(_valueText(metric), style: ValoraTypography.bodyMedium),
+                  ],
                 ),
-          ],
-        ),
+              ),
+        ],
       ),
     );
   }

@@ -46,6 +46,8 @@ class _ValoraButtonState extends State<ValoraButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Widget child = AnimatedSwitcher(
       duration: ValoraAnimations.normal,
       switchInCurve: ValoraAnimations.emphatic,
@@ -60,9 +62,7 @@ class _ValoraButtonState extends State<ValoraButton> {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation(
-                  widget.variant == ValoraButtonVariant.primary
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.primary,
+                  _getLoadingColor(isDark),
                 ),
               ),
             )
@@ -77,33 +77,47 @@ class _ValoraButtonState extends State<ValoraButton> {
                   Icon(widget.icon, size: ValoraSpacing.iconSizeSm + 2),
                   const SizedBox(width: ValoraSpacing.sm),
                 ],
-                Text(widget.label),
+                Text(
+                  widget.label,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
     );
 
     final effectiveOnPressed = widget.isLoading ? null : widget.onPressed;
 
+    ButtonStyle style = _getButtonStyle(isDark);
+
     Widget button;
     switch (widget.variant) {
       case ValoraButtonVariant.primary:
         button = ElevatedButton(
           onPressed: effectiveOnPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ValoraColors.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          ),
+          style: style,
           child: child,
         );
         break;
       case ValoraButtonVariant.secondary:
-        button = ElevatedButton(onPressed: effectiveOnPressed, child: child);
+        button = ElevatedButton(
+          onPressed: effectiveOnPressed,
+          style: style,
+          child: child,
+        );
         break;
       case ValoraButtonVariant.outline:
-        button = OutlinedButton(onPressed: effectiveOnPressed, child: child);
+        button = OutlinedButton(
+          onPressed: effectiveOnPressed,
+          style: style,
+          child: child,
+        );
         break;
       case ValoraButtonVariant.ghost:
-        button = TextButton(onPressed: effectiveOnPressed, child: child);
+        button = TextButton(
+          onPressed: effectiveOnPressed,
+          style: style,
+          child: child,
+        );
         break;
     }
 
@@ -112,7 +126,7 @@ class _ValoraButtonState extends State<ValoraButton> {
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() {
           _isHovered = false;
-          _isPressed = false; // Ensure pressed state is cleared if dragged out
+          _isPressed = false;
         }),
         child: Listener(
           onPointerDown: (_) => setState(() => _isPressed = true),
@@ -136,5 +150,70 @@ class _ValoraButtonState extends State<ValoraButton> {
           duration: ValoraAnimations.normal,
           curve: ValoraAnimations.standard,
         );
+  }
+
+  Color _getLoadingColor(bool isDark) {
+    if (widget.variant == ValoraButtonVariant.primary) {
+      return ValoraColors.surfaceLight;
+    }
+    return ValoraColors.primary;
+  }
+
+  ButtonStyle _getButtonStyle(bool isDark) {
+    switch (widget.variant) {
+      case ValoraButtonVariant.primary:
+        return ElevatedButton.styleFrom(
+          backgroundColor: ValoraColors.primary,
+          foregroundColor: ValoraColors.surfaceLight,
+          disabledBackgroundColor: ValoraColors.primary.withValues(alpha: 0.5),
+          disabledForegroundColor: ValoraColors.surfaceLight.withValues(alpha: 0.7),
+          elevation: _isHovered ? 4 : 2,
+          padding: const EdgeInsets.symmetric(
+            horizontal: ValoraSpacing.lg,
+            vertical: ValoraSpacing.md,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+          ),
+        );
+      case ValoraButtonVariant.secondary:
+        return ElevatedButton.styleFrom(
+          backgroundColor: isDark ? ValoraColors.neutral700 : ValoraColors.neutral100,
+          foregroundColor: isDark ? ValoraColors.neutral100 : ValoraColors.neutral900,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(
+            horizontal: ValoraSpacing.lg,
+            vertical: ValoraSpacing.md,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+          ),
+        );
+      case ValoraButtonVariant.outline:
+        return OutlinedButton.styleFrom(
+          foregroundColor: isDark ? ValoraColors.neutral100 : ValoraColors.neutral900,
+          side: BorderSide(
+            color: isDark ? ValoraColors.neutral600 : ValoraColors.neutral300,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ValoraSpacing.lg,
+            vertical: ValoraSpacing.md,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+          ),
+        );
+      case ValoraButtonVariant.ghost:
+        return TextButton.styleFrom(
+          foregroundColor: isDark ? ValoraColors.neutral100 : ValoraColors.neutral900,
+          padding: const EdgeInsets.symmetric(
+            horizontal: ValoraSpacing.md,
+            vertical: ValoraSpacing.sm,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          ),
+        );
+    }
   }
 }

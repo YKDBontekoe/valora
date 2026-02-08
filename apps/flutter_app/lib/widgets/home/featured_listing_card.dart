@@ -11,6 +11,7 @@ import '../../core/theme/valora_animations.dart';
 import '../../models/listing.dart';
 import '../../providers/favorites_provider.dart';
 import '../valora_widgets.dart';
+import '../valora_glass_container.dart';
 
 class FeaturedListingCard extends StatefulWidget {
   final Listing listing;
@@ -39,17 +40,16 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: ValoraSpacing.lg),
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.only(right: ValoraSpacing.lg),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
         child: ValoraCard(
           padding: EdgeInsets.zero,
           onTap: widget.onTap,
           borderRadius: ValoraSpacing.radiusXl,
-          // Let ValoraCard handle elevation changes based on hover/press
           elevation: ValoraSpacing.elevationMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,6 +59,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                 children: [
                   Container(
                         height: 180,
+                        width: double.infinity,
                         color: isDark
                             ? ValoraColors.neutral700
                             : ValoraColors.neutral200,
@@ -115,33 +116,19 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                       ),
                     ),
                   ),
+
+                  // Match Badge
                   Positioned(
                     top: 12,
                     left: 12,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        ValoraSpacing.radiusMd,
-                      ),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
+                    child: ValoraGlassContainer(
+                       borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                       color: ValoraColors.glassBlack.withValues(alpha: 0.4),
+                       padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
                           ),
-                          decoration: BoxDecoration(
-                            color: ValoraColors.glassBlack.withValues(
-                              alpha: 0.4,
-                            ),
-                            borderRadius: BorderRadius.circular(
-                              ValoraSpacing.radiusMd,
-                            ),
-                            border: Border.all(
-                              color: ValoraColors.glassBorderDark,
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
+                       child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
@@ -170,10 +157,10 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                               ),
                             ],
                           ),
-                        ),
-                      ),
                     ),
                   ),
+
+                  // Favorite Button
                   Positioned(
                     top: 12,
                     right: 12,
@@ -182,48 +169,50 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         final isFavorite = favoritesProvider.isFavorite(
                           widget.listing.id,
                         );
-                        return Semantics(
-                          button: true,
-                          toggled: isFavorite,
-                          label: isFavorite
-                              ? 'Remove from saved listings'
-                              : 'Save listing',
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  (isDark
-                                          ? ValoraColors.surfaceDark
-                                          : ValoraColors.surfaceLight)
-                                      .withValues(alpha: 0.9),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              tooltip: isFavorite
-                                  ? 'Remove from saved'
-                                  : 'Save listing',
-                              onPressed:
-                                  widget.onFavoriteTap ??
-                                  () => favoritesProvider.toggleFavorite(
-                                    widget.listing,
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: widget.onFavoriteTap ??
+                                    () => favoritesProvider.toggleFavorite(
+                                      widget.listing,
+                                    ),
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color:
+                                    (isDark
+                                            ? ValoraColors.surfaceDark
+                                            : ValoraColors.surfaceLight)
+                                        .withValues(alpha: 0.9),
+                                shape: BoxShape.circle,
+                                boxShadow: isFavorite
+                                    ? [
+                                        BoxShadow(
+                                          color: ValoraColors.error.withValues(alpha: 0.2),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
+                                        )
+                                      ]
+                                    : null,
+                              ),
+                              child: Icon(
+                                    isFavorite
+                                        ? Icons.favorite_rounded
+                                        : Icons.favorite_border_rounded,
+                                    size: 18,
+                                    color: isFavorite
+                                        ? ValoraColors.error
+                                        : ValoraColors.neutral400,
+                                  )
+                                  .animate(target: isFavorite ? 1 : 0)
+                                  .scale(
+                                    begin: const Offset(0.8, 0.8),
+                                    end: const Offset(1, 1),
+                                    curve: Curves.elasticOut,
+                                    duration: ValoraAnimations.normal
                                   ),
-                              icon:
-                                  Icon(
-                                        isFavorite
-                                            ? Icons.favorite_rounded
-                                            : Icons.favorite_border_rounded,
-                                        size: 18,
-                                        color: isFavorite
-                                            ? ValoraColors.error
-                                            : ValoraColors.neutral400,
-                                      )
-                                      .animate(target: isFavorite ? 1 : 0)
-                                      .scale(
-                                        begin: const Offset(1, 1),
-                                        end: const Offset(1.2, 1.2),
-                                        curve: Curves.elasticOut,
-                                      )
-                                      .then()
-                                      .scale(end: const Offset(1, 1)),
                             ),
                           ),
                         );
@@ -232,6 +221,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                   ),
                 ],
               ),
+
               // Info Section
               Padding(
                 padding: const EdgeInsets.all(ValoraSpacing.md),
