@@ -253,38 +253,6 @@ public class FundaMapperTests
         Assert.Equal("Dubbel glas", listing.Features["Isolatie"]);
     }
 
-    [Fact]
-    public void MergeListingDetails_UpdatesTarget()
-    {
-        var target = new Listing { FundaId = "1", Address = "Test", Price = 100000 };
-        var source = new Listing
-        {
-            FundaId = "1",
-            Address = "Test",
-            Price = 200000,
-            Bedrooms = 3,
-            Status = "Verkocht",
-            BrokerPhone = "0612345678"
-        };
-
-        FundaMapper.MergeListingDetails(target, source);
-
-        Assert.Equal(3, target.Bedrooms);
-        Assert.Equal("Verkocht", target.Status);
-        Assert.Equal("0612345678", target.BrokerPhone);
-        Assert.Equal(100000, target.Price);
-    }
-
-    [Fact]
-    public void MergeListingDetails_NullLabels_DoesNotCrash()
-    {
-        var target = new Listing { FundaId = "1", Address = "Test" };
-        var source = new Listing { FundaId = "1", Address = "Test", Labels = null! }; // Force null to test the fix
-
-        // Should not throw NullReferenceException
-        var exception = Record.Exception(() => FundaMapper.MergeListingDetails(target, source));
-        Assert.Null(exception);
-    }
 
     [Fact]
     public void ParseFirstNumber_ParsesCorrectly()

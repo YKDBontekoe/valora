@@ -338,28 +338,6 @@ internal static partial class FundaMapper
         }
     }
 
-    public static void MergeListingDetails(Listing target, Listing source)
-    {
-        // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
-        if (source.Bedrooms.HasValue) target.Bedrooms = source.Bedrooms;
-        if (source.LivingAreaM2.HasValue) target.LivingAreaM2 = source.LivingAreaM2;
-        if (source.PlotAreaM2.HasValue) target.PlotAreaM2 = source.PlotAreaM2;
-        if (!string.IsNullOrEmpty(source.Status)) target.Status = source.Status;
-
-        // New fields from extended APIs
-        if (source.BrokerOfficeId.HasValue) target.BrokerOfficeId = source.BrokerOfficeId;
-        if (!string.IsNullOrEmpty(source.BrokerPhone)) target.BrokerPhone = source.BrokerPhone;
-        if (!string.IsNullOrEmpty(source.BrokerLogoUrl)) target.BrokerLogoUrl = source.BrokerLogoUrl;
-        if (!string.IsNullOrEmpty(source.BrokerAssociationCode)) target.BrokerAssociationCode = source.BrokerAssociationCode;
-        if (source.FiberAvailable.HasValue) target.FiberAvailable = source.FiberAvailable;
-        if (source.PublicationDate.HasValue) target.PublicationDate = source.PublicationDate;
-
-        target.IsSoldOrRented = source.IsSoldOrRented;
-
-        if (source.Labels != null && source.Labels.Count > 0) target.Labels = source.Labels;
-        if (!string.IsNullOrEmpty(source.PostalCode)) target.PostalCode = source.PostalCode;
-        if (!string.IsNullOrEmpty(source.AgentName)) target.AgentName = source.AgentName;
-    }
 
     private static void FlattenFeatures(List<FundaNuxtFeatureItem>? items, Dictionary<string, string> map)
     {
