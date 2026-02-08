@@ -189,6 +189,10 @@ public class FundaScraperService : IFundaScraperService
                 FundaMapper.EnrichListingWithSummary(listing, summary);
             }
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch summary for {FundaId}", listing.FundaId);
@@ -206,6 +210,10 @@ public class FundaScraperService : IFundaScraperService
                 {
                     FundaMapper.EnrichListingWithNuxtData(listing, richData);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -233,6 +241,10 @@ public class FundaScraperService : IFundaScraperService
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Failed to fetch contact details for {FundaId}", listing.FundaId);
@@ -250,6 +262,10 @@ public class FundaScraperService : IFundaScraperService
                 {
                     listing.FiberAvailable = fiber.Availability;
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

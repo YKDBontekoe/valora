@@ -44,9 +44,10 @@ public class ListingService : IListingService
     private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
     {
         listing.Status ??= DefaultStatus;
+        listing.LastFundaFetchUtc = DateTime.UtcNow;
 
         await _listingRepository.AddAsync(listing, cancellationToken);
-        _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
+        _logger.LogInformation("Added new listing: {FundaId}", listing.FundaId);
 
         if (shouldNotify)
         {

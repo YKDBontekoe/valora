@@ -97,7 +97,7 @@ public class Listing : BaseEntity
 
     public void Merge(Listing source)
     {
-        if (source.Price.HasValue) Price = source.Price;
+        Price = source.Price; // Always overwrite to allow price clearing
         if (source.ImageUrl != null) ImageUrl = source.ImageUrl;
 
         // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
