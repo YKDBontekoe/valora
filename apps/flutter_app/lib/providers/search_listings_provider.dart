@@ -58,6 +58,14 @@ class SearchListingsProvider extends ChangeNotifier {
         _maxLivingArea != null;
   }
 
+  bool get hasActiveFiltersOrSort {
+    return hasActiveFilters || isSortActive;
+  }
+
+  bool get isSortActive {
+    return _sortBy != null && (_sortBy != 'date' || _sortOrder != 'desc');
+  }
+
   void setQuery(String value) {
     _query = value;
   }
@@ -125,6 +133,39 @@ class SearchListingsProvider extends ChangeNotifier {
     await refresh();
   }
 
+  Future<void> clearPriceFilter() async {
+    _minPrice = null;
+    _maxPrice = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearCityFilter() async {
+    _city = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearBedroomsFilter() async {
+    _minBedrooms = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearLivingAreaFilter() async {
+    _minLivingArea = null;
+    _maxLivingArea = null;
+    notifyListeners();
+    await refresh();
+  }
+
+  Future<void> clearSort() async {
+    _sortBy = null;
+    _sortOrder = null;
+    notifyListeners();
+    await refresh();
+  }
+
   Future<void> clearFilters() async {
     _minPrice = null;
     _maxPrice = null;
@@ -139,6 +180,8 @@ class SearchListingsProvider extends ChangeNotifier {
   }
 
   Future<void> _loadListings({required bool refresh}) async {
+    final int requestId = ++_requestSequence;
+
     if (refresh) {
       _isLoading = true;
       _error = null;
@@ -148,7 +191,9 @@ class SearchListingsProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    if (_query.isEmpty && !hasActiveFilters) {
+    if (_query.isEmpty && !hasActiveFiltersOrSort) {
+      if (requestId != _requestSequence) return;
+
       _isLoading = false;
       _isLoadingMore = false;
       _error = null;
@@ -158,8 +203,6 @@ class SearchListingsProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-
-    final int requestId = ++_requestSequence;
 
     try {
       final response = await _apiService.getListings(

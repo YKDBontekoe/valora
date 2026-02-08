@@ -17,6 +17,7 @@ class ValoraChip extends StatefulWidget {
     this.icon,
     this.backgroundColor,
     this.textColor,
+    this.onDeleted,
   });
 
   final String label;
@@ -25,6 +26,7 @@ class ValoraChip extends StatefulWidget {
   final IconData? icon;
   final Color? backgroundColor;
   final Color? textColor;
+  final VoidCallback? onDeleted;
 
   @override
   State<ValoraChip> createState() => _ValoraChipState();
@@ -103,6 +105,21 @@ class _ValoraChipState extends State<ValoraChip> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                        if (widget.onDeleted != null) ...[
+                          const SizedBox(width: ValoraSpacing.xs),
+                          InkWell(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              widget.onDeleted!();
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: text.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

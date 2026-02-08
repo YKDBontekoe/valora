@@ -339,4 +339,50 @@ void main() {
       expect(find.text('Try adjusting filters'), findsOneWidget);
     });
   });
+
+  group('ValoraChip Tests', () {
+    testWidgets('renders label and handles selection', (WidgetTester tester) async {
+      bool selected = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraChip(
+              label: 'Test Chip',
+              isSelected: selected,
+              onSelected: (val) => selected = val,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Test Chip'), findsOneWidget);
+      expect(find.byIcon(Icons.close_rounded), findsNothing);
+
+      await tester.tap(find.text('Test Chip'));
+      await tester.pumpAndSettle();
+      expect(selected, isTrue);
+    });
+
+    testWidgets('shows delete icon and handles deletion', (WidgetTester tester) async {
+      bool deleted = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraChip(
+              label: 'Filter',
+              isSelected: true,
+              onSelected: (_) {},
+              onDeleted: () => deleted = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+      expect(deleted, isTrue);
+    });
+  });
 }

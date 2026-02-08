@@ -5,11 +5,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../providers/search_listings_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
+import '../widgets/valora_glass_container.dart';
 import '../widgets/valora_widgets.dart';
 import 'listing_detail_screen.dart';
 
@@ -95,6 +97,113 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  void _showSortOptions() {
+    final SearchListingsProvider provider = _searchProvider!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ValoraGlassContainer(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ValoraSpacing.radiusXl),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.all(ValoraSpacing.lg),
+              child: Text(
+                'Sort By',
+                style: ValoraTypography.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            _buildSortOption(
+              context,
+              'Newest',
+              'date',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            _buildSortOption(
+              context,
+              'Price: Low to High',
+              'price',
+              'asc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            _buildSortOption(
+              context,
+              'Price: High to Low',
+              'price',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            _buildSortOption(
+              context,
+              'Area: Small to Large',
+              'livingarea',
+              'asc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            _buildSortOption(
+              context,
+              'Area: Large to Small',
+              'livingarea',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            SizedBox(height: ValoraSpacing.xl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortOption(
+    BuildContext context,
+    String label,
+    String sortBy,
+    String sortOrder,
+    String? currentSortBy,
+    String? currentSortOrder,
+  ) {
+    final isSelected = currentSortBy == sortBy && currentSortOrder == sortOrder;
+
+    return ListTile(
+      title: Text(
+        label,
+        style: isSelected
+            ? ValoraTypography.bodyLarge.copyWith(
+                color: ValoraColors.primary,
+                fontWeight: FontWeight.bold,
+              )
+            : ValoraTypography.bodyLarge,
+      ),
+      trailing: isSelected
+          ? const Icon(Icons.check_rounded, color: ValoraColors.primary)
+          : null,
+      onTap: () {
+        _searchProvider!.applyFilters(
+          minPrice: _searchProvider!.minPrice,
+          maxPrice: _searchProvider!.maxPrice,
+          city: _searchProvider!.city,
+          minBedrooms: _searchProvider!.minBedrooms,
+          minLivingArea: _searchProvider!.minLivingArea,
+          maxLivingArea: _searchProvider!.maxLivingArea,
+          sortBy: sortBy,
+          sortOrder: sortOrder,
+        );
+        Navigator.pop(context);
+      },
+    );
+  }
+
   Future<void> _openFilterDialog() async {
     final SearchListingsProvider provider = _searchProvider!;
 
@@ -160,6 +269,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     centerTitle: false,
                     actions: [
+                      IconButton(
+                        onPressed: _showSortOptions,
+                        icon: const Icon(Icons.sort_rounded),
+                        tooltip: 'Sort',
+                      ),
                       Stack(
                         children: [
                           IconButton(
@@ -186,7 +300,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                     bottom: PreferredSize(
                       preferredSize: Size.fromHeight(
-                        provider.hasActiveFilters ? 130 : 80,
+                        provider.hasActiveFiltersOrSort ? 130 : 80,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +315,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               textInputAction: TextInputAction.search,
                             ),
                           ),
-                          if (provider.hasActiveFilters)
+                          if (provider.hasActiveFiltersOrSort)
                             SizedBox(
                               height: 40,
                               child: ListView(
@@ -219,6 +333,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                             'Price: €${provider.minPrice?.toInt() ?? 0} - ${provider.maxPrice != null ? '€${provider.maxPrice!.toInt()}' : 'Any'}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider.clearPriceFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.city != null)
@@ -228,6 +343,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: 'City: ${provider.city}',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider.clearCityFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.minBedrooms != null)
@@ -237,6 +353,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minBedrooms}+ Beds',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider.clearBedroomsFilter().catchError((_) {}),
                                       ),
                                     ),
                                   if (provider.minLivingArea != null)
@@ -246,9 +363,24 @@ class _SearchScreenState extends State<SearchScreen> {
                                         label: '${provider.minLivingArea}+ m²',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider.clearLivingAreaFilter().catchError((_) {}),
                                       ),
                                     ),
-                                  if (provider.hasActiveFilters)
+                                  if (provider.isSortActive)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ValoraChip(
+                                        label: provider.sortBy == 'price'
+                                            ? 'Price: ${provider.sortOrder == 'asc' ? 'Low to High' : 'High to Low'}'
+                                            : (provider.sortBy == 'livingarea'
+                                                ? 'Area: ${provider.sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}'
+                                                : 'Sort'),
+                                        isSelected: true,
+                                        onSelected: (_) => _showSortOptions(),
+                                        onDeleted: () => provider.clearSort().catchError((_) {}),
+                                      ),
+                                    ),
+                                  if (provider.hasActiveFiltersOrSort)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 4),
                                       child: IconButton(
@@ -269,7 +401,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ],
                               ),
                             ),
-                          if (provider.hasActiveFilters)
+                          if (provider.hasActiveFiltersOrSort)
                             const SizedBox(height: 12),
                         ],
                       ),
