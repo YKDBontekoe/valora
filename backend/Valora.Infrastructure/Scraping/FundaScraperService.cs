@@ -7,12 +7,12 @@ using Valora.Infrastructure.Scraping.Models;
 
 namespace Valora.Infrastructure.Scraping;
 
+using Valora.Application.Services;
+
 public class FundaScraperService : IFundaScraperService
 {
-    private const string DefaultStatus = "Beschikbaar";
-
     private readonly IListingRepository _listingRepository;
-    private readonly IPriceHistoryRepository _priceHistoryRepository;
+    private readonly IListingService _listingService;
     private readonly IFundaApiClient _apiClient;
     private readonly ScraperOptions _options;
     private readonly ILogger<FundaScraperService> _logger;
@@ -20,14 +20,14 @@ public class FundaScraperService : IFundaScraperService
 
     public FundaScraperService(
         IListingRepository listingRepository,
-        IPriceHistoryRepository priceHistoryRepository,
+        IListingService listingService,
         IOptions<ScraperOptions> options,
         ILogger<FundaScraperService> logger,
         IScraperNotificationService notificationService,
         IFundaApiClient apiClient)
     {
         _listingRepository = listingRepository;
-        _priceHistoryRepository = priceHistoryRepository;
+        _listingService = listingService;
         _apiClient = apiClient;
         _options = options.Value;
         _logger = logger;
@@ -173,13 +173,18 @@ public class FundaScraperService : IFundaScraperService
 
         await EnrichListingAsync(listing, apiListing, cancellationToken);
 
-        if (existingListing == null)
+        var result = await _listingService.ProcessListingAsync(listing, existingListing, cancellationToken);
+
+        if (shouldNotify)
         {
-            await AddNewListingAsync(listing, shouldNotify, cancellationToken);
-        }
-        else
-        {
-            await UpdateExistingListingAsync(existingListing, listing, shouldNotify, cancellationToken);
+            if (result.IsNew)
+            {
+                await NotifyMatchFoundAsync(listing.Address);
+            }
+            else if (result.IsUpdated)
+            {
+                await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
+            }
         }
     }
 
@@ -275,63 +280,6 @@ public class FundaScraperService : IFundaScraperService
         }
     }
 
-    private async Task AddNewListingAsync(Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // Set default status for new listings if not present
-        listing.Status ??= DefaultStatus;
-
-        // New listing - add it
-        await _listingRepository.AddAsync(listing, cancellationToken);
-        _logger.LogInformation("Added new listing: {FundaId} - {Address}", listing.FundaId, listing.Address);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync(listing.Address);
-        }
-
-        // Record initial price
-        if (listing.Price.HasValue)
-        {
-            await _priceHistoryRepository.AddAsync(new PriceHistory
-            {
-                ListingId = listing.Id,
-                Price = listing.Price.Value
-            }, cancellationToken);
-        }
-    }
-
-    private async Task UpdateExistingListingAsync(Listing existingListing, Listing listing, bool shouldNotify, CancellationToken cancellationToken)
-    {
-        // Existing listing - check for price changes
-        var priceChanged = existingListing.Price != listing.Price && listing.Price.HasValue;
-
-        if (priceChanged)
-        {
-            _logger.LogInformation(
-                "Price changed for {FundaId}: {OldPrice} -> {NewPrice}",
-                listing.FundaId, existingListing.Price, listing.Price);
-
-            await _priceHistoryRepository.AddAsync(new PriceHistory
-            {
-                ListingId = existingListing.Id,
-                Price = listing.Price!.Value
-            }, cancellationToken);
-        }
-
-        // Update listing properties
-        existingListing.Price = listing.Price;
-        existingListing.ImageUrl = listing.ImageUrl;
-        
-        FundaMapper.MergeListingDetails(existingListing, listing);
-
-        await _listingRepository.UpdateAsync(existingListing, cancellationToken);
-        _logger.LogDebug("Updated listing: {FundaId}", listing.FundaId);
-
-        if (shouldNotify)
-        {
-            await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
-        }
-    }
 
     private async Task NotifyMatchFoundAsync(string address)
     {

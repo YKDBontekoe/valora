@@ -94,4 +94,27 @@ public class Listing : BaseEntity
     /// Used for cache invalidation in dynamic search.
     /// </summary>
     public DateTime? LastFundaFetchUtc { get; set; }
+
+    public void Merge(Listing source)
+    {
+        // We do NOT overwrite fields that might have been enriched manually or by previous scraper if they are null in the new source
+        if (source.Bedrooms.HasValue) Bedrooms = source.Bedrooms;
+        if (source.LivingAreaM2.HasValue) LivingAreaM2 = source.LivingAreaM2;
+        if (source.PlotAreaM2.HasValue) PlotAreaM2 = source.PlotAreaM2;
+        if (!string.IsNullOrEmpty(source.Status)) Status = source.Status;
+
+        // New fields from extended APIs
+        if (source.BrokerOfficeId.HasValue) BrokerOfficeId = source.BrokerOfficeId;
+        if (!string.IsNullOrEmpty(source.BrokerPhone)) BrokerPhone = source.BrokerPhone;
+        if (!string.IsNullOrEmpty(source.BrokerLogoUrl)) BrokerLogoUrl = source.BrokerLogoUrl;
+        if (!string.IsNullOrEmpty(source.BrokerAssociationCode)) BrokerAssociationCode = source.BrokerAssociationCode;
+        if (source.FiberAvailable.HasValue) FiberAvailable = source.FiberAvailable;
+        if (source.PublicationDate.HasValue) PublicationDate = source.PublicationDate;
+
+        IsSoldOrRented = source.IsSoldOrRented;
+
+        if (source.Labels != null && source.Labels.Count > 0) Labels = source.Labels;
+        if (!string.IsNullOrEmpty(source.PostalCode)) PostalCode = source.PostalCode;
+        if (!string.IsNullOrEmpty(source.AgentName)) AgentName = source.AgentName;
+    }
 }
