@@ -132,6 +132,13 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
                 .Metadata.SetValueComparer(stringListComparer);
+
+            // Phase 5: Context Report JSONB
+            entity.Property(e => e.ContextReport)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonHelper.Serialize(v),
+                    v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(v));
         });
 
         modelBuilder.Entity<PriceHistory>(entity =>

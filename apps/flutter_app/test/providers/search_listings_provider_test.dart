@@ -142,6 +142,8 @@ void main() {
       minBedrooms: 2,
       minLivingArea: 50,
       maxLivingArea: 100,
+      minSafetyScore: null,
+      minCompositeScore: null,
       sortBy: 'price',
       sortOrder: 'asc',
     );

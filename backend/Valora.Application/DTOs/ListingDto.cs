@@ -59,5 +59,10 @@ public record ListingDto(
     // Status
     DateTime? PublicationDate,
     bool IsSoldOrRented,
-    List<string> Labels
+    List<string> Labels,
+    
+    // Phase 5: Context
+    double? ContextCompositeScore,
+    double? ContextSafetyScore,
+    Valora.Domain.Models.ContextReportModel? ContextReport
 );

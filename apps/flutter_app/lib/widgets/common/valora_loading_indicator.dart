@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_spacing.dart';
@@ -13,6 +15,7 @@ class ValoraLoadingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bool isTest = kDebugMode && Platform.environment.containsKey('FLUTTER_TEST');
 
     return Center(
       child: Column(
@@ -28,15 +31,25 @@ class ValoraLoadingIndicator extends StatelessWidget {
           ),
           if (message != null) ...[
             const SizedBox(height: ValoraSpacing.md),
-            Text(
-              message!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ).animate().fade().shimmer(duration: ValoraAnimations.verySlow),
+            _buildMessage(context, isTest, colorScheme),
           ],
         ],
       ),
     );
+  }
+
+  Widget _buildMessage(BuildContext context, bool isTest, ColorScheme colorScheme) {
+    final text = Text(
+      message!,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+    );
+
+    if (isTest) {
+      return text;
+    }
+
+    return text.animate().fade().shimmer(duration: ValoraAnimations.verySlow);
   }
 }

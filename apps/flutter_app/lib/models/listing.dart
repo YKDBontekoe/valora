@@ -67,6 +67,11 @@ class Listing {
   final bool isSoldOrRented;
   final List<String> labels;
 
+  // Phase 5: Context
+  final double? contextCompositeScore;
+  final double? contextSafetyScore;
+  final Map<String, dynamic>? contextReport;
+
   Listing({
     required this.id,
     required this.fundaId,
@@ -119,6 +124,9 @@ class Listing {
     this.publicationDate,
     this.isSoldOrRented = false,
     this.labels = const [],
+    this.contextCompositeScore,
+    this.contextSafetyScore,
+    this.contextReport,
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -204,6 +212,9 @@ class Listing {
               ?.map((e) => e.toString())
               .toList() ??
           [],
+      contextCompositeScore: json['contextCompositeScore']?.toDouble(),
+      contextSafetyScore: json['contextSafetyScore']?.toDouble(),
+      contextReport: json['contextReport'],
     );
   }
 
@@ -268,6 +279,10 @@ class Listing {
       'publicationDate': publicationDate?.toIso8601String(),
       'isSoldOrRented': isSoldOrRented,
       'labels': labels,
+
+      'contextCompositeScore': contextCompositeScore,
+      'contextSafetyScore': contextSafetyScore,
+      'contextReport': contextReport,
     };
   }
 }

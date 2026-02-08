@@ -14,6 +14,8 @@ import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_glass_container.dart';
 import '../widgets/valora_widgets.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -40,9 +42,13 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _searchProvider ??= SearchListingsProvider(
-      apiService: context.read<ApiService>(),
-    );
+    try {
+      _searchProvider ??= context.read<SearchListingsProvider>();
+    } catch (_) {
+      _searchProvider ??= SearchListingsProvider(
+        apiService: context.read<ApiService>(),
+      );
+    }
   }
 
   @override
@@ -159,6 +165,22 @@ class _SearchScreenState extends State<SearchScreen> {
               provider.sortBy,
               provider.sortOrder,
             ),
+            _buildSortOption(
+              context,
+              'Composite Score: High to Low',
+              'contextcompositescore',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
+            _buildSortOption(
+              context,
+              'Safety Score: High to Low',
+              'contextsafetyscore',
+              'desc',
+              provider.sortBy,
+              provider.sortOrder,
+            ),
             SizedBox(height: ValoraSpacing.xl),
           ],
         ),
@@ -199,6 +221,8 @@ class _SearchScreenState extends State<SearchScreen> {
           minBedrooms: _searchProvider!.minBedrooms,
           minLivingArea: _searchProvider!.minLivingArea,
           maxLivingArea: _searchProvider!.maxLivingArea,
+          minSafetyScore: _searchProvider!.minSafetyScore,
+          minCompositeScore: _searchProvider!.minCompositeScore,
           sortBy: sortBy,
           sortOrder: sortOrder,
         );
@@ -219,6 +243,8 @@ class _SearchScreenState extends State<SearchScreen> {
         initialMinBedrooms: provider.minBedrooms,
         initialMinLivingArea: provider.minLivingArea,
         initialMaxLivingArea: provider.maxLivingArea,
+        initialMinSafetyScore: provider.minSafetyScore,
+        initialMinCompositeScore: provider.minCompositeScore,
         initialSortBy: provider.sortBy,
         initialSortOrder: provider.sortOrder,
       ),
@@ -235,6 +261,8 @@ class _SearchScreenState extends State<SearchScreen> {
       minBedrooms: result['minBedrooms'] as int?,
       minLivingArea: result['minLivingArea'] as int?,
       maxLivingArea: result['maxLivingArea'] as int?,
+      minSafetyScore: result['minSafetyScore'] as double?,
+      minCompositeScore: result['minCompositeScore'] as double?,
       sortBy: result['sortBy'] as String?,
       sortOrder: result['sortOrder'] as String?,
     );
@@ -317,12 +345,43 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                            child: ValoraTextField(
+                            child: TypeAheadField<PdokSuggestion>(
                               controller: _searchController,
-                              label: '',
-                              hint: 'City, address, or zip code...',
-                              prefixIcon: Icons.search_rounded,
-                              textInputAction: TextInputAction.search,
+                              suggestionsCallback: (pattern) async {
+                                return await PdokService().search(pattern);
+                              },
+                              builder: (context, controller, focusNode) {
+                                return ValoraTextField(
+                                  controller: controller,
+                                  focusNode: focusNode,
+                                  label: '',
+                                  hint: 'City, address, or zip code...',
+                                  prefixIcon: Icons.search_rounded,
+                                  textInputAction: TextInputAction.search,
+                                  onSubmitted: (_) => _searchProvider!.refresh(),
+                                );
+                              },
+                              itemBuilder: (context, suggestion) {
+                                return ListTile(
+                                  leading: const Icon(Icons.location_on_outlined),
+                                  title: Text(suggestion.weergavenaam),
+                                  subtitle: Text(suggestion.type),
+                                );
+                              },
+                              onSelected: (suggestion) {
+                                _searchController.text = suggestion.weergavenaam;
+                                if (suggestion.type == 'woonplaats') {
+                                  _searchProvider!.setCity(suggestion.weergavenaam);
+                                  _searchController.clear();
+                                } else {
+                                  _searchProvider!.setQuery(suggestion.weergavenaam);
+                                }
+                                _searchProvider!.refresh();
+                              },
+                              emptyBuilder: (context) => const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text('No address found'),
+                              ),
                             ),
                           ),
                           if (provider.hasActiveFiltersOrSort)
@@ -420,6 +479,30 @@ class _SearchScreenState extends State<SearchScreen> {
                                         }),
                                       ),
                                     ),
+                                  if (provider.minCompositeScore != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ValoraChip(
+                                        label: 'Composite: ${provider.minCompositeScore}+',
+                                        isSelected: true,
+                                        onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider
+                                            .clearCompositeScoreFilter() // create this method
+                                            .catchError((_) {}),
+                                      ),
+                                    ),
+                                  if (provider.minSafetyScore != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ValoraChip(
+                                        label: 'Safety: ${provider.minSafetyScore}+',
+                                        isSelected: true,
+                                        onSelected: (_) => _openFilterDialog(),
+                                        onDeleted: () => provider
+                                            .clearSafetyScoreFilter() // create this method
+                                            .catchError((_) {}),
+                                      ),
+                                    ),
                                   if (provider.isSortActive)
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
@@ -428,7 +511,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                             ? 'Price: ${provider.sortOrder == 'asc' ? 'Low to High' : 'High to Low'}'
                                             : (provider.sortBy == 'livingarea'
                                                 ? 'Area: ${provider.sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}'
-                                                : 'Sort'),
+                                                : (provider.sortBy == 'contextcompositescore'
+                                                    ? 'Composite'
+                                                    : (provider.sortBy == 'contextsafetyscore'
+                                                        ? 'Safety'
+                                                        : 'Sort'))),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
                                         onDeleted: () => provider
@@ -460,7 +547,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                               : ValoraColors
                                                     .surfaceVariantLight,
                                         ),
-                                        onPressed: provider.clearFilters,
+                                        onPressed: () => provider.clearFilters(),
                                       ),
                                     ),
                                 ],

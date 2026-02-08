@@ -8,6 +8,7 @@ class ValoraTextField extends StatefulWidget {
   const ValoraTextField({
     super.key,
     this.controller,
+    this.focusNode,
     required this.label,
     this.hint,
     this.keyboardType,
@@ -17,12 +18,13 @@ class ValoraTextField extends StatefulWidget {
     this.validator,
     this.obscureText = false,
     this.textInputAction,
-    this.onFieldSubmitted,
+    this.onSubmitted,
     this.autofillHints,
     this.inputFormatters,
   });
 
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String label;
   final String? hint;
   final TextInputType? keyboardType;
@@ -32,7 +34,7 @@ class ValoraTextField extends StatefulWidget {
   final FormFieldValidator<String>? validator;
   final bool obscureText;
   final TextInputAction? textInputAction;
-  final ValueChanged<String>? onFieldSubmitted;
+  final ValueChanged<String>? onSubmitted;
   final Iterable<String>? autofillHints;
   final List<TextInputFormatter>? inputFormatters;
 
@@ -47,17 +49,38 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+    _isFocused = _focusNode.hasFocus;
+  }
+
+  void _handleFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
     });
   }
 
   @override
+  void didUpdateWidget(ValoraTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      oldWidget.focusNode?.removeListener(_handleFocusChange);
+      if (oldWidget.focusNode == null) {
+        _focusNode.dispose();
+      }
+      
+      _focusNode = widget.focusNode ?? FocusNode();
+      _focusNode.addListener(_handleFocusChange);
+      _isFocused = _focusNode.hasFocus;
+    }
+  }
+
+  @override
   void dispose() {
-    _focusNode.dispose();
+    _focusNode.removeListener(_handleFocusChange);
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 
@@ -66,15 +89,17 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: ValoraTypography.labelMedium.copyWith(
-            color: _isFocused
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
+        if (widget.label.isNotEmpty) ...[
+          Text(
+            widget.label,
+            style: ValoraTypography.labelMedium.copyWith(
+              color: _isFocused
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        const SizedBox(height: ValoraSpacing.xs),
+          const SizedBox(height: ValoraSpacing.xs),
+        ],
         TextFormField(
           controller: widget.controller,
           focusNode: _focusNode,
@@ -83,7 +108,7 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
           validator: widget.validator,
           obscureText: widget.obscureText,
           textInputAction: widget.textInputAction,
-          onFieldSubmitted: widget.onFieldSubmitted,
+          onFieldSubmitted: widget.onSubmitted,
           autofillHints: widget.autofillHints,
           inputFormatters: widget.inputFormatters,
           style: ValoraTypography.bodyMedium,

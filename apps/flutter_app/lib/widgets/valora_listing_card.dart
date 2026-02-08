@@ -68,6 +68,26 @@ class ValoraListingCard extends StatelessWidget {
                   onFavorite: onFavorite,
                 ),
               ),
+              if (listing.contextCompositeScore != null)
+                Positioned(
+                  bottom: ValoraSpacing.sm,
+                  right: ValoraSpacing.sm,
+                  child: ValoraBadge(
+                    label: listing.contextCompositeScore!.toStringAsFixed(1),
+                    color: _getScoreColor(listing.contextCompositeScore!),
+                    icon: Icons.insights,
+                  ),
+                ),
+              if (listing.contextCompositeScore != null)
+                Positioned(
+                  bottom: ValoraSpacing.sm,
+                  right: ValoraSpacing.sm,
+                  child: ValoraBadge(
+                    label: listing.contextCompositeScore!.toStringAsFixed(1),
+                    color: _getScoreColor(listing.contextCompositeScore!),
+                    icon: Icons.insights,
+                  ),
+                ),
             ],
           ),
 
@@ -127,6 +147,13 @@ class ValoraListingCard extends StatelessWidget {
       default:
         return ValoraColors.primary;
     }
+  }
+
+  Color _getScoreColor(double score) {
+    if (score >= 8.0) return ValoraColors.success;
+    if (score >= 6.0) return ValoraColors.primary;
+    if (score >= 4.0) return ValoraColors.warning;
+    return ValoraColors.error;
   }
 }
 

@@ -65,7 +65,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // With a token, app should navigate to Home and show the default Report tab.
-      expect(find.text('Location Context'), findsOneWidget);
+      expect(find.text('Property Analytics'), findsOneWidget);
     } finally {
       // Restore the original builder to avoid polluting other tests
       ErrorWidget.builder = originalBuilder;
@@ -86,6 +86,11 @@ class MockHttpClient extends Fake implements HttpClient {
 
   @override
   Future<HttpClientRequest> getUrl(Uri url) async {
+    return MockHttpClientRequest();
+  }
+
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri url) async {
     return MockHttpClientRequest();
   }
 }
