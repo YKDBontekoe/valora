@@ -116,11 +116,29 @@ if (hangfireEnabled)
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration["ALLOWED_ORIGINS"]?.Split(';', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins.Any())
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+             // Production safe default: block unless configured
+             policy.WithOrigins()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        }
     });
 });
 
@@ -210,7 +228,10 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
-    app.UseHangfireDashboard("/hangfire");
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new Valora.Api.Middleware.HangfireAuthorizationFilter() }
+    });
 
     // Configure recurring job for scraping
     RecurringJob.AddOrUpdate<FundaScraperJob>(

@@ -26,9 +26,9 @@ public interface IFundaSearchService
 /// </summary>
 public record FundaSearchQuery(
     [MaxLength(100)] string Region,
-    int? MinPrice = null,
-    int? MaxPrice = null,
-    int? MinBedrooms = null,
+    [Range(0, int.MaxValue)] int? MinPrice = null,
+    [Range(0, int.MaxValue)] int? MaxPrice = null,
+    [Range(0, int.MaxValue)] int? MinBedrooms = null,
     [RegularExpression("(?i)^(buy|rent|project)$")] string OfferingType = "buy",
     [Range(1, 100)] int PageSize = 20,
     [Range(1, 10000)] int Page = 1
