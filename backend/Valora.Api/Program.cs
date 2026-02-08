@@ -135,7 +135,9 @@ builder.Services.AddCors(options =>
         else
         {
              // Production safe default: block unless configured
-             policy.WithOrigins()
+             // Use SetIsOriginAllowed(_ => false) to explicitly deny all if not configured.
+             // WithOrigins() with no arguments might throw or behave unexpectedly in some versions.
+             policy.SetIsOriginAllowed(_ => false)
                    .AllowAnyMethod()
                    .AllowAnyHeader();
         }
@@ -228,9 +230,10 @@ app.MapHub<ScraperHub>("/hubs/scraper").RequireAuthorization();
 if (app.Configuration.GetValue<bool>("HANGFIRE_ENABLED"))
 {
     // Hangfire Dashboard
+    var dashboardLogger = app.Services.GetRequiredService<ILogger<Valora.Api.Middleware.HangfireAuthorizationFilter>>();
     app.UseHangfireDashboard("/hangfire", new DashboardOptions
     {
-        Authorization = new[] { new Valora.Api.Middleware.HangfireAuthorizationFilter() }
+        Authorization = new[] { new Valora.Api.Middleware.HangfireAuthorizationFilter(dashboardLogger) }
     });
 
     // Configure recurring job for scraping
@@ -394,9 +397,12 @@ api.MapPost("/ai/chat", async (
     IAiService aiService,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Prompt))
+    // Manual validation since minimal APIs don't always do this automatically without [AsParameters]
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(request);
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(request, validationContext, validationResults, true))
     {
-        return Results.BadRequest(new { error = "Prompt is required" });
+        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
     }
 
     try
