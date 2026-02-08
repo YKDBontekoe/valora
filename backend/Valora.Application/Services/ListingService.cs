@@ -51,7 +51,7 @@ public class ListingService : IListingService
 
         if (shouldNotify)
         {
-            await NotifyMatchFoundAsync(listing.Address);
+            await NotifyMatchFoundAsync(listing.FundaId);
         }
 
         if (listing.Price.HasValue)
@@ -89,19 +89,23 @@ public class ListingService : IListingService
 
         if (shouldNotify)
         {
-            await NotifyMatchFoundAsync($"{listing.Address} (Updated)");
+            await NotifyMatchFoundAsync(listing.FundaId);
         }
     }
 
-    private async Task NotifyMatchFoundAsync(string address)
+    private async Task NotifyMatchFoundAsync(string fundaId)
     {
         try
         {
-            await _notificationService.NotifyListingFoundAsync(address);
+            await _notificationService.NotifyListingFoundAsync(fundaId);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send notification for listing: {Address}", address);
+            _logger.LogWarning(ex, "Failed to send notification for listing: {FundaId}", fundaId);
         }
     }
 }

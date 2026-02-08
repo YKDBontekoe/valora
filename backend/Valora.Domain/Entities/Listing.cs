@@ -133,7 +133,7 @@ public class Listing : BaseEntity
         if (!string.IsNullOrEmpty(source.HeatingType)) HeatingType = source.HeatingType;
         if (!string.IsNullOrEmpty(source.InsulationType)) InsulationType = source.InsulationType;
         if (!string.IsNullOrEmpty(source.GardenOrientation)) GardenOrientation = source.GardenOrientation;
-        if (source.HasGarage) HasGarage = source.HasGarage;
+        HasGarage = source.HasGarage; // Always overwrite to allow clearing
         if (!string.IsNullOrEmpty(source.ParkingType)) ParkingType = source.ParkingType;
 
         // Phase 3 & 4
