@@ -9,6 +9,8 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
 
 namespace Valora.Infrastructure;
 
@@ -44,33 +46,71 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
+
         services.AddHttpClient<IPdokListingService, PdokListingService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddStandardResilienceHandler();
+
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
         });
+
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
         });
+
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
         });
+
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
         });
+
         services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
         });
+
         services.AddHttpClient<IDemographicsClient, CbsDemographicsClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
         });
 
 

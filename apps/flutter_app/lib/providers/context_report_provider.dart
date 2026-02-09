@@ -54,6 +54,8 @@ class ContextReportProvider extends ChangeNotifier {
   }
 
   Future<void> generate(String input) async {
+    if (_isLoading) return;
+
     final String trimmed = input.trim();
     if (trimmed.isEmpty) {
       _error = 'Enter an address or listing link.';
