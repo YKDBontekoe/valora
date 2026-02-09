@@ -206,9 +206,12 @@ class _SearchScreenState extends State<SearchScreen> {
   ) {
     final effectiveSortBy = currentSortBy ?? 'date';
     final effectiveSortOrder = currentSortOrder ?? 'desc';
-    final isSelected = effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
+    final isSelected =
+        effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
 
     return ListTile(
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
       title: Text(
         label,
         style: isSelected
@@ -367,7 +370,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                            padding: const EdgeInsets.fromLTRB(
+                              ValoraSpacing.lg,
+                              0,
+                              ValoraSpacing.lg,
+                              ValoraSpacing.md,
+                            ),
                             child: TypeAheadField<PdokSuggestion>(
                               controller: _searchController,
                               debounceDuration: const Duration(milliseconds: 400),
@@ -467,7 +475,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               child: ListView(
                                 scrollDirection: Axis.horizontal,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
+                                  horizontal: ValoraSpacing.lg,
                                 ),
                                 children: [
                                   if (provider.minPrice != null ||
@@ -689,17 +697,19 @@ class _SearchScreenState extends State<SearchScreen> {
                   else
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
+                        horizontal: ValoraSpacing.lg,
+                        vertical: ValoraSpacing.md,
                       ),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           if (index == provider.listings.length) {
                             if (provider.isLoadingMore) {
                               return const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 24),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: ValoraSpacing.lg,
+                                ),
                                 child: Center(
-                                  child: CircularProgressIndicator(),
+                                  child: ValoraLoadingIndicator(),
                                 ),
                               );
                             }

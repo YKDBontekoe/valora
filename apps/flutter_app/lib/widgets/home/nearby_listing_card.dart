@@ -37,16 +37,14 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Container(
+      child: ValoraCard(
         margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
-        child: ValoraCard(
-          onTap: widget.onTap,
-          padding: const EdgeInsets.all(ValoraSpacing.sm),
-          borderRadius: ValoraSpacing.radiusLg,
-          // Let ValoraCard handle interactive elevation
-          elevation: ValoraSpacing.elevationSm,
-          child: Row(
-            children: [
+        onTap: widget.onTap,
+        padding: const EdgeInsets.all(ValoraSpacing.sm),
+        borderRadius: ValoraSpacing.radiusLg,
+        elevation: ValoraSpacing.elevationSm,
+        child: Row(
+          children: [
               // Image
               Stack(
                 children: [
@@ -185,14 +183,16 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: ValoraSpacing.sm,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
                               color: ValoraColors.success.withValues(
                                 alpha: 0.1,
                               ),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(
+                                ValoraSpacing.radiusSm,
+                              ),
                             ),
                             child: Text(
                               'Active',
@@ -224,13 +224,13 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             Icons.bed_rounded,
                             '${widget.listing.bedrooms ?? 0}',
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: ValoraSpacing.sm),
                           _buildFeature(
                             context,
                             Icons.shower_rounded,
                             '${widget.listing.bathrooms ?? 0}',
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: ValoraSpacing.sm),
                           _buildFeature(
                             context,
                             Icons.square_foot_rounded,
@@ -245,7 +245,6 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
             ],
           ),
         ),
-      ),
     );
   }
 
