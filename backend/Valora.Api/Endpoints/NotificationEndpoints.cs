@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Valora.Api.Filters;
 using Valora.Application.Services;
 using Valora.Domain.Entities;
 
@@ -10,7 +11,8 @@ public static class NotificationEndpoints
     public static void MapNotificationEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/notifications")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<ValidationFilter>();
 
         group.MapGet("/", async (
             [FromQuery] bool unreadOnly,
@@ -20,6 +22,11 @@ public static class NotificationEndpoints
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+            if (limit < 0 || limit > 100)
+            {
+                return Results.BadRequest("Limit must be between 0 and 100.");
+            }
 
             var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit == 0 ? 50 : limit);
             return Results.Ok(result);

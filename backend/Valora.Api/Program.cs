@@ -11,6 +11,7 @@ using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Api.Endpoints;
+using Valora.Api.Filters;
 using Valora.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,22 +37,12 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
     .Configure<IConfiguration, IWebHostEnvironment, ILogger<Program>>((options, configuration, env, logger) =>
     {
         // JWT Secret configuration is critical.
-        // In Production, we enforce providing a strong secret via environment variables.
-        // In Development, we allow a fallback to a hardcoded secret to simplify onboarding,
-        // but we log a warning to ensure developers are aware of this.
+        // We enforce providing a strong secret via environment variables.
         var secret = configuration["JWT_SECRET"];
 
         if (string.IsNullOrEmpty(secret))
         {
-            if (env.IsDevelopment())
-            {
-                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-                logger.LogWarning("WARNING: JWT Secret is not configured. Using temporary development key.");
-            }
-            else
-            {
-                throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
-            }
+            throw new InvalidOperationException("JWT Secret is missing in configuration. Please set JWT_SECRET.");
         }
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -178,7 +169,8 @@ app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
 
 // API Endpoints
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api")
+    .AddEndpointFilter<ValidationFilter>();
 
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.

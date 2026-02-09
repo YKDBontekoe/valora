@@ -81,17 +81,12 @@ public static class DependencyInjection
     {
         var secret = configuration["JWT_SECRET"];
 
-        // Fallback for Development environment to match Program.cs behavior
         if (string.IsNullOrEmpty(secret))
         {
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            if (string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
-            {
-                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-            }
+            throw new InvalidOperationException("JWT Secret is missing in configuration. Please set JWT_SECRET.");
         }
 
-        options.Secret = secret ?? string.Empty;
+        options.Secret = secret;
         options.Issuer = configuration["JWT_ISSUER"];
         options.Audience = configuration["JWT_AUDIENCE"];
 
