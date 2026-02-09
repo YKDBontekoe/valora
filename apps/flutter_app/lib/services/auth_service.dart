@@ -22,6 +22,7 @@ class AuthService {
             iOptions: IOSOptions(
               accessibility: KeychainAccessibility.first_unlock,
             ),
+            // encryptedSharedPreferences is deprecated and ignored in newer versions
             aOptions: AndroidOptions(),
           ),
       _client = client ?? http.Client();
@@ -68,9 +69,7 @@ class AuthService {
       if (kDebugMode) {
         debugPrint('SecureStorage read (refresh) failed: $e');
       }
-      // If we can't read the storage, it's a transient error, NOT an invalid token.
-      // Throwing StorageException allows AuthProvider to decide whether to logout or retry/ignore.
-      throw StorageException('Failed to read refresh token: $e');
+      throw RefreshTokenInvalidException('No refresh token available');
     }
 
     if (refreshToken == null) {
