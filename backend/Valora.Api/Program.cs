@@ -12,6 +12,8 @@ using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
+using Valora.Api.Endpoints;
+using Valora.Api.Filters;
 using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -33,16 +35,13 @@ builder.Services.AddSwaggerGen(option =>
     });
     option.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
+        // JWT Secret configuration is critical.
+        // We enforce providing a strong secret via environment variables.
+        var secret = configuration["JWT_SECRET"];
+
+        if (string.IsNullOrEmpty(secret))
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] { }
+            throw new InvalidOperationException("JWT Secret is missing in configuration. Please set JWT_SECRET.");
         }
     });
 });
@@ -192,7 +191,8 @@ app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 
 // API Endpoints
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api")
+    .AddEndpointFilter<ValidationFilter>();
 
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
