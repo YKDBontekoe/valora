@@ -29,6 +29,7 @@ public class BaseIntegrationTest : IAsyncLifetime
         // In a real scenario, Respawn is better, but this avoids adding a package dependency now.
         DbContext.Listings.RemoveRange(DbContext.Listings);
         DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
+        DbContext.Notifications.RemoveRange(DbContext.Notifications);
         if (DbContext.Users.Any())
         {
             DbContext.Users.RemoveRange(DbContext.Users);

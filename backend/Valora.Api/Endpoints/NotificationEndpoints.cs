@@ -13,15 +13,15 @@ public static class NotificationEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", async (
-            [FromQuery] bool unreadOnly,
-            [FromQuery] int limit,
             INotificationService service,
-            ClaimsPrincipal user) =>
+            ClaimsPrincipal user,
+            [FromQuery] bool unreadOnly = false,
+            [FromQuery] int limit = 50) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit == 0 ? 50 : limit);
+            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit);
             return Results.Ok(result);
         });
 
