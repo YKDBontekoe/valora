@@ -47,51 +47,57 @@ public static class DependencyInjection
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
 
-        var retryPolicy = HttpPolicyExtensions
+        // Base retry policy: 3 retries with exponential backoff (2, 4, 8 seconds)
+        var defaultRetryPolicy = HttpPolicyExtensions
             .HandleTransientHttpError()
             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+        // Fast retry policy: 2 retries with short constant backoff (1s) to avoid client timeouts
+        var fastRetryPolicy = HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(2, _ => TimeSpan.FromSeconds(1));
 
         services.AddHttpClient<IPdokListingService, PdokListingService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(defaultRetryPolicy);
 
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(defaultRetryPolicy);
 
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(10);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(fastRetryPolicy);
 
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(fastRetryPolicy);
 
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(fastRetryPolicy);
 
         services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(10);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(fastRetryPolicy);
 
         services.AddHttpClient<IDemographicsClient, CbsDemographicsClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(10);
         })
-        .AddPolicyHandler(retryPolicy);
+        .AddPolicyHandler(fastRetryPolicy);
 
 
         return services;

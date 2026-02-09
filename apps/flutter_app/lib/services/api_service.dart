@@ -349,7 +349,10 @@ class ApiService {
   Exception _handleException(dynamic error, StackTrace? stack, [Uri? uri]) {
     if (error is AppException) return error;
 
-    final urlString = uri?.toString() ?? 'unknown URL';
+    // Redact query parameters to prevent PII leakage
+    final redactedUri = uri?.replace(queryParameters: {}) ?? Uri();
+    final urlString = redactedUri.toString().isEmpty ? 'unknown URL' : redactedUri.toString();
+
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
     // Report non-business exceptions to Sentry
