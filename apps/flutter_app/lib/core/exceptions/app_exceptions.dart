@@ -44,3 +44,8 @@ class RefreshTokenInvalidException extends AppException {
   RefreshTokenInvalidException([String? message])
     : super(message ?? 'Refresh token is invalid', 'Authentication Error: ');
 }
+
+class StorageException extends AppException {
+  StorageException([String? message])
+    : super(message ?? 'Secure storage access failed', 'Storage Error: ');
+}

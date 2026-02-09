@@ -22,7 +22,6 @@ class AuthService {
             iOptions: IOSOptions(
               accessibility: KeychainAccessibility.first_unlock,
             ),
-            // encryptedSharedPreferences is deprecated and ignored in newer versions
             aOptions: AndroidOptions(),
           ),
       _client = client ?? http.Client();
@@ -34,7 +33,7 @@ class AuthService {
       if (kDebugMode) {
         debugPrint('SecureStorage read failed: $e');
       }
-      return null;
+      throw StorageException('Failed to read auth token: $e');
     }
   }
 
@@ -45,6 +44,7 @@ class AuthService {
       if (kDebugMode) {
         debugPrint('SecureStorage write failed: $e');
       }
+      throw StorageException('Failed to save auth token: $e');
     }
   }
 
@@ -56,6 +56,7 @@ class AuthService {
       if (kDebugMode) {
         debugPrint('SecureStorage delete failed: $e');
       }
+      throw StorageException('Failed to clear auth data: $e');
     }
   }
 
@@ -67,7 +68,9 @@ class AuthService {
       if (kDebugMode) {
         debugPrint('SecureStorage read (refresh) failed: $e');
       }
-      throw RefreshTokenInvalidException('No refresh token available');
+      // If we can't read the storage, it's a transient error, NOT an invalid token.
+      // Throwing StorageException allows AuthProvider to decide whether to logout or retry/ignore.
+      throw StorageException('Failed to read refresh token: $e');
     }
 
     if (refreshToken == null) {
@@ -92,7 +95,11 @@ class AuthService {
           if (newRefreshToken != null) {
              try {
                await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
-             } catch (_) {}
+             } catch (e) {
+               // If writing new refresh token fails, we can still proceed with the new access token,
+               // but we should probably log it. Not fatal for this session.
+               if (kDebugMode) debugPrint('Failed to update refresh token: $e');
+             }
           }
           return newToken;
         }
@@ -140,6 +147,7 @@ class AuthService {
             );
           } catch (e) {
              if (kDebugMode) debugPrint('SecureStorage write refresh failed: $e');
+             // Non-fatal, user just won't be able to refresh later
           }
         }
         return data;
