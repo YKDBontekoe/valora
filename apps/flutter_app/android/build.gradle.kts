@@ -1,3 +1,5 @@
+import com.android.build.gradle.BaseExtension
+
 allprojects {
     repositories {
         google()
@@ -15,19 +17,21 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 
-    // Force all plugins to use the same compileSdk as the app
-    // Use plugins.withId to safely configure plugins when they are applied
-    project.plugins.withId("com.android.application") {
-        project.extensions.configure<com.android.build.gradle.BaseExtension> {
+    fun configureAndroid(p: Project) {
+        p.extensions.findByType<BaseExtension>()?.run {
             compileSdkVersion(36)
         }
     }
-    project.plugins.withId("com.android.library") {
-        project.extensions.configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
+
+    if (project.state.executed) {
+        configureAndroid(project)
+    } else {
+        project.afterEvaluate {
+            configureAndroid(this)
         }
     }
 }
