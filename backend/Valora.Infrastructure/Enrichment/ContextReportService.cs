@@ -60,18 +60,26 @@ public sealed class ContextReportService : IContextReportService
 
         // Radius is clamped to prevent excessive load on Overpass/external APIs
         var normalizedRadius = Math.Clamp(request.RadiusMeters, 200, 5000);
-        var cacheKey = $"context-report:v2:{request.Input.Trim().ToLowerInvariant()}:{normalizedRadius}";
 
-        // Aggressive caching is used because neighborhood statistics change very slowly (yearly/quarterly)
-        if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
-        {
-            return cached;
-        }
-
+        // 1. Resolve Location First
+        // The location resolver has its own cache. We need the resolved coordinates/IDs
+        // to build a stable cache key for the expensive report generation.
         var location = await _locationResolver.ResolveAsync(request.Input, cancellationToken);
         if (location is null)
         {
             throw new ValidationException(new[] { "Could not resolve input to a Dutch address." });
+        }
+
+        // 2. Check Report Cache using stable location key
+        // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
+        // This ensures "Damrak 1" and "Damrak 1 Amsterdam" share the same report if they resolve to the same point.
+        var latKey = location.Latitude.ToString("F5");
+        var lonKey = location.Longitude.ToString("F5");
+        var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
+
+        if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
+        {
+            return cached;
         }
 
         // Fetch all data sources in parallel (Fan-out)
@@ -91,6 +99,11 @@ public sealed class ContextReportService : IContextReportService
         var air = await airQualityTask;
 
         var warnings = new List<string>();
+
+        if (normalizedRadius != request.RadiusMeters)
+        {
+            warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
+        }
 
         // Build normalized metrics for each category (Fan-in)
         var socialMetrics = BuildSocialMetrics(cbs, warnings);

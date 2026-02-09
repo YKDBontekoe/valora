@@ -133,6 +133,7 @@ For a deep dive into the data flow, see [Data Flow: From Request to Report](docs
 | `GET` | `/api/health` | No | Service + DB connectivity check |
 | `POST` | `/api/auth/register` | No | Register user |
 | `POST` | `/api/auth/login` | No | Login and receive JWT |
+| `POST` | `/api/auth/refresh` | No | Refresh expired access token |
 | `POST` | `/api/context/report` | **Yes** | Generates a context report from an address or Funda URL. |
 | `POST` | `/api/listings/{id}/enrich` | **Yes** | Updates an existing listing entity with fresh context data. |
 

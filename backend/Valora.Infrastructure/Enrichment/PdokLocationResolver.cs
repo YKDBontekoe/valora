@@ -57,54 +57,66 @@ public sealed class PdokLocationResolver : ILocationResolver
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
-        using var response = await _httpClient.GetAsync(url, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogWarning("PDOK resolve failed with status {StatusCode}", response.StatusCode);
+            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("PDOK resolve failed with status {StatusCode} for input '{InputHash}'", response.StatusCode, normalizedInput.GetHashCode());
+                return null;
+            }
+
+            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+
+            if (!document.RootElement.TryGetProperty("response", out var responseElement) ||
+                !responseElement.TryGetProperty("docs", out var docsElement) ||
+                docsElement.ValueKind != JsonValueKind.Array ||
+                docsElement.GetArrayLength() == 0)
+            {
+                // Cache negative results to prevent repeated bad calls
+                _cache.Set(cacheKey, null as ResolvedLocationDto, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
+                return null;
+            }
+
+            var doc = docsElement[0];
+            // centroide_ll = WGS84 (Lat/Lon), centroide_rd = Rijksdriehoek (X/Y)
+            var pointLl = TryParsePoint(GetString(doc, "centroide_ll"));
+            var pointRd = TryParsePoint(GetString(doc, "centroide_rd"));
+
+            if (pointLl is null)
+            {
+                _logger.LogWarning("PDOK response did not include valid coordinates");
+                return null;
+            }
+
+            var result = new ResolvedLocationDto(
+                Query: input,
+                DisplayAddress: GetString(doc, "weergavenaam") ?? normalizedInput,
+                Latitude: pointLl.Value.Latitude,
+                Longitude: pointLl.Value.Longitude,
+                RdX: pointRd?.Longitude,
+                RdY: pointRd?.Latitude,
+                MunicipalityCode: PrefixCode(GetString(doc, "gemeentecode"), "GM"),
+                MunicipalityName: GetString(doc, "gemeentenaam"),
+                DistrictCode: GetString(doc, "wijkcode"),
+                DistrictName: GetString(doc, "wijknaam"),
+                NeighborhoodCode: GetString(doc, "buurtcode"),
+                NeighborhoodName: GetString(doc, "buurtnaam"),
+                PostalCode: GetString(doc, "postcode"));
+
+            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PDOK resolve failed exceptionally for input '{InputHash}'", normalizedInput.GetHashCode());
             return null;
         }
-
-        using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-
-        if (!document.RootElement.TryGetProperty("response", out var responseElement) ||
-            !responseElement.TryGetProperty("docs", out var docsElement) ||
-            docsElement.ValueKind != JsonValueKind.Array ||
-            docsElement.GetArrayLength() == 0)
-        {
-            // Cache negative results to prevent repeated bad calls
-            _cache.Set(cacheKey, null as ResolvedLocationDto, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
-            return null;
-        }
-
-        var doc = docsElement[0];
-        // centroide_ll = WGS84 (Lat/Lon), centroide_rd = Rijksdriehoek (X/Y)
-        var pointLl = TryParsePoint(GetString(doc, "centroide_ll"));
-        var pointRd = TryParsePoint(GetString(doc, "centroide_rd"));
-
-        if (pointLl is null)
-        {
-            _logger.LogWarning("PDOK response did not include valid coordinates");
-            return null;
-        }
-
-        var result = new ResolvedLocationDto(
-            Query: input,
-            DisplayAddress: GetString(doc, "weergavenaam") ?? normalizedInput,
-            Latitude: pointLl.Value.Latitude,
-            Longitude: pointLl.Value.Longitude,
-            RdX: pointRd?.Longitude,
-            RdY: pointRd?.Latitude,
-            MunicipalityCode: PrefixCode(GetString(doc, "gemeentecode"), "GM"),
-            MunicipalityName: GetString(doc, "gemeentenaam"),
-            DistrictCode: GetString(doc, "wijkcode"),
-            DistrictName: GetString(doc, "wijknaam"),
-            NeighborhoodCode: GetString(doc, "buurtcode"),
-            NeighborhoodName: GetString(doc, "buurtnaam"),
-            PostalCode: GetString(doc, "postcode"));
-
-        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
-        return result;
     }
 
     /// <summary>

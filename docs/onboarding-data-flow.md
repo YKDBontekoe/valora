@@ -18,14 +18,7 @@ sequenceDiagram
     Client->>API: POST /api/context/report { input: "Damrak 1" }
     API->>Service: BuildAsync(input)
 
-    Service->>Cache: Check "context-report:{input}"
-    alt Cache Hit
-        Cache-->>Service: Return Cached Report
-        Service-->>API: Return Report
-        API-->>Client: 200 OK (Cached)
-    end
-
-    Service->>Resolver: ResolveAsync(input)
+    Service->>Resolver: ResolveAsync(input) (Location Cache)
     alt Is Funda URL?
         Resolver->>Resolver: Extract Address from URL
     end
@@ -33,26 +26,33 @@ sequenceDiagram
     Sources-->>Resolver: Return Coordinates & Admin Codes
     Resolver-->>Service: ResolvedLocationDto (Lat/Lon)
 
-    par Fan-Out: Fetch Data Sources
-        Service->>Sources: CBS Neighborhood Stats (Social)
-        Service->>Sources: CBS Crime Stats (Safety)
-        Service->>Sources: CBS Demographics (Family)
-        Service->>Sources: Overpass API (Amenities)
-        Service->>Sources: Luchtmeetnet (Air Quality)
+    Service->>Cache: Check "context-report:{lat}_{lon}:{radius}"
+    alt Cache Hit
+        Cache-->>Service: Return Cached Report
+        Service-->>API: Return Report
+        API-->>Client: 200 OK (Cached)
+    else Cache Miss
+        par Fan-Out: Fetch Data Sources
+            Service->>Sources: CBS Neighborhood Stats (Social)
+            Service->>Sources: CBS Crime Stats (Safety)
+            Service->>Sources: CBS Demographics (Family)
+            Service->>Sources: Overpass API (Amenities)
+            Service->>Sources: Luchtmeetnet (Air Quality)
+        end
+
+        Sources-->>Service: Return Raw Data (or Partial Failure)
+
+        Service->>Service: Normalize Metrics (Fan-In)
+        Service->>Service: Compute Category Scores (Social, Safety, etc.)
+        Service->>Service: Compute Composite Score (Weighted Average)
+
+        Service->>Cache: Store Report (TTL Configurable)
+        Service-->>API: ContextReportDto
+        API-->>Client: 200 OK (Fresh Report)
     end
-
-    Sources-->>Service: Return Raw Data (or Partial Failure)
-
-    Service->>Service: Normalize Metrics (Fan-In)
-    Service->>Service: Compute Category Scores (Social, Safety, etc.)
-    Service->>Service: Compute Composite Score (Weighted Average)
-
-    Service->>Cache: Store Report (TTL 1h)
-    Service-->>API: ContextReportDto
-    API-->>Client: 200 OK (Fresh Report)
 ```
 
-## detailed Steps
+## Detailed Steps
 
 ### 1. Request Handling (`Valora.Api`)
 - The endpoint `POST /api/context/report` receives the request.
