@@ -31,17 +31,9 @@ public class ValidationFilter : IEndpointFilter
     private static bool ShouldValidate(object argument)
     {
         var type = argument.GetType();
-        // Skip primitives, strings, and system types unless they are DTOs in our namespace
-        // Actually, for DTOs, we just want to validate custom classes.
-        if (type.IsPrimitive || type == typeof(string) || type.IsEnum) return false;
 
-        // Skip common framework types
-        if (type.Namespace?.StartsWith("System") == true ||
-            type.Namespace?.StartsWith("Microsoft") == true)
-        {
-            return false;
-        }
-
-        return true;
+        // Only validate types in the DTOs namespace
+        // This avoids validating injected services, generic types, or framework objects
+        return type.Namespace?.StartsWith("Valora.Application.DTOs") == true;
     }
 }

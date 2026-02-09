@@ -15,10 +15,10 @@ public static class NotificationEndpoints
             .AddEndpointFilter<ValidationFilter>();
 
         group.MapGet("/", async (
-            [FromQuery] bool unreadOnly,
-            [FromQuery] int limit,
             INotificationService service,
-            ClaimsPrincipal user) =>
+            ClaimsPrincipal user,
+            [FromQuery] bool unreadOnly = false,
+            [FromQuery] int limit = 50) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
@@ -28,7 +28,7 @@ public static class NotificationEndpoints
                 return Results.BadRequest("Limit must be between 0 and 100.");
             }
 
-            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit == 0 ? 50 : limit);
+            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit);
             return Results.Ok(result);
         });
 
