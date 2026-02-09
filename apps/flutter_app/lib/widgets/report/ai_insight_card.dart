@@ -78,6 +78,7 @@ class _AiInsightCardState extends State<AiInsightCard> {
 
     if (_isLoading) {
       return const ValoraShimmer(
+        width: double.infinity,
         height: 150,
         borderRadius: 16,
       );
