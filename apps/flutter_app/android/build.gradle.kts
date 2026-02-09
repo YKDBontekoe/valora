@@ -19,11 +19,15 @@ subprojects {
     project.evaluationDependsOn(":app")
 
     // Force all plugins to use the same compileSdk as the app
-    afterEvaluate {
-        if ((plugins.hasPlugin("android") || plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library"))) {
-            configure<com.android.build.gradle.BaseExtension> {
-                compileSdkVersion(36)
-            }
+    // Use plugins.withId to safely configure plugins when they are applied
+    project.plugins.withId("com.android.application") {
+        project.extensions.configure<com.android.build.gradle.BaseExtension> {
+            compileSdkVersion(36)
+        }
+    }
+    project.plugins.withId("com.android.library") {
+        project.extensions.configure<com.android.build.gradle.BaseExtension> {
+            compileSdkVersion(36)
         }
     }
 }
