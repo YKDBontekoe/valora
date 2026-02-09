@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
-import 'package:valora_app/screens/context_report_screen.dart';
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/screens/settings_screen.dart';
