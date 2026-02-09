@@ -243,16 +243,14 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("BrochureUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
+                        .HasColumnType("text");
 
                     b.Property<string>("BrokerAssociationCode")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<string>("BrokerLogoUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
+                        .HasColumnType("text");
 
                     b.Property<int?>("BrokerOfficeId")
                         .HasColumnType("integer");
@@ -302,8 +300,7 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(10000)
-                        .HasColumnType("character varying(10000)");
+                        .HasColumnType("text");
 
                     b.Property<string>("EnergyLabel")
                         .HasMaxLength(20)
@@ -436,15 +433,13 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("VideoUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
+                        .HasColumnType("text");
 
                     b.Property<int?>("ViewCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("VirtualTourUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
+                        .HasColumnType("text");
 
                     b.Property<int?>("VolumeM3")
                         .HasColumnType("integer");
@@ -459,10 +454,6 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("Bedrooms");
 
                     b.HasIndex("City");
-
-                    b.HasIndex("ContextCompositeScore");
-
-                    b.HasIndex("ContextSafetyScore");
 
                     b.HasIndex("FundaId")
                         .IsUnique();
@@ -581,8 +572,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

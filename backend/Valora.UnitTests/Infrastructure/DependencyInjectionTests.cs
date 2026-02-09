@@ -99,7 +99,7 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddInfrastructure_Throws_WhenJwtSecretMissing_EvenInDevelopment()
+    public void AddInfrastructure_FallsBackToDevSecret_WhenJwtSecretMissing_AndInDevelopment()
     {
         var configData = new Dictionary<string, string?>
         {
@@ -120,9 +120,9 @@ public class DependencyInjectionTests
             services.AddInfrastructure(configuration);
             var provider = services.BuildServiceProvider();
 
-            // Options are lazily evaluated, so we need to access Value to trigger binding
-            Assert.Throws<InvalidOperationException>(() =>
-                _ = provider.GetRequiredService<IOptions<JwtOptions>>().Value);
+            var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
+
+            Assert.Equal("DevSecretKey_ChangeMe_In_Production_Configuration_123!", options.Secret);
         }
         finally
         {

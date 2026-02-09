@@ -8,7 +8,6 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Infrastructure.Enrichment;
-using Valora.Infrastructure.Enrichment.Builders;
 
 namespace Valora.UnitTests.Services;
 
@@ -105,10 +104,10 @@ public class ContextReportServiceTests
         Assert.Empty(report.DemographicsMetrics);
         Assert.NotEmpty(report.AmenityMetrics);
         Assert.Empty(report.EnvironmentMetrics);
-        Assert.Contains(report.Warnings, w => w.Contains("Social indicators", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Crime statistics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Demographics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Environment indicators", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS demographics", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
         Assert.True(report.CompositeScore > 0);
     }
 
@@ -153,9 +152,9 @@ public class ContextReportServiceTests
         Assert.NotEmpty(report.DemographicsMetrics);
         Assert.NotEmpty(report.AmenityMetrics);
         Assert.Empty(report.EnvironmentMetrics);
-        Assert.Contains(report.Warnings, w => w.Contains("Social indicators", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Crime statistics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Environment indicators", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
     }
 
     private ContextReportService CreateService()
@@ -169,13 +168,7 @@ public class ContextReportServiceTests
             _airClient.Object,
             _memoryCache,
             Options.Create(new ContextEnrichmentOptions()),
-            _logger.Object,
-            new SocialMetricBuilder(),
-            new CrimeMetricBuilder(),
-            new DemographicsMetricBuilder(),
-            new AmenityMetricBuilder(),
-            new EnvironmentMetricBuilder(),
-            new ScoringCalculator());
+            _logger.Object);
     }
 
     private static ResolvedLocationDto CreateLocation()
