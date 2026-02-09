@@ -1,2 +1,2 @@
 ignore:
-  - "backend/Valora.Infrastructure/Migrations/**/*"
+  - "**/Migrations/**/*"
