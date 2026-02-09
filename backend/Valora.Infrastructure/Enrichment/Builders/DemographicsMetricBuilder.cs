@@ -8,7 +8,7 @@ public class DemographicsMetricBuilder
     {
         if (demographics is null)
         {
-            warnings.Add("CBS demographics were unavailable; demographics score is partial.");
+            warnings.Add("Demographics were unavailable; demographics score is partial.");
             return [];
         }
 

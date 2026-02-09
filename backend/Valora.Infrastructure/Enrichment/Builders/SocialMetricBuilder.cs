@@ -8,7 +8,7 @@ public class SocialMetricBuilder
     {
         if (cbs is null)
         {
-            warnings.Add("CBS neighborhood indicators were unavailable; social score is partial.");
+            warnings.Add("Social indicators were unavailable; social score is partial.");
             return [];
         }
 

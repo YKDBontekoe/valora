@@ -8,7 +8,7 @@ public class AmenityMetricBuilder
     {
         if (amenities is null)
         {
-            warnings.Add("OSM amenities were unavailable; amenity score is partial.");
+            warnings.Add("Amenities were unavailable; amenity score is partial.");
             return [];
         }
 
@@ -30,8 +30,8 @@ public class AmenityMetricBuilder
 
     private static double ScoreAmenityCount(AmenityStatsDto amenities)
     {
-        var total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
-        return Math.Clamp(total * 5, 0, 100);
+        long total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
+        return Math.Clamp(total * 5.0, 0, 100);
     }
 
     private static double? ScoreAmenityProximity(double? nearestDistanceMeters)

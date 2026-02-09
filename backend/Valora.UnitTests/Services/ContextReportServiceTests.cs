@@ -105,10 +105,10 @@ public class ContextReportServiceTests
         Assert.Empty(report.DemographicsMetrics);
         Assert.NotEmpty(report.AmenityMetrics);
         Assert.Empty(report.EnvironmentMetrics);
-        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("CBS demographics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Social indicators", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Crime statistics", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Demographics", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Environment indicators", StringComparison.Ordinal));
         Assert.True(report.CompositeScore > 0);
     }
 
@@ -153,9 +153,9 @@ public class ContextReportServiceTests
         Assert.NotEmpty(report.DemographicsMetrics);
         Assert.NotEmpty(report.AmenityMetrics);
         Assert.Empty(report.EnvironmentMetrics);
-        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Social indicators", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Crime statistics", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, w => w.Contains("Environment indicators", StringComparison.Ordinal));
     }
 
     private ContextReportService CreateService()

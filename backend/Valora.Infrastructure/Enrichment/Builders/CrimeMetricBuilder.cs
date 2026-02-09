@@ -8,7 +8,7 @@ public class CrimeMetricBuilder
     {
         if (crime is null)
         {
-            warnings.Add("CBS crime statistics were unavailable; safety score is partial.");
+            warnings.Add("Crime statistics were unavailable; safety score is partial.");
             return [];
         }
 

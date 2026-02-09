@@ -8,7 +8,7 @@ public class EnvironmentMetricBuilder
     {
         if (air is null)
         {
-            warnings.Add("Air quality source was unavailable; environment score is partial.");
+            warnings.Add("Environment indicators were unavailable; environment score is partial.");
             return [];
         }
 

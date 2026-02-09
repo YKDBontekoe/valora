@@ -42,12 +42,12 @@ public static class DependencyInjection
         services.AddScoped<IContextReportService, ContextReportService>();
         
         // Enrichment Builders
-        services.AddSingleton<SocialMetricBuilder>();
-        services.AddSingleton<CrimeMetricBuilder>();
-        services.AddSingleton<DemographicsMetricBuilder>();
-        services.AddSingleton<AmenityMetricBuilder>();
-        services.AddSingleton<EnvironmentMetricBuilder>();
-        services.AddSingleton<ScoringCalculator>();
+        services.AddTransient<SocialMetricBuilder>();
+        services.AddTransient<CrimeMetricBuilder>();
+        services.AddTransient<DemographicsMetricBuilder>();
+        services.AddTransient<AmenityMetricBuilder>();
+        services.AddTransient<EnvironmentMetricBuilder>();
+        services.AddTransient<ScoringCalculator>();
 
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
