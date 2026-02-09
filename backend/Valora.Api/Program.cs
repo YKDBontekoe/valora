@@ -12,6 +12,8 @@ using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
+using Valora.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +50,11 @@ builder.Services.AddSwaggerGen(option =>
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
+
+// Add Identity
+builder.Services.AddIdentityCore<ApplicationUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ValoraDbContext>();
 
 // Add Authentication
 builder.Services.AddAuthentication(options =>

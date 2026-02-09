@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Valora.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
+using Valora.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace Valora.IntegrationTests;
 
@@ -40,7 +42,6 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             services.RemoveAll<ValoraDbContext>();
 
             // Remove implicit configuration that might hold the old delegate
-            // This is likely why Npgsql was still sticking around!
             var configType = Type.GetType("Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration`1, Microsoft.EntityFrameworkCore");
             if (configType != null)
             {
@@ -65,6 +66,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                 services.Remove(s);
             }
 
+            // Add DbContext
             if (_connectionString.StartsWith("InMemory"))
             {
                 var dbName = _connectionString.Contains(":") ? _connectionString.Split(':')[1] : "ValoraIntegrationTestDb";
@@ -79,6 +81,18 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
 
+            // Ensure Identity uses the new DbContext
+            // When we replaced DbContext, the previous Identity configuration might be stale or broken
+            // because AddEntityFrameworkStores<TContext>() registers stores bound to the original TContext configuration.
+            // We need to re-register Identity stores to bind them to the new DbContext registration.
+
+            // Note: AddIdentityCore adds the core services (UserManager, etc.).
+            // We shouldn't need to call AddIdentityCore again if it was already called in Program.cs,
+            // BUT we definitely need to re-bind the EF stores to the new context.
+
+            services.AddIdentityCore<ApplicationUser>()
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<ValoraDbContext>();
         });
     }
 }
