@@ -126,8 +126,8 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                            horizontal: ValoraSpacing.sm,
+                            vertical: ValoraSpacing.xs,
                           ),
                           decoration: BoxDecoration(
                             color: ValoraColors.glassBlack.withValues(
@@ -163,7 +163,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                               Text(
                                 '${widget.matchPercentage}% Match',
                                 style: ValoraTypography.labelSmall.copyWith(
-                                  color: Colors.white,
+                                  color: ValoraColors.neutral50,
                                   fontSize: 10,
                                   letterSpacing: 0.5,
                                 ),
@@ -277,12 +277,12 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: ValoraSpacing.sm,
+                            vertical: ValoraSpacing.xs,
                           ),
                           decoration: BoxDecoration(
                             color: ValoraColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
                           ),
                           child: Row(
                             children: [

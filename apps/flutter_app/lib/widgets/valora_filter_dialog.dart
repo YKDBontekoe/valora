@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import 'valora_widgets.dart';
@@ -100,11 +101,14 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
     final minCompositeScore = double.tryParse(_minCompositeScoreController.text);
     final minSafetyScore = double.tryParse(_minSafetyScoreController.text);
 
-    if ((minCompositeScore != null && (minCompositeScore < 0 || minCompositeScore > 100)) ||
-        (minSafetyScore != null && (minSafetyScore < 0 || minSafetyScore > 100))) {
+    if ((minCompositeScore != null &&
+            (minCompositeScore < 0 || minCompositeScore > 100)) ||
+        (minSafetyScore != null &&
+            (minSafetyScore < 0 || minSafetyScore > 100))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Score must be between 0 and 100'),
+          backgroundColor: ValoraColors.error,
         ),
       );
       return;
@@ -114,6 +118,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Min price cannot be greater than Max price'),
+          backgroundColor: ValoraColors.error,
         ),
       );
       return;
@@ -125,6 +130,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Min area cannot be greater than Max area'),
+          backgroundColor: ValoraColors.error,
         ),
       );
       return;

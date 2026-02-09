@@ -680,7 +680,10 @@ class ListingDetailScreen extends StatelessWidget {
     ColorScheme colorScheme,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ValoraSpacing.md - 4,
+        vertical: ValoraSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
@@ -691,8 +694,12 @@ class ListingDetailScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: colorScheme.onSecondaryContainer),
-          const SizedBox(width: 8),
+          Icon(
+            icon,
+            size: ValoraSpacing.iconSizeSm,
+            color: colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: ValoraSpacing.sm),
           Text(
             label,
             style: ValoraTypography.labelLarge.copyWith(
@@ -789,7 +796,7 @@ class ListingDetailScreen extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
                 image: DecorationImage(
                   image: NetworkImage(listing.brokerLogoUrl!),
                   fit: BoxFit.contain,
@@ -802,7 +809,7 @@ class ListingDetailScreen extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
               ),
               child: const Icon(Icons.business, color: Colors.white),
             ),
@@ -858,7 +865,7 @@ class ListingDetailScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(ValoraSpacing.sm),
             decoration: BoxDecoration(
               color: colorScheme.surface,
               shape: BoxShape.circle,
