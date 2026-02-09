@@ -25,31 +25,6 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-# Install Playwright dependencies (system libraries for Chromium)
-# Note: Using t64 suffixes for some packages to match Ubuntu Noble/Debian Trixie
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0t64 \
-    libatk-bridge2.0-0t64 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2t64 \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY --from=build /app/publish .
-
-# Install Chromium browser for Playwright
-# We use 'dotnet exec' with the app's runtime config to run the Playwright installer
-RUN dotnet exec --runtimeconfig Valora.Api.runtimeconfig.json Microsoft.Playwright.dll install chromium
 
 ENTRYPOINT ["dotnet", "Valora.Api.dll"]
