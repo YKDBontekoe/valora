@@ -406,7 +406,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 // If it is a specific address (bucket 'adres'), lookup directly
                                 if (suggestion.type == 'adres') {
                                   // Show loading indicator
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   showDialog(
                                     context: context,
                                     barrierDismissible: false,
@@ -418,7 +418,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   try {
                                     final listing = await context.read<ApiService>().getListingFromPdok(suggestion.id);
                                     
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     Navigator.pop(context); // Remove loading indicator
 
                                     if (listing != null) {
@@ -434,7 +434,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       );
                                     }
                                   } catch (e, stack) {
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     Navigator.pop(context); // Remove loading indicator
                                     
                                     debugPrint('Error loading PDOK listing: $e\n$stack');
