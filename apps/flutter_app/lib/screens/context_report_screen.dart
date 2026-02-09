@@ -5,6 +5,7 @@ import '../models/context_report.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/report/report_widgets.dart';
+import '../widgets/valora_widgets.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key});
@@ -232,8 +233,95 @@ class _InputForm extends StatelessWidget {
             ),
           ),
         ],
+        // Recent Searches
+        if (provider.history.isNotEmpty) ...[
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Searches',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () => _confirmClearHistory(context, provider),
+                child: const Text('Clear All'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...provider.history.map((item) {
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.history_rounded),
+              title: Text(item.query),
+              subtitle: Text(
+                _formatDate(item.timestamp),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: () => provider.removeFromHistory(item.query),
+              ),
+              onTap: () {
+                controller.text = item.query;
+                provider.generate(item.query);
+              },
+            );
+          }),
+        ],
       ],
     );
+  }
+
+  Future<void> _confirmClearHistory(
+    BuildContext context,
+    ContextReportProvider provider,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Clear History?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Clear',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text(
+          'Are you sure you want to clear your search history?',
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      await provider.clearHistory();
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final checkDate = DateTime(date.year, date.month, date.day);
+
+    if (checkDate == today) {
+      return 'Today';
+    } else if (checkDate == yesterday) {
+      return 'Yesterday';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 }
 
