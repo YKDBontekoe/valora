@@ -9,8 +9,8 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
+using Microsoft.Extensions.Http.Resilience;
 using Polly;
-using Polly.Extensions.Http;
 
 namespace Valora.Infrastructure;
 
@@ -47,57 +47,71 @@ public static class DependencyInjection
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
 
-        // Base retry policy: 3 retries with exponential backoff (2, 4, 8 seconds)
-        var defaultRetryPolicy = HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-
-        // Fast retry policy: 2 retries with short constant backoff (1s) to avoid client timeouts
-        var fastRetryPolicy = HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .WaitAndRetryAsync(2, _ => TimeSpan.FromSeconds(1));
-
         services.AddHttpClient<IPdokListingService, PdokListingService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(defaultRetryPolicy);
+        .AddStandardResilienceHandler();
 
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(defaultRetryPolicy);
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
         })
-        .AddPolicyHandler(fastRetryPolicy);
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(fastRetryPolicy);
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddPolicyHandler(fastRetryPolicy);
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
         services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
         })
-        .AddPolicyHandler(fastRetryPolicy);
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
         services.AddHttpClient<IDemographicsClient, CbsDemographicsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
         })
-        .AddPolicyHandler(fastRetryPolicy);
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
 
         return services;
