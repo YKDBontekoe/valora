@@ -29,6 +29,8 @@ public static class ListingMapper
             listing.FiberAvailable,
             // Status
             listing.PublicationDate, listing.IsSoldOrRented, listing.Labels,
+            // Phase 6: WOZ
+            null, null, null,
             // Phase 5: Context
             listing.ContextCompositeScore, listing.ContextSafetyScore, listing.ContextReport
         );

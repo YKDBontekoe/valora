@@ -44,7 +44,7 @@ class ApiService {
   // For local development on Android emulator use 10.0.2.2 instead of localhost
   static const String baseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://localhost:5001/api',
+    defaultValue: 'https://valora-ylpr.onrender.com/api',
   );
 
   static const Duration timeoutDuration = Duration(seconds: 30);
