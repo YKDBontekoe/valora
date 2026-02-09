@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../core/exceptions/app_exceptions.dart';
@@ -15,24 +16,63 @@ class AuthService {
   String get baseUrl => ApiService.baseUrl;
 
   AuthService({FlutterSecureStorage? storage, http.Client? client})
-    : _storage = storage ?? const FlutterSecureStorage(),
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+            aOptions: AndroidOptions(),
+          ),
       _client = client ?? http.Client();
 
   Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    try {
+      return await _storage.read(key: _tokenKey);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage read failed: $e');
+      }
+      throw StorageException('Failed to read auth token: $e');
+    }
   }
 
   Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+    try {
+      await _storage.write(key: _tokenKey, value: token);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage write failed: $e');
+      }
+      throw StorageException('Failed to save auth token: $e');
+    }
   }
 
   Future<void> deleteToken() async {
-    await _storage.delete(key: _tokenKey);
-    await _storage.delete(key: _refreshTokenKey);
+    try {
+      await _storage.delete(key: _tokenKey);
+      await _storage.delete(key: _refreshTokenKey);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage delete failed: $e');
+      }
+      throw StorageException('Failed to clear auth data: $e');
+    }
   }
 
   Future<String?> refreshToken() async {
-    final refreshToken = await _storage.read(key: _refreshTokenKey);
+    String? refreshToken;
+    try {
+      refreshToken = await _storage.read(key: _refreshTokenKey);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage read (refresh) failed: $e');
+      }
+      // If we can't read the storage, it's a transient error, NOT an invalid token.
+      // Throwing StorageException allows AuthProvider to decide whether to logout or retry/ignore.
+      throw StorageException('Failed to read refresh token: $e');
+    }
+
     if (refreshToken == null) {
       throw RefreshTokenInvalidException('No refresh token available');
     }
@@ -53,7 +93,13 @@ class AuthService {
         if (newToken != null) {
           await saveToken(newToken);
           if (newRefreshToken != null) {
-            await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
+             try {
+               await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
+             } catch (e) {
+               // If writing new refresh token fails, we can still proceed with the new access token,
+               // but we should probably log it. Not fatal for this session.
+               if (kDebugMode) debugPrint('Failed to update refresh token: $e');
+             }
           }
           return newToken;
         }
@@ -94,10 +140,15 @@ class AuthService {
           await saveToken(data['token']);
         }
         if (data['refreshToken'] != null) {
-          await _storage.write(
-            key: _refreshTokenKey,
-            value: data['refreshToken'],
-          );
+          try {
+            await _storage.write(
+              key: _refreshTokenKey,
+              value: data['refreshToken'],
+            );
+          } catch (e) {
+             if (kDebugMode) debugPrint('SecureStorage write refresh failed: $e');
+             // Non-fatal, user just won't be able to refresh later
+          }
         }
         return data;
       } else {

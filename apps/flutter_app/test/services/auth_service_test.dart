@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -235,6 +236,50 @@ void main() {
 
       verify(mockStorage.delete(key: 'auth_token')).called(1);
       verify(mockStorage.delete(key: 'refresh_token')).called(1);
+    });
+
+    test('deleteToken throws StorageException on failure', () async {
+      when(
+        mockStorage.delete(key: anyNamed('key')),
+      ).thenThrow(PlatformException(code: 'error', message: 'failed'));
+
+      expect(
+        () => authService.deleteToken(),
+        throwsA(isA<StorageException>()),
+      );
+    });
+
+    test('saveToken throws StorageException on failure', () async {
+      when(
+        mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+      ).thenThrow(PlatformException(code: 'error', message: 'failed'));
+
+      expect(
+        () => authService.saveToken('token'),
+        throwsA(isA<StorageException>()),
+      );
+    });
+
+    test('getToken throws StorageException on failure', () async {
+      when(
+        mockStorage.read(key: anyNamed('key')),
+      ).thenThrow(PlatformException(code: 'error', message: 'failed'));
+
+      expect(
+        () => authService.getToken(),
+        throwsA(isA<StorageException>()),
+      );
+    });
+
+    test('refreshToken throws StorageException on read failure', () async {
+      when(
+        mockStorage.read(key: 'refresh_token'),
+      ).thenThrow(PlatformException(code: 'error', message: 'failed'));
+
+      expect(
+        () => authService.refreshToken(),
+        throwsA(isA<StorageException>()),
+      );
     });
   });
 }
