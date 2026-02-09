@@ -96,6 +96,18 @@ public class NotificationEndpointTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task GetNotifications_WithInvalidLimit_ReturnsBadRequest()
+    {
+        // Arrange
+        await AuthenticateAsync();
+
+        // Act & Assert
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client.GetAsync("/api/notifications?limit=0")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client.GetAsync("/api/notifications?limit=101")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client.GetAsync("/api/notifications?limit=-5")).StatusCode);
+    }
+
+    [Fact]
     public async Task GetNotifications_WithUnreadFilter_ReturnsOnlyUnread()
     {
         // Arrange
@@ -216,25 +228,6 @@ public class NotificationEndpointTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task CreateTestNotification_PersistsToDatabase()
-    {
-        // Arrange
-        var email = "testnotif@example.com";
-        await AuthenticateAsync(email);
-        var user = await DbContext.Users.FirstAsync(u => u.Email == email);
-
-        // Act
-        var response = await Client.PostAsync("/api/notifications/test", null);
-
-        // Assert
-        response.EnsureSuccessStatusCode();
-        DbContext.ChangeTracker.Clear();
-        var notification = await DbContext.Notifications.FirstOrDefaultAsync(n => n.UserId == user.Id && n.Title == "Welcome to Notifications!");
-        Assert.NotNull(notification);
-        Assert.Equal("This is a test notification to verify the system works.", notification.Body);
-    }
-
-    [Fact]
     public async Task Endpoints_RequireAuthentication_ReturnsUnauthorized()
     {
         // Act & Assert
@@ -242,6 +235,5 @@ public class NotificationEndpointTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.Unauthorized, (await Client.GetAsync("/api/notifications/unread-count")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Client.PostAsync($"/api/notifications/{Guid.NewGuid()}/read", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Client.PostAsync("/api/notifications/read-all", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await Client.PostAsync("/api/notifications/test", null)).StatusCode);
     }
 }
