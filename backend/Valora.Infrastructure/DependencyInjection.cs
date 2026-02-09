@@ -6,6 +6,7 @@ using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
 using Valora.Application.Services;
 using Valora.Infrastructure.Enrichment;
+using Valora.Infrastructure.Enrichment.Builders;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
@@ -40,6 +41,14 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
         
+        // Enrichment Builders
+        services.AddTransient<SocialMetricBuilder>();
+        services.AddTransient<CrimeMetricBuilder>();
+        services.AddTransient<DemographicsMetricBuilder>();
+        services.AddTransient<AmenityMetricBuilder>();
+        services.AddTransient<EnvironmentMetricBuilder>();
+        services.AddTransient<ScoringCalculator>();
+
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
