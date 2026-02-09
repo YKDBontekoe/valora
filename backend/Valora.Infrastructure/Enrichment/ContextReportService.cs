@@ -42,6 +42,15 @@ public sealed class ContextReportService : IContextReportService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Coordinates the retrieval of data from multiple public sources and builds a unified context report.
+    /// </summary>
+    /// <remarks>
+    /// This method employs a "fan-out" pattern to query all external APIs in parallel.
+    /// It is designed for resilience: if a non-critical source fails (e.g., air quality),
+    /// the method catches the exception via <see cref="TryGetSourceAsync{T}"/> and returns a partial report
+    /// with a warning, rather than failing the entire request.
+    /// </remarks>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Input))
@@ -49,21 +58,32 @@ public sealed class ContextReportService : IContextReportService
             throw new ValidationException(new[] { "Input is required." });
         }
 
+        // Radius is clamped to prevent excessive load on Overpass/external APIs
         var normalizedRadius = Math.Clamp(request.RadiusMeters, 200, 5000);
-        var cacheKey = $"context-report:v2:{request.Input.Trim().ToLowerInvariant()}:{normalizedRadius}";
 
-        if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
-        {
-            return cached;
-        }
-
+        // 1. Resolve Location First
+        // The location resolver has its own cache. We need the resolved coordinates/IDs
+        // to build a stable cache key for the expensive report generation.
         var location = await _locationResolver.ResolveAsync(request.Input, cancellationToken);
         if (location is null)
         {
             throw new ValidationException(new[] { "Could not resolve input to a Dutch address." });
         }
 
-        // Fetch all data sources in parallel
+        // 2. Check Report Cache using stable location key
+        // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
+        // This ensures "Damrak 1" and "Damrak 1 Amsterdam" share the same report if they resolve to the same point.
+        var latKey = location.Latitude.ToString("F5");
+        var lonKey = location.Longitude.ToString("F5");
+        var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
+
+        if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        // Fetch all data sources in parallel (Fan-out)
+        // Each task is wrapped in a safe executor that returns null on failure instead of throwing
         var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), cancellationToken);
         var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), cancellationToken);
         var demographicsTask = TryGetSourceAsync("CBS Demographics", token => _demographicsClient.GetDemographicsAsync(location, token), cancellationToken);
@@ -80,7 +100,12 @@ public sealed class ContextReportService : IContextReportService
 
         var warnings = new List<string>();
 
-        // Build metrics for each category
+        if (normalizedRadius != request.RadiusMeters)
+        {
+            warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
+        }
+
+        // Build normalized metrics for each category (Fan-in)
         var socialMetrics = BuildSocialMetrics(cbs, warnings);
         var crimeMetrics = BuildCrimeMetrics(crime, warnings);
         var demographicsMetrics = BuildDemographicsMetrics(demographics, warnings);
@@ -109,6 +134,14 @@ public sealed class ContextReportService : IContextReportService
         return report;
     }
 
+    /// <summary>
+    /// Wraps an external API call in a try-catch block to ensure partial success.
+    /// </summary>
+    /// <remarks>
+    /// If an exception occurs (other than cancellation), it is logged as an error,
+    /// and the method returns <c>default</c> (null), allowing the report builder to continue
+    /// without that specific data source.
+    /// </remarks>
     private async Task<T?> TryGetSourceAsync<T>(
         string sourceName,
         Func<CancellationToken, Task<T?>> sourceCall,
@@ -348,33 +381,51 @@ public sealed class ContextReportService : IContextReportService
         return values.Average();
     }
 
-    // Scoring functions
+    // Scoring functions - Heuristics based on Dutch urban planning standards
+
+    /// <summary>
+    /// Scores population density.
+    /// Optimal density (~3500 people/km²) is preferred for access to amenities without overcrowding.
+    /// </summary>
     private static double? ScoreDensity(int? density)
     {
         if (!density.HasValue) return null;
 
         return density.Value switch
         {
-            <= 500 => 65,
-            <= 1500 => 85,
-            <= 3500 => 100,
-            <= 7000 => 70,
-            _ => 50
+            <= 500 => 65,    // Rural / Isolated
+            <= 1500 => 85,   // Suburban spacious
+            <= 3500 => 100,  // Urban optimal
+            <= 7000 => 70,   // Urban dense
+            _ => 50          // Overcrowded
         };
     }
 
+    /// <summary>
+    /// Penalizes neighborhoods with a high percentage of low-income households.
+    /// </summary>
     private static double? ScoreLowIncome(double? lowIncomePercent)
     {
         if (!lowIncomePercent.HasValue) return null;
+        // Inverse linear relationship: 0% low income -> 100 score, 12.5% -> 0 score
+        // The multiplier 8 is aggressive to highlight socio-economic challenges.
         return Math.Clamp(100 - (lowIncomePercent.Value * 8), 0, 100);
     }
 
+    /// <summary>
+    /// Scores WOZ value (property valuation).
+    /// </summary>
     private static double? ScoreWoz(double? wozKeur)
     {
         if (!wozKeur.HasValue) return null;
+        // Example: 450k -> (450-150)/3 = 100 score. 150k -> 0 score.
         return Math.Clamp((wozKeur.Value - 150) / 3, 0, 100);
     }
 
+    /// <summary>
+    /// Scores total crime incidents per 1000 residents.
+    /// Based on CBS data where national average fluctuates around 45-50.
+    /// </summary>
     private static double? ScoreTotalCrime(int? crimesPer1000)
     {
         if (!crimesPer1000.HasValue) return null;
@@ -382,12 +433,12 @@ public sealed class ContextReportService : IContextReportService
         // Lower crime is better - Dutch average is around 50 per 1000
         return crimesPer1000.Value switch
         {
-            <= 20 => 100,
-            <= 35 => 85,
-            <= 50 => 70,
-            <= 75 => 50,
-            <= 100 => 30,
-            _ => 15
+            <= 20 => 100, // Very Safe
+            <= 35 => 85,  // Safe
+            <= 50 => 70,  // Average
+            <= 75 => 50,  // Below Average
+            <= 100 => 30, // Unsafe
+            _ => 15       // Very Unsafe
         };
     }
 
@@ -418,56 +469,71 @@ public sealed class ContextReportService : IContextReportService
         };
     }
 
+    /// <summary>
+    /// Calculates a family-friendly score based on demographics.
+    /// Factors in household composition, presence of children, and household size.
+    /// </summary>
     private static double? ScoreFamilyFriendly(DemographicsDto demographics)
     {
         // Composite score based on presence of families and children
-        double score = 50; // Base score
+        double score = 50; // Start with neutral baseline
 
         if (demographics.PercentFamilyHouseholds.HasValue)
-            score += (demographics.PercentFamilyHouseholds.Value - 20) * 1.5; // Boost for families
+            score += (demographics.PercentFamilyHouseholds.Value - 20) * 1.5; // Boost if family households > 20%
 
         if (demographics.PercentAge0To14.HasValue)
-            score += (demographics.PercentAge0To14.Value - 15) * 2; // Boost for children
+            score += (demographics.PercentAge0To14.Value - 15) * 2; // Boost if children > 15%
 
         if (demographics.AverageHouseholdSize.HasValue)
-            score += (demographics.AverageHouseholdSize.Value - 2) * 15; // Larger households = more families
+            score += (demographics.AverageHouseholdSize.Value - 2) * 15; // Larger households indicate families
 
         return Math.Clamp(score, 0, 100);
     }
 
+    /// <summary>
+    /// Scores the volume of amenities in the search radius.
+    /// Simple quantity heuristic: 20 amenities = 100 score.
+    /// </summary>
     private static double ScoreAmenityCount(AmenityStatsDto amenities)
     {
         var total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
         return Math.Clamp(total * 5, 0, 100);
     }
 
+    /// <summary>
+    /// Scores the "15-minute city" potential based on proximity to the nearest key amenity.
+    /// </summary>
     private static double? ScoreAmenityProximity(double? nearestDistanceMeters)
     {
         if (!nearestDistanceMeters.HasValue) return null;
 
         return nearestDistanceMeters.Value switch
         {
-            <= 250 => 100,
-            <= 500 => 85,
-            <= 1000 => 70,
-            <= 1500 => 55,
-            <= 2000 => 40,
-            _ => 25
+            <= 250 => 100, // Very Walkable
+            <= 500 => 85,  // Walkable
+            <= 1000 => 70, // Bikeable
+            <= 1500 => 55, // Short Drive
+            <= 2000 => 40, // Drive
+            _ => 25        // Isolated
         };
     }
 
+    /// <summary>
+    /// Scores air quality based on PM2.5 concentration.
+    /// WHO guideline is < 5 µg/m³.
+    /// </summary>
     private static double? ScorePm25(double? pm25)
     {
         if (!pm25.HasValue) return null;
 
         return pm25.Value switch
         {
-            <= 5 => 100,
-            <= 10 => 85,
-            <= 15 => 70,
-            <= 25 => 50,
-            <= 35 => 25,
-            _ => 10
+            <= 5 => 100, // Excellent (WHO Goal)
+            <= 10 => 85, // Good
+            <= 15 => 70, // Moderate
+            <= 25 => 50, // Poor (EU Limit)
+            <= 35 => 25, // Unhealthy
+            _ => 10      // Hazardous
         };
     }
 }
