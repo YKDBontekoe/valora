@@ -5,6 +5,10 @@ import '../core/theme/valora_colors.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/valora_widgets.dart';
+import 'settings/notification_settings_screen.dart';
+import 'settings/search_preferences_screen.dart';
+import 'settings/privacy_security_screen.dart';
+import '../services/search_history_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -58,9 +62,39 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _confirmClearHistory(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Clear History?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Clear',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text('Are you sure you want to clear your search history? This action cannot be undone.'),
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await context.read<SearchHistoryService>().clearHistory();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Search history cleared')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Access theme mode to conditionally render UI
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark
         ? ValoraColors.backgroundDark
@@ -82,13 +116,12 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: backgroundColor,
       body: CustomScrollView(
         slivers: [
-          // Sticky Header
           SliverAppBar(
             pinned: true,
-            backgroundColor: backgroundColor.withValues(alpha: 0.95),
+            backgroundColor: backgroundColor.withOpacity(0.95),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
-            automaticallyImplyLeading: false, // No back button since it's a tab
+            automaticallyImplyLeading: false,
             title: Text(
               'Settings',
               style: TextStyle(
@@ -126,8 +159,6 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
-
-          // Content
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -136,7 +167,6 @@ class SettingsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Profile Section
                   _buildProfileCard(
                     context,
                     surfaceColor,
@@ -144,10 +174,7 @@ class SettingsScreen extends StatelessWidget {
                     textColor,
                     subtextColor,
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Preferences Section
                   _buildSectionHeader('PREFERENCES', subtextColor),
                   const SizedBox(height: 12),
                   Container(
@@ -157,7 +184,7 @@ class SettingsScreen extends StatelessWidget {
                       border: Border.all(color: borderColor),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -169,33 +196,37 @@ class SettingsScreen extends StatelessWidget {
                           context,
                           icon: Icons.notifications_active_rounded,
                           iconColor: Colors.blue,
-                          iconBgColor: Colors.blue.withValues(alpha: 0.1),
-                          title: 'Smart Alerts',
-                          subtitle: 'Instant updates on price drops',
+                          iconBgColor: Colors.blue.withOpacity(0.1),
+                          title: 'Notifications',
+                          subtitle: 'Alerts & Updates',
                           showDivider: true,
-                          onTap: () => _openExternal(
+                          onTap: () => Navigator.push(
                             context,
-                            Uri.parse('https://valora.nl/preferences/alerts'),
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationSettingsScreen(),
+                            ),
                           ),
                         ),
                         _buildSettingsTile(
                           context,
                           icon: Icons.tune_rounded,
                           iconColor: Colors.purple,
-                          iconBgColor: Colors.purple.withValues(alpha: 0.1),
+                          iconBgColor: Colors.purple.withOpacity(0.1),
                           title: 'Search Preferences',
-                          subtitle: 'Location, Price, Amenities',
+                          subtitle: 'Default filters',
                           showDivider: true,
-                          onTap: () => _openExternal(
+                          onTap: () => Navigator.push(
                             context,
-                            Uri.parse('https://valora.nl/preferences/search'),
+                            MaterialPageRoute(
+                              builder: (context) => const SearchPreferencesScreen(),
+                            ),
                           ),
                         ),
                         _buildSettingsTile(
                           context,
                           icon: Icons.palette_rounded,
                           iconColor: Colors.orange,
-                          iconBgColor: Colors.orange.withValues(alpha: 0.1),
+                          iconBgColor: Colors.orange.withOpacity(0.1),
                           title: 'Appearance',
                           subtitle: 'Theme & Display settings',
                           showDivider: false,
@@ -206,11 +237,8 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Account & Security Section
-                  _buildSectionHeader('ACCOUNT & SECURITY', subtextColor),
+                  _buildSectionHeader('DATA & PRIVACY', subtextColor),
                   const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
@@ -219,7 +247,53 @@ class SettingsScreen extends StatelessWidget {
                       border: Border.all(color: borderColor),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSettingsTile(
+                          context,
+                          icon: Icons.history_rounded,
+                          iconColor: ValoraColors.error,
+                          iconBgColor: ValoraColors.error.withOpacity(0.1),
+                          title: 'Clear History',
+                          subtitle: 'Remove search history',
+                          showDivider: true,
+                          onTap: () => _confirmClearHistory(context),
+                        ),
+                        _buildSettingsTile(
+                          context,
+                          icon: Icons.lock_rounded,
+                          iconColor: Colors.grey,
+                          iconBgColor: Colors.grey.withOpacity(0.1),
+                          title: 'Privacy & Security',
+                          subtitle: 'Data protection',
+                          showDivider: false,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PrivacySecurityScreen(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('ACCOUNT', subtextColor),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -231,47 +305,29 @@ class SettingsScreen extends StatelessWidget {
                           context,
                           icon: Icons.card_membership_rounded,
                           iconColor: ValoraColors.success,
-                          iconBgColor: ValoraColors.success.withValues(
-                            alpha: 0.1,
-                          ),
+                          iconBgColor: ValoraColors.success.withOpacity(0.1),
                           title: 'Subscription',
                           subtitle: 'Pro Plan Active',
                           subtitleColor: ValoraColors.success,
-                          showDivider: true,
+                          showDivider: false,
                           onTap: () => _openExternal(
                             context,
                             Uri.parse('https://valora.nl/account/subscription'),
                           ),
                         ),
-                        _buildSettingsTile(
-                          context,
-                          icon: Icons.lock_rounded,
-                          iconColor: Colors.grey,
-                          iconBgColor: Colors.grey.withValues(alpha: 0.1),
-                          title: 'Privacy & Security',
-                          subtitle: 'Password, FaceID',
-                          showDivider: false,
-                          onTap: () => _openExternal(
-                            context,
-                            Uri.parse('https://valora.nl/privacy'),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Help Section
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: ValoraColors.primary.withValues(
-                        alpha: isDark ? 0.1 : 0.05,
+                      color: ValoraColors.primary.withOpacity(
+                        isDark ? 0.1 : 0.05,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: ValoraColors.primary.withValues(alpha: 0.2),
+                        color: ValoraColors.primary.withOpacity(0.2),
                       ),
                     ),
                     child: Row(
@@ -320,10 +376,7 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Logout
                   TextButton.icon(
                     onPressed: () => _confirmLogout(context),
                     icon: const Icon(Icons.logout_rounded, size: 20),
@@ -345,20 +398,15 @@ class SettingsScreen extends StatelessWidget {
                           }),
                         ),
                   ),
-
                   const SizedBox(height: 16),
-
                   Text(
                     'Valora v2.4.0 (Build 392)',
                     style: TextStyle(
-                      color: subtextColor.withValues(alpha: 0.5),
+                      color: subtextColor.withOpacity(0.5),
                       fontSize: 12,
                     ),
                   ),
-
-                  const SizedBox(
-                    height: 100,
-                  ), // Bottom padding for navigation bar
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -375,7 +423,6 @@ class SettingsScreen extends StatelessWidget {
     Color textColor,
     Color subtextColor,
   ) {
-    // Get user info from AuthProvider
     final authProvider = context.watch<AuthProvider>();
     final userEmail = authProvider.email ?? 'Unknown user';
     final initials = userEmail.trim().isNotEmpty
@@ -390,7 +437,7 @@ class SettingsScreen extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 6,
             offset: const Offset(0, 4),
           ),
@@ -405,11 +452,11 @@ class SettingsScreen extends StatelessWidget {
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: ValoraColors.primary.withValues(alpha: 0.12),
+                  color: ValoraColors.primary.withOpacity(0.12),
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 4,
                     ),
                   ],
@@ -464,7 +511,7 @@ class SettingsScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: ValoraColors.primary.withValues(alpha: 0.1),
+              color: ValoraColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(

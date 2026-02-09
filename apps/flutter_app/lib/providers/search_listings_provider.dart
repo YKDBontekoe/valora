@@ -7,14 +7,25 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../services/api_service.dart';
+import '../services/search_history_service.dart';
+import 'preferences_provider.dart';
 
 class SearchListingsProvider extends ChangeNotifier {
-  SearchListingsProvider({required ApiService apiService})
-    : _apiService = apiService;
+  SearchListingsProvider({
+    required ApiService apiService,
+    required SearchHistoryService searchHistoryService,
+    PreferencesProvider? preferencesProvider,
+  }) : _apiService = apiService,
+       _searchHistoryService = searchHistoryService {
+    if (preferencesProvider != null) {
+      _applyDefaults(preferencesProvider);
+    }
+  }
 
   static const int pageSize = 20;
 
   final ApiService _apiService;
+  final SearchHistoryService _searchHistoryService;
 
   final List<Listing> _listings = <Listing>[];
   bool _isLoading = false;
@@ -70,6 +81,15 @@ class SearchListingsProvider extends ChangeNotifier {
 
   bool get isSortActive {
     return _sortBy != null && (_sortBy != 'date' || _sortOrder != 'desc');
+  }
+
+  void _applyDefaults(PreferencesProvider prefs) {
+    if (prefs.isInitialized) {
+       _city = prefs.defaultCity;
+       _minPrice = prefs.defaultMinPrice;
+       _maxPrice = prefs.defaultMaxPrice;
+       _minBedrooms = prefs.defaultMinBedrooms;
+    }
   }
 
   void setQuery(String value) {
@@ -246,6 +266,12 @@ class SearchListingsProvider extends ChangeNotifier {
         ..addAll(response.items);
       _hasNextPage = response.hasNextPage;
       _error = null;
+
+      if (refresh && _query.isNotEmpty) {
+        // Fire and forget
+        _searchHistoryService.addToHistory(_query);
+      }
+
     } catch (e) {
       if (requestId != _requestSequence) {
         return;
