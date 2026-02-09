@@ -70,7 +70,10 @@ class _AiInsightCardState extends State<AiInsightCard> {
               ],
             ),
             const SizedBox(height: 12),
-            _MarkdownText(text: _summary!),
+            _MarkdownText(
+              key: const Key('ai-summary-text'),
+              text: _summary!,
+            ),
           ],
         ),
       ).animate().fadeIn().scale(alignment: Alignment.topCenter);
@@ -145,7 +148,7 @@ class _AiInsightCardState extends State<AiInsightCard> {
 }
 
 class _MarkdownText extends StatelessWidget {
-  const _MarkdownText({required this.text});
+  const _MarkdownText({super.key, required this.text});
 
   final String text;
 
