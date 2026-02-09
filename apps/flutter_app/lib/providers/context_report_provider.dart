@@ -19,16 +19,24 @@ class ContextReportProvider extends ChangeNotifier {
   final SearchHistoryService _historyService;
 
   bool _isLoading = false;
+  bool _isDisposed = false;
   String? _error;
   ContextReport? _report;
   int _radiusMeters = 1000;
   List<SearchHistoryItem> _history = [];
+  int _historyLoadSeq = 0;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   ContextReport? get report => _report;
   int get radiusMeters => _radiusMeters;
-  List<SearchHistoryItem> get history => _history;
+  List<SearchHistoryItem> get history => List.unmodifiable(_history);
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
 
   void setRadiusMeters(int value) {
     _radiusMeters = value.clamp(200, 5000);
@@ -36,7 +44,12 @@ class ContextReportProvider extends ChangeNotifier {
   }
 
   Future<void> _loadHistory() async {
-    _history = await _historyService.getHistory();
+    final int seq = ++_historyLoadSeq;
+    final history = await _historyService.getHistory();
+
+    if (_isDisposed || seq != _historyLoadSeq) return;
+
+    _history = history;
     notifyListeners();
   }
 
@@ -53,20 +66,34 @@ class ContextReportProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _report = await _apiService.getContextReport(
+      // 1. Fetch Report
+      final report = await _apiService.getContextReport(
         trimmed,
         radiusMeters: _radiusMeters,
       );
+
+      if (_isDisposed) return;
+
+      _report = report;
       _error = null;
-      await _historyService.addToHistory(trimmed);
-      await _loadHistory();
+
+      // 2. Update History (Failures here should not fail the report)
+      try {
+        await _historyService.addToHistory(trimmed);
+        await _loadHistory();
+      } catch (_) {
+        // Ignore history save errors
+      }
     } catch (e) {
+      if (_isDisposed) return;
       _report = null;
       _error =
           e is AppException ? e.message : 'Failed to generate context report.';
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
