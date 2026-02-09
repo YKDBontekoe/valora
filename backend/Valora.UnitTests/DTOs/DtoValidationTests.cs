@@ -19,6 +19,14 @@ public class DtoValidationTests
     {
         AssertValid(new RegisterDto { Email = "test@example.com", Password = "password", ConfirmPassword = "password" });
         AssertInvalid(new RegisterDto { Email = "invalid", Password = "p", ConfirmPassword = "p" }, nameof(RegisterDto.Email));
+
+        // Password rules
+        AssertInvalid(new RegisterDto { Email = "test@example.com", Password = "", ConfirmPassword = "" }, nameof(RegisterDto.Password));
+        AssertInvalid(new RegisterDto { Email = "test@example.com", Password = null!, ConfirmPassword = null! }, nameof(RegisterDto.Password));
+        AssertInvalid(new RegisterDto { Email = "test@example.com", Password = "123", ConfirmPassword = "123" }, nameof(RegisterDto.Password)); // MinLength(6)
+
+        // Mismatch
+        AssertInvalid(new RegisterDto { Email = "test@example.com", Password = "password", ConfirmPassword = "mismatch" }, nameof(RegisterDto.ConfirmPassword));
     }
 
     [Fact]
@@ -36,6 +44,7 @@ public class DtoValidationTests
     {
         AssertValid(new AiChatRequest { Prompt = "Hello" });
         AssertInvalid(new AiChatRequest { Prompt = "" }, nameof(AiChatRequest.Prompt));
+        AssertInvalid(new AiChatRequest { Prompt = null! }, nameof(AiChatRequest.Prompt));
         AssertInvalid(new AiChatRequest { Prompt = new string('a', 5001) }, nameof(AiChatRequest.Prompt));
     }
 
