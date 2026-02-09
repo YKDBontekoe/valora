@@ -29,6 +29,14 @@ public sealed class PdokLocationResolver : ILocationResolver
         _logger = logger;
     }
 
+    /// <summary>
+    /// Resolves an address string or URL to a normalized location object using the PDOK Locatieserver.
+    /// </summary>
+    /// <remarks>
+    /// This method first checks if the input is a listing URL (e.g. Funda) and extracts the address from it.
+    /// Then it queries the PDOK "free" endpoint to fuzzy match the address to a specific building ID.
+    /// It returns coordinates (WGS84 and RD New) along with administrative hierarchy codes (municipality/district/neighborhood).
+    /// </remarks>
     public async Task<ResolvedLocationDto?> ResolveAsync(string input, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -44,6 +52,8 @@ public sealed class PdokLocationResolver : ILocationResolver
             return cached;
         }
 
+        // Query the "free" endpoint which allows for flexible/fuzzy input
+        // fq=type:adres restricts results to specific addresses, filtering out general place names
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
@@ -62,11 +72,13 @@ public sealed class PdokLocationResolver : ILocationResolver
             docsElement.ValueKind != JsonValueKind.Array ||
             docsElement.GetArrayLength() == 0)
         {
+            // Cache negative results to prevent repeated bad calls
             _cache.Set(cacheKey, null as ResolvedLocationDto, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
             return null;
         }
 
         var doc = docsElement[0];
+        // centroide_ll = WGS84 (Lat/Lon), centroide_rd = Rijksdriehoek (X/Y)
         var pointLl = TryParsePoint(GetString(doc, "centroide_ll"));
         var pointRd = TryParsePoint(GetString(doc, "centroide_rd"));
 
@@ -95,8 +107,14 @@ public sealed class PdokLocationResolver : ILocationResolver
         return result;
     }
 
+    /// <summary>
+    /// Normalizes raw user input into a searchable address string.
+    /// Handles extraction of address parts from supported listing URLs (Funda).
+    /// </summary>
     private static string NormalizeInput(string input)
     {
+        // Heuristic: If input looks like a Funda URL, extract the last path segment
+        // which typically contains the address (e.g., .../huis-424242-straatnaam-1)
         if (Uri.TryCreate(input, UriKind.Absolute, out var uri) &&
             uri.Host.Contains("funda.nl", StringComparison.OrdinalIgnoreCase))
         {
@@ -107,6 +125,7 @@ public sealed class PdokLocationResolver : ILocationResolver
 
             if (!string.IsNullOrWhiteSpace(segment))
             {
+                // Funda slugs are usually kebab-case; replace hyphens with spaces for better searchability
                 return Uri.UnescapeDataString(segment).Replace('-', ' ');
             }
         }
