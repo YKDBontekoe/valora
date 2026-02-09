@@ -708,9 +708,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 padding: EdgeInsets.symmetric(
                                   vertical: ValoraSpacing.lg,
                                 ),
-                                child: Center(
-                                  child: ValoraLoadingIndicator(),
-                                ),
+                                child: ValoraLoadingIndicator(),
                               );
                             }
                             return const SizedBox(height: 80);
