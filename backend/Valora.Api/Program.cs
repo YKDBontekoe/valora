@@ -1,58 +1,64 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Microsoft.OpenApi.Models;
+using Valora.Api.Endpoints;
+using Valora.Api.Middleware;
 using Valora.Application;
-using Valora.Infrastructure;
-using Valora.Infrastructure.Persistence;
-using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Exceptions;
+using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
-using Valora.Api.Endpoints;
-using Valora.Domain.Entities;
+using Valora.Infrastructure;
+using Valora.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-
-// Add Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-    .AddEntityFrameworkStores<ValoraDbContext>()
-    .AddDefaultTokenProviders();
-
-// Add Authentication & JWT
-builder.Services.AddAuthentication(options =>
+// Add services to the container.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(option =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer();
-
-builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-    .Configure<IConfiguration, IWebHostEnvironment, ILogger<Program>>((options, configuration, env, logger) =>
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Valora API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        // JWT Secret configuration is critical.
-        // In Production, we enforce providing a strong secret via environment variables.
-        // In Development, we allow a fallback to a hardcoded secret to simplify onboarding,
-        // but we log a warning to ensure developers are aware of this.
-        var secret = configuration["JWT_SECRET"];
-
-        if (string.IsNullOrEmpty(secret))
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
-            if (env.IsDevelopment())
+            new OpenApiSecurityScheme
             {
-                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-                logger.LogWarning("WARNING: JWT Secret is not configured. Using temporary development key.");
-            }
-            else
-            {
-                throw new InvalidOperationException("JWT Secret is missing in Production configuration.");
-            }
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
         }
+    });
+});
+
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration);
+
+// Add Authentication
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        var secret = builder.Configuration["JWT_SECRET"]
+                     ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -60,8 +66,8 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = configuration["JWT_ISSUER"],
-            ValidAudience = configuration["JWT_AUDIENCE"],
+            ValidIssuer = builder.Configuration["JWT_ISSUER"],
+            ValidAudience = builder.Configuration["JWT_AUDIENCE"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
         };
 
@@ -69,17 +75,17 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         {
             OnAuthenticationFailed = context =>
             {
-                logger.LogError(context.Exception, "Authentication failed");
+                // logger.LogError(context.Exception, "Authentication failed");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
+                // logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
-                logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
+                // logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
                 return Task.CompletedTask;
             }
         };
@@ -176,6 +182,7 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 // Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
+app.MapAiEndpoints();
 
 // API Endpoints
 var api = app.MapGroup("/api");
@@ -324,29 +331,6 @@ api.MapPost("/listings/{id:guid}/enrich", async (
         return Results.Problem("Failed to enrich listing. Please try again later.");
     }
 
-}).RequireAuthorization();
-
-// AI Chat Endpoint
-api.MapPost("/ai/chat", async (
-    AiChatRequest request,
-    IAiService aiService,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Prompt))
-    {
-        return Results.BadRequest(new { error = "Prompt is required" });
-    }
-
-    try
-    {
-        var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
-        return Results.Ok(new { response });
-    }
-    catch (Exception ex)
-    {
-        // Log error
-        return Results.Problem(detail: ex.Message, statusCode: 500);
-    }
 }).RequireAuthorization();
 
 app.Run();

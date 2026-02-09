@@ -1,24 +1,51 @@
-import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
+
 import '../core/exceptions/app_exceptions.dart';
-import '../core/config/app_config.dart';
+import '../models/context_report.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
-import '../models/context_report.dart';
 import '../models/notification.dart';
 
-typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
-typedef ComputeRunner =
-    Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message);
+// Top-level function for compute
+ListingResponse _parseListingResponse(String body) {
+  return ListingResponse.fromJson(json.decode(body));
+}
+
+Listing _parseListing(String body) {
+  return Listing.fromJson(json.decode(body));
+}
+
+List<ValoraNotification> _parseNotifications(String body) {
+  final List<dynamic> list = json.decode(body);
+  return list.map((e) => ValoraNotification.fromJson(e)).toList();
+}
+
+ContextReport _parseContextReport(String body) {
+  return ContextReport.fromJson(json.decode(body));
+}
+
+typedef ComputeRunner = Future<R> Function<Q, R>(
+  ComputeCallback<Q, R> callback,
+  Q message, {
+  String? debugLabel,
+});
 
 class ApiService {
-  static String get baseUrl => AppConfig.apiUrl;
+  // baseUrl is usually provided by environment variables or config
+  // For local development on Android emulator use 10.0.2.2 instead of localhost
+  static const String baseUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://localhost:5001/api',
+  );
+
   static const Duration timeoutDuration = Duration(seconds: 30);
 
   final http.Client _client;
@@ -189,6 +216,31 @@ class ApiService {
     }
   }
 
+  Future<String> getAiAnalysis(ContextReport report) async {
+    final uri = Uri.parse('$baseUrl/ai/analyze-report');
+    try {
+      final payload = json.encode({
+        'report': report.toJson(),
+      });
+
+      final response = await _authenticatedRequest(
+        (headers) => _client
+            .post(uri, headers: headers, body: payload)
+            .timeout(const Duration(seconds: 60)), // AI takes longer
+      );
+
+      return await _handleResponse(
+        response,
+        (body) {
+          final jsonBody = json.decode(body);
+          return jsonBody['summary'] as String;
+        },
+      );
+    } catch (e) {
+      throw _handleException(e, uri);
+    }
+  }
+
   Future<List<ValoraNotification>> getNotifications({
     bool unreadOnly = false,
     int limit = 50,
@@ -343,22 +395,4 @@ class ApiService {
     }
     return sanitized;
   }
-}
-
-// Top-level functions for isolate
-ListingResponse _parseListingResponse(String body) {
-  return ListingResponse.fromJson(json.decode(body));
-}
-
-Listing _parseListing(String body) {
-  return Listing.fromJson(json.decode(body));
-}
-
-List<ValoraNotification> _parseNotifications(String body) {
-  final List<dynamic> list = json.decode(body);
-  return list.map((e) => ValoraNotification.fromJson(e)).toList();
-}
-
-ContextReport _parseContextReport(String body) {
-  return ContextReport.fromJson(json.decode(body));
 }

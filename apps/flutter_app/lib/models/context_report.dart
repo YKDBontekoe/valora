@@ -43,6 +43,21 @@ class ContextReport {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'location': location.toJson(),
+      'socialMetrics': socialMetrics.map((e) => e.toJson()).toList(),
+      'crimeMetrics': crimeMetrics.map((e) => e.toJson()).toList(),
+      'demographicsMetrics': demographicsMetrics.map((e) => e.toJson()).toList(),
+      'amenityMetrics': amenityMetrics.map((e) => e.toJson()).toList(),
+      'environmentMetrics': environmentMetrics.map((e) => e.toJson()).toList(),
+      'compositeScore': compositeScore,
+      'categoryScores': categoryScores,
+      'sources': sources.map((e) => e.toJson()).toList(),
+      'warnings': warnings,
+    };
+  }
+
   static List<ContextMetric> _parseMetrics(dynamic value) {
     final List<dynamic> list = value as List<dynamic>? ?? <dynamic>[];
     return list
@@ -88,6 +103,18 @@ class ContextLocation {
       postalCode: json['postalCode']?.toString(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'query': query,
+      'displayAddress': displayAddress,
+      'latitude': latitude,
+      'longitude': longitude,
+      if (municipalityName != null) 'municipalityName': municipalityName,
+      if (neighborhoodName != null) 'neighborhoodName': neighborhoodName,
+      if (postalCode != null) 'postalCode': postalCode,
+    };
+  }
 }
 
 class ContextMetric {
@@ -120,6 +147,18 @@ class ContextMetric {
       note: json['note']?.toString(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'key': key,
+      'label': label,
+      'source': source,
+      if (value != null) 'value': value,
+      if (unit != null) 'unit': unit,
+      if (score != null) 'score': score,
+      if (note != null) 'note': note,
+    };
+  }
 }
 
 class SourceAttribution {
@@ -139,5 +178,13 @@ class SourceAttribution {
       url: json['url']?.toString() ?? '',
       license: json['license']?.toString() ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'source': source,
+      'url': url,
+      'license': license,
+    };
   }
 }

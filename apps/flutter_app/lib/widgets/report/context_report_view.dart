@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/context_report.dart';
 import 'report_widgets.dart';
+import 'ai_insight_card.dart';
 
 class ContextReportView extends StatelessWidget {
   const ContextReportView({
@@ -72,6 +73,10 @@ class ContextReportView extends StatelessWidget {
           ),
           const SizedBox(height: 24),
         ],
+
+        // AI Insight
+        AiInsightCard(report: report),
+        const SizedBox(height: 24),
 
         // Score overview
         Row(
