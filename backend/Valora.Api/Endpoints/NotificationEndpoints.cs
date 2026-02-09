@@ -13,15 +13,16 @@ public static class NotificationEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", async (
-            [FromQuery] bool unreadOnly,
-            [FromQuery] int limit,
             INotificationService service,
-            ClaimsPrincipal user) =>
+            ClaimsPrincipal user,
+            [FromQuery] bool unreadOnly = false,
+            [FromQuery] int limit = 50) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+            if (limit <= 0 || limit > 100) return Results.BadRequest("Limit must be between 1 and 100.");
 
-            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit == 0 ? 50 : limit);
+            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit);
             return Results.Ok(result);
         });
 
@@ -59,21 +60,5 @@ public static class NotificationEndpoints
             return Results.Ok();
         });
 
-        // Temporary endpoint to trigger a test notification
-        group.MapPost("/test", async (
-            INotificationService service,
-            ClaimsPrincipal user) =>
-        {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
-
-            await service.CreateNotificationAsync(
-                userId,
-                "Welcome to Notifications!",
-                "This is a test notification to verify the system works.",
-                NotificationType.Info
-            );
-            return Results.Ok();
-        });
     }
 }
