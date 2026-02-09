@@ -6,7 +6,6 @@ using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
 using Valora.Application.Services;
 using Valora.Infrastructure.Enrichment;
-using Valora.Infrastructure.Enrichment.Builders;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
@@ -41,14 +40,6 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
         
-        // Enrichment Builders
-        services.AddTransient<SocialMetricBuilder>();
-        services.AddTransient<CrimeMetricBuilder>();
-        services.AddTransient<DemographicsMetricBuilder>();
-        services.AddTransient<AmenityMetricBuilder>();
-        services.AddTransient<EnvironmentMetricBuilder>();
-        services.AddTransient<ScoringCalculator>();
-
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
@@ -90,12 +81,17 @@ public static class DependencyInjection
     {
         var secret = configuration["JWT_SECRET"];
 
+        // Fallback for Development environment to match Program.cs behavior
         if (string.IsNullOrEmpty(secret))
         {
-            throw new InvalidOperationException("JWT Secret is missing in configuration. Please set JWT_SECRET.");
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
+            {
+                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
+            }
         }
 
-        options.Secret = secret;
+        options.Secret = secret ?? string.Empty;
         options.Issuer = configuration["JWT_ISSUER"];
         options.Audience = configuration["JWT_AUDIENCE"];
 

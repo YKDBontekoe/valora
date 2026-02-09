@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:valora_app/services/api_service.dart';
+import 'package:flutter/foundation.dart';
 
-Future<R> syncRunner<Q, R>(ComputeCallback<Q, R> callback, Q message) async =>
+Future<R> syncRunner<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel}) async =>
     await callback(message);

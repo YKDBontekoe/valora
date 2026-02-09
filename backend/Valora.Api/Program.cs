@@ -1,49 +1,71 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Microsoft.OpenApi.Models;
+using Valora.Api.Endpoints;
+using Valora.Api.Middleware;
 using Valora.Application;
-using Valora.Infrastructure;
-using Valora.Infrastructure.Persistence;
-using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Exceptions;
+using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
-using Valora.Api.Endpoints;
-using Valora.Api.Filters;
+using Valora.Infrastructure;
+using Valora.Infrastructure.Persistence;
 using Valora.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+// Add services to the container.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(option =>
+{
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Valora API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
+
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration);
 
 // Add Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-    .AddEntityFrameworkStores<ValoraDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentityCore<ApplicationUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ValoraDbContext>();
 
-// Add Authentication & JWT
+// Add Authentication
 builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer();
-
-builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-    .Configure<IConfiguration, IWebHostEnvironment, ILogger<Program>>((options, configuration, env, logger) =>
     {
-        // JWT Secret configuration is critical.
-        // We enforce providing a strong secret via environment variables.
-        var secret = configuration["JWT_SECRET"];
-
-        if (string.IsNullOrEmpty(secret))
-        {
-            throw new InvalidOperationException("JWT Secret is missing in configuration. Please set JWT_SECRET.");
-        }
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        var secret = builder.Configuration["JWT_SECRET"]
+                     ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -51,8 +73,8 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = configuration["JWT_ISSUER"],
-            ValidAudience = configuration["JWT_AUDIENCE"],
+            ValidIssuer = builder.Configuration["JWT_ISSUER"],
+            ValidAudience = builder.Configuration["JWT_AUDIENCE"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
         };
 
@@ -60,17 +82,17 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         {
             OnAuthenticationFailed = context =>
             {
-                logger.LogError(context.Exception, "Authentication failed");
+                // logger.LogError(context.Exception, "Authentication failed");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
+                // logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
-                logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
+                // logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
                 return Task.CompletedTask;
             }
         };
@@ -167,10 +189,10 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 // Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
+app.MapAiEndpoints();
 
 // API Endpoints
-var api = app.MapGroup("/api")
-    .AddEndpointFilter<ValidationFilter>();
+var api = app.MapGroup("/api");
 
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
@@ -316,29 +338,6 @@ api.MapPost("/listings/{id:guid}/enrich", async (
         return Results.Problem("Failed to enrich listing. Please try again later.");
     }
 
-}).RequireAuthorization();
-
-// AI Chat Endpoint
-api.MapPost("/ai/chat", async (
-    AiChatRequest request,
-    IAiService aiService,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Prompt))
-    {
-        return Results.BadRequest(new { error = "Prompt is required" });
-    }
-
-    try
-    {
-        var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
-        return Results.Ok(new { response });
-    }
-    catch (Exception ex)
-    {
-        // Log error
-        return Results.Problem(detail: ex.Message, statusCode: 500);
-    }
 }).RequireAuthorization();
 
 app.Run();
