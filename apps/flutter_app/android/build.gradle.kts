@@ -17,6 +17,15 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+
+    // Force all plugins to use the same compileSdk as the app
+    afterEvaluate {
+        if ((plugins.hasPlugin("android") || plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library"))) {
+            configure<com.android.build.gradle.BaseExtension> {
+                compileSdkVersion(36)
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
