@@ -395,24 +395,69 @@ class _SearchScreenState extends State<SearchScreen> {
                                   subtitle: Text(suggestion.type),
                                 );
                               },
-                              onSelected: (suggestion) {
+                              onSelected: (suggestion) async {
                                 _debounce?.cancel();
+                                
                                 // Temporarily remove listener to avoid triggering _onSearchChanged
                                 _searchController.removeListener(_onSearchChanged);
                                 _searchController.text = suggestion.displayName;
                                 _searchController.addListener(_onSearchChanged);
 
-                                if (suggestion.type == 'woonplaats') {
-                                  _searchProvider!.setCity(suggestion.displayName);
-                                  _searchController.clear();
-                                } else {
-                                  _searchProvider!.setQuery(suggestion.displayName);
+                                // If it is a specific address (bucket 'adres'), lookup directly
+                                if (suggestion.type == 'adres') {
+                                  // Show loading indicator
+                                  if (!context.mounted) return;
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => const Center(
+                                      child: ValoraLoadingIndicator(message: 'Loading property details...'),
+                                    ),
+                                  );
+
+                                  try {
+                                    final listing = await context.read<ApiService>().getListingFromPdok(suggestion.id);
+                                    
+                                    if (!context.mounted) return;
+                                    Navigator.pop(context); // Remove loading indicator
+
+                                    if (listing != null) {
+                                       Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ListingDetailScreen(listing: listing),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Could not load property details')),
+                                      );
+                                    }
+                                  } catch (e, stack) {
+                                    if (!context.mounted) return;
+                                    Navigator.pop(context); // Remove loading indicator
+                                    
+                                    debugPrint('Error loading PDOK listing: $e\n$stack');
+                                    
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Something went wrong. Please try again.')),
+                                    );
+                                  }
+                                } 
+                                // Otherwise (city, street, etc), just fall back to existing search behavior
+                                else {
+                                  if (suggestion.type == 'woonplaats') {
+                                    _searchProvider!.setCity(suggestion.displayName);
+                                    _searchController.clear();
+                                  } else {
+                                    _searchProvider!.setQuery(suggestion.displayName);
+                                  }
+                                  _searchProvider!.refresh();
                                 }
-                                _searchProvider!.refresh();
                               },
                               emptyBuilder: (context) => const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text('No address found'),
+                                padding: EdgeInsets.all(16.0),
+                                child: Text('No address found. Try entering a street and number.'),
                               ),
                             ),
                           ),

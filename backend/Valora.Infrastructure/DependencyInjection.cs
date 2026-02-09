@@ -39,11 +39,15 @@ public static class DependencyInjection
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
-
+        
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
+        services.AddHttpClient<IPdokListingService, PdokListingService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
@@ -127,6 +131,11 @@ public static class DependencyInjection
         if (int.TryParse(configuration["CONTEXT_REPORT_CACHE_MINUTES"], out var reportMinutes))
         {
             options.ReportCacheMinutes = reportMinutes;
+        }
+
+        if (int.TryParse(configuration["CONTEXT_PDOK_LISTING_CACHE_MINUTES"], out var pdokListingMinutes))
+        {
+            options.PdokListingCacheMinutes = pdokListingMinutes;
         }
     }
 }

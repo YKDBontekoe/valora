@@ -44,8 +44,8 @@ void main() {
     expect(find.byTooltip('Saved'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
 
-    // Tap Search (index 1)
-    await tester.tap(find.byTooltip('Search'));
+    // Tap Report (index 1)
+    await tester.tap(find.byTooltip('Report'));
     await tester.pumpAndSettle();
 
     expect(selectedIndex, 1);
@@ -62,8 +62,8 @@ void main() {
 
     expect(selectedIndex, 3);
 
-    // Tap Report (index 0)
-    await tester.tap(find.byTooltip('Report'));
+    // Tap Search (index 0)
+    await tester.tap(find.byTooltip('Search'));
     await tester.pumpAndSettle();
 
     expect(selectedIndex, 0);

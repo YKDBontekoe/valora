@@ -136,7 +136,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .Metadata.SetValueComparer(stringListComparer);
 
             // Phase 5: Context Report JSONB
-            var contextReportComparer = new ValueComparer<Valora.Domain.Models.ContextReportModel>(
+            var contextReportComparer = new ValueComparer<Valora.Domain.Models.ContextReportModel?>(
                 (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
                 c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
                 c => c == null ? null : JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(JsonHelper.Serialize(c))!);
@@ -145,7 +145,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(v))
+                    v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel?>(v))
                 .Metadata.SetValueComparer(contextReportComparer);
         });
 

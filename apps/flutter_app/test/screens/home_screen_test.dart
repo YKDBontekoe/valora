@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
-import 'package:valora_app/screens/context_report_screen.dart';
 import 'package:valora_app/screens/home_screen.dart';
+import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/screens/settings_screen.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
@@ -28,11 +28,11 @@ void main() {
     );
   }
 
-  testWidgets('shows context report screen by default', (WidgetTester tester) async {
+  testWidgets('shows search screen by default', (WidgetTester tester) async {
     await tester.pumpWidget(createWidget());
     await tester.pumpAndSettle();
 
-    expect(find.byType(ContextReportScreen), findsOneWidget);
+    expect(find.byType(SearchScreen), findsOneWidget);
   });
 
   testWidgets('navigates to settings tab', (WidgetTester tester) async {
