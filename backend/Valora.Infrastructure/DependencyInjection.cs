@@ -9,6 +9,8 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace Valora.Infrastructure;
 
@@ -44,34 +46,52 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
+
+        var retryPolicy = HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
         services.AddHttpClient<IPdokListingService, PdokListingService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
+
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
+
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
+
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
+
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
+
         services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
+
         services.AddHttpClient<IDemographicsClient, CbsDemographicsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+        .AddPolicyHandler(retryPolicy);
 
 
         return services;

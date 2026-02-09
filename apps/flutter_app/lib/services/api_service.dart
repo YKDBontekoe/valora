@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
 
 import '../core/exceptions/app_exceptions.dart';
+import 'crash_reporting_service.dart';
 import '../models/context_report.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
@@ -136,10 +137,10 @@ class ApiService {
         response,
         (body) => _runner(_parseListingResponse, body),
       );
-    } catch (e) {
+    } catch (e, stack) {
       final uri = Uri.parse('$baseUrl/listings')
           .replace(queryParameters: filter.toQueryParameters());
-      throw _handleException(e, uri);
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -165,8 +166,8 @@ class ApiService {
         response,
         (body) => _runner(_parseListing, body),
       );
-    } catch (e) {
-      throw _handleException(e, listingUri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, listingUri);
     }
   }
 
@@ -185,8 +186,8 @@ class ApiService {
       );
     } on NotFoundException {
       return null;
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -211,8 +212,8 @@ class ApiService {
         response,
         (body) => _runner(_parseContextReport, body),
       );
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -236,8 +237,8 @@ class ApiService {
           return jsonBody['summary'] as String;
         },
       );
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -263,8 +264,8 @@ class ApiService {
         response,
         (body) => _runner(_parseNotifications, body),
       );
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -283,8 +284,8 @@ class ApiService {
           return jsonBody['count'] as int;
         },
       );
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -296,8 +297,8 @@ class ApiService {
             _client.post(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -309,8 +310,8 @@ class ApiService {
             _client.post(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
-    } catch (e) {
-      throw _handleException(e, uri);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -345,23 +346,33 @@ class ApiService {
     }
   }
 
-  Exception _handleException(dynamic error, [Uri? uri]) {
+  Exception _handleException(dynamic error, StackTrace? stack, [Uri? uri]) {
     if (error is AppException) return error;
 
     final urlString = uri?.toString() ?? 'unknown URL';
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
+    // Report non-business exceptions to Sentry
+    CrashReportingService.captureException(
+      error,
+      stackTrace: stack ?? (error is Error ? error.stackTrace : null),
+      context: {
+        'url': urlString,
+        'error_type': error.runtimeType.toString(),
+      },
+    );
+
     if (error is SocketException) {
-      return NetworkException('Server unreachable at $urlString. Please ensure the backend is running.');
+      return NetworkException('Unable to reach the server. Please check your internet connection.');
     } else if (error is TimeoutException) {
-      return NetworkException('Request to $urlString timed out.');
+      return NetworkException('The request timed out. Please try again later.');
     } else if (error is http.ClientException) {
-      return NetworkException('Connection failed to $urlString. Please check your network.');
+      return NetworkException('Connection failed. Please check your network settings.');
     } else if (error is FormatException) {
-      return JsonParsingException();
+      return JsonParsingException('Failed to process server response.');
     }
 
-    return UnknownException('Unexpected error: $error');
+    return UnknownException('An unexpected error occurred. Please try again.');
   }
 
   String? _parseErrorMessage(String body) {

@@ -217,24 +217,14 @@ class _InputForm extends StatelessWidget {
           ),
         ),
         if (provider.error != null) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.error_outline, color: theme.colorScheme.error),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    provider.error!,
-                    style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 24),
+          ValoraEmptyState(
+            icon: Icons.error_outline_rounded,
+            title: 'Report Generation Failed',
+            subtitle: provider.error,
+            action: ValoraButton(
+              label: 'Try Again',
+              onPressed: () => provider.generate(controller.text),
             ),
           ),
         ],
