@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -8,7 +9,8 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/auth");
+        var group = app.MapGroup("/api/auth")
+            .AddEndpointFilter<ValidationFilter>();
 
         group.MapPost("/register", async (
             [FromBody] RegisterDto registerDto,

@@ -42,7 +42,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.TokenHash).IsRequired();
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(256);
             entity.HasIndex(e => e.TokenHash).IsUnique();
             entity.Ignore(e => e.RawToken);
             entity.HasOne(e => e.User)
@@ -80,6 +80,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.PostalCode).HasMaxLength(20);
             entity.Property(e => e.Url).HasMaxLength(500);
             entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.Description).HasMaxLength(10000);
             entity.Property(e => e.PropertyType).HasMaxLength(100);
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.EnergyLabel).HasMaxLength(20);
@@ -95,6 +96,11 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CVBoilerBrand).HasMaxLength(100);
             entity.Property(e => e.BrokerPhone).HasMaxLength(50);
             entity.Property(e => e.BrokerAssociationCode).HasMaxLength(20);
+
+            entity.Property(e => e.VideoUrl).HasMaxLength(2048);
+            entity.Property(e => e.VirtualTourUrl).HasMaxLength(2048);
+            entity.Property(e => e.BrochureUrl).HasMaxLength(2048);
+            entity.Property(e => e.BrokerLogoUrl).HasMaxLength(2048);
 
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
             // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)
