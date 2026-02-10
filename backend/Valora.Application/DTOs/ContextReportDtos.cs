@@ -1,6 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Valora.Application.DTOs;
 
-public sealed record ContextReportRequestDto(string Input, int RadiusMeters = 1000);
+public sealed record ContextReportRequestDto(
+    [property: Required] [property: MaxLength(200)] string Input,
+    [property: Range(100, 5000)] int RadiusMeters = 1000);
 
 public sealed record ResolvedLocationDto(
     string Query,

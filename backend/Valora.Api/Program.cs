@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Valora.Api.Endpoints;
+using Valora.Api.Filters;
 using Valora.Api.Middleware;
 using Valora.Application;
 using Valora.Application.Common.Exceptions;
@@ -14,6 +15,7 @@ using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
 using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,7 +54,15 @@ builder.Services
     .AddInfrastructure(builder.Configuration);
 
 // Add Identity
-builder.Services.AddIdentityCore<ApplicationUser>()
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequiredLength = 8;
+        options.User.RequireUniqueEmail = true;
+    })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ValoraDbContext>();
 
@@ -223,14 +233,6 @@ api.MapGet("/health", async (ValoraDbContext db, ILogger<Program> logger, Cancel
 /// </summary>
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
 {
-    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(filter);
-    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-
-    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(filter, validationContext, validationResults, true))
-    {
-        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
-    }
-
     var paginatedList = await repo.GetSummariesAsync(filter, ct);
 
     return Results.Ok(new
@@ -242,7 +244,8 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
         paginatedList.HasNextPage,
         paginatedList.HasPreviousPage
     });
-}).RequireAuthorization();
+}).RequireAuthorization()
+  .AddEndpointFilter<ValidationFilter<ListingFilterDto>>();
 
 /// <summary>
 /// Looks up property details from PDOK by ID and enriches with neighborhood analytics.
@@ -272,15 +275,10 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
 }).RequireAuthorization();
 
 api.MapPost("/context/report", async (
-    ContextReportRequestDto request,
+    [FromBody] ContextReportRequestDto request,
     IContextReportService contextReportService,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Input))
-    {
-        return Results.BadRequest(new { error = "Input is required" });
-    }
-
     try
     {
         var report = await contextReportService.BuildAsync(request, ct);
@@ -294,7 +292,8 @@ api.MapPost("/context/report", async (
             errors = ex.Errors
         });
     }
-}).RequireAuthorization();
+}).RequireAuthorization()
+  .AddEndpointFilter<ValidationFilter<ContextReportRequestDto>>();
 
 api.MapPost("/listings/{id:guid}/enrich", async (
     Guid id,

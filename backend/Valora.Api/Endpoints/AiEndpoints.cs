@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -10,18 +11,15 @@ public static class AiEndpoints
 {
     public static void MapAiEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/ai").RequireAuthorization();
+        var group = app.MapGroup("/api/ai")
+            .RequireAuthorization();
 
         group.MapPost("/chat", async (
             [FromBody] AiChatRequest request,
             IAiService aiService,
+            ILogger<IAiService> logger,
             CancellationToken ct) =>
         {
-            if (string.IsNullOrWhiteSpace(request.Prompt))
-            {
-                return Results.BadRequest(new { error = "Prompt is required" });
-            }
-
             try
             {
                 var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
@@ -29,20 +27,18 @@ public static class AiEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem(detail: ex.Message, statusCode: 500);
+                logger.LogError(ex, "Error occurred during AI chat.");
+                return Results.Problem("An error occurred while processing your request.", statusCode: 500);
             }
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<AiChatRequest>>();
 
         group.MapPost("/analyze-report", async (
             [FromBody] AiAnalysisRequest request,
             IAiService aiService,
+            ILogger<IAiService> logger,
             CancellationToken ct) =>
         {
-            if (request.Report is null)
-            {
-                return Results.BadRequest(new { error = "Report data is required" });
-            }
-
             try
             {
                 var prompt = BuildAnalysisPrompt(request.Report);
@@ -51,9 +47,11 @@ public static class AiEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem(detail: ex.Message, statusCode: 500);
+                logger.LogError(ex, "Error occurred during AI analysis.");
+                return Results.Problem("An error occurred while analyzing the report.", statusCode: 500);
             }
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<AiAnalysisRequest>>();
     }
 
     private static string BuildAnalysisPrompt(ContextReportDto report)
