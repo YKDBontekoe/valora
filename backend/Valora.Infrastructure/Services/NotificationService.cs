@@ -56,6 +56,18 @@ public class NotificationService : INotificationService
         }
     }
 
+    public async Task DeleteNotificationAsync(Guid notificationId, string userId)
+    {
+        var notification = await _context.Notifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
+
+        if (notification != null)
+        {
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+        }
+    }
+
     public async Task MarkAllAsReadAsync(string userId)
     {
         var unreadNotifications = await _context.Notifications

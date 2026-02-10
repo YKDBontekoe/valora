@@ -60,5 +60,16 @@ public static class NotificationEndpoints
             return Results.Ok();
         });
 
+        group.MapDelete("/{id}", async (
+            Guid id,
+            INotificationService service,
+            ClaimsPrincipal user) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+            await service.DeleteNotificationAsync(id, userId);
+            return Results.Ok();
+        });
     }
 }
