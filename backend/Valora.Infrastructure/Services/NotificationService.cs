@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Valora.Application.DTOs;
 using Valora.Application.Services;
 using Valora.Domain.Entities;
@@ -13,10 +14,12 @@ namespace Valora.Infrastructure.Services;
 public class NotificationService : INotificationService
 {
     private readonly ValoraDbContext _context;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(ValoraDbContext context)
+    public NotificationService(ValoraDbContext context, ILogger<NotificationService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50)
@@ -63,8 +66,7 @@ public class NotificationService : INotificationService
 
         if (notification == null) return false;
 
-        // In a real scenario, this would likely be an AuditLog entry
-        Console.WriteLine($"[AUDIT] User {userId} deleting notification {notificationId}");
+        _logger.LogInformation("User {UserId} deleting notification {NotificationId}", userId, notificationId);
 
         _context.Notifications.Remove(notification);
         await _context.SaveChangesAsync();
@@ -73,17 +75,27 @@ public class NotificationService : INotificationService
 
     public async Task MarkAllAsReadAsync(string userId)
     {
-        var unreadNotifications = await _context.Notifications
-            .Where(n => n.UserId == userId && !n.IsRead)
-            .ToListAsync();
-
-        if (unreadNotifications.Any())
+        // InMemory provider does not support ExecuteUpdateAsync
+        if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
         {
-            foreach (var n in unreadNotifications)
+            var unreadNotifications = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync();
+
+            if (unreadNotifications.Any())
             {
-                n.IsRead = true;
+                foreach (var n in unreadNotifications)
+                {
+                    n.IsRead = true;
+                }
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         }
     }
 

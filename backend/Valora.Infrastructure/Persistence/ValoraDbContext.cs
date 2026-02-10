@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Valora.Domain.Entities;
+using Valora.Domain.Models;
 
 namespace Valora.Infrastructure.Persistence;
 
@@ -16,29 +17,42 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    // Value Comparers
+    // Suppress null warnings with ! because these properties are initialized to empty collections
+    // and JsonHelper ensures non-null returns from DB.
+    private static readonly ValueComparer<List<string>> StringListComparer = new(
+        (c1, c2) => c1!.SequenceEqual(c2!),
+        c => c!.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)),
+        c => c!.ToList());
+
+    private static readonly ValueComparer<Dictionary<string, string>> DictionaryComparer = new(
+        (c1, c2) => c1!.Count == c2!.Count && !c1.Except(c2).Any(),
+        // Order by key to ensure GetHashCode is consistent regardless of insertion order
+        c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
+        c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
+
+    private static readonly ValueComparer<List<DateTime>> DateListComparer = new(
+        (c1, c2) => c1!.SequenceEqual(c2!),
+        c => c!.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+        c => c!.ToList());
+
+    private static readonly ValueComparer<ContextReportModel?> ContextReportComparer = new(
+        (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
+        c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
+        c => c == null ? null : JsonHelper.Deserialize<ContextReportModel>(JsonHelper.Serialize(c))!);
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Value Comparers
-        // Suppress null warnings with ! because these properties are initialized to empty collections
-        // and JsonHelper ensures non-null returns from DB.
-        var stringListComparer = new ValueComparer<List<string>>(
-            (c1, c2) => c1!.SequenceEqual(c2!),
-            c => c!.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)),
-            c => c!.ToList());
+        ConfigureRefreshToken(modelBuilder);
+        ConfigureListing(modelBuilder);
+        ConfigurePriceHistory(modelBuilder);
+        ConfigureNotification(modelBuilder);
+    }
 
-        var dictionaryComparer = new ValueComparer<Dictionary<string, string>>(
-            (c1, c2) => c1!.Count == c2!.Count && !c1.Except(c2).Any(),
-            // Order by key to ensure GetHashCode is consistent regardless of insertion order
-            c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
-            c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
-
-        var dateListComparer = new ValueComparer<List<DateTime>>(
-            (c1, c2) => c1!.SequenceEqual(c2!),
-            c => c!.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-            c => c!.ToList());
-
+    private void ConfigureRefreshToken(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -50,7 +64,10 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
+    }
 
+    private void ConfigureListing(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Listing>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -103,7 +120,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<Dictionary<string, string>>(v))
-                .Metadata.SetValueComparer(dictionaryComparer);
+                .Metadata.SetValueComparer(DictionaryComparer);
             
             // Phase 4: JSON conversions for list properties
             entity.Property(e => e.ImageUrls)
@@ -111,21 +128,21 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
-                .Metadata.SetValueComparer(stringListComparer);
+                .Metadata.SetValueComparer(StringListComparer);
             
             entity.Property(e => e.FloorPlanUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
-                .Metadata.SetValueComparer(stringListComparer);
+                .Metadata.SetValueComparer(StringListComparer);
             
             entity.Property(e => e.OpenHouseDates)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<DateTime>>(v))
-                .Metadata.SetValueComparer(dateListComparer);
+                .Metadata.SetValueComparer(DateListComparer);
             
             // New: Labels from Summary API (e.g., "Nieuw", "Open huis")
             entity.Property(e => e.Labels)
@@ -133,22 +150,19 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
-                .Metadata.SetValueComparer(stringListComparer);
-
-            // Phase 5: Context Report JSONB
-            var contextReportComparer = new ValueComparer<Valora.Domain.Models.ContextReportModel?>(
-                (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
-                c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
-                c => c == null ? null : JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(JsonHelper.Serialize(c))!);
+                .Metadata.SetValueComparer(StringListComparer);
 
             entity.Property(e => e.ContextReport)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel?>(v))
-                .Metadata.SetValueComparer(contextReportComparer);
+                    v => JsonHelper.Deserialize<ContextReportModel?>(v))
+                .Metadata.SetValueComparer(ContextReportComparer);
         });
+    }
 
+    private void ConfigurePriceHistory(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<PriceHistory>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -158,7 +172,10 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                   .HasForeignKey(e => e.ListingId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
+    }
 
+    private void ConfigureNotification(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -171,6 +188,5 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Body).IsRequired().HasMaxLength(2000);
             entity.Property(e => e.ActionUrl).HasMaxLength(500);
         });
-
     }
 }
