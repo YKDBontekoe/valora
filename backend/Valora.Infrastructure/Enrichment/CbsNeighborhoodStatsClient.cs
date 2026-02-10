@@ -59,7 +59,7 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
         var escapedCode = Uri.EscapeDataString(regionCode);
         var url =
             $"{_options.CbsBaseUrl.TrimEnd('/')}/85618NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=" +
-            "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_34,GemiddeldeWOZWaardeVanWoningen_36,HuishoudensMetEenLaagInkomen_73," +
+            "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_34,GemiddeldeWOZWaardeVanWoningen_36,HuishoudensMetEenLaagInkomen_87," +
             "Mannen_6,Vrouwen_7,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12," +
             "Eenpersoonshuishoudens_30,HuishoudensZonderKinderen_31,HuishoudensMetKinderen_32,GemiddeldeHuishoudensgrootte_33," +
             "MateVanStedelijkheid_125," +
@@ -107,7 +107,7 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             var residents = GetInt(row, "AantalInwoners_5");
             var density = GetInt(row, "Bevolkingsdichtheid_34");
             var woz = GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_36");
-            var lowIncome = GetDouble(row, "HuishoudensMetEenLaagInkomen_73");
+            var lowIncome = GetDouble(row, "HuishoudensMetEenLaagInkomen_87");
 
             if (residents == null || density == null || woz == null || lowIncome == null)
             {

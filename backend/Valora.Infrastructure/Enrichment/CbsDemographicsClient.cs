@@ -62,7 +62,7 @@ public sealed class CbsDemographicsClient : IDemographicsClient
         var escapedCode = Uri.EscapeDataString(regionCode);
         // CBS table 83765NED extended fields for demographics
         var url =
-            $"{_options.CbsBaseUrl.TrimEnd('/')}/83765NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12,GemiddeldeHuishoudensgrootte_28,Koopwoningen_36,Eenpersoonshuishoudens_29,HuishoudensMet_Kinderen_31";
+            $"{_options.CbsBaseUrl.TrimEnd('/')}/83765NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12,GemiddeldeHuishoudensgrootte_32,Koopwoningen_40,Eenpersoonshuishoudens_29,HuishoudensMetKinderen_31";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -101,10 +101,10 @@ public sealed class CbsDemographicsClient : IDemographicsClient
                 PercentAge25To44: GetInt(row, "k_25Tot45Jaar_10"),
                 PercentAge45To64: GetInt(row, "k_45Tot65Jaar_11"),
                 PercentAge65Plus: GetInt(row, "k_65JaarOfOuder_12"),
-                AverageHouseholdSize: GetDouble(row, "GemiddeldeHuishoudensgrootte_28"),
-                PercentOwnerOccupied: GetInt(row, "Koopwoningen_36"),
+                AverageHouseholdSize: GetDouble(row, "GemiddeldeHuishoudensgrootte_32"),
+                PercentOwnerOccupied: GetInt(row, "Koopwoningen_40"),
                 PercentSingleHouseholds: GetInt(row, "Eenpersoonshuishoudens_29"),
-                PercentFamilyHouseholds: GetInt(row, "HuishoudensMet_Kinderen_31"),
+                PercentFamilyHouseholds: GetInt(row, "HuishoudensMetKinderen_31"),
                 RetrievedAtUtc: DateTimeOffset.UtcNow);
 
             _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
