@@ -7,11 +7,11 @@ class PropertyPhotoService {
   static const int _imageWidth = 1280;
   static const int _imageHeight = 720;
 
-  Future<List<String>> getPropertyPhotos({
+  List<String> getPropertyPhotos({
     required double latitude,
     required double longitude,
     int limit = 3,
-  }) async {
+  }) {
     if (!_isCoordinateValid(latitude, longitude) || limit <= 0) {
       return const <String>[];
     }

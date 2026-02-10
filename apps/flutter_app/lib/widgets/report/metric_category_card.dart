@@ -186,7 +186,6 @@ class _MetricRow extends StatelessWidget {
       case 'age_25_44':
       case 'age_45_64':
       case 'age_65_plus':
-      case 'age_65_plus':
         return Icons.cake_rounded;
       // Phase 2: Housing
       case 'housing_owner':

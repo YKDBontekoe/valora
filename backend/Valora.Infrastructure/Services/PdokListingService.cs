@@ -112,7 +112,7 @@ public class PdokListingService : IPdokListingService
                 }
             }
 
-            // 5. Map to ListingDto
+            // 6. Map to ListingDto
             var listing = new ListingDto(
                 Id: GenerateStableId(pdokId), 
                 FundaId: pdokId, // Store PDOK ID here for reference

@@ -180,10 +180,10 @@ public sealed class ContextReportService : IContextReportService
 
         return
         [
-            new("residents", "Residents", cbs.Residents, "people", null, "CBS StatLine 83765NED"),
-            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, "CBS StatLine 83765NED"),
-            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, "CBS StatLine 83765NED"),
-            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, "CBS StatLine 83765NED")
+            new("residents", "Residents", cbs.Residents, "people", null, "CBS StatLine 85618NED"),
+            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, "CBS StatLine 85618NED"),
+            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, "CBS StatLine 85618NED"),
+            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, "CBS StatLine 85618NED")
         ];
     }
 
@@ -221,14 +221,14 @@ public sealed class ContextReportService : IContextReportService
 
         return
         [
-            new("age_0_14", "Age 0-14", demographics.PercentAge0To14, "%", null, "CBS StatLine 83765NED"),
-            new("age_15_24", "Age 15-24", demographics.PercentAge15To24, "%", null, "CBS StatLine 83765NED"),
-            new("age_25_44", "Age 25-44", demographics.PercentAge25To44, "%", null, "CBS StatLine 83765NED"),
-            new("age_45_64", "Age 45-64", demographics.PercentAge45To64, "%", null, "CBS StatLine 83765NED"),
-            new("age_65_plus", "Age 65+", demographics.PercentAge65Plus, "%", null, "CBS StatLine 83765NED"),
-            new("avg_household_size", "Avg Household Size", demographics.AverageHouseholdSize, "people", null, "CBS StatLine 83765NED"),
-            new("owner_occupied", "Owner-Occupied", demographics.PercentOwnerOccupied, "%", null, "CBS StatLine 83765NED"),
-            new("single_households", "Single Households", demographics.PercentSingleHouseholds, "%", null, "CBS StatLine 83765NED"),
+            new("age_0_14", "Age 0-14", demographics.PercentAge0To14, "%", null, "CBS StatLine 85618NED"),
+            new("age_15_24", "Age 15-24", demographics.PercentAge15To24, "%", null, "CBS StatLine 85618NED"),
+            new("age_25_44", "Age 25-44", demographics.PercentAge25To44, "%", null, "CBS StatLine 85618NED"),
+            new("age_45_64", "Age 45-64", demographics.PercentAge45To64, "%", null, "CBS StatLine 85618NED"),
+            new("age_65_plus", "Age 65+", demographics.PercentAge65Plus, "%", null, "CBS StatLine 85618NED"),
+            new("avg_household_size", "Avg Household Size", demographics.AverageHouseholdSize, "people", null, "CBS StatLine 85618NED"),
+            new("owner_occupied", "Owner-Occupied", demographics.PercentOwnerOccupied, "%", null, "CBS StatLine 85618NED"),
+            new("single_households", "Single Households", demographics.PercentSingleHouseholds, "%", null, "CBS StatLine 85618NED"),
             new("family_friendly", "Family-Friendly Score", familyScore, "score", familyScore, "Valora Composite")
         ];
     }
@@ -254,9 +254,9 @@ public sealed class ContextReportService : IContextReportService
 
         return
         [
-            new("mobility_cars_household", "Cars per Household", cbs.CarsPerHousehold, null, null, "CBS StatLine 85618NED"),
+            new("mobility_cars_household", "Cars per Household", cbs.CarsPerHousehold, "cars/hh", null, "CBS StatLine 85618NED"),
             new("mobility_car_density", "Car Density", cbs.CarDensity, "cars/km²", null, "CBS StatLine 85618NED"),
-            new("mobility_total_cars", "Total Cars", cbs.TotalCars, null, null, "CBS StatLine 85618NED")
+            new("mobility_total_cars", "Total Cars", cbs.TotalCars, "cars", null, "CBS StatLine 85618NED")
         ];
     }
 
@@ -331,7 +331,7 @@ public sealed class ContextReportService : IContextReportService
 
         if (cbs is not null)
         {
-            sources.Add(new SourceAttributionDto("CBS StatLine 83765NED", "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto("CBS StatLine 85618NED", "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
         }
 
         if (crime is not null)

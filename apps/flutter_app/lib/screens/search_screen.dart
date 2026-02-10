@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -127,7 +128,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return listing;
     }
 
-    final photoUrls = await _propertyPhotoService.getPropertyPhotos(
+    final photoUrls = _propertyPhotoService.getPropertyPhotos(
       latitude: listing.latitude!,
       longitude: listing.longitude!,
     );
@@ -146,8 +147,14 @@ class _SearchScreenState extends State<SearchScreen> {
     Listing listingToDisplay = listing;
     try {
       listingToDisplay = await _enrichListingWithRealPhotos(listing);
-    } catch (_) {
+    } catch (e, stack) {
       // Photo enrichment is best-effort and should never block details.
+      developer.log(
+        'Photo enrichment failed for listing ${listing.id}',
+        name: 'SearchScreen',
+        error: e,
+        stackTrace: stack,
+      );
       listingToDisplay = listing;
     }
 
@@ -511,8 +518,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                       context,
                                     ); // Remove loading indicator
 
-                                    debugPrint(
-                                      'Error loading PDOK listing: $e\n$stack',
+                                    developer.log(
+                                      'Error loading PDOK listing',
+                                      name: 'SearchScreen',
+                                      error: e,
+                                      stackTrace: stack,
                                     );
 
                                     ScaffoldMessenger.of(context).showSnackBar(

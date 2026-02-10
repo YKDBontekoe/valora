@@ -114,7 +114,7 @@ public class PdokListingPrototype
         {
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
-                Content = new StringContent(_response)
+                Content = new StringContent(_response, System.Text.Encoding.UTF8, "application/json")
             });
         }
     }

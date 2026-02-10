@@ -6,7 +6,7 @@ void main() {
     test('builds PDOK WMS image URLs for valid coordinates', () async {
       final service = PropertyPhotoService();
 
-      final urls = await service.getPropertyPhotos(
+      final urls = service.getPropertyPhotos(
         latitude: 52.3731,
         longitude: 4.8922,
       );
@@ -22,7 +22,7 @@ void main() {
     test('respects limit parameter', () async {
       final service = PropertyPhotoService();
 
-      final urls = await service.getPropertyPhotos(
+      final urls = service.getPropertyPhotos(
         latitude: 52.3731,
         longitude: 4.8922,
         limit: 2,
@@ -34,7 +34,7 @@ void main() {
     test('returns empty for invalid coordinates', () async {
       final service = PropertyPhotoService();
 
-      final urls = await service.getPropertyPhotos(
+      final urls = service.getPropertyPhotos(
         latitude: 123.0,
         longitude: 4.8922,
       );

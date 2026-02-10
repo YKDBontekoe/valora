@@ -59,7 +59,7 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
         var escapedCode = Uri.EscapeDataString(regionCode);
         var url =
             $"{_options.CbsBaseUrl.TrimEnd('/')}/85618NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=" +
-            "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_33,GemiddeldeWOZWaardeVanWoningen_35,HuishoudensMetEenLaagInkomen_72," +
+            "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_34,GemiddeldeWOZWaardeVanWoningen_36,HuishoudensMetEenLaagInkomen_73," +
             "Mannen_6,Vrouwen_7,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12," +
             "Eenpersoonshuishoudens_30,HuishoudensZonderKinderen_31,HuishoudensMetKinderen_32,GemiddeldeHuishoudensgrootte_33," +
             "MateVanStedelijkheid_125," +
@@ -104,13 +104,24 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
 
             var row = values[0];
 
+            var residents = GetInt(row, "AantalInwoners_5");
+            var density = GetInt(row, "Bevolkingsdichtheid_34");
+            var woz = GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_36");
+            var lowIncome = GetDouble(row, "HuishoudensMetEenLaagInkomen_73");
+
+            if (residents == null || density == null || woz == null || lowIncome == null)
+            {
+                _logger.LogDebug("CBS 85618NED partial data for {RegionCode}: Residents={R}, Density={D}, WOZ={W}, LowIncome={L}", 
+                    regionCode.Trim(), residents, density, woz, lowIncome);
+            }
+
             var result = new NeighborhoodStatsDto(
                 RegionCode: GetString(row, "WijkenEnBuurten")?.Trim() ?? regionCode.Trim(),
                 RegionType: GetString(row, "SoortRegio_2")?.Trim() ?? "Onbekend",
-                Residents: GetInt(row, "AantalInwoners_5"),
-                PopulationDensity: GetInt(row, "Bevolkingsdichtheid_33"),
-                AverageWozValueKeur: GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_35"),
-                LowIncomeHouseholdsPercent: GetDouble(row, "HuishoudensMetEenLaagInkomen_72"),
+                Residents: residents,
+                PopulationDensity: density,
+                AverageWozValueKeur: woz,
+                LowIncomeHouseholdsPercent: lowIncome,
                 // New Fields Sourcing
                 Men: GetInt(row, "Mannen_6"),
                 Women: GetInt(row, "Vrouwen_7"),
