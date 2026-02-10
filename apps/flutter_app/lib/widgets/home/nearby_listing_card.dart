@@ -28,15 +28,21 @@ class NearbyListingCard extends StatefulWidget {
 }
 
 class _NearbyListingCardState extends State<NearbyListingCard> {
-  bool _isHovered = false;
+  final ValueNotifier<bool> _isHovered = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _isHovered.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) => _isHovered.value = true,
+      onExit: (_) => _isHovered.value = false,
       child: ValoraCard(
         margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
         onTap: widget.onTap,
@@ -48,51 +54,57 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
               // Image
               Stack(
                 children: [
-                  Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            ValoraSpacing.radiusMd,
-                          ),
-                          color: isDark
-                              ? ValoraColors.neutral700
-                              : ValoraColors.neutral200,
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _isHovered,
+                    builder: (context, hovered, child) {
+                      return child!
+                          .animate(target: hovered ? 1 : 0)
+                          .scale(
+                            end: const Offset(1.05, 1.05),
+                            duration: ValoraAnimations.slow,
+                            curve: ValoraAnimations.deceleration,
+                          );
+                    },
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          ValoraSpacing.radiusMd,
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: widget.listing.imageUrl != null
-                            ? Hero(
-                                tag: widget.listing.id,
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.listing.imageUrl!,
-                                  memCacheWidth: 300,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      const ValoraShimmer(
-                                        width: 96,
-                                        height: 96,
-                                      ),
-                                  errorWidget: (context, url, error) => Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      color: ValoraColors.neutral400,
+                        color: isDark
+                            ? ValoraColors.neutral700
+                            : ValoraColors.neutral200,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: widget.listing.imageUrl != null
+                          ? Hero(
+                              tag: widget.listing.id,
+                              child: CachedNetworkImage(
+                                imageUrl: widget.listing.imageUrl!,
+                                memCacheWidth: 300,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    const ValoraShimmer(
+                                      width: 96,
+                                      height: 96,
                                     ),
+                                errorWidget: (context, url, error) => Center(
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    color: ValoraColors.neutral400,
                                   ),
                                 ),
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.home,
-                                  color: ValoraColors.neutral400,
-                                ),
                               ),
-                      )
-                      .animate(target: _isHovered ? 1 : 0)
-                      .scale(
-                        end: const Offset(1.05, 1.05),
-                        duration: ValoraAnimations.slow,
-                        curve: ValoraAnimations.deceleration,
-                      ),
+                            )
+                          : Center(
+                              child: Icon(
+                                Icons.home,
+                                color: ValoraColors.neutral400,
+                              ),
+                            ),
+                    ),
+                  ),
 
                   Positioned(
                     top: 4,

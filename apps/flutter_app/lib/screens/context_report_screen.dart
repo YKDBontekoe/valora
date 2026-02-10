@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
+import '../models/context_report.dart';
+import '../models/search_history_item.dart';
 import '../widgets/report/context_report_view.dart';
 
 import '../widgets/valora_widgets.dart';
@@ -27,31 +29,31 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ContextReportProvider>(
       create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
-      child: Consumer<ContextReportProvider>(
-        builder: (context, provider, _) {
+      child: Selector<ContextReportProvider, ContextReport?>(
+        selector: (_, provider) => provider.report,
+        builder: (context, report, _) {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Property Analytics'),
               actions: [
-                if (provider.report != null)
+                if (report != null)
                   IconButton(
                     tooltip: 'New Report',
-                    onPressed: provider.clear,
+                    onPressed: () => context.read<ContextReportProvider>().clear(),
                     icon: const Icon(Icons.refresh_rounded),
                   ),
               ],
             ),
             body: SafeArea(
-              child: provider.report != null
+              child: report != null
                   ? ListView(
                       padding: const EdgeInsets.all(20),
                       children: [
-                        ContextReportView(report: provider.report!),
+                        ContextReportView(report: report),
                       ],
                     )
                   : _InputForm(
                       controller: _inputController,
-                      provider: provider,
                     ),
             ),
           );
@@ -64,15 +66,14 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
 class _InputForm extends StatelessWidget {
   const _InputForm({
     required this.controller,
-    required this.provider,
   });
 
   final TextEditingController controller;
-  final ContextReportProvider provider;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final provider = context.read<ContextReportProvider>();
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -146,129 +147,154 @@ class _InputForm extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         // Radius slider
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Selector<ContextReportProvider, int>(
+          selector: (_, p) => p.radiusMeters,
+          builder: (context, radiusMeters, _) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Search Radius',
-                    style: theme.textTheme.labelLarge,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Search Radius',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                      Text(
+                        '${radiusMeters}m',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${provider.radiusMeters}m',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 6,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                    ),
+                    child: Slider(
+                      min: 200,
+                      max: 5000,
+                      divisions: 24,
+                      value: radiusMeters.toDouble(),
+                      onChanged: (value) => provider.setRadiusMeters(value.round()),
                     ),
                   ),
                 ],
               ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 6,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-                ),
-                child: Slider(
-                  min: 200,
-                  max: 5000,
-                  divisions: 24,
-                  value: provider.radiusMeters.toDouble(),
-                  onChanged: (value) => provider.setRadiusMeters(value.round()),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 24),
         // Generate button
-        SizedBox(
-          height: 56,
-          child: FilledButton.icon(
-            onPressed: provider.isLoading
-                ? null
-                : () => provider.generate(controller.text),
-            style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            icon: provider.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.search_rounded),
-            label: Text(
-              provider.isLoading ? 'Analyzing...' : 'Generate Report',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        if (provider.error != null) ...[
-          const SizedBox(height: 24),
-          ValoraEmptyState(
-            icon: Icons.error_outline_rounded,
-            title: 'Report Generation Failed',
-            subtitle: provider.error,
-            action: ValoraButton(
-              label: 'Try Again',
-              onPressed: () => provider.generate(controller.text),
-            ),
-          ),
-        ],
-        // Recent Searches
-        if (provider.history.isNotEmpty) ...[
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recent Searches',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+        Selector<ContextReportProvider, bool>(
+          selector: (_, p) => p.isLoading,
+          builder: (context, isLoading, _) {
+            return SizedBox(
+              height: 56,
+              child: FilledButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () => provider.generate(controller.text),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.search_rounded),
+                label: Text(
+                  isLoading ? 'Analyzing...' : 'Generate Report',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
-              TextButton(
-                onPressed: () => _confirmClearHistory(context, provider),
-                child: const Text('Clear All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...provider.history.map((item) {
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.history_rounded),
-              title: Text(item.query),
-              subtitle: Text(
-                _formatDate(item.timestamp),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.close_rounded, size: 20),
-                onPressed: () => provider.removeFromHistory(item.query),
-              ),
-              onTap: () {
-                controller.text = item.query;
-                provider.generate(item.query);
-              },
             );
-          }),
-        ],
+          },
+        ),
+        Selector<ContextReportProvider, String?>(
+          selector: (_, p) => p.error,
+          builder: (context, error, _) {
+            if (error == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: ValoraEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Report Generation Failed',
+                subtitle: error,
+                action: ValoraButton(
+                  label: 'Try Again',
+                  onPressed: () => provider.generate(controller.text),
+                ),
+              ),
+            );
+          },
+        ),
+        // Recent Searches
+        Selector<ContextReportProvider, List<SearchHistoryItem>>(
+          selector: (_, p) => p.history,
+          builder: (context, history, _) {
+            if (history.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Searches',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _confirmClearHistory(context, provider),
+                      child: const Text('Clear All'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...history.map((item) {
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.history_rounded),
+                    title: Text(item.query),
+                    subtitle: Text(
+                      _formatDate(item.timestamp),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => provider.removeFromHistory(item.query),
+                    ),
+                    onTap: () {
+                      controller.text = item.query;
+                      provider.generate(item.query);
+                    },
+                  );
+                }),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -319,5 +345,3 @@ class _InputForm extends StatelessWidget {
     }
   }
 }
-
-
