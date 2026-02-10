@@ -59,12 +59,13 @@ class ListingDetailScreen extends StatelessWidget {
       try {
         if (!await launchUrl(uri)) {
           if (context.mounted) {
-            _showErrorSnackBar(context, 'Could not launch dialer');
+            _showErrorSnackBar(context, 'Could not launch dialer. Please check your device settings.');
           }
         }
       } catch (e) {
+        debugPrint('Error launching dialer: $e');
         if (context.mounted) {
-          _showErrorSnackBar(context, 'Error launching dialer: $e');
+          _showErrorSnackBar(context, 'Could not launch dialer. Please try again.');
         }
       }
     }
@@ -115,11 +116,12 @@ class ListingDetailScreen extends StatelessWidget {
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
           context.mounted) {
-        _showErrorSnackBar(context, 'Could not open $url');
+        _showErrorSnackBar(context, 'Could not open link. Please check your browser settings.');
       }
     } catch (e) {
+      debugPrint('Error launching URL: $e');
       if (context.mounted) {
-        _showErrorSnackBar(context, 'Error launching URL: $e');
+        _showErrorSnackBar(context, 'Could not open link. Please try again.');
       }
     }
   }

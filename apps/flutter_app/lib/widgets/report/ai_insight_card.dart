@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../../core/exceptions/app_exceptions.dart';
 import '../../models/context_report.dart';
 import '../../services/api_service.dart';
 import '../common/valora_button.dart';
@@ -37,9 +38,14 @@ class _AiInsightCardState extends State<AiInsightCard> {
         });
       }
     } catch (e) {
+      debugPrint('Error generating insight: $e');
       if (mounted) {
+        String message = 'Failed to generate insight. Please try again.';
+        if (e is AppException) {
+          message = e.message;
+        }
         setState(() {
-          _error = e.toString();
+          _error = message;
           _isLoading = false;
         });
       }
@@ -92,15 +98,24 @@ class _AiInsightCardState extends State<AiInsightCard> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-              'Failed to generate insight',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+            Row(
+              children: [
+                Icon(Icons.error_outline_rounded, color: theme.colorScheme.error),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _error!,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             ValoraButton(
               label: 'Retry',
               onPressed: _generateInsight,
               variant: ValoraButtonVariant.secondary,
+              isFullWidth: true,
             ),
           ],
         ),

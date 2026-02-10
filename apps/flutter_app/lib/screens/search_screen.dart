@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../core/exceptions/app_exceptions.dart';
 import '../core/formatters/currency_formatter.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
@@ -438,7 +439,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       );
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Could not load property details')),
+                                        const SnackBar(content: Text('Property not found in our database')),
                                       );
                                     }
                                   } catch (e, stack) {
@@ -446,9 +447,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                     Navigator.pop(context); // Remove loading indicator
                                     
                                     debugPrint('Error loading PDOK listing: $e\n$stack');
+
+                                    String message = 'Something went wrong. Please try again.';
+                                    if (e is AppException) {
+                                      message = e.message;
+                                    }
                                     
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Something went wrong. Please try again.')),
+                                      SnackBar(content: Text(message)),
                                     );
                                   }
                                 } 
