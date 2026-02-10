@@ -2,6 +2,7 @@ using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
+using Valora.Domain.Entities;
 
 namespace Valora.Application.Services;
 
@@ -16,28 +17,22 @@ public class AuthService : IAuthService
         _tokenService = tokenService;
     }
 
-    public async Task<Result> RegisterAsync(RegisterDto registerDto)
+    public async Task<Result> RegisterAsync(RegisterDto request)
     {
-        if (registerDto.Password != registerDto.ConfirmPassword)
+        if (request.Password != request.ConfirmPassword)
         {
             return Result.Failure(new[] { ErrorMessages.PasswordsDoNotMatch });
         }
 
-        var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
+        var (result, userId) = await _identityService.CreateUserAsync(request.Email, request.Password);
 
         return result;
     }
 
-    public async Task<AuthResponseDto?> LoginAsync(LoginDto loginDto)
+    public async Task<AuthResponseDto?> LoginAsync(LoginDto request)
     {
-        var user = await _identityService.GetUserByEmailAsync(loginDto.Email);
+        var user = await ValidateUserAsync(request.Email, request.Password);
         if (user == null)
-        {
-            return null;
-        }
-
-        var isValidPassword = await _identityService.CheckPasswordAsync(loginDto.Email, loginDto.Password);
-        if (!isValidPassword)
         {
             return null;
         }
@@ -63,11 +58,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Rotate Refresh Token
-        await _tokenService.RevokeRefreshTokenAsync(refreshToken);
-        var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
-        await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
-
+        var newRefreshToken = await RotateRefreshTokenAsync(refreshToken, existingToken.UserId);
         var newAccessToken = await _tokenService.GenerateTokenAsync(existingToken.User);
 
         return new AuthResponseDto(
@@ -76,5 +67,30 @@ public class AuthService : IAuthService
             existingToken.User.Email!,
             existingToken.User.Id
         );
+    }
+
+    private async Task<ApplicationUser?> ValidateUserAsync(string email, string password)
+    {
+        var user = await _identityService.GetUserByEmailAsync(email);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var isValidPassword = await _identityService.CheckPasswordAsync(email, password);
+        if (!isValidPassword)
+        {
+            return null;
+        }
+
+        return user;
+    }
+
+    private async Task<RefreshToken> RotateRefreshTokenAsync(string oldToken, string userId)
+    {
+        await _tokenService.RevokeRefreshTokenAsync(oldToken);
+        var newRefreshToken = _tokenService.GenerateRefreshToken(userId);
+        await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
+        return newRefreshToken;
     }
 }
