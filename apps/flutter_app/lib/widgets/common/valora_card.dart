@@ -19,6 +19,9 @@ class ValoraCard extends StatefulWidget {
     this.elevation,
     this.borderRadius,
     this.gradient,
+    this.border,
+    this.clipBehavior = Clip.antiAlias,
+    this.backgroundColor,
   });
 
   /// The content of the card
@@ -41,6 +44,15 @@ class ValoraCard extends StatefulWidget {
 
   /// Optional gradient background
   final Gradient? gradient;
+
+  /// Optional border
+  final BoxBorder? border;
+
+  /// Clip behavior for the card
+  final Clip clipBehavior;
+
+  /// Optional background color override
+  final Color? backgroundColor;
 
   @override
   State<ValoraCard> createState() => _ValoraCardState();
@@ -116,22 +128,23 @@ class _ValoraCardState extends State<ValoraCard> {
         ),
       );
     }
-    // No MouseRegion hover effect when non-interactive
 
     return AnimatedContainer(
           duration: ValoraAnimations.normal,
           curve: ValoraAnimations.standard,
           margin: widget.margin,
           decoration: BoxDecoration(
-            color: widget.gradient == null
-                ? (isDark
-                      ? ValoraColors.surfaceDark
-                      : ValoraColors.surfaceLight)
-                : null,
+            color: widget.backgroundColor ??
+                (widget.gradient == null
+                    ? (isDark
+                        ? ValoraColors.surfaceDark
+                        : ValoraColors.surfaceLight)
+                    : null),
             borderRadius: BorderRadius.circular(cardRadius),
             boxShadow: currentShadows,
+            border: widget.border,
           ),
-          clipBehavior: Clip.antiAlias,
+          clipBehavior: widget.clipBehavior,
           child: cardContent,
         )
         .animate(target: _isPressed ? 1 : 0) // Press scale

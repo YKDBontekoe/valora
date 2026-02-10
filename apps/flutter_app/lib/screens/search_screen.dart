@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
-import '../core/formatters/currency_formatter.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -279,28 +278,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String _priceChipLabel(double? minPrice, double? maxPrice) {
-    final min = CurrencyFormatter.formatEur(minPrice ?? 0);
-    final max =
-        maxPrice != null ? CurrencyFormatter.formatEur(maxPrice) : 'Any';
-    return 'Price: $min - $max';
-  }
-
-  String _sortChipLabel(String? sortBy, String? sortOrder) {
-    switch (sortBy) {
-      case 'price':
-        return 'Price: ${sortOrder == 'asc' ? 'Low to High' : 'High to Low'}';
-      case 'livingarea':
-        return 'Area: ${sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}';
-      case 'contextcompositescore':
-        return 'Composite';
-      case 'contextsafetyscore':
-        return 'Safety';
-      default:
-        return 'Sort';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -337,6 +314,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         onPressed: _showSortOptions,
                         icon: const Icon(Icons.sort_rounded),
                         tooltip: 'Sort',
+                        color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
                       ),
                       Stack(
                         children: [
@@ -344,6 +322,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             onPressed: _openFilterDialog,
                             icon: const Icon(Icons.tune_rounded),
                             tooltip: 'Filters',
+                             color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
                           ),
                           if (provider.hasActiveFilters)
                             Positioned(
@@ -364,7 +343,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                     bottom: PreferredSize(
                       preferredSize: Size.fromHeight(
-                        provider.hasActiveFiltersOrSort ? 130 : 80,
+                        provider.hasActiveFiltersOrSort ? 120 : 80,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,179 +448,10 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                             ),
                           ),
-                          if (provider.hasActiveFiltersOrSort)
-                            SizedBox(
-                              height: 40,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: ValoraSpacing.lg,
-                                ),
-                                children: [
-                                  if (provider.minPrice != null ||
-                                      provider.maxPrice != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: _priceChipLabel(
-                                            provider.minPrice, provider.maxPrice),
-                                        isSelected: true,
-                                        onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider
-                                            .clearPriceFilter()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear price filter')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.city != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: 'City: ${provider.city}',
-                                        isSelected: true,
-                                        onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider
-                                            .clearCityFilter()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear city filter')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.minBedrooms != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: '${provider.minBedrooms}+ Beds',
-                                        isSelected: true,
-                                        onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider
-                                            .clearBedroomsFilter()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear bedrooms filter')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.minLivingArea != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: '${provider.minLivingArea}+ m²',
-                                        isSelected: true,
-                                        onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider
-                                            .clearLivingAreaFilter()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear area filter')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.minCompositeScore != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: 'Composite: ${provider.minCompositeScore}+',
-                                        isSelected: true,
-                                        onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider
-                                            .clearCompositeScoreFilter()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Failed to clear composite score filter')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.minSafetyScore != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: 'Safety: ${provider.minSafetyScore}+',
-                                        isSelected: true,
-                                        onSelected: (_) => _openFilterDialog(),
-                                        onDeleted: () => provider
-                                            .clearSafetyScoreFilter()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Failed to clear safety score filter')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.isSortActive)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: ValoraChip(
-                                        label: _sortChipLabel(provider.sortBy, provider.sortOrder),
-                                        isSelected: true,
-                                        onSelected: (_) => _showSortOptions(),
-                                        onDeleted: () => provider
-                                            .clearSort()
-                                            .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear sort')),
-                                            );
-                                          }
-                                        }),
-                                      ),
-                                    ),
-                                  if (provider.hasActiveFiltersOrSort)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 4),
-                                      child: IconButton(
-                                        icon: const Icon(
-                                          Icons.clear_all_rounded,
-                                          size: 20,
-                                        ),
-                                        tooltip: 'Clear Filters',
-                                        style: IconButton.styleFrom(
-                                          backgroundColor: isDark
-                                              ? ValoraColors.surfaceVariantDark
-                                              : ValoraColors
-                                                    .surfaceVariantLight,
-                                        ),
-                                        onPressed: () => provider.clearFilters(),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                          ValoraFilterBar(
+                            onFilterTap: _openFilterDialog,
+                            onSortTap: _showSortOptions,
+                          ),
                           if (provider.hasActiveFiltersOrSort)
                             const SizedBox(height: 12),
                         ],

@@ -305,7 +305,7 @@ class ListingDetailScreen extends StatelessWidget {
                           // Broker Section
                           if (listing.brokerLogoUrl != null ||
                               listing.brokerPhone != null) ...[
-                            _buildBrokerSection(colorScheme),
+                            _buildBrokerSection(context, colorScheme),
                             const SizedBox(height: ValoraSpacing.md),
                           ],
 
@@ -446,6 +446,7 @@ class ListingDetailScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -481,8 +482,6 @@ class ListingDetailScreen extends StatelessWidget {
         borderRadius: 0,
       );
     }
-    // If we have lat/long, we could show a static map here, but for now a nice icon
-    // showing it's a "Building" record vs a "Sale" record
     return Container(
       color: isDark ? ValoraColors.surfaceVariantDark : ValoraColors.neutral100,
       child: Center(
@@ -560,44 +559,40 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (listing.bedrooms != null) {
       specs.add(
-        _buildSpecItem(
-          Icons.bed_rounded,
-          'Bedrooms',
-          '${listing.bedrooms}',
-          colorScheme,
+        ValoraSpecCard(
+          icon: Icons.bed_rounded,
+          label: 'Bedrooms',
+          value: '${listing.bedrooms}',
         ),
       );
     }
 
     if (listing.bathrooms != null) {
       specs.add(
-        _buildSpecItem(
-          Icons.shower_rounded,
-          'Bathrooms',
-          '${listing.bathrooms}',
-          colorScheme,
+        ValoraSpecCard(
+          icon: Icons.shower_rounded,
+          label: 'Bathrooms',
+          value: '${listing.bathrooms}',
         ),
       );
     }
 
     if (listing.livingAreaM2 != null) {
       specs.add(
-        _buildSpecItem(
-          Icons.square_foot_rounded,
-          'Living Area',
-          '${listing.livingAreaM2} m²',
-          colorScheme,
+        ValoraSpecCard(
+          icon: Icons.square_foot_rounded,
+          label: 'Living Area',
+          value: '${listing.livingAreaM2} m²',
         ),
       );
     }
 
     if (listing.plotAreaM2 != null) {
       specs.add(
-        _buildSpecItem(
-          Icons.landscape_rounded,
-          'Plot Size',
-          '${listing.plotAreaM2} m²',
-          colorScheme,
+        ValoraSpecCard(
+          icon: Icons.landscape_rounded,
+          label: 'Plot Size',
+          value: '${listing.plotAreaM2} m²',
         ),
       );
     }
@@ -777,17 +772,14 @@ class ListingDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBrokerSection(ColorScheme colorScheme) {
+  Widget _buildBrokerSection(BuildContext context, ColorScheme colorScheme) {
     if (listing.agentName == null && listing.brokerLogoUrl == null && listing.brokerPhone == null) {
       return const SizedBox.shrink();
     }
-    return Container(
+    return ValoraCard(
       padding: const EdgeInsets.all(ValoraSpacing.md),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
-      ),
+      backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.3),
+      border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
       child: Row(
         children: [
           if (listing.brokerLogoUrl != null)
@@ -841,59 +833,6 @@ class ListingDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSpecItem(
-    IconData icon,
-    String label,
-    String value,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(ValoraSpacing.md),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(ValoraSpacing.sm),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 20, color: colorScheme.primary),
-          ),
-          const SizedBox(width: ValoraSpacing.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: ValoraTypography.labelSmall.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: ValoraTypography.titleMedium.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: ValoraSpacing.sm),
         ],
       ),
     );

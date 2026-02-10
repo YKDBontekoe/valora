@@ -40,6 +40,7 @@ class ValoraListingCard extends StatelessWidget {
     return ValoraCard(
       padding: EdgeInsets.zero,
       onTap: onTap,
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -66,6 +67,7 @@ class ValoraListingCard extends StatelessWidget {
                 child: _FavoriteButton(
                   isFavorite: isFavorite,
                   onFavorite: onFavorite,
+                  isDark: isDark,
                 ),
               ),
               if (listing.contextCompositeScore != null)
@@ -89,7 +91,7 @@ class ValoraListingCard extends StatelessWidget {
               children: [
                 // Price
                 if (listing.price != null) ValoraPrice(price: listing.price!),
-                const SizedBox(height: ValoraSpacing.sm),
+                const SizedBox(height: ValoraSpacing.xs),
 
                 // Address
                 Text(
@@ -100,7 +102,7 @@ class ValoraListingCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: ValoraSpacing.xs),
+                const SizedBox(height: 2),
 
                 // Location
                 Text(
@@ -215,47 +217,66 @@ class _Placeholder extends StatelessWidget {
 }
 
 class _FavoriteButton extends StatelessWidget {
-  const _FavoriteButton({required this.isFavorite, this.onFavorite});
+  const _FavoriteButton({
+    required this.isFavorite,
+    this.onFavorite,
+    required this.isDark,
+  });
 
   final bool isFavorite;
   final VoidCallback? onFavorite;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.9),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onFavorite,
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(ValoraSpacing.sm),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) {
-              return ScaleTransition(scale: animation, child: child);
-            },
-            child: isFavorite
-                ? Icon(
-                        Icons.favorite,
-                        key: const ValueKey(true),
-                        size: ValoraSpacing.iconSizeMd,
-                        color: ValoraColors.error,
-                      )
-                      .animate()
-                      .scale(
-                        duration: 400.ms,
-                        curve: Curves.elasticOut,
-                        begin: const Offset(0.5, 0.5),
-                        end: const Offset(1, 1),
-                      )
-                      .shimmer(delay: 200.ms, duration: 600.ms)
-                : Icon(
-                    Icons.favorite_border,
-                    key: const ValueKey(false),
-                    size: ValoraSpacing.iconSizeMd,
-                    color: ValoraColors.neutral600,
-                  ),
+    return Container(
+      decoration: BoxDecoration(
+        color:
+            (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight)
+                .withValues(alpha: 0.9),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onFavorite,
+          customBorder: const CircleBorder(),
+          child: Padding(
+            padding: const EdgeInsets.all(ValoraSpacing.sm),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: isFavorite
+                  ? Icon(
+                          Icons.favorite,
+                          key: const ValueKey(true),
+                          size: ValoraSpacing.iconSizeMd,
+                          color: ValoraColors.error,
+                        )
+                        .animate()
+                        .scale(
+                          duration: 400.ms,
+                          curve: Curves.elasticOut,
+                          begin: const Offset(0.5, 0.5),
+                          end: const Offset(1, 1),
+                        )
+                  : Icon(
+                      Icons.favorite_border,
+                      key: const ValueKey(false),
+                      size: ValoraSpacing.iconSizeMd,
+                      color: ValoraColors.neutral500,
+                    ),
+            ),
           ),
         ),
       ),
@@ -319,7 +340,7 @@ class _ListingSpecs extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: ValoraSpacing.iconSizeSm + 2,
+          size: ValoraSpacing.iconSizeSm,
           color: colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: ValoraSpacing.xs),
@@ -327,6 +348,7 @@ class _ListingSpecs extends StatelessWidget {
           value,
           style: ValoraTypography.metadata.copyWith(
             color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
