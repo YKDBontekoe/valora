@@ -49,10 +49,12 @@ Response includes:
 
 - `location`
 - `socialMetrics`
-- `safetyMetrics`
+- `crimeMetrics`
+- `demographicsMetrics`
 - `amenityMetrics`
 - `environmentMetrics`
 - `compositeScore`
+- `categoryScores`
 - `sources`
 - `warnings`
 

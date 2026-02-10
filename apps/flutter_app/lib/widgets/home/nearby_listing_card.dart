@@ -283,8 +283,11 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
       case 'sold':
       case 'under offer':
         return ValoraColors.soldBadge;
-      default:
+      case 'active':
+      case 'beschikbaar':
         return ValoraColors.success;
+      default:
+        return ValoraColors.neutral500;
     }
   }
 }

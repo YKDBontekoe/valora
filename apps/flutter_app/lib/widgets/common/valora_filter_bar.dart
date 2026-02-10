@@ -134,15 +134,18 @@ class ValoraFilterBar extends StatelessWidget {
   }
 
   String _sortChipLabel(String? sortBy, String? sortOrder) {
+    final isAsc = sortOrder == 'asc';
+    final direction = isAsc ? 'Low to High' : 'High to Low';
+
     switch (sortBy) {
       case 'price':
-        return 'Price: ${sortOrder == 'asc' ? 'Low to High' : 'High to Low'}';
+        return 'Price: $direction';
       case 'livingarea':
-        return 'Area: ${sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}';
+        return 'Area: ${isAsc ? 'Small to Large' : 'Large to Small'}';
       case 'contextcompositescore':
-        return 'Composite';
+        return 'Composite: $direction';
       case 'contextsafetyscore':
-        return 'Safety';
+        return 'Safety: $direction';
       default:
         return 'Sort';
     }
