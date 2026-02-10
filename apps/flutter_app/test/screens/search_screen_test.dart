@@ -15,7 +15,6 @@ import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 @GenerateMocks([ApiService, FavoritesProvider, PdokService])
 @GenerateNiceMocks([
