@@ -12,7 +12,6 @@ import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/common/valora_text_field.dart';
-import 'package:valora_app/widgets/home/nearby_listing_card.dart';
 
 // Mock ApiService
 class MockApiService extends Mock implements ApiService {
