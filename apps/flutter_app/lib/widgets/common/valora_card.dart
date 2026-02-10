@@ -19,6 +19,9 @@ class ValoraCard extends StatefulWidget {
     this.elevation,
     this.borderRadius,
     this.gradient,
+    this.backgroundColor,
+    this.border,
+    this.clipBehavior,
   });
 
   /// The content of the card
@@ -42,13 +45,29 @@ class ValoraCard extends StatefulWidget {
   /// Optional gradient background
   final Gradient? gradient;
 
+  /// Optional background color override
+  final Color? backgroundColor;
+
+  /// Optional border
+  final BoxBorder? border;
+
+  /// Clip behavior
+  final Clip? clipBehavior;
+
   @override
   State<ValoraCard> createState() => _ValoraCardState();
 }
 
 class _ValoraCardState extends State<ValoraCard> {
-  bool _isHovered = false;
-  bool _isPressed = false;
+  final _isHovered = ValueNotifier<bool>(false);
+  final _isPressed = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _isHovered.dispose();
+    _isPressed.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,95 +75,99 @@ class _ValoraCardState extends State<ValoraCard> {
     final cardRadius = widget.borderRadius ?? ValoraSpacing.radiusLg;
     final baseElevation = widget.elevation ?? ValoraSpacing.elevationSm;
 
-    // Interactive elevation logic: maps elevation values to shadow tokens
-    List<BoxShadow> currentShadows;
+    // Pre-calculate shadow sets
+    List<BoxShadow> baseShadows;
+    List<BoxShadow> hoverShadows;
 
-    // Determine target shadow based on state and elevation
     if (baseElevation <= ValoraSpacing.elevationNone) {
-      currentShadows = [];
+      baseShadows = [];
+      hoverShadows = [];
+    } else if (baseElevation <= ValoraSpacing.elevationSm) {
+      baseShadows = isDark ? ValoraShadows.smDark : ValoraShadows.sm;
+      hoverShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
+    } else if (baseElevation <= ValoraSpacing.elevationMd) {
+      baseShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
+      hoverShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
     } else {
-      // Determine base shadow level
-      List<BoxShadow> baseShadows;
-      List<BoxShadow> hoverShadows;
-
-      if (baseElevation <= ValoraSpacing.elevationSm) {
-        baseShadows = isDark ? ValoraShadows.smDark : ValoraShadows.sm;
-        hoverShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
-      } else if (baseElevation <= ValoraSpacing.elevationMd) {
-        baseShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
-        hoverShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
-      } else {
-        baseShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
-        hoverShadows = isDark ? ValoraShadows.xlDark : ValoraShadows.xl;
-      }
-
-      if (_isPressed) {
-        currentShadows = baseShadows; // Pressing flattens back to base
-      } else if (_isHovered) {
-        currentShadows = hoverShadows;
-      } else {
-        currentShadows = baseShadows;
-      }
+      baseShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+      hoverShadows = isDark ? ValoraShadows.xlDark : ValoraShadows.xl;
     }
 
-    Widget cardContent = Container(
-      padding:
-          widget.padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
-      decoration: widget.gradient != null
-          ? BoxDecoration(
-              gradient: widget.gradient,
-              borderRadius: BorderRadius.circular(cardRadius),
-            )
-          : null,
+    // Static content preparation
+    final cardContent = Container(
+      padding: widget.padding ?? const EdgeInsets.all(ValoraSpacing.cardPadding),
       child: widget.child,
     );
 
-    if (widget.onTap != null) {
-      cardContent = Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            widget.onTap?.call();
-          },
-          onHover: (hovered) => setState(() => _isHovered = hovered),
-          onTapDown: (_) => setState(() => _isPressed = true),
-          onTapUp: (_) => setState(() => _isPressed = false),
-          onTapCancel: () => setState(() => _isPressed = false),
-          borderRadius: BorderRadius.circular(cardRadius),
-          child: cardContent,
-        ),
-      );
-    }
-    // No MouseRegion hover effect when non-interactive
+    return Padding(
+      padding: widget.margin ?? EdgeInsets.zero,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _isHovered,
+        builder: (context, isHovered, _) {
+          return ValueListenableBuilder<bool>(
+            valueListenable: _isPressed,
+            builder: (context, isPressed, _) {
+              List<BoxShadow> currentShadows;
+              if (isPressed) {
+                currentShadows = baseShadows;
+              } else if (isHovered) {
+                currentShadows = hoverShadows;
+              } else {
+                currentShadows = baseShadows;
+              }
 
-    return AnimatedContainer(
-          duration: ValoraAnimations.normal,
-          curve: ValoraAnimations.standard,
-          margin: widget.margin,
-          decoration: BoxDecoration(
-            color: widget.gradient == null
-                ? (isDark
-                      ? ValoraColors.surfaceDark
-                      : ValoraColors.surfaceLight)
-                : null,
-            borderRadius: BorderRadius.circular(cardRadius),
-            boxShadow: currentShadows,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: cardContent,
-        )
-        .animate(target: _isPressed ? 1 : 0) // Press scale
-        .scale(
-          end: const Offset(0.98, 0.98),
-          duration: ValoraAnimations.fast,
-          curve: ValoraAnimations.standard,
-        )
-        .animate(target: _isHovered && !_isPressed ? 1 : 0) // Hover lift
-        .scale(
-          end: const Offset(1.02, 1.02),
-          duration: ValoraAnimations.normal,
-          curve: ValoraAnimations.standard,
-        );
+              Widget content = widget.onTap != null
+                  ? Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          widget.onTap?.call();
+                        },
+                        onHover: (bool hovered) => _isHovered.value = hovered,
+                        onTapDown: (TapDownDetails _) => _isPressed.value = true,
+                        onTapUp: (TapUpDetails _) => _isPressed.value = false,
+                        onTapCancel: () => _isPressed.value = false,
+                        borderRadius: BorderRadius.circular(cardRadius),
+                        child: cardContent,
+                      ),
+                    )
+                  : cardContent;
+
+              return AnimatedContainer(
+                duration: ValoraAnimations.normal,
+                curve: ValoraAnimations.standard,
+                decoration: BoxDecoration(
+                  color: widget.backgroundColor ??
+                      (widget.gradient == null
+                          ? (isDark
+                              ? ValoraColors.surfaceDark
+                              : ValoraColors.surfaceLight)
+                          : null),
+                  gradient: widget.gradient,
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  border: widget.border,
+                  boxShadow: currentShadows,
+                ),
+                clipBehavior: widget.clipBehavior ?? Clip.antiAlias,
+                child: content,
+              )
+              .animate(target: isPressed ? 1 : 0)
+              .scale(
+                end: const Offset(0.98, 0.98),
+                duration: ValoraAnimations.fast,
+                curve: ValoraAnimations.standard,
+              )
+              .animate(target: isHovered && !isPressed ? 1 : 0)
+              .scale(
+                end: const Offset(1.02, 1.02),
+                duration: ValoraAnimations.normal,
+                curve: ValoraAnimations.standard,
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }
