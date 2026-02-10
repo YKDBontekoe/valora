@@ -65,7 +65,6 @@ public class DependencyInjectionTests
 
         var provider = services.BuildServiceProvider();
 
-        Assert.IsType<ContextReportService>(provider.GetRequiredService<IContextReportService>());
         Assert.IsType<PdokLocationResolver>(provider.GetRequiredService<ILocationResolver>());
         Assert.IsType<CbsNeighborhoodStatsClient>(provider.GetRequiredService<ICbsNeighborhoodStatsClient>());
         Assert.IsType<OverpassAmenityClient>(provider.GetRequiredService<IAmenityClient>());

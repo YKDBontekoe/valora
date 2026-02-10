@@ -40,7 +40,6 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddScoped<INotificationService, NotificationService>();
-        services.AddScoped<IContextReportService, ContextReportService>();
         
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));

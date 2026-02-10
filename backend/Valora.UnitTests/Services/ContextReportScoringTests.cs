@@ -5,7 +5,8 @@ using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
-using Valora.Infrastructure.Enrichment;
+using Valora.Application.Enrichment.Builders;
+using Valora.Application.Services;
 
 namespace Valora.UnitTests.Services;
 
@@ -185,7 +186,13 @@ public class ContextReportScoringTests
             _airClient.Object,
             _memoryCache,
             Options.Create(new ContextEnrichmentOptions()),
-            _logger.Object);
+            _logger.Object,
+            new SocialMetricBuilder(),
+            new CrimeMetricBuilder(),
+            new DemographicsMetricBuilder(),
+            new AmenityMetricBuilder(),
+            new EnvironmentMetricBuilder(),
+            new ScoringCalculator());
     }
 
     private static ResolvedLocationDto CreateLocation()
