@@ -80,7 +80,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         onTap: () => _showCityDetails(context, city),
         child: Container(
           decoration: BoxDecoration(
-            color: color.withOpacity(0.8),
+            color: color.withValues(alpha: 0.8),
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: const [
@@ -174,8 +174,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 label: Text(_getMetricLabel(metric)),
                 selected: isSelected,
                 onSelected: (_) => provider.setMetric(metric),
-                backgroundColor: Colors.white.withOpacity(0.9),
-                selectedColor: ValoraColors.primary.withOpacity(0.2),
+                backgroundColor: Colors.white.withValues(alpha: 0.9),
+                selectedColor: ValoraColors.primary.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
                   color: isSelected ? ValoraColors.primary : Colors.black87,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
