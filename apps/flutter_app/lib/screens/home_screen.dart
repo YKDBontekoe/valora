@@ -1,3 +1,4 @@
+import 'insights/insights_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/home/home_bottom_nav_bar.dart';
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
       index: _currentNavIndex,
       children: const [
         SearchScreen(),
+        InsightsScreen(),
         ContextReportScreen(),
         SavedListingsScreen(),
         SettingsScreen(),

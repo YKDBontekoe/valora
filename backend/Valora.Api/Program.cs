@@ -190,6 +190,7 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
 app.MapAiEndpoints();
+app.MapMapEndpoints();
 
 // API Endpoints
 var api = app.MapGroup("/api");
