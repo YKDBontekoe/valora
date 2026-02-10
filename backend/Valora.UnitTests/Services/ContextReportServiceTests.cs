@@ -158,6 +158,64 @@ public class ContextReportServiceTests
         Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task BuildAsync_ReturnsRequestSpecificQuery_EvenWhenCached()
+    {
+        var location = CreateLocation();
+
+        // Setup resolution for two different queries to return the same location
+        _locationResolver.Setup(x => x.ResolveAsync("Damrak 1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+        _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        // Setup client response (only called once if caching works)
+        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NeighborhoodStatsDto("GM0363", "Gemeente", 860000, 6057, 290, 7.5, DateTimeOffset.UtcNow));
+
+        var service = CreateService();
+
+        // First call
+        var report1 = await service.BuildAsync(new ContextReportRequestDto("Damrak 1"));
+
+        // Second call with different query string but same location
+        var report2 = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
+
+        // Assert
+        Assert.Equal("Damrak 1", report1.Location.Query);
+        Assert.Equal("Damrak 1 Amsterdam", report2.Location.Query);
+
+        // Verify underlying service only called once
+        _cbsClient.Verify(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task BuildAsync_HandlesRadiusClampingWarnings_CorrectlyPerRequest()
+    {
+        var location = CreateLocation();
+        _locationResolver.Setup(x => x.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NeighborhoodStatsDto("GM", "N", 100, 100, 100, 10, DateTimeOffset.UtcNow));
+
+        var service = CreateService();
+
+        // 1. Request with large radius (clamped to 5000)
+        var report1 = await service.BuildAsync(new ContextReportRequestDto("test", 6000));
+
+        // 2. Request with small radius (clamped to 200)
+        var report2 = await service.BuildAsync(new ContextReportRequestDto("test", 100));
+
+        // 3. Request with valid radius (no clamp)
+        var report3 = await service.BuildAsync(new ContextReportRequestDto("test", 1000));
+
+        // Assert
+        Assert.Contains(report1.Warnings, w => w.Contains("clamped from 6000m to 5000m"));
+        Assert.Contains(report2.Warnings, w => w.Contains("clamped from 100m to 200m"));
+        Assert.DoesNotContain(report3.Warnings, w => w.Contains("clamped"));
+    }
+
     private ContextReportService CreateService()
     {
         return new ContextReportService(

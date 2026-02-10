@@ -83,7 +83,18 @@ public sealed class ContextReportService : IContextReportService
 
         if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
         {
-            return cached;
+            // Return a copy with the correct query and any request-specific warnings
+            var warnings = new List<string>(cached.Warnings);
+            if (normalizedRadius != request.RadiusMeters)
+            {
+                warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
+            }
+
+            return cached with
+            {
+                Location = cached.Location with { Query = request.Input },
+                Warnings = warnings
+            };
         }
 
         var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), cancellationToken);
@@ -100,18 +111,14 @@ public sealed class ContextReportService : IContextReportService
         var amenities = await amenitiesTask;
         var air = await airQualityTask;
 
-        var warnings = new List<string>();
+        // Warnings stored in cache should only be those related to data fetching failures
+        var invariantWarnings = new List<string>();
 
-        if (normalizedRadius != request.RadiusMeters)
-        {
-            warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
-        }
-
-        var socialMetrics = _socialBuilder.Build(cbs, warnings);
-        var crimeMetrics = _crimeBuilder.Build(crime, warnings);
-        var demographicsMetrics = _demographicsBuilder.Build(demographics, warnings);
-        var amenityMetrics = _amenityBuilder.Build(amenities, warnings);
-        var environmentMetrics = _environmentBuilder.Build(air, warnings);
+        var socialMetrics = _socialBuilder.Build(cbs, invariantWarnings);
+        var crimeMetrics = _crimeBuilder.Build(crime, invariantWarnings);
+        var demographicsMetrics = _demographicsBuilder.Build(demographics, invariantWarnings);
+        var amenityMetrics = _amenityBuilder.Build(amenities, invariantWarnings);
+        var environmentMetrics = _environmentBuilder.Build(air, invariantWarnings);
 
         var categoryScores = _scoringCalculator.ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, amenityMetrics, environmentMetrics);
         var compositeScore = _scoringCalculator.ComputeCompositeScore(categoryScores);
@@ -128,10 +135,23 @@ public sealed class ContextReportService : IContextReportService
             CompositeScore: Math.Round(compositeScore, 1),
             CategoryScores: categoryScores,
             Sources: sources,
-            Warnings: warnings);
+            Warnings: invariantWarnings);
 
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
-        return report;
+
+        // Prepare the return object which includes request-specific details
+        var returnWarnings = new List<string>(invariantWarnings);
+        if (normalizedRadius != request.RadiusMeters)
+        {
+            returnWarnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
+        }
+
+        // Return a copy with the original request input query
+        return report with
+        {
+            Location = location with { Query = request.Input },
+            Warnings = returnWarnings
+        };
     }
 
     private async Task<T?> TryGetSourceAsync<T>(
