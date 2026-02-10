@@ -113,7 +113,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         CancellationToken cancellationToken)
     {
         // Phase 1: Get all station IDs (lightweight list)
-        var stationIds = new List<string>();
+        var stationIds = new HashSet<string>();
         
         // Loop through pages to get all station IDs
         // Pagination seems to go up to ~5-6 pages currently
@@ -209,7 +209,14 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
     private async Task<(string Name, double Latitude, double Longitude)?> GetStationDetailAsync(string stationId, CancellationToken cancellationToken)
     {
-        var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{stationId}";
+        var cacheKey = $"lucht:station:{stationId}";
+        if (_cache.TryGetValue(cacheKey, out (string Name, double Latitude, double Longitude) cached))
+        {
+            return cached;
+        }
+
+        var encodedId = Uri.EscapeDataString(stationId);
+        var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedId}";
         try 
         {
             using var response = await _httpClient.GetAsync(url, cancellationToken);
@@ -226,11 +233,16 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                 ? nameElement.GetString() ?? stationId
                 : stationId;
 
-            return (name, lat, lon);
+            var result = (name, lat, lon);
+            
+            // Cache station metadata for 24 hours since coordinates rarely change
+            _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
+            
+            return result;
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore individual station failures
+            _logger.LogWarning(ex, "Failed to fetch details for station {StationId}", stationId);
             return null;
         }
     }

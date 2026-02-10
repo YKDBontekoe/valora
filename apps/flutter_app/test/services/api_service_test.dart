@@ -21,7 +21,8 @@ void main() {
 
   group('ApiService', () {
     test('baseUrl uses dotenv', () {
-      expect(ApiService.baseUrl, 'http://localhost:5001/api');
+      dotenv.env['API_URL'] = 'http://test-api.com/api';
+      expect(ApiService.baseUrl, 'http://test-api.com/api');
     });
 
     test('baseUrl falls back to default if dotenv missing', () {
