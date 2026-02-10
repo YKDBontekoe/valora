@@ -3,21 +3,20 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
-import 'dart:convert' as _i6;
+import 'dart:async' as _i6;
+import 'dart:convert' as _i5;
 import 'dart:io' as _i4;
 import 'dart:ui' as _i13;
 
-import 'package:flutter/foundation.dart' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i15;
+import 'package:mockito/src/dummies.dart' as _i10;
 import 'package:valora_app/models/context_report.dart' as _i3;
-import 'package:valora_app/models/listing.dart' as _i10;
-import 'package:valora_app/models/listing_filter.dart' as _i9;
+import 'package:valora_app/models/listing.dart' as _i9;
+import 'package:valora_app/models/listing_filter.dart' as _i8;
 import 'package:valora_app/models/listing_response.dart' as _i2;
 import 'package:valora_app/models/notification.dart' as _i11;
 import 'package:valora_app/providers/favorites_provider.dart' as _i12;
-import 'package:valora_app/services/api_service.dart' as _i8;
+import 'package:valora_app/services/api_service.dart' as _i7;
 import 'package:valora_app/services/pdok_service.dart' as _i14;
 
 // ignore_for_file: type=lint
@@ -68,12 +67,12 @@ class _FakeHttpHeaders_5 extends _i1.SmartFake implements _i4.HttpHeaders {
 }
 
 class _FakeHttpClientResponse_6 extends _i1.SmartFake
-    implements _i5.HttpClientResponse {
+    implements _i4.HttpClientResponse {
   _FakeHttpClientResponse_6(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeEncoding_7 extends _i1.SmartFake implements _i6.Encoding {
+class _FakeEncoding_7 extends _i1.SmartFake implements _i5.Encoding {
   _FakeEncoding_7(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
@@ -84,12 +83,12 @@ class _FakeSocket_8 extends _i1.SmartFake implements _i4.Socket {
 }
 
 class _FakeStreamSubscription_9<T> extends _i1.SmartFake
-    implements _i7.StreamSubscription<T> {
+    implements _i6.StreamSubscription<T> {
   _FakeStreamSubscription_9(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeFuture_10<T> extends _i1.SmartFake implements _i7.Future<T> {
+class _FakeFuture_10<T> extends _i1.SmartFake implements _i6.Future<T> {
   _FakeFuture_10(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
@@ -97,42 +96,50 @@ class _FakeFuture_10<T> extends _i1.SmartFake implements _i7.Future<T> {
 /// A class which mocks [ApiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockApiService extends _i1.Mock implements _i8.ApiService {
+class MockApiService extends _i1.Mock implements _i7.ApiService {
   MockApiService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i7.Future<bool> healthCheck() =>
+  _i6.Future<bool> healthCheck() =>
       (super.noSuchMethod(
             Invocation.method(#healthCheck, []),
-            returnValue: _i7.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i7.Future<_i2.ListingResponse> getListings(_i9.ListingFilter? filter) =>
+  _i6.Future<_i2.ListingResponse> getListings(_i8.ListingFilter? filter) =>
       (super.noSuchMethod(
             Invocation.method(#getListings, [filter]),
-            returnValue: _i7.Future<_i2.ListingResponse>.value(
+            returnValue: _i6.Future<_i2.ListingResponse>.value(
               _FakeListingResponse_0(
                 this,
                 Invocation.method(#getListings, [filter]),
               ),
             ),
           )
-          as _i7.Future<_i2.ListingResponse>);
+          as _i6.Future<_i2.ListingResponse>);
 
   @override
-  _i7.Future<_i10.Listing?> getListing(String? id) =>
+  _i6.Future<_i9.Listing?> getListing(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getListing, [id]),
-            returnValue: _i7.Future<_i10.Listing?>.value(),
+            returnValue: _i6.Future<_i9.Listing?>.value(),
           )
-          as _i7.Future<_i10.Listing?>);
+          as _i6.Future<_i9.Listing?>);
 
   @override
-  _i7.Future<_i3.ContextReport> getContextReport(
+  _i6.Future<_i9.Listing?> getListingFromPdok(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getListingFromPdok, [id]),
+            returnValue: _i6.Future<_i9.Listing?>.value(),
+          )
+          as _i6.Future<_i9.Listing?>);
+
+  @override
+  _i6.Future<_i3.ContextReport> getContextReport(
     String? input, {
     int? radiusMeters = 1000,
   }) =>
@@ -142,7 +149,7 @@ class MockApiService extends _i1.Mock implements _i8.ApiService {
               [input],
               {#radiusMeters: radiusMeters},
             ),
-            returnValue: _i7.Future<_i3.ContextReport>.value(
+            returnValue: _i6.Future<_i3.ContextReport>.value(
               _FakeContextReport_1(
                 this,
                 Invocation.method(
@@ -153,10 +160,23 @@ class MockApiService extends _i1.Mock implements _i8.ApiService {
               ),
             ),
           )
-          as _i7.Future<_i3.ContextReport>);
+          as _i6.Future<_i3.ContextReport>);
 
   @override
-  _i7.Future<List<_i11.ValoraNotification>> getNotifications({
+  _i6.Future<String> getAiAnalysis(_i3.ContextReport? report) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAiAnalysis, [report]),
+            returnValue: _i6.Future<String>.value(
+              _i10.dummyValue<String>(
+                this,
+                Invocation.method(#getAiAnalysis, [report]),
+              ),
+            ),
+          )
+          as _i6.Future<String>);
+
+  @override
+  _i6.Future<List<_i11.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
   }) =>
@@ -165,37 +185,46 @@ class MockApiService extends _i1.Mock implements _i8.ApiService {
               #unreadOnly: unreadOnly,
               #limit: limit,
             }),
-            returnValue: _i7.Future<List<_i11.ValoraNotification>>.value(
+            returnValue: _i6.Future<List<_i11.ValoraNotification>>.value(
               <_i11.ValoraNotification>[],
             ),
           )
-          as _i7.Future<List<_i11.ValoraNotification>>);
+          as _i6.Future<List<_i11.ValoraNotification>>);
 
   @override
-  _i7.Future<int> getUnreadNotificationCount() =>
+  _i6.Future<int> getUnreadNotificationCount() =>
       (super.noSuchMethod(
             Invocation.method(#getUnreadNotificationCount, []),
-            returnValue: _i7.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i7.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i7.Future<void> markNotificationAsRead(String? id) =>
+  _i6.Future<void> markNotificationAsRead(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#markNotificationAsRead, [id]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i6.Future<void>);
 
   @override
-  _i7.Future<void> markAllNotificationsAsRead() =>
+  _i6.Future<void> markAllNotificationsAsRead() =>
       (super.noSuchMethod(
             Invocation.method(#markAllNotificationsAsRead, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> deleteNotification(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteNotification, [id]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
 }
 
 /// A class which mocks [FavoritesProvider].
@@ -207,12 +236,12 @@ class MockFavoritesProvider extends _i1.Mock implements _i12.FavoritesProvider {
   }
 
   @override
-  List<_i10.Listing> get favorites =>
+  List<_i9.Listing> get favorites =>
       (super.noSuchMethod(
             Invocation.getter(#favorites),
-            returnValue: <_i10.Listing>[],
+            returnValue: <_i9.Listing>[],
           )
-          as List<_i10.Listing>);
+          as List<_i9.Listing>);
 
   @override
   bool get isLoading =>
@@ -230,13 +259,13 @@ class MockFavoritesProvider extends _i1.Mock implements _i12.FavoritesProvider {
           as DateTime?);
 
   @override
-  _i7.Future<void> loadFavorites() =>
+  _i6.Future<void> loadFavorites() =>
       (super.noSuchMethod(
             Invocation.method(#loadFavorites, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i6.Future<void>);
 
   @override
   bool isFavorite(String? id) =>
@@ -247,13 +276,13 @@ class MockFavoritesProvider extends _i1.Mock implements _i12.FavoritesProvider {
           as bool);
 
   @override
-  _i7.Future<void> toggleFavorite(_i10.Listing? listing) =>
+  _i6.Future<void> toggleFavorite(_i9.Listing? listing) =>
       (super.noSuchMethod(
             Invocation.method(#toggleFavorite, [listing]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i6.Future<void>);
 
   @override
   void addListener(_i13.VoidCallback? listener) => super.noSuchMethod(
@@ -289,14 +318,14 @@ class MockPdokService extends _i1.Mock implements _i14.PdokService {
   }
 
   @override
-  _i7.Future<List<_i14.PdokSuggestion>> search(String? query) =>
+  _i6.Future<List<_i14.PdokSuggestion>> search(String? query) =>
       (super.noSuchMethod(
             Invocation.method(#search, [query]),
-            returnValue: _i7.Future<List<_i14.PdokSuggestion>>.value(
+            returnValue: _i6.Future<List<_i14.PdokSuggestion>>.value(
               <_i14.PdokSuggestion>[],
             ),
           )
-          as _i7.Future<List<_i14.PdokSuggestion>>);
+          as _i6.Future<List<_i14.PdokSuggestion>>);
 }
 
 /// A class which mocks [HttpClient].
@@ -355,7 +384,7 @@ class MockHttpClient extends _i1.Mock implements _i4.HttpClient {
   );
 
   @override
-  set authenticate(_i7.Future<bool> Function(Uri, String, String?)? f) =>
+  set authenticate(_i6.Future<bool> Function(Uri, String, String?)? f) =>
       super.noSuchMethod(
         Invocation.setter(#authenticate, f),
         returnValueForMissingStub: null,
@@ -363,7 +392,7 @@ class MockHttpClient extends _i1.Mock implements _i4.HttpClient {
 
   @override
   set connectionFactory(
-    _i7.Future<_i4.ConnectionTask<_i4.Socket>> Function(Uri, String?, int?)? f,
+    _i6.Future<_i4.ConnectionTask<_i4.Socket>> Function(Uri, String?, int?)? f,
   ) => super.noSuchMethod(
     Invocation.setter(#connectionFactory, f),
     returnValueForMissingStub: null,
@@ -377,7 +406,7 @@ class MockHttpClient extends _i1.Mock implements _i4.HttpClient {
 
   @override
   set authenticateProxy(
-    _i7.Future<bool> Function(String, int, String, String?)? f,
+    _i6.Future<bool> Function(String, int, String, String?)? f,
   ) => super.noSuchMethod(
     Invocation.setter(#authenticateProxy, f),
     returnValueForMissingStub: null,
@@ -398,7 +427,7 @@ class MockHttpClient extends _i1.Mock implements _i4.HttpClient {
   );
 
   @override
-  _i7.Future<_i4.HttpClientRequest> open(
+  _i6.Future<_i4.HttpClientRequest> open(
     String? method,
     String? host,
     int? port,
@@ -406,279 +435,279 @@ class MockHttpClient extends _i1.Mock implements _i4.HttpClient {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#open, [method, host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#open, [method, host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#open, [method, host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> openUrl(String? method, Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> openUrl(String? method, Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#openUrl, [method, url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#openUrl, [method, url]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#openUrl, [method, url]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> get(
+  _i6.Future<_i4.HttpClientRequest> get(
     String? host,
     int? port,
     String? path,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#get, [host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#get, [host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#get, [host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> getUrl(Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> getUrl(Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#getUrl, [url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(this, Invocation.method(#getUrl, [url])),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(this, Invocation.method(#getUrl, [url])),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> post(
+  _i6.Future<_i4.HttpClientRequest> post(
     String? host,
     int? port,
     String? path,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#post, [host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#post, [host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#post, [host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> postUrl(Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> postUrl(Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#postUrl, [url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#postUrl, [url]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#postUrl, [url]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> put(
+  _i6.Future<_i4.HttpClientRequest> put(
     String? host,
     int? port,
     String? path,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#put, [host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#put, [host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#put, [host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> putUrl(Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> putUrl(Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#putUrl, [url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(this, Invocation.method(#putUrl, [url])),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(this, Invocation.method(#putUrl, [url])),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> delete(
+  _i6.Future<_i4.HttpClientRequest> delete(
     String? host,
     int? port,
     String? path,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#delete, [host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#delete, [host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> deleteUrl(Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> deleteUrl(Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#deleteUrl, [url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#deleteUrl, [url]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#deleteUrl, [url]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> patch(
+  _i6.Future<_i4.HttpClientRequest> patch(
     String? host,
     int? port,
     String? path,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patch, [host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#patch, [host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#patch, [host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> patchUrl(Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> patchUrl(Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#patchUrl, [url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#patchUrl, [url]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#patchUrl, [url]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> head(
+  _i6.Future<_i4.HttpClientRequest> head(
     String? host,
     int? port,
     String? path,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#head, [host, port, path]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#head, [host, port, path]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#head, [host, port, path]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
-  _i7.Future<_i4.HttpClientRequest> headUrl(Uri? url) =>
+  _i6.Future<_i4.HttpClientRequest> headUrl(Uri? url) =>
       (super.noSuchMethod(
             Invocation.method(#headUrl, [url]),
-            returnValue: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValue: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#headUrl, [url]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.HttpClientRequest>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientRequest>.value(
               _FakeHttpClientRequest_3(
                 this,
                 Invocation.method(#headUrl, [url]),
               ),
             ),
           )
-          as _i7.Future<_i4.HttpClientRequest>);
+          as _i6.Future<_i4.HttpClientRequest>);
 
   @override
   void addCredentials(
@@ -743,11 +772,11 @@ class MockHttpClientRequest extends _i1.Mock implements _i4.HttpClientRequest {
   String get method =>
       (super.noSuchMethod(
             Invocation.getter(#method),
-            returnValue: _i15.dummyValue<String>(
+            returnValue: _i10.dummyValue<String>(
               this,
               Invocation.getter(#method),
             ),
-            returnValueForMissingStub: _i15.dummyValue<String>(
+            returnValueForMissingStub: _i10.dummyValue<String>(
               this,
               Invocation.getter(#method),
             ),
@@ -806,17 +835,17 @@ class MockHttpClientRequest extends _i1.Mock implements _i4.HttpClientRequest {
           as List<_i4.Cookie>);
 
   @override
-  _i7.Future<_i5.HttpClientResponse> get done =>
+  _i6.Future<_i4.HttpClientResponse> get done =>
       (super.noSuchMethod(
             Invocation.getter(#done),
-            returnValue: _i7.Future<_i5.HttpClientResponse>.value(
+            returnValue: _i6.Future<_i4.HttpClientResponse>.value(
               _FakeHttpClientResponse_6(this, Invocation.getter(#done)),
             ),
-            returnValueForMissingStub: _i7.Future<_i5.HttpClientResponse>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientResponse>.value(
               _FakeHttpClientResponse_6(this, Invocation.getter(#done)),
             ),
           )
-          as _i7.Future<_i5.HttpClientResponse>);
+          as _i6.Future<_i4.HttpClientResponse>);
 
   @override
   set persistentConnection(bool? value) => super.noSuchMethod(
@@ -849,7 +878,7 @@ class MockHttpClientRequest extends _i1.Mock implements _i4.HttpClientRequest {
   );
 
   @override
-  _i6.Encoding get encoding =>
+  _i5.Encoding get encoding =>
       (super.noSuchMethod(
             Invocation.getter(#encoding),
             returnValue: _FakeEncoding_7(this, Invocation.getter(#encoding)),
@@ -858,26 +887,26 @@ class MockHttpClientRequest extends _i1.Mock implements _i4.HttpClientRequest {
               Invocation.getter(#encoding),
             ),
           )
-          as _i6.Encoding);
+          as _i5.Encoding);
 
   @override
-  set encoding(_i6.Encoding? value) => super.noSuchMethod(
+  set encoding(_i5.Encoding? value) => super.noSuchMethod(
     Invocation.setter(#encoding, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  _i7.Future<_i5.HttpClientResponse> close() =>
+  _i6.Future<_i4.HttpClientResponse> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
-            returnValue: _i7.Future<_i5.HttpClientResponse>.value(
+            returnValue: _i6.Future<_i4.HttpClientResponse>.value(
               _FakeHttpClientResponse_6(this, Invocation.method(#close, [])),
             ),
-            returnValueForMissingStub: _i7.Future<_i5.HttpClientResponse>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientResponse>.value(
               _FakeHttpClientResponse_6(this, Invocation.method(#close, [])),
             ),
           )
-          as _i7.Future<_i5.HttpClientResponse>);
+          as _i6.Future<_i4.HttpClientResponse>);
 
   @override
   void abort([Object? exception, StackTrace? stackTrace]) => super.noSuchMethod(
@@ -923,29 +952,29 @@ class MockHttpClientRequest extends _i1.Mock implements _i4.HttpClientRequest {
   );
 
   @override
-  _i7.Future<dynamic> addStream(_i7.Stream<List<int>>? stream) =>
+  _i6.Future<dynamic> addStream(_i6.Stream<List<int>>? stream) =>
       (super.noSuchMethod(
             Invocation.method(#addStream, [stream]),
-            returnValue: _i7.Future<dynamic>.value(),
-            returnValueForMissingStub: _i7.Future<dynamic>.value(),
+            returnValue: _i6.Future<dynamic>.value(),
+            returnValueForMissingStub: _i6.Future<dynamic>.value(),
           )
-          as _i7.Future<dynamic>);
+          as _i6.Future<dynamic>);
 
   @override
-  _i7.Future<dynamic> flush() =>
+  _i6.Future<dynamic> flush() =>
       (super.noSuchMethod(
             Invocation.method(#flush, []),
-            returnValue: _i7.Future<dynamic>.value(),
-            returnValueForMissingStub: _i7.Future<dynamic>.value(),
+            returnValue: _i6.Future<dynamic>.value(),
+            returnValueForMissingStub: _i6.Future<dynamic>.value(),
           )
-          as _i7.Future<dynamic>);
+          as _i6.Future<dynamic>);
 }
 
 /// A class which mocks [HttpClientResponse].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockHttpClientResponse extends _i1.Mock
-    implements _i5.HttpClientResponse {
+    implements _i4.HttpClientResponse {
   @override
   int get statusCode =>
       (super.noSuchMethod(
@@ -959,11 +988,11 @@ class MockHttpClientResponse extends _i1.Mock
   String get reasonPhrase =>
       (super.noSuchMethod(
             Invocation.getter(#reasonPhrase),
-            returnValue: _i15.dummyValue<String>(
+            returnValue: _i10.dummyValue<String>(
               this,
               Invocation.getter(#reasonPhrase),
             ),
-            returnValueForMissingStub: _i15.dummyValue<String>(
+            returnValueForMissingStub: _i10.dummyValue<String>(
               this,
               Invocation.getter(#reasonPhrase),
             ),
@@ -1047,103 +1076,103 @@ class MockHttpClientResponse extends _i1.Mock
           as bool);
 
   @override
-  _i7.Future<int> get length =>
+  _i6.Future<int> get length =>
       (super.noSuchMethod(
             Invocation.getter(#length),
-            returnValue: _i7.Future<int>.value(0),
-            returnValueForMissingStub: _i7.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
+            returnValueForMissingStub: _i6.Future<int>.value(0),
           )
-          as _i7.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i7.Future<bool> get isEmpty =>
+  _i6.Future<bool> get isEmpty =>
       (super.noSuchMethod(
             Invocation.getter(#isEmpty),
-            returnValue: _i7.Future<bool>.value(false),
-            returnValueForMissingStub: _i7.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
+            returnValueForMissingStub: _i6.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i7.Future<List<int>> get first =>
+  _i6.Future<List<int>> get first =>
       (super.noSuchMethod(
             Invocation.getter(#first),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<List<int>> get last =>
+  _i6.Future<List<int>> get last =>
       (super.noSuchMethod(
             Invocation.getter(#last),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<List<int>> get single =>
+  _i6.Future<List<int>> get single =>
       (super.noSuchMethod(
             Invocation.getter(#single),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<_i5.HttpClientResponse> redirect([
+  _i6.Future<_i4.HttpClientResponse> redirect([
     String? method,
     Uri? url,
     bool? followLoops,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#redirect, [method, url, followLoops]),
-            returnValue: _i7.Future<_i5.HttpClientResponse>.value(
+            returnValue: _i6.Future<_i4.HttpClientResponse>.value(
               _FakeHttpClientResponse_6(
                 this,
                 Invocation.method(#redirect, [method, url, followLoops]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<_i5.HttpClientResponse>.value(
+            returnValueForMissingStub: _i6.Future<_i4.HttpClientResponse>.value(
               _FakeHttpClientResponse_6(
                 this,
                 Invocation.method(#redirect, [method, url, followLoops]),
               ),
             ),
           )
-          as _i7.Future<_i5.HttpClientResponse>);
+          as _i6.Future<_i4.HttpClientResponse>);
 
   @override
-  _i7.Future<_i4.Socket> detachSocket() =>
+  _i6.Future<_i4.Socket> detachSocket() =>
       (super.noSuchMethod(
             Invocation.method(#detachSocket, []),
-            returnValue: _i7.Future<_i4.Socket>.value(
+            returnValue: _i6.Future<_i4.Socket>.value(
               _FakeSocket_8(this, Invocation.method(#detachSocket, [])),
             ),
-            returnValueForMissingStub: _i7.Future<_i4.Socket>.value(
+            returnValueForMissingStub: _i6.Future<_i4.Socket>.value(
               _FakeSocket_8(this, Invocation.method(#detachSocket, [])),
             ),
           )
-          as _i7.Future<_i4.Socket>);
+          as _i6.Future<_i4.Socket>);
 
   @override
-  _i7.Stream<List<int>> asBroadcastStream({
-    void Function(_i7.StreamSubscription<List<int>>)? onListen,
-    void Function(_i7.StreamSubscription<List<int>>)? onCancel,
+  _i6.Stream<List<int>> asBroadcastStream({
+    void Function(_i6.StreamSubscription<List<int>>)? onListen,
+    void Function(_i6.StreamSubscription<List<int>>)? onCancel,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#asBroadcastStream, [], {
               #onListen: onListen,
               #onCancel: onCancel,
             }),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.StreamSubscription<List<int>> listen(
+  _i6.StreamSubscription<List<int>> listen(
     void Function(List<int>)? onData, {
     Function? onError,
     void Function()? onDone,
@@ -1184,347 +1213,347 @@ class MockHttpClientResponse extends _i1.Mock
               ),
             ),
           )
-          as _i7.StreamSubscription<List<int>>);
+          as _i6.StreamSubscription<List<int>>);
 
   @override
-  _i7.Stream<List<int>> where(bool Function(List<int>)? test) =>
+  _i6.Stream<List<int>> where(bool Function(List<int>)? test) =>
       (super.noSuchMethod(
             Invocation.method(#where, [test]),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Stream<S> map<S>(S Function(List<int>)? convert) =>
+  _i6.Stream<S> map<S>(S Function(List<int>)? convert) =>
       (super.noSuchMethod(
             Invocation.method(#map, [convert]),
-            returnValue: _i7.Stream<S>.empty(),
-            returnValueForMissingStub: _i7.Stream<S>.empty(),
+            returnValue: _i6.Stream<S>.empty(),
+            returnValueForMissingStub: _i6.Stream<S>.empty(),
           )
-          as _i7.Stream<S>);
+          as _i6.Stream<S>);
 
   @override
-  _i7.Stream<E> asyncMap<E>(_i7.FutureOr<E> Function(List<int>)? convert) =>
+  _i6.Stream<E> asyncMap<E>(_i6.FutureOr<E> Function(List<int>)? convert) =>
       (super.noSuchMethod(
             Invocation.method(#asyncMap, [convert]),
-            returnValue: _i7.Stream<E>.empty(),
-            returnValueForMissingStub: _i7.Stream<E>.empty(),
+            returnValue: _i6.Stream<E>.empty(),
+            returnValueForMissingStub: _i6.Stream<E>.empty(),
           )
-          as _i7.Stream<E>);
+          as _i6.Stream<E>);
 
   @override
-  _i7.Stream<E> asyncExpand<E>(_i7.Stream<E>? Function(List<int>)? convert) =>
+  _i6.Stream<E> asyncExpand<E>(_i6.Stream<E>? Function(List<int>)? convert) =>
       (super.noSuchMethod(
             Invocation.method(#asyncExpand, [convert]),
-            returnValue: _i7.Stream<E>.empty(),
-            returnValueForMissingStub: _i7.Stream<E>.empty(),
+            returnValue: _i6.Stream<E>.empty(),
+            returnValueForMissingStub: _i6.Stream<E>.empty(),
           )
-          as _i7.Stream<E>);
+          as _i6.Stream<E>);
 
   @override
-  _i7.Stream<List<int>> handleError(
+  _i6.Stream<List<int>> handleError(
     Function? onError, {
     bool Function(dynamic)? test,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#handleError, [onError], {#test: test}),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Stream<S> expand<S>(Iterable<S> Function(List<int>)? convert) =>
+  _i6.Stream<S> expand<S>(Iterable<S> Function(List<int>)? convert) =>
       (super.noSuchMethod(
             Invocation.method(#expand, [convert]),
-            returnValue: _i7.Stream<S>.empty(),
-            returnValueForMissingStub: _i7.Stream<S>.empty(),
+            returnValue: _i6.Stream<S>.empty(),
+            returnValueForMissingStub: _i6.Stream<S>.empty(),
           )
-          as _i7.Stream<S>);
+          as _i6.Stream<S>);
 
   @override
-  _i7.Future<dynamic> pipe(_i7.StreamConsumer<List<int>>? streamConsumer) =>
+  _i6.Future<dynamic> pipe(_i6.StreamConsumer<List<int>>? streamConsumer) =>
       (super.noSuchMethod(
             Invocation.method(#pipe, [streamConsumer]),
-            returnValue: _i7.Future<dynamic>.value(),
-            returnValueForMissingStub: _i7.Future<dynamic>.value(),
+            returnValue: _i6.Future<dynamic>.value(),
+            returnValueForMissingStub: _i6.Future<dynamic>.value(),
           )
-          as _i7.Future<dynamic>);
+          as _i6.Future<dynamic>);
 
   @override
-  _i7.Stream<S> transform<S>(
-    _i7.StreamTransformer<List<int>, S>? streamTransformer,
+  _i6.Stream<S> transform<S>(
+    _i6.StreamTransformer<List<int>, S>? streamTransformer,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#transform, [streamTransformer]),
-            returnValue: _i7.Stream<S>.empty(),
-            returnValueForMissingStub: _i7.Stream<S>.empty(),
+            returnValue: _i6.Stream<S>.empty(),
+            returnValueForMissingStub: _i6.Stream<S>.empty(),
           )
-          as _i7.Stream<S>);
+          as _i6.Stream<S>);
 
   @override
-  _i7.Future<List<int>> reduce(
+  _i6.Future<List<int>> reduce(
     List<int> Function(List<int>, List<int>)? combine,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#reduce, [combine]),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<S> fold<S>(S? initialValue, S Function(S, List<int>)? combine) =>
+  _i6.Future<S> fold<S>(S? initialValue, S Function(S, List<int>)? combine) =>
       (super.noSuchMethod(
             Invocation.method(#fold, [initialValue, combine]),
             returnValue:
-                _i15.ifNotNull(
-                  _i15.dummyValueOrNull<S>(
+                _i10.ifNotNull(
+                  _i10.dummyValueOrNull<S>(
                     this,
                     Invocation.method(#fold, [initialValue, combine]),
                   ),
-                  (S v) => _i7.Future<S>.value(v),
+                  (S v) => _i6.Future<S>.value(v),
                 ) ??
                 _FakeFuture_10<S>(
                   this,
                   Invocation.method(#fold, [initialValue, combine]),
                 ),
             returnValueForMissingStub:
-                _i15.ifNotNull(
-                  _i15.dummyValueOrNull<S>(
+                _i10.ifNotNull(
+                  _i10.dummyValueOrNull<S>(
                     this,
                     Invocation.method(#fold, [initialValue, combine]),
                   ),
-                  (S v) => _i7.Future<S>.value(v),
+                  (S v) => _i6.Future<S>.value(v),
                 ) ??
                 _FakeFuture_10<S>(
                   this,
                   Invocation.method(#fold, [initialValue, combine]),
                 ),
           )
-          as _i7.Future<S>);
+          as _i6.Future<S>);
 
   @override
-  _i7.Future<String> join([String? separator = '']) =>
+  _i6.Future<String> join([String? separator = '']) =>
       (super.noSuchMethod(
             Invocation.method(#join, [separator]),
-            returnValue: _i7.Future<String>.value(
-              _i15.dummyValue<String>(
+            returnValue: _i6.Future<String>.value(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#join, [separator]),
               ),
             ),
-            returnValueForMissingStub: _i7.Future<String>.value(
-              _i15.dummyValue<String>(
+            returnValueForMissingStub: _i6.Future<String>.value(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#join, [separator]),
               ),
             ),
           )
-          as _i7.Future<String>);
+          as _i6.Future<String>);
 
   @override
-  _i7.Future<bool> contains(Object? needle) =>
+  _i6.Future<bool> contains(Object? needle) =>
       (super.noSuchMethod(
             Invocation.method(#contains, [needle]),
-            returnValue: _i7.Future<bool>.value(false),
-            returnValueForMissingStub: _i7.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
+            returnValueForMissingStub: _i6.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i7.Future<void> forEach(void Function(List<int>)? action) =>
+  _i6.Future<void> forEach(void Function(List<int>)? action) =>
       (super.noSuchMethod(
             Invocation.method(#forEach, [action]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i6.Future<void>);
 
   @override
-  _i7.Future<bool> every(bool Function(List<int>)? test) =>
+  _i6.Future<bool> every(bool Function(List<int>)? test) =>
       (super.noSuchMethod(
             Invocation.method(#every, [test]),
-            returnValue: _i7.Future<bool>.value(false),
-            returnValueForMissingStub: _i7.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
+            returnValueForMissingStub: _i6.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i7.Future<bool> any(bool Function(List<int>)? test) =>
+  _i6.Future<bool> any(bool Function(List<int>)? test) =>
       (super.noSuchMethod(
             Invocation.method(#any, [test]),
-            returnValue: _i7.Future<bool>.value(false),
-            returnValueForMissingStub: _i7.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
+            returnValueForMissingStub: _i6.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i7.Stream<R> cast<R>() =>
+  _i6.Stream<R> cast<R>() =>
       (super.noSuchMethod(
             Invocation.method(#cast, []),
-            returnValue: _i7.Stream<R>.empty(),
-            returnValueForMissingStub: _i7.Stream<R>.empty(),
+            returnValue: _i6.Stream<R>.empty(),
+            returnValueForMissingStub: _i6.Stream<R>.empty(),
           )
-          as _i7.Stream<R>);
+          as _i6.Stream<R>);
 
   @override
-  _i7.Future<List<List<int>>> toList() =>
+  _i6.Future<List<List<int>>> toList() =>
       (super.noSuchMethod(
             Invocation.method(#toList, []),
-            returnValue: _i7.Future<List<List<int>>>.value(<List<int>>[]),
-            returnValueForMissingStub: _i7.Future<List<List<int>>>.value(
+            returnValue: _i6.Future<List<List<int>>>.value(<List<int>>[]),
+            returnValueForMissingStub: _i6.Future<List<List<int>>>.value(
               <List<int>>[],
             ),
           )
-          as _i7.Future<List<List<int>>>);
+          as _i6.Future<List<List<int>>>);
 
   @override
-  _i7.Future<Set<List<int>>> toSet() =>
+  _i6.Future<Set<List<int>>> toSet() =>
       (super.noSuchMethod(
             Invocation.method(#toSet, []),
-            returnValue: _i7.Future<Set<List<int>>>.value(<List<int>>{}),
-            returnValueForMissingStub: _i7.Future<Set<List<int>>>.value(
+            returnValue: _i6.Future<Set<List<int>>>.value(<List<int>>{}),
+            returnValueForMissingStub: _i6.Future<Set<List<int>>>.value(
               <List<int>>{},
             ),
           )
-          as _i7.Future<Set<List<int>>>);
+          as _i6.Future<Set<List<int>>>);
 
   @override
-  _i7.Future<E> drain<E>([E? futureValue]) =>
+  _i6.Future<E> drain<E>([E? futureValue]) =>
       (super.noSuchMethod(
             Invocation.method(#drain, [futureValue]),
             returnValue:
-                _i15.ifNotNull(
-                  _i15.dummyValueOrNull<E>(
+                _i10.ifNotNull(
+                  _i10.dummyValueOrNull<E>(
                     this,
                     Invocation.method(#drain, [futureValue]),
                   ),
-                  (E v) => _i7.Future<E>.value(v),
+                  (E v) => _i6.Future<E>.value(v),
                 ) ??
                 _FakeFuture_10<E>(
                   this,
                   Invocation.method(#drain, [futureValue]),
                 ),
             returnValueForMissingStub:
-                _i15.ifNotNull(
-                  _i15.dummyValueOrNull<E>(
+                _i10.ifNotNull(
+                  _i10.dummyValueOrNull<E>(
                     this,
                     Invocation.method(#drain, [futureValue]),
                   ),
-                  (E v) => _i7.Future<E>.value(v),
+                  (E v) => _i6.Future<E>.value(v),
                 ) ??
                 _FakeFuture_10<E>(
                   this,
                   Invocation.method(#drain, [futureValue]),
                 ),
           )
-          as _i7.Future<E>);
+          as _i6.Future<E>);
 
   @override
-  _i7.Stream<List<int>> take(int? count) =>
+  _i6.Stream<List<int>> take(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#take, [count]),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Stream<List<int>> takeWhile(bool Function(List<int>)? test) =>
+  _i6.Stream<List<int>> takeWhile(bool Function(List<int>)? test) =>
       (super.noSuchMethod(
             Invocation.method(#takeWhile, [test]),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Stream<List<int>> skip(int? count) =>
+  _i6.Stream<List<int>> skip(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#skip, [count]),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Stream<List<int>> skipWhile(bool Function(List<int>)? test) =>
+  _i6.Stream<List<int>> skipWhile(bool Function(List<int>)? test) =>
       (super.noSuchMethod(
             Invocation.method(#skipWhile, [test]),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Stream<List<int>> distinct([
+  _i6.Stream<List<int>> distinct([
     bool Function(List<int>, List<int>)? equals,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#distinct, [equals]),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 
   @override
-  _i7.Future<List<int>> firstWhere(
+  _i6.Future<List<int>> firstWhere(
     bool Function(List<int>)? test, {
     List<int> Function()? orElse,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#firstWhere, [test], {#orElse: orElse}),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<List<int>> lastWhere(
+  _i6.Future<List<int>> lastWhere(
     bool Function(List<int>)? test, {
     List<int> Function()? orElse,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#lastWhere, [test], {#orElse: orElse}),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<List<int>> singleWhere(
+  _i6.Future<List<int>> singleWhere(
     bool Function(List<int>)? test, {
     List<int> Function()? orElse,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#singleWhere, [test], {#orElse: orElse}),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Future<List<int>> elementAt(int? index) =>
+  _i6.Future<List<int>> elementAt(int? index) =>
       (super.noSuchMethod(
             Invocation.method(#elementAt, [index]),
-            returnValue: _i7.Future<List<int>>.value(<int>[]),
-            returnValueForMissingStub: _i7.Future<List<int>>.value(<int>[]),
+            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValueForMissingStub: _i6.Future<List<int>>.value(<int>[]),
           )
-          as _i7.Future<List<int>>);
+          as _i6.Future<List<int>>);
 
   @override
-  _i7.Stream<List<int>> timeout(
+  _i6.Stream<List<int>> timeout(
     Duration? timeLimit, {
-    void Function(_i7.EventSink<List<int>>)? onTimeout,
+    void Function(_i6.EventSink<List<int>>)? onTimeout,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#timeout, [timeLimit], {#onTimeout: onTimeout}),
-            returnValue: _i7.Stream<List<int>>.empty(),
-            returnValueForMissingStub: _i7.Stream<List<int>>.empty(),
+            returnValue: _i6.Stream<List<int>>.empty(),
+            returnValueForMissingStub: _i6.Stream<List<int>>.empty(),
           )
-          as _i7.Stream<List<int>>);
+          as _i6.Stream<List<int>>);
 }
 
 /// A class which mocks [HttpHeaders].
