@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
-import 'valora_card.dart';
 
 class ValoraSpecCard extends StatelessWidget {
   const ValoraSpecCard({

@@ -34,49 +34,42 @@ class ValoraFilterBar extends StatelessWidget {
             children: [
               if (provider.minPrice != null || provider.maxPrice != null)
                 _buildChip(
-                  context,
                   label: _priceChipLabel(provider.minPrice, provider.maxPrice),
                   onTap: onFilterTap,
                   onDelete: () => _handleDelete(context, provider.clearPriceFilter),
                 ),
               if (provider.city != null)
                 _buildChip(
-                  context,
                   label: 'City: ${provider.city}',
                   onTap: onFilterTap,
                   onDelete: () => _handleDelete(context, provider.clearCityFilter),
                 ),
               if (provider.minBedrooms != null)
                 _buildChip(
-                  context,
                   label: '${provider.minBedrooms}+ Beds',
                   onTap: onFilterTap,
                   onDelete: () => _handleDelete(context, provider.clearBedroomsFilter),
                 ),
               if (provider.minLivingArea != null)
                 _buildChip(
-                  context,
                   label: '${provider.minLivingArea}+ m²',
                   onTap: onFilterTap,
                   onDelete: () => _handleDelete(context, provider.clearLivingAreaFilter),
                 ),
               if (provider.minCompositeScore != null)
                 _buildChip(
-                  context,
                   label: 'Composite: ${provider.minCompositeScore}+',
                   onTap: onFilterTap,
                   onDelete: () => _handleDelete(context, provider.clearCompositeScoreFilter),
                 ),
               if (provider.minSafetyScore != null)
                 _buildChip(
-                  context,
                   label: 'Safety: ${provider.minSafetyScore}+',
                   onTap: onFilterTap,
                   onDelete: () => _handleDelete(context, provider.clearSafetyScoreFilter),
                 ),
               if (provider.isSortActive)
                 _buildChip(
-                  context,
                   label: _sortChipLabel(provider.sortBy, provider.sortOrder),
                   onTap: onSortTap,
                   onDelete: () => _handleDelete(context, provider.clearSort),
@@ -102,8 +95,7 @@ class ValoraFilterBar extends StatelessWidget {
     );
   }
 
-  Widget _buildChip(
-    BuildContext context, {
+  Widget _buildChip({
     required String label,
     required VoidCallback onTap,
     required VoidCallback onDelete,
@@ -125,7 +117,8 @@ class ValoraFilterBar extends StatelessWidget {
   ) async {
     try {
       await action();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error clearing filter: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to clear filter')),

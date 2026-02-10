@@ -305,7 +305,7 @@ class ListingDetailScreen extends StatelessWidget {
                           // Broker Section
                           if (listing.brokerLogoUrl != null ||
                               listing.brokerPhone != null) ...[
-                            _buildBrokerSection(context, colorScheme),
+                            _buildBrokerSection(colorScheme),
                             const SizedBox(height: ValoraSpacing.md),
                           ],
 
@@ -772,7 +772,7 @@ class ListingDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBrokerSection(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildBrokerSection(ColorScheme colorScheme) {
     if (listing.agentName == null && listing.brokerLogoUrl == null && listing.brokerPhone == null) {
       return const SizedBox.shrink();
     }

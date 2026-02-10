@@ -179,28 +179,33 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                           ),
                         ),
                         if (widget.listing.status != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: ValoraSpacing.sm,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(widget.listing.status!)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(
-                                ValoraSpacing.radiusSm,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 120),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: ValoraSpacing.sm,
+                                vertical: 2,
                               ),
-                              border: Border.all(
+                              decoration: BoxDecoration(
                                 color: _getStatusColor(widget.listing.status!)
-                                    .withValues(alpha: 0.2),
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(
+                                  ValoraSpacing.radiusSm,
+                                ),
+                                border: Border.all(
+                                  color: _getStatusColor(widget.listing.status!)
+                                      .withValues(alpha: 0.2),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              widget.listing.status!.toUpperCase(),
-                              style: ValoraTypography.labelSmall.copyWith(
-                                color: _getStatusColor(widget.listing.status!),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                              child: Text(
+                                widget.listing.status!.toUpperCase(),
+                                style: ValoraTypography.labelSmall.copyWith(
+                                  color: _getStatusColor(widget.listing.status!),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),
@@ -257,13 +262,13 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
         Icon(
           icon,
           size: 14,
-          color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
         ),
         const SizedBox(width: 4),
         Text(
           label,
           style: ValoraTypography.labelSmall.copyWith(
-            color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
+            color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
             fontWeight: FontWeight.w600,
           ),
         ),
