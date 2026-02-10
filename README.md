@@ -115,7 +115,7 @@ Copy `.env.example` to `.env` in `backend/` and `apps/flutter_app/`.
 
 ### Quick Start
 
-1.  **Infrastructure:** Start the database and redis (if configured).
+1.  **Infrastructure:** Start the database.
     ```bash
     docker-compose -f docker/docker-compose.yml up -d
     ```
@@ -141,6 +141,7 @@ Copy `.env.example` to `.env` in `backend/` and `apps/flutter_app/`.
 | `GET` | `/api/health` | No | Service + DB connectivity check |
 | `POST` | `/api/auth/register` | No | Register user |
 | `POST` | `/api/auth/login` | No | Login and receive JWT |
+| `POST` | `/api/auth/refresh` | No | Refresh expired access token |
 | `POST` | `/api/context/report` | **Yes** | Generates a context report from an address or Funda URL. |
 | `POST` | `/api/listings/{id}/enrich` | **Yes** | Updates an existing listing entity with fresh context data. |
 

@@ -12,13 +12,13 @@ Get a local environment running, understand the architecture, and generate your 
 - Flutter SDK
 
 ### Step 1: Start Infrastructure
-Start the database (PostgreSQL) and Redis cache.
+Start the database (PostgreSQL).
 
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-*Verification:* Run `docker ps` and ensure `valora-db` and `valora-redis` (if configured) are running.
+*Verification:* Run `docker ps` and ensure `valora-db` is running.
 
 ### Step 2: Configure & Run Backend
 
