@@ -10,7 +10,7 @@ The following diagram illustrates the lifecycle of a `POST /api/context/report` 
 sequenceDiagram
     participant Client as Flutter App
     participant API as Valora.Api
-    participant Service as ContextReportService
+    participant Service as ContextReportService (Infrastructure)
     participant Resolver as PdokLocationResolver
     participant Sources as External APIs (CBS, OSM, etc.)
     participant Cache as MemoryCache
@@ -57,7 +57,7 @@ sequenceDiagram
 ### 1. Request Handling (`Valora.Api`)
 - The endpoint `POST /api/context/report` receives the request.
 - It validates that the `input` string is not empty.
-- It delegates the work to `IContextReportService`.
+- It delegates the work to the `IContextReportService` interface (implemented in `Valora.Infrastructure`).
 
 ### 2. Location Resolution (`PdokLocationResolver`)
 - **Input Normalization:** If the input is a Funda URL, the resolver extracts the address slug. Otherwise, it uses the raw address string.
