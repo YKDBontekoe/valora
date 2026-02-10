@@ -12,8 +12,8 @@ class ValoraChip extends StatefulWidget {
   const ValoraChip({
     super.key,
     required this.label,
-    required this.isSelected,
-    required this.onSelected,
+    this.isSelected = false,
+    this.onSelected,
     this.icon,
     this.backgroundColor,
     this.textColor,
@@ -33,44 +33,54 @@ class ValoraChip extends StatefulWidget {
 }
 
 class _ValoraChipState extends State<ValoraChip> {
-  bool _isHovered = false;
-  bool _isPressed = false;
+  final _isHovered = ValueNotifier<bool>(false);
+  final _isPressed = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _isHovered.dispose();
+    _isPressed.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Determine colors
-    final bg = widget.isSelected
-        ? (widget.backgroundColor ?? ValoraColors.primary)
-        : (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isHovered,
+      builder: (context, isHovered, _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: _isPressed,
+          builder: (context, isPressed, _) {
+            // Determine colors
+            final bg = widget.isSelected
+                ? (widget.backgroundColor ?? ValoraColors.primary)
+                : (widget.backgroundColor ??
+                    (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight));
 
-    final text = widget.isSelected
-        ? (widget.textColor ?? Colors.white)
-        : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500);
+            final text = widget.isSelected
+                ? (widget.textColor ?? Colors.white)
+                : (widget.textColor ??
+                    (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500));
 
-    final border = widget.isSelected
-        ? Colors.transparent
-        : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
+            final border = widget.isSelected
+                ? Colors.transparent
+                : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral200);
 
-    return MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() {
-            _isHovered = false;
-            _isPressed = false;
-          }),
-          child: Listener(
-            onPointerDown: (_) => setState(() => _isPressed = true),
-            onPointerUp: (_) => setState(() => _isPressed = false),
-            onPointerCancel: (_) => setState(() => _isPressed = false),
-            child: AnimatedContainer(
+            // Shadow logic
+            final List<BoxShadow> shadows = widget.isSelected
+                ? ValoraShadows.primary
+                : (isHovered && widget.onSelected != null
+                    ? ValoraShadows.sm
+                    : const <BoxShadow>[]);
+
+            Widget content = AnimatedContainer(
               duration: ValoraAnimations.normal,
               curve: ValoraAnimations.standard,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-                boxShadow: widget.isSelected
-                    ? ValoraShadows.primary
-                    : (_isHovered ? ValoraShadows.sm : []),
+                boxShadow: shadows,
               ),
               child: Material(
                 color: bg,
@@ -85,6 +95,10 @@ class _ValoraChipState extends State<ValoraChip> {
                           widget.onSelected!(!widget.isSelected);
                         }
                       : null,
+                  onHover: (bool val) => _isHovered.value = val,
+                  onTapDown: (TapDownDetails _) => _isPressed.value = true,
+                  onTapUp: (TapUpDetails _) => _isPressed.value = false,
+                  onTapCancel: () => _isPressed.value = false,
                   borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -125,22 +139,30 @@ class _ValoraChipState extends State<ValoraChip> {
                   ),
                 ),
               ),
-            ),
-          ),
-        )
-        .animate(target: _isPressed ? 1 : 0)
-        .scale(end: const Offset(0.95, 0.95), duration: ValoraAnimations.fast)
-        .animate(target: widget.isSelected ? 1 : 0) // Pulse on selection
-        .scale(
-          end: const Offset(1.05, 1.05),
-          duration: ValoraAnimations.normal,
-          curve: ValoraAnimations.emphatic,
-        )
-        .then()
-        .scale(
-          begin: const Offset(1.05, 1.05),
-          end: const Offset(1.0, 1.0),
-          duration: ValoraAnimations.normal,
+            );
+
+            // Animate scale
+            return content
+                .animate(target: isPressed ? 1 : 0)
+                .scale(
+                  end: const Offset(0.95, 0.95),
+                  duration: ValoraAnimations.fast,
+                )
+                .animate(target: widget.isSelected ? 1 : 0) // Pulse on selection
+                .scale(
+                  end: const Offset(1.05, 1.05),
+                  duration: ValoraAnimations.normal,
+                  curve: ValoraAnimations.emphatic,
+                )
+                .then()
+                .scale(
+                  begin: const Offset(1.05, 1.05),
+                  end: const Offset(1.0, 1.0),
+                  duration: ValoraAnimations.normal,
+                );
+          },
         );
+      },
+    );
   }
 }

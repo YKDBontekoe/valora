@@ -390,6 +390,23 @@ class ListingDetailScreen extends StatelessWidget {
               PageView.builder(
                 itemCount: images.length,
                 itemBuilder: (context, index) {
+                  Widget imageWidget = CachedNetworkImage(
+                    imageUrl: images[index],
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                        _buildPlaceholder(isDark, isLoading: true),
+                    errorWidget: (context, url, error) =>
+                        _buildPlaceholder(isDark),
+                  );
+
+                  // Hero transition for the first image
+                  if (index == 0) {
+                    imageWidget = Hero(
+                      tag: 'listing_img_${listing.id}',
+                      child: imageWidget,
+                    );
+                  }
+
                   return GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
@@ -401,14 +418,7 @@ class ListingDetailScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    child: CachedNetworkImage(
-                      imageUrl: images[index],
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          _buildPlaceholder(isDark, isLoading: true),
-                      errorWidget: (context, url, error) =>
-                          _buildPlaceholder(isDark),
-                    ),
+                    child: imageWidget,
                   );
                 },
               )
@@ -435,8 +445,7 @@ class ListingDetailScreen extends StatelessWidget {
             // Photo Counter
             if (images.length > 1)
               Positioned(
-                bottom:
-                    ValoraSpacing.lg + 20, // Adjust for rounded corners of body
+                bottom: ValoraSpacing.lg + 20,
                 right: ValoraSpacing.md,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -679,34 +688,14 @@ class ListingDetailScreen extends StatelessWidget {
     String label,
     ColorScheme colorScheme,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ValoraSpacing.md - 4,
-        vertical: ValoraSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: ValoraSpacing.iconSizeSm,
-            color: colorScheme.onSecondaryContainer,
-          ),
-          const SizedBox(width: ValoraSpacing.sm),
-          Text(
-            label,
-            style: ValoraTypography.labelLarge.copyWith(
-              color: colorScheme.onSecondaryContainer,
-            ),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(right: ValoraSpacing.xs, bottom: ValoraSpacing.xs),
+      child: ValoraChip(
+        label: label,
+        icon: icon,
+        isSelected: false,
+        backgroundColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+        textColor: colorScheme.onSecondaryContainer,
       ),
     );
   }
