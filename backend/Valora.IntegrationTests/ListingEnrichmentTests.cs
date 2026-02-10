@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,10 +14,11 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixture>
+public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixture>, IAsyncLifetime
 {
     private readonly TestcontainersDatabaseFixture _fixture;
-    private readonly HttpClient _client;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
 
     // Mocks
     private readonly Mock<ILocationResolver> _locationResolverMock = new();
@@ -29,9 +31,14 @@ public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixtur
     public ListingEnrichmentTests(TestcontainersDatabaseFixture fixture)
     {
         _fixture = fixture;
+    }
 
+    public async Task InitializeAsync()
+    {
         // Configure the factory to swap out services with our mocks
-        var factory = _fixture.Factory!.WithWebHostBuilder(builder =>
+        // We MUST store this factory instance because it contains the scoped services (like DbContext)
+        // that are consistent with the HttpClient it creates.
+        _factory = _fixture.Factory!.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
@@ -44,27 +51,61 @@ public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixtur
             });
         });
 
-        _client = factory.CreateClient();
+        _client = _factory.CreateClient();
+
+        // Ensure clean state before each test
+        // We use _factory.Services to ensure we are targeting the same InMemory/Container DB as the client
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
+        // Similar to BaseIntegrationTest.InitializeAsync
+        context.Listings.RemoveRange(context.Listings);
+        context.Notifications.RemoveRange(context.Notifications);
+        if (context.Users.Any())
+        {
+            context.Users.RemoveRange(context.Users);
+        }
+        await context.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        _client.Dispose();
+        return Task.CompletedTask;
     }
 
     private async Task AuthenticateAsync(string email = "enrich@test.com")
     {
-        using var scope = _fixture.Factory!.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        // Use a strong password to satisfy Identity requirements
+        const string password = "StrongPassword123!";
 
-        var user = await userManager.FindByEmailAsync(email);
-        if (user == null)
+        // Create user via UserManager to ensure they exist in the DB
+        // Using _factory.Services ensures we are in the same scope as the API
+        using (var scope = _factory.Services.CreateScope())
         {
-            user = new ApplicationUser { UserName = email, Email = email };
-            await userManager.CreateAsync(user, "Password123!");
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new ApplicationUser { UserName = email, Email = email };
+                var result = await userManager.CreateAsync(user, password);
+                if (!result.Succeeded)
+                {
+                    throw new Exception($"Failed to create test user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
         }
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginDto(email, "Password123!"));
+        // Login via API to get the token
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginDto(email, password));
         loginResponse.EnsureSuccessStatusCode();
+
         var authResponse = await loginResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
+        Assert.NotNull(authResponse);
+        Assert.False(string.IsNullOrEmpty(authResponse.Token), "Auth token should not be null or empty");
 
         _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse!.Token);
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
     }
 
     [Fact]
@@ -75,7 +116,9 @@ public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixtur
         SetupMocksWithValidData();
 
         var listingId = Guid.NewGuid();
-        using (var scope = _fixture.Factory!.Services.CreateScope())
+
+        // Seed listing using the SAME factory scope
+        using (var scope = _factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
             context.Listings.Add(new Listing
@@ -96,10 +139,9 @@ public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixtur
         // Assert
         response.EnsureSuccessStatusCode();
 
-        using (var scope = _fixture.Factory!.Services.CreateScope())
+        using (var scope = _factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            // Use AsNoTracking to ensure we get fresh data from DB
             var listing = await context.Listings.AsNoTracking().FirstOrDefaultAsync(l => l.Id == listingId);
 
             Assert.NotNull(listing);
@@ -130,7 +172,7 @@ public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixtur
             .ThrowsAsync(new Exception("API Down"));
 
         var listingId = Guid.NewGuid();
-        using (var scope = _fixture.Factory!.Services.CreateScope())
+        using (var scope = _factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
             context.Listings.Add(new Listing
@@ -151,7 +193,7 @@ public class ListingEnrichmentTests : IClassFixture<TestcontainersDatabaseFixtur
         // Assert
         response.EnsureSuccessStatusCode(); // Should still be 200 OK because partial success is allowed
 
-        using (var scope = _fixture.Factory!.Services.CreateScope())
+        using (var scope = _factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
             var listing = await context.Listings.AsNoTracking().FirstOrDefaultAsync(l => l.Id == listingId);
