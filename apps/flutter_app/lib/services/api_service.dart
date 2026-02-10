@@ -40,8 +40,9 @@ typedef ComputeRunner = Future<R> Function<Q, R>(
 });
 
 class ApiService {
-  // baseUrl is usually provided by environment variables or config
-  // For local development on Android emulator use 10.0.2.2 instead of localhost
+  // baseUrl is usually provided by environment variables or config.
+  // Production builds should override API_URL via --dart-define or environment config.
+  // For local development on Android emulator use 10.0.2.2 instead of localhost.
   static const String baseUrl = String.fromEnvironment(
     'API_URL',
     defaultValue: 'http://localhost:5001/api',

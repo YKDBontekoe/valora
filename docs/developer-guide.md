@@ -49,10 +49,14 @@ Response includes:
 
 - `location`
 - `socialMetrics`
-- `safetyMetrics`
+- `crimeMetrics`
+- `demographicsMetrics`
+- `housingMetrics`
+- `mobilityMetrics`
 - `amenityMetrics`
 - `environmentMetrics`
 - `compositeScore`
+- `categoryScores`
 - `sources`
 - `warnings`
 
@@ -76,6 +80,7 @@ Core environment variables:
 API key expectations:
 
 - No key required by default for PDOK, CBS StatLine, Overpass, and Luchtmeetnet base connectors.
+- No key required for Flutter-side Kadaster/PDOK WMS property imagery (`service.pdok.nl/hwh/luchtfotorgb/wms/v1_0`).
 - `OPENROUTER_API_KEY` is required only for AI chat endpoints.
 - Optional future connectors may require keys (for example ORS/KNMI/DUO); keep those values in `.env` and never commit secrets.
 

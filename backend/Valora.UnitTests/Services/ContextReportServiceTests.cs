@@ -43,7 +43,13 @@ public class ContextReportServiceTests
             .ReturnsAsync(location);
 
         _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM0363", "Gemeente", 860000, 6057, 290, 7.5, DateTimeOffset.UtcNow));
+            .ReturnsAsync(new NeighborhoodStatsDto("GM0363", "Gemeente", 860000, 6057, 290, 7.5, 
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            // Phase 2: Housing (7), Mobility (3), Proximity (5)
+            null, null, null, null, null, null, null,
+            null, null, null,
+            null, null, null, null, null,
+            DateTimeOffset.UtcNow));
 
         _crimeClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CrimeStatsDto(45, 5, 3, 20, 8, null, DateTimeOffset.UtcNow));
