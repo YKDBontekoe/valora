@@ -49,6 +49,7 @@ void main() {
 
   testWidgets('AiInsightCard shows initial state correctly', (tester) async {
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
     expect(find.text('Unlock Neighborhood Insights'), findsOneWidget);
     expect(
@@ -63,18 +64,24 @@ void main() {
         .thenAnswer((_) async => 'This is a **great** neighborhood.');
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Generate Insight'));
     await tester.pump(); // Start loading
     // We cannot pumpAndSettle here easily because of infinite animations or async gap,
     // but the ApiService mock returns immediately in the next microtask.
     await tester.pump(const Duration(milliseconds: 100));
+    // Settle animations
+    await tester.pumpAndSettle();
 
     expect(find.text('AI Insight'), findsOneWidget);
     expect(find.byKey(const Key('ai-summary-text')), findsOneWidget);
 
     // Check rich text content indirectly or by finding the widget
-    final richTextFinder = find.byKey(const Key('ai-summary-text'));
+    final richTextFinder = find.descendant(
+      of: find.byKey(const Key('ai-summary-text')),
+      matching: find.byType(RichText),
+    );
     final RichText richText = tester.widget(richTextFinder);
     final textSpan = richText.text as TextSpan;
     // 'This is a ' (normal) + 'great' (bold) + ' neighborhood.' (normal)
