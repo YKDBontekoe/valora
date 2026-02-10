@@ -430,7 +430,7 @@ void main() {
       );
     });
 
-    final searchProvider = SearchListingsProvider(apiService: mockApiService);
+    final searchProvider = SearchListingsProvider(apiService: mockApiService, searchHistoryService: mockSearchHistoryService);
 
     await tester.pumpWidget(
       createWidgetUnderTest(searchProvider: searchProvider),

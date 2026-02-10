@@ -11,7 +11,9 @@ import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../providers/search_listings_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../services/api_service.dart';
+import '../services/search_history_service.dart';
 import '../services/property_photo_service.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
@@ -59,6 +61,8 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (_) {
       final created = SearchListingsProvider(
         apiService: context.read<ApiService>(),
+        searchHistoryService: context.read<SearchHistoryService>(),
+        preferencesProvider: context.read<PreferencesProvider>(),
       );
       _searchProvider ??= created;
       _ownsProvider = true;

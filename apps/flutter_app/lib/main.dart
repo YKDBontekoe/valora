@@ -8,6 +8,8 @@ import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/favorites_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/preferences_provider.dart';
+import 'services/search_history_service.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
@@ -65,6 +67,8 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider<PreferencesProvider>(create: (_) => PreferencesProvider()),
+          Provider<SearchHistoryService>(create: (_) => SearchHistoryService()),
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),
