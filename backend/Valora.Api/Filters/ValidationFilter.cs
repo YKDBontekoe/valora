@@ -8,6 +8,11 @@ public class ValidationFilter<T> : IEndpointFilter where T : class
     {
         var argument = context.Arguments.FirstOrDefault(a => a is T);
 
+        if (argument == null)
+        {
+            return Results.BadRequest("Request body is required.");
+        }
+
         if (argument is T validArgument)
         {
             var validationContext = new ValidationContext(validArgument);
