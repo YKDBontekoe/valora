@@ -182,7 +182,9 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100)); // Wait for entry animations
+    await tester.pump(
+      const Duration(milliseconds: 100),
+    ); // Wait for entry animations
 
     expect(find.text('Search'), findsOneWidget);
     expect(find.text('Find your home'), findsOneWidget);
@@ -213,7 +215,9 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100)); // Initial animations
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100)); // Initial animations
 
     // Enter text to load listings
     await tester.enterText(find.byType(TextField), 'Test');
@@ -258,7 +262,9 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     await tester.enterText(find.byType(TextField), 'Test');
     await tester.pump(const Duration(milliseconds: 800)); // Debounce
@@ -283,11 +289,15 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Open filter dialog
     await tester.tap(find.byIcon(Icons.tune_rounded));
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Filter & Sort'), findsOneWidget);
 
@@ -326,7 +336,9 @@ void main() {
     when(mockApiService.getListings(any)).thenThrow(Exception('Network error'));
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     await tester.enterText(find.byType(TextField), 'Error');
     await tester.pump(const Duration(milliseconds: 800));
@@ -374,7 +386,9 @@ void main() {
     ).thenThrow(Exception('Pagination Error'));
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Load first page
     await tester.enterText(find.byType(TextField), 'Test');
@@ -418,8 +432,12 @@ void main() {
 
     final searchProvider = SearchListingsProvider(apiService: mockApiService, searchHistoryService: mockSearchHistoryService);
 
-    await tester.pumpWidget(createWidgetUnderTest(searchProvider: searchProvider));
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpWidget(
+      createWidgetUnderTest(searchProvider: searchProvider),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Enter query to ensure API is called
     await tester.enterText(find.byType(TextField), 'test');
@@ -493,7 +511,9 @@ void main() {
     });
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); await tester.pump(const Duration(milliseconds: 100)); await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Enter query
     await tester.enterText(find.byType(TextField), 'test');

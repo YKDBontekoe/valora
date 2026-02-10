@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
 
+import '../core/config/app_config.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'crash_reporting_service.dart';
 import '../models/context_report.dart';
@@ -40,12 +41,8 @@ typedef ComputeRunner = Future<R> Function<Q, R>(
 });
 
 class ApiService {
-  // baseUrl is usually provided by environment variables or config
-  // For local development on Android emulator use 10.0.2.2 instead of localhost
-  static const String baseUrl = String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://localhost:5001/api',
-  );
+  // baseUrl is provided by AppConfig which handles dotenv and fallbacks.
+  static String get baseUrl => AppConfig.apiUrl;
 
   static const Duration timeoutDuration = Duration(seconds: 30);
 
@@ -308,6 +305,19 @@ class ApiService {
       final response = await _authenticatedRequest(
         (headers) =>
             _client.post(uri, headers: headers).timeout(timeoutDuration),
+      );
+      await _handleResponse(response, (_) => null);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    final uri = Uri.parse('$baseUrl/notifications/$id');
+    try {
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.delete(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
     } catch (e, stack) {

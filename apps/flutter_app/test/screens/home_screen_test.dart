@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
@@ -12,6 +13,10 @@ import 'package:valora_app/services/auth_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   Widget createWidget() {
     return MultiProvider(
       providers: [

@@ -29,17 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBody() {
-    switch (_currentNavIndex) {
-      case 0:
-        return const SearchScreen();
-      case 1:
-        return const ContextReportScreen();
-      case 2:
-        return const SavedListingsScreen();
-      case 3:
-        return const SettingsScreen();
-      default:
-        return const SearchScreen();
-    }
+    return IndexedStack(
+      index: _currentNavIndex,
+      children: const [
+        SearchScreen(),
+        ContextReportScreen(),
+        SavedListingsScreen(),
+        SettingsScreen(),
+      ],
+    );
   }
 }

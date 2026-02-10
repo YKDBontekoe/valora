@@ -109,5 +109,30 @@ void main() {
       expect(notificationService.unreadCount, 0);
       verify(mockApiService.markAllNotificationsAsRead()).called(1);
     });
+
+    test('deleteNotification updates list optimistically and calls API', () async {
+      final notification = ValoraNotification(
+        id: '1',
+        title: 'Test 1',
+        body: 'Body',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      );
+
+      // Setup initial state
+      when(mockApiService.getNotifications(limit: 50))
+          .thenAnswer((_) async => [notification]);
+      await notificationService.fetchNotifications();
+
+      // Setup delete call
+      when(mockApiService.deleteNotification('1'))
+          .thenAnswer((_) async {});
+
+      await notificationService.deleteNotification('1');
+
+      expect(notificationService.notifications, isEmpty);
+      verify(mockApiService.deleteNotification('1')).called(1);
+    });
   });
 }

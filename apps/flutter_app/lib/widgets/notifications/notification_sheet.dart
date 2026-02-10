@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../services/notification_service.dart';
+import '../valora_widgets.dart';
 import 'notification_item.dart';
 
 class NotificationSheet extends StatefulWidget {
@@ -118,19 +119,69 @@ class _NotificationSheetState extends State<NotificationSheet> {
                     ),
                     itemBuilder: (context, index) {
                       final notification = service.notifications[index];
-                      return NotificationItem(
-                        notification: notification,
-                        onTap: () async {
-                          if (!notification.isRead) {
-                            service.markAsRead(notification.id);
-                          }
-                          if (notification.actionUrl != null) {
-                             final uri = Uri.parse(notification.actionUrl!);
-                             if (await canLaunchUrl(uri)) {
-                               await launchUrl(uri);
-                             }
+                      return Dismissible(
+                        key: Key(notification.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: ValoraColors.error,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 24),
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        confirmDismiss: (direction) async {
+                          return await showDialog<bool>(
+                            context: context,
+                            builder: (context) => ValoraDialog(
+                              title: 'Delete Notification?',
+                              actions: [
+                                ValoraButton(
+                                  label: 'Cancel',
+                                  variant: ValoraButtonVariant.ghost,
+                                  onPressed: () => Navigator.pop(context, false),
+                                ),
+                                ValoraButton(
+                                  label: 'Delete',
+                                  variant: ValoraButtonVariant.primary,
+                                  onPressed: () => Navigator.pop(context, true),
+                                ),
+                              ],
+                              child: const Text(
+                                'Are you sure you want to delete this notification?',
+                              ),
+                            ),
+                          );
+                        },
+                        onDismissed: (direction) async {
+                          try {
+                            await service.deleteNotification(notification.id);
+                          } catch (_) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to delete notification'),
+                                  backgroundColor: ValoraColors.error,
+                                ),
+                              );
+                            }
                           }
                         },
+                        child: NotificationItem(
+                          notification: notification,
+                          onTap: () async {
+                            if (!notification.isRead) {
+                              service.markAsRead(notification.id);
+                            }
+                            if (notification.actionUrl != null) {
+                              final uri = Uri.parse(notification.actionUrl!);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              }
+                            }
+                          },
+                        ),
                       );
                     },
                   ),

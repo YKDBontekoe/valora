@@ -61,6 +61,8 @@ public class ListingRepository : IListingRepository
             l.FiberAvailable,
             // Status
             l.PublicationDate, l.IsSoldOrRented, l.Labels,
+            // Phase 6: WOZ
+            null, null, null,
             // Context
             l.ContextCompositeScore, l.ContextSafetyScore, l.ContextReport
         ));

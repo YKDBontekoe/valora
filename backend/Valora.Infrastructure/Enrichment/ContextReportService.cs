@@ -8,6 +8,9 @@ using Valora.Application.Enrichment;
 
 namespace Valora.Infrastructure.Enrichment;
 
+/// <summary>
+/// Orchestrates the generation of context reports by aggregating data from multiple external sources.
+/// </summary>
 public sealed class ContextReportService : IContextReportService
 {
     private readonly ILocationResolver _locationResolver;
@@ -46,10 +49,20 @@ public sealed class ContextReportService : IContextReportService
     /// Coordinates the retrieval of data from multiple public sources and builds a unified context report.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// This method employs a "fan-out" pattern to query all external APIs in parallel.
     /// It is designed for resilience: if a non-critical source fails (e.g., air quality),
     /// the method catches the exception via <see cref="TryGetSourceAsync{T}"/> and returns a partial report
     /// with a warning, rather than failing the entire request.
+    /// </para>
+    /// <para>
+    /// The process involves:
+    /// 1. Resolving the input to a standardized Dutch address/location.
+    /// 2. Checking the cache for an existing report.
+    /// 3. Fetching data from CBS, PDOK, Overpass, etc., concurrently.
+    /// 4. Normalizing raw data into 0-100 scores using heuristics.
+    /// 5. Aggregating scores into categories and a final composite score.
+    /// </para>
     /// </remarks>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
     {
@@ -109,11 +122,13 @@ public sealed class ContextReportService : IContextReportService
         var socialMetrics = BuildSocialMetrics(cbs, warnings);
         var crimeMetrics = BuildCrimeMetrics(crime, warnings);
         var demographicsMetrics = BuildDemographicsMetrics(demographics, warnings);
-        var amenityMetrics = BuildAmenityMetrics(amenities, warnings);
+        var housingMetrics = BuildHousingMetrics(cbs, warnings); // Phase 2
+        var mobilityMetrics = BuildMobilityMetrics(cbs, warnings); // Phase 2
+        var amenityMetrics = BuildAmenityMetrics(amenities, cbs, warnings); // Phase 2: CBS Proximity
         var environmentMetrics = BuildEnvironmentMetrics(air, warnings);
 
         // Compute category scores for radar chart
-        var categoryScores = ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, amenityMetrics, environmentMetrics);
+        var categoryScores = ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, housingMetrics, mobilityMetrics, amenityMetrics, environmentMetrics);
         var compositeScore = ComputeCompositeScore(categoryScores);
 
         var sources = BuildSourceAttributions(cbs, crime, demographics, amenities, air);
@@ -123,6 +138,8 @@ public sealed class ContextReportService : IContextReportService
             SocialMetrics: socialMetrics,
             CrimeMetrics: crimeMetrics,
             DemographicsMetrics: demographicsMetrics,
+            HousingMetrics: housingMetrics, // Phase 2
+            MobilityMetrics: mobilityMetrics, // Phase 2
             AmenityMetrics: amenityMetrics,
             EnvironmentMetrics: environmentMetrics,
             CompositeScore: Math.Round(compositeScore, 1),
@@ -176,10 +193,10 @@ public sealed class ContextReportService : IContextReportService
 
         return
         [
-            new("residents", "Residents", cbs.Residents, "people", null, "CBS StatLine 83765NED"),
-            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, "CBS StatLine 83765NED"),
-            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, "CBS StatLine 83765NED"),
-            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, "CBS StatLine 83765NED")
+            new("residents", "Residents", cbs.Residents, "people", null, "CBS StatLine 85618NED"),
+            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, "CBS StatLine 85618NED"),
+            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, "CBS StatLine 85618NED"),
+            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, "CBS StatLine 85618NED")
         ];
     }
 
@@ -217,40 +234,82 @@ public sealed class ContextReportService : IContextReportService
 
         return
         [
-            new("age_0_14", "Age 0-14", demographics.PercentAge0To14, "%", null, "CBS StatLine 83765NED"),
-            new("age_15_24", "Age 15-24", demographics.PercentAge15To24, "%", null, "CBS StatLine 83765NED"),
-            new("age_25_44", "Age 25-44", demographics.PercentAge25To44, "%", null, "CBS StatLine 83765NED"),
-            new("age_45_64", "Age 45-64", demographics.PercentAge45To64, "%", null, "CBS StatLine 83765NED"),
-            new("age_65_plus", "Age 65+", demographics.PercentAge65Plus, "%", null, "CBS StatLine 83765NED"),
-            new("avg_household_size", "Avg Household Size", demographics.AverageHouseholdSize, "people", null, "CBS StatLine 83765NED"),
-            new("owner_occupied", "Owner-Occupied", demographics.PercentOwnerOccupied, "%", null, "CBS StatLine 83765NED"),
-            new("single_households", "Single Households", demographics.PercentSingleHouseholds, "%", null, "CBS StatLine 83765NED"),
+            new("age_0_14", "Age 0-14", demographics.PercentAge0To14, "%", null, "CBS StatLine 85618NED"),
+            new("age_15_24", "Age 15-24", demographics.PercentAge15To24, "%", null, "CBS StatLine 85618NED"),
+            new("age_25_44", "Age 25-44", demographics.PercentAge25To44, "%", null, "CBS StatLine 85618NED"),
+            new("age_45_64", "Age 45-64", demographics.PercentAge45To64, "%", null, "CBS StatLine 85618NED"),
+            new("age_65_plus", "Age 65+", demographics.PercentAge65Plus, "%", null, "CBS StatLine 85618NED"),
+            new("avg_household_size", "Avg Household Size", demographics.AverageHouseholdSize, "people", null, "CBS StatLine 85618NED"),
+            new("owner_occupied", "Owner-Occupied", demographics.PercentOwnerOccupied, "%", null, "CBS StatLine 85618NED"),
+            new("single_households", "Single Households", demographics.PercentSingleHouseholds, "%", null, "CBS StatLine 85618NED"),
             new("family_friendly", "Family-Friendly Score", familyScore, "score", familyScore, "Valora Composite")
         ];
     }
 
-    private static List<ContextMetricDto> BuildAmenityMetrics(AmenityStatsDto? amenities, List<string> warnings)
+    private static List<ContextMetricDto> BuildHousingMetrics(NeighborhoodStatsDto? cbs, List<string> warnings)
     {
-        if (amenities is null)
-        {
-            warnings.Add("OSM amenities were unavailable; amenity score is partial.");
-            return [];
-        }
-
-        var proximityScore = ScoreAmenityProximity(amenities.NearestAmenityDistanceMeters);
-        var countScore = ScoreAmenityCount(amenities);
+        if (cbs is null) return [];
 
         return
         [
-            new("schools", "Schools in Radius", amenities.SchoolCount, "count", null, "OpenStreetMap / Overpass"),
-            new("supermarkets", "Supermarkets in Radius", amenities.SupermarketCount, "count", null, "OpenStreetMap / Overpass"),
-            new("parks", "Parks in Radius", amenities.ParkCount, "count", null, "OpenStreetMap / Overpass"),
-            new("healthcare", "Healthcare in Radius", amenities.HealthcareCount, "count", null, "OpenStreetMap / Overpass"),
-            new("transit_stops", "Transit Stops in Radius", amenities.TransitStopCount, "count", null, "OpenStreetMap / Overpass"),
-            new("amenity_diversity", "Amenity Diversity", amenities.DiversityScore, "score", amenities.DiversityScore, "OpenStreetMap / Overpass"),
-            new("amenity_proximity", "Nearest Amenity Distance", amenities.NearestAmenityDistanceMeters, "m", proximityScore, "OpenStreetMap / Overpass"),
-            new("amenity_count_score", "Amenity Volume Score", countScore, "score", countScore, "OpenStreetMap / Overpass")
+            new("housing_owner", "Owner-Occupied", cbs.PercentageOwnerOccupied, "%", null, "CBS StatLine 85618NED"),
+            new("housing_rental", "Rental Properties", cbs.PercentageRental, "%", null, "CBS StatLine 85618NED"),
+            new("housing_social", "Social Housing", cbs.PercentageSocialHousing, "%", null, "CBS StatLine 85618NED"),
+            new("housing_pre2000", "Built Pre-2000", cbs.PercentagePre2000, "%", null, "CBS StatLine 85618NED"),
+            new("housing_post2000", "Built Post-2000", cbs.PercentagePost2000, "%", null, "CBS StatLine 85618NED"),
+            new("housing_multifamily", "Multi-Family Homes", cbs.PercentageMultiFamily, "%", null, "CBS StatLine 85618NED")
         ];
+    }
+
+    private static List<ContextMetricDto> BuildMobilityMetrics(NeighborhoodStatsDto? cbs, List<string> warnings)
+    {
+        if (cbs is null) return [];
+
+        return
+        [
+            new("mobility_cars_household", "Cars per Household", cbs.CarsPerHousehold, "cars/hh", null, "CBS StatLine 85618NED"),
+            new("mobility_car_density", "Car Density", cbs.CarDensity, "cars/km²", null, "CBS StatLine 85618NED"),
+            new("mobility_total_cars", "Total Cars", cbs.TotalCars, "cars", null, "CBS StatLine 85618NED")
+        ];
+    }
+
+    private static List<ContextMetricDto> BuildAmenityMetrics(AmenityStatsDto? amenities, NeighborhoodStatsDto? cbs, List<string> warnings)
+    {
+        var metrics = new List<ContextMetricDto>();
+
+        if (amenities != null)
+        {
+            var proximityScore = ScoreAmenityProximity(amenities.NearestAmenityDistanceMeters);
+            var countScore = ScoreAmenityCount(amenities);
+
+            metrics.AddRange(
+            [
+                new("schools", "Schools in Radius", amenities.SchoolCount, "count", null, "OpenStreetMap / Overpass"),
+                new("supermarkets", "Supermarkets in Radius", amenities.SupermarketCount, "count", null, "OpenStreetMap / Overpass"),
+                new("parks", "Parks in Radius", amenities.ParkCount, "count", null, "OpenStreetMap / Overpass"),
+                new("healthcare", "Healthcare in Radius", amenities.HealthcareCount, "count", null, "OpenStreetMap / Overpass"),
+                new("transit_stops", "Transit Stops in Radius", amenities.TransitStopCount, "count", null, "OpenStreetMap / Overpass"),
+                new("amenity_diversity", "Amenity Diversity", amenities.DiversityScore, "score", amenities.DiversityScore, "OpenStreetMap / Overpass"),
+                new("amenity_proximity", "Nearest Amenity Distance", amenities.NearestAmenityDistanceMeters, "m", proximityScore, "OpenStreetMap / Overpass"),
+                new("amenity_count_score", "Amenity Volume Score", countScore, "score", countScore, "OpenStreetMap / Overpass")
+            ]);
+        }
+        else
+        {
+            warnings.Add("OSM amenities were unavailable; amenity score is partial.");
+        }
+
+        if (cbs != null)
+        {
+            // Phase 2: CBS Proximity - Walkability
+            metrics.Add(new("dist_supermarket", "Dist. to Supermarket", cbs.DistanceToSupermarket, "km", ScoreProximity(cbs.DistanceToSupermarket, 1.0, 2.5), "CBS StatLine 85618NED"));
+            metrics.Add(new("dist_gp", "Dist. to GP", cbs.DistanceToGp, "km", ScoreProximity(cbs.DistanceToGp, 1.5, 3.0), "CBS StatLine 85618NED"));
+            metrics.Add(new("dist_school", "Dist. to School", cbs.DistanceToSchool, "km", ScoreProximity(cbs.DistanceToSchool, 1.0, 3.0), "CBS StatLine 85618NED"));
+            metrics.Add(new("dist_daycare", "Dist. to Daycare", cbs.DistanceToDaycare, "km", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("schools_3km", "Schools within 3km", cbs.SchoolsWithin3km, "count", null, "CBS StatLine 85618NED"));
+        }
+
+        return metrics;
     }
 
     private static List<ContextMetricDto> BuildEnvironmentMetrics(AirQualitySnapshotDto? air, List<string> warnings)
@@ -285,7 +344,7 @@ public sealed class ContextReportService : IContextReportService
 
         if (cbs is not null)
         {
-            sources.Add(new SourceAttributionDto("CBS StatLine 83765NED", "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto("CBS StatLine 85618NED", "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
         }
 
         if (crime is not null)
@@ -315,6 +374,8 @@ public sealed class ContextReportService : IContextReportService
         IReadOnlyList<ContextMetricDto> socialMetrics,
         IReadOnlyList<ContextMetricDto> crimeMetrics,
         IReadOnlyList<ContextMetricDto> demographicsMetrics,
+        IReadOnlyList<ContextMetricDto> housingMetrics,
+        IReadOnlyList<ContextMetricDto> mobilityMetrics,
         IReadOnlyList<ContextMetricDto> amenityMetrics,
         IReadOnlyList<ContextMetricDto> environmentMetrics)
     {
@@ -328,6 +389,12 @@ public sealed class ContextReportService : IContextReportService
 
         var demographics = AverageScore(demographicsMetrics);
         if (demographics.HasValue) scores["Demographics"] = Math.Round(demographics.Value, 1);
+
+        var housing = AverageScore(housingMetrics);
+        if (housing.HasValue) scores["Housing"] = Math.Round(housing.Value, 1);
+
+        var mobility = AverageScore(mobilityMetrics);
+        if (mobility.HasValue) scores["Mobility"] = Math.Round(mobility.Value, 1);
 
         var amenity = AverageScore(amenityMetrics);
         if (amenity.HasValue) scores["Amenities"] = Math.Round(amenity.Value, 1);
@@ -349,10 +416,12 @@ public sealed class ContextReportService : IContextReportService
         var weights = new Dictionary<string, double>
         {
             ["Social"] = 0.20,
-            ["Safety"] = 0.25,
+            ["Safety"] = 0.20,
             ["Demographics"] = 0.10,
-            ["Amenities"] = 0.30,
-            ["Environment"] = 0.15
+            ["Housing"] = 0.10,
+            ["Mobility"] = 0.05,
+            ["Amenities"] = 0.25,
+            ["Environment"] = 0.10
         };
 
         double totalWeight = 0;
@@ -393,10 +462,10 @@ public sealed class ContextReportService : IContextReportService
 
         return density.Value switch
         {
-            <= 500 => 65,    // Rural / Isolated
-            <= 1500 => 85,   // Suburban spacious
-            <= 3500 => 100,  // Urban optimal
-            <= 7000 => 70,   // Urban dense
+            <= 500 => 65,    // Rural / Isolated - good for tranquility but bad for access
+            <= 1500 => 85,   // Suburban spacious - balanced
+            <= 3500 => 100,  // Urban optimal - highly walkable
+            <= 7000 => 70,   // Urban dense - can be noisy
             _ => 50          // Overcrowded
         };
     }
@@ -404,6 +473,11 @@ public sealed class ContextReportService : IContextReportService
     /// <summary>
     /// Penalizes neighborhoods with a high percentage of low-income households.
     /// </summary>
+    /// <remarks>
+    /// This metric is a proxy for socio-economic stability.
+    /// 0% low income = 100 score. 12.5% low income = 0 score.
+    /// The steep penalty (8x multiplier) is designed to highlight areas with concentrated poverty.
+    /// </remarks>
     private static double? ScoreLowIncome(double? lowIncomePercent)
     {
         if (!lowIncomePercent.HasValue) return null;
@@ -415,6 +489,10 @@ public sealed class ContextReportService : IContextReportService
     /// <summary>
     /// Scores WOZ value (property valuation).
     /// </summary>
+    /// <remarks>
+    /// Higher property values generally correlate with better neighborhood maintenance and services.
+    /// Baseline: 150k (0 score). Target: 450k (100 score).
+    /// </remarks>
     private static double? ScoreWoz(double? wozKeur)
     {
         if (!wozKeur.HasValue) return null;
@@ -424,8 +502,11 @@ public sealed class ContextReportService : IContextReportService
 
     /// <summary>
     /// Scores total crime incidents per 1000 residents.
-    /// Based on CBS data where national average fluctuates around 45-50.
     /// </summary>
+    /// <remarks>
+    /// Based on CBS data where national average fluctuates around 45-50.
+    /// Scores are bucketed to provide clear safety tiers (Very Safe, Safe, Average, etc.).
+    /// </remarks>
     private static double? ScoreTotalCrime(int? crimesPer1000)
     {
         if (!crimesPer1000.HasValue) return null;
@@ -442,37 +523,54 @@ public sealed class ContextReportService : IContextReportService
         };
     }
 
+    /// <summary>
+    /// Scores burglary rate per 1000 residents.
+    /// </summary>
+    /// <remarks>
+    /// Burglary is a high-impact crime for residents.
+    /// </remarks>
     private static double? ScoreBurglary(int? burglaryPer1000)
     {
         if (!burglaryPer1000.HasValue) return null;
 
         return burglaryPer1000.Value switch
         {
-            <= 2 => 100,
-            <= 5 => 80,
-            <= 10 => 60,
-            <= 15 => 40,
-            _ => 20
+            <= 2 => 100, // Rare
+            <= 5 => 80,  // Low
+            <= 10 => 60, // Moderate
+            <= 15 => 40, // High
+            _ => 20      // Very High
         };
     }
 
+    /// <summary>
+    /// Scores violent crime rate per 1000 residents.
+    /// </summary>
+    /// <remarks>
+    /// Violent crime has a severe impact on perceived safety. The thresholds are much stricter than for total crime.
+    /// </remarks>
     private static double? ScoreViolentCrime(int? violentPer1000)
     {
         if (!violentPer1000.HasValue) return null;
 
         return violentPer1000.Value switch
         {
-            <= 2 => 100,
-            <= 5 => 75,
-            <= 10 => 50,
-            _ => 25
+            <= 2 => 100, // Very Rare
+            <= 5 => 75,  // Low
+            <= 10 => 50, // Moderate
+            _ => 25      // High
         };
     }
 
     /// <summary>
     /// Calculates a family-friendly score based on demographics.
-    /// Factors in household composition, presence of children, and household size.
     /// </summary>
+    /// <remarks>
+    /// Factors in:
+    /// - Percentage of family households (>20% boosts score)
+    /// - Percentage of children 0-14 (>15% boosts score)
+    /// - Average household size (>2 people boosts score)
+    /// </remarks>
     private static double? ScoreFamilyFriendly(DemographicsDto demographics)
     {
         // Composite score based on presence of families and children
@@ -492,8 +590,11 @@ public sealed class ContextReportService : IContextReportService
 
     /// <summary>
     /// Scores the volume of amenities in the search radius.
-    /// Simple quantity heuristic: 20 amenities = 100 score.
     /// </summary>
+    /// <remarks>
+    /// Simple quantity heuristic: 20 total amenities = 100 score.
+    /// This encourages diversity (e.g. 5 schools + 5 parks + 10 shops = 100).
+    /// </remarks>
     private static double ScoreAmenityCount(AmenityStatsDto amenities)
     {
         var total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
@@ -503,6 +604,11 @@ public sealed class ContextReportService : IContextReportService
     /// <summary>
     /// Scores the "15-minute city" potential based on proximity to the nearest key amenity.
     /// </summary>
+    /// <remarks>
+    /// Based on walking speed (approx 5km/h).
+    /// 250m = ~3 mins walk (Excellent).
+    /// 1000m = ~12 mins walk (Acceptable/Bikeable).
+    /// </remarks>
     private static double? ScoreAmenityProximity(double? nearestDistanceMeters)
     {
         if (!nearestDistanceMeters.HasValue) return null;
@@ -520,8 +626,11 @@ public sealed class ContextReportService : IContextReportService
 
     /// <summary>
     /// Scores air quality based on PM2.5 concentration.
-    /// WHO guideline is < 5 µg/m³.
     /// </summary>
+    /// <remarks>
+    /// Reference: WHO guideline is &lt; 5 µg/m³.
+    /// EU limit is 25 µg/m³.
+    /// </remarks>
     private static double? ScorePm25(double? pm25)
     {
         if (!pm25.HasValue) return null;
@@ -535,5 +644,16 @@ public sealed class ContextReportService : IContextReportService
             <= 35 => 25, // Unhealthy
             _ => 10      // Hazardous
         };
+    }
+    /// <summary>
+    /// Scores proximity to key amenities (Supermarket, GP, School).
+    /// </summary>
+    private static double? ScoreProximity(double? distanceKm, double optimalKm, double acceptableKm)
+    {
+        if (!distanceKm.HasValue) return null;
+
+        if (distanceKm <= optimalKm) return 100;
+        if (distanceKm <= acceptableKm) return 70;
+        return 40;
     }
 }

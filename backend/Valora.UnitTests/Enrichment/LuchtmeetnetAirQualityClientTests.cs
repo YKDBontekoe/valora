@@ -13,7 +13,7 @@ namespace Valora.UnitTests.Enrichment;
 public class LuchtmeetnetAirQualityClientTests
 {
     [Fact]
-    public async Task GetSnapshotAsync_UsesStationListCoordinates_WithoutStationDetailRequests()
+    public async Task GetSnapshotAsync_FetchesStationDetails_ToFindNearest()
     {
         var handler = new RecordingHandler(request =>
         {
@@ -24,13 +24,26 @@ public class LuchtmeetnetAirQualityClientTests
             {
                 return JsonResponse("""
                 {
+                  "pagination": { "last_page": 1 },
                   "data": [
                     {
                       "number": "S1",
-                      "location": "Station One",
-                      "geometry": { "coordinates": [4.898, 52.377] }
+                      "location": "Station One"
                     }
                   ]
+                }
+                """);
+            }
+
+            if (path == "/open_api/stations/S1")
+            {
+                 return JsonResponse("""
+                {
+                  "data": {
+                    "number": "S1",
+                    "location": "Station One",
+                    "geometry": { "coordinates": [4.898, 52.377] }
+                  }
                 }
                 """);
             }
@@ -63,7 +76,7 @@ public class LuchtmeetnetAirQualityClientTests
 
         Assert.NotNull(result);
         Assert.Equal("S1", result!.StationId);
-        Assert.DoesNotContain(handler.RequestedUris, uri => uri.AbsolutePath == "/open_api/stations/S1");
+        Assert.Contains(handler.RequestedUris, uri => uri.AbsolutePath == "/open_api/stations/S1");
     }
 
     [Fact]
@@ -78,13 +91,26 @@ public class LuchtmeetnetAirQualityClientTests
             {
                 return JsonResponse("""
                 {
+                  "pagination": { "last_page": 1 },
                   "data": [
                     {
                       "number": "S1",
-                      "location": "Station One",
-                      "geometry": { "coordinates": [4.898, 52.377] }
+                      "location": "Station One"
                     }
                   ]
+                }
+                """);
+            }
+
+            if (path == "/open_api/stations/S1")
+            {
+                 return JsonResponse("""
+                {
+                  "data": {
+                    "number": "S1",
+                    "location": "Station One",
+                    "geometry": { "coordinates": [4.898, 52.377] }
+                  }
                 }
                 """);
             }

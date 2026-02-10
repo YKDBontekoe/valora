@@ -51,6 +51,12 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
   Future<void> markAllAsRead() async {}
 
   @override
+  Future<void> deleteNotification(String id) async {
+    _notifications = _notifications.where((n) => n.id != id).toList();
+    notifyListeners();
+  }
+
+  @override
   void startPolling() {}
 
   @override

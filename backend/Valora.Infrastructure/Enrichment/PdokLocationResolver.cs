@@ -10,6 +10,9 @@ using Valora.Application.Enrichment;
 
 namespace Valora.Infrastructure.Enrichment;
 
+/// <summary>
+/// Implements location resolution using the official Dutch PDOK Locatieserver.
+/// </summary>
 public sealed class PdokLocationResolver : ILocationResolver
 {
     private readonly HttpClient _httpClient;
@@ -33,10 +36,21 @@ public sealed class PdokLocationResolver : ILocationResolver
     /// Resolves an address string or URL to a normalized location object using the PDOK Locatieserver.
     /// </summary>
     /// <remarks>
-    /// This method first checks if the input is a listing URL (e.g. Funda) and extracts the address from it.
-    /// Then it queries the PDOK "free" endpoint to fuzzy match the address to a specific building ID.
-    /// It returns coordinates (WGS84 and RD New) along with administrative hierarchy codes (municipality/district/neighborhood).
+    /// <para>
+    /// This method serves as the entry point for turning user input (e.g., "Damrak 1" or a Funda URL)
+    /// into a structured location entity with coordinates and administrative hierarchy codes.
+    /// </para>
+    /// <para>
+    /// Process:
+    /// 1. Normalize input (extract address from URL if applicable).
+    /// 2. Check local memory cache.
+    /// 3. Query PDOK "free" endpoint (fuzzy search) filtered by <c>type:adres</c>.
+    /// 4. Parse response to extract WGS84 (GPS) and RD New (Rijksdriehoek) coordinates.
+    /// </para>
     /// </remarks>
+    /// <param name="input">Raw user input (address string or URL).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A <see cref="ResolvedLocationDto"/> if found, otherwise <c>null</c>.</returns>
     public async Task<ResolvedLocationDto?> ResolveAsync(string input, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -121,8 +135,15 @@ public sealed class PdokLocationResolver : ILocationResolver
 
     /// <summary>
     /// Normalizes raw user input into a searchable address string.
-    /// Handles extraction of address parts from supported listing URLs (Funda).
+    /// Handles extraction of address parts from supported listing URLs.
     /// </summary>
+    /// <remarks>
+    /// Logic:
+    /// 1. Checks if input is a valid absolute URI.
+    /// 2. If host matches known listing sites (e.g., funda.nl).
+    /// 3. Extracts the slug from the path (usually the last segment).
+    /// 4. Decodes and replaces hyphens with spaces to form a search query (e.g., "huis-address-city" -> "huis address city").
+    /// </remarks>
     private static string NormalizeInput(string input)
     {
         // Heuristic: If input looks like a Funda URL, extract the last path segment
