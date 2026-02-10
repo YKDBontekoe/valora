@@ -63,7 +63,9 @@ public class PdokListingService : IPdokListingService
             var listing = _mapper.MapToDto(doc, pdokId, null, null, null);
 
             // 3. Enrich with Context Report
-            if (!string.IsNullOrWhiteSpace(listing.Address))
+            // Check if address is valid and not the "Unknown Address" placeholder
+            if (!string.IsNullOrWhiteSpace(listing.Address) &&
+                !string.Equals(listing.Address, PdokListingMapper.UnknownAddress, StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {

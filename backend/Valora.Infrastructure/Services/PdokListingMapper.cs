@@ -8,6 +8,8 @@ namespace Valora.Infrastructure.Services;
 
 public class PdokListingMapper : IPdokListingMapper
 {
+    public const string UnknownAddress = "Unknown Address";
+
     public ListingDto MapToDto(JsonElement doc, string pdokId, ContextReportModel? contextReport, double? compositeScore, double? safetyScore)
     {
         // Extract Basic Info
@@ -25,7 +27,7 @@ public class PdokListingMapper : IPdokListingMapper
         return new ListingDto(
             Id: GenerateStableId(pdokId),
             FundaId: pdokId, // Store PDOK ID here for reference
-            Address: address ?? "Unknown Address",
+            Address: address ?? UnknownAddress,
             City: city,
             PostalCode: postcode,
             Price: null, // Not available
