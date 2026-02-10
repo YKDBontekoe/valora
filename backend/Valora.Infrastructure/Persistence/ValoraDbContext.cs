@@ -28,7 +28,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     private static readonly ValueComparer<Dictionary<string, string>> DictionaryComparer = new(
         (c1, c2) => c1!.Count == c2!.Count && !c1.Except(c2).Any(),
         // Order by key to ensure GetHashCode is consistent regardless of insertion order
-        c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
+        c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value != null ? v.Value.GetHashCode() : 0)),
         c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
 
     private static readonly ValueComparer<List<DateTime>> DateListComparer = new(
@@ -39,7 +39,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     private static readonly ValueComparer<ContextReportModel?> ContextReportComparer = new(
         (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
         c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
-        c => c == null ? null : JsonHelper.Deserialize<ContextReportModel>(JsonHelper.Serialize(c))!);
+        c => c == null ? null : JsonHelper.DeserializeNullable<ContextReportModel>(JsonHelper.Serialize(c)));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -156,7 +156,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
-                    v => JsonHelper.Deserialize<ContextReportModel?>(v))
+                    v => JsonHelper.DeserializeNullable<ContextReportModel>(v))
                 .Metadata.SetValueComparer(ContextReportComparer);
         });
     }

@@ -66,7 +66,9 @@ public class NotificationService : INotificationService
 
         if (notification == null) return false;
 
-        _logger.LogInformation("User {UserId} deleting notification {NotificationId}", userId, notificationId);
+        // Mask UserId for privacy (simple masking: show first 4 chars + ellipsis)
+        var maskedUserId = userId.Length > 4 ? userId[..4] + "..." : "***";
+        _logger.LogInformation("Deleting notification {NotificationId} for user {UserId}. Outcome: Success", notificationId, maskedUserId);
 
         _context.Notifications.Remove(notification);
         await _context.SaveChangesAsync();

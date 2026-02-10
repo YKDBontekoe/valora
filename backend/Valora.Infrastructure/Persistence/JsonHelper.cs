@@ -29,4 +29,21 @@ public static class JsonHelper
             return new T();
         }
     }
+
+    public static T? DeserializeNullable<T>(string? json) where T : class
+    {
+        if (string.IsNullOrWhiteSpace(json) || json.Trim() == "null")
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, Options);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 }
