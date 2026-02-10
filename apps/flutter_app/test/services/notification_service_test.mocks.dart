@@ -141,4 +141,13 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
           as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> deleteNotification(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteNotification, [id]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 }

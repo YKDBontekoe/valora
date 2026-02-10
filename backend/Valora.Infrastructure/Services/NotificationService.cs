@@ -56,16 +56,19 @@ public class NotificationService : INotificationService
         }
     }
 
-    public async Task DeleteNotificationAsync(Guid notificationId, string userId)
+    public async Task<bool> DeleteNotificationAsync(Guid notificationId, string userId)
     {
         var notification = await _context.Notifications
             .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 
-        if (notification != null)
-        {
-            _context.Notifications.Remove(notification);
-            await _context.SaveChangesAsync();
-        }
+        if (notification == null) return false;
+
+        // In a real scenario, this would likely be an AuditLog entry
+        Console.WriteLine($"[AUDIT] User {userId} deleting notification {notificationId}");
+
+        _context.Notifications.Remove(notification);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task MarkAllAsReadAsync(string userId)

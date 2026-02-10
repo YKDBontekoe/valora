@@ -52,27 +52,36 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<void> deleteNotification(String id) async {
+    final index = _notifications.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+
+    final removed = _notifications[index];
+
+    // Optimistic update
+    _notifications.removeAt(index);
+    if (!removed.isRead) {
+      _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
+    }
+    notifyListeners();
+
     try {
-      final index = _notifications.indexWhere((n) => n.id == id);
-      if (index != -1) {
-        final removed = _notifications[index];
-
-        // Optimistic update
-        _notifications.removeAt(index);
-        if (!removed.isRead) {
-          _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
-        }
-        notifyListeners();
-
-        await _apiService.deleteNotification(id);
-      }
+      await _apiService.deleteNotification(id);
     } catch (e) {
       if (kDebugMode) {
         print('Error deleting notification: $e');
       }
-      // Since it's a delete, reverting is tricky and maybe jarring.
-      // We'll rely on the next fetch to correct state if it failed.
-      // But showing a user error might be better handled in the UI via the Future completion.
+      // Revert state on failure
+      if (index <= _notifications.length) {
+        _notifications.insert(index, removed);
+      } else {
+        _notifications.add(removed);
+      }
+
+      if (!removed.isRead) {
+        _unreadCount++;
+      }
+      notifyListeners();
+
       rethrow;
     }
   }

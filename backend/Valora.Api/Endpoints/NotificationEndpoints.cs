@@ -68,8 +68,8 @@ public static class NotificationEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-            await service.DeleteNotificationAsync(id, userId);
-            return Results.Ok();
+            var deleted = await service.DeleteNotificationAsync(id, userId);
+            return deleted ? Results.NoContent() : Results.NotFound();
         });
     }
 }

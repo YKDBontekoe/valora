@@ -154,8 +154,19 @@ class _NotificationSheetState extends State<NotificationSheet> {
                             ),
                           );
                         },
-                        onDismissed: (direction) {
-                          service.deleteNotification(notification.id);
+                        onDismissed: (direction) async {
+                          try {
+                            await service.deleteNotification(notification.id);
+                          } catch (_) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to delete notification'),
+                                  backgroundColor: ValoraColors.error,
+                                ),
+                              );
+                            }
+                          }
                         },
                         child: NotificationItem(
                           notification: notification,
