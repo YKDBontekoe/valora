@@ -6,11 +6,12 @@
 import 'dart:async' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i8;
 import 'package:valora_app/models/context_report.dart' as _i3;
 import 'package:valora_app/models/listing.dart' as _i7;
 import 'package:valora_app/models/listing_filter.dart' as _i6;
 import 'package:valora_app/models/listing_response.dart' as _i2;
-import 'package:valora_app/models/notification.dart' as _i8;
+import 'package:valora_app/models/notification.dart' as _i9;
 import 'package:valora_app/services/api_service.dart' as _i4;
 
 // ignore_for_file: type=lint
@@ -77,6 +78,14 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
           as _i5.Future<_i7.Listing?>);
 
   @override
+  _i5.Future<_i7.Listing?> getListingFromPdok(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getListingFromPdok, [id]),
+            returnValue: _i5.Future<_i7.Listing?>.value(),
+          )
+          as _i5.Future<_i7.Listing?>);
+
+  @override
   _i5.Future<_i3.ContextReport> getContextReport(
     String? input, {
     int? radiusMeters = 1000,
@@ -101,7 +110,20 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
           as _i5.Future<_i3.ContextReport>);
 
   @override
-  _i5.Future<List<_i8.ValoraNotification>> getNotifications({
+  _i5.Future<String> getAiAnalysis(_i3.ContextReport? report) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAiAnalysis, [report]),
+            returnValue: _i5.Future<String>.value(
+              _i8.dummyValue<String>(
+                this,
+                Invocation.method(#getAiAnalysis, [report]),
+              ),
+            ),
+          )
+          as _i5.Future<String>);
+
+  @override
+  _i5.Future<List<_i9.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
   }) =>
@@ -110,11 +132,11 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
               #unreadOnly: unreadOnly,
               #limit: limit,
             }),
-            returnValue: _i5.Future<List<_i8.ValoraNotification>>.value(
-              <_i8.ValoraNotification>[],
+            returnValue: _i5.Future<List<_i9.ValoraNotification>>.value(
+              <_i9.ValoraNotification>[],
             ),
           )
-          as _i5.Future<List<_i8.ValoraNotification>>);
+          as _i5.Future<List<_i9.ValoraNotification>>);
 
   @override
   _i5.Future<int> getUnreadNotificationCount() =>

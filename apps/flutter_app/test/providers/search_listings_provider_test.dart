@@ -4,43 +4,55 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:retry/retry.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/services/search_history_service.dart';
 
 import '../helpers/test_runners.dart';
+import 'search_listings_provider_test.mocks.dart';
 
-Map<String, dynamic> _listing({required String id, required String address}) {
-  return <String, dynamic>{
-    'id': id,
-    'fundaId': id,
-    'address': address,
-    'city': 'Amsterdam',
-    'price': 100000,
-  };
-}
-
-http.Response _listingResponse({
-  required List<Map<String, dynamic>> items,
-  required bool hasNextPage,
-}) {
-  return http.Response(
-    json.encode(<String, dynamic>{
-      'items': items,
-      'pageIndex': 1,
-      'totalPages': hasNextPage ? 2 : 1,
-      'totalCount': items.length,
-      'hasNextPage': hasNextPage,
-      'hasPreviousPage': false,
-    }),
-    200,
-  );
-}
-
+@GenerateMocks([SearchHistoryService])
 void main() {
+  late MockSearchHistoryService mockSearchHistoryService;
+
   setUpAll(() async {
     await dotenv.load(fileName: '.env.example');
   });
+
+  setUp(() {
+    mockSearchHistoryService = MockSearchHistoryService();
+    when(mockSearchHistoryService.addToHistory(any)).thenAnswer((_) async {});
+  });
+
+  Map<String, dynamic> _listing({required String id, required String address}) {
+    return <String, dynamic>{
+      'id': id,
+      'fundaId': id,
+      'address': address,
+      'city': 'Amsterdam',
+      'price': 100000,
+    };
+  }
+
+  http.Response _listingResponse({
+    required List<Map<String, dynamic>> items,
+    required bool hasNextPage,
+  }) {
+    return http.Response(
+      json.encode(<String, dynamic>{
+        'items': items,
+        'pageIndex': 1,
+        'totalPages': hasNextPage ? 2 : 1,
+        'totalCount': items.length,
+        'hasNextPage': hasNextPage,
+        'hasPreviousPage': false,
+      }),
+      200,
+    );
+  }
 
   test('ignores stale responses when a newer search completes first', () async {
     final MockClient client = MockClient((request) async {
@@ -70,6 +82,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      searchHistoryService: mockSearchHistoryService,
     );
 
     provider.setQuery('old');
@@ -107,6 +120,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      searchHistoryService: mockSearchHistoryService,
     );
     provider.setQuery('amsterdam');
 
@@ -132,6 +146,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      searchHistoryService: mockSearchHistoryService,
     );
 
     // Initial state with filters
