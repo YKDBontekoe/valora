@@ -15,6 +15,7 @@ import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 @GenerateMocks([ApiService, FavoritesProvider, PdokService])
 @GenerateNiceMocks([
@@ -507,5 +508,33 @@ void main() {
 
     // Verify reload triggered
     verify(mockApiService.getListings(any)).called(greaterThan(1));
+  });
+
+  testWidgets('SearchScreen handles PDOK lookup error', (tester) async {
+    when(mockPdokService.search(any)).thenAnswer((_) async => [
+          PdokSuggestion(id: '123', type: 'adres', displayName: 'Test Address', score: 1.0),
+        ]);
+
+    when(mockApiService.getListingFromPdok('123')).thenThrow(Exception('PDOK Error'));
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Type query to trigger suggestions
+    await tester.enterText(find.byType(ValoraTextField), 'Test Address');
+    await tester.pump(const Duration(milliseconds: 500)); // Debounce
+
+    // Tap suggestion
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Test Address').last);
+    await tester.pump(); // Start lookup
+
+    // Wait for error handling
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+
+    // Verify error snackbar
+    expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
   });
 }

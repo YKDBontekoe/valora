@@ -37,8 +37,8 @@ class _AiInsightCardState extends State<AiInsightCard> {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      debugPrint('Error generating insight: $e');
+    } catch (e, stack) {
+      debugPrintStack(label: 'Error generating insight: $e', stackTrace: stack);
       if (mounted) {
         String message = 'Failed to generate insight. Please try again.';
         if (e is AppException) {

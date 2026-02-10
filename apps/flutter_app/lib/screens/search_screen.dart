@@ -446,7 +446,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                     if (!context.mounted) return;
                                     Navigator.pop(context); // Remove loading indicator
                                     
-                                    debugPrint('Error loading PDOK listing: $e\n$stack');
+                                    debugPrintStack(label: 'Error loading PDOK listing: $e', stackTrace: stack);
 
                                     String message = 'Something went wrong. Please try again.';
                                     if (e is AppException) {
