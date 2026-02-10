@@ -1,30 +1,25 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
-import '../models/listing.dart';
 import '../providers/search_listings_provider.dart';
 import '../services/api_service.dart';
-import '../services/pdok_service.dart';
-import '../services/property_photo_service.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_glass_container.dart';
 import '../widgets/valora_widgets.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final PdokService? pdokService;
-  final PropertyPhotoService? propertyPhotoService;
-
-  const SearchScreen({super.key, this.pdokService, this.propertyPhotoService});
+  const SearchScreen({super.key, this.pdokService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -34,7 +29,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final PdokService _pdokService;
-  late final PropertyPhotoService _propertyPhotoService;
   Timer? _debounce;
 
   SearchListingsProvider? _searchProvider;
@@ -44,8 +38,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _pdokService = widget.pdokService ?? PdokService();
-    _propertyPhotoService =
-        widget.propertyPhotoService ?? PropertyPhotoService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -117,55 +109,6 @@ class _SearchScreenState extends State<SearchScreen> {
         const SnackBar(content: Text('Failed to load more items')),
       );
     }
-  }
-
-  Future<Listing> _enrichListingWithRealPhotos(Listing listing) async {
-    final hasPhotos =
-        listing.imageUrls.isNotEmpty ||
-        (listing.imageUrl?.trim().isNotEmpty ?? false);
-    if (hasPhotos || listing.latitude == null || listing.longitude == null) {
-      return listing;
-    }
-
-    final photoUrls = _propertyPhotoService.getPropertyPhotos(
-      latitude: listing.latitude!,
-      longitude: listing.longitude!,
-    );
-
-    if (photoUrls.isEmpty) {
-      return listing;
-    }
-
-    final serialized = listing.toJson();
-    serialized['imageUrl'] = photoUrls.first;
-    serialized['imageUrls'] = photoUrls;
-    return Listing.fromJson(serialized);
-  }
-
-  Future<void> _openListingDetail(Listing listing) async {
-    Listing listingToDisplay = listing;
-    try {
-      listingToDisplay = await _enrichListingWithRealPhotos(listing);
-    } catch (e, stack) {
-      developer.log(
-        'Photo enrichment failed for listing ${listing.id}',
-        name: 'SearchScreen',
-        error: e,
-        stackTrace: stack,
-      );
-      listingToDisplay = listing;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ListingDetailScreen(listing: listingToDisplay),
-      ),
-    );
   }
 
   void _showSortOptions() {
@@ -266,7 +209,8 @@ class _SearchScreenState extends State<SearchScreen> {
         effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
       title: Text(
         label,
         style: isSelected
@@ -334,27 +278,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String _priceChipLabel(double? minPrice, double? maxPrice) {
-    final min = CurrencyFormatter.formatEur(minPrice ?? 0);
-    final max = maxPrice != null ? CurrencyFormatter.formatEur(maxPrice) : 'Any';
-    return 'Price: $min - $max';
-  }
-
-  String _sortChipLabel(String? sortBy, String? sortOrder) {
-    switch (sortBy) {
-      case 'price':
-        return 'Price: ${sortOrder == 'asc' ? 'Low to High' : 'High to Low'}';
-      case 'livingarea':
-        return 'Area: ${sortOrder == 'asc' ? 'Small to Large' : 'Large to Small'}';
-      case 'contextcompositescore':
-        return 'Composite';
-      case 'contextsafetyscore':
-        return 'Safety';
-      default:
-        return 'Sort';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -391,9 +314,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         onPressed: _showSortOptions,
                         icon: const Icon(Icons.sort_rounded),
                         tooltip: 'Sort',
-                        color: isDark
-                            ? ValoraColors.neutral50
-                            : ValoraColors.neutral900,
+                        color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
                       ),
                       Stack(
                         children: [
@@ -401,9 +322,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             onPressed: _openFilterDialog,
                             icon: const Icon(Icons.tune_rounded),
                             tooltip: 'Filters',
-                            color: isDark
-                                ? ValoraColors.neutral50
-                                : ValoraColors.neutral900,
+                             color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
                           ),
                           if (provider.hasActiveFilters)
                             Positioned(
@@ -438,8 +357,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                             child: TypeAheadField<PdokSuggestion>(
                               controller: _searchController,
-                              debounceDuration:
-                                  const Duration(milliseconds: 400),
+                              debounceDuration: const Duration(milliseconds: 400),
                               suggestionsCallback: (pattern) async {
                                 return await _pdokService.search(pattern);
                               },
@@ -459,8 +377,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               },
                               itemBuilder: (context, suggestion) {
                                 return ListTile(
-                                  leading: const Icon(
-                                      Icons.location_on_outlined),
+                                  leading: const Icon(Icons.location_on_outlined),
                                   title: Text(suggestion.displayName),
                                   subtitle: Text(suggestion.type),
                                 );
@@ -468,77 +385,66 @@ class _SearchScreenState extends State<SearchScreen> {
                               onSelected: (suggestion) async {
                                 _debounce?.cancel();
 
+                                // Temporarily remove listener to avoid triggering _onSearchChanged
                                 _searchController.removeListener(_onSearchChanged);
                                 _searchController.text = suggestion.displayName;
                                 _searchController.addListener(_onSearchChanged);
 
+                                // If it is a specific address (bucket 'adres'), lookup directly
                                 if (suggestion.type == 'adres') {
+                                  // Show loading indicator
                                   if (!context.mounted) return;
                                   showDialog(
                                     context: context,
                                     barrierDismissible: false,
                                     builder: (context) => const Center(
-                                      child: ValoraLoadingIndicator(
-                                        message: 'Loading property details...',
-                                      ),
+                                      child: ValoraLoadingIndicator(message: 'Loading property details...'),
                                     ),
                                   );
 
                                   try {
-                                    final listing = await context
-                                        .read<ApiService>()
-                                        .getListingFromPdok(suggestion.id);
+                                    final listing = await context.read<ApiService>().getListingFromPdok(suggestion.id);
 
                                     if (!context.mounted) return;
-                                    Navigator.pop(context);
+                                    Navigator.pop(context); // Remove loading indicator
 
                                     if (listing != null) {
-                                      await _openListingDetail(listing);
+                                       Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ListingDetailScreen(listing: listing),
+                                        ),
+                                      );
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Could not load property details'),
-                                        ),
+                                        const SnackBar(content: Text('Could not load property details')),
                                       );
                                     }
                                   } catch (e, stack) {
                                     if (!context.mounted) return;
-                                    Navigator.pop(context);
+                                    Navigator.pop(context); // Remove loading indicator
 
-                                    developer.log(
-                                      'Error loading PDOK listing',
-                                      name: 'SearchScreen',
-                                      error: e,
-                                      stackTrace: stack,
-                                    );
+                                    debugPrint('Error loading PDOK listing: $e\n$stack');
 
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Something went wrong. Please try again.'),
-                                      ),
+                                      const SnackBar(content: Text('Something went wrong. Please try again.')),
                                     );
                                   }
-                                } else {
+                                }
+                                // Otherwise (city, street, etc), just fall back to existing search behavior
+                                else {
                                   if (suggestion.type == 'woonplaats') {
-                                    _searchProvider!.setCity(
-                                      suggestion.displayName,
-                                    );
+                                    _searchProvider!.setCity(suggestion.displayName);
                                     _searchController.clear();
                                   } else {
-                                    _searchProvider!.setQuery(
-                                      suggestion.displayName,
-                                    );
+                                    _searchProvider!.setQuery(suggestion.displayName);
                                   }
                                   _searchProvider!.refresh();
                                 }
                               },
                               emptyBuilder: (context) => const Padding(
                                 padding: EdgeInsets.all(16.0),
-                                child: Text(
-                                  'No address found. Try entering a street and number.',
-                                ),
+                                child: Text('No address found. Try entering a street and number.'),
                               ),
                             ),
                           ),
@@ -621,7 +527,15 @@ class _SearchScreenState extends State<SearchScreen> {
                           final listing = provider.listings[index];
                           return NearbyListingCard(
                                 listing: listing,
-                                onTap: () => _openListingDetail(listing),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ListingDetailScreen(listing: listing),
+                                    ),
+                                  );
+                                },
                               )
                               .animate(delay: (50 * (index % 10)).ms)
                               .fade(duration: 400.ms)

@@ -132,22 +132,6 @@ class ContextReportView extends StatelessWidget {
             score: report.categoryScores['Demographics'],
             accentColor: const Color(0xFF8B5CF6),
           ),
-        if (report.housingMetrics.isNotEmpty)
-          MetricCategoryCard(
-            title: 'Housing',
-            icon: Icons.home_work_rounded,
-            metrics: report.housingMetrics,
-            score: report.categoryScores['Housing'],
-            accentColor: const Color(0xFFEC4899),
-          ),
-        if (report.mobilityMetrics.isNotEmpty)
-          MetricCategoryCard(
-            title: 'Mobility',
-            icon: Icons.directions_car_rounded,
-            metrics: report.mobilityMetrics,
-            score: report.categoryScores['Mobility'],
-            accentColor: const Color(0xFF0EA5E9),
-          ),
         if (report.amenityMetrics.isNotEmpty)
           MetricCategoryCard(
             title: 'Amenities',

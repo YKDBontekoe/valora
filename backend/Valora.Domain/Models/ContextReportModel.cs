@@ -6,8 +6,6 @@ public sealed record ContextReportModel
     public List<ContextMetricModel> SocialMetrics { get; init; } = [];
     public List<ContextMetricModel> CrimeMetrics { get; init; } = [];
     public List<ContextMetricModel> DemographicsMetrics { get; init; } = [];
-    public List<ContextMetricModel> HousingMetrics { get; init; } = [];
-    public List<ContextMetricModel> MobilityMetrics { get; init; } = [];
     public List<ContextMetricModel> AmenityMetrics { get; init; } = [];
     public List<ContextMetricModel> EnvironmentMetrics { get; init; } = [];
     public double CompositeScore { get; init; }
@@ -22,8 +20,6 @@ public sealed record ContextReportModel
         List<ContextMetricModel> socialMetrics,
         List<ContextMetricModel> crimeMetrics,
         List<ContextMetricModel> demographicsMetrics,
-        List<ContextMetricModel> housingMetrics,
-        List<ContextMetricModel> mobilityMetrics,
         List<ContextMetricModel> amenityMetrics,
         List<ContextMetricModel> environmentMetrics,
         double compositeScore,
@@ -35,8 +31,6 @@ public sealed record ContextReportModel
         SocialMetrics = socialMetrics;
         CrimeMetrics = crimeMetrics;
         DemographicsMetrics = demographicsMetrics;
-        HousingMetrics = housingMetrics;
-        MobilityMetrics = mobilityMetrics;
         AmenityMetrics = amenityMetrics;
         EnvironmentMetrics = environmentMetrics;
         CompositeScore = compositeScore;

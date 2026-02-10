@@ -61,11 +61,6 @@ public record ListingDto(
     bool IsSoldOrRented,
     List<string> Labels,
     
-    // Phase 6: WOZ
-    int? WozValue,
-    DateTime? WozReferenceDate,
-    string? WozValueSource,
-    
     // Phase 5: Context
     double? ContextCompositeScore,
     double? ContextSafetyScore,

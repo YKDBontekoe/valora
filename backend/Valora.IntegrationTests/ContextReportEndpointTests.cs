@@ -156,8 +156,6 @@ public class ContextReportEndpointTests
                 SocialMetrics: [],
                 CrimeMetrics: [],
                 DemographicsMetrics: [],
-                HousingMetrics: [],
-                MobilityMetrics: [],
                 AmenityMetrics: [],
                 EnvironmentMetrics: [],
                 CompositeScore: 75,

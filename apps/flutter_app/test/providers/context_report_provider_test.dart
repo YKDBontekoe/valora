@@ -42,8 +42,6 @@ void main() {
       socialMetrics: <ContextMetric>[],
       crimeMetrics: <ContextMetric>[],
       demographicsMetrics: <ContextMetric>[],
-      housingMetrics: <ContextMetric>[],
-      mobilityMetrics: <ContextMetric>[],
       amenityMetrics: <ContextMetric>[],
       environmentMetrics: <ContextMetric>[],
       compositeScore: 88.2,

@@ -29,8 +29,6 @@ public static class ListingMapper
             listing.FiberAvailable,
             // Status
             listing.PublicationDate, listing.IsSoldOrRented, listing.Labels,
-            // Phase 6: WOZ
-            null, null, null,
             // Phase 5: Context
             listing.ContextCompositeScore, listing.ContextSafetyScore, listing.ContextReport
         );
@@ -50,8 +48,6 @@ public static class ListingMapper
             reportDto.SocialMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
             reportDto.CrimeMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
             reportDto.DemographicsMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.HousingMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
-            reportDto.MobilityMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
             reportDto.AmenityMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
             reportDto.EnvironmentMetrics.Select(m => new Valora.Domain.Models.ContextMetricModel(m.Key, m.Label, m.Value, m.Unit, m.Score, m.Source, m.Note)).ToList(),
             reportDto.CompositeScore,

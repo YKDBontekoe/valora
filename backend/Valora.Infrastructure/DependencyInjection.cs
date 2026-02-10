@@ -9,7 +9,6 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
-using System.Net;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
 
@@ -111,22 +110,6 @@ public static class DependencyInjection
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 2;
             options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
-        });
-
-        services.AddHttpClient<IWozValuationService, WozValuationService>(client =>
-        {
-            // WOZ-waardeloket can be slow
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
-        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-        {
-            UseCookies = true,
-            AutomaticDecompression = DecompressionMethods.All
-        })
-        .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Constant;
         });
 

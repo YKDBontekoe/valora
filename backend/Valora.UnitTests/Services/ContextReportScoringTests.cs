@@ -84,13 +84,7 @@ public class ContextReportScoringTests
         SetupDefaults(_location);
 
         _cbsClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, density, 300, 5, 
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            // Phase 2: Housing (7), Mobility (3), Proximity (5)
-            null, null, null, null, null, null, null,
-            null, null, null,
-            null, null, null, null, null,
-            DateTimeOffset.UtcNow));
+            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, density, 300, 5, DateTimeOffset.UtcNow));
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -109,13 +103,7 @@ public class ContextReportScoringTests
         SetupDefaults(_location);
 
         _cbsClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, 2000, 300, percent, 
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            // Phase 2: Housing (7), Mobility (3), Proximity (5)
-            null, null, null, null, null, null, null,
-            null, null, null,
-            null, null, null, null, null,
-            DateTimeOffset.UtcNow));
+            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, 2000, 300, percent, DateTimeOffset.UtcNow));
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -135,13 +123,7 @@ public class ContextReportScoringTests
         SetupDefaults(_location);
 
         _cbsClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, 2000, woz, 5, 
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            // Phase 2: Housing (7), Mobility (3), Proximity (5)
-            null, null, null, null, null, null, null,
-            null, null, null,
-            null, null, null, null, null,
-            DateTimeOffset.UtcNow));
+            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, 2000, woz, 5, DateTimeOffset.UtcNow));
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
