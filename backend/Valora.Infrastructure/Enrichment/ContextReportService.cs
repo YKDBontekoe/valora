@@ -8,6 +8,9 @@ using Valora.Application.Enrichment;
 
 namespace Valora.Infrastructure.Enrichment;
 
+/// <summary>
+/// Orchestrates the generation of context reports by aggregating data from multiple external sources.
+/// </summary>
 public sealed class ContextReportService : IContextReportService
 {
     private readonly ILocationResolver _locationResolver;
@@ -46,10 +49,20 @@ public sealed class ContextReportService : IContextReportService
     /// Coordinates the retrieval of data from multiple public sources and builds a unified context report.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// This method employs a "fan-out" pattern to query all external APIs in parallel.
     /// It is designed for resilience: if a non-critical source fails (e.g., air quality),
     /// the method catches the exception via <see cref="TryGetSourceAsync{T}"/> and returns a partial report
     /// with a warning, rather than failing the entire request.
+    /// </para>
+    /// <para>
+    /// The process involves:
+    /// 1. Resolving the input to a standardized Dutch address/location.
+    /// 2. Checking the cache for an existing report.
+    /// 3. Fetching data from CBS, PDOK, Overpass, etc., concurrently.
+    /// 4. Normalizing raw data into 0-100 scores using heuristics.
+    /// 5. Aggregating scores into categories and a final composite score.
+    /// </para>
     /// </remarks>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
     {
@@ -393,10 +406,10 @@ public sealed class ContextReportService : IContextReportService
 
         return density.Value switch
         {
-            <= 500 => 65,    // Rural / Isolated
-            <= 1500 => 85,   // Suburban spacious
-            <= 3500 => 100,  // Urban optimal
-            <= 7000 => 70,   // Urban dense
+            <= 500 => 65,    // Rural / Isolated - good for tranquility but bad for access
+            <= 1500 => 85,   // Suburban spacious - balanced
+            <= 3500 => 100,  // Urban optimal - highly walkable
+            <= 7000 => 70,   // Urban dense - can be noisy
             _ => 50          // Overcrowded
         };
     }
@@ -404,6 +417,11 @@ public sealed class ContextReportService : IContextReportService
     /// <summary>
     /// Penalizes neighborhoods with a high percentage of low-income households.
     /// </summary>
+    /// <remarks>
+    /// This metric is a proxy for socio-economic stability.
+    /// 0% low income = 100 score. 12.5% low income = 0 score.
+    /// The steep penalty (8x multiplier) is designed to highlight areas with concentrated poverty.
+    /// </remarks>
     private static double? ScoreLowIncome(double? lowIncomePercent)
     {
         if (!lowIncomePercent.HasValue) return null;
@@ -415,6 +433,10 @@ public sealed class ContextReportService : IContextReportService
     /// <summary>
     /// Scores WOZ value (property valuation).
     /// </summary>
+    /// <remarks>
+    /// Higher property values generally correlate with better neighborhood maintenance and services.
+    /// Baseline: 150k (0 score). Target: 450k (100 score).
+    /// </remarks>
     private static double? ScoreWoz(double? wozKeur)
     {
         if (!wozKeur.HasValue) return null;
@@ -424,8 +446,11 @@ public sealed class ContextReportService : IContextReportService
 
     /// <summary>
     /// Scores total crime incidents per 1000 residents.
-    /// Based on CBS data where national average fluctuates around 45-50.
     /// </summary>
+    /// <remarks>
+    /// Based on CBS data where national average fluctuates around 45-50.
+    /// Scores are bucketed to provide clear safety tiers (Very Safe, Safe, Average, etc.).
+    /// </remarks>
     private static double? ScoreTotalCrime(int? crimesPer1000)
     {
         if (!crimesPer1000.HasValue) return null;
@@ -442,37 +467,54 @@ public sealed class ContextReportService : IContextReportService
         };
     }
 
+    /// <summary>
+    /// Scores burglary rate per 1000 residents.
+    /// </summary>
+    /// <remarks>
+    /// Burglary is a high-impact crime for residents.
+    /// </remarks>
     private static double? ScoreBurglary(int? burglaryPer1000)
     {
         if (!burglaryPer1000.HasValue) return null;
 
         return burglaryPer1000.Value switch
         {
-            <= 2 => 100,
-            <= 5 => 80,
-            <= 10 => 60,
-            <= 15 => 40,
-            _ => 20
+            <= 2 => 100, // Rare
+            <= 5 => 80,  // Low
+            <= 10 => 60, // Moderate
+            <= 15 => 40, // High
+            _ => 20      // Very High
         };
     }
 
+    /// <summary>
+    /// Scores violent crime rate per 1000 residents.
+    /// </summary>
+    /// <remarks>
+    /// Violent crime has a severe impact on perceived safety. The thresholds are much stricter than for total crime.
+    /// </remarks>
     private static double? ScoreViolentCrime(int? violentPer1000)
     {
         if (!violentPer1000.HasValue) return null;
 
         return violentPer1000.Value switch
         {
-            <= 2 => 100,
-            <= 5 => 75,
-            <= 10 => 50,
-            _ => 25
+            <= 2 => 100, // Very Rare
+            <= 5 => 75,  // Low
+            <= 10 => 50, // Moderate
+            _ => 25      // High
         };
     }
 
     /// <summary>
     /// Calculates a family-friendly score based on demographics.
-    /// Factors in household composition, presence of children, and household size.
     /// </summary>
+    /// <remarks>
+    /// Factors in:
+    /// - Percentage of family households (>20% boosts score)
+    /// - Percentage of children 0-14 (>15% boosts score)
+    /// - Average household size (>2 people boosts score)
+    /// </remarks>
     private static double? ScoreFamilyFriendly(DemographicsDto demographics)
     {
         // Composite score based on presence of families and children
@@ -492,8 +534,11 @@ public sealed class ContextReportService : IContextReportService
 
     /// <summary>
     /// Scores the volume of amenities in the search radius.
-    /// Simple quantity heuristic: 20 amenities = 100 score.
     /// </summary>
+    /// <remarks>
+    /// Simple quantity heuristic: 20 total amenities = 100 score.
+    /// This encourages diversity (e.g. 5 schools + 5 parks + 10 shops = 100).
+    /// </remarks>
     private static double ScoreAmenityCount(AmenityStatsDto amenities)
     {
         var total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
@@ -503,6 +548,11 @@ public sealed class ContextReportService : IContextReportService
     /// <summary>
     /// Scores the "15-minute city" potential based on proximity to the nearest key amenity.
     /// </summary>
+    /// <remarks>
+    /// Based on walking speed (approx 5km/h).
+    /// 250m = ~3 mins walk (Excellent).
+    /// 1000m = ~12 mins walk (Acceptable/Bikeable).
+    /// </remarks>
     private static double? ScoreAmenityProximity(double? nearestDistanceMeters)
     {
         if (!nearestDistanceMeters.HasValue) return null;
@@ -520,8 +570,11 @@ public sealed class ContextReportService : IContextReportService
 
     /// <summary>
     /// Scores air quality based on PM2.5 concentration.
-    /// WHO guideline is < 5 µg/m³.
     /// </summary>
+    /// <remarks>
+    /// Reference: WHO guideline is &lt; 5 µg/m³.
+    /// EU limit is 25 µg/m³.
+    /// </remarks>
     private static double? ScorePm25(double? pm25)
     {
         if (!pm25.HasValue) return null;
