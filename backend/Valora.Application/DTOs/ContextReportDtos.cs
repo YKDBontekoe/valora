@@ -24,6 +24,42 @@ public sealed record NeighborhoodStatsDto(
     int? PopulationDensity,
     double? AverageWozValueKeur,
     double? LowIncomeHouseholdsPercent,
+    // New Fields
+    int? Men,
+    int? Women,
+    int? Age0To15,
+    int? Age15To25,
+    int? Age25To45,
+    int? Age45To65,
+    int? Age65Plus,
+    int? SingleHouseholds,
+    int? HouseholdsWithoutChildren,
+    int? HouseholdsWithChildren,
+    double? AverageHouseholdSize,
+    string? Urbanity, // MateVanStedelijkheid
+    double? AverageIncomePerRecipient, // x1000
+    double? AverageIncomePerInhabitant, // x1000
+    int? EducationLow, // BasisonderwijsVmboMbo1
+    int? EducationMedium, // HavoVwoMbo24
+    int? EducationHigh, // HboWo
+    // Phase 2: Housing
+    int? PercentageOwnerOccupied, // Koopwoningen_41
+    int? PercentageRental, // HuurwoningenTotaal_42
+    int? PercentageSocialHousing, // InBezitWoningcorporatie_43
+    int? PercentagePrivateRental, // InBezitOverigeVerhuurders_44
+    int? PercentagePre2000, // BouwjaarVoor2000_46
+    int? PercentagePost2000, // BouwjaarVanaf2000_47
+    int? PercentageMultiFamily, // PercentageMeergezinswoning_38
+    // Phase 2: Mobility
+    double? CarsPerHousehold, // PersonenautoSPerHuishouden_112
+    int? CarDensity, // PersonenautoSNaarOppervlakte_113
+    int? TotalCars, // PersonenautoSTotaal_109
+    // Phase 2: Proximity
+    double? DistanceToGp, // AfstandTotHuisartsenpraktijk_115
+    double? DistanceToSupermarket, // AfstandTotGroteSupermarkt_116
+    double? DistanceToDaycare, // AfstandTotKinderdagverblijf_117
+    double? DistanceToSchool, // AfstandTotSchool_118
+    double? SchoolsWithin3km, // ScholenBinnen3Km_119
     DateTimeOffset RetrievedAtUtc);
 
 public sealed record CrimeStatsDto(
@@ -85,6 +121,8 @@ public sealed record ContextReportDto(
     IReadOnlyList<ContextMetricDto> SocialMetrics,
     IReadOnlyList<ContextMetricDto> CrimeMetrics,
     IReadOnlyList<ContextMetricDto> DemographicsMetrics,
+    IReadOnlyList<ContextMetricDto> HousingMetrics, // Phase 2
+    IReadOnlyList<ContextMetricDto> MobilityMetrics, // Phase 2
     IReadOnlyList<ContextMetricDto> AmenityMetrics,
     IReadOnlyList<ContextMetricDto> EnvironmentMetrics,
     double CompositeScore,

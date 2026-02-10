@@ -94,7 +94,25 @@ public class PdokListingService : IPdokListingService
                 }
             }
 
-            // 5. Map to ListingDto
+            // 5. Fetch WOZ Value (Exclusively from CBS Context Data)
+            int? wozValue = null;
+            DateTime? wozReferenceDate = null;
+            string? wozValueSource = null;
+
+            if (contextReport != null)
+            {
+                var avgWozMetric = contextReport.SocialMetrics.FirstOrDefault(m => m.Key == "average_woz");
+                if (avgWozMetric?.Value.HasValue == true)
+                {
+                    // Value is in k€ (e.g. 450), convert to absolute value
+                    wozValue = (int)(avgWozMetric.Value.Value * 1000);
+                    wozValueSource = "CBS Neighborhood Average";
+                    // CBS data is typically from the previous year
+                    wozReferenceDate = new DateTime(DateTime.UtcNow.Year - 1, 1, 1);
+                }
+            }
+
+            // 6. Map to ListingDto
             var listing = new ListingDto(
                 Id: GenerateStableId(pdokId), 
                 FundaId: pdokId, // Store PDOK ID here for reference
@@ -149,8 +167,14 @@ public class PdokListingService : IPdokListingService
                 Labels: new List<string>(),
                 ContextCompositeScore: compositeScore,
                 ContextSafetyScore: safetyScore,
-                ContextReport: contextReport
+                ContextReport: contextReport,
+                
+                // WOZ
+                WozValue: wozValue,
+                WozReferenceDate: wozReferenceDate,
+                WozValueSource: wozValueSource
             );
+
 
             _cache.Set(cacheKey, listing, TimeSpan.FromMinutes(_options.PdokListingCacheMinutes));
             return listing;

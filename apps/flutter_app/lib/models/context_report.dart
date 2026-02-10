@@ -4,6 +4,8 @@ class ContextReport {
     required this.socialMetrics,
     required this.crimeMetrics,
     required this.demographicsMetrics,
+    required this.housingMetrics,
+    required this.mobilityMetrics,
     required this.amenityMetrics,
     required this.environmentMetrics,
     required this.compositeScore,
@@ -16,6 +18,8 @@ class ContextReport {
   final List<ContextMetric> socialMetrics;
   final List<ContextMetric> crimeMetrics;
   final List<ContextMetric> demographicsMetrics;
+  final List<ContextMetric> housingMetrics;
+  final List<ContextMetric> mobilityMetrics;
   final List<ContextMetric> amenityMetrics;
   final List<ContextMetric> environmentMetrics;
   final double compositeScore;
@@ -29,6 +33,8 @@ class ContextReport {
       socialMetrics: _parseMetrics(json['socialMetrics']),
       crimeMetrics: _parseMetrics(json['crimeMetrics']),
       demographicsMetrics: _parseMetrics(json['demographicsMetrics']),
+      housingMetrics: _parseMetrics(json['housingMetrics']),
+      mobilityMetrics: _parseMetrics(json['mobilityMetrics']),
       amenityMetrics: _parseMetrics(json['amenityMetrics']),
       environmentMetrics: _parseMetrics(json['environmentMetrics']),
       compositeScore: (json['compositeScore'] as num?)?.toDouble() ?? 0,
@@ -49,6 +55,8 @@ class ContextReport {
       'socialMetrics': socialMetrics.map((e) => e.toJson()).toList(),
       'crimeMetrics': crimeMetrics.map((e) => e.toJson()).toList(),
       'demographicsMetrics': demographicsMetrics.map((e) => e.toJson()).toList(),
+      'housingMetrics': housingMetrics.map((e) => e.toJson()).toList(),
+      'mobilityMetrics': mobilityMetrics.map((e) => e.toJson()).toList(),
       'amenityMetrics': amenityMetrics.map((e) => e.toJson()).toList(),
       'environmentMetrics': environmentMetrics.map((e) => e.toJson()).toList(),
       'compositeScore': compositeScore,

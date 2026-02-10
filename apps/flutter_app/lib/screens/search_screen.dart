@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,8 +9,10 @@ import '../core/formatters/currency_formatter.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
+import '../models/listing.dart';
 import '../providers/search_listings_provider.dart';
 import '../services/api_service.dart';
+import '../services/property_photo_service.dart';
 import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_glass_container.dart';
@@ -20,7 +23,9 @@ import 'listing_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final PdokService? pdokService;
-  const SearchScreen({super.key, this.pdokService});
+  final PropertyPhotoService? propertyPhotoService;
+
+  const SearchScreen({super.key, this.pdokService, this.propertyPhotoService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -30,6 +35,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final PdokService _pdokService;
+  late final PropertyPhotoService _propertyPhotoService;
   Timer? _debounce;
 
   SearchListingsProvider? _searchProvider;
@@ -39,6 +45,8 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _pdokService = widget.pdokService ?? PdokService();
+    _propertyPhotoService =
+        widget.propertyPhotoService ?? PropertyPhotoService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -110,6 +118,56 @@ class _SearchScreenState extends State<SearchScreen> {
         const SnackBar(content: Text('Failed to load more items')),
       );
     }
+  }
+
+  Future<Listing> _enrichListingWithRealPhotos(Listing listing) async {
+    final hasPhotos =
+        listing.imageUrls.isNotEmpty ||
+        (listing.imageUrl?.trim().isNotEmpty ?? false);
+    if (hasPhotos || listing.latitude == null || listing.longitude == null) {
+      return listing;
+    }
+
+    final photoUrls = _propertyPhotoService.getPropertyPhotos(
+      latitude: listing.latitude!,
+      longitude: listing.longitude!,
+    );
+
+    if (photoUrls.isEmpty) {
+      return listing;
+    }
+
+    final serialized = listing.toJson();
+    serialized['imageUrl'] = photoUrls.first;
+    serialized['imageUrls'] = photoUrls;
+    return Listing.fromJson(serialized);
+  }
+
+  Future<void> _openListingDetail(Listing listing) async {
+    Listing listingToDisplay = listing;
+    try {
+      listingToDisplay = await _enrichListingWithRealPhotos(listing);
+    } catch (e, stack) {
+      // Photo enrichment is best-effort and should never block details.
+      developer.log(
+        'Photo enrichment failed for listing ${listing.id}',
+        name: 'SearchScreen',
+        error: e,
+        stackTrace: stack,
+      );
+      listingToDisplay = listing;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ListingDetailScreen(listing: listingToDisplay),
+      ),
+    );
   }
 
   void _showSortOptions() {
@@ -210,8 +268,7 @@ class _SearchScreenState extends State<SearchScreen> {
         effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
 
     return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
+      contentPadding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
       title: Text(
         label,
         style: isSelected
@@ -281,8 +338,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   String _priceChipLabel(double? minPrice, double? maxPrice) {
     final min = CurrencyFormatter.formatEur(minPrice ?? 0);
-    final max =
-        maxPrice != null ? CurrencyFormatter.formatEur(maxPrice) : 'Any';
+    final max = maxPrice != null
+        ? CurrencyFormatter.formatEur(maxPrice)
+        : 'Any';
     return 'Price: $min - $max';
   }
 
@@ -378,7 +436,9 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                             child: TypeAheadField<PdokSuggestion>(
                               controller: _searchController,
-                              debounceDuration: const Duration(milliseconds: 400),
+                              debounceDuration: const Duration(
+                                milliseconds: 400,
+                              ),
                               suggestionsCallback: (pattern) async {
                                 return await _pdokService.search(pattern);
                               },
@@ -398,16 +458,20 @@ class _SearchScreenState extends State<SearchScreen> {
                               },
                               itemBuilder: (context, suggestion) {
                                 return ListTile(
-                                  leading: const Icon(Icons.location_on_outlined),
+                                  leading: const Icon(
+                                    Icons.location_on_outlined,
+                                  ),
                                   title: Text(suggestion.displayName),
                                   subtitle: Text(suggestion.type),
                                 );
                               },
                               onSelected: (suggestion) async {
                                 _debounce?.cancel();
-                                
+
                                 // Temporarily remove listener to avoid triggering _onSearchChanged
-                                _searchController.removeListener(_onSearchChanged);
+                                _searchController.removeListener(
+                                  _onSearchChanged,
+                                );
                                 _searchController.text = suggestion.displayName;
                                 _searchController.addListener(_onSearchChanged);
 
@@ -419,53 +483,77 @@ class _SearchScreenState extends State<SearchScreen> {
                                     context: context,
                                     barrierDismissible: false,
                                     builder: (context) => const Center(
-                                      child: ValoraLoadingIndicator(message: 'Loading property details...'),
+                                      child: ValoraLoadingIndicator(
+                                        message: 'Loading property details...',
+                                      ),
                                     ),
                                   );
 
                                   try {
-                                    final listing = await context.read<ApiService>().getListingFromPdok(suggestion.id);
-                                    
+                                    final listing = await context
+                                        .read<ApiService>()
+                                        .getListingFromPdok(suggestion.id);
+
                                     if (!context.mounted) return;
-                                    Navigator.pop(context); // Remove loading indicator
+                                    Navigator.pop(
+                                      context,
+                                    ); // Remove loading indicator
 
                                     if (listing != null) {
-                                       Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ListingDetailScreen(listing: listing),
-                                        ),
-                                      );
+                                      await _openListingDetail(listing);
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Could not load property details')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Could not load property details',
+                                          ),
+                                        ),
                                       );
                                     }
                                   } catch (e, stack) {
                                     if (!context.mounted) return;
-                                    Navigator.pop(context); // Remove loading indicator
-                                    
-                                    debugPrint('Error loading PDOK listing: $e\n$stack');
-                                    
+                                    Navigator.pop(
+                                      context,
+                                    ); // Remove loading indicator
+
+                                    developer.log(
+                                      'Error loading PDOK listing',
+                                      name: 'SearchScreen',
+                                      error: e,
+                                      stackTrace: stack,
+                                    );
+
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Something went wrong. Please try again.')),
+                                      const SnackBar(
+                                        content: Text(
+                                          'Something went wrong. Please try again.',
+                                        ),
+                                      ),
                                     );
                                   }
-                                } 
+                                }
                                 // Otherwise (city, street, etc), just fall back to existing search behavior
                                 else {
                                   if (suggestion.type == 'woonplaats') {
-                                    _searchProvider!.setCity(suggestion.displayName);
+                                    _searchProvider!.setCity(
+                                      suggestion.displayName,
+                                    );
                                     _searchController.clear();
                                   } else {
-                                    _searchProvider!.setQuery(suggestion.displayName);
+                                    _searchProvider!.setQuery(
+                                      suggestion.displayName,
+                                    );
                                   }
                                   _searchProvider!.refresh();
                                 }
                               },
                               emptyBuilder: (context) => const Padding(
                                 padding: EdgeInsets.all(16.0),
-                                child: Text('No address found. Try entering a street and number.'),
+                                child: Text(
+                                  'No address found. Try entering a street and number.',
+                                ),
                               ),
                             ),
                           ),
@@ -484,21 +572,26 @@ class _SearchScreenState extends State<SearchScreen> {
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
                                         label: _priceChipLabel(
-                                            provider.minPrice, provider.maxPrice),
+                                          provider.minPrice,
+                                          provider.maxPrice,
+                                        ),
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
                                         onDeleted: () => provider
                                             .clearPriceFilter()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear price filter')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear price filter',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.city != null)
@@ -511,15 +604,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         onDeleted: () => provider
                                             .clearCityFilter()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear city filter')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear city filter',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.minBedrooms != null)
@@ -532,15 +628,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         onDeleted: () => provider
                                             .clearBedroomsFilter()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear bedrooms filter')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear bedrooms filter',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.minLivingArea != null)
@@ -553,72 +652,95 @@ class _SearchScreenState extends State<SearchScreen> {
                                         onDeleted: () => provider
                                             .clearLivingAreaFilter()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear area filter')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear area filter',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.minCompositeScore != null)
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label: 'Composite: ${provider.minCompositeScore}+',
+                                        label:
+                                            'Composite: ${provider.minCompositeScore}+',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
                                         onDeleted: () => provider
                                             .clearCompositeScoreFilter()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Failed to clear composite score filter')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear composite score filter',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.minSafetyScore != null)
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label: 'Safety: ${provider.minSafetyScore}+',
+                                        label:
+                                            'Safety: ${provider.minSafetyScore}+',
                                         isSelected: true,
                                         onSelected: (_) => _openFilterDialog(),
                                         onDeleted: () => provider
                                             .clearSafetyScoreFilter()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Failed to clear safety score filter')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear safety score filter',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.isSortActive)
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: ValoraChip(
-                                        label: _sortChipLabel(provider.sortBy, provider.sortOrder),
+                                        label: _sortChipLabel(
+                                          provider.sortBy,
+                                          provider.sortOrder,
+                                        ),
                                         isSelected: true,
                                         onSelected: (_) => _showSortOptions(),
                                         onDeleted: () => provider
                                             .clearSort()
                                             .catchError((_) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Failed to clear sort')),
-                                            );
-                                          }
-                                        }),
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to clear sort',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
                                       ),
                                     ),
                                   if (provider.hasActiveFiltersOrSort)
@@ -636,7 +758,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                               : ValoraColors
                                                     .surfaceVariantLight,
                                         ),
-                                        onPressed: () => provider.clearFilters(),
+                                        onPressed: () =>
+                                            provider.clearFilters(),
                                       ),
                                     ),
                                 ],
@@ -717,15 +840,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           final listing = provider.listings[index];
                           return NearbyListingCard(
                                 listing: listing,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ListingDetailScreen(listing: listing),
-                                    ),
-                                  );
-                                },
+                                onTap: () => _openListingDetail(listing),
                               )
                               .animate(delay: (50 * (index % 10)).ms)
                               .fade(duration: 400.ms)
