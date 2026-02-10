@@ -315,6 +315,19 @@ class ApiService {
     }
   }
 
+  Future<void> deleteNotification(String id) async {
+    final uri = Uri.parse('$baseUrl/notifications/$id');
+    try {
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.delete(uri, headers: headers).timeout(timeoutDuration),
+      );
+      await _handleResponse(response, (_) => null);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);

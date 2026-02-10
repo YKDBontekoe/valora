@@ -355,5 +355,28 @@ void main() {
         throwsA(isA<UnknownException>()),
       );
     });
+
+    test('deleteNotification sends DELETE request', () async {
+      final client = MockClient((request) async {
+        expect(request.method, 'DELETE');
+        expect(request.url.path, '/api/notifications/123');
+        return http.Response('', 200);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+      await apiService.deleteNotification('123');
+    });
+
+    test('deleteNotification throws ServerException on 500', () async {
+      final client = MockClient((request) async {
+        return http.Response('Error', 500);
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+      expect(
+        () => apiService.deleteNotification('123'),
+        throwsA(isA<ServerException>()),
+      );
+    });
   });
 }
