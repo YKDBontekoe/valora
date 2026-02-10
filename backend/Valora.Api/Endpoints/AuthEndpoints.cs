@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -22,7 +23,8 @@ public static class AuthEndpoints
             }
 
             return Results.BadRequest(result.Errors.Select(e => new { description = e }));
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<RegisterDto>>();
 
         group.MapPost("/login", async (
             [FromBody] LoginDto loginDto,
@@ -36,7 +38,8 @@ public static class AuthEndpoints
             }
 
             return Results.Ok(response);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<LoginDto>>();
 
         group.MapPost("/refresh", async (
             [FromBody] RefreshTokenRequestDto request,
@@ -50,6 +53,7 @@ public static class AuthEndpoints
             }
 
             return Results.Ok(response);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<RefreshTokenRequestDto>>();
     }
 }
