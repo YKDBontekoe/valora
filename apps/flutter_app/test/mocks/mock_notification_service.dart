@@ -6,6 +6,8 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
   List<ValoraNotification> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
   String? _error;
 
   @override
@@ -16,6 +18,12 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
 
   @override
   bool get isLoading => _isLoading;
+
+  @override
+  bool get isLoadingMore => _isLoadingMore;
+
+  @override
+  bool get hasMore => _hasMore;
 
   @override
   String? get error => _error;
@@ -36,6 +44,16 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
     notifyListeners();
   }
 
+  void setIsLoadingMore(bool value) {
+    _isLoadingMore = value;
+    notifyListeners();
+  }
+
+  void setHasMore(bool value) {
+    _hasMore = value;
+    notifyListeners();
+  }
+
   void setError(String? value) {
     _error = value;
     notifyListeners();
@@ -43,6 +61,9 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
 
   @override
   Future<void> fetchNotifications({bool refresh = false}) async {}
+
+  @override
+  Future<void> loadMoreNotifications() async {}
 
   @override
   Future<void> markAsRead(String id) async {}

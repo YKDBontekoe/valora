@@ -19,7 +19,7 @@ public class NotificationService : INotificationService
         _context = context;
     }
 
-    public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50)
+    public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, int offset = 0)
     {
         var query = _context.Notifications
             .AsNoTracking()
@@ -32,6 +32,7 @@ public class NotificationService : INotificationService
 
         var notifications = await query
             .OrderByDescending(n => n.CreatedAt)
+            .Skip(offset)
             .Take(limit)
             .ToListAsync();
 

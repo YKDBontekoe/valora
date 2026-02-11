@@ -243,6 +243,7 @@ class ApiService {
   Future<List<ValoraNotification>> getNotifications({
     bool unreadOnly = false,
     int limit = 50,
+    int offset = 0,
   }) async {
     Uri? uri;
     try {
@@ -250,6 +251,7 @@ class ApiService {
         queryParameters: {
           'unreadOnly': unreadOnly.toString(),
           'limit': limit.toString(),
+          'offset': offset.toString(),
         },
       );
 

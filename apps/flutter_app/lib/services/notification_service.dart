@@ -8,6 +8,10 @@ class NotificationService extends ChangeNotifier {
   List<ValoraNotification> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _offset = 0;
+  static const int _pageSize = 20;
   String? _error;
   Timer? _pollingTimer;
 
@@ -21,6 +25,8 @@ class NotificationService extends ChangeNotifier {
   List<ValoraNotification> get notifications => _notifications;
   int get unreadCount => _unreadCount;
   bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMore => _hasMore;
   String? get error => _error;
 
   void startPolling() {
@@ -94,15 +100,41 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetched = await _apiService.getNotifications(limit: 50);
+      _offset = 0;
+      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: 0);
       _notifications = fetched;
-      // Trust the specific endpoint for the badge, but for the list, we rely on what we fetched.
-      // Sync unread count if we have the full list
-      // _unreadCount = _notifications.where((n) => !n.isRead).length;
+      _hasMore = fetched.length >= _pageSize;
+      _offset = fetched.length;
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreNotifications() async {
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
+
+      if (fetched.isEmpty) {
+        _hasMore = false;
+      } else {
+        _notifications.addAll(fetched);
+        _hasMore = fetched.length >= _pageSize;
+        _offset += fetched.length;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading more notifications: $e');
+      }
+    } finally {
+      _isLoadingMore = false;
       notifyListeners();
     }
   }

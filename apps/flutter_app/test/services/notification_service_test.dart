@@ -30,7 +30,7 @@ void main() {
         ),
       ];
 
-      when(mockApiService.getNotifications(limit: 50))
+      when(mockApiService.getNotifications(limit: 20, offset: 0))
           .thenAnswer((_) async => notifications);
 
       await notificationService.fetchNotifications();
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('fetchNotifications handles error', () async {
-      when(mockApiService.getNotifications(limit: 50))
+      when(mockApiService.getNotifications(limit: 20, offset: 0))
           .thenThrow(Exception('Network error'));
 
       await notificationService.fetchNotifications();
@@ -62,7 +62,7 @@ void main() {
       );
 
       // Setup initial state
-      when(mockApiService.getNotifications(limit: 50))
+      when(mockApiService.getNotifications(limit: 20, offset: 0))
           .thenAnswer((_) async => [notification]);
       await notificationService.fetchNotifications();
 
@@ -96,7 +96,7 @@ void main() {
         ),
       ];
 
-      when(mockApiService.getNotifications(limit: 50))
+      when(mockApiService.getNotifications(limit: 20, offset: 0))
           .thenAnswer((_) async => notifications);
       await notificationService.fetchNotifications();
 
@@ -121,7 +121,7 @@ void main() {
       );
 
       // Setup initial state
-      when(mockApiService.getNotifications(limit: 50))
+      when(mockApiService.getNotifications(limit: 20, offset: 0))
           .thenAnswer((_) async => [notification]);
       await notificationService.fetchNotifications();
 

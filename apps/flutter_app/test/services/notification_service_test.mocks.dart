@@ -104,11 +104,13 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
   _i5.Future<List<_i8.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
+    int? offset = 0,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getNotifications, [], {
               #unreadOnly: unreadOnly,
               #limit: limit,
+              #offset: offset,
             }),
             returnValue: _i5.Future<List<_i8.ValoraNotification>>.value(
               <_i8.ValoraNotification>[],
