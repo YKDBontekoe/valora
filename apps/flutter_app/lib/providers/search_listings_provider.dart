@@ -105,7 +105,13 @@ class SearchListingsProvider extends ChangeNotifier {
       }
 
       _currentPage = nextPage;
-      _listings.addAll(response.items);
+      // Deduplicate items to avoid Hero tag collisions
+      final existingIds = _listings.map((l) => l.id).toSet();
+      for (final item in response.items) {
+        if (!existingIds.contains(item.id)) {
+          _listings.add(item);
+        }
+      }
       _hasNextPage = response.hasNextPage;
       _error = null;
     } catch (e) {

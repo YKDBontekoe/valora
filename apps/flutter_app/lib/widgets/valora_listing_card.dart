@@ -18,6 +18,7 @@ class ValoraListingCard extends StatelessWidget {
     this.onTap,
     this.onFavorite,
     this.isFavorite = false,
+    this.heroTag,
   });
 
   /// The listing data to display
@@ -31,6 +32,9 @@ class ValoraListingCard extends StatelessWidget {
 
   /// Whether listing is favorited
   final bool isFavorite;
+
+  /// Optional Hero tag override to avoid collisions
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +55,7 @@ class ValoraListingCard extends StatelessWidget {
                 imageUrl: listing.imageUrl,
                 listingId: listing.id,
                 isDark: isDark,
+                heroTag: heroTag,
               ),
               if (listing.status != null)
                 Positioned(
@@ -153,11 +158,13 @@ class _ListingImage extends StatelessWidget {
     required this.imageUrl,
     required this.listingId,
     required this.isDark,
+    this.heroTag,
   });
 
   final String? imageUrl;
   final String listingId;
   final bool isDark;
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +172,7 @@ class _ListingImage extends StatelessWidget {
     final hasValidImage = validImageUrl != null && validImageUrl.isNotEmpty;
 
     return Hero(
-      tag: listingId,
+      tag: heroTag ?? listingId,
       child: AspectRatio(
         aspectRatio: 16 / 10,
         child: hasValidImage

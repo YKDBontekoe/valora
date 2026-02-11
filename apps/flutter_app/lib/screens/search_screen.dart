@@ -841,14 +841,17 @@ class _SearchScreenState extends State<SearchScreen> {
                           final listing = provider.listings[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
-                            child: Consumer<FavoritesProvider>(
-                              builder: (context, favorites, _) {
-                                final isFavorite = favorites.isFavorite(listing.id);
+                            child: Selector<FavoritesProvider, bool>(
+                              selector: (context, favorites) =>
+                                  favorites.isFavorite(listing.id),
+                              builder: (context, isFavorite, _) {
                                 return ValoraListingCard(
                                   listing: listing,
                                   onTap: () => _openListingDetail(listing),
                                   isFavorite: isFavorite,
-                                  onFavorite: () => favorites.toggleFavorite(listing),
+                                  onFavorite: () => context
+                                      .read<FavoritesProvider>()
+                                      .toggleFavorite(listing),
                                 );
                               },
                             ),

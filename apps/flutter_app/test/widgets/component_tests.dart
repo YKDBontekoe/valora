@@ -6,6 +6,7 @@ import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/widgets/common/valora_button.dart';
 import 'package:valora_app/widgets/common/valora_chip.dart';
+import 'package:valora_app/widgets/common/valora_price.dart';
 import 'package:valora_app/widgets/home/featured_listing_card.dart';
 import 'package:valora_app/widgets/valora_listing_card.dart';
 
@@ -166,10 +167,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // ValoraListingCard uses CurrencyFormatter which includes spaces/commas depending on locale
-      // Assuming ValoraPrice formats it nicely. We can check for partial text or specific formatted string if we know it.
-      // Based on CurrencyFormatter.formatEur in previous files: "€ 500.000" or similar.
-      // Let's just check for 'Test Address' and '3' (bedrooms) for now to be safe, or check ValoraPrice existence.
+      // Validate that price is rendered using ValoraPrice by checking for text containing 500
+      expect(
+        find.descendant(
+          of: find.byType(ValoraPrice),
+          matching: find.textContaining('500'),
+        ),
+        findsOneWidget,
+      );
+
       expect(find.text('Test Address'), findsOneWidget);
       expect(find.text('3'), findsOneWidget); // Bedrooms
       expect(find.text('2'), findsOneWidget); // Bathrooms
