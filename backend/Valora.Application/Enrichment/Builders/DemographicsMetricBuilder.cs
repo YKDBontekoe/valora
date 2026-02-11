@@ -20,12 +20,29 @@ public static class DemographicsMetricBuilder
         double? p65Plus = CalculatePercent(cbs.Age65Plus, cbs.Residents);
 
         // Calculate Household Percentages
-        // Total households is the sum of single, without children, and with children households
-        int? totalHouseholds = (cbs.SingleHouseholds ?? 0) + (cbs.HouseholdsWithoutChildren ?? 0) + (cbs.HouseholdsWithChildren ?? 0);
-        if (totalHouseholds == 0) totalHouseholds = null;
+        // Total households is the sum of single, without children, and with children households.
+        // If any component is missing, we cannot reliably compute the total or percentages.
+        int? totalHouseholds = null;
+        if (cbs.SingleHouseholds.HasValue &&
+            cbs.HouseholdsWithoutChildren.HasValue &&
+            cbs.HouseholdsWithChildren.HasValue)
+        {
+            totalHouseholds = cbs.SingleHouseholds.Value +
+                              cbs.HouseholdsWithoutChildren.Value +
+                              cbs.HouseholdsWithChildren.Value;
+
+            if (totalHouseholds == 0) totalHouseholds = null;
+        }
 
         double? pSingle = CalculatePercent(cbs.SingleHouseholds, totalHouseholds);
-        double? pFamily = CalculatePercent(cbs.HouseholdsWithChildren, totalHouseholds);
+
+        // "Family Households" in CBS context includes both households with and without children (couples).
+        int? familyHouseholdsCount = null;
+        if (cbs.HouseholdsWithoutChildren.HasValue && cbs.HouseholdsWithChildren.HasValue)
+        {
+            familyHouseholdsCount = cbs.HouseholdsWithoutChildren.Value + cbs.HouseholdsWithChildren.Value;
+        }
+        double? pFamily = CalculatePercent(familyHouseholdsCount, totalHouseholds);
 
         var familyScore = ScoreFamilyFriendly(pFamily, p0_14, cbs.AverageHouseholdSize);
 
@@ -54,7 +71,7 @@ public static class DemographicsMetricBuilder
     /// </summary>
     /// <remarks>
     /// Factors in:
-    /// - Percentage of family households (>20% boosts score)
+    /// - Percentage of family households (with or without children) (>20% boosts score)
     /// - Percentage of children 0-14 (>15% boosts score)
     /// - Average household size (>2 people boosts score)
     /// </remarks>

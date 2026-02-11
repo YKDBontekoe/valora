@@ -25,7 +25,7 @@ public class DemographicsMetricBuilderTests
             Age65Plus: 150, // 15%
             SingleHouseholds: 400,
             HouseholdsWithoutChildren: 200,
-            HouseholdsWithChildren: 400, // Total 1000 households
+            HouseholdsWithChildren: 400, // Total 1000 households, Family = 600
             AverageHouseholdSize: 2.1,
             Urbanity: "Urban",
             AverageIncomePerRecipient: 40,
@@ -59,6 +59,10 @@ public class DemographicsMetricBuilderTests
         Assert.Equal(15.0, metrics.Single(m => m.Key == "age_0_14").Value);
         Assert.Equal(10.0, metrics.Single(m => m.Key == "age_15_24").Value);
         Assert.Equal(40.0, metrics.Single(m => m.Key == "single_households").Value); // 400/1000
+
+        // Family-Friendly Score should use pFamily = 60%
+        // Score = 50 + (60-20)*1.5 + (15-15)*2 + (2.1-2)*15 = 50 + 60 + 0 + 1.5 = 111.5 -> Clamped to 100
+        Assert.Equal(100.0, metrics.Single(m => m.Key == "family_friendly").Value);
         Assert.Equal("%", metrics.First(m => m.Key == "age_0_14").Unit);
     }
 
@@ -115,5 +119,67 @@ public class DemographicsMetricBuilderTests
         // Assert
         Assert.Null(metrics.Single(m => m.Key == "age_0_14").Value);
         Assert.Null(metrics.Single(m => m.Key == "single_households").Value);
+    }
+
+    [Fact]
+    public void Build_HandlesNullHouseholdComponents()
+    {
+        // Arrange
+        var cbs = new NeighborhoodStatsDto(
+            RegionCode: "BU0363",
+            RegionType: "Neighborhood",
+            Residents: 1000,
+            PopulationDensity: 5000,
+            AverageWozValueKeur: 400,
+            LowIncomeHouseholdsPercent: 10,
+            Men: 500,
+            Women: 500,
+            Age0To15: 150,
+            Age15To25: 100,
+            Age25To45: 350,
+            Age45To65: 250,
+            Age65Plus: 150,
+            SingleHouseholds: 400,
+            HouseholdsWithoutChildren: null, // Partial data
+            HouseholdsWithChildren: 400,
+            AverageHouseholdSize: 2.1,
+            Urbanity: "Urban",
+            AverageIncomePerRecipient: 40,
+            AverageIncomePerInhabitant: 35,
+            EducationLow: 20,
+            EducationMedium: 40,
+            EducationHigh: 40,
+            PercentageOwnerOccupied: 60,
+            PercentageRental: 40,
+            PercentageSocialHousing: 10,
+            PercentagePrivateRental: 30,
+            PercentagePre2000: 80,
+            PercentagePost2000: 20,
+            PercentageMultiFamily: 70,
+            CarsPerHousehold: 1.0,
+            CarDensity: 1000,
+            TotalCars: 500,
+            DistanceToGp: 0.5,
+            DistanceToSupermarket: 0.3,
+            DistanceToDaycare: 0.4,
+            DistanceToSchool: 0.6,
+            SchoolsWithin3km: 5.0,
+            RetrievedAtUtc: DateTimeOffset.UtcNow);
+
+        var warnings = new List<string>();
+
+        // Act
+        var metrics = DemographicsMetricBuilder.Build(cbs, warnings);
+
+        // Assert
+        // totalHouseholds should be null, so percentages based on it should be null
+        Assert.Null(metrics.Single(m => m.Key == "single_households").Value);
+
+        // pFamily uses familyHouseholdsCount which is also null due to HouseholdsWithoutChildren being null
+        // Family score should still be calculated if other components are present
+        var score = metrics.Single(m => m.Key == "family_friendly").Value;
+        Assert.NotNull(score);
+        // Score = 50 + (null) + (15-15)*2 + (2.1-2)*15 = 50 + 0 + 1.5 = 51.5
+        Assert.Equal(51.5, score);
     }
 }
