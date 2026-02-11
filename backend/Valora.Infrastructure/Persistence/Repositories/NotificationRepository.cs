@@ -68,4 +68,27 @@ public class NotificationRepository : INotificationRepository
         _context.Notifications.Remove(notification);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task MarkAllAsReadAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        if (_context.Database.IsRelational())
+        {
+            await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true), cancellationToken);
+        }
+        else
+        {
+            // Fallback for InMemory provider (for tests)
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync(cancellationToken);
+
+            foreach (var n in notifications)
+            {
+                n.IsRead = true;
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
 }

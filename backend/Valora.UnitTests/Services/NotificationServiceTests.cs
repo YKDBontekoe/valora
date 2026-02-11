@@ -16,6 +16,7 @@ public class NotificationServiceTests
     private readonly ValoraDbContext _context;
     private readonly NotificationService _service;
     private readonly Mock<ILogger<NotificationService>> _mockLogger;
+    private readonly TimeProvider _timeProvider;
 
     public NotificationServiceTests()
     {
@@ -25,9 +26,10 @@ public class NotificationServiceTests
 
         _context = new ValoraDbContext(options);
         _mockLogger = new Mock<ILogger<NotificationService>>();
+        _timeProvider = TimeProvider.System;
 
         var repository = new NotificationRepository(_context);
-        _service = new NotificationService(repository, _mockLogger.Object);
+        _service = new NotificationService(repository, _mockLogger.Object, _timeProvider);
     }
 
     [Fact]
