@@ -338,13 +338,19 @@ class ApiService {
       name: 'ApiService',
     );
 
+    final String? message = _parseErrorMessage(response.body);
+
     switch (response.statusCode) {
       case 400:
-        throw ValidationException(
-          _parseErrorMessage(response.body) ?? 'Invalid request',
-        );
+        throw ValidationException(message ?? 'Invalid request');
+      case 401:
+        throw UnauthorizedException(message ?? 'Unauthorized access');
+      case 403:
+        throw ForbiddenException(message ?? 'Access denied');
       case 404:
-        throw NotFoundException('Resource not found');
+        throw NotFoundException(message ?? 'Resource not found');
+      case 429:
+        throw ServerException('Too many requests. Please try again later.');
       case 500:
       case 502:
       case 503:
@@ -353,7 +359,7 @@ class ApiService {
           'Server error (${response.statusCode}). Please try again later.',
         );
       default:
-        throw UnknownException(
+        throw ServerException(
           'Request failed with status: ${response.statusCode}',
         );
     }

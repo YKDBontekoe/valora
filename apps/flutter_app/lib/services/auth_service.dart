@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:retry/retry.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'api_service.dart';
 
@@ -12,6 +13,11 @@ class AuthService {
   final http.Client _client;
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
+
+  final RetryOptions _retryOptions = const RetryOptions(
+    maxAttempts: 3,
+    delayFactor: Duration(seconds: 1),
+  );
 
   String get baseUrl => ApiService.baseUrl;
 
@@ -77,13 +83,27 @@ class AuthService {
     }
 
     try {
-      final response = await _client
-          .post(
-            Uri.parse('$baseUrl/auth/refresh'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'refreshToken': refreshToken}),
-          )
-          .timeout(ApiService.timeoutDuration);
+      final response = await _retryOptions.retry(
+        () async {
+          final res = await _client
+              .post(
+                Uri.parse('$baseUrl/auth/refresh'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'refreshToken': refreshToken}),
+              )
+              .timeout(ApiService.timeoutDuration);
+
+          if (res.statusCode >= 500) {
+            throw ServerException('Server error (${res.statusCode})');
+          }
+          return res;
+        },
+        retryIf: (e) =>
+            e is SocketException ||
+            e is TimeoutException ||
+            e is http.ClientException ||
+            e is ServerException,
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -95,8 +115,6 @@ class AuthService {
              try {
                await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
              } catch (e) {
-               // If writing new refresh token fails, we can still proceed with the new access token,
-               // but we should probably log it. Not fatal for this session.
                if (kDebugMode) debugPrint('Failed to update refresh token: $e');
              }
           }
@@ -125,13 +143,27 @@ class AuthService {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final response = await _client
-          .post(
-            Uri.parse('$baseUrl/auth/login'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'password': password}),
-          )
-          .timeout(ApiService.timeoutDuration);
+      final response = await _retryOptions.retry(
+        () async {
+          final res = await _client
+              .post(
+                Uri.parse('$baseUrl/auth/login'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'email': email, 'password': password}),
+              )
+              .timeout(ApiService.timeoutDuration);
+
+          if (res.statusCode >= 500) {
+            throw ServerException('Server error (${res.statusCode})');
+          }
+          return res;
+        },
+        retryIf: (e) =>
+            e is SocketException ||
+            e is TimeoutException ||
+            e is http.ClientException ||
+            e is ServerException,
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -146,7 +178,6 @@ class AuthService {
             );
           } catch (e) {
              if (kDebugMode) debugPrint('SecureStorage write refresh failed: $e');
-             // Non-fatal, user just won't be able to refresh later
           }
         }
         return data;
@@ -165,17 +196,31 @@ class AuthService {
     String confirmPassword,
   ) async {
     try {
-      final response = await _client
-          .post(
-            Uri.parse('$baseUrl/auth/register'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'email': email,
-              'password': password,
-              'confirmPassword': confirmPassword,
-            }),
-          )
-          .timeout(ApiService.timeoutDuration);
+      final response = await _retryOptions.retry(
+        () async {
+          final res = await _client
+              .post(
+                Uri.parse('$baseUrl/auth/register'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({
+                  'email': email,
+                  'password': password,
+                  'confirmPassword': confirmPassword,
+                }),
+              )
+              .timeout(ApiService.timeoutDuration);
+
+          if (res.statusCode >= 500) {
+            throw ServerException('Server error (${res.statusCode})');
+          }
+          return res;
+        },
+        retryIf: (e) =>
+            e is SocketException ||
+            e is TimeoutException ||
+            e is http.ClientException ||
+            e is ServerException,
+      );
 
       if (response.statusCode != 200) {
         throw _handleError(response);

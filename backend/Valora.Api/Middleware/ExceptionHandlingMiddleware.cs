@@ -32,8 +32,10 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             var user = context.User?.Identity?.Name ?? "Anonymous";
-            _logger.LogError(ex, "An unhandled exception occurred processing {Method} {Path} for user {User}. RequestId: {RequestId}",
-                context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
+            // Log with structured logging for better observability
+            _logger.LogError(ex, "Unhandled exception: {ExceptionType} processing {Method} {Path} for user {User}. RequestId: {RequestId}",
+                ex.GetType().Name, context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
+
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -52,26 +54,33 @@ public class ExceptionHandlingMiddleware
             case ValidationException validationEx:
                 statusCode = (int)HttpStatusCode.BadRequest;
                 title = "Validation Error";
+                detail = "One or more validation errors occurred.";
                 errors = validationEx.Errors;
                 break;
             case NotFoundException:
                 statusCode = (int)HttpStatusCode.NotFound;
-                title = "Not Found";
+                title = "Resource Not Found";
+                detail = exception.Message;
+                break;
+            case UnauthorizedAccessException:
+                statusCode = (int)HttpStatusCode.Unauthorized;
+                title = "Unauthorized";
+                detail = "You are not authorized to access this resource.";
                 break;
             case TaskCanceledException:
             case OperationCanceledException:
                 statusCode = 499; // Client Closed Request
                 title = "Request Cancelled";
-                detail = "The request was cancelled.";
+                detail = "The request was cancelled by the client.";
                 break;
             case DbUpdateConcurrencyException:
                 statusCode = (int)HttpStatusCode.Conflict;
                 title = "Concurrency Conflict";
-                detail = "The resource you are attempting to update has been modified by another user.";
+                detail = "The resource has been modified by another user.";
                 break;
             case DbUpdateException:
                 statusCode = (int)HttpStatusCode.Conflict;
-                title = "Database Error";
+                title = "Database Conflict";
                 detail = "A database constraint violation occurred.";
                 break;
             case BadHttpRequestException:
@@ -82,7 +91,7 @@ public class ExceptionHandlingMiddleware
             case SocketException:
                 statusCode = (int)HttpStatusCode.ServiceUnavailable;
                 title = "External Service Error";
-                detail = "An external service is unavailable.";
+                detail = "An external service is currently unavailable.";
                 break;
             case TimeoutException:
                 statusCode = (int)HttpStatusCode.GatewayTimeout;
@@ -92,7 +101,13 @@ public class ExceptionHandlingMiddleware
             case JsonException:
                 statusCode = (int)HttpStatusCode.BadGateway;
                 title = "Upstream Response Error";
-                detail = "An external service returned an unexpected payload.";
+                detail = "An external service returned an invalid response.";
+                break;
+            default:
+                // For unhandled exceptions, hide details in production
+                statusCode = (int)HttpStatusCode.InternalServerError;
+                title = "Internal Server Error";
+                detail = _env.IsDevelopment() ? exception.Message : "An unexpected error occurred. Please try again later.";
                 break;
         }
 
@@ -102,11 +117,13 @@ public class ExceptionHandlingMiddleware
         {
             Status = statusCode,
             Title = title,
-            Detail = _env.IsDevelopment() ? detail : (statusCode == 500 ? "An error occurred while processing your request." : detail),
-            Instance = context.Request.Path
+            Detail = detail,
+            Instance = context.Request.Path,
+            Type = $"https://httpstatuses.com/{statusCode}"
         };
 
         problemDetails.Extensions["traceId"] = context.TraceIdentifier;
+        problemDetails.Extensions["requestId"] = context.TraceIdentifier;
 
         if (errors != null)
         {
@@ -115,7 +132,7 @@ public class ExceptionHandlingMiddleware
 
         if (_env.IsDevelopment())
         {
-            problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+            problemDetails.Extensions["stackTrace"] = exception.ToString();
         }
 
         var json = JsonSerializer.Serialize(problemDetails);

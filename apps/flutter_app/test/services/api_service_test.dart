@@ -353,7 +353,7 @@ void main() {
 
       expect(
         () => apiService.getListings(const ListingFilter()),
-        throwsA(isA<UnknownException>()),
+        throwsA(isA<UnauthorizedException>()),
       );
     });
 

@@ -30,6 +30,16 @@ class NotFoundException extends AppException {
     : super(message ?? 'Resource not found', 'Not Found: ');
 }
 
+class UnauthorizedException extends AppException {
+  UnauthorizedException([String? message])
+    : super(message ?? 'Unauthorized access', 'Unauthorized: ');
+}
+
+class ForbiddenException extends AppException {
+  ForbiddenException([String? message])
+    : super(message ?? 'Forbidden access', 'Forbidden: ');
+}
+
 class UnknownException extends AppException {
   UnknownException([String? message])
     : super(message ?? 'An unknown error occurred');
