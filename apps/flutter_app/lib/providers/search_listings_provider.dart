@@ -110,6 +110,7 @@ class SearchListingsProvider extends ChangeNotifier {
       for (final item in response.items) {
         if (!existingIds.contains(item.id)) {
           _listings.add(item);
+          existingIds.add(item.id);
         }
       }
       _hasNextPage = response.hasNextPage;

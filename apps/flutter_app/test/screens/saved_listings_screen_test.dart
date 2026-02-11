@@ -415,16 +415,8 @@ void main() {
 
       // In ValoraListingCard, the favorite button is an Icon(Icons.favorite) when favored
       final favIcon = find.byIcon(Icons.favorite);
-      if (favIcon.evaluate().isNotEmpty) {
-        await tester.tap(favIcon.first);
-      } else {
-        // Fallback: find ANY icon in the card (though usually it should be Icons.favorite)
-        final firstCard = find.byType(ValoraListingCard).first;
-        final anyIcon = find
-            .descendant(of: firstCard, matching: find.byType(Icon))
-            .first;
-        await tester.tap(anyIcon);
-      }
+      expect(favIcon, findsWidgets); // Ensure at least one favorite icon is found
+      await tester.tap(favIcon.first);
 
       await tester.pump(const Duration(seconds: 1)); // Dialog animation
 
