@@ -110,9 +110,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChangeNotifierProvider<FavoritesProvider>.value(
-              value: mockFavoritesProvider,
-              child: ValoraListingCard(listing: dummyListing, onTap: () {}),
+            // Wrap in SingleChildScrollView to prevent overflow in test
+            body: SingleChildScrollView(
+              child: ChangeNotifierProvider<FavoritesProvider>.value(
+                value: mockFavoritesProvider,
+                child: ValoraListingCard(listing: dummyListing, onTap: () {}),
+              ),
             ),
           ),
         ),

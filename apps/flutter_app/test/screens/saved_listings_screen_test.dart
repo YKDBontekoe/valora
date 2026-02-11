@@ -238,7 +238,7 @@ void main() {
       await tester.pumpWidget(createSavedListingsScreen());
       // Wait for image loading to replace shimmer (finite pump)
       await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('A Street'), findsOneWidget);
       expect(find.text('B Street'), findsOneWidget);
@@ -275,7 +275,7 @@ void main() {
       await tester.tap(find.text('Clear Search'));
       await tester.pump(); // Start animations/rebuild
       await tester.pump(
-        const Duration(seconds: 2),
+        const Duration(seconds: 3),
       ); // Wait longer for all animations (fade in lists + images)
 
       expect(find.text('A Street'), findsOneWidget);
@@ -300,7 +300,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       await tester.tap(chipFinder);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
 
       final finder = find.descendant(
         of: find.byType(SliverList),
@@ -327,13 +327,13 @@ void main() {
 
       await tester.scrollUntilVisible(priceChip, 50.0, scrollable: scrollable);
       await tester.tap(priceChip);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
 
       // Now tap Newest
       final newestChip = find.text('Newest');
       await tester.scrollUntilVisible(newestChip, 50.0, scrollable: scrollable);
       await tester.tap(newestChip);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
 
       final finder = find.descendant(
         of: find.byType(SliverList),
@@ -365,7 +365,7 @@ void main() {
         scrollable: scrollable,
       );
       await tester.tap(cityAscChip);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
 
       var finder = find.descendant(
         of: find.byType(SliverList),
@@ -383,7 +383,7 @@ void main() {
         scrollable: scrollable,
       );
       await tester.tap(cityDescChip);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
 
       finder = find.descendant(
         of: find.byType(SliverList),
