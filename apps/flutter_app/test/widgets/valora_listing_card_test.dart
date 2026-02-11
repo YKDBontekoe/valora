@@ -118,7 +118,11 @@ void main() {
     // Avoid pumpAndSettle due to shimmer
     await tester.pump();
 
-    await tester.tap(find.byType(ValoraCard));
+    // Find visible widget
+    final cardFinder = find.byType(ValoraCard);
+    await tester.ensureVisible(cardFinder);
+
+    await tester.tap(cardFinder, warnIfMissed: false);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300)); // Wait for animation
 

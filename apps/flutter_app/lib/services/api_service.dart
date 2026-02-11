@@ -1,3 +1,4 @@
+import '../models/map_city_insight.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -418,5 +419,26 @@ class ApiService {
       throw ValidationException('Invalid listing identifier');
     }
     return sanitized;
+  }
+
+  Future<List<MapCityInsight>> getCityInsights() async {
+    final uri = Uri.parse('$baseUrl/map/cities');
+    try {
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapCityInsight.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      final uri = Uri.parse('$baseUrl/map/cities');
+      throw _handleException(e, stack, uri);
+    }
   }
 }

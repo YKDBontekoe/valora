@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/main.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
+import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
@@ -58,6 +59,11 @@ void main() {
             ChangeNotifierProvider<NotificationService>.value(
               value: MockNotificationService(),
             ),
+            ChangeNotifierProxyProvider<ApiService, InsightsProvider>(
+              create: (context) => InsightsProvider(context.read<ApiService>()),
+              update: (context, apiService, previous) =>
+                  (previous ?? InsightsProvider(apiService))..update(apiService),
+            ),
           ],
           child: const ValoraApp(),
         ),
@@ -95,6 +101,10 @@ class MockHttpClient extends Fake implements HttpClient {
   Future<HttpClientRequest> openUrl(String method, Uri url) async {
     return MockHttpClientRequest();
   }
+
+  // flutter_map calls close() on the client when disposed
+  @override
+  void close({bool force = false}) {}
 }
 
 class MockHttpClientRequest extends Fake implements HttpClientRequest {

@@ -27,10 +27,20 @@ void main() {
       expect(find.text('Amsterdam'), findsOneWidget);
 
       // Check chip selection
-      // Use .first to ensure we have a unique candidate
       final chipFinder = find
           .widgetWithText(ValoraChip, 'Price: Low to High')
           .first;
+
+      // Scroll to ensure visibility before asserting
+      final scrollableFinder = find
+          .descendant(
+            of: find.byType(ValoraFilterDialog),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+
+      await tester.scrollUntilVisible(chipFinder, 50.0, scrollable: scrollableFinder);
+      await tester.pumpAndSettle();
 
       expect(chipFinder, findsOneWidget);
       final priceAscChip = tester.widget<ValoraChip>(chipFinder);
@@ -78,6 +88,7 @@ void main() {
         50.0,
         scrollable: scrollableFinder,
       );
+      await tester.pumpAndSettle();
 
       final newestChip = tester.widget<ValoraChip>(chipFinder);
       expect(newestChip.isSelected, isTrue);
@@ -109,7 +120,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap "Price: High to Low"
-      await tester.tap(chipFinder);
+      await tester.ensureVisible(chipFinder); // Ensure visible before tap
+      await tester.tap(chipFinder, warnIfMissed: false);
       await tester.pumpAndSettle(); // Wait for selection animation
 
       final valoraChip = tester.widget<ValoraChip>(chipFinder);

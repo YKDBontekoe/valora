@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
+import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/home_screen.dart';
 import 'package:valora_app/screens/search_screen.dart';
@@ -27,6 +28,9 @@ void main() {
         Provider<ApiService>(create: (_) => ApiService()),
         ChangeNotifierProvider<NotificationService>(
           create: (_) => NotificationService(ApiService()),
+        ),
+        ChangeNotifierProvider<InsightsProvider>(
+          create: (_) => InsightsProvider(ApiService()),
         ),
       ],
       child: const MaterialApp(home: HomeScreen()),

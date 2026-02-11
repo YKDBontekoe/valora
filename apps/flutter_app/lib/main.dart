@@ -1,3 +1,4 @@
+import 'providers/insights_provider.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
@@ -85,6 +86,11 @@ Future<void> main() async {
             create: (context) => NotificationService(context.read<ApiService>()),
             update: (context, apiService, previous) =>
                 (previous ?? NotificationService(apiService))..update(apiService),
+          ),
+          ChangeNotifierProxyProvider<ApiService, InsightsProvider>(
+            create: (context) => InsightsProvider(context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? InsightsProvider(apiService))..update(apiService),
           ),
         ],
         child: const ValoraApp(),
