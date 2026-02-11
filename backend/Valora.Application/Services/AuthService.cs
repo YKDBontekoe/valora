@@ -24,7 +24,7 @@ public class AuthService : IAuthService
     {
         if (registerDto.Password != registerDto.ConfirmPassword)
         {
-            _logger.LogWarning("Registration failed: Password confirmation mismatch for email {Email}", registerDto.Email);
+            _logger.LogWarning("Registration failed: Password confirmation mismatch for email {Email}", MaskEmail(registerDto.Email));
             return Result.Failure(new[] { ErrorMessages.PasswordsDoNotMatch });
         }
 
@@ -36,7 +36,7 @@ public class AuthService : IAuthService
         }
         else
         {
-            _logger.LogWarning("Registration failed for email {Email}: {Errors}", registerDto.Email, string.Join(", ", result.Errors));
+            _logger.LogWarning("Registration failed for email {Email}: {Errors}", MaskEmail(registerDto.Email), string.Join(", ", result.Errors));
         }
 
         return result;
@@ -47,7 +47,7 @@ public class AuthService : IAuthService
         var user = await ValidateUserAsync(loginDto.Email, loginDto.Password);
         if (user == null)
         {
-            _logger.LogWarning("Login failed: Invalid credentials for email {Email}", loginDto.Email);
+            _logger.LogWarning("Login failed: Invalid credentials for email {Email}", MaskEmail(loginDto.Email));
             return null;
         }
 
@@ -75,6 +75,16 @@ public class AuthService : IAuthService
 
         var isValidPassword = await _identityService.CheckPasswordAsync(email, password);
         return isValidPassword ? user : null;
+    }
+
+    private static string MaskEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return "unknown";
+        var atIndex = email.IndexOf('@');
+        if (atIndex <= 1) return "***" + (atIndex >= 0 ? email[atIndex..] : "");
+
+        // Return first character + *** + domain
+        return email[0] + "***" + email[atIndex..];
     }
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
