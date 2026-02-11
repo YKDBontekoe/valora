@@ -8,7 +8,7 @@ namespace Valora.Application.Services;
 
 public interface INotificationService
 {
-    Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50);
+    Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, int offset = 0);
     Task<int> GetUnreadCountAsync(string userId);
     Task MarkAsReadAsync(Guid notificationId, string userId);
     Task MarkAllAsReadAsync(string userId);

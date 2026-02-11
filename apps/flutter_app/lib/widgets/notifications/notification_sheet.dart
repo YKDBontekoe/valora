@@ -15,12 +15,28 @@ class NotificationSheet extends StatefulWidget {
 }
 
 class _NotificationSheetState extends State<NotificationSheet> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationService>().fetchNotifications();
     });
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      context.read<NotificationService>().loadMoreNotifications();
+    }
   }
 
   @override
@@ -111,13 +127,21 @@ class _NotificationSheetState extends State<NotificationSheet> {
               else
                 Flexible(
                   child: ListView.separated(
+                    controller: _scrollController,
                     shrinkWrap: true,
-                    itemCount: service.notifications.length,
+                    itemCount: service.notifications.length +
+                        (service.isLoadingMore ? 1 : 0),
                     separatorBuilder: (context, index) => const Divider(
                       height: 1,
                       indent: 72,
                     ),
                     itemBuilder: (context, index) {
+                      if (index == service.notifications.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
                       final notification = service.notifications[index];
                       return Dismissible(
                         key: Key(notification.id),
