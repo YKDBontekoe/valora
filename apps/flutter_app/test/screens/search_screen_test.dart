@@ -15,8 +15,9 @@ import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 
-@GenerateMocks([ApiService, FavoritesProvider, PdokService])
+@GenerateMocks([ApiService, FavoritesProvider, PdokService, PropertyPhotoService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
@@ -143,11 +144,13 @@ void main() {
   late MockApiService mockApiService;
   late MockFavoritesProvider mockFavoritesProvider;
   late MockPdokService mockPdokService;
+  late MockPropertyPhotoService mockPropertyPhotoService;
 
   setUp(() {
     mockApiService = MockApiService();
     mockFavoritesProvider = MockFavoritesProvider();
     mockPdokService = MockPdokService();
+    mockPropertyPhotoService = MockPropertyPhotoService();
 
     // Default favorites provider behavior
     when(mockFavoritesProvider.favorites).thenReturn([]);
@@ -155,6 +158,10 @@ void main() {
 
     // Default PDOK service behavior
     when(mockPdokService.search(any)).thenAnswer((_) async => []);
+
+    // Default PropertyPhotoService behavior
+    when(mockPropertyPhotoService.getPropertyPhotos(latitude: anyNamed('latitude'), longitude: anyNamed('longitude')))
+        .thenReturn([]);
 
     // Install HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -172,7 +179,12 @@ void main() {
             value: searchProvider,
           ),
       ],
-      child: MaterialApp(home: SearchScreen(pdokService: mockPdokService)),
+      child: MaterialApp(
+        home: SearchScreen(
+          pdokService: mockPdokService,
+          propertyPhotoService: mockPropertyPhotoService,
+        ),
+      ),
     );
   }
 
@@ -527,5 +539,42 @@ void main() {
 
     // Verify reload triggered
     verify(mockApiService.getListings(any)).called(greaterThan(1));
+  });
+
+  testWidgets('SearchScreen sort options trigger rebuild', (WidgetTester tester) async {
+    final searchProvider = SearchListingsProvider(apiService: mockApiService);
+
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest(searchProvider: searchProvider));
+    await tester.pumpAndSettle();
+
+    // Enter text to activate search state
+    await tester.enterText(find.byType(TextField), 'Test');
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pumpAndSettle();
+
+    // Open Sort
+    await tester.tap(find.byIcon(Icons.sort_rounded));
+    await tester.pumpAndSettle();
+
+    // Select Price Low to High
+    await tester.tap(find.text('Price: Low to High'));
+    await tester.pumpAndSettle();
+
+    expect(searchProvider.sortBy, 'price');
+    expect(searchProvider.sortOrder, 'asc');
+
+    // Verify chip appears
+    expect(find.text('Price: Low to High'), findsOneWidget);
   });
 }
