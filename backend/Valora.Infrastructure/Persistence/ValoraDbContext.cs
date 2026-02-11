@@ -69,9 +69,6 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => new { e.City, e.Price });
             entity.HasIndex(e => new { e.City, e.Bedrooms });
             entity.HasIndex(e => new { e.City, e.LivingAreaM2 });
-            entity.HasIndex(e => new { e.City, e.LastFundaFetchUtc });
-            entity.HasIndex(e => new { e.City, e.ContextCompositeScore });
-            entity.HasIndex(e => new { e.City, e.ContextSafetyScore });
             entity.HasIndex(e => e.Address);
             entity.HasIndex(e => e.PropertyType);
             entity.Property(e => e.Address).IsRequired();
@@ -150,6 +147,16 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel?>(v))
                 .Metadata.SetValueComparer(contextReportComparer);
+
+            // Check Constraints
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "\"ContextCompositeScore\" >= 0 AND \"ContextCompositeScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "\"ContextSafetyScore\" >= 0 AND \"ContextSafetyScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
+            });
         });
 
         modelBuilder.Entity<PriceHistory>(entity =>
@@ -168,8 +175,6 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.IsRead);
             entity.HasIndex(e => e.CreatedAt);
-            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
-            entity.HasIndex(e => new { e.UserId, e.IsRead });
 
             entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);

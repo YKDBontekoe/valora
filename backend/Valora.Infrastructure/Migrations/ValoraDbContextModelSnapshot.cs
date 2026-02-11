@@ -476,17 +476,22 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("City", "Bedrooms");
 
-                    b.HasIndex("City", "ContextCompositeScore");
-
-                    b.HasIndex("City", "ContextSafetyScore");
-
-                    b.HasIndex("City", "LastFundaFetchUtc");
-
                     b.HasIndex("City", "LivingAreaM2");
 
                     b.HasIndex("City", "Price");
 
-                    b.ToTable("Listings");
+                    b.ToTable("Listings", t =>
+                        {
+                            t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
+
+                            t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "\"ContextCompositeScore\" >= 0 AND \"ContextCompositeScore\" <= 100");
+
+                            t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
+
+                            t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "\"ContextSafetyScore\" >= 0 AND \"ContextSafetyScore\" <= 100");
+
+                            t.HasCheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
+                        });
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.Notification", b =>
@@ -533,10 +538,6 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("IsRead");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "CreatedAt");
-
-                    b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications");
                 });

@@ -282,44 +282,4 @@ public class ListingRepositoryTests
         var deleted = await context.Listings.FindAsync(listing.Id);
         Assert.Null(deleted);
     }
-
-    [Fact]
-    public async Task GetDetailAsync_ShouldReturnProjectedDto()
-    {
-        // Arrange
-        using var context = new ValoraDbContext(_options);
-        var listing = new Listing
-        {
-            FundaId = "123",
-            Address = "Detailed St",
-            City = "Amsterdam",
-            PostalCode = "1011AA",
-            Price = 500000,
-            Bedrooms = 3,
-            Bathrooms = 2,
-            LivingAreaM2 = 120,
-            ImageUrls = new List<string> { "url1", "url2" },
-            Features = new Dictionary<string, string> { { "Key", "Value" } },
-            ContextCompositeScore = 85.5,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.Listings.Add(listing);
-        await context.SaveChangesAsync();
-
-        var repository = new ListingRepository(context);
-
-        // Act
-        var result = await repository.GetDetailAsync(listing.Id);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(listing.Id, result!.Id);
-        Assert.Equal("Detailed St", result.Address);
-        Assert.Equal(3, result.Bedrooms);
-        Assert.Equal(2, result.ImageUrls.Count);
-        Assert.Equal("url1", result.ImageUrls[0]);
-        Assert.Single(result.Features);
-        Assert.Equal("Value", result.Features["Key"]);
-        Assert.Equal(85.5, result.ContextCompositeScore);
-    }
 }

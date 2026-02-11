@@ -154,54 +154,6 @@ public class ListingRepository : IListingRepository
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
-    public async Task<ListingDto?> GetDetailAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await _context.Listings
-            .AsNoTracking()
-            .Where(l => l.Id == id)
-            .Select(l => new ListingDto(
-                l.Id,
-                l.FundaId,
-                l.Address,
-                l.City,
-                l.PostalCode,
-                l.Price,
-                l.Bedrooms,
-                l.Bathrooms,
-                l.LivingAreaM2,
-                l.PlotAreaM2,
-                l.PropertyType,
-                l.Status,
-                l.Url,
-                l.ImageUrl,
-                l.ListedDate,
-                l.CreatedAt,
-                // Rich Data
-                l.Description, l.EnergyLabel, l.YearBuilt, l.ImageUrls,
-                // Phase 2
-                l.OwnershipType, l.CadastralDesignation, l.VVEContribution, l.HeatingType,
-                l.InsulationType, l.GardenOrientation, l.HasGarage, l.ParkingType,
-                // Phase 3
-                l.AgentName, l.VolumeM3, l.BalconyM2, l.GardenM2, l.ExternalStorageM2,
-                l.Features,
-                // Geo & Media
-                l.Latitude, l.Longitude, l.VideoUrl, l.VirtualTourUrl, l.FloorPlanUrls, l.BrochureUrl,
-                // Construction
-                l.RoofType, l.NumberOfFloors, l.ConstructionPeriod, l.CVBoilerBrand, l.CVBoilerYear,
-                // Broker
-                l.BrokerPhone, l.BrokerLogoUrl,
-                // Infra
-                l.FiberAvailable,
-                // Status
-                l.PublicationDate, l.IsSoldOrRented, l.Labels,
-                // Phase 6: WOZ
-                null, null, null,
-                // Context
-                l.ContextCompositeScore, l.ContextSafetyScore, l.ContextReport
-            ))
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
     public async Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default)
     {
         return await _context.Listings

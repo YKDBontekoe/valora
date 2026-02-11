@@ -148,6 +148,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       listingToDisplay = await _enrichListingWithRealPhotos(listing);
     } catch (e, stack) {
+      // Photo enrichment is best-effort and should never block details.
       developer.log(
         'Photo enrichment failed for listing ${listing.id}',
         name: 'SearchScreen',
@@ -364,31 +365,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return ChangeNotifierProvider<SearchListingsProvider>.value(
       value: _searchProvider!,
-      child: Scaffold(
-        body: RefreshIndicator(
-          onRefresh: _searchProvider!.refresh,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            controller: _scrollController,
-            slivers: [
-              // Selector for AppBar to avoid rebuilding listing list on filter changes
-              Selector<SearchListingsProvider, _SearchAppBarState>(
-                selector: (_, p) => _SearchAppBarState(
-                  hasActiveFiltersOrSort: p.hasActiveFiltersOrSort,
-                  minPrice: p.minPrice,
-                  maxPrice: p.maxPrice,
-                  city: p.city,
-                  minBedrooms: p.minBedrooms,
-                  minLivingArea: p.minLivingArea,
-                  maxLivingArea: p.maxLivingArea,
-                  minCompositeScore: p.minCompositeScore,
-                  minSafetyScore: p.minSafetyScore,
-                  sortBy: p.sortBy,
-                  sortOrder: p.sortOrder,
-                ),
-                builder: (context, value, child) {
-                  final provider = _searchProvider!;
-                  return SliverAppBar(
+      child: Consumer<SearchListingsProvider>(
+        builder: (context, provider, _) {
+          return Scaffold(
+            body: RefreshIndicator(
+              onRefresh: provider.refresh,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                controller: _scrollController,
+                slivers: [
+                  SliverAppBar(
                     pinned: true,
                     backgroundColor: isDark
                         ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
@@ -784,26 +770,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         ],
                       ),
                     ),
-                  );
-                  },
-                ),
-              // Selector for Loading/Error states
-              Selector<SearchListingsProvider, int>(
-                selector: (_, p) =>
-                    p.isLoading.hashCode ^
-                    p.error.hashCode ^
-                    p.listings.length.hashCode ^
-                    p.query.hashCode ^
-                    p.hasActiveFilters.hashCode,
-                builder: (context, value, child) {
-                  final provider = _searchProvider!;
-                  if (provider.isLoading) {
-                    return const SliverFillRemaining(
+                  ),
+                  if (provider.isLoading)
+                    const SliverFillRemaining(
                       child: ValoraLoadingIndicator(message: 'Searching...'),
-                    );
-                  } else if (provider.error != null &&
-                      provider.listings.isEmpty) {
-                    return SliverFillRemaining(
+                    )
+                  else if (provider.error != null && provider.listings.isEmpty)
+                    SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
@@ -816,11 +789,10 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         ),
                       ),
-                    );
-                  } else if (provider.listings.isEmpty &&
-                      (provider.query.isNotEmpty ||
-                          provider.hasActiveFilters)) {
-                    return const SliverFillRemaining(
+                    )
+                  else if (provider.listings.isEmpty &&
+                      (provider.query.isNotEmpty || provider.hasActiveFilters))
+                    const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
@@ -830,11 +802,11 @@ class _SearchScreenState extends State<SearchScreen> {
                               'Try adjusting your filters or search terms.',
                         ),
                       ),
-                    );
-                  } else if (provider.listings.isEmpty &&
+                    )
+                  else if (provider.listings.isEmpty &&
                       provider.query.isEmpty &&
-                      !provider.hasActiveFilters) {
-                    return const SliverFillRemaining(
+                      !provider.hasActiveFilters)
+                    const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
@@ -844,143 +816,48 @@ class _SearchScreenState extends State<SearchScreen> {
                               'Enter a location or use filters to start searching.',
                         ),
                       ),
-                    );
-                  }
-                  return const SliverPadding(padding: EdgeInsets.zero);
-                },
-              ),
-              // Selector for Listings
-              Selector<SearchListingsProvider, _ListingListState>(
-                selector: (_, p) => _ListingListState(
-                  listings: p.listings,
-                  isLoadingMore: p.isLoadingMore,
-                ),
-                builder: (context, state, child) {
-                  final listings = state.listings;
-                  if (listings.isEmpty) {
-                    // Handled by the state selector above
-                    return const SliverPadding(padding: EdgeInsets.zero);
-                  }
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: ValoraSpacing.lg,
-                      vertical: ValoraSpacing.md,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index == listings.length) {
-                          if (state.isLoadingMore) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(
-                                vertical: ValoraSpacing.lg,
-                              ),
-                              child: ValoraLoadingIndicator(),
-                            );
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ValoraSpacing.lg,
+                        vertical: ValoraSpacing.md,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          if (index == provider.listings.length) {
+                            if (provider.isLoadingMore) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: ValoraSpacing.lg,
+                                ),
+                                child: ValoraLoadingIndicator(),
+                              );
+                            }
+                            return const SizedBox(height: 80);
                           }
-                          return const SizedBox(height: 80);
-                        }
 
-                        final listing = listings[index];
-                        return NearbyListingCard(
-                              listing: listing,
-                              onTap: () => _openListingDetail(listing),
-                            )
-                            .animate(delay: (50 * (index % 10)).ms)
-                            .fade(duration: 400.ms)
-                            .slideY(
-                              begin: 0.1,
-                              end: 0,
-                              curve: Curves.easeOut,
-                            );
-                      }, childCount: listings.length + 1),
+                          final listing = provider.listings[index];
+                          return NearbyListingCard(
+                                listing: listing,
+                                onTap: () => _openListingDetail(listing),
+                              )
+                              .animate(delay: (50 * (index % 10)).ms)
+                              .fade(duration: 400.ms)
+                              .slideY(
+                                begin: 0.1,
+                                end: 0,
+                                curve: Curves.easeOut,
+                              );
+                        }, childCount: provider.listings.length + 1),
+                      ),
                     ),
-                  );
-                },
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
-}
-
-class _ListingListState {
-  final List<Listing> listings;
-  final bool isLoadingMore;
-
-  const _ListingListState({
-    required this.listings,
-    required this.isLoadingMore,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _ListingListState &&
-          runtimeType == other.runtimeType &&
-          listings == other.listings &&
-          isLoadingMore == other.isLoadingMore;
-
-  @override
-  int get hashCode => listings.hashCode ^ isLoadingMore.hashCode;
-}
-
-class _SearchAppBarState {
-  final bool hasActiveFiltersOrSort;
-  final double? minPrice;
-  final double? maxPrice;
-  final String? city;
-  final int? minBedrooms;
-  final int? minLivingArea;
-  final int? maxLivingArea;
-  final double? minCompositeScore;
-  final double? minSafetyScore;
-  final String? sortBy;
-  final String? sortOrder;
-
-  const _SearchAppBarState({
-    required this.hasActiveFiltersOrSort,
-    this.minPrice,
-    this.maxPrice,
-    this.city,
-    this.minBedrooms,
-    this.minLivingArea,
-    this.maxLivingArea,
-    this.minCompositeScore,
-    this.minSafetyScore,
-    this.sortBy,
-    this.sortOrder,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _SearchAppBarState &&
-          runtimeType == other.runtimeType &&
-          hasActiveFiltersOrSort == other.hasActiveFiltersOrSort &&
-          minPrice == other.minPrice &&
-          maxPrice == other.maxPrice &&
-          city == other.city &&
-          minBedrooms == other.minBedrooms &&
-          minLivingArea == other.minLivingArea &&
-          maxLivingArea == other.maxLivingArea &&
-          minCompositeScore == other.minCompositeScore &&
-          minSafetyScore == other.minSafetyScore &&
-          sortBy == other.sortBy &&
-          sortOrder == other.sortOrder;
-
-  @override
-  int get hashCode =>
-      hasActiveFiltersOrSort.hashCode ^
-      minPrice.hashCode ^
-      maxPrice.hashCode ^
-      city.hashCode ^
-      minBedrooms.hashCode ^
-      minLivingArea.hashCode ^
-      maxLivingArea.hashCode ^
-      minCompositeScore.hashCode ^
-      minSafetyScore.hashCode ^
-      sortBy.hashCode ^
-      sortOrder.hashCode;
 }
