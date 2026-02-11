@@ -8,10 +8,12 @@ namespace Valora.Infrastructure.Persistence.Repositories;
 public class NotificationRepository : INotificationRepository
 {
     private readonly ValoraDbContext _context;
+    private readonly TimeProvider _timeProvider;
 
-    public NotificationRepository(ValoraDbContext context)
+    public NotificationRepository(ValoraDbContext context, TimeProvider timeProvider)
     {
         _context = context;
+        _timeProvider = timeProvider;
     }
 
     public async Task<List<Notification>> GetByUserIdAsync(string userId, bool unreadOnly, int limit, int offset, CancellationToken cancellationToken = default)
@@ -59,6 +61,7 @@ public class NotificationRepository : INotificationRepository
 
     public async Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
     {
+        notification.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         _context.Notifications.Update(notification);
         await _context.SaveChangesAsync(cancellationToken);
     }
@@ -71,11 +74,16 @@ public class NotificationRepository : INotificationRepository
 
     public async Task MarkAllAsReadAsync(string userId, CancellationToken cancellationToken = default)
     {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+
         if (_context.Database.IsRelational())
         {
             await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
-                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true), cancellationToken);
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(n => n.IsRead, true)
+                    .SetProperty(n => n.UpdatedAt, now),
+                    cancellationToken);
         }
         else
         {
@@ -87,6 +95,7 @@ public class NotificationRepository : INotificationRepository
             foreach (var n in notifications)
             {
                 n.IsRead = true;
+                n.UpdatedAt = now;
             }
             await _context.SaveChangesAsync(cancellationToken);
         }
