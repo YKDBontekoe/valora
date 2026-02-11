@@ -47,6 +47,10 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Authenticate to access secure storage</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Valora needs your location to show nearby listings.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Valora needs your location to show nearby listings.</string>
 	<key>FLTEnableImpeller</key>
 	<false/>
 </dict>
