@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
@@ -13,13 +14,24 @@ public class AuthServiceTests
 {
     private readonly Mock<IIdentityService> _mockIdentityService;
     private readonly Mock<ITokenService> _mockTokenService;
+    private readonly Mock<ILogger<AuthService>> _mockLogger;
     private readonly AuthService _authService;
 
     public AuthServiceTests()
     {
         _mockIdentityService = new Mock<IIdentityService>();
         _mockTokenService = new Mock<ITokenService>();
-        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object);
+        _mockLogger = new Mock<ILogger<AuthService>>();
+        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WithMismatchedPasswords_ReturnsFailure()
+    {
+        var registerDto = new RegisterDto { Email = "t@t.com", Password = "p", ConfirmPassword = "x" };
+        var result = await _authService.RegisterAsync(registerDto);
+        Assert.False(result.Succeeded);
+        Assert.Contains(ErrorMessages.PasswordsDoNotMatch, result.Errors);
     }
 
     [Fact]

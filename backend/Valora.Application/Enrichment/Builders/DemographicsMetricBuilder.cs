@@ -39,6 +39,14 @@ public static class DemographicsMetricBuilder
     /// </remarks>
     private static double? ScoreFamilyFriendly(DemographicsDto demographics)
     {
+        // If no relevant data is present, do not return a phantom score.
+        if (!demographics.PercentFamilyHouseholds.HasValue &&
+            !demographics.PercentAge0To14.HasValue &&
+            !demographics.AverageHouseholdSize.HasValue)
+        {
+            return null;
+        }
+
         // Composite score based on presence of families and children
         double score = 50; // Start with neutral baseline
 

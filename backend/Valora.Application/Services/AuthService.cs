@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
@@ -9,16 +11,34 @@ public class AuthService : IAuthService
 {
     private readonly IIdentityService _identityService;
     private readonly ITokenService _tokenService;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IIdentityService identityService, ITokenService tokenService)
+    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger)
     {
         _identityService = identityService;
         _tokenService = tokenService;
+        _logger = logger;
     }
 
     public async Task<Result> RegisterAsync(RegisterDto registerDto)
     {
+        if (registerDto.Password != registerDto.ConfirmPassword)
+        {
+            _logger.LogWarning("Registration failed: Password confirmation mismatch for email {Email}", registerDto.Email);
+            return Result.Failure(new[] { ErrorMessages.PasswordsDoNotMatch });
+        }
+
         var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
+
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("User registered successfully: {UserId}", userId);
+        }
+        else
+        {
+            _logger.LogWarning("Registration failed for email {Email}: {Errors}", registerDto.Email, string.Join(", ", result.Errors));
+        }
+
         return result;
     }
 
@@ -27,8 +47,11 @@ public class AuthService : IAuthService
         var user = await ValidateUserAsync(loginDto.Email, loginDto.Password);
         if (user == null)
         {
+            _logger.LogWarning("Login failed: Invalid credentials for email {Email}", loginDto.Email);
             return null;
         }
+
+        _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
 
         var token = await _tokenService.CreateJwtTokenAsync(user);
         var refreshToken = _tokenService.GenerateRefreshToken(user.Id);

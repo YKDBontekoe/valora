@@ -123,13 +123,16 @@ public static class PdokListingMapper
 
     private static double? TryParseCoordinate(string? wkt, bool isLat)
     {
-        if (string.IsNullOrEmpty(wkt) || !wkt.StartsWith("POINT(") || !wkt.EndsWith(")")) return null;
+        // POINT(lon lat)
+        if (string.IsNullOrWhiteSpace(wkt)) return null;
+        if (!wkt.StartsWith("POINT(", StringComparison.OrdinalIgnoreCase) || !wkt.EndsWith(")")) return null;
 
         var content = wkt.Substring(6, wkt.Length - 7);
-        var parts = content.Split(' ');
+        var parts = content.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
         if (parts.Length != 2) return null;
 
-        if (double.TryParse(parts[isLat ? 1 : 0], NumberStyles.Any, CultureInfo.InvariantCulture, out var coord))
+        if (double.TryParse(parts[isLat ? 1 : 0], NumberStyles.Float, CultureInfo.InvariantCulture, out var coord))
         {
             return coord;
         }
