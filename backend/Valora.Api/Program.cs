@@ -198,24 +198,14 @@ var api = app.MapGroup("/api");
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
 /// </summary>
-api.MapGet("/health", async (ValoraDbContext db, ILogger<Program> logger, CancellationToken ct) =>
+api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 {
-    try
+    if (await db.Database.CanConnectAsync(ct))
     {
-        if (await db.Database.CanConnectAsync(ct))
-        {
-            return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
-        }
-        else
-        {
-            return Results.Problem("Service unavailable", statusCode: 503);
-        }
+        return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
     }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Health check failed");
-        return Results.Problem("Service unavailable", statusCode: 503);
-    }
+
+    return Results.Problem("Service unavailable", statusCode: 503);
 });
 
 /// <summary>
@@ -279,22 +269,11 @@ api.MapPost("/context/report", async (
 {
     if (string.IsNullOrWhiteSpace(request.Input))
     {
-        return Results.BadRequest(new { error = "Input is required" });
+        throw new ValidationException(new[] { "Input is required" });
     }
 
-    try
-    {
-        var report = await contextReportService.BuildAsync(request, ct);
-        return Results.Ok(report);
-    }
-    catch (ValidationException ex)
-    {
-        return Results.BadRequest(new
-        {
-            error = "Validation failed",
-            errors = ex.Errors
-        });
-    }
+    var report = await contextReportService.BuildAsync(request, ct);
+    return Results.Ok(report);
 }).RequireAuthorization();
 
 api.MapPost("/listings/{id:guid}/enrich", async (
@@ -309,36 +288,26 @@ api.MapPost("/listings/{id:guid}/enrich", async (
     // 1. Generate Report
     ContextReportRequestDto request = new(Input: listing.Address); // Default 1km radius
     
-    try 
-    {
-        // We use the application DTO for the service call...
-        var reportDto = await contextReportService.BuildAsync(request, ct);
+    // We use the application DTO for the service call...
+    var reportDto = await contextReportService.BuildAsync(request, ct);
 
-        // ...and map it to the Domain model for storage
-        var contextReportModel = ListingMapper.MapToDomain(reportDto);
+    // ...and map it to the Domain model for storage
+    var contextReportModel = ListingMapper.MapToDomain(reportDto);
 
-        // 2. Update Entity
-        listing.ContextReport = contextReportModel;
-        listing.ContextCompositeScore = reportDto.CompositeScore;
-        
-        if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
-        if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Safety" to "Safety" score
-        if (reportDto.CategoryScores.TryGetValue("Demographics", out var demo)) { /* No specific column yet */ }
-        if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
-        if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
+    // 2. Update Entity
+    listing.ContextReport = contextReportModel;
+    listing.ContextCompositeScore = reportDto.CompositeScore;
 
-        // 3. Save
-        await repo.UpdateAsync(listing, ct);
+    if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
+    if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Safety" to "Safety" score
+    if (reportDto.CategoryScores.TryGetValue("Demographics", out var demo)) { /* No specific column yet */ }
+    if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
+    if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
 
-        return Results.Ok(new { message = "Listing enriched successfully", compositeScore = reportDto.CompositeScore });
-    }
-    catch (Exception ex)
-    {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Failed to enrich listing {ListingId}", id);
-        return Results.Problem("Failed to enrich listing. Please try again later.");
-    }
+    // 3. Save
+    await repo.UpdateAsync(listing, ct);
 
+    return Results.Ok(new { message = "Listing enriched successfully", compositeScore = reportDto.CompositeScore });
 }).RequireAuthorization();
 
 app.Run();
