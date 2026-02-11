@@ -1,7 +1,7 @@
-using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
+using Valora.Domain.Entities;
 
 namespace Valora.Application.Services;
 
@@ -18,31 +18,19 @@ public class AuthService : IAuthService
 
     public async Task<Result> RegisterAsync(RegisterDto registerDto)
     {
-        if (registerDto.Password != registerDto.ConfirmPassword)
-        {
-            return Result.Failure(new[] { ErrorMessages.PasswordsDoNotMatch });
-        }
-
         var (result, userId) = await _identityService.CreateUserAsync(registerDto.Email, registerDto.Password);
-
         return result;
     }
 
     public async Task<AuthResponseDto?> LoginAsync(LoginDto loginDto)
     {
-        var user = await _identityService.GetUserByEmailAsync(loginDto.Email);
+        var user = await ValidateUserAsync(loginDto.Email, loginDto.Password);
         if (user == null)
         {
             return null;
         }
 
-        var isValidPassword = await _identityService.CheckPasswordAsync(loginDto.Email, loginDto.Password);
-        if (!isValidPassword)
-        {
-            return null;
-        }
-
-        var token = await _tokenService.GenerateTokenAsync(user);
+        var token = await _tokenService.CreateJwtTokenAsync(user);
         var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
         await _tokenService.SaveRefreshTokenAsync(refreshToken);
 
@@ -52,6 +40,18 @@ public class AuthService : IAuthService
             user.Email!,
             user.Id
         );
+    }
+
+    private async Task<ApplicationUser?> ValidateUserAsync(string email, string password)
+    {
+        var user = await _identityService.GetUserByEmailAsync(email);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var isValidPassword = await _identityService.CheckPasswordAsync(email, password);
+        return isValidPassword ? user : null;
     }
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
@@ -68,7 +68,7 @@ public class AuthService : IAuthService
         var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
         await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
 
-        var newAccessToken = await _tokenService.GenerateTokenAsync(existingToken.User);
+        var newAccessToken = await _tokenService.CreateJwtTokenAsync(existingToken.User);
 
         return new AuthResponseDto(
             newAccessToken,

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Common;
 
 namespace Valora.Infrastructure.Enrichment;
 
