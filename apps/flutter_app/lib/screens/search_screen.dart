@@ -11,12 +11,13 @@ import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../providers/search_listings_provider.dart';
+import '../providers/favorites_provider.dart';
 import '../services/api_service.dart';
 import '../services/property_photo_service.dart';
-import '../widgets/home_components.dart';
 import '../widgets/valora_filter_dialog.dart';
 import '../widgets/valora_glass_container.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_listing_card.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
@@ -838,10 +839,20 @@ class _SearchScreenState extends State<SearchScreen> {
                           }
 
                           final listing = provider.listings[index];
-                          return NearbyListingCard(
-                                listing: listing,
-                                onTap: () => _openListingDetail(listing),
-                              )
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
+                            child: Consumer<FavoritesProvider>(
+                              builder: (context, favorites, _) {
+                                final isFavorite = favorites.isFavorite(listing.id);
+                                return ValoraListingCard(
+                                  listing: listing,
+                                  onTap: () => _openListingDetail(listing),
+                                  isFavorite: isFavorite,
+                                  onFavorite: () => favorites.toggleFavorite(listing),
+                                );
+                              },
+                            ),
+                          )
                               .animate(delay: (50 * (index % 10)).ms)
                               .fade(duration: 400.ms)
                               .slideY(

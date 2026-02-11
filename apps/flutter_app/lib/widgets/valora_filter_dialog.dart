@@ -191,8 +191,8 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Price Range', style: ValoraTypography.titleMedium),
-          const SizedBox(height: ValoraSpacing.sm),
+          Text('Price Range', style: ValoraTypography.headlineSmall),
+          const SizedBox(height: ValoraSpacing.md),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -217,7 +217,12 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
               ),
             ],
           ),
-          const SizedBox(height: ValoraSpacing.lg),
+          const SizedBox(height: ValoraSpacing.xl),
+          Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+          const SizedBox(height: ValoraSpacing.xl),
+
+          Text('Location & Details', style: ValoraTypography.headlineSmall),
+          const SizedBox(height: ValoraSpacing.md),
           ValoraTextField(
             controller: _cityController,
             label: 'City',
@@ -256,9 +261,12 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
               ),
             ],
           ),
-          const SizedBox(height: ValoraSpacing.lg),
-          Text('Sort By', style: ValoraTypography.titleMedium),
-          const SizedBox(height: ValoraSpacing.sm),
+          const SizedBox(height: ValoraSpacing.xl),
+          Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+          const SizedBox(height: ValoraSpacing.xl),
+
+          Text('Sort By', style: ValoraTypography.headlineSmall),
+          const SizedBox(height: ValoraSpacing.md),
           Wrap(
             spacing: ValoraSpacing.sm,
             runSpacing: ValoraSpacing.xs,
@@ -314,9 +322,12 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
               ),
             ],
           ),
-          const SizedBox(height: ValoraSpacing.lg),
-          Text('Context Scores (0-100)', style: ValoraTypography.titleMedium),
-          const SizedBox(height: ValoraSpacing.sm),
+          const SizedBox(height: ValoraSpacing.xl),
+          Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+          const SizedBox(height: ValoraSpacing.xl),
+
+          Text('Context Scores (0-100)', style: ValoraTypography.headlineSmall),
+          const SizedBox(height: ValoraSpacing.md),
           Row(
             children: [
               Expanded(

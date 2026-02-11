@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_animations.dart';
 import '../models/listing.dart';
 import 'valora_widgets.dart';
 
@@ -176,8 +177,8 @@ class _ListingImage extends StatelessWidget {
                     _Placeholder(isDark: isDark, isLoading: true),
                 errorWidget: (context, url, error) =>
                     _Placeholder(isDark: isDark),
-                fadeInDuration: const Duration(milliseconds: 500),
-                fadeInCurve: Curves.easeOut,
+                fadeInDuration: ValoraAnimations.slow,
+                fadeInCurve: ValoraAnimations.deceleration,
               )
             : _Placeholder(isDark: isDark),
       ),
@@ -231,7 +232,7 @@ class _FavoriteButton extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(ValoraSpacing.sm),
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
+            duration: ValoraAnimations.medium,
             transitionBuilder: (child, animation) {
               return ScaleTransition(scale: animation, child: child);
             },
@@ -244,12 +245,15 @@ class _FavoriteButton extends StatelessWidget {
                       )
                       .animate()
                       .scale(
-                        duration: 400.ms,
+                        duration: ValoraAnimations.slow,
                         curve: Curves.elasticOut,
                         begin: const Offset(0.5, 0.5),
                         end: const Offset(1, 1),
                       )
-                      .shimmer(delay: 200.ms, duration: 600.ms)
+                      .shimmer(
+                        delay: ValoraAnimations.normal,
+                        duration: 600.ms,
+                      )
                 : Icon(
                     Icons.favorite_border,
                     key: const ValueKey(false),

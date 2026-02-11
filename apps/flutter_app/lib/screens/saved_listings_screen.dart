@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_spacing.dart';
 import '../models/listing.dart';
 import '../providers/favorites_provider.dart';
-import '../widgets/home_components.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_listing_card.dart';
 import 'listing_detail_screen.dart';
 
 class SavedListingsScreen extends StatefulWidget {
@@ -204,18 +205,22 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final listing = listings[index];
-                    return NearbyListingCard(
-                      listing: listing,
-                      onFavoriteTap: () => _confirmRemove(context, listing),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ListingDetailScreen(listing: listing),
-                          ),
-                        );
-                      },
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
+                      child: ValoraListingCard(
+                        listing: listing,
+                        isFavorite: true,
+                        onFavorite: () => _confirmRemove(context, listing),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ListingDetailScreen(listing: listing),
+                            ),
+                          );
+                        },
+                      ),
                     );
                   }, childCount: listings.length),
                 ),
