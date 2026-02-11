@@ -1,6 +1,6 @@
-namespace Valora.Infrastructure.Enrichment;
+namespace Valora.Domain.Common;
 
-internal static class GeoDistance
+public static class GeoDistance
 {
     private const double EarthRadiusMeters = 6371000;
 

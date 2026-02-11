@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Valora.Infrastructure.Services;
 using Xunit;
 
@@ -12,6 +14,7 @@ public class NotificationServiceTests
 {
     private readonly ValoraDbContext _context;
     private readonly NotificationService _service;
+    private readonly Mock<ILogger<NotificationService>> _mockLogger;
 
     public NotificationServiceTests()
     {
@@ -20,7 +23,8 @@ public class NotificationServiceTests
             .Options;
 
         _context = new ValoraDbContext(options);
-        _service = new NotificationService(_context);
+        _mockLogger = new Mock<ILogger<NotificationService>>();
+        _service = new NotificationService(_context, _mockLogger.Object);
     }
 
     [Fact]

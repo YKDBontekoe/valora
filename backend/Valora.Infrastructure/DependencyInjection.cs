@@ -19,6 +19,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // Ensure Logging is available for infrastructure services even in non-web contexts
+        services.AddLogging();
+
         var rawConnectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
         var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 

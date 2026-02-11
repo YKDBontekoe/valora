@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 
@@ -21,8 +22,10 @@ public static class AuthEndpoints
                 return Results.Ok(new { message = "User created successfully" });
             }
 
-            return Results.BadRequest(result.Errors.Select(e => new { description = e }));
-        });
+            // Return generic error to avoid leaking implementation details
+            return Results.BadRequest(new { error = "Registration failed. Please check your details and try again." });
+        })
+        .AddEndpointFilter<ValidationFilter<RegisterDto>>();
 
         group.MapPost("/login", async (
             [FromBody] LoginDto loginDto,
@@ -36,7 +39,8 @@ public static class AuthEndpoints
             }
 
             return Results.Ok(response);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<LoginDto>>();
 
         group.MapPost("/refresh", async (
             [FromBody] RefreshTokenRequestDto request,
@@ -50,6 +54,7 @@ public static class AuthEndpoints
             }
 
             return Results.Ok(response);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<RefreshTokenRequestDto>>();
     }
 }

@@ -32,7 +32,7 @@ public class TokenService : ITokenService
         _userManager = userManager;
     }
 
-    public async Task<string> GenerateTokenAsync(ApplicationUser user)
+    public async Task<string> CreateJwtTokenAsync(ApplicationUser user)
     {
         if (string.IsNullOrEmpty(_options.Secret))
         {
@@ -89,12 +89,7 @@ public class TokenService : ITokenService
     {
         if (string.IsNullOrWhiteSpace(token.TokenHash))
         {
-            if (string.IsNullOrWhiteSpace(token.RawToken))
-            {
-                throw new InvalidOperationException("Refresh token value is required.");
-            }
-
-            token.TokenHash = HashRefreshToken(token.RawToken);
+            throw new InvalidOperationException("Refresh token hash is required.");
         }
 
         _context.RefreshTokens.Add(token);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Valora.Application.DTOs;
 using Valora.Application.Services;
 using Valora.Domain.Entities;
@@ -13,10 +14,12 @@ namespace Valora.Infrastructure.Services;
 public class NotificationService : INotificationService
 {
     private readonly ValoraDbContext _context;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(ValoraDbContext context)
+    public NotificationService(ValoraDbContext context, ILogger<NotificationService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, int offset = 0)
@@ -65,7 +68,7 @@ public class NotificationService : INotificationService
         if (notification == null) return false;
 
         // In a real scenario, this would likely be an AuditLog entry
-        Console.WriteLine($"[AUDIT] User {userId} deleting notification {notificationId}");
+        _logger.LogInformation("[AUDIT] User {UserId} deleting notification {NotificationId}", userId, notificationId);
 
         _context.Notifications.Remove(notification);
         await _context.SaveChangesAsync();
