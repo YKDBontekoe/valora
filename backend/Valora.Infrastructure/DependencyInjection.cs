@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
@@ -139,17 +140,12 @@ public static class DependencyInjection
     {
         var secret = configuration["JWT_SECRET"];
 
-        // Fallback for Development environment to match Program.cs behavior
         if (string.IsNullOrEmpty(secret))
         {
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            if (string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
-            {
-                secret = "DevSecretKey_ChangeMe_In_Production_Configuration_123!";
-            }
+            throw new OptionsValidationException("JwtOptions", typeof(JwtOptions), new[] { "JWT_SECRET is not configured." });
         }
 
-        options.Secret = secret ?? string.Empty;
+        options.Secret = secret;
         options.Issuer = configuration["JWT_ISSUER"];
         options.Audience = configuration["JWT_AUDIENCE"];
 

@@ -147,6 +147,16 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel?>(v))
                 .Metadata.SetValueComparer(contextReportComparer);
+
+            // Check Constraints
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "\"ContextCompositeScore\" >= 0 AND \"ContextCompositeScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "\"ContextSafetyScore\" >= 0 AND \"ContextSafetyScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
+                t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
+            });
         });
 
         modelBuilder.Entity<PriceHistory>(entity =>

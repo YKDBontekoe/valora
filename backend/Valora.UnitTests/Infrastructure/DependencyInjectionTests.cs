@@ -99,7 +99,7 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddInfrastructure_FallsBackToDevSecret_WhenJwtSecretMissing_AndInDevelopment()
+    public void AddInfrastructure_Throws_WhenJwtSecretMissing()
     {
         var configData = new Dictionary<string, string?>
         {
@@ -112,21 +112,14 @@ public class DependencyInjectionTests
             .AddInMemoryCollection(configData)
             .Build();
 
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        var services = new ServiceCollection();
+        services.AddInfrastructure(configuration);
+        var provider = services.BuildServiceProvider();
 
-        try
-        {
-            var services = new ServiceCollection();
-            services.AddInfrastructure(configuration);
-            var provider = services.BuildServiceProvider();
-
-            var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
-
-            Assert.Equal("DevSecretKey_ChangeMe_In_Production_Configuration_123!", options.Secret);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
-        }
+        // When requesting IOptions<JwtOptions>, the configuration delegate runs and should throw
+        var ex = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<JwtOptions>>().Value);
+        // Note: OptionsValidationException usually wraps the underlying exception or validation errors.
+        // If we throw InvalidOperationException directly in the configure delegate, it might come out as that or wrapped.
+        // Let's inspect.
     }
 }
