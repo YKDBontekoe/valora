@@ -14,7 +14,6 @@ public class ContextReportScoringTests
     private readonly Mock<ILocationResolver> _locationResolver;
     private readonly Mock<ICbsNeighborhoodStatsClient> _cbsClient;
     private readonly Mock<ICbsCrimeStatsClient> _crimeClient;
-    private readonly Mock<IDemographicsClient> _demographicsClient;
     private readonly Mock<IAmenityClient> _amenityClient;
     private readonly Mock<IAirQualityClient> _airClient;
     private readonly Mock<ILogger<ContextReportService>> _logger;
@@ -26,7 +25,6 @@ public class ContextReportScoringTests
         _locationResolver = new Mock<ILocationResolver>();
         _cbsClient = new Mock<ICbsNeighborhoodStatsClient>();
         _crimeClient = new Mock<ICbsCrimeStatsClient>();
-        _demographicsClient = new Mock<IDemographicsClient>();
         _amenityClient = new Mock<IAmenityClient>();
         _airClient = new Mock<IAirQualityClient>();
         _logger = new Mock<ILogger<ContextReportService>>();
@@ -44,8 +42,6 @@ public class ContextReportScoringTests
             .ReturnsAsync((NeighborhoodStatsDto?)null);
         _crimeClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CrimeStatsDto?)null);
-        _demographicsClient.Setup(x => x.GetDemographicsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((DemographicsDto?)null);
         _amenityClient.Setup(x => x.GetAmenitiesAsync(location, It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AmenityStatsDto?)null);
         _airClient.Setup(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()))
@@ -198,7 +194,6 @@ public class ContextReportScoringTests
             _locationResolver.Object,
             _cbsClient.Object,
             _crimeClient.Object,
-            _demographicsClient.Object,
             _amenityClient.Object,
             _airClient.Object,
             _memoryCache,

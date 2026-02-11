@@ -19,7 +19,6 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
     private readonly Mock<ILocationResolver> _mockLocationResolver = new();
     private readonly Mock<ICbsNeighborhoodStatsClient> _mockCbsClient = new();
     private readonly Mock<ICbsCrimeStatsClient> _mockCrimeClient = new();
-    private readonly Mock<IDemographicsClient> _mockDemographicsClient = new();
     private readonly Mock<IAmenityClient> _mockAmenityClient = new();
     private readonly Mock<IAirQualityClient> _mockAirQualityClient = new();
 
@@ -54,8 +53,6 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
                 services.RemoveAll<ICbsCrimeStatsClient>();
                 services.AddSingleton(_testInstance._mockCrimeClient.Object);
 
-                services.RemoveAll<IDemographicsClient>();
-                services.AddSingleton(_testInstance._mockDemographicsClient.Object);
 
                 services.RemoveAll<IAmenityClient>();
                 services.AddSingleton(_testInstance._mockAmenityClient.Object);
@@ -79,21 +76,22 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
                 LowIncomeHouseholdsPercent: 10,
                 Men: 500,
                 Women: 500,
-                Age0To15: 100,
-                Age15To25: 150,
-                Age25To45: 400,
+                Age0To15: 150,
+                Age15To25: 120,
+                Age25To45: 300,
                 Age45To65: 250,
-                Age65Plus: 100,
-                SingleHouseholds: 60,
-                HouseholdsWithoutChildren: 20,
-                HouseholdsWithChildren: 20,
-                AverageHouseholdSize: 1.8,
+                Age65Plus: 180,
+                SingleHouseholds: 400,
+                HouseholdsWithoutChildren: 350,
+                HouseholdsWithChildren: 250,
+                AverageHouseholdSize: 2.1,
                 Urbanity: "Zeer sterk stedelijk",
-                AverageIncomePerRecipient: 30,
-                AverageIncomePerInhabitant: 35,
+                AverageIncomePerRecipient: 35.0,
+                AverageIncomePerInhabitant: 30.0,
                 EducationLow: 20,
                 EducationMedium: 40,
                 EducationHigh: 40,
+                // Phase 2: Housing
                 PercentageOwnerOccupied: 40,
                 PercentageRental: 60,
                 PercentageSocialHousing: 20,
@@ -101,9 +99,11 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
                 PercentagePre2000: 90,
                 PercentagePost2000: 10,
                 PercentageMultiFamily: 80,
+                // Phase 2: Mobility
                 CarsPerHousehold: 0.5,
                 CarDensity: 1000,
                 TotalCars: 500,
+                // Phase 2: Proximity
                 DistanceToGp: 0.5,
                 DistanceToSupermarket: 0.2,
                 DistanceToDaycare: 0.4,
@@ -114,26 +114,12 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
         _mockCrimeClient
             .Setup(x => x.GetStatsAsync(resolvedLocation, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CrimeStatsDto(
-                TotalCrimesPer1000: 50,
+                TotalCrimesPer1000: 45,
                 BurglaryPer1000: 5,
-                ViolentCrimePer1000: 2,
-                TheftPer1000: 30,
-                VandalismPer1000: 10,
-                YearOverYearChangePercent: -2.5,
-                RetrievedAtUtc: DateTimeOffset.UtcNow));
-
-        _mockDemographicsClient
-            .Setup(x => x.GetDemographicsAsync(resolvedLocation, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new DemographicsDto(
-                PercentAge0To14: 10,
-                PercentAge15To24: 15,
-                PercentAge25To44: 40,
-                PercentAge45To64: 25,
-                PercentAge65Plus: 10,
-                AverageHouseholdSize: 1.8,
-                PercentOwnerOccupied: 40,
-                PercentSingleHouseholds: 60,
-                PercentFamilyHouseholds: 40,
+                ViolentCrimePer1000: 3,
+                TheftPer1000: 20,
+                VandalismPer1000: 8,
+                YearOverYearChangePercent: 5.2,
                 RetrievedAtUtc: DateTimeOffset.UtcNow));
 
         _mockAmenityClient
@@ -330,8 +316,7 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
 
         // Setup others as null/default or simple returns just to not break null checks if logic is robust
         _mockCrimeClient.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>())).ReturnsAsync((CrimeStatsDto?)null);
-        _mockDemographicsClient.Setup(x => x.GetDemographicsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>())).ReturnsAsync((DemographicsDto?)null);
-        _mockAmenityClient.Setup(x => x.GetAmenitiesAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((AmenityStatsDto?)null);
+                _mockAmenityClient.Setup(x => x.GetAmenitiesAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((AmenityStatsDto?)null);
 
         var request = new ContextReportRequestDto(Input: input, RadiusMeters: 500);
 

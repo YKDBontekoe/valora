@@ -75,17 +75,6 @@ public sealed record CrimeStatsDto(
     double? YearOverYearChangePercent,
     DateTimeOffset RetrievedAtUtc);
 
-public sealed record DemographicsDto(
-    int? PercentAge0To14,
-    int? PercentAge15To24,
-    int? PercentAge25To44,
-    int? PercentAge45To64,
-    int? PercentAge65Plus,
-    double? AverageHouseholdSize,
-    int? PercentOwnerOccupied,
-    int? PercentSingleHouseholds,
-    int? PercentFamilyHouseholds,
-    DateTimeOffset RetrievedAtUtc);
 
 public sealed record AmenityStatsDto(
     int SchoolCount,

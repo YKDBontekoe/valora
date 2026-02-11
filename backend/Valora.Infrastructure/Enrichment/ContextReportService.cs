@@ -17,7 +17,6 @@ public sealed class ContextReportService : IContextReportService
     private readonly ILocationResolver _locationResolver;
     private readonly ICbsNeighborhoodStatsClient _cbsClient;
     private readonly ICbsCrimeStatsClient _crimeClient;
-    private readonly IDemographicsClient _demographicsClient;
     private readonly IAmenityClient _amenityClient;
     private readonly IAirQualityClient _airQualityClient;
     private readonly IMemoryCache _cache;
@@ -28,7 +27,6 @@ public sealed class ContextReportService : IContextReportService
         ILocationResolver locationResolver,
         ICbsNeighborhoodStatsClient cbsClient,
         ICbsCrimeStatsClient crimeClient,
-        IDemographicsClient demographicsClient,
         IAmenityClient amenityClient,
         IAirQualityClient airQualityClient,
         IMemoryCache cache,
@@ -38,7 +36,6 @@ public sealed class ContextReportService : IContextReportService
         _locationResolver = locationResolver;
         _cbsClient = cbsClient;
         _crimeClient = crimeClient;
-        _demographicsClient = demographicsClient;
         _amenityClient = amenityClient;
         _airQualityClient = airQualityClient;
         _cache = cache;
@@ -104,15 +101,13 @@ public sealed class ContextReportService : IContextReportService
         // Each task is wrapped in a safe executor that returns null on failure instead of throwing
         var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), cancellationToken);
         var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), cancellationToken);
-        var demographicsTask = TryGetSourceAsync("CBS Demographics", token => _demographicsClient.GetDemographicsAsync(location, token), cancellationToken);
         var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, normalizedRadius, token), cancellationToken);
         var airQualityTask = TryGetSourceAsync("Luchtmeetnet", token => _airQualityClient.GetSnapshotAsync(location, token), cancellationToken);
 
-        await Task.WhenAll(cbsTask, crimeTask, demographicsTask, amenitiesTask, airQualityTask);
+        await Task.WhenAll(cbsTask, crimeTask, amenitiesTask, airQualityTask);
 
         var cbs = await cbsTask;
         var crime = await crimeTask;
-        var demographics = await demographicsTask;
         var amenities = await amenitiesTask;
         var air = await airQualityTask;
 
@@ -126,7 +121,7 @@ public sealed class ContextReportService : IContextReportService
         // Build normalized metrics for each category (Fan-in)
         var socialMetrics = SocialMetricBuilder.Build(cbs, warnings);
         var crimeMetrics = CrimeMetricBuilder.Build(crime, warnings);
-        var demographicsMetrics = DemographicsMetricBuilder.Build(demographics, warnings);
+        var demographicsMetrics = DemographicsMetricBuilder.Build(cbs, warnings);
         var housingMetrics = HousingMetricBuilder.Build(cbs, warnings); // Phase 2
         var mobilityMetrics = MobilityMetricBuilder.Build(cbs, warnings); // Phase 2
         var amenityMetrics = AmenityMetricBuilder.Build(amenities, cbs, warnings); // Phase 2: CBS Proximity
@@ -136,7 +131,7 @@ public sealed class ContextReportService : IContextReportService
         var categoryScores = ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, housingMetrics, mobilityMetrics, amenityMetrics, environmentMetrics);
         var compositeScore = ComputeCompositeScore(categoryScores);
 
-        var sources = BuildSourceAttributions(cbs, crime, demographics, amenities, air);
+        var sources = BuildSourceAttributions(cbs, crime, amenities, air);
 
         var report = new ContextReportDto(
             Location: location,
@@ -188,7 +183,6 @@ public sealed class ContextReportService : IContextReportService
     private static List<SourceAttributionDto> BuildSourceAttributions(
         NeighborhoodStatsDto? cbs,
         CrimeStatsDto? crime,
-        DemographicsDto? demographics,
         AmenityStatsDto? amenities,
         AirQualitySnapshotDto? air)
     {
@@ -205,11 +199,6 @@ public sealed class ContextReportService : IContextReportService
         if (crime is not null)
         {
             sources.Add(new SourceAttributionDto("CBS StatLine 47018NED", "https://opendata.cbs.nl", "Publiek", crime.RetrievedAtUtc));
-        }
-
-        if (demographics is not null)
-        {
-            sources.Add(new SourceAttributionDto("CBS Demographics", "https://opendata.cbs.nl", "Publiek", demographics.RetrievedAtUtc));
         }
 
         if (amenities is not null)
