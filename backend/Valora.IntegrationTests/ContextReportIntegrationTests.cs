@@ -13,9 +13,9 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-public class ContextReportIntegrationTests : IClassFixture<TestcontainersDatabaseFixture>
+public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
     private readonly Mock<ILocationResolver> _mockLocationResolver = new();
     private readonly Mock<ICbsNeighborhoodStatsClient> _mockCbsClient = new();
     private readonly Mock<ICbsCrimeStatsClient> _mockCrimeClient = new();
@@ -23,7 +23,7 @@ public class ContextReportIntegrationTests : IClassFixture<TestcontainersDatabas
     private readonly Mock<IAmenityClient> _mockAmenityClient = new();
     private readonly Mock<IAirQualityClient> _mockAirQualityClient = new();
 
-    public ContextReportIntegrationTests(TestcontainersDatabaseFixture fixture)
+    public ContextReportIntegrationTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
     }
@@ -163,7 +163,7 @@ public class ContextReportIntegrationTests : IClassFixture<TestcontainersDatabas
     public async Task BuildAsync_ReturnsCompleteReport_WhenAllSourcesSucceed()
     {
         // Arrange
-        await using var factory = new ContextReportTestWebAppFactory(_fixture.ConnectionString, this);
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextReportSuccess", this);
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<IContextReportService>();
 
@@ -207,10 +207,9 @@ public class ContextReportIntegrationTests : IClassFixture<TestcontainersDatabas
     public async Task BuildAsync_CachesResult_WhenSuccessful()
     {
         // Arrange
-        await using var factory = new ContextReportTestWebAppFactory(_fixture.ConnectionString, this);
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextReportCache", this);
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<IContextReportService>();
-        var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
 
         var input = "Museumplein 1 Amsterdam";
         var resolvedLocation = new ResolvedLocationDto(
@@ -236,25 +235,27 @@ public class ContextReportIntegrationTests : IClassFixture<TestcontainersDatabas
 
         var request = new ContextReportRequestDto(Input: input, RadiusMeters: 500);
 
-        // Act
-        await service.BuildAsync(request);
+        // Act - First Call
+        var report1 = await service.BuildAsync(request);
+
+        // Assert - Verify it works
+        Assert.NotNull(report1);
+
+        // Act - Second Call (Should hit cache)
+        var report2 = await service.BuildAsync(request);
 
         // Assert
-        // Cache Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
-        var latKey = resolvedLocation.Latitude.ToString("F5");
-        var lonKey = resolvedLocation.Longitude.ToString("F5");
-        var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{request.RadiusMeters}";
-
-        Assert.True(cache.TryGetValue(cacheKey, out ContextReportDto? cachedReport));
-        Assert.NotNull(cachedReport);
-        Assert.Equal(resolvedLocation.DisplayAddress, cachedReport!.Location.DisplayAddress);
+        Assert.NotNull(report2);
+        // Verify mocks were only called ONCE despite two service calls
+        _mockCbsClient.Verify(x => x.GetStatsAsync(resolvedLocation, It.IsAny<CancellationToken>()), Times.Once, "Cache failure: External API called more than once");
+        _mockLocationResolver.Verify(x => x.ResolveAsync(input, It.IsAny<CancellationToken>()), Times.Exactly(2), "Resolver should be called again as it has its own cache logic or is external");
     }
 
     [Fact]
     public async Task BuildAsync_ReturnsPartialReport_WhenNonCriticalSourceFails()
     {
         // Arrange
-        await using var factory = new ContextReportTestWebAppFactory(_fixture.ConnectionString, this);
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextReportPartial", this);
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<IContextReportService>();
 
@@ -351,7 +352,7 @@ public class ContextReportIntegrationTests : IClassFixture<TestcontainersDatabas
     public async Task BuildAsync_ThrowsValidationException_WhenLocationResolverFails()
     {
         // Arrange
-        await using var factory = new ContextReportTestWebAppFactory(_fixture.ConnectionString, this);
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextReportFailure", this);
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<IContextReportService>();
 
