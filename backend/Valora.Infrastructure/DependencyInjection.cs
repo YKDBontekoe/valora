@@ -109,15 +109,6 @@ public static class DependencyInjection
             options.Retry.BackoffType = DelayBackoffType.Constant;
         });
 
-        services.AddHttpClient<IDemographicsClient, CbsDemographicsClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-        })
-        .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
-        });
 
         services.AddHttpClient<IWozValuationService, WozValuationService>(client =>
         {
