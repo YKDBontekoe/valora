@@ -3,12 +3,13 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
-import 'dart:ui' as _i5;
+import 'dart:async' as _i5;
+import 'dart:collection' as _i2;
+import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:valora_app/models/listing.dart' as _i3;
-import 'package:valora_app/providers/favorites_provider.dart' as _i2;
+import 'package:valora_app/models/listing.dart' as _i4;
+import 'package:valora_app/providers/favorites_provider.dart' as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -25,21 +26,30 @@ import 'package:valora_app/providers/favorites_provider.dart' as _i2;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
+class _FakeUnmodifiableListView_0<E> extends _i1.SmartFake
+    implements _i2.UnmodifiableListView<E> {
+  _FakeUnmodifiableListView_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [FavoritesProvider].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFavoritesProvider extends _i1.Mock implements _i2.FavoritesProvider {
+class MockFavoritesProvider extends _i1.Mock implements _i3.FavoritesProvider {
   MockFavoritesProvider() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  List<_i3.Listing> get favorites =>
+  _i2.UnmodifiableListView<_i4.Listing> get favorites =>
       (super.noSuchMethod(
             Invocation.getter(#favorites),
-            returnValue: <_i3.Listing>[],
+            returnValue: _FakeUnmodifiableListView_0<_i4.Listing>(
+              this,
+              Invocation.getter(#favorites),
+            ),
           )
-          as List<_i3.Listing>);
+          as _i2.UnmodifiableListView<_i4.Listing>);
 
   @override
   bool get isLoading =>
@@ -57,13 +67,13 @@ class MockFavoritesProvider extends _i1.Mock implements _i2.FavoritesProvider {
           as DateTime?);
 
   @override
-  _i4.Future<void> loadFavorites() =>
+  _i5.Future<void> loadFavorites() =>
       (super.noSuchMethod(
             Invocation.method(#loadFavorites, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
   bool isFavorite(String? id) =>
@@ -74,22 +84,22 @@ class MockFavoritesProvider extends _i1.Mock implements _i2.FavoritesProvider {
           as bool);
 
   @override
-  _i4.Future<void> toggleFavorite(_i3.Listing? listing) =>
+  _i5.Future<void> toggleFavorite(_i4.Listing? listing) =>
       (super.noSuchMethod(
             Invocation.method(#toggleFavorite, [listing]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  void addListener(_i5.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i5.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );

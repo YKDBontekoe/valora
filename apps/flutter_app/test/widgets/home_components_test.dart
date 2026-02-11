@@ -15,6 +15,9 @@ class MockFavoritesProvider extends Mock implements FavoritesProvider {
 
   @override
   bool get hasListeners => false;
+
+  @override
+  Future<void> toggleFavorite(Listing listing) async {}
 }
 
 void main() {

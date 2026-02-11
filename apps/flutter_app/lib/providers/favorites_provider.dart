@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/listing.dart';
@@ -11,7 +12,8 @@ class FavoritesProvider extends ChangeNotifier {
   final Map<String, DateTime> _savedAtByListingId = <String, DateTime>{};
   bool _isLoading = true;
 
-  List<Listing> get favorites => _favorites;
+  UnmodifiableListView<Listing> get favorites =>
+      UnmodifiableListView(_favorites);
   bool get isLoading => _isLoading;
   DateTime? savedAtFor(String listingId) => _savedAtByListingId[listingId];
 

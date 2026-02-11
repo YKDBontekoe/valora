@@ -76,7 +76,8 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
 
     return Consumer<FavoritesProvider>(
       builder: (context, favoritesProvider, child) {
-        var listings = favoritesProvider.favorites;
+        // Create a mutable copy for sorting and filtering
+        List<Listing> listings = List.from(favoritesProvider.favorites);
 
         // Filter
         if (_searchQuery.isNotEmpty) {
@@ -88,8 +89,6 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
         }
 
         // Sort
-        // Create a copy to sort
-        listings = List.from(listings);
         switch (_sortOrder) {
           case 'price_asc':
             listings.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));

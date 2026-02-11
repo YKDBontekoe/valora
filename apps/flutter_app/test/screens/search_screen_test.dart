@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -150,7 +151,8 @@ void main() {
     mockPdokService = MockPdokService();
 
     // Default favorites provider behavior
-    when(mockFavoritesProvider.favorites).thenReturn([]);
+    when(mockFavoritesProvider.favorites)
+        .thenReturn(UnmodifiableListView<Listing>([]));
     when(mockFavoritesProvider.isFavorite(any)).thenReturn(false);
 
     // Default PDOK service behavior

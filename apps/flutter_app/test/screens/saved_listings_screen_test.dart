@@ -216,8 +216,21 @@ void main() {
   };
 
   setUp(() {
+    // Use V2 storage format to control savedAt timestamps for deterministic sorting
+    final listing1V2 = {
+      'savedAt': '2023-01-01T10:00:00Z',
+      'listing': listing1,
+    };
+    final listing2V2 = {
+      'savedAt': '2023-01-02T10:00:00Z',
+      'listing': listing2,
+    };
+
     SharedPreferences.setMockInitialValues({
-      'favorite_listings': [json.encode(listing1), json.encode(listing2)],
+      'favorite_listings_v2': [
+        json.encode(listing1V2),
+        json.encode(listing2V2),
+      ],
     });
     HttpOverrides.global = TestHttpOverrides();
   });
