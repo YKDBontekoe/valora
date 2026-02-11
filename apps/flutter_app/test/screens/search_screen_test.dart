@@ -11,8 +11,8 @@ import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
+import 'package:valora_app/widgets/valora_listing_card.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
 
@@ -397,10 +397,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     // Verify first page loaded
-    expect(find.byType(NearbyListingCard), findsWidgets);
+    expect(find.byType(ValoraListingCard), findsWidgets);
 
     // Scroll to bottom
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -2000));
+    // ValoraListingCard is taller, so we need to scroll more to reach the bottom
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -10000));
     await tester.pump();
     await tester.pump(
       const Duration(milliseconds: 100),
@@ -412,6 +413,9 @@ void main() {
 
     // Verify error snackbar
     expect(find.text('Failed to load more items'), findsOneWidget);
+
+    // Wait for SnackBar to disappear to avoid pending timer exception
+    await tester.pump(const Duration(seconds: 5));
   });
 
   testWidgets('SearchScreen clears filters via provider (manual clear call)', (

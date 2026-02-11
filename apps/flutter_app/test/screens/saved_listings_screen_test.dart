@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/saved_listings_screen.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
-import 'package:valora_app/widgets/home_components.dart';
+import 'package:valora_app/widgets/valora_listing_card.dart';
 
 // Reuse HttpOverrides logic
 class TestHttpOverrides extends HttpOverrides {
@@ -304,9 +304,9 @@ void main() {
 
       final finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCard),
       );
-      final cards = tester.widgetList<NearbyListingCard>(finder);
+      final cards = tester.widgetList<ValoraListingCard>(finder);
 
       expect(cards.first.listing.price, 300000.0);
       expect(cards.last.listing.price, 500000.0);
@@ -337,9 +337,9 @@ void main() {
 
       final finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCard),
       );
-      final cards = tester.widgetList<NearbyListingCard>(finder);
+      final cards = tester.widgetList<ValoraListingCard>(finder);
 
       // Default is reversed (LIFO): B Street (added 2nd) should be first
       expect(cards.first.listing.address, 'B Street');
@@ -369,9 +369,9 @@ void main() {
 
       var finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCard),
       );
-      var cards = tester.widgetList<NearbyListingCard>(finder);
+      var cards = tester.widgetList<ValoraListingCard>(finder);
       expect(cards.first.listing.city, 'Amsterdam');
       expect(cards.last.listing.city, 'Rotterdam');
 
@@ -387,9 +387,9 @@ void main() {
 
       finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCard),
       );
-      cards = tester.widgetList<NearbyListingCard>(finder);
+      cards = tester.widgetList<ValoraListingCard>(finder);
       expect(cards.first.listing.city, 'Rotterdam');
       expect(cards.last.listing.city, 'Amsterdam');
     });
@@ -400,23 +400,17 @@ void main() {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      // Use find.byIcon to find the favorite icon
-      final favIcon = find.byIcon(Icons.favorite_rounded);
+      // In ValoraListingCard, the favorite button is an Icon(Icons.favorite) when favored
+      final favIcon = find.byIcon(Icons.favorite);
       if (favIcon.evaluate().isNotEmpty) {
         await tester.tap(favIcon.first);
       } else {
-        // Fallback if icon differs in test env
-        final borderIcon = find.byIcon(Icons.favorite_border_rounded);
-        if (borderIcon.evaluate().isNotEmpty) {
-          await tester.tap(borderIcon.first);
-        } else {
-          // Hard fallback: find ANY icon in the card
-          final firstCard = find.byType(NearbyListingCard).first;
-          final anyIcon = find
-              .descendant(of: firstCard, matching: find.byType(Icon))
-              .first;
-          await tester.tap(anyIcon);
-        }
+        // Fallback: find ANY icon in the card (though usually it should be Icons.favorite)
+        final firstCard = find.byType(ValoraListingCard).first;
+        final anyIcon = find
+            .descendant(of: firstCard, matching: find.byType(Icon))
+            .first;
+        await tester.tap(anyIcon);
       }
 
       await tester.pump(const Duration(seconds: 1)); // Dialog animation
@@ -426,7 +420,7 @@ void main() {
         expect(find.text('Remove Favorite?'), findsOneWidget);
         await tester.tap(find.text('Remove'));
         await tester.pump(const Duration(seconds: 1)); // Animation
-        expect(find.byType(NearbyListingCard), findsOneWidget);
+        expect(find.byType(ValoraListingCard), findsOneWidget);
       }
     });
   });
