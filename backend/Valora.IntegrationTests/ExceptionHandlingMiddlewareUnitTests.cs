@@ -65,7 +65,7 @@ public class ExceptionHandlingMiddlewareUnitTests
 
         Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
         Assert.DoesNotContain("Secret exception", body);
-        Assert.Contains("An error occurred while processing your request", body);
+        Assert.Contains("An unexpected error occurred. Please try again later.", body);
     }
 
     private class MockHostEnvironment : IHostEnvironment
