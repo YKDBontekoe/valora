@@ -118,8 +118,7 @@ public class DependencyInjectionTests
 
         // When requesting IOptions<JwtOptions>, the configuration delegate runs and should throw
         var ex = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<JwtOptions>>().Value);
-        // Note: OptionsValidationException usually wraps the underlying exception or validation errors.
-        // If we throw InvalidOperationException directly in the configure delegate, it might come out as that or wrapped.
-        // Let's inspect.
+
+        Assert.Contains("JWT_SECRET is not configured", ex.Message);
     }
 }

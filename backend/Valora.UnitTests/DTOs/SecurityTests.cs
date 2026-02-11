@@ -36,9 +36,10 @@ public class SecurityTests
     [InlineData("Valid Input", true)]
     // Create a string of 201 chars
     [InlineData("Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quExtra", false)]
-    public void ContextReportRequestDto_Input_Validation_ReturnsExpectedResult(string input, bool expectedValid)
+    public void ContextReportRequestDto_Input_Validation_ReturnsExpectedResult(string? input, bool expectedValid)
     {
-        var dto = new ContextReportRequestDto(input, 1000);
+        // Suppress warning because we are intentionally testing invalid inputs
+        var dto = new ContextReportRequestDto(input!, 1000);
         var context = new ValidationContext(dto);
         var results = new List<ValidationResult>();
 
@@ -66,9 +67,9 @@ public class SecurityTests
     [InlineData(null, false)] // Required
     [InlineData("", false)] // Required
     [InlineData("Valid Prompt", true)]
-    public void AiChatRequest_Prompt_Validation_ReturnsExpectedResult(string prompt, bool expectedValid)
+    public void AiChatRequest_Prompt_Validation_ReturnsExpectedResult(string? prompt, bool expectedValid)
     {
-        var dto = new AiChatRequest { Prompt = prompt };
+        var dto = new AiChatRequest { Prompt = prompt! };
         var context = new ValidationContext(dto);
         var results = new List<ValidationResult>();
 
