@@ -101,6 +101,19 @@ public sealed record AirQualitySnapshotDto(
     DateTimeOffset? MeasuredAtUtc,
     DateTimeOffset RetrievedAtUtc);
 
+public sealed record FoundationRiskDto(
+    string RiskLevel,
+    string SoilType,
+    string? Description,
+    DateTimeOffset RetrievedAtUtc);
+
+public sealed record SolarPotentialDto(
+    string Potential,
+    double? RoofAreaM2,
+    int? InstallablePanels,
+    double? EstimatedGenerationKwh,
+    DateTimeOffset RetrievedAtUtc);
+
 public sealed record ContextMetricDto(
     string Key,
     string Label,
@@ -129,4 +142,3 @@ public sealed record ContextReportDto(
     IReadOnlyDictionary<string, double> CategoryScores,
     IReadOnlyList<SourceAttributionDto> Sources,
     IReadOnlyList<string> Warnings);
-

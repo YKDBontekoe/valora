@@ -19,6 +19,8 @@ public class ContextReportServiceTests
     private readonly Mock<IDemographicsClient> _demographicsClient;
     private readonly Mock<IAmenityClient> _amenityClient;
     private readonly Mock<IAirQualityClient> _airClient;
+    private readonly Mock<IPdokSoilClient> _soilClient;
+    private readonly Mock<IPdokBuildingClient> _buildingClient;
     private readonly Mock<ILogger<ContextReportService>> _logger;
     private readonly IMemoryCache _memoryCache;
 
@@ -30,6 +32,8 @@ public class ContextReportServiceTests
         _demographicsClient = new Mock<IDemographicsClient>();
         _amenityClient = new Mock<IAmenityClient>();
         _airClient = new Mock<IAirQualityClient>();
+        _soilClient = new Mock<IPdokSoilClient>();
+        _buildingClient = new Mock<IPdokBuildingClient>();
         _logger = new Mock<ILogger<ContextReportService>>();
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
     }
@@ -172,6 +176,8 @@ public class ContextReportServiceTests
             _demographicsClient.Object,
             _amenityClient.Object,
             _airClient.Object,
+            _soilClient.Object,
+            _buildingClient.Object,
             _memoryCache,
             Options.Create(new ContextEnrichmentOptions()),
             _logger.Object);

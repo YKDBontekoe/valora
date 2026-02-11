@@ -17,8 +17,10 @@ public sealed class ContextReportService : IContextReportService
     private readonly ICbsNeighborhoodStatsClient _cbsClient;
     private readonly ICbsCrimeStatsClient _crimeClient;
     private readonly IDemographicsClient _demographicsClient;
-    private readonly IAmenityClient _amenityClient;
+        private readonly IAmenityClient _amenityClient;
     private readonly IAirQualityClient _airQualityClient;
+    private readonly IPdokSoilClient _soilClient;
+    private readonly IPdokBuildingClient _buildingClient;
     private readonly IMemoryCache _cache;
     private readonly ContextEnrichmentOptions _options;
     private readonly ILogger<ContextReportService> _logger;
@@ -28,8 +30,10 @@ public sealed class ContextReportService : IContextReportService
         ICbsNeighborhoodStatsClient cbsClient,
         ICbsCrimeStatsClient crimeClient,
         IDemographicsClient demographicsClient,
-        IAmenityClient amenityClient,
+                IAmenityClient amenityClient,
         IAirQualityClient airQualityClient,
+        IPdokSoilClient soilClient,
+        IPdokBuildingClient buildingClient,
         IMemoryCache cache,
         IOptions<ContextEnrichmentOptions> options,
         ILogger<ContextReportService> logger)
@@ -38,8 +42,10 @@ public sealed class ContextReportService : IContextReportService
         _cbsClient = cbsClient;
         _crimeClient = crimeClient;
         _demographicsClient = demographicsClient;
-        _amenityClient = amenityClient;
+                _amenityClient = amenityClient;
         _airQualityClient = airQualityClient;
+        _soilClient = soilClient;
+        _buildingClient = buildingClient;
         _cache = cache;
         _options = options.Value;
         _logger = logger;
@@ -102,14 +108,18 @@ public sealed class ContextReportService : IContextReportService
         var demographicsTask = TryGetSourceAsync("CBS Demographics", token => _demographicsClient.GetDemographicsAsync(location, token), cancellationToken);
         var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, normalizedRadius, token), cancellationToken);
         var airQualityTask = TryGetSourceAsync("Luchtmeetnet", token => _airQualityClient.GetSnapshotAsync(location, token), cancellationToken);
+        var soilTask = TryGetSourceAsync("PDOK Soil", token => _soilClient.GetFoundationRiskAsync(location, token), cancellationToken);
+        var solarTask = TryGetSourceAsync("PDOK Building", token => _buildingClient.GetSolarPotentialAsync(location, token), cancellationToken);
 
-        await Task.WhenAll(cbsTask, crimeTask, demographicsTask, amenitiesTask, airQualityTask);
+        await Task.WhenAll(cbsTask, crimeTask, demographicsTask, amenitiesTask, airQualityTask, soilTask, solarTask);
 
         var cbs = await cbsTask;
         var crime = await crimeTask;
         var demographics = await demographicsTask;
         var amenities = await amenitiesTask;
         var air = await airQualityTask;
+        var soil = await soilTask;
+        var solar = await solarTask;
 
         var warnings = new List<string>();
 
@@ -122,16 +132,16 @@ public sealed class ContextReportService : IContextReportService
         var socialMetrics = BuildSocialMetrics(cbs, warnings);
         var crimeMetrics = BuildCrimeMetrics(crime, warnings);
         var demographicsMetrics = BuildDemographicsMetrics(demographics, warnings);
-        var housingMetrics = BuildHousingMetrics(cbs, warnings); // Phase 2
+        var housingMetrics = BuildHousingMetrics(cbs, soil, warnings); // Phase 2
         var mobilityMetrics = BuildMobilityMetrics(cbs, warnings); // Phase 2
         var amenityMetrics = BuildAmenityMetrics(amenities, cbs, warnings); // Phase 2: CBS Proximity
-        var environmentMetrics = BuildEnvironmentMetrics(air, warnings);
+        var environmentMetrics = BuildEnvironmentMetrics(air, solar, warnings);
 
         // Compute category scores for radar chart
         var categoryScores = ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, housingMetrics, mobilityMetrics, amenityMetrics, environmentMetrics);
         var compositeScore = ComputeCompositeScore(categoryScores);
 
-        var sources = BuildSourceAttributions(cbs, crime, demographics, amenities, air);
+        var sources = BuildSourceAttributions(cbs, crime, demographics, amenities, air, soil, solar);
 
         var report = new ContextReportDto(
             Location: location,
@@ -246,19 +256,27 @@ public sealed class ContextReportService : IContextReportService
         ];
     }
 
-    private static List<ContextMetricDto> BuildHousingMetrics(NeighborhoodStatsDto? cbs, List<string> warnings)
+    private static List<ContextMetricDto> BuildHousingMetrics(NeighborhoodStatsDto? cbs, FoundationRiskDto? soil, List<string> warnings)
     {
-        if (cbs is null) return [];
+        var metrics = new List<ContextMetricDto>();
 
-        return
-        [
-            new("housing_owner", "Owner-Occupied", cbs.PercentageOwnerOccupied, "%", null, "CBS StatLine 85618NED"),
-            new("housing_rental", "Rental Properties", cbs.PercentageRental, "%", null, "CBS StatLine 85618NED"),
-            new("housing_social", "Social Housing", cbs.PercentageSocialHousing, "%", null, "CBS StatLine 85618NED"),
-            new("housing_pre2000", "Built Pre-2000", cbs.PercentagePre2000, "%", null, "CBS StatLine 85618NED"),
-            new("housing_post2000", "Built Post-2000", cbs.PercentagePost2000, "%", null, "CBS StatLine 85618NED"),
-            new("housing_multifamily", "Multi-Family Homes", cbs.PercentageMultiFamily, "%", null, "CBS StatLine 85618NED")
-        ];
+        if (cbs != null)
+        {
+            metrics.Add(new("housing_owner", "Owner-Occupied", cbs.PercentageOwnerOccupied, "%", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("housing_rental", "Rental Properties", cbs.PercentageRental, "%", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("housing_social", "Social Housing", cbs.PercentageSocialHousing, "%", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("housing_pre2000", "Built Pre-2000", cbs.PercentagePre2000, "%", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("housing_post2000", "Built Post-2000", cbs.PercentagePost2000, "%", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("housing_multifamily", "Multi-Family Homes", cbs.PercentageMultiFamily, "%", null, "CBS StatLine 85618NED"));
+        }
+
+        if (soil != null)
+        {
+            metrics.Add(new("foundation_risk", "Foundation Risk", null, soil.RiskLevel, ScoreFoundation(soil.RiskLevel), "PDOK Bodemkaart", soil.Description));
+            metrics.Add(new("soil_type", "Soil Type", null, soil.SoilType, null, "PDOK Bodemkaart"));
+        }
+
+        return metrics;
     }
 
     private static List<ContextMetricDto> BuildMobilityMetrics(NeighborhoodStatsDto? cbs, List<string> warnings)
@@ -307,27 +325,35 @@ public sealed class ContextReportService : IContextReportService
             metrics.Add(new("dist_school", "Dist. to School", cbs.DistanceToSchool, "km", ScoreProximity(cbs.DistanceToSchool, 1.0, 3.0), "CBS StatLine 85618NED"));
             metrics.Add(new("dist_daycare", "Dist. to Daycare", cbs.DistanceToDaycare, "km", null, "CBS StatLine 85618NED"));
             metrics.Add(new("schools_3km", "Schools within 3km", cbs.SchoolsWithin3km, "count", null, "CBS StatLine 85618NED"));
+
         }
 
         return metrics;
     }
 
-    private static List<ContextMetricDto> BuildEnvironmentMetrics(AirQualitySnapshotDto? air, List<string> warnings)
+    private static List<ContextMetricDto> BuildEnvironmentMetrics(AirQualitySnapshotDto? air, SolarPotentialDto? solar, List<string> warnings)
     {
-        if (air is null)
+        var metrics = new List<ContextMetricDto>();
+
+        if (air != null)
         {
-            warnings.Add("Air quality source was unavailable; environment score is partial.");
-            return [];
+            var pm25Score = ScorePm25(air.Pm25);
+            metrics.Add(new("pm25", "PM2.5", air.Pm25, "µg/m³", pm25Score, "Luchtmeetnet Open API"));
+            metrics.Add(new("air_station", "Nearest Station", null, null, null, "Luchtmeetnet Open API", air.StationName));
+            metrics.Add(new("air_station_distance", "Distance to Station", air.StationDistanceMeters, "m", null, "Luchtmeetnet Open API"));
+        }
+        else
+        {
+             warnings.Add("Air quality source was unavailable.");
         }
 
-        var pm25Score = ScorePm25(air.Pm25);
+        if (solar != null)
+        {
+            metrics.Add(new("solar_potential", "Solar Potential", solar.EstimatedGenerationKwh, "kWh/yr", ScoreSolar(solar.Potential), "PDOK 3D BAG", $"Based on {solar.RoofAreaM2}m² roof area"));
+            metrics.Add(new("solar_panels", "Est. Panels", solar.InstallablePanels, "count", null, "PDOK 3D BAG"));
+        }
 
-        return
-        [
-            new("pm25", "PM2.5", air.Pm25, "µg/m³", pm25Score, "Luchtmeetnet Open API"),
-            new("air_station", "Nearest Station", null, null, null, "Luchtmeetnet Open API", air.StationName),
-            new("air_station_distance", "Distance to Station", air.StationDistanceMeters, "m", null, "Luchtmeetnet Open API")
-        ];
+        return metrics;
     }
 
     private static List<SourceAttributionDto> BuildSourceAttributions(
@@ -335,7 +361,9 @@ public sealed class ContextReportService : IContextReportService
         CrimeStatsDto? crime,
         DemographicsDto? demographics,
         AmenityStatsDto? amenities,
-        AirQualitySnapshotDto? air)
+        AirQualitySnapshotDto? air,
+        FoundationRiskDto? soil,
+        SolarPotentialDto? solar)
     {
         var sources = new List<SourceAttributionDto>
         {
@@ -365,6 +393,16 @@ public sealed class ContextReportService : IContextReportService
         if (air is not null)
         {
             sources.Add(new SourceAttributionDto("Luchtmeetnet", "https://api.luchtmeetnet.nl", "Publiek", air.RetrievedAtUtc));
+        }
+
+        if (soil is not null)
+        {
+            sources.Add(new SourceAttributionDto("PDOK BRO Bodemkaart", "https://service.pdok.nl", "CC-BY", soil.RetrievedAtUtc));
+        }
+
+        if (solar is not null)
+        {
+            sources.Add(new SourceAttributionDto("PDOK BAG", "https://service.pdok.nl", "CC-BY", solar.RetrievedAtUtc));
         }
 
         return sources;
@@ -655,5 +693,26 @@ public sealed class ContextReportService : IContextReportService
         if (distanceKm <= optimalKm) return 100;
         if (distanceKm <= acceptableKm) return 70;
         return 40;
+    }
+    private static double? ScoreFoundation(string riskLevel)
+    {
+        return riskLevel.ToLowerInvariant() switch
+        {
+            "low" => 100,
+            "medium" => 60,
+            "high" => 30,
+            _ => null
+        };
+    }
+
+    private static double? ScoreSolar(string potential)
+    {
+        return potential.ToLowerInvariant() switch
+        {
+            "high" => 100,
+            "medium" => 75,
+            "low" => 50,
+            _ => null
+        };
     }
 }

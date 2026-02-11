@@ -17,6 +17,8 @@ public class ContextReportScoringTests
     private readonly Mock<IDemographicsClient> _demographicsClient;
     private readonly Mock<IAmenityClient> _amenityClient;
     private readonly Mock<IAirQualityClient> _airClient;
+    private readonly Mock<IPdokSoilClient> _soilClient;
+    private readonly Mock<IPdokBuildingClient> _buildingClient;
     private readonly Mock<ILogger<ContextReportService>> _logger;
     private readonly IMemoryCache _memoryCache;
     private readonly ResolvedLocationDto _location;
@@ -29,6 +31,8 @@ public class ContextReportScoringTests
         _demographicsClient = new Mock<IDemographicsClient>();
         _amenityClient = new Mock<IAmenityClient>();
         _airClient = new Mock<IAirQualityClient>();
+        _soilClient = new Mock<IPdokSoilClient>();
+        _buildingClient = new Mock<IPdokBuildingClient>();
         _logger = new Mock<ILogger<ContextReportService>>();
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _location = CreateLocation();
@@ -50,6 +54,10 @@ public class ContextReportScoringTests
             .ReturnsAsync((AmenityStatsDto?)null);
         _airClient.Setup(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AirQualitySnapshotDto?)null);
+        _soilClient.Setup(x => x.GetFoundationRiskAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((FoundationRiskDto?)null);
+        _buildingClient.Setup(x => x.GetSolarPotentialAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SolarPotentialDto?)null);
     }
 
     [Theory]
@@ -191,6 +199,41 @@ public class ContextReportScoringTests
         var metric = report.EnvironmentMetrics.Single(m => m.Key == "pm25");
         Assert.Equal(expectedScore, metric.Score);
     }
+    [Theory]
+    [InlineData("Low", 100)]
+    [InlineData("Medium", 60)]
+    [InlineData("High", 30)]
+    public async Task ScoreFoundation_ReturnsCorrectScore(string risk, double expectedScore)
+    {
+        SetupDefaults(_location);
+
+        _soilClient.Setup(x => x.GetFoundationRiskAsync(_location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FoundationRiskDto(risk, "Sand", "Desc", DateTimeOffset.UtcNow));
+
+        var service = CreateService();
+        var report = await service.BuildAsync(new ContextReportRequestDto("test"));
+
+        var metric = report.HousingMetrics.Single(m => m.Key == "foundation_risk");
+        Assert.Equal(expectedScore, metric.Score);
+    }
+
+    [Theory]
+    [InlineData("High", 100)]
+    [InlineData("Medium", 75)]
+    [InlineData("Low", 50)]
+    public async Task ScoreSolar_ReturnsCorrectScore(string potential, double expectedScore)
+    {
+        SetupDefaults(_location);
+
+        _buildingClient.Setup(x => x.GetSolarPotentialAsync(_location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SolarPotentialDto(potential, 50, 10, 3000, DateTimeOffset.UtcNow));
+
+        var service = CreateService();
+        var report = await service.BuildAsync(new ContextReportRequestDto("test"));
+
+        var metric = report.EnvironmentMetrics.Single(m => m.Key == "solar_potential");
+        Assert.Equal(expectedScore, metric.Score);
+    }
 
     private ContextReportService CreateService()
     {
@@ -201,6 +244,8 @@ public class ContextReportScoringTests
             _demographicsClient.Object,
             _amenityClient.Object,
             _airClient.Object,
+            _soilClient.Object,
+            _buildingClient.Object,
             _memoryCache,
             Options.Create(new ContextEnrichmentOptions()),
             _logger.Object);

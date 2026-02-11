@@ -117,7 +117,6 @@ public static class DependencyInjection
 
         services.AddHttpClient<IWozValuationService, WozValuationService>(client =>
         {
-            // WOZ-waardeloket can be slow
             client.Timeout = TimeSpan.FromSeconds(15);
         })
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
@@ -131,6 +130,25 @@ public static class DependencyInjection
             options.Retry.BackoffType = DelayBackoffType.Constant;
         });
 
+        services.AddHttpClient<IPdokSoilClient, PdokSoilClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
+
+        services.AddHttpClient<IPdokBuildingClient, PdokBuildingClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.BackoffType = DelayBackoffType.Constant;
+        });
 
         return services;
     }
