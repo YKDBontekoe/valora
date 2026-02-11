@@ -72,7 +72,9 @@ public sealed class ContextReportService : IContextReportService
             throw new ValidationException(new[] { "Input is required." });
         }
 
-        // Radius is clamped to prevent excessive load on Overpass/external APIs
+        // Radius is clamped to prevent excessive load on Overpass/external APIs.
+        // Queries > 5km can cause timeouts or massive memory usage in the Overpass client.
+        // Minimum 200m ensures we have a meaningful neighborhood scope.
         var normalizedRadius = Math.Clamp(request.RadiusMeters, 200, 5000);
 
         // 1. Resolve Location First
@@ -86,7 +88,9 @@ public sealed class ContextReportService : IContextReportService
 
         // 2. Check Report Cache using stable location key
         // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
-        // This ensures "Damrak 1" and "Damrak 1 Amsterdam" share the same report if they resolve to the same point.
+        // Using 5 decimal places (F5) gives precision to ~1 meter.
+        // This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
+        // if they resolve to the same coordinate, preventing duplicate expensive API calls.
         var latKey = location.Latitude.ToString("F5");
         var lonKey = location.Longitude.ToString("F5");
         var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
@@ -256,6 +260,15 @@ public sealed class ContextReportService : IContextReportService
         return scores;
     }
 
+    /// <summary>
+    /// Calculates the final 0-100 "Valora Score" based on weighted category scores.
+    /// </summary>
+    /// <remarks>
+    /// Weights are determined heuristically based on general resident priorities:
+    /// - Amenities (25%) and Safety (20%) are the strongest drivers for location desirability.
+    /// - Social (20%) reflects the neighborhood vibe and stability.
+    /// - Environment, Demographics, and Housing have lower weights as they are often secondary or highly subjective factors.
+    /// </remarks>
     private static double ComputeCompositeScore(IReadOnlyDictionary<string, double> categoryScores)
     {
         if (categoryScores.Count == 0)

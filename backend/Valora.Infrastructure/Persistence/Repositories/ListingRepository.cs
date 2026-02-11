@@ -18,6 +18,9 @@ public class ListingRepository : IListingRepository
 
     public async Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
+        // AsNoTracking() is used for read-only queries.
+        // It bypasses the ChangeTracker, significantly reducing memory usage and CPU time
+        // when fetching large datasets where no updates will be performed in the same context scope.
         var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
@@ -25,7 +28,8 @@ public class ListingRepository : IListingRepository
 
         // Optimization: Projection to DTO
         // We project directly to the DTO in the database query.
-        // This prevents fetching unnecessary columns and avoids the overhead of change tracking.
+        // This prevents fetching unnecessary columns (reducing payload size)
+        // and ensures only the required data travels over the wire from the database.
         var dtoQuery = query.Select(l => new ListingDto(
             l.Id,
             l.FundaId,
@@ -102,6 +106,14 @@ public class ListingRepository : IListingRepository
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
 
+    /// <summary>
+    /// Applies dynamic filtering based on the provided criteria.
+    /// </summary>
+    /// <remarks>
+    /// This method builds the IQueryable expression tree step-by-step.
+    /// The database provider (EF Core) translates this into a single optimized SQL WHERE clause.
+    /// Helper methods like ApplySearchFilter handle provider-specific logic (e.g., ILIKE for Postgres vs LIKE for SQL Server).
+    /// </remarks>
     private IQueryable<Listing> ApplyFilters(IQueryable<Listing> query, ListingFilterDto filter, bool isPostgres)
     {
         query = query.ApplySearchFilter(filter, isPostgres);

@@ -11,10 +11,25 @@ The app accepts a listing link or plain address as input, resolves it to a locat
 - Enrichment: public API connectors queried on demand
 - Output: explainable context report (social, amenities, environment, accessibility-ready)
 
+## Key Concepts
+
+Valora operates with two primary data workflows:
+
+1.  **On-Demand Reports (`POST /api/context/report`)**:
+    -   Ephemeral, generated on the fly.
+    -   Used when a user types an arbitrary address.
+    -   Results are cached in memory (`IMemoryCache`) but not persisted to the database.
+
+2.  **Listing Enrichment (`POST /api/listings/{id}/enrich`)**:
+    -   Persistent enhancement of an existing `Listing` entity.
+    -   Calculates scores and saves the full context report into the database (PostgreSQL JSONB).
+    -   Enables advanced filtering (e.g., "Sort by Safety Score").
+
 ## Documentation
 
 - **[Onboarding Guide](docs/onboarding.md)**: Get started in 10 minutes.
-- **[Data Flow Deep Dive](docs/onboarding-data-flow.md)**: Understand how a request becomes a report.
+- **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Understand how a request becomes a report.
+- **[Data Flow: Enrichment & Persistence](docs/data-flow-enrichment.md)**: Learn how listings are enriched and stored.
 - **[Developer Guide](docs/developer-guide.md)**: Architecture, testing, and coding standards.
 - **[User Guide](docs/user-guide.md)**: How to use the application.
 
