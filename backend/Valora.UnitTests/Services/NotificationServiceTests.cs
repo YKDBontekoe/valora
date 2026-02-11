@@ -5,7 +5,8 @@ using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Valora.Infrastructure.Services;
+using Valora.Application.Services;
+using Valora.Infrastructure.Persistence.Repositories;
 using Xunit;
 
 namespace Valora.UnitTests.Services;
@@ -24,7 +25,9 @@ public class NotificationServiceTests
 
         _context = new ValoraDbContext(options);
         _mockLogger = new Mock<ILogger<NotificationService>>();
-        _service = new NotificationService(_context, _mockLogger.Object);
+
+        var repository = new NotificationRepository(_context);
+        _service = new NotificationService(repository, _mockLogger.Object);
     }
 
     [Fact]

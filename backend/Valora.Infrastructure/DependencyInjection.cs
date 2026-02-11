@@ -36,6 +36,7 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         // Services
         services.AddSingleton(TimeProvider.System);
@@ -43,7 +44,6 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
-        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
         services.AddScoped<IMapService, MapService>();
         
