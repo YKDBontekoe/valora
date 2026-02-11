@@ -8,15 +8,16 @@ import '../../core/theme/valora_typography.dart';
 import '../../models/listing.dart';
 import '../../providers/favorites_provider.dart';
 import '../valora_widgets.dart';
-import '../../screens/gallery/full_screen_gallery.dart';
 
 class ListingSliverAppBar extends StatelessWidget {
   const ListingSliverAppBar({
     super.key,
     required this.listing,
+    this.onImageTap,
   });
 
   final Listing listing;
+  final ValueChanged<int>? onImageTap;
 
   @override
   Widget build(BuildContext context) {
@@ -63,16 +64,7 @@ class ListingSliverAppBar extends StatelessWidget {
                 itemCount: images.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => FullScreenGallery(
-                            imageUrls: images,
-                            initialIndex: index,
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: () => onImageTap?.call(index),
                     child: CachedNetworkImage(
                       imageUrl: images[index],
                       fit: BoxFit.cover,

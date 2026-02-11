@@ -17,6 +17,7 @@ import '../widgets/listing_detail/listing_specs.dart';
 import '../widgets/listing_detail/listing_features.dart';
 import '../widgets/listing_detail/listing_technical_details.dart';
 import '../widgets/listing_detail/listing_broker_card.dart';
+import 'gallery/full_screen_gallery.dart';
 
 class ListingDetailScreen extends StatelessWidget {
   const ListingDetailScreen({super.key, required this.listing});
@@ -133,12 +134,29 @@ class ListingDetailScreen extends StatelessWidget {
         ? ContextReport.fromJson(listing.contextReport!)
         : null;
 
+    // Use imageUrls if available, otherwise fallback to single imageUrl, otherwise empty list
+    final images = listing.imageUrls.isNotEmpty
+        ? listing.imageUrls
+        : (listing.imageUrl != null ? [listing.imageUrl!] : <String>[]);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          ListingSliverAppBar(listing: listing),
+          ListingSliverAppBar(
+            listing: listing,
+            onImageTap: (index) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => FullScreenGallery(
+                    imageUrls: images,
+                    initialIndex: index,
+                  ),
+                ),
+              );
+            },
+          ),
           SliverToBoxAdapter(
             child: ValoraGlassContainer(
               margin: const EdgeInsets.all(ValoraSpacing.md),
