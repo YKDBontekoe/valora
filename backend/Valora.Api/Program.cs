@@ -265,10 +265,9 @@ api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService
 /// </summary>
 api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
+    var dto = await repo.GetDetailAsync(id, ct);
+    if (dto is null) return Results.NotFound();
     
-    var dto = ListingMapper.ToDto(listing);
     return Results.Ok(dto);
 }).RequireAuthorization();
 
