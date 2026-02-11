@@ -380,6 +380,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   city: p.city,
                   minBedrooms: p.minBedrooms,
                   minLivingArea: p.minLivingArea,
+                  maxLivingArea: p.maxLivingArea,
                   minCompositeScore: p.minCompositeScore,
                   minSafetyScore: p.minSafetyScore,
                   sortBy: p.sortBy,
@@ -932,6 +933,7 @@ class _SearchAppBarState {
   final String? city;
   final int? minBedrooms;
   final int? minLivingArea;
+  final int? maxLivingArea;
   final double? minCompositeScore;
   final double? minSafetyScore;
   final String? sortBy;
@@ -944,6 +946,7 @@ class _SearchAppBarState {
     this.city,
     this.minBedrooms,
     this.minLivingArea,
+    this.maxLivingArea,
     this.minCompositeScore,
     this.minSafetyScore,
     this.sortBy,
@@ -961,6 +964,7 @@ class _SearchAppBarState {
           city == other.city &&
           minBedrooms == other.minBedrooms &&
           minLivingArea == other.minLivingArea &&
+          maxLivingArea == other.maxLivingArea &&
           minCompositeScore == other.minCompositeScore &&
           minSafetyScore == other.minSafetyScore &&
           sortBy == other.sortBy &&
@@ -974,6 +978,7 @@ class _SearchAppBarState {
       city.hashCode ^
       minBedrooms.hashCode ^
       minLivingArea.hashCode ^
+      maxLivingArea.hashCode ^
       minCompositeScore.hashCode ^
       minSafetyScore.hashCode ^
       sortBy.hashCode ^
