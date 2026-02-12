@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
@@ -81,7 +79,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case NotificationType.system:
         return Icons.info_outline_rounded;
       case NotificationType.info:
-      default:
         return Icons.notifications_none_rounded;
     }
   }
@@ -95,7 +92,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case NotificationType.system:
         return isDark ? ValoraColors.neutral400 : ValoraColors.neutral600;
       case NotificationType.info:
-      default:
         return isDark ? ValoraColors.neutral400 : ValoraColors.neutral600;
     }
   }
@@ -191,9 +187,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           }
 
                           final notification = provider.notifications[index];
-                          // We need to build the dismissible item properly.
-                          // It seems I was trying to return a Dismissible inside _buildNotificationItem
-                          // Wait, _buildNotificationItem is a separate function, let's extract logic.
                           return _NotificationItem(
                             key: Key(notification.id),
                             notification: notification,
