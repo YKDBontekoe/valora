@@ -281,7 +281,9 @@ class _SearchScreenState extends State<SearchScreen> {
     else {
       if (suggestion.type == 'woonplaats') {
         _searchProvider!.setCity(suggestion.displayName);
+        _searchController.removeListener(_onSearchChanged);
         _searchController.clear();
+        _searchController.addListener(_onSearchChanged);
       } else {
         _searchProvider!.setQuery(suggestion.displayName);
       }

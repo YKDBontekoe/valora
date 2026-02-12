@@ -86,12 +86,25 @@ void main() {
     when(mockProvider.sortBy).thenReturn('price');
     when(mockProvider.sortOrder).thenReturn('asc');
 
-    await tester.pumpWidget(buildWidget());
+    bool sortTapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ActiveFiltersList(
+            provider: mockProvider,
+            onFilterTap: () {},
+            onSortTap: () => sortTapped = true,
+          ),
+        ),
+      ),
+    );
 
     expect(find.text('Price: Low to High'), findsOneWidget);
 
     await tester.tap(find.text('Price: Low to High'));
     await tester.pumpAndSettle(); // Wait for ink splash/animations
+
+    expect(sortTapped, isTrue);
   });
 
   testWidgets('ActiveFiltersList clear all button works', (tester) async {
