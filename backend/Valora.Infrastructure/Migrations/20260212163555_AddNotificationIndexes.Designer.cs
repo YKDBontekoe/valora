@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Valora.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    partial class ValoraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212163555_AddNotificationIndexes")]
+    partial class AddNotificationIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -538,6 +541,12 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("character varying(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsRead");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("UserId", "CreatedAt");
 

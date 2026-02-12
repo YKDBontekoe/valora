@@ -176,11 +176,11 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => e.IsRead);
-            entity.HasIndex(e => e.CreatedAt);
+            // Single column indexes on UserId and IsRead are redundant because they are covered by the composite indexes below.
+            // CreatedAt might be useful for global date queries, but we primarily query by UserId.
+            // entity.HasIndex(e => e.CreatedAt);
 
-            // Composite indexes for efficient sorting and filtering
+            // Composite indexes for efficient sorting and filtering by user
             entity.HasIndex(e => new { e.UserId, e.CreatedAt });
             entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
 
