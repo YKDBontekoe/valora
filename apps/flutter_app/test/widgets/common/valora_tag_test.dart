@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/widgets/common/valora_tag.dart';
-import 'package:valora_app/core/theme/valora_colors.dart';
-import 'package:valora_app/core/theme/valora_spacing.dart';
 
 void main() {
   group('ValoraTag', () {
