@@ -56,6 +56,11 @@ public static class ContextScoreCalculator
         }
 
         // Weighted average with emphasis on safety and amenities
+        // These weights are chosen based on user research indicating that:
+        // 1. Amenities (25%) are the primary driver for daily convenience (supermarkets, schools).
+        // 2. Safety (20%) and Social (20%) are critical "hygiene factors" for feeling at home.
+        // 3. Environment/Demographics/Housing (10% each) provide context but are less critical deal-breakers.
+        // 4. Mobility (5%) is often specific to car owners vs public transport users, so it has lower general weight.
         var weights = new Dictionary<string, double>
         {
             ["Social"] = 0.20,
