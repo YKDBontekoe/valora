@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -7,7 +6,7 @@ using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
-using Valora.Infrastructure.Enrichment;
+using Valora.Application.Services;
 
 namespace Valora.UnitTests.Services;
 
@@ -19,7 +18,7 @@ public class ContextReportServiceTests
     private readonly Mock<IAmenityClient> _amenityClient;
     private readonly Mock<IAirQualityClient> _airClient;
     private readonly Mock<ILogger<ContextReportService>> _logger;
-    private readonly IMemoryCache _memoryCache;
+    private readonly Mock<ICacheService> _cacheService;
 
     public ContextReportServiceTests()
     {
@@ -29,7 +28,7 @@ public class ContextReportServiceTests
         _amenityClient = new Mock<IAmenityClient>();
         _airClient = new Mock<IAirQualityClient>();
         _logger = new Mock<ILogger<ContextReportService>>();
-        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        _cacheService = new Mock<ICacheService>();
     }
 
     [Fact]
@@ -161,7 +160,7 @@ public class ContextReportServiceTests
             _crimeClient.Object,
             _amenityClient.Object,
             _airClient.Object,
-            _memoryCache,
+            _cacheService.Object,
             Options.Create(new ContextEnrichmentOptions()),
             _logger.Object);
     }

@@ -6,6 +6,7 @@ using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Enrichment;
+using Valora.Infrastructure.Services;
 
 namespace Valora.UnitTests.Infrastructure;
 
@@ -65,7 +66,7 @@ public class DependencyInjectionTests
 
         var provider = services.BuildServiceProvider();
 
-        Assert.IsType<ContextReportService>(provider.GetRequiredService<IContextReportService>());
+        Assert.IsType<CacheService>(provider.GetRequiredService<ICacheService>());
         Assert.IsType<PdokLocationResolver>(provider.GetRequiredService<ILocationResolver>());
         Assert.IsType<CbsNeighborhoodStatsClient>(provider.GetRequiredService<ICbsNeighborhoodStatsClient>());
         Assert.IsType<OverpassAmenityClient>(provider.GetRequiredService<IAmenityClient>());

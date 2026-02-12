@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Exceptions;
@@ -7,7 +6,7 @@ using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Application.Enrichment.Builders;
 
-namespace Valora.Infrastructure.Enrichment;
+namespace Valora.Application.Services;
 
 /// <summary>
 /// Orchestrates the generation of context reports by aggregating data from multiple external sources.
@@ -19,7 +18,7 @@ public sealed class ContextReportService : IContextReportService
     private readonly ICbsCrimeStatsClient _crimeClient;
     private readonly IAmenityClient _amenityClient;
     private readonly IAirQualityClient _airQualityClient;
-    private readonly IMemoryCache _cache;
+    private readonly ICacheService _cache;
     private readonly ContextEnrichmentOptions _options;
     private readonly ILogger<ContextReportService> _logger;
 
@@ -29,7 +28,7 @@ public sealed class ContextReportService : IContextReportService
         ICbsCrimeStatsClient crimeClient,
         IAmenityClient amenityClient,
         IAirQualityClient airQualityClient,
-        IMemoryCache cache,
+        ICacheService cache,
         IOptions<ContextEnrichmentOptions> options,
         ILogger<ContextReportService> logger)
     {
