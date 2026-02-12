@@ -371,7 +371,7 @@ class _SearchScreenState extends State<SearchScreen> {
         builder: (context, provider, _) {
           return Scaffold(
             body: RefreshIndicator(
-              onRefresh: provider.refresh,
+              onRefresh: () => provider.refresh(clearData: false),
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 controller: _scrollController,

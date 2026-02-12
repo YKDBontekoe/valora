@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../providers/insights_provider.dart';
 import '../../models/map_city_insight.dart';
+import '../../widgets/valora_widgets.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -31,7 +32,17 @@ class _InsightsScreenState extends State<InsightsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (provider.error != null && provider.cities.isEmpty) {
-            return Center(child: Text('Error: ${provider.error}'));
+            return Center(
+              child: ValoraEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Failed to load insights',
+                subtitle: provider.error,
+                action: ValoraButton(
+                  label: 'Retry',
+                  onPressed: provider.loadInsights,
+                ),
+              ),
+            );
           }
 
           return Stack(
