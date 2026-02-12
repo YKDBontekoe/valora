@@ -219,6 +219,28 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_ArgumentException_ReturnsBadRequest()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new ArgumentException("Invalid arg"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("Invalid arg", body);
+    }
+
+    [Fact]
     public async Task InvokeAsync_HttpRequestException_ReturnsServiceUnavailable()
     {
         // Arrange
@@ -235,6 +257,9 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("An external dependency is currently unavailable", body);
     }
 
     [Fact]
@@ -292,5 +317,8 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal((int)HttpStatusCode.BadGateway, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("An external service returned an invalid or unexpected response format", body);
     }
 }

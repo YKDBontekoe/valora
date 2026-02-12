@@ -178,4 +178,61 @@ void main() {
     expect(provider.sortBy, isNull);
     expect(provider.sortOrder, isNull);
   });
+
+  test('refresh(clearData: false) keeps existing listings during load', () async {
+    final MockClient client = MockClient((request) async {
+      final String searchTerm = request.url.queryParameters['searchTerm'] ?? '';
+
+      // Simulate network delay
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      if (searchTerm == 'initial') {
+        return _listingResponse(
+          items: <Map<String, dynamic>>[
+            _listing(id: '1', address: 'Initial Result'),
+          ],
+          hasNextPage: false,
+        );
+      }
+
+      return _listingResponse(
+        items: <Map<String, dynamic>>[
+          _listing(id: '2', address: 'Refreshed Result'),
+        ],
+        hasNextPage: false,
+      );
+    });
+
+    final ApiService apiService = ApiService(
+      client: client,
+      runner: syncRunner,
+      retryOptions: const RetryOptions(maxAttempts: 1),
+    );
+
+    final SearchListingsProvider provider = SearchListingsProvider(
+      apiService: apiService,
+    );
+
+    // Initial load
+    provider.setQuery('initial');
+    await provider.refresh();
+    expect(provider.listings, hasLength(1));
+    expect(provider.listings.first.address, 'Initial Result');
+
+    // Trigger refresh without clearing data
+    provider.setQuery('refreshed');
+    final Future<void> refreshFuture = provider.refresh(clearData: false);
+
+    // Verify listings are still present while loading
+    expect(provider.isLoading, true);
+    expect(provider.listings, hasLength(1));
+    expect(provider.listings.first.address, 'Initial Result');
+
+    await refreshFuture;
+
+    // Verify final state
+    expect(provider.isLoading, false);
+    expect(provider.listings, hasLength(1));
+    expect(provider.listings.first.address, 'Refreshed Result');
+  });
 }
