@@ -7,6 +7,7 @@ public class AiChatRequest
     [Required(ErrorMessage = "Prompt is required.")]
     [StringLength(2000)]
     [MinLength(1, ErrorMessage = "Prompt cannot be empty.")]
+    [RegularExpression(@".*\S.*", ErrorMessage = "Prompt must contain at least one non-whitespace character.")]
     public string Prompt { get; set; } = string.Empty;
 
     [StringLength(50)]

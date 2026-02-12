@@ -22,7 +22,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development"); // Ensure tests run in Development mode to avoid strict production checks
+        builder.UseEnvironment("Testing"); // Ensure tests run in Testing mode
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
