@@ -2,162 +2,124 @@
 
 Valora is a public-context intelligence platform for residential locations in the Netherlands.
 
-The app accepts a listing link or plain address as input, resolves it to a location, and generates a context report using public/open APIs (CBS, PDOK, OSM/Overpass, Luchtmeetnet, and others as configured).
+It helps users understand the "vibe" and statistics of a neighborhood by aggregating data from public sources (CBS, PDOK, OpenStreetMap, Luchtmeetnet) into a unified, explainable context report.
 
-## Product Direction
+## 🚀 Start Here
 
-- Input: listing URL or address text
-- Resolution: normalized address + coordinates + admin codes
-- Enrichment: public API connectors queried on demand
-- Output: explainable context report (social, amenities, environment, accessibility-ready)
+> **[Get Started in 10 Minutes](docs/onboarding.md)**: Follow the step-by-step onboarding guide to set up your environment and run the app.
 
-## Key Concepts
+---
 
-Valora operates with two primary data workflows:
+## System Context
 
-1.  **On-Demand Reports (`POST /api/context/report`)**:
-    -   Ephemeral, generated on the fly.
-    -   Used when a user types an arbitrary address.
-    -   Results are cached in memory (Redis/InMemory) but not persisted to the database.
-
-2.  **Listing Enrichment (`POST /api/listings/{id}/enrich`)**:
-    -   Persistent enhancement of an existing `Listing` entity.
-    -   Calculates scores and saves the full context report into the database (PostgreSQL JSONB).
-    -   Enables advanced filtering (e.g., "Sort by Safety Score").
-
-## Documentation
-
-- **[Onboarding Guide](docs/onboarding.md)**: Get started in 10 minutes.
-- **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Understand how a request becomes a report.
-- **[Data Flow: Enrichment & Persistence](docs/data-flow-enrichment.md)**: Learn how listings are enriched and stored.
-- **[Developer Guide](docs/developer-guide.md)**: Architecture, testing, and coding standards.
-- **[User Guide](docs/user-guide.md)**: How to use the application.
-
-## Architecture
-
-Valora follows Clean Architecture principles to separate concerns and maintain testability.
+Valora acts as an intelligent aggregator between the user and Dutch open data ecosystems.
 
 ```mermaid
 graph TD
-    subgraph Frontend [Flutter App]
-        UI[UI Screens]
-        Providers[State Providers]
+    User((User)) -->|Input Address/URL| App[Flutter App]
+    App -->|API Request| Backend[Valora Backend]
+
+    subgraph "External Data Sources"
+        Backend -->|Geocoding| PDOK[PDOK Locatieserver]
+        Backend -->|Demographics/Crime| CBS[CBS StatLine]
+        Backend -->|Amenities| OSM[OpenStreetMap (Overpass)]
+        Backend -->|Air Quality| Air[Luchtmeetnet]
     end
 
-    subgraph Backend [Valora.Api]
-        API[Minimal API Endpoints]
-    end
+    Backend -->|Persist| DB[(PostgreSQL)]
+    Backend -->|Cache| Cache[(Memory/Redis)]
+```
 
-    subgraph Application [Valora.Application]
-        Interfaces[Interfaces]
-        DTOs[DTOs]
-        UseCases[Use Cases]
-    end
+## Key Features
 
-    subgraph Infrastructure [Valora.Infrastructure]
-        Services[Service Implementation]
-        EF[EF Core / DB]
-        ExtClients[External API Clients]
-    end
+-   **Context Reports**: Generate on-demand reports for any Dutch address with scores for Safety, Social, Amenities, and Environment.
+-   **Listing Enrichment**: Enhance real estate listings with persistent context data for advanced filtering.
+-   **Explainable Scoring**: Transparent 0-100 scores derived from raw data (e.g., crime rates, distance to schools).
+-   **Clean Architecture**: Modular, testable backend design separating Domain, Application, and Infrastructure.
+-   **Resilience**: "Fan-out" data fetching ensures partial reports are generated even if one data source is down.
 
-    Frontend --> API
+## Architecture
+
+Valora follows **Clean Architecture** principles to separate concerns and maintain testability.
+
+```mermaid
+classDiagram
+    class Domain {
+        +Entities (Listing, Notification)
+        +Business Rules
+        +No Dependencies
+    }
+    class Application {
+        +Use Cases (GetContextReport)
+        +Interfaces (IContextReportService)
+        +DTOs
+    }
+    class Infrastructure {
+        +External Clients (CbsClient)
+        +Persistence (EfCore)
+        +Implements Interfaces
+    }
+    class API {
+        +Endpoints
+        +Configuration
+        +Dependency Injection
+    }
+
     API --> Application
     Infrastructure --> Application
-    API --> Infrastructure
-    Services --> ExtClients
+    Application --> Domain
+    Infrastructure --> Domain
+    API ..> Infrastructure : DI Wiring Only
 ```
 
 ### Layer Responsibilities
 
-- **Valora.Domain**: Core entities and business rules (e.g., `Listing`, `Report`). No external dependencies.
-- **Valora.Application**: Use case definitions, interfaces (e.g., `IContextReportService`), and DTOs. Defines *what* the system does.
-- **Valora.Infrastructure**: Implementations of interfaces (e.g., `ContextReportService`, EF Core repositories, HTTP clients for CBS/PDOK). Defines *how* it works.
-- **Valora.Api**: Entry point, dependency injection wiring, and HTTP routing.
+-   **Valora.Domain**: Core entities and business rules. The heart of the system.
+-   **Valora.Application**: Defines *what* the system does (Interfaces, Use Cases). Depends only on Domain.
+-   **Valora.Infrastructure**: Defines *how* it works (External APIs, Database). Implements Application interfaces.
+-   **Valora.Api**: The entry point. Wires everything together and handles HTTP requests.
 
-## Project Structure
+## Documentation Index
 
-```
-├── apps/
-│   └── flutter_app/       # Mobile application (Flutter)
-├── backend/
-│   ├── Valora.Api/        # API entry point
-│   ├── Valora.Application/# Core logic & interfaces
-│   ├── Valora.Domain/     # Entities & business rules
-│   └── Valora.Infrastructure/ # Database & external services
-├── docker/                # Docker compose files
-├── docs/                  # Documentation
-└── verification/          # Scripts for verifying changes
-```
+-   **[Onboarding Guide](docs/onboarding.md)**: Setup instructions.
+-   **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Deep dive into the "Fan-Out" process.
+-   **[Data Flow: Enrichment](docs/data-flow-enrichment.md)**: How listings are stored and updated.
+-   **[Developer Guide](docs/developer-guide.md)**: Coding standards, patterns, and testing.
+-   **[User Guide](docs/user-guide.md)**: App features walkthrough.
 
-## Data Sources
-
-Valora aggregates data from several Dutch open data providers:
-
-| Source | Purpose | URL |
-|---|---|---|
-| **PDOK Locatieserver** | Address resolution & geocoding | `api.pdok.nl` |
-| **CBS StatLine** | Neighborhood statistics (income, demographics, crime) | `opendata.cbs.nl` |
-| **OpenStreetMap (Overpass)** | Amenities (shops, schools, parks, transit) | `overpass-api.de` |
-| **Luchtmeetnet** | Air quality (PM2.5) | `api.luchtmeetnet.nl` |
-
-## Setup & Configuration
+## Quick Setup
 
 ### Prerequisites
-- Docker Desktop
-- .NET 10 SDK
-- Flutter SDK
+-   Docker Desktop
+-   .NET 10 SDK
+-   Flutter SDK
 
-### Environment Variables
+### 1. Infrastructure
+```bash
+docker-compose -f docker/docker-compose.yml up -d
+```
 
-Copy `.env.example` to `.env` in `backend/` and `apps/flutter_app/`.
+### 2. Backend
+```bash
+cd backend
+cp .env.example .env  # CRITICAL: Configure JWT_SECRET and DATABASE_URL
+dotnet run --project Valora.Api
+```
 
-#### Backend (`backend/.env`)
-
-| Variable | Description | Required? |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | **Yes** |
-| `JWT_SECRET` | Secret key for signing JWT tokens | **Yes** |
-| `JWT_ISSUER` | Token issuer claim (e.g., `ValoraApi`) | **Yes** |
-| `JWT_AUDIENCE` | Token audience claim (e.g., `ValoraApp`) | **Yes** |
-| `OPENROUTER_API_KEY` | Key for AI Chat features (optional) | No |
-| `CONTEXT_*_CACHE_MINUTES` | Cache duration for external data sources | No (Defaults exist) |
-
-#### Frontend (`apps/flutter_app/.env`)
-
-| Variable | Description | Required? |
-|---|---|---|
-| `API_URL` | URL of the backend API (e.g., `http://localhost:5001/api`) | **Yes** |
-
-### Quick Start
-
-1.  **Infrastructure:** Start the database.
-    ```bash
-    docker-compose -f docker/docker-compose.yml up -d
-    ```
-
-2.  **Backend:** Configure and run the API.
-    ```bash
-    cd backend
-    dotnet run --project Valora.Api
-    ```
-    *Verify:* `curl http://localhost:5001/api/health`
-
-3.  **Frontend:** Configure and run the mobile app.
-    ```bash
-    cd apps/flutter_app
-    flutter pub get
-    flutter run
-    ```
+### 3. Frontend
+```bash
+cd apps/flutter_app
+cp .env.example .env  # CRITICAL: Set API_URL (use 10.0.2.2 for Android Emulator)
+flutter pub get
+flutter run
+```
 
 ## API Reference
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/health` | No | Service + DB connectivity check |
-| `POST` | `/api/auth/register` | No | Register user |
-| `POST` | `/api/auth/login` | No | Login and receive JWT |
-| `POST` | `/api/auth/refresh` | No | Refresh expired access token |
-| `POST` | `/api/context/report` | **Yes** | Generates a context report from an address or Funda URL. |
-| `POST` | `/api/listings/{id}/enrich` | **Yes** | Updates an existing listing entity with fresh context data. |
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/context/report` | **Core:** Generate report from address/URL. |
+| `POST` | `/api/listings/{id}/enrich` | Update listing with context data. |
+| `POST` | `/api/auth/login` | Authenticate user. |
 
-> **Note:** The `/api/context/report` endpoint is the core of the application. It aggregates data from 5+ external sources in parallel using a fan-out pattern.
+See [Developer Guide](docs/developer-guide.md) for full API details.

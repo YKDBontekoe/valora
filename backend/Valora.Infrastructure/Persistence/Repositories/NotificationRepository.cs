@@ -18,6 +18,9 @@ public class NotificationRepository : INotificationRepository
 
     public async Task<List<Notification>> GetByUserIdAsync(string userId, bool unreadOnly, int limit, int offset, CancellationToken cancellationToken = default)
     {
+        // AsNoTracking() is used here because this is a read-only query for the UI.
+        // It avoids the overhead of change tracking in EF Core, resulting in faster performance
+        // and lower memory usage, especially when pagination is involved.
         var query = _context.Notifications
             .AsNoTracking()
             .Where(n => n.UserId == userId);
@@ -78,6 +81,9 @@ public class NotificationRepository : INotificationRepository
 
         if (_context.Database.IsRelational())
         {
+            // ExecuteUpdateAsync performs a bulk update directly in the database (SQL UPDATE).
+            // This is significantly more efficient than fetching all entities into memory,
+            // modifying them, and calling SaveChanges(), especially for users with many notifications.
             await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .ExecuteUpdateAsync(s => s
