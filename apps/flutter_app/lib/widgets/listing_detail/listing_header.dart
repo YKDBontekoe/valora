@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/valora_colors.dart';
+import '../../core/utils/listing_utils.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../models/listing.dart';
@@ -36,22 +36,10 @@ class ListingHeader extends StatelessWidget {
           const SizedBox(width: ValoraSpacing.md),
           ValoraBadge(
             label: listing.status!.toUpperCase(),
-            color: _getStatusColor(listing.status!),
+            color: ListingUtils.getStatusColor(listing.status!),
           ),
         ],
       ],
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'new':
-        return ValoraColors.newBadge;
-      case 'sold':
-      case 'under offer':
-        return ValoraColors.soldBadge;
-      default:
-        return ValoraColors.primary;
-    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../core/utils/listing_utils.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
@@ -57,7 +58,7 @@ class ValoraListingCard extends StatelessWidget {
                   left: ValoraSpacing.sm,
                   child: ValoraBadge(
                     label: listing.status!.toUpperCase(),
-                    color: _getStatusColor(listing.status!),
+                    color: ListingUtils.getStatusColor(listing.status!),
                   ),
                 ),
               Positioned(
@@ -74,7 +75,7 @@ class ValoraListingCard extends StatelessWidget {
                   right: ValoraSpacing.sm,
                   child: ValoraBadge(
                     label: listing.contextCompositeScore!.toStringAsFixed(1),
-                    color: _getScoreColor(listing.contextCompositeScore!),
+                    color: ListingUtils.getScoreColor(listing.contextCompositeScore!),
                     icon: Icons.insights,
                   ),
                 ),
@@ -125,25 +126,6 @@ class ValoraListingCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'new':
-        return ValoraColors.newBadge;
-      case 'sold':
-      case 'under offer':
-        return ValoraColors.soldBadge;
-      default:
-        return ValoraColors.primary;
-    }
-  }
-
-  Color _getScoreColor(double score) {
-    if (score >= 8.0) return ValoraColors.success;
-    if (score >= 6.0) return ValoraColors.primary;
-    if (score >= 4.0) return ValoraColors.warning;
-    return ValoraColors.error;
   }
 }
 
