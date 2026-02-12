@@ -15,6 +15,10 @@ void main() {
   setUp(() {
     mockApiService = MockApiService();
     notificationService = NotificationService(mockApiService);
+
+    // Default mock for unread count
+    when(mockApiService.getUnreadNotificationCount())
+        .thenAnswer((_) async => 0);
   });
 
   group('NotificationService', () {
@@ -32,10 +36,13 @@ void main() {
 
       when(mockApiService.getNotifications(limit: 20, offset: 0))
           .thenAnswer((_) async => notifications);
+      when(mockApiService.getUnreadNotificationCount())
+          .thenAnswer((_) async => 5);
 
       await notificationService.fetchNotifications();
 
       expect(notificationService.notifications, equals(notifications));
+      expect(notificationService.unreadCount, 5);
       expect(notificationService.isLoading, isFalse);
       expect(notificationService.error, isNull);
     });

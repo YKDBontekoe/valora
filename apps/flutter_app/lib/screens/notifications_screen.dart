@@ -43,8 +43,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
         !provider.isLoadingMore &&
-        provider.hasMore &&
-        provider.error == null) {
+        provider.hasMore) {
+      // We allow loadMore even if there was a previous error,
+      // as loadMoreNotifications clears the error on start.
       provider.loadMoreNotifications();
     }
   }
@@ -148,14 +149,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
-                      child: ValoraEmptyState(
-                        icon: Icons.error_outline_rounded,
-                        title: 'Something went wrong',
-                        subtitle: provider.error ?? 'Unknown error',
-                        action: ValoraButton(
-                          label: 'Retry',
-                          onPressed: _handleRefresh,
-                        ),
+                      child: Builder(
+                        builder: (context) {
+                          // Log the actual error for debugging
+                          debugPrint('Notification Error: ${provider.error}');
+                          return ValoraEmptyState(
+                            icon: Icons.error_outline_rounded,
+                            title: 'Something went wrong',
+                            subtitle: 'We couldn\'t load your notifications. Please try again.',
+                            action: ValoraButton(
+                              label: 'Retry',
+                              onPressed: _handleRefresh,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   )
