@@ -23,9 +23,8 @@ public class NotificationService : INotificationService
 
     public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, int offset = 0)
     {
-        // Validation for limit and offset
-        if (limit <= 0) limit = 50;
-        if (offset < 0) offset = 0;
+        limit = limit <= 0 ? 50 : limit;
+        offset = offset < 0 ? 0 : offset;
 
         var notifications = await _repository.GetByUserIdAsync(userId, unreadOnly, limit, offset);
         return notifications.Select(NotificationDto.FromEntity).ToList();
