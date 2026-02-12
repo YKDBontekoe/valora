@@ -178,4 +178,44 @@ void main() {
     expect(provider.sortBy, isNull);
     expect(provider.sortOrder, isNull);
   });
+
+  test('caches listings using UnmodifiableListView to prevent unnecessary rebuilds', () async {
+    final MockClient client = MockClient((request) async {
+      return _listingResponse(items: <Map<String, dynamic>>[
+        _listing(id: '1', address: 'Cached Search Result')
+      ], hasNextPage: false);
+    });
+
+    final ApiService apiService = ApiService(
+      client: client,
+      runner: syncRunner,
+      retryOptions: const RetryOptions(maxAttempts: 1),
+    );
+
+    final SearchListingsProvider provider = SearchListingsProvider(
+      apiService: apiService,
+    );
+
+    // Initial search
+    provider.setQuery('cache');
+    await provider.refresh();
+
+    // First access
+    final list1 = provider.listings;
+    expect(list1, hasLength(1));
+    expect(list1.first.address, 'Cached Search Result');
+
+    // Second access - should be same instance (identity equality)
+    final list2 = provider.listings;
+    expect(list2, same(list1));
+
+    // Refresh - should invalidate cache
+    await provider.refresh();
+    final list3 = provider.listings;
+
+    // Content is same, but instance should be new because cache was cleared on refresh
+    expect(list3, hasLength(1));
+    expect(list3.first.address, 'Cached Search Result');
+    expect(list3, isNot(same(list1)));
+  });
 }
