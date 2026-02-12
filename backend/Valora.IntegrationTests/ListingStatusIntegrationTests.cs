@@ -46,12 +46,13 @@ public class ListingStatusIntegrationTests : IClassFixture<TestcontainersDatabas
 
     private async Task AuthenticateAsync(string email = "status_test@example.com", string password = "Password123!")
     {
-        await Client.PostAsJsonAsync("/api/auth/register", new
+        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new
         {
             Email = email,
             Password = password,
             ConfirmPassword = password
         });
+        registerResponse.EnsureSuccessStatusCode();
 
         var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new
         {
@@ -129,8 +130,6 @@ public class ListingStatusIntegrationTests : IClassFixture<TestcontainersDatabas
         Assert.NotNull(result);
         Assert.NotNull(result.Items);
 
-        // This assertion currently FAILS because the API returns all listings
-        // After the fix, it should PASS
         Assert.Single(result.Items);
         Assert.Equal("Active1", result.Items.First().FundaId);
     }
