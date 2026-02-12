@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,12 +28,15 @@ public static class DependencyInjection
         var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
 
         services.AddDbContext<ValoraDbContext>(options =>
+        {
             options.UseNpgsql(
                 connectionString,
                 npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorCodesToAdd: null)));
+                    errorCodesToAdd: null));
+            options.ConfigureWarnings(w => w.Log(RelationalEventId.PendingModelChangesWarning));
+        });
 
         // Repositories
         services.AddScoped<IListingRepository, ListingRepository>();
