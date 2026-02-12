@@ -22,10 +22,13 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing"); // Ensure tests run in Testing mode
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
+                { "AllowedOrigins:0", "http://localhost" },
                 { "DATABASE_URL", _connectionString },
                 { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
                 { "JWT_ISSUER", "ValoraTest" },

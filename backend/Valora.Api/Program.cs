@@ -105,7 +105,21 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+
+        if (allowedOrigins is null || allowedOrigins.Length == 0)
+        {
+            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+            {
+                allowedOrigins = ["http://localhost:3000"];
+            }
+            else
+            {
+                throw new InvalidOperationException("AllowedOrigins must be configured in production.");
+            }
+        }
+
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -267,14 +281,11 @@ api.MapPost("/context/report", async (
     IContextReportService contextReportService,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Input))
-    {
-        throw new ValidationException(new[] { "Input is required" });
-    }
-
     var report = await contextReportService.BuildAsync(request, ct);
     return Results.Ok(report);
-}).RequireAuthorization();
+})
+.RequireAuthorization()
+.AddEndpointFilter<Valora.Api.Filters.ValidationFilter<ContextReportRequestDto>>();
 
 api.MapPost("/listings/{id:guid}/enrich", async (
     Guid id,

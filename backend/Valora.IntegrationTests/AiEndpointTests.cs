@@ -61,9 +61,9 @@ public class AiEndpointTests
     {
         // Arrange
         await AuthenticateAsync();
-        var request = new AiChatRequest { Prompt = "Hello", Model = "gpt-4" };
+        var request = new AiChatRequest { Prompt = "Hello", Model = "openai/gpt-4o" };
         _mockAiService
-            .Setup(x => x.ChatAsync("Hello", "gpt-4", It.IsAny<CancellationToken>()))
+            .Setup(x => x.ChatAsync("Hello", "openai/gpt-4o", It.IsAny<CancellationToken>()))
             .ReturnsAsync("AI Response");
 
         // Act
@@ -80,7 +80,7 @@ public class AiEndpointTests
     {
         // Arrange
         await AuthenticateAsync();
-        var request = new AiChatRequest { Prompt = "", Model = "gpt-4" };
+        var request = new AiChatRequest { Prompt = "", Model = "openai/gpt-4o" };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/ai/chat", request);
