@@ -131,9 +131,9 @@ class MockSearchListingsProvider extends _i1.Mock
   );
 
   @override
-  _i5.Future<void> refresh() =>
+  _i5.Future<void> refresh({bool? clearData = true}) =>
       (super.noSuchMethod(
-            Invocation.method(#refresh, []),
+            Invocation.method(#refresh, [], {#clearData: clearData}),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
