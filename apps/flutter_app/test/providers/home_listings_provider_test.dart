@@ -135,4 +135,44 @@ void main() {
     expect(provider.minLivingArea, isNull);
     expect(provider.maxLivingArea, isNull);
   });
+
+  test('caches listings using UnmodifiableListView to prevent unnecessary rebuilds', () async {
+    final MockClient client = MockClient((request) async {
+      if (request.url.path.endsWith('/health')) {
+        return http.Response('ok', 200);
+      }
+      return _response(<Map<String, dynamic>>[
+        _listing('1', 'Cached Home')
+      ]);
+    });
+
+    final HomeListingsProvider provider = HomeListingsProvider(
+      apiService: ApiService(
+        client: client,
+        runner: syncRunner,
+        retryOptions: const RetryOptions(maxAttempts: 1),
+      ),
+    );
+
+    // Initial load
+    await provider.checkConnectionAndLoad();
+
+    // First access
+    final list1 = provider.listings;
+    expect(list1, hasLength(1));
+    expect(list1.first.address, 'Cached Home');
+
+    // Second access - should be same instance (identity equality)
+    final list2 = provider.listings;
+    expect(list2, same(list1));
+
+    // Refresh - should invalidate cache
+    await provider.refresh();
+    final list3 = provider.listings;
+
+    // Content is same, but instance should be new because cache was cleared on refresh
+    expect(list3, hasLength(1));
+    expect(list3.first.address, 'Cached Home');
+    expect(list3, isNot(same(list1)));
+  });
 }

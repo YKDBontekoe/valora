@@ -282,4 +282,40 @@ public class ListingRepositoryTests
         var deleted = await context.Listings.FindAsync(listing.Id);
         Assert.Null(deleted);
     }
+
+    [Fact]
+    public async Task GetDtoByIdAsync_ShouldReturnProjectedDto()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        var listing = new Listing
+        {
+            FundaId = "dto-test",
+            Address = "Test Address",
+            City = "Test City",
+            Price = 450000,
+            Bedrooms = 3,
+            LivingAreaM2 = 120,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Listings.Add(listing);
+        await context.SaveChangesAsync();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        var dto = await repository.GetDtoByIdAsync(listing.Id);
+        var missing = await repository.GetDtoByIdAsync(Guid.NewGuid());
+
+        // Assert
+        Assert.NotNull(dto);
+        Assert.Equal(listing.Id, dto!.Id);
+        Assert.Equal("Test Address", dto.Address);
+        Assert.Equal("Test City", dto.City);
+        Assert.Equal(450000, dto.Price);
+        Assert.Equal(3, dto.Bedrooms);
+        Assert.Equal(120, dto.LivingAreaM2);
+
+        Assert.Null(missing);
+    }
 }
