@@ -15,6 +15,7 @@ import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
+import 'package:valora_app/services/notification_service.dart';
 
 @GenerateMocks([ApiService, FavoritesProvider, PdokService])
 @GenerateNiceMocks([
@@ -139,15 +140,24 @@ const List<int> _transparentImage = <int>[
   0x82,
 ];
 
+class FakeNotificationService extends NotificationService {
+  FakeNotificationService() : super(MockApiService());
+
+  @override
+  int get unreadCount => 0;
+}
+
 void main() {
   late MockApiService mockApiService;
   late MockFavoritesProvider mockFavoritesProvider;
   late MockPdokService mockPdokService;
+  late FakeNotificationService fakeNotificationService;
 
   setUp(() {
     mockApiService = MockApiService();
     mockFavoritesProvider = MockFavoritesProvider();
     mockPdokService = MockPdokService();
+    fakeNotificationService = FakeNotificationService();
 
     // Default favorites provider behavior
     when(mockFavoritesProvider.favorites).thenReturn([]);
@@ -166,6 +176,9 @@ void main() {
         Provider<ApiService>.value(value: mockApiService),
         ChangeNotifierProvider<FavoritesProvider>.value(
           value: mockFavoritesProvider,
+        ),
+        ChangeNotifierProvider<NotificationService>.value(
+          value: fakeNotificationService,
         ),
         if (searchProvider != null)
           ChangeNotifierProvider<SearchListingsProvider>.value(

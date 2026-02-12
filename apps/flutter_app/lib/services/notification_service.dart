@@ -100,9 +100,17 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _offset = 0;
-      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: 0);
+      // Fetch unread count in parallel with notifications
+      final results = await Future.wait([
+        _apiService.getNotifications(limit: _pageSize, offset: 0),
+        _apiService.getUnreadNotificationCount(),
+      ]);
+
+      final fetched = results[0] as List<ValoraNotification>;
+      final count = results[1] as int;
+
       _notifications = fetched;
+      _unreadCount = count;
       _hasMore = fetched.length >= _pageSize;
       _offset = fetched.length;
     } catch (e) {
@@ -117,6 +125,10 @@ class NotificationService extends ChangeNotifier {
     if (_isLoading || _isLoadingMore || !_hasMore) return;
 
     _isLoadingMore = true;
+    // Clear any previous error when attempting to load more
+    if (_error != null) {
+      _error = null;
+    }
     notifyListeners();
 
     try {
