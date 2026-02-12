@@ -102,14 +102,15 @@ docker-compose -f docker/docker-compose.yml up -d
 ### 2. Backend
 ```bash
 cd backend
-cp .env.example .env  # Configure JWT_SECRET
+cp .env.example .env  # CRITICAL: Configure JWT_SECRET and DATABASE_URL
 dotnet run --project Valora.Api
 ```
 
 ### 3. Frontend
 ```bash
 cd apps/flutter_app
-cp .env.example .env  # Check API_URL
+cp .env.example .env  # CRITICAL: Set API_URL (use 10.0.2.2 for Android Emulator)
+flutter pub get
 flutter run
 ```
 

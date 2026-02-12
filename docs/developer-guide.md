@@ -13,7 +13,8 @@ classDiagram
     direction TB
     class Domain {
         <<Core>>
-        +Entities (Listing, Report)
+        +Entities (Listing)
+        +Models (ContextReportModel)
         +Exceptions
         +Value Objects
     }
@@ -48,7 +49,7 @@ classDiagram
 1.  **`Valora.Domain`**
     -   **Role:** The enterprise business rules.
     -   **Dependencies:** None. Pure C#.
-    -   **Key Components:** `Listing`, `Notification`, `Money` (Value Object).
+    -   **Key Components:** `Listing` (Entity), `ContextReportModel` (Value Object/Model), `Money` (Value Object).
 
 2.  **`Valora.Application`**
     -   **Role:** The application business rules. Orchestrates the flow of data.
