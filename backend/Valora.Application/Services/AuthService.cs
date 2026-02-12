@@ -25,7 +25,7 @@ public class AuthService : IAuthService
     {
         if (registerDto.Password != registerDto.ConfirmPassword)
         {
-            _logger.LogWarning("Registration failed: Password confirmation mismatch for email {Email}", PrivacyUtils.MaskEmail(registerDto.Email));
+            _logger.LogWarning("Registration failed: Password confirmation mismatch for email {EmailHash}", PrivacyUtils.HashEmail(registerDto.Email));
             return Result.Failure(new[] { ErrorMessages.PasswordsDoNotMatch });
         }
 
@@ -37,7 +37,7 @@ public class AuthService : IAuthService
         }
         else
         {
-            _logger.LogWarning("Registration failed for email {Email}: {Errors}", PrivacyUtils.MaskEmail(registerDto.Email), string.Join(", ", result.Errors));
+            _logger.LogWarning("Registration failed for email {EmailHash}: {Errors}", PrivacyUtils.HashEmail(registerDto.Email), string.Join(", ", result.Errors));
         }
 
         return result;
@@ -48,7 +48,7 @@ public class AuthService : IAuthService
         var user = await ValidateUserAsync(loginDto.Email, loginDto.Password);
         if (user == null)
         {
-            _logger.LogWarning("Login failed: Invalid credentials for email {Email}", PrivacyUtils.MaskEmail(loginDto.Email));
+            _logger.LogWarning("Login failed: Invalid credentials for email {EmailHash}", PrivacyUtils.HashEmail(loginDto.Email));
             return null;
         }
 
