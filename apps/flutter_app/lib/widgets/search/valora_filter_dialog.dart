@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
-import '../core/theme/valora_typography.dart';
-import 'valora_widgets.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
+import '../valora_widgets.dart';
 
 class ValoraFilterDialog extends StatefulWidget {
   final double? initialMinPrice;
