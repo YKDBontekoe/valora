@@ -180,6 +180,10 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.IsRead);
             entity.HasIndex(e => e.CreatedAt);
 
+            // Composite indexes for efficient sorting and filtering
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+            entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
+
             entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Body).IsRequired().HasMaxLength(2000);

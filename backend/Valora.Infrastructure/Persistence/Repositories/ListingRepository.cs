@@ -35,6 +35,15 @@ public class ListingRepository : IListingRepository
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
 
+    public async Task<ListingDto?> GetDtoByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Listings
+            .AsNoTracking()
+            .Where(l => l.Id == id)
+            .Select(ListingProjections.ToDto)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<PaginatedList<ListingSummaryDto>> GetSummariesAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Listings.AsNoTracking().AsQueryable();

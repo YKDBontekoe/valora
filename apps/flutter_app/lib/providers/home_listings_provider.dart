@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -16,6 +17,8 @@ class HomeListingsProvider extends ChangeNotifier {
   final ApiService _apiService;
 
   final List<Listing> _listings = <Listing>[];
+  UnmodifiableListView<Listing>? _cachedListings;
+
   bool _isConnected = false;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -34,7 +37,7 @@ class HomeListingsProvider extends ChangeNotifier {
   String? _sortBy;
   String? _sortOrder;
 
-  List<Listing> get listings => List<Listing>.unmodifiable(_listings);
+  UnmodifiableListView<Listing> get listings => _cachedListings ??= UnmodifiableListView<Listing>(_listings);
   bool get isConnected => _isConnected;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
@@ -109,6 +112,7 @@ class HomeListingsProvider extends ChangeNotifier {
 
       _currentPage = nextPage;
       _listings.addAll(response.items);
+      _cachedListings = null;
       _hasNextPage = response.hasNextPage;
       _error = null;
     } catch (e) {
@@ -173,6 +177,7 @@ class HomeListingsProvider extends ChangeNotifier {
       _error = null;
       _currentPage = 1;
       _listings.clear();
+      _cachedListings = null;
       _hasNextPage = true;
       notifyListeners();
     }
@@ -190,6 +195,7 @@ class HomeListingsProvider extends ChangeNotifier {
       _listings
         ..clear()
         ..addAll(response.items);
+      _cachedListings = null;
       _hasNextPage = response.hasNextPage;
       _error = null;
     } catch (e) {

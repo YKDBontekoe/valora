@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -17,6 +18,8 @@ class SearchListingsProvider extends ChangeNotifier {
   final ApiService _apiService;
 
   final List<Listing> _listings = <Listing>[];
+  UnmodifiableListView<Listing>? _cachedListings;
+
   bool _isLoading = false;
   bool _isLoadingMore = false;
   String? _error;
@@ -36,7 +39,7 @@ class SearchListingsProvider extends ChangeNotifier {
   String? _sortBy;
   String? _sortOrder;
 
-  List<Listing> get listings => List<Listing>.unmodifiable(_listings);
+  UnmodifiableListView<Listing> get listings => _cachedListings ??= UnmodifiableListView<Listing>(_listings);
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   String? get error => _error;
@@ -106,6 +109,7 @@ class SearchListingsProvider extends ChangeNotifier {
 
       _currentPage = nextPage;
       _listings.addAll(response.items);
+      _cachedListings = null;
       _hasNextPage = response.hasNextPage;
       _error = null;
     } catch (e) {
@@ -217,6 +221,7 @@ class SearchListingsProvider extends ChangeNotifier {
       _currentPage = 1;
       _hasNextPage = false;
       _listings.clear();
+      _cachedListings = null;
       notifyListeners();
     }
 
@@ -227,6 +232,7 @@ class SearchListingsProvider extends ChangeNotifier {
       _isLoadingMore = false;
       _error = null;
       _listings.clear();
+      _cachedListings = null;
       _currentPage = 1;
       _hasNextPage = false;
       notifyListeners();
@@ -244,6 +250,7 @@ class SearchListingsProvider extends ChangeNotifier {
       _listings
         ..clear()
         ..addAll(response.items);
+      _cachedListings = null;
       _hasNextPage = response.hasNextPage;
       _error = null;
     } catch (e) {
