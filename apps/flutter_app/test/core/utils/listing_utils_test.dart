@@ -16,17 +16,17 @@ void main() {
     });
 
     test('getScoreColor returns correct color for score', () {
-      expect(ListingUtils.getScoreColor(8.0), ValoraColors.success);
-      expect(ListingUtils.getScoreColor(8.5), ValoraColors.success);
-      expect(ListingUtils.getScoreColor(10.0), ValoraColors.success);
+      expect(ListingUtils.getScoreColor(80.0), ValoraColors.success);
+      expect(ListingUtils.getScoreColor(85.5), ValoraColors.success);
+      expect(ListingUtils.getScoreColor(100.0), ValoraColors.success);
 
-      expect(ListingUtils.getScoreColor(6.0), ValoraColors.primary);
-      expect(ListingUtils.getScoreColor(7.9), ValoraColors.primary);
+      expect(ListingUtils.getScoreColor(60.0), ValoraColors.primary);
+      expect(ListingUtils.getScoreColor(79.9), ValoraColors.primary);
 
-      expect(ListingUtils.getScoreColor(4.0), ValoraColors.warning);
-      expect(ListingUtils.getScoreColor(5.9), ValoraColors.warning);
+      expect(ListingUtils.getScoreColor(40.0), ValoraColors.warning);
+      expect(ListingUtils.getScoreColor(59.9), ValoraColors.warning);
 
-      expect(ListingUtils.getScoreColor(3.9), ValoraColors.error);
+      expect(ListingUtils.getScoreColor(39.9), ValoraColors.error);
       expect(ListingUtils.getScoreColor(0.0), ValoraColors.error);
     });
   });

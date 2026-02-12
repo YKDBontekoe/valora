@@ -49,6 +49,45 @@ void main() {
       expect(tapped, isTrue);
     });
 
+    testWidgets('does not wrap in GestureDetector when onTap is null', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraTag(
+              label: 'Static Tag',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GestureDetector), findsNothing);
+      // MouseRegion is used internally by other widgets or might be implicitly present,
+      // but we specifically want to ensure our *interactive* MouseRegion (the one wrapping GestureDetector) is gone.
+      // The implementation removes the specific MouseRegion that wraps the GestureDetector.
+      // However, to be safe and specific, we can check that we don't have the gesture detector
+      // and that the widget tree structure is simpler.
+
+      // Let's verify that the ValoraTag child is directly the Container (or AnimatedContainer)
+      // and not wrapped in the interactive chain.
+
+      final valoraTagFinder = find.byType(ValoraTag);
+      final animatedContainerFinder = find.descendant(
+        of: valoraTagFinder,
+        matching: find.byType(AnimatedContainer),
+      );
+
+      expect(animatedContainerFinder, findsOneWidget);
+
+      // Ensure no GestureDetector is an ancestor of the AnimatedContainer *within* ValoraTag
+      final gestureDetectorFinder = find.ancestor(
+        of: animatedContainerFinder,
+        matching: find.byType(GestureDetector),
+      );
+
+      expect(gestureDetectorFinder, findsNothing);
+    });
+
     testWidgets('applies custom background color', (WidgetTester tester) async {
       const Color customColor = Colors.red;
 
@@ -66,7 +105,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // We need to inspect the AnimatedContainer's decoration.
-      // ValoraTag structure: MouseRegion -> GestureDetector -> AnimatedContainer
+      // With onTap=null, ValoraTag structure is directly AnimatedContainer
 
       final animatedContainer = tester.widget<AnimatedContainer>(
         find.descendant(

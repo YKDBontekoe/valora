@@ -15,9 +15,9 @@ class ListingUtils {
   }
 
   static Color getScoreColor(double score) {
-    if (score >= 8.0) return ValoraColors.success;
-    if (score >= 6.0) return ValoraColors.primary;
-    if (score >= 4.0) return ValoraColors.warning;
+    if (score >= 80.0) return ValoraColors.success;
+    if (score >= 60.0) return ValoraColors.primary;
+    if (score >= 40.0) return ValoraColors.warning;
     return ValoraColors.error;
   }
 }

@@ -39,6 +39,36 @@ class _ValoraTagState extends State<ValoraTag> {
     final border = widget.borderColor ??
         colorScheme.outlineVariant.withValues(alpha: 0.3);
 
+    final container = AnimatedContainer(
+      duration: ValoraAnimations.fast,
+      padding: const EdgeInsets.symmetric(
+        horizontal: ValoraSpacing.md - 4,
+        vertical: ValoraSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.icon != null) ...[
+            Icon(widget.icon, size: ValoraSpacing.iconSizeSm, color: text),
+            const SizedBox(width: ValoraSpacing.sm),
+          ],
+          Text(
+            widget.label,
+            style: ValoraTypography.labelLarge.copyWith(color: text),
+          ),
+        ],
+      ),
+    );
+
+    if (widget.onTap == null) {
+      return container;
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() {
@@ -50,42 +80,18 @@ class _ValoraTagState extends State<ValoraTag> {
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: ValoraAnimations.fast,
-          padding: const EdgeInsets.symmetric(
-            horizontal: ValoraSpacing.md - 4,
-            vertical: ValoraSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-            border: Border.all(color: border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.icon != null) ...[
-                Icon(widget.icon, size: ValoraSpacing.iconSizeSm, color: text),
-                const SizedBox(width: ValoraSpacing.sm),
-              ],
-              Text(
-                widget.label,
-                style: ValoraTypography.labelLarge.copyWith(color: text),
-              ),
-            ],
-          ),
-        )
-        .animate(target: _isPressed ? 1 : 0)
-        .scale(
-          end: const Offset(0.95, 0.95),
-          duration: ValoraAnimations.fast,
-        )
-        .animate(target: _isHovered && !_isPressed ? 1 : 0)
-        .scale(
-          end: const Offset(1.05, 1.05),
-          duration: ValoraAnimations.normal,
-          curve: ValoraAnimations.standard,
-        ),
+        child: container
+            .animate(target: _isPressed ? 1 : 0)
+            .scale(
+              end: const Offset(0.95, 0.95),
+              duration: ValoraAnimations.fast,
+            )
+            .animate(target: _isHovered && !_isPressed ? 1 : 0)
+            .scale(
+              end: const Offset(1.05, 1.05),
+              duration: ValoraAnimations.normal,
+              curve: ValoraAnimations.standard,
+            ),
       ),
     );
   }
