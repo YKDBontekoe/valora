@@ -72,7 +72,9 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onFilterTap(),
                 onDeleted:
                     () => provider.clearPriceFilter().catchError((_) {
-                      if (context.mounted) _showError(context, 'Failed to clear price filter');
+                      if (context.mounted) {
+                        _showError(context, 'Failed to clear price filter');
+                      }
                     }),
               ),
             ),
@@ -85,7 +87,9 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onFilterTap(),
                 onDeleted:
                     () => provider.clearCityFilter().catchError((_) {
-                      if (context.mounted) _showError(context, 'Failed to clear city filter');
+                      if (context.mounted) {
+                        _showError(context, 'Failed to clear city filter');
+                      }
                     }),
               ),
             ),
@@ -98,7 +102,9 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onFilterTap(),
                 onDeleted:
                     () => provider.clearBedroomsFilter().catchError((_) {
-                      if (context.mounted) _showError(context, 'Failed to clear bedrooms filter');
+                      if (context.mounted) {
+                        _showError(context, 'Failed to clear bedrooms filter');
+                      }
                     }),
               ),
             ),
@@ -111,7 +117,9 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onFilterTap(),
                 onDeleted:
                     () => provider.clearLivingAreaFilter().catchError((_) {
-                      if (context.mounted) _showError(context, 'Failed to clear area filter');
+                      if (context.mounted) {
+                        _showError(context, 'Failed to clear area filter');
+                      }
                     }),
               ),
             ),
@@ -124,10 +132,12 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onFilterTap(),
                 onDeleted:
                     () => provider.clearCompositeScoreFilter().catchError((_) {
-                      if (context.mounted) _showError(
-                        context,
-                        'Failed to clear composite score filter',
-                      );
+                      if (context.mounted) {
+                        _showError(
+                          context,
+                          'Failed to clear composite score filter',
+                        );
+                      }
                     }),
               ),
             ),
@@ -140,7 +150,9 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onFilterTap(),
                 onDeleted:
                     () => provider.clearSafetyScoreFilter().catchError((_) {
-                      if (context.mounted) _showError(context, 'Failed to clear safety score filter');
+                      if (context.mounted) {
+                        _showError(context, 'Failed to clear safety score filter');
+                      }
                     }),
               ),
             ),
@@ -153,7 +165,9 @@ class ActiveFiltersList extends StatelessWidget {
                 onSelected: (_) => onSortTap(),
                 onDeleted:
                     () => provider.clearSort().catchError((_) {
-                      if (context.mounted) _showError(context, 'Failed to clear sort');
+                      if (context.mounted) {
+                        _showError(context, 'Failed to clear sort');
+                      }
                     }),
               ),
             ),

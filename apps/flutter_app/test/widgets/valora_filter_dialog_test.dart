@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:valora_app/widgets/valora_filter_dialog.dart';
+import 'package:valora_app/widgets/search/valora_filter_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 void main() {
