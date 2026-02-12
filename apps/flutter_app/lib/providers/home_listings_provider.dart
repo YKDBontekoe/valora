@@ -84,8 +84,8 @@ class HomeListingsProvider extends ChangeNotifier {
     await refresh();
   }
 
-  Future<void> refresh() async {
-    await _loadListings(refresh: true);
+  Future<void> refresh({bool clearData = true}) async {
+    await _loadListings(refresh: true, clearData: clearData);
   }
 
   Future<void> loadMore() async {
@@ -150,7 +150,7 @@ class HomeListingsProvider extends ChangeNotifier {
     _sortBy = sortBy;
     _sortOrder = sortOrder;
     notifyListeners();
-    await refresh();
+    await refresh(clearData: true);
   }
 
   Future<void> clearFiltersAndSearch() async {
@@ -164,16 +164,18 @@ class HomeListingsProvider extends ChangeNotifier {
     _sortBy = null;
     _sortOrder = null;
     notifyListeners();
-    await refresh();
+    await refresh(clearData: true);
   }
 
-  Future<void> _loadListings({required bool refresh}) async {
+  Future<void> _loadListings({required bool refresh, bool clearData = true}) async {
     if (refresh) {
       _isLoading = true;
       _error = null;
       _currentPage = 1;
-      _listings.clear();
       _hasNextPage = true;
+      if (clearData) {
+        _listings.clear();
+      }
       notifyListeners();
     }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../models/map_city_insight.dart';
 import '../services/api_service.dart';
 
@@ -36,7 +37,7 @@ class InsightsProvider extends ChangeNotifier {
     try {
       _cities = await _apiService.getCityInsights();
     } catch (e) {
-      _error = e.toString();
+      _error = e is AppException ? e.message : 'Failed to load insights';
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -87,11 +87,16 @@ public class ExceptionHandlingMiddleware
                 statusCode = (int)HttpStatusCode.BadRequest;
                 title = "Bad Request";
                 break;
+            case ArgumentException:
+                statusCode = (int)HttpStatusCode.BadRequest;
+                title = "Invalid Argument";
+                detail = exception.Message;
+                break;
             case HttpRequestException:
             case SocketException:
                 statusCode = (int)HttpStatusCode.ServiceUnavailable;
                 title = "External Service Error";
-                detail = "An external service is currently unavailable.";
+                detail = "An external dependency is currently unavailable. Please try again later.";
                 break;
             case TimeoutException:
                 statusCode = (int)HttpStatusCode.GatewayTimeout;
@@ -101,7 +106,7 @@ public class ExceptionHandlingMiddleware
             case JsonException:
                 statusCode = (int)HttpStatusCode.BadGateway;
                 title = "Upstream Response Error";
-                detail = "An external service returned an invalid response.";
+                detail = "An external service returned an invalid or unexpected response format.";
                 break;
             default:
                 // For unhandled exceptions, hide details in production
