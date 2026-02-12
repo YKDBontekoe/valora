@@ -30,46 +30,7 @@ public class ListingRepository : IListingRepository
         // We project directly to the DTO in the database query.
         // This prevents fetching unnecessary columns (select N+1 avoidance)
         // and ensures only the required data travels over the wire from the database.
-        var dtoQuery = query.Select(l => new ListingDto(
-            l.Id,
-            l.FundaId,
-            l.Address,
-            l.City,
-            l.PostalCode,
-            l.Price,
-            l.Bedrooms,
-            l.Bathrooms,
-            l.LivingAreaM2,
-            l.PlotAreaM2,
-            l.PropertyType,
-            l.Status,
-            l.Url,
-            l.ImageUrl,
-            l.ListedDate,
-            l.CreatedAt,
-            // Rich Data
-            l.Description, l.EnergyLabel, l.YearBuilt, l.ImageUrls,
-            // Phase 2
-            l.OwnershipType, l.CadastralDesignation, l.VVEContribution, l.HeatingType,
-            l.InsulationType, l.GardenOrientation, l.HasGarage, l.ParkingType,
-            // Phase 3
-            l.AgentName, l.VolumeM3, l.BalconyM2, l.GardenM2, l.ExternalStorageM2,
-            l.Features,
-            // Geo & Media
-            l.Latitude, l.Longitude, l.VideoUrl, l.VirtualTourUrl, l.FloorPlanUrls, l.BrochureUrl,
-            // Construction
-            l.RoofType, l.NumberOfFloors, l.ConstructionPeriod, l.CVBoilerBrand, l.CVBoilerYear,
-            // Broker
-            l.BrokerPhone, l.BrokerLogoUrl,
-            // Infra
-            l.FiberAvailable,
-            // Status
-            l.PublicationDate, l.IsSoldOrRented, l.Labels,
-            // Phase 6: WOZ
-            null, null, null,
-            // Context
-            l.ContextCompositeScore, l.ContextSafetyScore, l.ContextReport
-        ));
+        var dtoQuery = query.Select(ListingProjections.ToDto);
 
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
@@ -81,27 +42,7 @@ public class ListingRepository : IListingRepository
 
         query = ApplyFilters(query, filter, isPostgres);
 
-        var dtoQuery = query.Select(l => new ListingSummaryDto(
-            l.Id,
-            l.FundaId,
-            l.Address,
-            l.City,
-            l.PostalCode,
-            l.Price,
-            l.Bedrooms,
-            l.Bathrooms,
-            l.LivingAreaM2,
-            l.PlotAreaM2,
-            l.PropertyType,
-            l.Status,
-            l.Url,
-            l.ImageUrl,
-            l.ListedDate,
-            l.CreatedAt,
-            l.EnergyLabel,
-            l.IsSoldOrRented,
-            l.Labels
-        ));
+        var dtoQuery = query.Select(ListingProjections.ToSummaryDto);
 
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
