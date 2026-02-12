@@ -8,3 +8,4 @@ export 'common/valora_badge.dart';
 export 'common/valora_shimmer.dart';
 export 'common/valora_chip.dart';
 export 'common/valora_dialog.dart';
+export 'common/valora_tag.dart';

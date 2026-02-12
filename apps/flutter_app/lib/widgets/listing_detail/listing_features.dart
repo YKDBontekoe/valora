@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/valora_spacing.dart';
-import '../../core/theme/valora_typography.dart';
 import '../../models/listing.dart';
+import '../valora_widgets.dart';
 
 class ListingFeatures extends StatelessWidget {
   const ListingFeatures({
@@ -13,48 +13,46 @@ class ListingFeatures extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final features = <Widget>[];
 
     if (listing.energyLabel != null) {
       features.add(
-        _buildFeatureChip(
-          Icons.energy_savings_leaf_rounded,
-          'Label ${listing.energyLabel}',
-          colorScheme,
+        ValoraTag(
+          icon: Icons.energy_savings_leaf_rounded,
+          label: 'Label ${listing.energyLabel}',
         ),
       );
     }
     if (listing.yearBuilt != null) {
       features.add(
-        _buildFeatureChip(
-          Icons.calendar_today_rounded,
-          'Built ${listing.yearBuilt}',
-          colorScheme,
+        ValoraTag(
+          icon: Icons.calendar_today_rounded,
+          label: 'Built ${listing.yearBuilt}',
         ),
       );
     }
     if (listing.ownershipType != null) {
       features.add(
-        _buildFeatureChip(
-          Icons.gavel_rounded,
-          listing.ownershipType!,
-          colorScheme,
+        ValoraTag(
+          icon: Icons.gavel_rounded,
+          label: listing.ownershipType!,
         ),
       );
     }
     if (listing.heatingType != null) {
       features.add(
-        _buildFeatureChip(
-          Icons.thermostat_rounded,
-          listing.heatingType!,
-          colorScheme,
+        ValoraTag(
+          icon: Icons.thermostat_rounded,
+          label: listing.heatingType!,
         ),
       );
     }
     if (listing.hasGarage) {
       features.add(
-        _buildFeatureChip(Icons.garage_rounded, 'Garage', colorScheme),
+        const ValoraTag(
+          icon: Icons.garage_rounded,
+          label: 'Garage',
+        ),
       );
     }
 
@@ -64,43 +62,6 @@ class ListingFeatures extends StatelessWidget {
       spacing: ValoraSpacing.sm,
       runSpacing: ValoraSpacing.sm,
       children: features,
-    );
-  }
-
-  Widget _buildFeatureChip(
-    IconData icon,
-    String label,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ValoraSpacing.md - 4,
-        vertical: ValoraSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: ValoraSpacing.iconSizeSm,
-            color: colorScheme.onSecondaryContainer,
-          ),
-          const SizedBox(width: ValoraSpacing.sm),
-          Text(
-            label,
-            style: ValoraTypography.labelLarge.copyWith(
-              color: colorScheme.onSecondaryContainer,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

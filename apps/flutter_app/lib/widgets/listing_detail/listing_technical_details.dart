@@ -43,14 +43,15 @@ class ListingTechnicalDetails extends StatelessWidget {
         ),
         const SizedBox(height: ValoraSpacing.md),
         Wrap(
-          spacing: ValoraSpacing.md,
-          runSpacing: ValoraSpacing.md,
+          spacing: ValoraSpacing.sm,
+          runSpacing: ValoraSpacing.sm,
           children: validDetails
               .map(
                 (e) => ValoraGlassContainer(
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
                   padding: const EdgeInsets.symmetric(
                     horizontal: ValoraSpacing.md,
-                    vertical: ValoraSpacing.sm,
+                    vertical: ValoraSpacing.sm + 2,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,6 +61,7 @@ class ListingTechnicalDetails extends StatelessWidget {
                         e.key,
                         style: ValoraTypography.labelSmall.copyWith(
                           color: colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 2),
