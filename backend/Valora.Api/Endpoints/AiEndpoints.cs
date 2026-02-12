@@ -15,13 +15,9 @@ public static class AiEndpoints
         group.MapPost("/chat", async (
             [FromBody] AiChatRequest request,
             IAiService aiService,
+            ILogger<AiChatRequest> logger,
             CancellationToken ct) =>
         {
-            if (string.IsNullOrWhiteSpace(request.Prompt))
-            {
-                return Results.BadRequest(new { error = "Prompt is required" });
-            }
-
             try
             {
                 var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
@@ -29,20 +25,18 @@ public static class AiEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem(detail: ex.Message, statusCode: 500);
+                logger.LogError(ex, "Error processing AI chat request.");
+                return Results.Problem(detail: "An unexpected error occurred while processing your request.", statusCode: 500);
             }
-        });
+        })
+        .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AiChatRequest>>();
 
         group.MapPost("/analyze-report", async (
             [FromBody] AiAnalysisRequest request,
             IAiService aiService,
+            ILogger<AiAnalysisRequest> logger,
             CancellationToken ct) =>
         {
-            if (request.Report is null)
-            {
-                return Results.BadRequest(new { error = "Report data is required" });
-            }
-
             try
             {
                 var prompt = BuildAnalysisPrompt(request.Report);
@@ -51,9 +45,11 @@ public static class AiEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem(detail: ex.Message, statusCode: 500);
+                logger.LogError(ex, "Error generating AI analysis report.");
+                return Results.Problem(detail: "An unexpected error occurred while generating the report summary.", statusCode: 500);
             }
-        });
+        })
+        .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AiAnalysisRequest>>();
     }
 
     private static string BuildAnalysisPrompt(ContextReportDto report)

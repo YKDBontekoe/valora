@@ -156,6 +156,10 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                 t.HasCheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
                 t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
                 t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
+
+                t.HasCheckConstraint("CK_Listing_Price", "\"Price\" > 0");
+                t.HasCheckConstraint("CK_Listing_LivingAreaM2", "\"LivingAreaM2\" > 0");
+                t.HasCheckConstraint("CK_Listing_Bedrooms", "\"Bedrooms\" >= 0");
             });
         });
 
