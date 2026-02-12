@@ -4,8 +4,9 @@ namespace Valora.Application.DTOs;
 
 public class AiChatRequest
 {
-    [Required]
+    [Required(ErrorMessage = "Prompt is required.")]
     [StringLength(2000)]
+    [MinLength(1, ErrorMessage = "Prompt cannot be empty.")]
     public string Prompt { get; set; } = string.Empty;
 
     [StringLength(50)]

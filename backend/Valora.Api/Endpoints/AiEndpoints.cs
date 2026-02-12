@@ -23,6 +23,11 @@ public static class AiEndpoints
                 var response = await aiService.ChatAsync(request.Prompt, request.Model, ct);
                 return Results.Ok(new { response });
             }
+            catch (OperationCanceledException)
+            {
+                // Client cancelled the request - don't log as error
+                return Results.Problem(detail: "Request was cancelled", statusCode: 499);
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error processing AI chat request.");
@@ -42,6 +47,11 @@ public static class AiEndpoints
                 var prompt = BuildAnalysisPrompt(request.Report);
                 var summary = await aiService.ChatAsync(prompt, null, ct);
                 return Results.Ok(new AiAnalysisResponse(summary));
+            }
+            catch (OperationCanceledException)
+            {
+                // Client cancelled the request - don't log as error
+                return Results.Problem(detail: "Request was cancelled", statusCode: 499);
             }
             catch (Exception ex)
             {

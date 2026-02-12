@@ -3,8 +3,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Valora.Application.DTOs;
 
 public sealed record ContextReportRequestDto(
-    [property: Required] [property: StringLength(200, MinimumLength = 3)] string Input,
-    [property: Range(100, 5000)] int RadiusMeters = 1000);
+    [property: Required(ErrorMessage = "Input address is required.")]
+    [property: StringLength(200, MinimumLength = 3, ErrorMessage = "Input must be between 3 and 200 characters.")]
+    string Input,
+    [property: Range(100, 5000, ErrorMessage = "Radius must be between 100 and 5000 meters.")]
+    int RadiusMeters = 1000);
 
 public sealed record ResolvedLocationDto(
     string Query,

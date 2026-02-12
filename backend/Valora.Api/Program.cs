@@ -105,8 +105,19 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
-                             ?? new[] { "http://localhost:3000" }; // Default for dev
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+
+        if (allowedOrigins is null || allowedOrigins.Length == 0)
+        {
+            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+            {
+                allowedOrigins = ["http://localhost:3000"];
+            }
+            else
+            {
+                throw new InvalidOperationException("AllowedOrigins must be configured in production.");
+            }
+        }
 
         policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
