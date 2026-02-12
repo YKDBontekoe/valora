@@ -57,6 +57,9 @@ public class ListingRepository : IListingRepository
     /// </remarks>
     private IQueryable<Listing> ApplyFilters(IQueryable<Listing> query, ListingFilterDto filter, bool isPostgres)
     {
+        // Filter out inactive listings
+        query = query.Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken" && !l.IsSoldOrRented);
+
         query = query.ApplySearchFilter(filter, isPostgres);
 
         if (filter.MinPrice.HasValue)

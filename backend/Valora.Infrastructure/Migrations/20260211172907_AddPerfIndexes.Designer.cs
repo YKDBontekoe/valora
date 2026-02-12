@@ -13,7 +13,7 @@ namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
     [Migration("20260211172907_AddPerfIndexes")]
-    partial class AddPerfIndexes
+    partial class AddScoreConstraints
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
