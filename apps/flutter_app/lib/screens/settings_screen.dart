@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'notifications_screen.dart';
 import '../core/theme/valora_colors.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
@@ -173,10 +174,14 @@ class SettingsScreen extends StatelessWidget {
                           title: 'Smart Alerts',
                           subtitle: 'Instant updates on price drops',
                           showDivider: true,
-                          onTap: () => _openExternal(
-                            context,
-                            Uri.parse('https://valora.nl/preferences/alerts'),
-                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NotificationsScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _buildSettingsTile(
                           context,

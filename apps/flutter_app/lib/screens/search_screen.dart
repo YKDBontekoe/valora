@@ -20,6 +20,8 @@ import '../widgets/valora_widgets.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
+import 'notifications_screen.dart';
+import '../services/notification_service.dart';
 
 class SearchScreen extends StatefulWidget {
   final PdokService? pdokService;
@@ -391,6 +393,40 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     centerTitle: false,
                     actions: [
+                      Consumer<NotificationService>(
+                        builder: (context, notificationProvider, _) {
+                          return Stack(
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const NotificationsScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.notifications_outlined),
+                                tooltip: 'Notifications',
+                              ),
+                              if (notificationProvider.unreadCount > 0)
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: ValoraColors.error,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ).animate().scale(curve: Curves.elasticOut),
+                            ],
+                          );
+                        },
+                      ),
                       IconButton(
                         onPressed: _showSortOptions,
                         icon: const Icon(Icons.sort_rounded),
