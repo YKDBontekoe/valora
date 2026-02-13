@@ -553,6 +553,7 @@ void main() {
       price: 100000,
       description: null,
       features: {},
+      url: 'https://example.com', // Indicates DB-backed listing
     );
 
     final fullListing = Listing(
@@ -599,6 +600,55 @@ void main() {
     verify(mockApiService.getListing('summary-id')).called(1);
 
     // Ensure all timers (e.g. animations) are settled
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('SearchScreen does not fetch details for PDOK listing (no url)', (
+    WidgetTester tester,
+  ) async {
+    final pdokListing = Listing(
+      id: 'pdok-id',
+      fundaId: '456',
+      address: 'PDOK Address',
+      city: 'PDOK City',
+      price: 200000,
+      description: null,
+      features: {},
+      url: null, // Indicates PDOK lookup (no deep link)
+    );
+
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [pdokListing],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Load listing
+    await tester.enterText(find.byType(TextField), 'pdok');
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Tap listing
+    await tester.tap(find.text('PDOK Address'));
+    await tester.pump();
+
+    // Wait for potential async calls
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify API was NOT called for details
+    verifyNever(mockApiService.getListing(any));
+
+    // Ensure all timers are settled
     await tester.pumpAndSettle();
   });
 }

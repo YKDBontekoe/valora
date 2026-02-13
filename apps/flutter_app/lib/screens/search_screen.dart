@@ -149,8 +149,13 @@ class _SearchScreenState extends State<SearchScreen> {
     Listing listingToDisplay = listing;
     try {
       // If the listing is a summary (missing description or features), fetch full details
-      if (listing.description == null && listing.features.isEmpty) {
-        final fullListing = await context.read<ApiService>().getListing(listing.id);
+      // Only do this if we have a URL, which indicates a DB-backed listing (PDOK lookups lack URLs)
+      if (listing.description == null &&
+          listing.features.isEmpty &&
+          listing.url != null) {
+        final fullListing = await context.read<ApiService>().getListing(
+          listing.id,
+        );
         if (fullListing != null) {
           listingToDisplay = fullListing;
         }
