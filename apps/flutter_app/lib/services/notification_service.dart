@@ -6,7 +6,7 @@ import 'api_service.dart';
 class NotificationService extends ChangeNotifier {
   ApiService _apiService;
   List<ValoraNotification> _notifications = [];
-  final List<ValoraNotification> _pendingDeletions = [];
+  final Map<String, ValoraNotification> _pendingDeletions = {};
   final Map<String, Timer> _deletionTimers = {};
 
   int _unreadCount = 0;
@@ -62,12 +62,20 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> deleteNotification(String id) async {
     final index = _notifications.indexWhere((n) => n.id == id);
-    if (index == -1) return;
+    if (index == -1) {
+        // Already deleted or pending
+        if (_pendingDeletions.containsKey(id)) {
+            // Reset timer if re-deleted while pending
+             _deletionTimers[id]?.cancel();
+             _deletionTimers[id] = Timer(const Duration(seconds: 4), () => _commitDelete(id));
+        }
+        return;
+    }
 
     final removed = _notifications[index];
 
-    // Store in pending deletions
-    _pendingDeletions.add(removed);
+    // Store in pending deletions map (deduplicated by key)
+    _pendingDeletions[id] = removed;
 
     // Optimistic update
     _notifications.removeAt(index);
@@ -78,33 +86,35 @@ class NotificationService extends ChangeNotifier {
 
     // Start timer for actual deletion
     _deletionTimers[id]?.cancel();
-    _deletionTimers[id] = Timer(const Duration(seconds: 4), () async {
+    _deletionTimers[id] = Timer(const Duration(seconds: 4), () => _commitDelete(id));
+  }
+
+  Future<void> _commitDelete(String id) async {
       _deletionTimers.remove(id);
-      _pendingDeletions.removeWhere((n) => n.id == id);
+      _pendingDeletions.remove(id);
+
       try {
         await _apiService.deleteNotification(id);
       } catch (e) {
         if (kDebugMode) {
           print('Error deleting notification: $e');
         }
-        // If API fails, we could potentially re-add it, but since it's a delete,
-        // silent failure or logging is often acceptable.
+        // Failure is silently ignored for user experience, but logged.
+        // The item remains deleted locally for the session.
       }
-    });
   }
 
   void undoDelete(String id) {
-    final pendingIndex = _pendingDeletions.indexWhere((n) => n.id == id);
-    if (pendingIndex == -1) return;
+    if (!_pendingDeletions.containsKey(id)) return;
 
-    final notification = _pendingDeletions[pendingIndex];
+    final notification = _pendingDeletions[id]!;
 
     // Cancel timer
     _deletionTimers[id]?.cancel();
     _deletionTimers.remove(id);
 
     // Remove from pending
-    _pendingDeletions.removeAt(pendingIndex);
+    _pendingDeletions.remove(id);
 
     // Add back to notifications
     _notifications.add(notification);
@@ -132,22 +142,24 @@ class NotificationService extends ChangeNotifier {
         _apiService.getUnreadNotificationCount(),
       ]);
 
-      final fetched = results[0] as List<ValoraNotification>;
+      var fetched = results[0] as List<ValoraNotification>;
       final count = results[1] as int;
+
+      // Filter out pending deletions so they don't reappear
+      if (_pendingDeletions.isNotEmpty) {
+          fetched = fetched.where((n) => !_pendingDeletions.containsKey(n.id)).toList();
+      }
 
       _notifications = fetched;
       _unreadCount = count;
       _hasMore = fetched.length >= _pageSize;
       _offset = fetched.length;
 
-      // Clear pending deletions on fresh fetch to avoid state sync issues
-      if (refresh) {
-          for (var timer in _deletionTimers.values) {
-              timer.cancel();
-          }
-          _deletionTimers.clear();
-          _pendingDeletions.clear();
-      }
+      // Clear pending deletions on fresh fetch ONLY if refresh is explicit,
+      // but usually we want to respect the pending state even across refreshes within the same session.
+      // However, if the user explicitly refreshes, maybe they want the truth from server?
+      // Let's stick to filtering them out to keep the UI consistent with user actions.
+
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -167,7 +179,12 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
+      var fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
+
+      // Filter out pending deletions
+      if (_pendingDeletions.isNotEmpty) {
+          fetched = fetched.where((n) => !_pendingDeletions.containsKey(n.id)).toList();
+      }
 
       if (fetched.isEmpty) {
         _hasMore = false;

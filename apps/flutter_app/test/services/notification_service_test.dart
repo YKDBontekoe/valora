@@ -197,5 +197,46 @@ void main() {
         verifyNever(mockApiService.deleteNotification('1'));
       });
     });
+
+    test('fetchNotifications filters out pending deletions', () {
+       fakeAsync((async) {
+        final notification = ValoraNotification(
+          id: '1',
+          title: 'Test 1',
+          body: 'Body',
+          isRead: false,
+          createdAt: DateTime.now(),
+          type: NotificationType.info,
+        );
+
+        when(mockApiService.getNotifications(limit: 20, offset: 0))
+            .thenAnswer((_) async => [notification]);
+        when(mockApiService.deleteNotification('1'))
+            .thenAnswer((_) async {});
+
+        notificationService.fetchNotifications();
+        async.flushMicrotasks();
+        expect(notificationService.notifications, hasLength(1));
+
+        // Delete
+        notificationService.deleteNotification('1');
+        async.flushMicrotasks();
+        expect(notificationService.notifications, isEmpty);
+
+        // Simulate a background fetch that returns the item again (because API delete hasn't happened yet)
+        when(mockApiService.getNotifications(limit: 20, offset: 0))
+            .thenAnswer((_) async => [notification]);
+
+        notificationService.fetchNotifications();
+        async.flushMicrotasks();
+
+        // Should STILL be empty because it's pending delete
+        expect(notificationService.notifications, isEmpty);
+
+        // Wait for timer to complete
+        async.elapse(const Duration(seconds: 4));
+        verify(mockApiService.deleteNotification('1')).called(1);
+      });
+    });
   });
 }
