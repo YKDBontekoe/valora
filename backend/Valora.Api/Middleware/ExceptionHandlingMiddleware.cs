@@ -42,7 +42,8 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        context.Response.ContentType = "application/json";
+        // Default to problem+json for standard error responses
+        context.Response.ContentType = "application/problem+json";
 
         var statusCode = (int)HttpStatusCode.InternalServerError;
         var title = "An internal error occurred";
@@ -53,8 +54,8 @@ public class ExceptionHandlingMiddleware
         {
             case ValidationException validationEx:
                 statusCode = (int)HttpStatusCode.BadRequest;
-                title = "Validation Error";
-                detail = "One or more validation errors occurred.";
+                title = "One or more validation errors occurred.";
+                detail = "See the errors property for details.";
                 errors = validationEx.Errors;
                 break;
             case NotFoundException:

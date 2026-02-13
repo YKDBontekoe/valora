@@ -229,6 +229,12 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingService listingService, CancellationToken ct) =>
 {
     var result = await listingService.GetSummariesAsync(filter, ct);
+
+    if (!result.Succeeded)
+    {
+        return Results.BadRequest(result.Errors.Select(e => new { Error = e }));
+    }
+
     var paginatedList = result.Value;
 
     return Results.Ok(new
