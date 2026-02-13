@@ -45,31 +45,33 @@ class ListingUrlLauncher {
 
   static Future<void> contactBroker(BuildContext context, String? phone) async {
     if (phone != null) {
-      final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^0-9+]'), '')}');
       try {
+        final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^0-9+]'), '')}');
         if (!await launchUrl(uri)) {
           if (context.mounted) {
             _showErrorSnackBar(context, 'Could not launch dialer');
           }
         }
       } catch (e) {
+        debugPrint('Error launching dialer: $e');
         if (context.mounted) {
-          _showErrorSnackBar(context, 'Error launching dialer: $e');
+          _showErrorSnackBar(context, 'Could not launch dialer');
         }
       }
     }
   }
 
   static Future<void> _openUrl(BuildContext context, String url) async {
-    final Uri uri = Uri.parse(url);
     try {
+      final Uri uri = Uri.parse(url);
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
           context.mounted) {
-        _showErrorSnackBar(context, 'Could not open $url');
+        _showErrorSnackBar(context, 'Could not open link');
       }
     } catch (e) {
+      debugPrint('Error launching URL: $e');
       if (context.mounted) {
-        _showErrorSnackBar(context, 'Error launching URL: $e');
+        _showErrorSnackBar(context, 'Could not open link');
       }
     }
   }
