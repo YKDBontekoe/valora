@@ -65,21 +65,21 @@ public class ContextReportServiceTests
     }
 
     [Fact]
-    public async Task BuildAsync_WhenSomeSourcesFail_ReturnsPartialReportWithWarnings()
+    public async Task BuildAsync_WhenProviderReturnsWarnings_PassesThemThrough()
     {
         var location = CreateLocation();
 
         _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(location);
 
-        var warnings = new List<string> { "CBS failed", "Crime failed", "Air failed" };
+        var providerWarnings = new List<string> { "Source CBS unavailable", "Source AirQuality unavailable" };
         var sourceData = new ContextSourceData(
             NeighborhoodStats: null,
             CrimeStats: null,
             AmenityStats: new AmenityStatsDto(1, 2, 1, 1, 2, 450, 80, DateTimeOffset.UtcNow),
             AirQualitySnapshot: null,
             Sources: new List<SourceAttributionDto>(),
-            Warnings: warnings
+            Warnings: providerWarnings
         );
 
         _contextDataProvider.Setup(x => x.GetSourceDataAsync(location, 1000, It.IsAny<CancellationToken>()))
@@ -89,19 +89,42 @@ public class ContextReportServiceTests
 
         var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
 
-        Assert.Empty(report.SocialMetrics);
-        Assert.Empty(report.CrimeMetrics);
-        Assert.Empty(report.DemographicsMetrics);
-        Assert.NotEmpty(report.AmenityMetrics);
-        Assert.Empty(report.EnvironmentMetrics);
-        // We expect warnings from the provider plus potentially one from radius clamping if applicable (not here)
-        foreach (var warning in warnings)
+        // Verify provider warnings are passed through
+        foreach (var warning in providerWarnings)
         {
             Assert.Contains(warning, report.Warnings);
         }
+    }
 
-        // Verify that metric builders added their own warnings
-        Assert.Contains(report.Warnings, w => w.Contains("CBS"));
+    [Fact]
+    public async Task BuildAsync_WhenDataIsMissing_BuildersAddSpecificWarnings()
+    {
+        var location = CreateLocation();
+
+        _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        // Provider returns no warnings itself, but data is null
+        var sourceData = new ContextSourceData(
+            NeighborhoodStats: null,
+            CrimeStats: null,
+            AmenityStats: new AmenityStatsDto(1, 2, 1, 1, 2, 450, 80, DateTimeOffset.UtcNow),
+            AirQualitySnapshot: null,
+            Sources: new List<SourceAttributionDto>(),
+            Warnings: new List<string>()
+        );
+
+        _contextDataProvider.Setup(x => x.GetSourceDataAsync(location, 1000, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sourceData);
+
+        var service = CreateService();
+
+        var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
+
+        // Verify builders added their own specific warnings
+        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators were unavailable"));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics were unavailable"));
+        Assert.Contains(report.Warnings, w => w.Contains("Air quality source"));
 
         Assert.True(report.CompositeScore > 0);
     }

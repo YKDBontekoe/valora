@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
@@ -34,12 +35,14 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// </summary>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
+        var warnings = new ConcurrentBag<string>();
+
         // Fetch all data sources in parallel (Fan-out)
         // Each task is wrapped in a safe executor that returns null on failure instead of throwing
-        var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), cancellationToken);
-        var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), cancellationToken);
-        var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, radiusMeters, token), cancellationToken);
-        var airQualityTask = TryGetSourceAsync("Luchtmeetnet", token => _airQualityClient.GetSnapshotAsync(location, token), cancellationToken);
+        var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), warnings, cancellationToken);
+        var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), warnings, cancellationToken);
+        var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, radiusMeters, token), warnings, cancellationToken);
+        var airQualityTask = TryGetSourceAsync("Luchtmeetnet", token => _airQualityClient.GetSnapshotAsync(location, token), warnings, cancellationToken);
 
         await Task.WhenAll(cbsTask, crimeTask, amenitiesTask, airQualityTask);
 
@@ -56,7 +59,7 @@ public sealed class ContextDataProvider : IContextDataProvider
             AmenityStats: amenities,
             AirQualitySnapshot: air,
             Sources: sources,
-            Warnings: new List<string>());
+            Warnings: warnings.ToList());
     }
 
     /// <summary>
@@ -65,6 +68,7 @@ public sealed class ContextDataProvider : IContextDataProvider
     private async Task<T?> TryGetSourceAsync<T>(
         string sourceName,
         Func<CancellationToken, Task<T?>> sourceCall,
+        ConcurrentBag<string> warnings,
         CancellationToken cancellationToken)
     {
         try
@@ -78,6 +82,7 @@ public sealed class ContextDataProvider : IContextDataProvider
         catch (Exception ex)
         {
             _logger.LogError(ex, "Context source {SourceName} failed; report will continue with partial data", sourceName);
+            warnings.Add($"Source {sourceName} unavailable");
             return default;
         }
     }

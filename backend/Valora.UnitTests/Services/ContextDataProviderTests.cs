@@ -80,6 +80,7 @@ public class ContextDataProviderTests
 
         Assert.Null(result.NeighborhoodStats);
         Assert.Null(result.CrimeStats); // Expected null because setup returned null
+        Assert.Contains(result.Warnings, w => w.Contains("Source CBS unavailable"));
 
         // Verify logger was called
         _logger.Verify(
