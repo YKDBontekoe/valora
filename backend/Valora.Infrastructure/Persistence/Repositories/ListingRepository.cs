@@ -58,7 +58,7 @@ public class ListingRepository : IListingRepository
     private IQueryable<Listing> ApplyFilters(IQueryable<Listing> query, ListingFilterDto filter, bool isPostgres)
     {
         // Filter out inactive listings
-        query = query.Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken" && !l.IsSoldOrRented);
+        query = query.WhereActive();
 
         query = query.ApplySearchFilter(filter, isPostgres);
 
@@ -157,7 +157,7 @@ public class ListingRepository : IListingRepository
         // Return listings that are not explicitly sold or withdrawn
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
         return await _context.Listings
-            .Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken" && !l.IsSoldOrRented)
+            .WhereActive()
             .ToListAsync(cancellationToken);
     }
 
@@ -173,7 +173,8 @@ public class ListingRepository : IListingRepository
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
-        var query = _context.Listings.AsNoTracking().AsQueryable();
+        var query = _context.Listings.AsNoTracking().AsQueryable()
+            .WhereActive();
 
         // Filter by city (case-insensitive)
         query = query.ApplyCityFilter(city, isPostgres);

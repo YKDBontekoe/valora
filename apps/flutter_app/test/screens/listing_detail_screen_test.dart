@@ -289,7 +289,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(SnackBar), findsOneWidget);
-    expect(find.textContaining('Error launching URL'), findsOneWidget);
+    expect(find.textContaining('Could not open'), findsOneWidget);
   });
 
   testWidgets('Tapping "Contact Broker" launches dialer', (tester) async {

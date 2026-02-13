@@ -3,8 +3,8 @@ import '../../core/theme/valora_spacing.dart';
 import '../../models/listing.dart';
 import '../valora_widgets.dart';
 
-class ListingFeatures extends StatelessWidget {
-  const ListingFeatures({
+class ListingHighlights extends StatelessWidget {
+  const ListingHighlights({
     super.key,
     required this.listing,
   });

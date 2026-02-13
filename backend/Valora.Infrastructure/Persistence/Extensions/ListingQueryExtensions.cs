@@ -6,6 +6,11 @@ namespace Valora.Infrastructure.Persistence.Extensions;
 
 public static class ListingQueryExtensions
 {
+    public static IQueryable<Listing> WhereActive(this IQueryable<Listing> query)
+    {
+        return query.Where(l => l.Status != "Verkocht" && l.Status != "Ingetrokken" && !l.IsSoldOrRented);
+    }
+
     public static IQueryable<Listing> ApplySearchFilter(this IQueryable<Listing> query, ListingFilterDto filter, bool isPostgres)
     {
         if (string.IsNullOrWhiteSpace(filter.SearchTerm))
