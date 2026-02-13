@@ -127,7 +127,8 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // The code uses toStringAsFixed(0) which doesn't add commas
-      expect(find.text('\$500000'), findsOneWidget);
+      // Updated to match Dutch locale formatting used by CurrencyFormatter
+      expect(find.text('€500.000'), findsOneWidget);
       expect(find.text('Test Address'), findsOneWidget);
       expect(find.text('3 Bd'), findsOneWidget);
       expect(find.text('2 Ba'), findsOneWidget);
@@ -166,7 +167,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('\$500000'), findsOneWidget);
+      // Updated to match Dutch locale formatting used by CurrencyFormatter
+      expect(find.text('€500.000'), findsOneWidget);
       expect(find.text('Test Address'), findsOneWidget);
       expect(find.text('Active'), findsOneWidget);
     });

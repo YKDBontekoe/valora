@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_animations.dart';
+import '../../core/theme/valora_typography.dart';
 
 /// Button component with multiple variants.
 enum ValoraButtonVariant { primary, secondary, outline, ghost }
@@ -46,7 +47,8 @@ class _ValoraButtonState extends State<ValoraButton> {
 
   @override
   Widget build(BuildContext context) {
-    Widget child = AnimatedSwitcher(
+    // 1. Build the child content (Loading indicator OR Icon + Text)
+    final Widget childContent = AnimatedSwitcher(
       duration: ValoraAnimations.normal,
       switchInCurve: ValoraAnimations.emphatic,
       switchOutCurve: ValoraAnimations.acceleration,
@@ -61,8 +63,8 @@ class _ValoraButtonState extends State<ValoraButton> {
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation(
                   widget.variant == ValoraButtonVariant.primary
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.primary,
+                      ? ValoraColors.surfaceLight
+                      : ValoraColors.primary,
                 ),
               ),
             )
@@ -77,42 +79,77 @@ class _ValoraButtonState extends State<ValoraButton> {
                   Icon(widget.icon, size: ValoraSpacing.iconSizeSm + 2),
                   const SizedBox(width: ValoraSpacing.sm),
                 ],
-                Text(widget.label),
+                Text(
+                  widget.label,
+                  style: ValoraTypography.labelLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
     );
 
+    // 2. Determine the button widget based on variant
     final effectiveOnPressed = widget.isLoading ? null : widget.onPressed;
-
     Widget button;
+
     switch (widget.variant) {
       case ValoraButtonVariant.primary:
         button = ElevatedButton(
           onPressed: effectiveOnPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: ValoraColors.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: ValoraColors.neutral200,
+            disabledForegroundColor: ValoraColors.neutral400,
+            elevation: _isHovered ? ValoraSpacing.elevationMd : ValoraSpacing.elevationNone,
+            shadowColor: ValoraColors.primary.withValues(alpha: 0.4),
           ),
-          child: child,
+          child: childContent,
         );
         break;
       case ValoraButtonVariant.secondary:
-        button = ElevatedButton(onPressed: effectiveOnPressed, child: child);
+        button = ElevatedButton(
+          onPressed: effectiveOnPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: ValoraColors.primaryLight.withValues(alpha: 0.1),
+            foregroundColor: ValoraColors.primary,
+            elevation: 0,
+            disabledBackgroundColor: ValoraColors.neutral100,
+            disabledForegroundColor: ValoraColors.neutral300,
+          ),
+          child: childContent,
+        );
         break;
       case ValoraButtonVariant.outline:
-        button = OutlinedButton(onPressed: effectiveOnPressed, child: child);
+        button = OutlinedButton(
+          onPressed: effectiveOnPressed,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: ValoraColors.primary,
+            side: const BorderSide(color: ValoraColors.primary),
+            disabledForegroundColor: ValoraColors.neutral400,
+          ),
+          child: childContent,
+        );
         break;
       case ValoraButtonVariant.ghost:
-        button = TextButton(onPressed: effectiveOnPressed, child: child);
+        button = TextButton(
+          onPressed: effectiveOnPressed,
+          style: TextButton.styleFrom(
+            foregroundColor: ValoraColors.neutral600,
+          ),
+          child: childContent,
+        );
         break;
     }
 
-    if (effectiveOnPressed != null) {
+    // 3. Wrap with interactivity (Hover/Press)
+    if (widget.onPressed != null && !widget.isLoading) {
       button = MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() {
           _isHovered = false;
-          _isPressed = false; // Ensure pressed state is cleared if dragged out
+          _isPressed = false;
         }),
         child: Listener(
           onPointerDown: (_) => setState(() => _isPressed = true),
@@ -123,6 +160,7 @@ class _ValoraButtonState extends State<ValoraButton> {
       );
     }
 
+    // 4. Add animations
     return button
         .animate(target: _isPressed ? 1 : 0)
         .scale(

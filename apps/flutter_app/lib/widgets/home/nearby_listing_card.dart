@@ -29,6 +29,7 @@ class NearbyListingCard extends StatefulWidget {
 
 class _NearbyListingCardState extends State<NearbyListingCard> {
   bool _isHovered = false;
+  static const double _thumbnailSize = 96.0;
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +50,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
               Stack(
                 children: [
                   Container(
-                        width: 96,
-                        height: 96,
+                        width: _thumbnailSize,
+                        height: _thumbnailSize,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(
                             ValoraSpacing.radiusMd,
@@ -69,8 +70,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) =>
                                       const ValoraShimmer(
-                                        width: 96,
-                                        height: 96,
+                                        width: _thumbnailSize,
+                                        height: _thumbnailSize,
                                       ),
                                   errorWidget: (context, url, error) => Center(
                                     child: Icon(
@@ -95,8 +96,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                       ),
 
                   Positioned(
-                    top: 4,
-                    right: 4,
+                    top: ValoraSpacing.xs,
+                    right: ValoraSpacing.xs,
                     child: Consumer<FavoritesProvider>(
                       builder: (context, favoritesProvider, child) {
                         final isFavorite = favoritesProvider.isFavorite(
@@ -119,7 +120,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                             ),
                             child: IconButton(
                               constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(ValoraSpacing.xs),
                               tooltip: isFavorite
                                   ? 'Remove from saved'
                                   : 'Save listing',
@@ -158,7 +159,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
               // Info
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: ValoraSpacing.xs),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -216,7 +217,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: ValoraSpacing.radiusLg), // 12
                       Row(
                         children: [
                           _buildFeature(
@@ -257,7 +258,7 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
           size: 14,
           color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: ValoraSpacing.xs),
         Text(
           label,
           style: ValoraTypography.labelSmall.copyWith(
