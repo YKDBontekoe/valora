@@ -226,17 +226,10 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 /// Retrieves a paginated list of listings based on filter criteria.
 /// Requires Authentication.
 /// </summary>
-api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingService listingService, CancellationToken ct) =>
 {
-    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(filter);
-    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-
-    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(filter, validationContext, validationResults, true))
-    {
-        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
-    }
-
-    var paginatedList = await repo.GetSummariesAsync(filter, ct);
+    var result = await listingService.GetSummariesAsync(filter, ct);
+    var paginatedList = result.Value;
 
     return Results.Ok(new
     {
@@ -267,13 +260,12 @@ api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService
 /// Retrieves detailed information for a specific listing by ID.
 /// Requires Authentication.
 /// </summary>
-api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings/{id:guid}", async (Guid id, IListingService listingService, CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
+    var result = await listingService.GetByIdAsync(id, ct);
+    if (!result.Succeeded) return Results.NotFound();
     
-    var dto = ListingMapper.ToDto(listing);
-    return Results.Ok(dto);
+    return Results.Ok(result.Value);
 }).RequireAuthorization();
 
 api.MapPost("/context/report", async (
@@ -289,36 +281,13 @@ api.MapPost("/context/report", async (
 
 api.MapPost("/listings/{id:guid}/enrich", async (
     Guid id,
-    IListingRepository repo,
-    IContextReportService contextReportService,
+    IListingService listingService,
     CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
+    var result = await listingService.EnrichListingAsync(id, ct);
+    if (!result.Succeeded) return Results.NotFound();
 
-    // 1. Generate Report
-    ContextReportRequestDto request = new(Input: listing.Address); // Default 1km radius
-    
-    // We use the application DTO for the service call...
-    var reportDto = await contextReportService.BuildAsync(request, ct);
-
-    // ...and map it to the Domain model for storage
-    var contextReportModel = ListingMapper.MapToDomain(reportDto);
-
-    // 2. Update Entity
-    listing.ContextReport = contextReportModel;
-    listing.ContextCompositeScore = reportDto.CompositeScore;
-
-    if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
-    if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Safety" to "Safety" score
-    if (reportDto.CategoryScores.TryGetValue("Demographics", out var demo)) { /* No specific column yet */ }
-    if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
-    if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
-
-    // 3. Save
-    await repo.UpdateAsync(listing, ct);
-
-    return Results.Ok(new { message = "Listing enriched successfully", compositeScore = reportDto.CompositeScore });
+    return Results.Ok(new { message = "Listing enriched successfully", compositeScore = result.Value });
 }).RequireAuthorization();
 
 app.Run();
