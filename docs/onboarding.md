@@ -6,12 +6,26 @@ Get a local environment running, understand the architecture, and generate your 
 
 ## 1. Environment Setup (First 10 Minutes)
 
-### Prerequisites
+### Automated Setup (Recommended)
+
+1.  **Run the setup script:**
+    ```bash
+    ./setup.sh
+    ```
+2.  **Follow the printed instructions** to start the services (Database, Backend, Frontend).
+
+---
+
+### Manual Setup (Alternative)
+
+If you cannot run the script, follow these steps manually.
+
+#### Prerequisites
 - Docker Desktop
 - .NET 10 SDK
 - Flutter SDK
 
-### Step 1: Start Infrastructure
+#### Step 1: Start Infrastructure
 Start the database (PostgreSQL).
 
 ```bash
@@ -20,7 +34,7 @@ docker-compose -f docker/docker-compose.yml up -d
 
 *Verification:* Run `docker ps` and ensure `valora-db` is running.
 
-### Step 2: Configure & Run Backend
+#### Step 2: Configure & Run Backend
 
 1.  Navigate to the backend directory:
     ```bash
@@ -46,7 +60,7 @@ curl http://localhost:5001/api/health
 # Response should be: {"status":"healthy",...}
 ```
 
-### Step 3: Configure & Run Frontend
+#### Step 3: Configure & Run Frontend
 
 1.  Navigate to the flutter app directory:
     ```bash
@@ -87,7 +101,7 @@ To understand how your request was processed, read the **[Data Flow Deep Dive](o
 | Task | Files/Folders |
 |---|---|
 | **Add a new data source** | 1. Define interface in `Valora.Application/Common/Interfaces`<br>2. Implement client in `Valora.Infrastructure`<br>3. Add to `ContextReportService.cs` |
-| **Adjust Scoring Logic** | `backend/Valora.Infrastructure/Enrichment/ContextReportService.cs` (Look for `Score*` methods) |
+| **Adjust Scoring Logic** | `backend/Valora.Application/Services/ContextReportService.cs` (Look for `Score*` methods) |
 | **Modify API Endpoints** | `backend/Valora.Api/Program.cs` |
 | **Update UI Screens** | `apps/flutter_app/lib/screens/` |
 
