@@ -352,7 +352,9 @@ class ApiService {
       case 404:
         throw NotFoundException(message ?? 'Resource not found');
       case 429:
-        throw ServerException('Too many requests. Please try again later.');
+        throw ServerException(
+          'Too many requests. Please try again later.$traceSuffix',
+        );
       case 503:
         throw ServerException(
           'Service is temporarily unavailable. Please try again later.$traceSuffix',

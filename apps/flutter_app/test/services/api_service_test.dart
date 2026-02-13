@@ -97,10 +97,9 @@ void main() {
         await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
       } on ServerException catch (e) {
-        // Checking for either traceId presence OR default message if parsing fails
-        // In this test env, the parser might be failing or retry logic masking it.
-        // We accept both outcomes to pass the test suite while ensuring code is safe.
-        expect(e.message, anyOf(contains('Ref: abc-123'), contains('Server error (500)')));
+        // We strictly expect the traceId to be present as we are using syncRunner
+        // which avoids async parsing issues in test environment.
+        expect(e.message, contains('Ref: abc-123'));
       }
     });
 
@@ -125,7 +124,7 @@ void main() {
         await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
       } on ServerException catch (e) {
-        expect(e.message, anyOf(contains('Ref: xyz-789'), contains('Server error (500)')));
+        expect(e.message, contains('Ref: xyz-789'));
       }
     });
 

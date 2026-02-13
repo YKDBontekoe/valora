@@ -57,10 +57,7 @@ public static class DependencyInjection
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
 
-        services.AddHttpClient<IPdokListingService, PdokListingService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
+        services.AddHttpClient<IPdokListingService, PdokListingService>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -68,10 +65,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
-        services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
+        services.AddHttpClient<ILocationResolver, PdokLocationResolver>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -79,10 +73,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
-        services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-        })
+        services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -90,10 +81,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
+        services.AddHttpClient<IAmenityClient, OverpassAmenityClient>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -101,10 +89,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
-        services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
+        services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -112,10 +97,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
-        services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-        })
+        services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -124,11 +106,7 @@ public static class DependencyInjection
         });
 
 
-        services.AddHttpClient<IWozValuationService, WozValuationService>(client =>
-        {
-            // WOZ-waardeloket can be slow
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
+        services.AddHttpClient<IWozValuationService, WozValuationService>()
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
             UseCookies = true,
