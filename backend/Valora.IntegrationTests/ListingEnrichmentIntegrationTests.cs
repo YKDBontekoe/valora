@@ -8,6 +8,7 @@ using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence;
 using Xunit;
 
 namespace Valora.IntegrationTests;
@@ -38,7 +39,7 @@ public class ListingEnrichmentIntegrationTests : IAsyncLifetime
 
         // Ensure database is clean before each test
         using var scope = _factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.ValoraDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         // Cleanup existing data
         context.Listings.RemoveRange(context.Listings);
@@ -125,7 +126,7 @@ public class ListingEnrichmentIntegrationTests : IAsyncLifetime
     {
         // Arrange
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.ValoraDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         var listing = new Listing
         {
@@ -245,7 +246,7 @@ public class ListingEnrichmentIntegrationTests : IAsyncLifetime
         // Verify DB update
         // We need to use a new context/scope to ensure we read from DB
         using var assertScope = _factory.Services.CreateScope();
-        var assertDbContext = assertScope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.ValoraDbContext>();
+        var assertDbContext = assertScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         var updatedListing = await assertDbContext.Listings.FindAsync(listing.Id);
         Assert.NotNull(updatedListing);
