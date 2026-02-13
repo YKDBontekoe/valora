@@ -47,6 +47,8 @@ class _ValoraButtonState extends State<ValoraButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     // 1. Build the child content (Loading indicator OR Icon + Text)
     final Widget childContent = AnimatedSwitcher(
       duration: ValoraAnimations.normal,
@@ -63,8 +65,8 @@ class _ValoraButtonState extends State<ValoraButton> {
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation(
                   widget.variant == ValoraButtonVariant.primary
-                      ? ValoraColors.surfaceLight
-                      : ValoraColors.primary,
+                      ? colorScheme.onPrimary
+                      : colorScheme.primary,
                 ),
               ),
             )
@@ -98,12 +100,12 @@ class _ValoraButtonState extends State<ValoraButton> {
         button = ElevatedButton(
           onPressed: effectiveOnPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: ValoraColors.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             disabledBackgroundColor: ValoraColors.neutral200,
             disabledForegroundColor: ValoraColors.neutral400,
             elevation: _isHovered ? ValoraSpacing.elevationMd : ValoraSpacing.elevationNone,
-            shadowColor: ValoraColors.primary.withValues(alpha: 0.4),
+            shadowColor: colorScheme.primary.withValues(alpha: 0.4),
           ),
           child: childContent,
         );
@@ -112,8 +114,8 @@ class _ValoraButtonState extends State<ValoraButton> {
         button = ElevatedButton(
           onPressed: effectiveOnPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: ValoraColors.primaryLight.withValues(alpha: 0.1),
-            foregroundColor: ValoraColors.primary,
+            backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+            foregroundColor: colorScheme.primary,
             elevation: 0,
             disabledBackgroundColor: ValoraColors.neutral100,
             disabledForegroundColor: ValoraColors.neutral300,
@@ -125,8 +127,8 @@ class _ValoraButtonState extends State<ValoraButton> {
         button = OutlinedButton(
           onPressed: effectiveOnPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: ValoraColors.primary,
-            side: const BorderSide(color: ValoraColors.primary),
+            foregroundColor: colorScheme.primary,
+            side: BorderSide(color: colorScheme.primary),
             disabledForegroundColor: ValoraColors.neutral400,
           ),
           child: childContent,

@@ -29,7 +29,6 @@ class NearbyListingCard extends StatefulWidget {
 
 class _NearbyListingCardState extends State<NearbyListingCard> {
   bool _isHovered = false;
-  static const double _thumbnailSize = 96.0;
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +49,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
               Stack(
                 children: [
                   Container(
-                        width: _thumbnailSize,
-                        height: _thumbnailSize,
+                        width: ValoraSpacing.thumbnailSizeLg,
+                        height: ValoraSpacing.thumbnailSizeLg,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(
                             ValoraSpacing.radiusMd,
@@ -70,8 +69,8 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) =>
                                       const ValoraShimmer(
-                                        width: _thumbnailSize,
-                                        height: _thumbnailSize,
+                                        width: ValoraSpacing.thumbnailSizeLg,
+                                        height: ValoraSpacing.thumbnailSizeLg,
                                       ),
                                   errorWidget: (context, url, error) => Center(
                                     child: Icon(
