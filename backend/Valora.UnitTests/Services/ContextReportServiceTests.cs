@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Text.Json;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
@@ -13,22 +12,16 @@ namespace Valora.UnitTests.Services;
 public class ContextReportServiceTests
 {
     private readonly Mock<ILocationResolver> _locationResolver;
-    private readonly Mock<ICbsNeighborhoodStatsClient> _cbsClient;
-    private readonly Mock<ICbsCrimeStatsClient> _crimeClient;
-    private readonly Mock<IAmenityClient> _amenityClient;
-    private readonly Mock<IAirQualityClient> _airClient;
-    private readonly Mock<ILogger<ContextReportService>> _logger;
+    private readonly Mock<IContextDataProvider> _contextDataProvider;
     private readonly Mock<ICacheService> _cacheService;
+    private readonly Mock<ILogger<ContextReportService>> _logger;
 
     public ContextReportServiceTests()
     {
         _locationResolver = new Mock<ILocationResolver>();
-        _cbsClient = new Mock<ICbsNeighborhoodStatsClient>();
-        _crimeClient = new Mock<ICbsCrimeStatsClient>();
-        _amenityClient = new Mock<IAmenityClient>();
-        _airClient = new Mock<IAirQualityClient>();
-        _logger = new Mock<ILogger<ContextReportService>>();
+        _contextDataProvider = new Mock<IContextDataProvider>();
         _cacheService = new Mock<ICacheService>();
+        _logger = new Mock<ILogger<ContextReportService>>();
     }
 
     [Fact]
@@ -39,23 +32,22 @@ public class ContextReportServiceTests
         _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(location);
 
-        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM0363", "Gemeente", 1000, 6057, 290, 7.5,
-            500, 500, 150, 120, 300, 250, 180, 400, 350, 250, 2.1, "Zeer sterk stedelijk", 35.0, 30.0, 20, 40, 40,
-            45, 55, 20, 35, 90, 10, 80,
-            1.2, 500, 1200,
-            0.5, 0.3, 0.4, 0.6, 5.0,
-            DateTimeOffset.UtcNow));
+        var sourceData = new ContextSourceData(
+            NeighborhoodStats: new NeighborhoodStatsDto("GM0363", "Gemeente", 1000, 6057, 290, 7.5,
+                500, 500, 150, 120, 300, 250, 180, 400, 350, 250, 2.1, "Zeer sterk stedelijk", 35.0, 30.0, 20, 40, 40,
+                45, 55, 20, 35, 90, 10, 80,
+                1.2, 500, 1200,
+                0.5, 0.3, 0.4, 0.6, 5.0,
+                DateTimeOffset.UtcNow),
+            CrimeStats: new CrimeStatsDto(45, 5, 3, 20, 8, null, DateTimeOffset.UtcNow),
+            AmenityStats: new AmenityStatsDto(10, 14, 11, 8, 20, 120, 100, DateTimeOffset.UtcNow),
+            AirQualitySnapshot: new AirQualitySnapshotDto("NL49014", "Amsterdam-Vondelpark", 900, 9.2, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            Sources: new List<SourceAttributionDto>(),
+            Warnings: new List<string>()
+        );
 
-        _crimeClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CrimeStatsDto(45, 5, 3, 20, 8, null, DateTimeOffset.UtcNow));
-
-
-        _amenityClient.Setup(x => x.GetAmenitiesAsync(location, 1000, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AmenityStatsDto(10, 14, 11, 8, 20, 120, 100, DateTimeOffset.UtcNow));
-
-        _airClient.Setup(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AirQualitySnapshotDto("NL49014", "Amsterdam-Vondelpark", 900, 9.2, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        _contextDataProvider.Setup(x => x.GetSourceDataAsync(location, 1000, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sourceData);
 
         var service = CreateService();
 
@@ -73,38 +65,67 @@ public class ContextReportServiceTests
     }
 
     [Fact]
-    public async Task BuildAsync_WhenSomeSourcesFail_ReturnsPartialReportWithWarnings()
+    public async Task BuildAsync_WhenProviderReturnsWarnings_PassesThemThrough()
     {
         var location = CreateLocation();
 
         _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(location);
 
-        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((NeighborhoodStatsDto?)null);
+        var providerWarnings = new List<string> { "Source CBS unavailable", "Source AirQuality unavailable" };
+        var sourceData = new ContextSourceData(
+            NeighborhoodStats: null,
+            CrimeStats: null,
+            AmenityStats: new AmenityStatsDto(1, 2, 1, 1, 2, 450, 80, DateTimeOffset.UtcNow),
+            AirQualitySnapshot: null,
+            Sources: new List<SourceAttributionDto>(),
+            Warnings: providerWarnings
+        );
 
-        _crimeClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CrimeStatsDto?)null);
-
-
-        _amenityClient.Setup(x => x.GetAmenitiesAsync(location, 1000, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AmenityStatsDto(1, 2, 1, 1, 2, 450, 80, DateTimeOffset.UtcNow));
-
-        _airClient.Setup(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AirQualitySnapshotDto?)null);
+        _contextDataProvider.Setup(x => x.GetSourceDataAsync(location, 1000, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sourceData);
 
         var service = CreateService();
 
         var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
 
-        Assert.Empty(report.SocialMetrics);
-        Assert.Empty(report.CrimeMetrics);
-        Assert.Empty(report.DemographicsMetrics);
-        Assert.NotEmpty(report.AmenityMetrics);
-        Assert.Empty(report.EnvironmentMetrics);
-        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics", StringComparison.Ordinal));
-                Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
+        // Verify provider warnings are passed through
+        foreach (var warning in providerWarnings)
+        {
+            Assert.Contains(warning, report.Warnings);
+        }
+    }
+
+    [Fact]
+    public async Task BuildAsync_WhenDataIsMissing_BuildersAddSpecificWarnings()
+    {
+        var location = CreateLocation();
+
+        _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        // Provider returns no warnings itself, but data is null
+        var sourceData = new ContextSourceData(
+            NeighborhoodStats: null,
+            CrimeStats: null,
+            AmenityStats: new AmenityStatsDto(1, 2, 1, 1, 2, 450, 80, DateTimeOffset.UtcNow),
+            AirQualitySnapshot: null,
+            Sources: new List<SourceAttributionDto>(),
+            Warnings: new List<string>()
+        );
+
+        _contextDataProvider.Setup(x => x.GetSourceDataAsync(location, 1000, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sourceData);
+
+        var service = CreateService();
+
+        var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
+
+        // Verify builders added their own specific warnings
+        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators were unavailable"));
+        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics were unavailable"));
+        Assert.Contains(report.Warnings, w => w.Contains("Air quality source"));
+
         Assert.True(report.CompositeScore > 0);
     }
 
@@ -117,49 +138,11 @@ public class ContextReportServiceTests
             service.BuildAsync(new ContextReportRequestDto(string.Empty)));
     }
 
-    [Fact]
-    public async Task BuildAsync_WhenSourceThrows_ReturnsPartialReportWithWarnings()
-    {
-        var location = CreateLocation();
-
-        _locationResolver.Setup(x => x.ResolveAsync("Damrak 1 Amsterdam", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(location);
-
-        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new HttpRequestException("CBS unavailable"));
-
-        _crimeClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new HttpRequestException("Crime API unavailable"));
-
-
-        _amenityClient.Setup(x => x.GetAmenitiesAsync(location, 1000, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AmenityStatsDto(1, 2, 1, 1, 2, 450, 80, DateTimeOffset.UtcNow));
-
-        _airClient.Setup(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new JsonException("Malformed payload"));
-
-        var service = CreateService();
-
-        var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
-
-        Assert.Empty(report.SocialMetrics);
-        Assert.Empty(report.CrimeMetrics);
-        Assert.Empty(report.DemographicsMetrics);
-        Assert.NotEmpty(report.AmenityMetrics);
-        Assert.Empty(report.EnvironmentMetrics);
-        Assert.Contains(report.Warnings, w => w.Contains("CBS neighborhood indicators", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("CBS crime statistics", StringComparison.Ordinal));
-        Assert.Contains(report.Warnings, w => w.Contains("Air quality source", StringComparison.Ordinal));
-    }
-
     private ContextReportService CreateService()
     {
         return new ContextReportService(
             _locationResolver.Object,
-            _cbsClient.Object,
-            _crimeClient.Object,
-            _amenityClient.Object,
-            _airClient.Object,
+            _contextDataProvider.Object,
             _cacheService.Object,
             Options.Create(new ContextEnrichmentOptions()),
             _logger.Object);

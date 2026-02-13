@@ -11,40 +11,40 @@ namespace Valora.UnitTests.Services;
 public class ContextReportScoringTests
 {
     private readonly Mock<ILocationResolver> _locationResolver;
-    private readonly Mock<ICbsNeighborhoodStatsClient> _cbsClient;
-    private readonly Mock<ICbsCrimeStatsClient> _crimeClient;
-    private readonly Mock<IAmenityClient> _amenityClient;
-    private readonly Mock<IAirQualityClient> _airClient;
-    private readonly Mock<ILogger<ContextReportService>> _logger;
+    private readonly Mock<IContextDataProvider> _contextDataProvider;
     private readonly Mock<ICacheService> _cacheService;
+    private readonly Mock<ILogger<ContextReportService>> _logger;
     private readonly ResolvedLocationDto _location;
 
     public ContextReportScoringTests()
     {
         _locationResolver = new Mock<ILocationResolver>();
-        _cbsClient = new Mock<ICbsNeighborhoodStatsClient>();
-        _crimeClient = new Mock<ICbsCrimeStatsClient>();
-        _amenityClient = new Mock<IAmenityClient>();
-        _airClient = new Mock<IAirQualityClient>();
-        _logger = new Mock<ILogger<ContextReportService>>();
+        _contextDataProvider = new Mock<IContextDataProvider>();
         _cacheService = new Mock<ICacheService>();
+        _logger = new Mock<ILogger<ContextReportService>>();
         _location = CreateLocation();
     }
 
-    private void SetupDefaults(ResolvedLocationDto location)
+    private void SetupSourceData(
+        NeighborhoodStatsDto? cbs = null,
+        CrimeStatsDto? crime = null,
+        AmenityStatsDto? amenities = null,
+        AirQualitySnapshotDto? air = null)
     {
         _locationResolver.Setup(x => x.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(location);
+            .ReturnsAsync(_location);
 
-        // Setup null returns for all clients to avoid NREs in Task.WhenAll
-        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((NeighborhoodStatsDto?)null);
-        _crimeClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CrimeStatsDto?)null);
-        _amenityClient.Setup(x => x.GetAmenitiesAsync(location, It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AmenityStatsDto?)null);
-        _airClient.Setup(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AirQualitySnapshotDto?)null);
+        var sourceData = new ContextSourceData(
+            NeighborhoodStats: cbs,
+            CrimeStats: crime,
+            AmenityStats: amenities,
+            AirQualitySnapshot: air,
+            Sources: new List<SourceAttributionDto>(),
+            Warnings: new List<string>()
+        );
+
+        _contextDataProvider.Setup(x => x.GetSourceDataAsync(_location, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sourceData);
     }
 
     [Theory]
@@ -56,10 +56,9 @@ public class ContextReportScoringTests
     [InlineData(150, 15)] // Very Unsafe
     public async Task ScoreTotalCrime_ReturnsCorrectScore(int crimesPer1000, double expectedScore)
     {
-        SetupDefaults(_location);
-
-        _crimeClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CrimeStatsDto(crimesPer1000, 0, 0, 0, 0, null, DateTimeOffset.UtcNow));
+        SetupSourceData(
+            crime: new CrimeStatsDto(crimesPer1000, 0, 0, 0, 0, null, DateTimeOffset.UtcNow)
+        );
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -76,16 +75,15 @@ public class ContextReportScoringTests
     [InlineData(8000, 50)]  // Overcrowded
     public async Task ScoreDensity_ReturnsCorrectScore(int density, double expectedScore)
     {
-        SetupDefaults(_location);
-
-        _cbsClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, density, 300, 5, 
+        SetupSourceData(
+            cbs: new NeighborhoodStatsDto("GM", "type", 100, density, 300, 5,
             null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             // Phase 2: Housing (7), Mobility (3), Proximity (5)
             null, null, null, null, null, null, null,
             null, null, null,
             null, null, null, null, null,
-            DateTimeOffset.UtcNow));
+            DateTimeOffset.UtcNow)
+        );
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -101,16 +99,15 @@ public class ContextReportScoringTests
     [InlineData(15, 0)]     // 100 - (15*8) = -20 -> Clamped to 0
     public async Task ScoreLowIncome_ReturnsCorrectScore(double percent, double expectedScore)
     {
-        SetupDefaults(_location);
-
-        _cbsClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, 2000, 300, percent, 
+        SetupSourceData(
+            cbs: new NeighborhoodStatsDto("GM", "type", 100, 2000, 300, percent,
             null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             // Phase 2: Housing (7), Mobility (3), Proximity (5)
             null, null, null, null, null, null, null,
             null, null, null,
             null, null, null, null, null,
-            DateTimeOffset.UtcNow));
+            DateTimeOffset.UtcNow)
+        );
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -127,16 +124,15 @@ public class ContextReportScoringTests
     [InlineData(100, 0)]    // < 0 -> Clamped to 0
     public async Task ScoreWoz_ReturnsCorrectScore(double woz, double expectedScore)
     {
-        SetupDefaults(_location);
-
-        _cbsClient.Setup(x => x.GetStatsAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto("GM", "type", 100, 2000, woz, 5, 
+        SetupSourceData(
+            cbs: new NeighborhoodStatsDto("GM", "type", 100, 2000, woz, 5,
             null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             // Phase 2: Housing (7), Mobility (3), Proximity (5)
             null, null, null, null, null, null, null,
             null, null, null,
             null, null, null, null, null,
-            DateTimeOffset.UtcNow));
+            DateTimeOffset.UtcNow)
+        );
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -154,10 +150,9 @@ public class ContextReportScoringTests
     [InlineData(2500, 25)] // Isolated
     public async Task ScoreAmenityProximity_ReturnsCorrectScore(double distance, double expectedScore)
     {
-        SetupDefaults(_location);
-
-        _amenityClient.Setup(x => x.GetAmenitiesAsync(_location, It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AmenityStatsDto(1, 1, 1, 1, 1, distance, 50, DateTimeOffset.UtcNow));
+        SetupSourceData(
+            amenities: new AmenityStatsDto(1, 1, 1, 1, 1, distance, 50, DateTimeOffset.UtcNow)
+        );
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -175,10 +170,9 @@ public class ContextReportScoringTests
     [InlineData(40, 10)] // Hazardous
     public async Task ScorePm25_ReturnsCorrectScore(double pm25, double expectedScore)
     {
-        SetupDefaults(_location);
-
-        _airClient.Setup(x => x.GetSnapshotAsync(_location, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AirQualitySnapshotDto("ID", "Name", 100, pm25, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        SetupSourceData(
+            air: new AirQualitySnapshotDto("ID", "Name", 100, pm25, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+        );
 
         var service = CreateService();
         var report = await service.BuildAsync(new ContextReportRequestDto("test"));
@@ -191,10 +185,7 @@ public class ContextReportScoringTests
     {
         return new ContextReportService(
             _locationResolver.Object,
-            _cbsClient.Object,
-            _crimeClient.Object,
-            _amenityClient.Object,
-            _airClient.Object,
+            _contextDataProvider.Object,
             _cacheService.Object,
             Options.Create(new ContextEnrichmentOptions()),
             _logger.Object);
