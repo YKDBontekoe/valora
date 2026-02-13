@@ -10,7 +10,9 @@ public static class AiEndpoints
 {
     public static void MapAiEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/ai").RequireAuthorization();
+        var group = app.MapGroup("/api/ai")
+            .RequireAuthorization()
+            .RequireRateLimiting("strict");
 
         group.MapPost("/chat", async (
             [FromBody] AiChatRequest request,
