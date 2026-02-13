@@ -406,12 +406,15 @@ class ApiService {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Look in extensions (RFC 7807) or root
+        // Look in extensions (RFC 7807)
         if (jsonBody['extensions'] is Map<String, dynamic>) {
-          return jsonBody['extensions']['traceId'] as String? ??
-                 jsonBody['extensions']['requestId'] as String?;
+          final extensions = jsonBody['extensions'] as Map<String, dynamic>;
+          if (extensions['traceId'] is String) return extensions['traceId'] as String;
+          if (extensions['requestId'] is String) return extensions['requestId'] as String;
         }
-        return jsonBody['traceId'] as String? ?? jsonBody['requestId'] as String?;
+        // Look in root
+        if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
+        if (jsonBody['requestId'] is String) return jsonBody['requestId'] as String;
       }
     } catch (_) {
       // Ignore parsing errors
