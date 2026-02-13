@@ -22,3 +22,25 @@ public class Result
         return new Result(false, errors);
     }
 }
+
+public class Result<T> : Result
+{
+    private readonly T? _value;
+
+    public T Value => Succeeded ? _value! : throw new InvalidOperationException("No value for failure result.");
+
+    internal Result(bool succeeded, T? value, IEnumerable<string> errors) : base(succeeded, errors)
+    {
+        _value = value;
+    }
+
+    public static Result<T> Success(T value)
+    {
+        return new Result<T>(true, value, Array.Empty<string>());
+    }
+
+    public new static Result<T> Failure(IEnumerable<string> errors)
+    {
+        return new Result<T>(false, default, errors);
+    }
+}
