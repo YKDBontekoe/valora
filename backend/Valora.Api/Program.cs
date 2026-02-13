@@ -109,21 +109,23 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    var isTesting = builder.Environment.IsEnvironment("Testing");
+    var permitLimitStrict = isTesting ? 1000 : 10;
+    var permitLimitFixed = isTesting ? 1000 : 100;
+
     // Strict policy for sensitive/expensive endpoints (Auth, AI, Reports)
-    // 10 requests per minute per IP
     options.AddFixedWindowLimiter("strict", limiterOptions =>
     {
-        limiterOptions.PermitLimit = 10;
+        limiterOptions.PermitLimit = permitLimitStrict;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         limiterOptions.QueueLimit = 0;
     });
 
     // General policy for standard API usage
-    // 100 requests per minute per IP
     options.AddFixedWindowLimiter("fixed", limiterOptions =>
     {
-        limiterOptions.PermitLimit = 100;
+        limiterOptions.PermitLimit = permitLimitFixed;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         limiterOptions.QueueLimit = 2;
@@ -218,18 +220,6 @@ if (!app.Environment.IsEnvironment("Testing"))
     }
 }
 
-app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
-app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
-
-app.UseCors();
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    app.UseRateLimiter();
-}
-
-app.UseAuthentication();
-app.UseAuthorization();
-
 if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION"))
 {
     if (app.Environment.IsProduction())
@@ -239,6 +229,15 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
     app.UseHttpsRedirection();
 }
 
+app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
+app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
+
+app.UseCors();
+app.UseRateLimiter();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 // Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
@@ -246,7 +245,7 @@ app.MapAiEndpoints();
 app.MapMapEndpoints();
 
 // API Endpoints
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
@@ -287,8 +286,7 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
         paginatedList.HasPreviousPage
     });
 })
-.RequireAuthorization()
-.RequireRateLimiting("fixed");
+.RequireAuthorization();
 
 /// <summary>
 /// Looks up property details from PDOK by ID and enriches with neighborhood analytics.
@@ -318,8 +316,7 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     var dto = ListingMapper.ToDto(listing);
     return Results.Ok(dto);
 })
-.RequireAuthorization()
-.RequireRateLimiting("fixed");
+.RequireAuthorization();
 
 api.MapPost("/context/report", async (
     ContextReportRequestDto request,

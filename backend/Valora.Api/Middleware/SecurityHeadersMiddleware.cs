@@ -17,8 +17,8 @@ public class SecurityHeadersMiddleware
         context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
 
         // Content-Security-Policy
-        // 'self' for default. 'unsafe-inline' for scripts/styles often needed for Swagger UI.
-        context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';");
+        // 'self' for default. 'unsafe-inline' for styles allowed for UI compatibility. Scripts are strictly 'self'.
+        context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self';");
 
         await _next(context);
     }

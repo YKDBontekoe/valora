@@ -11,8 +11,7 @@ public static class MapEndpoints
     public static RouteGroupBuilder MapMapEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api/map")
-            .WithTags("Map")
-            .RequireRateLimiting("fixed");
+            .WithTags("Map");
 
         group.MapGet("/cities", async (IMapService mapService, CancellationToken ct) =>
         {
