@@ -219,6 +219,7 @@ public class ListingRepositoryTests
         // Should be ordered by freshness desc
         Assert.Equal("B", result[0].Address);
         Assert.Equal("A", result[1].Address);
+        Assert.IsType<ListingSummaryDto>(result[0]);
     }
 
     [Fact]

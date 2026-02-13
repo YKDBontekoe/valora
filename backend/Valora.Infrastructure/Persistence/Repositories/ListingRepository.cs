@@ -161,7 +161,7 @@ public class ListingRepository : IListingRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Listing>> GetByCityAsync(
+    public async Task<List<ListingSummaryDto>> GetByCityAsync(
         string city, 
         int? minPrice = null, 
         int? maxPrice = null, 
@@ -200,10 +200,11 @@ public class ListingRepository : IListingRepository
             .OrderByDescending(l => l.LastFundaFetchUtc)
             .ThenByDescending(l => l.Price);
 
-        // Paginate
+        // Paginate and Project
         return await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(ListingProjections.ToSummaryDto)
             .ToListAsync(cancellationToken);
     }
 }
