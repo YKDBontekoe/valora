@@ -128,4 +128,5 @@ abstract final class ValoraSpacing {
   static const double listingImageHeight = 200.0;
   static const double listingCardImageHeight = 180.0;
   static const double thumbnailSize = 80.0;
+  static const double thumbnailSizeLg = 96.0;
 }

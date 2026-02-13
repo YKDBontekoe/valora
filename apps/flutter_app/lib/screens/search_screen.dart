@@ -360,11 +360,11 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                               if (notificationProvider.unreadCount > 0)
                                 Positioned(
-                                  top: 12,
-                                  right: 12,
+                                  top: ValoraSpacing.radiusLg,
+                                  right: ValoraSpacing.radiusLg,
                                   child: Container(
-                                    width: 8,
-                                    height: 8,
+                                    width: ValoraSpacing.sm,
+                                    height: ValoraSpacing.sm,
                                     decoration: const BoxDecoration(
                                       color: ValoraColors.error,
                                       shape: BoxShape.circle,
@@ -389,8 +389,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                           if (provider.hasActiveFilters)
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: ValoraSpacing.sm,
+                              right: ValoraSpacing.sm,
                               child: Container(
                                 width: 10,
                                 height: 10,
@@ -402,7 +402,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                         ],
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: ValoraSpacing.sm),
                     ],
                     bottom: PreferredSize(
                       preferredSize: Size.fromHeight(
@@ -426,7 +426,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             onSortTap: _showSortOptions,
                           ),
                           if (provider.hasActiveFiltersOrSort)
-                            const SizedBox(height: 12),
+                            const SizedBox(height: ValoraSpacing.radiusLg),
                         ],
                       ),
                     ),

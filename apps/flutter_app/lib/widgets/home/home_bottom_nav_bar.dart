@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 import '../../core/theme/valora_shadows.dart';
 
@@ -30,23 +32,31 @@ class HomeBottomNavBar extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       child: SafeArea(
         child: Container(
-          margin: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+          margin: const EdgeInsets.fromLTRB(
+            ValoraSpacing.lg,
+            0,
+            ValoraSpacing.lg,
+            ValoraSpacing.md,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(ValoraSpacing.xl),
             boxShadow: ValoraShadows.xl,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(ValoraSpacing.xl),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              filter: ImageFilter.blur(
+                sigmaX: ValoraSpacing.lg,
+                sigmaY: ValoraSpacing.lg,
+              ),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: ValoraSpacing.radiusLg, // 12
+                  vertical: ValoraSpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: glassColor,
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(ValoraSpacing.xl),
                   border: Border.all(color: borderColor, width: 1),
                 ),
                 child: Row(
@@ -126,26 +136,26 @@ class _GlassNavItem extends StatelessWidget {
               HapticFeedback.selectionClick();
               onTap();
             },
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(ValoraSpacing.lg),
             child: AnimatedContainer(
               duration: ValoraAnimations.medium,
               curve: ValoraAnimations.emphatic,
               padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? 20 : 16,
-                vertical: 12,
+                horizontal: isSelected ? ValoraSpacing.lg - 4 : ValoraSpacing.md, // 20 vs 16
+                vertical: ValoraSpacing.radiusLg, // 12
               ),
               decoration: BoxDecoration(
                 color: isSelected
                     ? ValoraColors.primary.withValues(alpha: 0.15)
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(ValoraSpacing.lg),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                         icon,
-                        size: 24,
+                        size: ValoraSpacing.iconSizeMd,
                         semanticLabel: null,
                         color: isSelected
                             ? ValoraColors.primary
@@ -169,14 +179,13 @@ class _GlassNavItem extends StatelessWidget {
                       child: ExcludeSemantics(
                         child: Padding(
                           padding: isSelected
-                              ? const EdgeInsets.only(left: 8)
+                              ? const EdgeInsets.only(left: ValoraSpacing.sm)
                               : EdgeInsets.zero,
                           child: Text(
                             label,
-                            style: const TextStyle(
+                            style: ValoraTypography.labelLarge.copyWith(
                               color: ValoraColors.primary,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
