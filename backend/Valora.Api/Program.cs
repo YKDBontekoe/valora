@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -98,7 +100,37 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    var isTesting = builder.Environment.IsEnvironment("Testing");
+    var permitLimitStrict = isTesting ? 1000 : 10;
+    var permitLimitFixed = isTesting ? 1000 : 100;
+
+    // Strict policy for sensitive/expensive endpoints (Auth, AI, Reports)
+    options.AddFixedWindowLimiter("strict", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = permitLimitStrict;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0;
+    });
+
+    // General policy for standard API usage
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = permitLimitFixed;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 2;
+    });
+});
 
 // Add CORS for Flutter
 builder.Services.AddCors(options =>
@@ -188,17 +220,23 @@ if (!app.Environment.IsEnvironment("Testing"))
     }
 }
 
+if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION"))
+{
+    if (app.Environment.IsProduction())
+    {
+        app.UseHsts();
+    }
+    app.UseHttpsRedirection();
+}
+
 app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
+app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
 
 app.UseCors();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION"))
-{
-    app.UseHttpsRedirection();
-}
 
 // Map Auth Endpoints (Injects IConfiguration into handler)
 app.MapAuthEndpoints();
@@ -207,7 +245,7 @@ app.MapAiEndpoints();
 app.MapMapEndpoints();
 
 // API Endpoints
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
@@ -247,7 +285,8 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
         paginatedList.HasNextPage,
         paginatedList.HasPreviousPage
     });
-}).RequireAuthorization();
+})
+.RequireAuthorization();
 
 /// <summary>
 /// Looks up property details from PDOK by ID and enriches with neighborhood analytics.
@@ -261,7 +300,9 @@ api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService
     if (listing is null) return Results.NotFound();
 
     return Results.Ok(listing);
-}).RequireAuthorization();
+})
+.RequireAuthorization()
+.RequireRateLimiting("strict");
 
 /// <summary>
 /// Retrieves detailed information for a specific listing by ID.
@@ -274,7 +315,8 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, Cance
     
     var dto = ListingMapper.ToDto(listing);
     return Results.Ok(dto);
-}).RequireAuthorization();
+})
+.RequireAuthorization();
 
 api.MapPost("/context/report", async (
     ContextReportRequestDto request,
@@ -285,6 +327,7 @@ api.MapPost("/context/report", async (
     return Results.Ok(report);
 })
 .RequireAuthorization()
+.RequireRateLimiting("strict")
 .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<ContextReportRequestDto>>();
 
 api.MapPost("/listings/{id:guid}/enrich", async (
@@ -319,7 +362,9 @@ api.MapPost("/listings/{id:guid}/enrich", async (
     await repo.UpdateAsync(listing, ct);
 
     return Results.Ok(new { message = "Listing enriched successfully", compositeScore = reportDto.CompositeScore });
-}).RequireAuthorization();
+})
+.RequireAuthorization("Admin")
+.RequireRateLimiting("strict");
 
 app.Run();
 
