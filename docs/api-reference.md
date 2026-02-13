@@ -86,7 +86,7 @@ Generate an on-demand context report for any Dutch address or Funda URL.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `input` | string | Yes | Address string (e.g., "Damrak 1, Amsterdam") or a valid Funda URL. |
-| `radiusMeters` | int | No | Analysis radius in meters. Default: 1000. Range: 100-5000. |
+| `radiusMeters` | int | No | Analysis radius in meters. Default: 1000. Range: 200-5000. |
 
 **Response (200 OK):**
 Returns a `ContextReportDto`.
