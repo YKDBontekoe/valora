@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Npgsql;
 using Valora.Api.Middleware;
 using Valora.Application.Common.Exceptions;
 
@@ -320,5 +321,71 @@ public class ExceptionHandlingMiddlewareTests
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
         Assert.Contains("An external service returned an invalid or unexpected response format", body);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_NpgsqlExceptionTransient_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        // Using "53300" (Too many connections) which is transient
+        var transientEx = new PostgresException("Transient error", "ERROR", "ERROR", "53300");
+
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw transientEx,
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_NpgsqlExceptionNonTransient_ReturnsInternalServerError()
+    {
+        // Arrange
+        // Using "42P01" (Undefined Table) which is NOT transient
+        var nonTransientEx = new PostgresException("Table not found", "ERROR", "ERROR", "42P01");
+
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw nonTransientEx,
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_DbUpdateExceptionWithTransientNpgsql_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        var transientEx = new PostgresException("Transient error", "ERROR", "ERROR", "53300");
+        var dbEx = new DbUpdateException("DB Error", transientEx);
+
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw dbEx,
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
     }
 }

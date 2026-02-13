@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Valora.Application.Common.Exceptions;
 
 namespace Valora.Api.Middleware;
@@ -78,10 +79,33 @@ public class ExceptionHandlingMiddleware
                 title = "Concurrency Conflict";
                 detail = "The resource has been modified by another user.";
                 break;
-            case DbUpdateException:
-                statusCode = (int)HttpStatusCode.Conflict;
-                title = "Database Conflict";
-                detail = "A database constraint violation occurred.";
+            case DbUpdateException dbEx:
+                if (dbEx.InnerException is NpgsqlException innerNpgsqlEx && innerNpgsqlEx.IsTransient)
+                {
+                    statusCode = (int)HttpStatusCode.ServiceUnavailable;
+                    title = "Service Unavailable";
+                    detail = "The service is temporarily unavailable due to database connectivity issues.";
+                }
+                else
+                {
+                    statusCode = (int)HttpStatusCode.Conflict;
+                    title = "Database Conflict";
+                    detail = "A database constraint violation occurred.";
+                }
+                break;
+            case NpgsqlException npgsqlEx:
+                if (npgsqlEx.IsTransient)
+                {
+                    statusCode = (int)HttpStatusCode.ServiceUnavailable;
+                    title = "Service Unavailable";
+                    detail = "The service is temporarily unavailable due to database connectivity issues.";
+                }
+                else
+                {
+                    statusCode = (int)HttpStatusCode.InternalServerError;
+                    title = "Database Error";
+                    detail = "A database error occurred.";
+                }
                 break;
             case BadHttpRequestException:
                 statusCode = (int)HttpStatusCode.BadRequest;
