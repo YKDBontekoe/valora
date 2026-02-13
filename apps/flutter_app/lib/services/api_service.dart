@@ -339,6 +339,8 @@ class ApiService {
     );
 
     final String? message = _parseErrorMessage(response.body);
+    final String? traceId = _parseTraceId(response.body);
+    final String traceSuffix = traceId != null ? ' (Ref: $traceId)' : '';
 
     switch (response.statusCode) {
       case 400:
@@ -351,16 +353,19 @@ class ApiService {
         throw NotFoundException(message ?? 'Resource not found');
       case 429:
         throw ServerException('Too many requests. Please try again later.');
+      case 503:
+        throw ServerException(
+          'Service is temporarily unavailable. Please try again later.$traceSuffix',
+        );
       case 500:
       case 502:
-      case 503:
       case 504:
         throw ServerException(
-          'Server error (${response.statusCode}). Please try again later.',
+          'We are experiencing technical difficulties. Please try again later.$traceSuffix',
         );
       default:
         throw ServerException(
-          'Request failed with status: ${response.statusCode}',
+          'Request failed with status: ${response.statusCode}$traceSuffix',
         );
     }
   }
@@ -385,16 +390,33 @@ class ApiService {
     );
 
     if (error is SocketException) {
-      return NetworkException('Unable to reach the server. Please check your internet connection.');
+      return NetworkException('No internet connection. Please check your settings.');
     } else if (error is TimeoutException) {
-      return NetworkException('The request timed out. Please try again later.');
+      return NetworkException('Request timed out. Please check your connection or try again later.');
     } else if (error is http.ClientException) {
-      return NetworkException('Connection failed. Please check your network settings.');
+      return NetworkException('Unable to reach the server. Please check your connection.');
     } else if (error is FormatException) {
       return JsonParsingException('Failed to process server response.');
     }
 
     return UnknownException('An unexpected error occurred. Please try again.');
+  }
+
+  String? _parseTraceId(String body) {
+    try {
+      final jsonBody = json.decode(body);
+      if (jsonBody is Map<String, dynamic>) {
+        // Look in extensions (RFC 7807) or root
+        if (jsonBody['extensions'] is Map<String, dynamic>) {
+          return jsonBody['extensions']['traceId'] as String? ??
+                 jsonBody['extensions']['requestId'] as String?;
+        }
+        return jsonBody['traceId'] as String? ?? jsonBody['requestId'] as String?;
+      }
+    } catch (_) {
+      // Ignore parsing errors
+    }
+    return null;
   }
 
   String? _parseErrorMessage(String body) {

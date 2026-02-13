@@ -61,16 +61,22 @@ public static class DependencyInjection
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
-        .AddStandardResilienceHandler();
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
+        });
 
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })
         .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client =>
@@ -78,9 +84,10 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         })
         .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });
 
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>(client =>
@@ -88,9 +95,10 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(15);
         })
         .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>(client =>
@@ -98,9 +106,10 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(15);
         })
         .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
         services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client =>
@@ -108,9 +117,10 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         })
         .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
-            options.Retry.Delay = TimeSpan.FromSeconds(1);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });
 
 
@@ -125,9 +135,10 @@ public static class DependencyInjection
             AutomaticDecompression = DecompressionMethods.All
         })
         .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
-            options.Retry.BackoffType = DelayBackoffType.Constant;
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
 
