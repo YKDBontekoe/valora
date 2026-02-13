@@ -92,8 +92,12 @@ class ApiService {
 
         // Force retry on server errors
         if (response.statusCode >= 500) {
+          // Parse trace ID if possible to include in the error
+          final String? traceId = _parseTraceId(response.body);
+          final String traceSuffix = traceId != null ? ' (Ref: $traceId)' : '';
+
           throw ServerException(
-            'Server error (${response.statusCode}). Please try again later.',
+            'Server error (${response.statusCode}). Please try again later.$traceSuffix',
           );
         }
 
