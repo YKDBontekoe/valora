@@ -230,5 +230,101 @@ void main() {
         expect(find.byType(SnackBar), findsOneWidget);
         expect(find.text('Could not launch dialer'), findsOneWidget);
     });
+
+    testWidgets('openVirtualTour success', (tester) async {
+       await tester.pumpWidget(createWidgetUnderTest(
+        Builder(builder: (context) {
+          return ElevatedButton(
+            onPressed: () => ListingUrlLauncher.openVirtualTour(context, 'https://example.com/tour'),
+            child: const Text('Open'),
+          );
+        }),
+      ));
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('openVirtualTour handles null', (tester) async {
+       await tester.pumpWidget(createWidgetUnderTest(
+        Builder(builder: (context) {
+          return ElevatedButton(
+            onPressed: () => ListingUrlLauncher.openVirtualTour(context, null),
+            child: const Text('Open'),
+          );
+        }),
+      ));
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('openVideo success', (tester) async {
+       await tester.pumpWidget(createWidgetUnderTest(
+        Builder(builder: (context) {
+          return ElevatedButton(
+            onPressed: () => ListingUrlLauncher.openVideo(context, 'https://example.com/video'),
+            child: const Text('Open'),
+          );
+        }),
+      ));
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('openVideo handles null', (tester) async {
+       await tester.pumpWidget(createWidgetUnderTest(
+        Builder(builder: (context) {
+          return ElevatedButton(
+            onPressed: () => ListingUrlLauncher.openVideo(context, null),
+            child: const Text('Open'),
+          );
+        }),
+      ));
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('openFirstFloorPlan success', (tester) async {
+       await tester.pumpWidget(createWidgetUnderTest(
+        Builder(builder: (context) {
+          return ElevatedButton(
+            onPressed: () => ListingUrlLauncher.openFirstFloorPlan(context, ['https://example.com/plan']),
+            child: const Text('Open'),
+          );
+        }),
+      ));
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('openFirstFloorPlan handles empty list', (tester) async {
+       await tester.pumpWidget(createWidgetUnderTest(
+        Builder(builder: (context) {
+          return ElevatedButton(
+            onPressed: () => ListingUrlLauncher.openFirstFloorPlan(context, []),
+            child: const Text('Open'),
+          );
+        }),
+      ));
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
   });
 }
