@@ -6,6 +6,9 @@ import 'api_service.dart';
 class NotificationService extends ChangeNotifier {
   ApiService _apiService;
   List<ValoraNotification> _notifications = [];
+  final List<ValoraNotification> _pendingDeletions = [];
+  final Map<String, Timer> _deletionTimers = {};
+
   int _unreadCount = 0;
   bool _isLoading = false;
   bool _isLoadingMore = false;
@@ -63,6 +66,9 @@ class NotificationService extends ChangeNotifier {
 
     final removed = _notifications[index];
 
+    // Store in pending deletions
+    _pendingDeletions.add(removed);
+
     // Optimistic update
     _notifications.removeAt(index);
     if (!removed.isRead) {
@@ -70,26 +76,46 @@ class NotificationService extends ChangeNotifier {
     }
     notifyListeners();
 
-    try {
-      await _apiService.deleteNotification(id);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting notification: $e');
+    // Start timer for actual deletion
+    _deletionTimers[id]?.cancel();
+    _deletionTimers[id] = Timer(const Duration(seconds: 4), () async {
+      _deletionTimers.remove(id);
+      _pendingDeletions.removeWhere((n) => n.id == id);
+      try {
+        await _apiService.deleteNotification(id);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error deleting notification: $e');
+        }
+        // If API fails, we could potentially re-add it, but since it's a delete,
+        // silent failure or logging is often acceptable.
       }
-      // Revert state on failure
-      if (index <= _notifications.length) {
-        _notifications.insert(index, removed);
-      } else {
-        _notifications.add(removed);
-      }
+    });
+  }
 
-      if (!removed.isRead) {
-        _unreadCount++;
-      }
-      notifyListeners();
+  void undoDelete(String id) {
+    final pendingIndex = _pendingDeletions.indexWhere((n) => n.id == id);
+    if (pendingIndex == -1) return;
 
-      rethrow;
+    final notification = _pendingDeletions[pendingIndex];
+
+    // Cancel timer
+    _deletionTimers[id]?.cancel();
+    _deletionTimers.remove(id);
+
+    // Remove from pending
+    _pendingDeletions.removeAt(pendingIndex);
+
+    // Add back to notifications
+    _notifications.add(notification);
+
+    // Sort to keep order correct
+    _notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (!notification.isRead) {
+      _unreadCount++;
     }
+    notifyListeners();
   }
 
   Future<void> fetchNotifications({bool refresh = false}) async {
@@ -113,6 +139,15 @@ class NotificationService extends ChangeNotifier {
       _unreadCount = count;
       _hasMore = fetched.length >= _pageSize;
       _offset = fetched.length;
+
+      // Clear pending deletions on fresh fetch to avoid state sync issues
+      if (refresh) {
+          for (var timer in _deletionTimers.values) {
+              timer.cancel();
+          }
+          _deletionTimers.clear();
+          _pendingDeletions.clear();
+      }
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -205,6 +240,9 @@ class NotificationService extends ChangeNotifier {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    for (var timer in _deletionTimers.values) {
+        timer.cancel();
+    }
     super.dispose();
   }
 }

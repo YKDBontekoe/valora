@@ -54,6 +54,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await context.read<NotificationService>().fetchNotifications(refresh: true);
   }
 
+  Future<void> _confirmMarkAllRead(BuildContext context, NotificationService provider) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Mark All as Read?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Mark Read',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text(
+          'Are you sure you want to mark all notifications as read?',
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      await provider.markAllAsRead();
+    }
+  }
+
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -129,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   actions: [
                     if (provider.unreadCount > 0)
                       TextButton.icon(
-                        onPressed: () => provider.markAllAsRead(),
+                        onPressed: () => _confirmMarkAllRead(context, provider),
                         icon: const Icon(Icons.done_all_rounded, size: 18),
                         label: const Text('Mark all read'),
                         style: TextButton.styleFrom(
@@ -252,14 +280,15 @@ class _NotificationItem extends StatelessWidget {
       ),
       onDismissed: (_) {
         provider.deleteNotification(notification.id);
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Notification deleted'),
+            duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'Undo',
               onPressed: () {
-                // Ideally we would restore it, but simple delete for now
-                // provider.undoDelete(); // Not implemented yet
+                provider.undoDelete(notification.id);
               },
             ),
           ),
@@ -271,9 +300,21 @@ class _NotificationItem extends StatelessWidget {
             provider.markAsRead(notification.id);
           }
           if (notification.actionUrl != null) {
-            final uri = Uri.parse(notification.actionUrl!);
-            if (await canLaunchUrl(uri)) {
-               await launchUrl(uri);
+            try {
+              final uri = Uri.parse(notification.actionUrl!);
+              if (!await launchUrl(uri)) {
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(content: Text('Could not open link')),
+                  );
+                }
+              }
+            } catch (e) {
+               if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(content: Text('Invalid link')),
+                  );
+                }
             }
           }
         },

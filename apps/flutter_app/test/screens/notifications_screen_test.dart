@@ -121,6 +121,15 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Mark all read'));
+    await tester.pumpAndSettle();
+
+    // Expect dialog
+    expect(find.text('Mark All as Read?'), findsOneWidget);
+
+    // Tap confirm
+    await tester.tap(find.text('Mark Read'));
+    await tester.pumpAndSettle();
+
     verify(mockNotificationService.markAllAsRead()).called(1);
   });
 
@@ -142,7 +151,7 @@ void main() {
     verify(mockNotificationService.markAsRead('1')).called(1);
   });
 
-  testWidgets('NotificationsScreen swipes to delete', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen swipes to delete and undo', (WidgetTester tester) async {
     final notification = ValoraNotification(
         id: '1',
         title: 'Title',
@@ -161,5 +170,10 @@ void main() {
 
     verify(mockNotificationService.deleteNotification('1')).called(1);
     expect(find.text('Notification deleted'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    verify(mockNotificationService.undoDelete('1')).called(1);
   });
 }
