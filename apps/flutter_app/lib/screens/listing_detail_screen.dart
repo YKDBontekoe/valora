@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_animations.dart';
+import '../core/utils/listing_url_launcher.dart';
 import '../models/listing.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_glass_container.dart';
@@ -14,7 +13,8 @@ import '../widgets/listing_detail/listing_sliver_app_bar.dart';
 import '../widgets/listing_detail/listing_header.dart';
 import '../widgets/listing_detail/listing_address.dart';
 import '../widgets/listing_detail/listing_specs.dart';
-import '../widgets/listing_detail/listing_features.dart';
+import '../widgets/listing_detail/listing_highlights.dart';
+import '../widgets/listing_detail/listing_detailed_features.dart';
 import '../widgets/listing_detail/listing_technical_details.dart';
 import '../widgets/listing_detail/listing_broker_card.dart';
 import 'gallery/full_screen_gallery.dart';
@@ -23,13 +23,6 @@ class ListingDetailScreen extends StatelessWidget {
   const ListingDetailScreen({super.key, required this.listing});
 
   final Listing listing;
-
-  Future<void> _openExternalLink(BuildContext context) async {
-    final url = listing.url;
-    if (url != null) {
-      await _openUrl(context, url);
-    }
-  }
 
   Future<void> _contactBroker(BuildContext context) async {
     final phone = listing.brokerPhone;
@@ -56,73 +49,8 @@ class ListingDetailScreen extends StatelessWidget {
         ),
       );
 
-      if (confirmed != true) return;
-
-      final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^0-9+]'), '')}');
-      try {
-        if (!await launchUrl(uri)) {
-          if (context.mounted) {
-            _showErrorSnackBar(context, 'Could not launch dialer');
-          }
-        }
-      } catch (e) {
-        if (context.mounted) {
-          _showErrorSnackBar(context, 'Error launching dialer: $e');
-        }
-      }
-    }
-  }
-
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: ValoraColors.error),
-    );
-  }
-
-  Future<void> _openMap(BuildContext context) async {
-    final Uri uri;
-    if (listing.latitude != null && listing.longitude != null) {
-      uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}',
-      );
-    } else {
-      final String query = '${listing.address} ${listing.city ?? ''}'.trim();
-      uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
-      );
-    }
-
-    await _openUrl(context, uri.toString());
-  }
-
-  Future<void> _openVirtualTour(BuildContext context) async {
-    if (listing.virtualTourUrl != null) {
-      await _openUrl(context, listing.virtualTourUrl!);
-    }
-  }
-
-  Future<void> _openVideo(BuildContext context) async {
-    if (listing.videoUrl != null) {
-      await _openUrl(context, listing.videoUrl!);
-    }
-  }
-
-  Future<void> _openFirstFloorPlan(BuildContext context) async {
-    if (listing.floorPlanUrls.isNotEmpty) {
-      await _openUrl(context, listing.floorPlanUrls.first);
-    }
-  }
-
-  Future<void> _openUrl(BuildContext context, String url) async {
-    final Uri uri = Uri.parse(url);
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
-          context.mounted) {
-        _showErrorSnackBar(context, 'Could not open $url');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        _showErrorSnackBar(context, 'Error launching URL: $e');
+      if (confirmed == true && context.mounted) {
+        await ListingUrlLauncher.contactBroker(context, phone);
       }
     }
   }
@@ -195,8 +123,8 @@ class ListingDetailScreen extends StatelessWidget {
                             const SizedBox(height: ValoraSpacing.xl),
                           ],
 
-                          // Key Features Grid
-                          ListingFeatures(listing: listing),
+                          // Key Features Grid (Highlights)
+                          ListingHighlights(listing: listing),
                           const SizedBox(height: ValoraSpacing.xl),
 
                           // Technical Details
@@ -242,21 +170,21 @@ class ListingDetailScreen extends StatelessWidget {
                                     label: 'Open Map',
                                     icon: Icons.map_rounded,
                                     variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => _openMap(context),
+                                    onPressed: () => ListingUrlLauncher.openMap(context, listing.latitude, listing.longitude, listing.address, listing.city),
                                   ),
                                 if (listing.virtualTourUrl != null)
                                   ValoraButton(
                                     label: 'Virtual Tour',
                                     icon: Icons.view_in_ar_rounded,
                                     variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => _openVirtualTour(context),
+                                    onPressed: () => ListingUrlLauncher.openVirtualTour(context, listing.virtualTourUrl),
                                   ),
                                 if (listing.videoUrl != null)
                                   ValoraButton(
                                     label: 'Watch Video',
                                     icon: Icons.play_circle_outline_rounded,
                                     variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => _openVideo(context),
+                                    onPressed: () => ListingUrlLauncher.openVideo(context, listing.videoUrl),
                                   ),
                                 if (listing.floorPlanUrls.isNotEmpty)
                                   ValoraButton(
@@ -264,62 +192,15 @@ class ListingDetailScreen extends StatelessWidget {
                                     icon: Icons.map_outlined,
                                     variant: ValoraButtonVariant.secondary,
                                     onPressed: () =>
-                                        _openFirstFloorPlan(context),
+                                        ListingUrlLauncher.openFirstFloorPlan(context, listing.floorPlanUrls),
                                   ),
                               ],
                             ),
                             const SizedBox(height: ValoraSpacing.xl),
                           ],
 
-                          // Features List
-                          if (listing.features.isNotEmpty) ...[
-                            Text(
-                              'Features',
-                              style: ValoraTypography.titleLarge.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: ValoraSpacing.md),
-                            ...listing.features.entries.map(
-                              (e) => Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: ValoraSpacing.sm,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle_outline_rounded,
-                                      size: 20,
-                                      color: colorScheme.primary,
-                                    ),
-                                    const SizedBox(width: ValoraSpacing.sm),
-                                    Expanded(
-                                      child: RichText(
-                                        text: TextSpan(
-                                          style: ValoraTypography.bodyMedium
-                                              .copyWith(
-                                                color: colorScheme.onSurface,
-                                              ),
-                                          children: [
-                                            TextSpan(
-                                              text: '${e.key}: ',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            TextSpan(text: e.value),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: ValoraSpacing.xl),
-                          ],
+                          // Features List (Detailed)
+                          ListingDetailedFeatures(listing: listing),
 
                           // Broker Section
                           if (listing.brokerLogoUrl != null ||
@@ -334,7 +215,7 @@ class ListingDetailScreen extends StatelessWidget {
                               label: 'View on Funda',
                               icon: Icons.open_in_new_rounded,
                               isFullWidth: true,
-                              onPressed: () => _openExternalLink(context),
+                              onPressed: () => ListingUrlLauncher.openExternalLink(context, listing.url),
                             ),
                           ],
 

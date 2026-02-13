@@ -4,6 +4,14 @@ namespace Valora.Application.Enrichment;
 
 public static class ContextScoreCalculator
 {
+    private const string CategorySocial = "Social";
+    private const string CategorySafety = "Safety";
+    private const string CategoryDemographics = "Demographics";
+    private const string CategoryHousing = "Housing";
+    private const string CategoryMobility = "Mobility";
+    private const string CategoryAmenities = "Amenities";
+    private const string CategoryEnvironment = "Environment";
+
     public static Dictionary<string, double> ComputeCategoryScores(
         IReadOnlyList<ContextMetricDto> socialMetrics,
         IReadOnlyList<ContextMetricDto> crimeMetrics,
@@ -16,25 +24,25 @@ public static class ContextScoreCalculator
         var scores = new Dictionary<string, double>();
 
         var social = AverageScore(socialMetrics);
-        if (social.HasValue) scores["Social"] = Math.Round(social.Value, 1);
+        if (social.HasValue) scores[CategorySocial] = Math.Round(social.Value, 1);
 
         var crime = AverageScore(crimeMetrics);
-        if (crime.HasValue) scores["Safety"] = Math.Round(crime.Value, 1);
+        if (crime.HasValue) scores[CategorySafety] = Math.Round(crime.Value, 1);
 
         var demographics = AverageScore(demographicsMetrics);
-        if (demographics.HasValue) scores["Demographics"] = Math.Round(demographics.Value, 1);
+        if (demographics.HasValue) scores[CategoryDemographics] = Math.Round(demographics.Value, 1);
 
         var housing = AverageScore(housingMetrics);
-        if (housing.HasValue) scores["Housing"] = Math.Round(housing.Value, 1);
+        if (housing.HasValue) scores[CategoryHousing] = Math.Round(housing.Value, 1);
 
         var mobility = AverageScore(mobilityMetrics);
-        if (mobility.HasValue) scores["Mobility"] = Math.Round(mobility.Value, 1);
+        if (mobility.HasValue) scores[CategoryMobility] = Math.Round(mobility.Value, 1);
 
         var amenity = AverageScore(amenityMetrics);
-        if (amenity.HasValue) scores["Amenities"] = Math.Round(amenity.Value, 1);
+        if (amenity.HasValue) scores[CategoryAmenities] = Math.Round(amenity.Value, 1);
 
         var environment = AverageScore(environmentMetrics);
-        if (environment.HasValue) scores["Environment"] = Math.Round(environment.Value, 1);
+        if (environment.HasValue) scores[CategoryEnvironment] = Math.Round(environment.Value, 1);
 
         return scores;
     }
@@ -63,13 +71,13 @@ public static class ContextScoreCalculator
         // 4. Mobility (5%) is often specific to car owners vs public transport users, so it has lower general weight.
         var weights = new Dictionary<string, double>
         {
-            ["Social"] = 0.20,
-            ["Safety"] = 0.20,
-            ["Demographics"] = 0.10,
-            ["Housing"] = 0.10,
-            ["Mobility"] = 0.05,
-            ["Amenities"] = 0.25,
-            ["Environment"] = 0.10
+            [CategorySocial] = 0.20,
+            [CategorySafety] = 0.20,
+            [CategoryDemographics] = 0.10,
+            [CategoryHousing] = 0.10,
+            [CategoryMobility] = 0.05,
+            [CategoryAmenities] = 0.25,
+            [CategoryEnvironment] = 0.10
         };
 
         double totalWeight = 0;
