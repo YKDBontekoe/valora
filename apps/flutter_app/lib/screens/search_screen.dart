@@ -148,15 +148,23 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _openListingDetail(Listing listing) async {
     Listing listingToDisplay = listing;
     try {
-      listingToDisplay = await _enrichListingWithRealPhotos(listing);
+      // If the listing is a summary (missing description or features), fetch full details
+      if (listing.description == null && listing.features.isEmpty) {
+        final fullListing = await context.read<ApiService>().getListing(listing.id);
+        if (fullListing != null) {
+          listingToDisplay = fullListing;
+        }
+      }
+
+      listingToDisplay = await _enrichListingWithRealPhotos(listingToDisplay);
     } catch (e, stack) {
       developer.log(
-        'Photo enrichment failed for listing ${listing.id}',
+        'Listing enrichment failed for listing ${listing.id}',
         name: 'SearchScreen',
         error: e,
         stackTrace: stack,
       );
-      listingToDisplay = listing;
+      // Fallback to what we have
     }
 
     if (!mounted) {
@@ -485,17 +493,12 @@ class _SearchScreenState extends State<SearchScreen> {
                           }
 
                           final listing = provider.listings[index];
-                          return NearbyListingCard(
-                                listing: listing,
-                                onTap: () => _openListingDetail(listing),
-                              )
-                              .animate(delay: (50 * (index % 10)).ms)
-                              .fade(duration: 400.ms)
-                              .slideY(
-                                begin: 0.1,
-                                end: 0,
-                                curve: Curves.easeOut,
-                              );
+                          return RepaintBoundary(
+                            child: NearbyListingCard(
+                              listing: listing,
+                              onTap: () => _openListingDetail(listing),
+                            ),
+                          );
                         }, childCount: provider.listings.length + 1),
                       ),
                     ),

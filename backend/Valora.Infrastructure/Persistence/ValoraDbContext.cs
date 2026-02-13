@@ -69,6 +69,9 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => new { e.City, e.Price });
             entity.HasIndex(e => new { e.City, e.Bedrooms });
             entity.HasIndex(e => new { e.City, e.LivingAreaM2 });
+            entity.HasIndex(e => new { e.City, e.ContextCompositeScore });
+            entity.HasIndex(e => new { e.City, e.ContextSafetyScore });
+            entity.HasIndex(e => new { e.City, e.LastFundaFetchUtc });
             entity.HasIndex(e => e.Address);
             entity.HasIndex(e => e.PropertyType);
             entity.Property(e => e.Address).IsRequired();
@@ -179,6 +182,9 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.IsRead);
             entity.HasIndex(e => e.CreatedAt);
+
+            // Optimizes "Get unread notifications for user X sorted by date"
+            entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
 
             entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);

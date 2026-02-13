@@ -23,9 +23,9 @@ public interface IListingRepository
     
     /// <summary>
     /// Retrieves listings by city/region with basic filtering.
-    /// Returns full Listing entities for dynamic search caching.
+    /// Returns lightweight summary DTOs.
     /// </summary>
-    Task<List<Listing>> GetByCityAsync(
+    Task<List<ListingSummaryDto>> GetByCityAsync(
         string city, 
         int? minPrice = null, 
         int? maxPrice = null, 
