@@ -78,6 +78,9 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
   }
 
   @override
+  void undoDelete(String id) {}
+
+  @override
   void startPolling() {}
 
   @override
