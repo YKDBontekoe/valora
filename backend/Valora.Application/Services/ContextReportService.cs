@@ -85,8 +85,8 @@ public sealed class ContextReportService : IContextReportService
         // 2. Check Report Cache using stable location key
         // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
         // Using 5 decimal places (F5) gives precision to ~1 meter.
-        // This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
-        // if they resolve to the same coordinate, preventing duplicate expensive API calls.
+        // WHY: This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
+        // if they resolve to the same coordinate, preventing duplicate expensive API calls to CBS/Overpass.
         var latKey = location.Latitude.ToString("F5");
         var lonKey = location.Longitude.ToString("F5");
         var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
@@ -96,8 +96,11 @@ public sealed class ContextReportService : IContextReportService
             return cached;
         }
 
-        // Fetch all data sources in parallel (Fan-out)
-        // Each task is wrapped in a safe executor that returns null on failure instead of throwing
+        // 3. Fetch all data sources in parallel (Fan-out)
+        // WHY: Fetching sequentially would take 5-10 seconds. Parallel execution reduces total time
+        // to the duration of the slowest request (typically Overpass or CBS).
+        // Each task is wrapped in a safe executor that returns null on failure instead of throwing,
+        // implementing the "Graceful Degradation" pattern.
         var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), cancellationToken);
         var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), cancellationToken);
         var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, normalizedRadius, token), cancellationToken);
@@ -154,6 +157,10 @@ public sealed class ContextReportService : IContextReportService
     /// Wraps an external API call in a try-catch block to ensure partial success.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// WHY: In a distributed aggregation system, one downstream failure should not crash the entire request.
+    /// If Luchtmeetnet is down, we still want to show Crime and Social stats.
+    /// </para>
     /// If an exception occurs (other than cancellation), it is logged as an error,
     /// and the method returns <c>default</c> (null), allowing the report builder to continue
     /// without that specific data source.

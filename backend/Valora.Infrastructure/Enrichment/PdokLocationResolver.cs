@@ -67,7 +67,9 @@ public sealed class PdokLocationResolver : ILocationResolver
         }
 
         // Query the "free" endpoint which allows for flexible/fuzzy input
-        // fq=type:adres restricts results to specific addresses, filtering out general place names
+        // fq=type:adres restricts results to specific addresses, filtering out general place names.
+        // WHY: Users might type "Damrak 1" (address) or just "Amsterdam" (place).
+        // We only want specific addresses for context reporting.
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
@@ -138,11 +140,12 @@ public sealed class PdokLocationResolver : ILocationResolver
     /// Handles extraction of address parts from supported listing URLs.
     /// </summary>
     /// <remarks>
-    /// Logic:
-    /// 1. Checks if input is a valid absolute URI.
-    /// 2. If host matches known listing sites (e.g., funda.nl).
-    /// 3. Extracts the slug from the path (usually the last segment).
-    /// 4. Decodes and replaces hyphens with spaces to form a search query (e.g., "huis-address-city" -> "huis address city").
+    /// <para>
+    /// WHY: Users often copy-paste URLs from listing sites. Instead of making them manually extract the address,
+    /// we parse the URL slug.
+    /// Example: `funda.nl/.../huis-42865926-damrak-1` becomes `huis 42865926 damrak 1`.
+    /// The PDOK "free" search is smart enough to ignore the ID and find the address.
+    /// </para>
     /// </remarks>
     private static string NormalizeInput(string input)
     {
@@ -159,6 +162,7 @@ public sealed class PdokLocationResolver : ILocationResolver
             if (!string.IsNullOrWhiteSpace(segment))
             {
                 // Funda slugs are usually kebab-case; replace hyphens with spaces for better searchability
+                // Result: "huis 424242 straatnaam 1"
                 return Uri.UnescapeDataString(segment).Replace('-', ' ');
             }
         }

@@ -6,7 +6,21 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 ## 🚀 Start Here
 
-> **[Get Started in 10 Minutes](docs/onboarding.md)**: Follow the step-by-step onboarding guide to set up your environment and run the app.
+> **[Get Started in 10 Minutes](docs/onboarding.md)**: Follow the automated setup guide to run the app.
+
+### Quick Setup
+
+We provide a script to set up your environment automatically.
+
+**Prerequisites:** Docker, .NET 10 SDK, Flutter SDK.
+
+1.  **Run the setup script:**
+    ```bash
+    ./setup.sh
+    ```
+    This will verify prerequisites, configure environment variables (`.env`), and generate secure secrets.
+
+2.  **Follow the printed instructions** to start the database, backend, and frontend.
 
 ---
 
@@ -52,6 +66,7 @@ classDiagram
     class Application {
         +Use Cases (GetContextReport)
         +Interfaces (IContextReportService)
+        +Services (ContextReportService)
         +DTOs
     }
     class Infrastructure {
@@ -75,44 +90,18 @@ classDiagram
 ### Layer Responsibilities
 
 -   **Valora.Domain**: Core entities and business rules. The heart of the system.
--   **Valora.Application**: Defines *what* the system does (Interfaces, Use Cases). Depends only on Domain.
--   **Valora.Infrastructure**: Defines *how* it works (External APIs, Database). Implements Application interfaces.
+-   **Valora.Application**: Defines *what* the system does (Interfaces, Use Cases, Orchestration Services like `ContextReportService`). Depends only on Domain.
+-   **Valora.Infrastructure**: Defines *how* it works (External APIs, Database, Implementations). Implements Application interfaces.
 -   **Valora.Api**: The entry point. Wires everything together and handles HTTP requests.
 
 ## Documentation Index
 
--   **[Onboarding Guide](docs/onboarding.md)**: Setup instructions.
+-   **[Onboarding Guide](docs/onboarding.md)**: detailed setup instructions.
+-   **[API Reference](docs/api-reference.md)**: Full endpoint documentation.
 -   **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Deep dive into the "Fan-Out" process.
 -   **[Data Flow: Enrichment](docs/data-flow-enrichment.md)**: How listings are stored and updated.
 -   **[Developer Guide](docs/developer-guide.md)**: Coding standards, patterns, and testing.
 -   **[User Guide](docs/user-guide.md)**: App features walkthrough.
-
-## Quick Setup
-
-### Prerequisites
--   Docker Desktop
--   .NET 10 SDK
--   Flutter SDK
-
-### 1. Infrastructure
-```bash
-docker-compose -f docker/docker-compose.yml up -d
-```
-
-### 2. Backend
-```bash
-cd backend
-cp .env.example .env  # CRITICAL: Configure JWT_SECRET and DATABASE_URL
-dotnet run --project Valora.Api
-```
-
-### 3. Frontend
-```bash
-cd apps/flutter_app
-cp .env.example .env  # CRITICAL: Set API_URL (use 10.0.2.2 for Android Emulator)
-flutter pub get
-flutter run
-```
 
 ## API Reference
 
@@ -121,5 +110,6 @@ flutter run
 | `POST` | `/api/context/report` | **Core:** Generate report from address/URL. |
 | `POST` | `/api/listings/{id}/enrich` | Update listing with context data. |
 | `POST` | `/api/auth/login` | Authenticate user. |
+| `GET` | `/api/listings` | Search and filter listings. |
 
-See [Developer Guide](docs/developer-guide.md) for full API details.
+See **[API Reference](docs/api-reference.md)** for full details.
