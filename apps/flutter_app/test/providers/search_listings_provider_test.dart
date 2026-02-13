@@ -235,4 +235,42 @@ void main() {
     expect(provider.listings, hasLength(1));
     expect(provider.listings.first.address, 'Refreshed Result');
   });
+
+  test('listings returns cached unmodifiable instance until refresh', () async {
+    final MockClient client = MockClient((request) async {
+      return _listingResponse(
+        items: <Map<String, dynamic>>[
+          _listing(id: '1', address: 'Cached Result'),
+        ],
+        hasNextPage: false,
+      );
+    });
+
+    final ApiService apiService = ApiService(
+      client: client,
+      runner: syncRunner,
+      retryOptions: const RetryOptions(maxAttempts: 1),
+    );
+
+    final SearchListingsProvider provider = SearchListingsProvider(
+      apiService: apiService,
+    );
+
+    // Initial load
+    provider.setQuery('cache');
+    await provider.refresh();
+
+    // First access creates cache
+    final list1 = provider.listings;
+    // Second access returns same instance
+    final list2 = provider.listings;
+
+    expect(identical(list1, list2), isTrue);
+
+    // Refresh invalidates cache
+    await provider.refresh();
+    final list3 = provider.listings;
+
+    expect(identical(list1, list3), isFalse);
+  });
 }

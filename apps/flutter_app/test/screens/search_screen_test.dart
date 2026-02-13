@@ -541,4 +541,64 @@ void main() {
     // Verify reload triggered
     verify(mockApiService.getListings(any)).called(greaterThan(1));
   });
+
+  testWidgets('SearchScreen fetches full details for summary listing on tap', (
+    WidgetTester tester,
+  ) async {
+    final summaryListing = Listing(
+      id: 'summary-id',
+      fundaId: '123',
+      address: 'Summary Address',
+      city: 'Summary City',
+      price: 100000,
+      description: null,
+      features: {},
+    );
+
+    final fullListing = Listing(
+      id: 'summary-id',
+      fundaId: '123',
+      address: 'Full Address',
+      city: 'Summary City',
+      price: 100000,
+      description: 'Full description',
+      features: {'key': 'value'},
+    );
+
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [summaryListing],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    when(mockApiService.getListing('summary-id')).thenAnswer((_) async => fullListing);
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Load listing
+    await tester.enterText(find.byType(TextField), 'summary');
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Tap listing
+    await tester.tap(find.text('Summary Address'));
+    await tester.pump(); // Trigger tap logic
+
+    // Wait for async enrich calls
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify full listing was fetched
+    verify(mockApiService.getListing('summary-id')).called(1);
+
+    // Ensure all timers (e.g. animations) are settled
+    await tester.pumpAndSettle();
+  });
 }
