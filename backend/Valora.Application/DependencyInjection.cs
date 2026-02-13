@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
+        services.AddScoped<IContextDataProvider, ContextDataProvider>();
         return services;
     }
 }

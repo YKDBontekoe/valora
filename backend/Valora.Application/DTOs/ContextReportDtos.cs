@@ -112,6 +112,14 @@ public sealed record SourceAttributionDto(
     string License,
     DateTimeOffset RetrievedAtUtc);
 
+public sealed record ContextSourceData(
+    NeighborhoodStatsDto? NeighborhoodStats,
+    CrimeStatsDto? CrimeStats,
+    AmenityStatsDto? AmenityStats,
+    AirQualitySnapshotDto? AirQualitySnapshot,
+    IReadOnlyList<SourceAttributionDto> Sources,
+    IReadOnlyList<string> Warnings);
+
 public sealed record ContextReportDto(
     ResolvedLocationDto Location,
     IReadOnlyList<ContextMetricDto> SocialMetrics,
