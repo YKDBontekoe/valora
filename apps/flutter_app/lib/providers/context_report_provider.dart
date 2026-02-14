@@ -10,9 +10,12 @@ class ContextReportProvider extends ChangeNotifier {
   ContextReportProvider({
     required ApiService apiService,
     SearchHistoryService? historyService,
+    bool loadHistory = true,
   }) : _apiService = apiService,
        _historyService = historyService ?? SearchHistoryService() {
-    _loadHistory();
+    if (loadHistory) {
+      _loadHistory();
+    }
   }
 
   final ApiService _apiService;
