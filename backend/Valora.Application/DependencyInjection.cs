@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IContextReportService, ContextReportService>();
         services.AddScoped<IContextDataProvider, ContextDataProvider>();
         services.AddScoped<IListingService, ListingService>();
+        services.AddScoped<IMapService, MapService>();
         return services;
     }
 }

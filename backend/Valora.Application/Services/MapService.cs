@@ -1,43 +1,27 @@
-using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
-using Valora.Infrastructure.Persistence;
 
-namespace Valora.Infrastructure.Services;
+namespace Valora.Application.Services;
 
 public class MapService : IMapService
 {
-    private readonly ValoraDbContext _context;
+    private readonly IMapRepository _repository;
     private readonly IAmenityClient _amenityClient;
     private readonly ICbsGeoClient _cbsGeoClient;
 
     public MapService(
-        ValoraDbContext context,
+        IMapRepository repository,
         IAmenityClient amenityClient,
         ICbsGeoClient cbsGeoClient)
     {
-        _context = context;
+        _repository = repository;
         _amenityClient = amenityClient;
         _cbsGeoClient = cbsGeoClient;
     }
 
     public async Task<List<MapCityInsightDto>> GetCityInsightsAsync(CancellationToken cancellationToken = default)
     {
-        var query = _context.Listings
-            .Where(x => x.City != null && x.Latitude.HasValue && x.Longitude.HasValue)
-            .GroupBy(x => x.City!)
-            .Select(g => new MapCityInsightDto(
-                g.Key,
-                g.Count(),
-                g.Average(x => x.Latitude!.Value),
-                g.Average(x => x.Longitude!.Value),
-                g.Average(x => x.ContextCompositeScore),
-                g.Average(x => x.ContextSafetyScore),
-                g.Average(x => x.ContextSocialScore),
-                g.Average(x => x.ContextAmenitiesScore)
-            ));
-
-        return await query.ToListAsync(cancellationToken);
+        return await _repository.GetCityInsightsAsync(cancellationToken);
     }
 
     public async Task<List<MapAmenityDto>> GetMapAmenitiesAsync(
@@ -73,18 +57,17 @@ public class MapService : IMapService
         // Fetch boundaries first
         var overlays = await _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity, ct);
 
-        // Fix N+1: Query all relevant listings in the bbox once
-        var listingsInBbox = await _context.Listings
-            .Where(l => l.Latitude >= minLat && l.Latitude <= maxLat &&
-                        l.Longitude >= minLon && l.Longitude <= maxLon &&
-                        l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2 > 0)
-            .Select(l => new { l.Price, l.LivingAreaM2 })
-            .ToListAsync(ct);
+        // Query listing data via repository
+        var listingData = await _repository.GetListingsPriceDataAsync(minLat, minLon, maxLat, maxLon, ct);
 
         double? avgPrice = null;
-        if (listingsInBbox.Any())
+        var validListings = listingData
+            .Where(l => l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2.Value > 0)
+            .ToList();
+
+        if (validListings.Any())
         {
-            avgPrice = (double)listingsInBbox.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
+            avgPrice = (double)validListings.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
         }
 
         var results = new List<MapOverlayDto>();

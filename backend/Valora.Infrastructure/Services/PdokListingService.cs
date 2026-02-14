@@ -16,6 +16,7 @@ public class PdokListingService : IPdokListingService
     private readonly IMemoryCache _cache;
     private readonly IContextReportService _contextReportService;
     private readonly ContextEnrichmentOptions _options;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<PdokListingService> _logger;
 
     public PdokListingService(
@@ -23,12 +24,14 @@ public class PdokListingService : IPdokListingService
         IMemoryCache cache,
         IContextReportService contextReportService,
         IOptions<ContextEnrichmentOptions> options,
+        TimeProvider timeProvider,
         ILogger<PdokListingService> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
         _contextReportService = contextReportService;
         _options = options.Value;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -59,7 +62,7 @@ public class PdokListingService : IPdokListingService
             var (contextReport, compositeScore, safetyScore) = await FetchContextReportAsync(address, pdokId, cancellationToken);
 
             // 5. Fetch WOZ Value (Exclusively from CBS Context Data)
-            var (wozValue, wozReferenceDate, wozValueSource) = PdokListingMapper.EstimateWozValue(contextReport);
+            var (wozValue, wozReferenceDate, wozValueSource) = contextReport?.EstimateWozValue(_timeProvider) ?? (null, null, null);
 
             // 6. Map to ListingDto
             var listing = PdokListingMapper.MapFromPdok(
