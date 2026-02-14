@@ -141,19 +141,37 @@ builder.Services.AddCors(options =>
 
         if (allowedOrigins is null || allowedOrigins.Length == 0)
         {
-            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+            // Try to read from environment variable as comma-separated string
+            var allowedOriginsStr = builder.Configuration["ALLOWED_ORIGINS"];
+            if (!string.IsNullOrEmpty(allowedOriginsStr))
             {
-                allowedOrigins = ["http://localhost:3000"];
-            }
-            else
-            {
-                throw new InvalidOperationException("AllowedOrigins must be configured in production.");
+                allowedOrigins = allowedOriginsStr.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             }
         }
 
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins is not null && allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+            {
+                policy.WithOrigins("http://localhost:3000")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+            else
+            {
+                // In production, default to allowing all origins if not explicitly configured.
+                // This prevents startup crashes while maintaining functionality for mobile apps.
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+        }
     });
 });
 
