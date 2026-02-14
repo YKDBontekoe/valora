@@ -36,5 +36,6 @@ internal sealed record LuchtmeetnetMeasurementResponse(
 
 internal sealed record LuchtmeetnetMeasurement(
     [property: JsonPropertyName("value")] double? Value,
+    [property: JsonPropertyName("formula")] string? Formula,
     [property: JsonPropertyName("timestamp_measured")] string TimestampMeasured
 );

@@ -45,18 +45,41 @@ class _ValoraCardState extends State<ValoraCard> {
   bool _isHovered = false;
   bool _isPressed = false;
 
+  static const double _precisionErrorTolerance = 1e-10;
+
   List<BoxShadow> _resolveShadow(bool isDark) {
     if (_isPressed) return isDark ? ValoraShadows.smDark : ValoraShadows.sm;
-    if (_isHovered) return isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
 
-    if (widget.elevation <= ValoraSpacing.elevationNone) return [];
-    if (widget.elevation <= ValoraSpacing.elevationSm) {
+    double effectiveElevation = widget.elevation;
+
+    if (_isHovered) {
+      // Relative lift logic: one level higher than current elevation
+      if (widget.elevation <= ValoraSpacing.elevationSm + _precisionErrorTolerance) {
+        effectiveElevation = ValoraSpacing.elevationMd;
+      } else if (widget.elevation <= ValoraSpacing.elevationMd + _precisionErrorTolerance) {
+        effectiveElevation = ValoraSpacing.elevationLg;
+      } else {
+        effectiveElevation = ValoraSpacing.elevationXl;
+      }
+    }
+
+    return _getShadowForElevation(effectiveElevation, isDark);
+  }
+
+  List<BoxShadow> _getShadowForElevation(double elevation, bool isDark) {
+    if (elevation <= ValoraSpacing.elevationNone + _precisionErrorTolerance) {
+      return [];
+    }
+    if (elevation <= ValoraSpacing.elevationSm + _precisionErrorTolerance) {
       return isDark ? ValoraShadows.smDark : ValoraShadows.sm;
     }
-    if (widget.elevation <= ValoraSpacing.elevationMd) {
+    if (elevation <= ValoraSpacing.elevationMd + _precisionErrorTolerance) {
       return isDark ? ValoraShadows.mdDark : ValoraShadows.md;
     }
-    return isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+    if (elevation <= ValoraSpacing.elevationLg + _precisionErrorTolerance) {
+      return isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+    }
+    return isDark ? ValoraShadows.xlDark : ValoraShadows.xl;
   }
 
   @override
