@@ -1,4 +1,3 @@
-import '../models/map_city_insight.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -6,158 +5,121 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:retry/retry.dart';
 
 import '../core/config/app_config.dart';
 import '../core/exceptions/app_exceptions.dart';
-import 'crash_reporting_service.dart';
 import '../models/context_report.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
+import '../models/map_city_insight.dart';
+import '../models/map_amenity.dart';
+import '../models/map_overlay.dart';
 import '../models/notification.dart';
+import 'crash_reporting_service.dart';
 
-// Top-level function for compute
-ListingResponse _parseListingResponse(String body) {
-  return ListingResponse.fromJson(json.decode(body));
-}
-
-Listing _parseListing(String body) {
-  return Listing.fromJson(json.decode(body));
-}
-
-List<ValoraNotification> _parseNotifications(String body) {
-  final List<dynamic> list = json.decode(body);
-  return list.map((e) => ValoraNotification.fromJson(e)).toList();
-}
-
-ContextReport _parseContextReport(String body) {
-  return ContextReport.fromJson(json.decode(body));
-}
-
-typedef ComputeRunner = Future<R> Function<Q, R>(
-  ComputeCallback<Q, R> callback,
-  Q message, {
-  String? debugLabel,
-});
+typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
 
 class ApiService {
-  // baseUrl is provided by AppConfig which handles dotenv and fallbacks.
-  static String get baseUrl => AppConfig.apiUrl;
-
-  static const Duration timeoutDuration = Duration(seconds: 30);
-
-  final http.Client _client;
-  String? _authToken;
+  final String? _authToken;
   final Future<String?> Function()? _refreshTokenCallback;
+  final http.Client _client;
+  final ApiRunner _runner;
   final RetryOptions _retryOptions;
-  final ComputeRunner _runner;
+
+  static String get baseUrl => AppConfig.apiUrl;
+  static const timeoutDuration = Duration(seconds: 15);
 
   ApiService({
-    http.Client? client,
     String? authToken,
     Future<String?> Function()? refreshTokenCallback,
+    http.Client? client,
+    ApiRunner? runner,
     RetryOptions? retryOptions,
-    ComputeRunner? runner,
-  }) : _client = client ?? http.Client(),
-       _authToken = authToken,
-       _refreshTokenCallback = refreshTokenCallback,
-       _retryOptions =
-           retryOptions ??
-           const RetryOptions(
-             maxAttempts: 3,
-             delayFactor: Duration(seconds: 1),
-           ),
-       _runner = runner ?? compute;
+  })  : _authToken = authToken,
+        _refreshTokenCallback = refreshTokenCallback,
+        _client = client ?? http.Client(),
+        _runner = runner ?? _defaultRunner,
+        _retryOptions = retryOptions ?? const RetryOptions(maxAttempts: 3);
 
-  Map<String, String> get _headers => {
-    if (_authToken != null) 'Authorization': 'Bearer $_authToken',
-    'Content-Type': 'application/json',
-  };
+  static Future<R> _defaultRunner<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel}) async {
+    return await callback(message);
+  }
 
   Future<http.Response> _authenticatedRequest(
     Future<http.Response> Function(Map<String, String> headers) request,
   ) async {
-    return await _retryOptions.retry(
-      () async {
-        final response = await request(_headers);
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+    };
 
-        if (response.statusCode == 401 && _refreshTokenCallback != null) {
-          final newToken = await _refreshTokenCallback();
-          if (newToken != null) {
-            _authToken = newToken;
-            return await request(_headers);
-          }
-        }
+    var response = await request(headers);
 
-        // Force retry on server errors
-        if (response.statusCode >= 500) {
-          // Parse trace ID if possible to include in the error
-          final String? traceId = _parseTraceId(response.body);
-          final String traceSuffix = traceId != null ? ' (Ref: $traceId)' : '';
-
-          throw ServerException(
-            'Server error (${response.statusCode}). Please try again later.$traceSuffix',
-          );
-        }
-
-        return response;
-      },
-      retryIf: (e) =>
-          e is SocketException ||
-          e is TimeoutException ||
-          e is http.ClientException ||
-          e is ServerException,
-    );
-  }
-
-  Future<bool> healthCheck() async {
-    final uri = Uri.parse('$baseUrl/health');
-    try {
-      final response = await _client
-          .get(uri, headers: _headers)
-          .timeout(timeoutDuration);
-      return response.statusCode == 200;
-    } catch (e) {
-      developer.log('Health check failed for $uri: $e', name: 'ApiService');
-      return false;
+    if (response.statusCode == 401 && _refreshTokenCallback != null) {
+      final newToken = await _refreshTokenCallback!();
+      if (newToken != null) {
+        headers['Authorization'] = 'Bearer $newToken';
+        response = await request(headers);
+      }
     }
+
+    return response;
   }
 
-  Future<ListingResponse> getListings(ListingFilter filter) async {
+  Listing _parseListing(String body) {
+    return Listing.fromJson(json.decode(body));
+  }
+
+  ListingResponse _parseListings(String body) {
+    return ListingResponse.fromJson(json.decode(body));
+  }
+
+  ContextReport _parseContextReport(String body) {
+    return ContextReport.fromJson(json.decode(body));
+  }
+
+  List<ValoraNotification> _parseNotifications(String body) {
+    final List<dynamic> jsonList = json.decode(body);
+    return jsonList.map((e) => ValoraNotification.fromJson(e)).toList();
+  }
+
+  Future<ListingResponse> getListings(
+    ListingFilter filter, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    Uri? uri;
     try {
-      final uri = Uri.parse(
-        '$baseUrl/listings',
-      ).replace(queryParameters: filter.toQueryParameters());
+      final queryParams = {
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+        ...filter.toQueryParameters(),
+      };
+
+      uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
 
       final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(uri, headers: headers).timeout(timeoutDuration),
+        (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
       );
 
       return await _handleResponse(
         response,
-        (body) => _runner(_parseListingResponse, body),
+        (body) => _runner(_parseListings, body),
       );
     } catch (e, stack) {
-      final uri = Uri.parse('$baseUrl/listings')
-          .replace(queryParameters: filter.toQueryParameters());
       throw _handleException(e, stack, uri);
     }
   }
 
-  Future<Listing?> getListing(String id) async {
+  Future<Listing> getListing(String id) async {
     Uri? listingUri;
     try {
-      final String sanitizedId = _sanitizeListingId(id);
-      final Uri baseUri = Uri.parse(baseUrl);
-      listingUri = baseUri.replace(
-        pathSegments: <String>[
-          ...baseUri.pathSegments.where((segment) => segment.isNotEmpty),
-          'listings',
-          sanitizedId,
-        ],
-      );
+      final sanitizedId = _sanitizeListingId(id);
+      listingUri = Uri.parse('$baseUrl/listings/$sanitizedId');
 
       final response = await _authenticatedRequest(
         (headers) =>
@@ -460,6 +422,16 @@ class ApiService {
     return sanitized;
   }
 
+  Future<bool> healthCheck() async {
+    final uri = Uri.parse('$baseUrl/health');
+    try {
+      final response = await _client.get(uri).timeout(timeoutDuration);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<List<MapCityInsight>> getCityInsights() async {
     final uri = Uri.parse('$baseUrl/map/cities');
     try {
@@ -477,6 +449,70 @@ class ApiService {
       );
     } catch (e, stack) {
       final uri = Uri.parse('$baseUrl/map/cities');
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<List<MapAmenity>> getMapAmenities({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    List<String>? types,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/amenities').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+      if (types != null) 'types': types.join(','),
+    });
+    try {
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapAmenity.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<List<MapOverlay>> getMapOverlays({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    required String metric,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/overlays').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+      'metric': metric,
+    });
+    try {
+      final response = await _authenticatedRequest(
+        (headers) =>
+            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapOverlay.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
   }

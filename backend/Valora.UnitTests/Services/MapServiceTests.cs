@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
@@ -9,6 +10,8 @@ namespace Valora.UnitTests.Services;
 public class MapServiceTests : IDisposable
 {
     private readonly ValoraDbContext _context;
+    private readonly Mock<IAmenityClient> _amenityClientMock;
+    private readonly Mock<ICbsGeoClient> _cbsGeoClientMock;
     private readonly IMapService _mapService;
 
     public MapServiceTests()
@@ -18,7 +21,10 @@ public class MapServiceTests : IDisposable
             .Options;
 
         _context = new ValoraDbContext(options);
-        _mapService = new MapService(_context);
+        _amenityClientMock = new Mock<IAmenityClient>();
+        _cbsGeoClientMock = new Mock<ICbsGeoClient>();
+
+        _mapService = new MapService(_context, _amenityClientMock.Object, _cbsGeoClientMock.Object);
     }
 
     [Fact]
