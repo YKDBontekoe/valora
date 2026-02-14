@@ -7,7 +7,6 @@ import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:valora_app/core/theme/valora_spacing.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class MockFavoritesProvider extends Mock implements FavoritesProvider {
   @override
