@@ -89,7 +89,7 @@ public class PdokListingPrototype
                    .ReturnsAsync(fallbackReport);
 
         var service = new PdokListingService(
-            httpClient, cache, contextMock.Object, options, logger.Object
+            httpClient, cache, contextMock.Object, options, TimeProvider.System, logger.Object
         );
 
         string pdokId = "dummy-id"; 

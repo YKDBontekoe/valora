@@ -45,7 +45,7 @@ public sealed record ContextReportModel
         Warnings = warnings;
     }
 
-    public (int? Value, DateTime? ReferenceDate, string? Source) EstimateWozValue()
+    public (int? Value, DateTime? ReferenceDate, string? Source) EstimateWozValue(TimeProvider timeProvider)
     {
         var avgWozMetric = SocialMetrics.FirstOrDefault(m => m.Key == "average_woz");
         if (avgWozMetric?.Value.HasValue == true)
@@ -54,7 +54,8 @@ public sealed record ContextReportModel
             var value = (int)(avgWozMetric.Value.Value * 1000);
             var source = "CBS Neighborhood Average";
             // CBS data is typically from the previous year
-            var referenceDate = new DateTime(DateTime.UtcNow.Year - 1, 1, 1);
+            var now = timeProvider.GetUtcNow();
+            var referenceDate = new DateTime(now.Year - 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             return (value, referenceDate, source);
         }
 

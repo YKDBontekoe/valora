@@ -41,6 +41,7 @@ public class MapServiceTests
         // Assert
         Assert.Equal(2, result.Count);
         Assert.Contains(result, x => x.City == "Utrecht" && x.Count == 2);
+        Assert.Contains(result, x => x.City == "Amsterdam" && x.Count == 1);
     }
 
     [Fact]

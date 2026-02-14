@@ -61,9 +61,13 @@ public class MapService : IMapService
         var listingData = await _repository.GetListingsPriceDataAsync(minLat, minLon, maxLat, maxLon, ct);
 
         double? avgPrice = null;
-        if (listingData.Any())
+        var validListings = listingData
+            .Where(l => l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2.Value > 0)
+            .ToList();
+
+        if (validListings.Any())
         {
-            avgPrice = (double)listingData.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
+            avgPrice = (double)validListings.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
         }
 
         var results = new List<MapOverlayDto>();
