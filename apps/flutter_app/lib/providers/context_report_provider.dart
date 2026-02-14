@@ -10,7 +10,9 @@ class ContextReportProvider extends ChangeNotifier {
   ContextReportProvider({
     required ApiService apiService,
     SearchHistoryService? historyService,
+    int initialRadius = 1000,
   }) : _apiService = apiService,
+       _radiusMeters = initialRadius,
        _historyService = historyService ?? SearchHistoryService() {
     _loadHistory();
   }
@@ -22,7 +24,7 @@ class ContextReportProvider extends ChangeNotifier {
   bool _isDisposed = false;
   String? _error;
   ContextReport? _report;
-  int _radiusMeters = 1000;
+  int _radiusMeters;
   List<SearchHistoryItem> _history = [];
   int _historyLoadSeq = 0;
 
@@ -39,7 +41,7 @@ class ContextReportProvider extends ChangeNotifier {
   }
 
   void setRadiusMeters(int value) {
-    _radiusMeters = value.clamp(200, 5000);
+    _radiusMeters = value.clamp(100, 5000);
     notifyListeners();
   }
 

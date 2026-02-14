@@ -1,3 +1,4 @@
+import 'providers/user_profile_provider.dart';
 import 'providers/insights_provider.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -91,6 +92,11 @@ Future<void> main() async {
             create: (context) => InsightsProvider(context.read<ApiService>()),
             update: (context, apiService, previous) =>
                 (previous ?? InsightsProvider(apiService))..update(apiService),
+          ),
+          ChangeNotifierProxyProvider<ApiService, UserProfileProvider>(
+            create: (context) => UserProfileProvider(apiService: context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? UserProfileProvider(apiService: apiService))..fetchProfile(),
           ),
         ],
         child: const ValoraApp(),

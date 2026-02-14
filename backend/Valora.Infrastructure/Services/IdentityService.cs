@@ -45,6 +45,11 @@ public class IdentityService : IIdentityService
         return await _userManager.FindByEmailAsync(email);
     }
 
+    public async Task<ApplicationUser?> GetUserByIdAsync(string userId)
+    {
+        return await _userManager.FindByIdAsync(userId);
+    }
+
     public async Task EnsureRoleAsync(string roleName)
     {
         if (!await _roleManager.RoleExistsAsync(roleName))
@@ -69,6 +74,29 @@ public class IdentityService : IIdentityService
         }
 
         return Result.Success();
+    }
+
+    public async Task<Result> UpdateProfileAsync(string userId, string? firstName, string? lastName, int defaultRadiusMeters, bool biometricsEnabled)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Result.Failure(new[] { "User not found." });
+
+        user.FirstName = firstName;
+        user.LastName = lastName;
+        user.DefaultRadiusMeters = defaultRadiusMeters;
+        user.BiometricsEnabled = biometricsEnabled;
+
+        var result = await _userManager.UpdateAsync(user);
+        return ToApplicationResult(result);
+    }
+
+    public async Task<Result> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Result.Failure(new[] { "User not found." });
+
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        return ToApplicationResult(result);
     }
 
     private static Result ToApplicationResult(IdentityResult result)

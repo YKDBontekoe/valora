@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/user_profile_provider.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/report/context_report_view.dart';
@@ -26,7 +27,7 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ContextReportProvider>(
-      create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
+      create: (_) => ContextReportProvider(apiService: context.read<ApiService>(), initialRadius: context.read<UserProfileProvider>().profile?.defaultRadiusMeters ?? 1000),
       child: Consumer<ContextReportProvider>(
         builder: (context, provider, _) {
           return Scaffold(

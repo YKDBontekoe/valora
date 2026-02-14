@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'notifications_screen.dart';
+import 'profile/edit_profile_screen.dart';
+import 'settings/search_preferences_screen.dart';
+import 'settings/privacy_security_screen.dart';
 import '../core/theme/valora_colors.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../widgets/valora_widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -189,12 +193,16 @@ class SettingsScreen extends StatelessWidget {
                           iconColor: Colors.purple,
                           iconBgColor: Colors.purple.withValues(alpha: 0.1),
                           title: 'Search Preferences',
-                          subtitle: 'Location, Price, Amenities',
+                          subtitle: 'Default Radius, Report Focus',
                           showDivider: true,
-                          onTap: () => _openExternal(
-                            context,
-                            Uri.parse('https://valora.nl/preferences/search'),
-                          ),
+                          onTap: () {
+                             Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SearchPreferencesScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _buildSettingsTile(
                           context,
@@ -234,32 +242,20 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         _buildSettingsTile(
                           context,
-                          icon: Icons.card_membership_rounded,
-                          iconColor: ValoraColors.success,
-                          iconBgColor: ValoraColors.success.withValues(
-                            alpha: 0.1,
-                          ),
-                          title: 'Subscription',
-                          subtitle: 'Pro Plan Active',
-                          subtitleColor: ValoraColors.success,
-                          showDivider: true,
-                          onTap: () => _openExternal(
-                            context,
-                            Uri.parse('https://valora.nl/account/subscription'),
-                          ),
-                        ),
-                        _buildSettingsTile(
-                          context,
                           icon: Icons.lock_rounded,
-                          iconColor: Colors.grey,
-                          iconBgColor: Colors.grey.withValues(alpha: 0.1),
+                          iconColor: Colors.blueGrey,
+                          iconBgColor: Colors.blueGrey.withValues(alpha: 0.1),
                           title: 'Privacy & Security',
-                          subtitle: 'Password, FaceID',
+                          subtitle: 'Password, Biometrics',
                           showDivider: false,
-                          onTap: () => _openExternal(
-                            context,
-                            Uri.parse('https://valora.nl/privacy'),
-                          ),
+                          onTap: () {
+                             Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PrivacySecurityScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -380,12 +376,11 @@ class SettingsScreen extends StatelessWidget {
     Color textColor,
     Color subtextColor,
   ) {
-    // Get user info from AuthProvider
-    final authProvider = context.watch<AuthProvider>();
-    final userEmail = authProvider.email ?? 'Unknown user';
-    final initials = userEmail.trim().isNotEmpty
-        ? userEmail.substring(0, userEmail.length >= 2 ? 2 : 1).toUpperCase()
-        : 'U';
+    // Get user info from UserProfileProvider
+    final profile = context.watch<UserProfileProvider>().profile;
+    final userName = profile?.displayName ?? 'Loading...';
+    final userEmail = profile?.email ?? '';
+    final initials = profile?.initials ?? 'U';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -451,7 +446,7 @@ class SettingsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userEmail,
+                  userName,
                   style: TextStyle(
                     color: textColor,
                     fontSize: 18,
@@ -460,24 +455,34 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Premium Member',
+                  userEmail,
                   style: TextStyle(color: subtextColor, fontSize: 14),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: ValoraColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Edit',
-              style: TextStyle(
-                color: ValoraColors.primary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+          InkWell(
+            onTap: () {
+               Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: ValoraColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Edit',
+                style: TextStyle(
+                  color: ValoraColors.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
