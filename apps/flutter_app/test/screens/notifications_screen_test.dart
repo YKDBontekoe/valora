@@ -121,6 +121,14 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Mark all read'));
+    await tester.pumpAndSettle(); // Show dialog
+
+    expect(find.text('Mark all as read?'), findsOneWidget);
+    expect(find.text('Confirm'), findsOneWidget);
+
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle(); // Close dialog
+
     verify(mockNotificationService.markAllAsRead()).called(1);
   });
 

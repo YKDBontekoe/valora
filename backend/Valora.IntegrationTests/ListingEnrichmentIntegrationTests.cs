@@ -62,6 +62,7 @@ public class ListingEnrichmentIntegrationTests : IAsyncLifetime
         var password = "Password123!";
         var email = "enrichment@test.local";
 
+        // Register user
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", new
         {
             Email = email,
@@ -69,7 +70,24 @@ public class ListingEnrichmentIntegrationTests : IAsyncLifetime
             ConfirmPassword = password
         });
 
-        // We allow register to fail if user already exists (though we cleared DB, Identity tables might be tricky with cascading deletes or user manager logic)
+        // Manually assign Admin role directly in DB because we don't have an endpoint for it yet
+        // and initial seeding might not run in test environment or we cleared users.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
+
+            if (!await roleManager.RoleExistsAsync("Admin"))
+            {
+                await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole("Admin"));
+            }
+
+            var user = await userManager.FindByEmailAsync(email);
+            if (user != null)
+            {
+                await userManager.AddToRoleAsync(user, "Admin");
+            }
+        }
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
         {
