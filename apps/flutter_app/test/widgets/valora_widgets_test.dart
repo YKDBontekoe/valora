@@ -63,7 +63,10 @@ void main() {
       addTearDown(gesture.removePointer);
       await tester.pump();
       await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
-      await tester.pumpAndSettle();
+      // Use explicit duration pump instead of pumpAndSettle to ensure animation has time to update
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
       final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;

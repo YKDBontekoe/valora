@@ -314,7 +314,7 @@ abstract final class ValoraTheme {
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
       borderSide: BorderSide(
-        color: ValoraColors.error.withValues(alpha: 0.5),
+        color: ValoraColors.error.withValues(alpha: 0.8),
         width: 1,
       ),
     ),
@@ -355,7 +355,7 @@ abstract final class ValoraTheme {
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
       borderSide: BorderSide(
-        color: ValoraColors.errorLight.withValues(alpha: 0.5),
+        color: ValoraColors.errorLight.withValues(alpha: 0.8),
         width: 1,
       ),
     ),

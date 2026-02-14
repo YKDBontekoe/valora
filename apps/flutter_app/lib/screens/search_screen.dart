@@ -413,26 +413,31 @@ class _SearchScreenState extends State<SearchScreen> {
                       preferredSize: Size.fromHeight(
                         provider.hasActiveFiltersOrSort ? 130 : 80,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SearchInput(
-                            controller: _searchController,
-                            pdokService: _pdokService,
-                            onSuggestionSelected: _onSuggestionSelected,
-                            onSubmitted: () {
-                                _debounce?.cancel();
-                                _searchProvider!.refresh();
-                            },
+                      child: ClipRRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SearchInput(
+                                controller: _searchController,
+                                pdokService: _pdokService,
+                                onSuggestionSelected: _onSuggestionSelected,
+                                onSubmitted: () {
+                                    _debounce?.cancel();
+                                    _searchProvider!.refresh();
+                                },
+                              ),
+                              ActiveFiltersList(
+                                provider: provider,
+                                onFilterTap: _openFilterDialog,
+                                onSortTap: _showSortOptions,
+                              ),
+                              if (provider.hasActiveFiltersOrSort)
+                                const SizedBox(height: ValoraSpacing.radiusLg),
+                            ],
                           ),
-                          ActiveFiltersList(
-                            provider: provider,
-                            onFilterTap: _openFilterDialog,
-                            onSortTap: _showSortOptions,
-                          ),
-                          if (provider.hasActiveFiltersOrSort)
-                            const SizedBox(height: ValoraSpacing.radiusLg),
-                        ],
+                        ),
                       ),
                     ),
                   ),

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
@@ -95,7 +96,7 @@ class _ValoraCardState extends State<ValoraCard> {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(
-              widget.borderRadius - effectiveBorderWidth,
+              math.max(0.0, widget.borderRadius - effectiveBorderWidth),
             ),
             gradient: widget.gradient,
           ),

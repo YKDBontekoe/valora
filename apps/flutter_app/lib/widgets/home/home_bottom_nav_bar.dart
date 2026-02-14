@@ -65,7 +65,7 @@ class HomeBottomNavBar extends StatelessWidget {
             horizontal: ValoraSpacing.sm,
             vertical: ValoraSpacing.sm,
           ),
-          blur: ValoraSpacing.xl,
+          blur: ValoraSpacing.md,
           borderRadius: BorderRadius.circular(ValoraSpacing.xl),
           color: glassColor,
           borderColor: borderColor,
