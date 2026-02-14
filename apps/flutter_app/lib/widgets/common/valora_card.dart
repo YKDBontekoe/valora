@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_animations.dart';
@@ -60,17 +61,18 @@ class _ValoraCardState extends State<ValoraCard> {
     List<BoxShadow> currentShadows;
 
     // Determine target shadow based on state and elevation
-    if (baseElevation <= ValoraSpacing.elevationNone) {
+    // Use precisionErrorTolerance to handle floating point inaccuracies
+    if (baseElevation <= ValoraSpacing.elevationNone + precisionErrorTolerance) {
       currentShadows = [];
     } else {
       // Determine base shadow level
       List<BoxShadow> baseShadows;
       List<BoxShadow> hoverShadows;
 
-      if (baseElevation <= ValoraSpacing.elevationSm) {
+      if (baseElevation <= ValoraSpacing.elevationSm + precisionErrorTolerance) {
         baseShadows = isDark ? ValoraShadows.smDark : ValoraShadows.sm;
         hoverShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
-      } else if (baseElevation <= ValoraSpacing.elevationMd) {
+      } else if (baseElevation <= ValoraSpacing.elevationMd + precisionErrorTolerance) {
         baseShadows = isDark ? ValoraShadows.mdDark : ValoraShadows.md;
         hoverShadows = isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
       } else {

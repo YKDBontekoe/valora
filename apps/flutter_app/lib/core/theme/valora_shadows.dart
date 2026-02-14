@@ -12,7 +12,7 @@ abstract final class ValoraShadows {
   /// Small shadow - Low elevation
   static final List<BoxShadow> sm = [
     BoxShadow(
-      color: Colors.black.withValues(alpha: 0.04),
+      color: Colors.black.withValues(alpha: 0.03),
       blurRadius: 2,
       offset: const Offset(0, 1),
     ),
@@ -36,7 +36,7 @@ abstract final class ValoraShadows {
   /// Large shadow - Hover states, prominent cards
   static final List<BoxShadow> lg = [
     BoxShadow(
-      color: Colors.black.withValues(alpha: 0.08),
+      color: Colors.black.withValues(alpha: 0.06),
       blurRadius: 12,
       offset: const Offset(0, 6),
       spreadRadius: -2,
