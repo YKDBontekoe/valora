@@ -145,6 +145,12 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                       label: '',
                       hint: 'Search saved listings...',
                       prefixIcon: Icons.search_rounded,
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded),
+                              onPressed: () => _searchController.clear(),
+                            )
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     SingleChildScrollView(

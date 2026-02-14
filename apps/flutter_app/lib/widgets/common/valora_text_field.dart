@@ -13,6 +13,7 @@ class ValoraTextField extends StatefulWidget {
     this.hint,
     this.keyboardType,
     this.prefixIcon,
+    this.suffixIcon,
     this.prefixText,
     this.onChanged,
     this.validator,
@@ -29,6 +30,7 @@ class ValoraTextField extends StatefulWidget {
   final String? hint;
   final TextInputType? keyboardType;
   final IconData? prefixIcon;
+  final Widget? suffixIcon;
   final String? prefixText;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
@@ -123,6 +125,7 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
                 : null,
             prefixText: widget.prefixText,
             prefixStyle: ValoraTypography.bodyMedium,
+            suffixIcon: widget.suffixIcon,
           ),
         ),
       ],

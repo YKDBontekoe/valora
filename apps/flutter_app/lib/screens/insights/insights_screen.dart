@@ -8,6 +8,7 @@ import '../../providers/insights_provider.dart';
 import '../../models/map_city_insight.dart';
 import '../../models/map_amenity.dart';
 import '../../models/map_overlay.dart';
+import '../../widgets/insights/map_legend.dart';
 import '../../widgets/valora_widgets.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -83,7 +84,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   minZoom: 6.0,
                   maxZoom: 18.0,
                   onPositionChanged: (position, hasGesture) {
-                    if (hasGesture) _onMapChanged();
+                    if (hasGesture) { _onMapChanged(); setState(() {}); }
                   },
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
@@ -115,6 +116,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
               ),
               _buildMetricSelector(context, provider),
               _buildLayerToggle(context, provider),
+              if (provider.showOverlays)
+                Positioned(
+                  left: 16,
+                  bottom: 24,
+                  child: MapLegend(metric: provider.selectedOverlayMetric),
+                ),
+              _buildZoomWarning(provider),
               if (provider.mapError != null)
                 Positioned(
                   bottom: 120,
@@ -438,6 +446,53 @@ class _InsightsScreenState extends State<InsightsScreen> {
       case InsightMetric.social: return 'Social';
       case InsightMetric.amenities: return 'Amenities';
     }
+  }
+
+
+  Widget _buildZoomWarning(InsightsProvider provider) {
+    if (!mounted) return const SizedBox.shrink();
+    double zoom;
+    try {
+      zoom = _mapController.camera.zoom;
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+    final needsZoomForAmenities = provider.showAmenities && zoom < 13;
+    final needsZoomForOverlays = provider.showOverlays && zoom < 11;
+
+    if (!needsZoomForAmenities && !needsZoomForOverlays) return const SizedBox.shrink();
+
+    return Positioned(
+      top: 110,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.amber.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.zoom_in_rounded, size: 20, color: Colors.black87),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                needsZoomForAmenities
+                  ? 'Zoom in further to see amenities'
+                  : 'Zoom in further to see overlays',
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _getOverlayLabel(MapOverlayMetric metric) {

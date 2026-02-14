@@ -1,156 +1,73 @@
-import '../valora_glass_container.dart';
-import '../common/valora_button.dart';
-import 'package:flutter/material.dart';
-import '../../models/context_report.dart';
+import sys
 
-/// A collapsible card displaying metrics for a category with premium styling.
-class MetricCategoryCard extends StatefulWidget {
-  const MetricCategoryCard({
-    super.key,
-    required this.title,
-    required this.icon,
-    required this.metrics,
-    required this.score,
-    this.accentColor,
-    this.isExpanded = false,
-    this.onToggle,
-  });
+with open('apps/flutter_app/lib/widgets/report/metric_category_card.dart', 'r') as f:
+    content = f.read()
 
-  final String title;
-  final IconData icon;
-  final List<ContextMetric> metrics;
-  final double? score;
-  final Color? accentColor;
-  final bool isExpanded;
-  final ValueChanged<bool>? onToggle;
+# Import ValoraGlassContainer and ValoraButton
+if "import '../valora_glass_container.dart';" not in content:
+    content = "import '../valora_glass_container.dart';\nimport '../common/valora_button.dart';\n" + content
 
-  @override
-  State<MetricCategoryCard> createState() => _MetricCategoryCardState();
-}
+# Update _MetricRow to include info button
+metric_row_build = '    final icon = _getIconForKey(metric.key);'
+new_metric_row_content = metric_row_build + """
 
-class _MetricCategoryCardState extends State<MetricCategoryCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _expandAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _expandAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-    if (widget.isExpanded) _controller.value = 1.0;
-  }
-
-  @override
-  void didUpdateWidget(MetricCategoryCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isExpanded != oldWidget.isExpanded) {
-      if (widget.isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accentColor = widget.accentColor ?? theme.colorScheme.primary;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surfaceContainerLow,
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header
-          InkWell(
-            onTap: () => widget.onToggle?.call(!widget.isExpanded),
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(widget.icon, color: accentColor, size: 22),
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _showExplanation(context, metric),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          widget.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (widget.score != null)
-                          Text(
-                            'Score: ${widget.score!.round()}/100',
-                            style: theme.textTheme.bodySmall?.copyWith(
+                        Flexible(
+                          child: Text(
+                            metric.label,
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 12,
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
                       ],
                     ),
                   ),
-                  AnimatedRotation(
-                    turns: widget.isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 250),
-                    child: Icon(
-                      Icons.expand_more,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          // Expandable content
-          SizeTransition(
-            sizeFactor: _expandAnimation,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: [
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+"""
+# We need to replace the whole build method of _MetricRow or just the part we want
+# Let's find the start of build method in _MetricRow
 
+content = content.replace(metric_row_build, new_metric_row_content)
 
+# Remove the old Row implementation that we just replaced part of
+# This is tricky because of nested Widgets.
+# I'll just rewrite the _MetricRow class.
+
+metric_row_class_start = 'class _MetricRow extends StatelessWidget {'
+metric_row_replacement = """
 class _MetricRow extends StatelessWidget {
   const _MetricRow({required this.metric});
 
@@ -368,36 +285,11 @@ class _MetricRow extends StatelessWidget {
     );
   }
 }
+"""
 
-class _ScoreBadge extends StatelessWidget {
-  const _ScoreBadge({required this.score});
+# Find where _MetricRow ends and replace it
+import re
+new_content = re.sub(r'class _MetricRow.*?}\n}', metric_row_replacement + '}', content, flags=re.DOTALL)
 
-  final double score;
-
-  Color _getColor() {
-    if (score >= 80) return const Color(0xFF10B981);
-    if (score >= 60) return const Color(0xFF3B82F6);
-    if (score >= 40) return const Color(0xFFF59E0B);
-    return const Color(0xFFEF4444);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getColor();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        score.round().toString(),
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
+with open('apps/flutter_app/lib/widgets/report/metric_category_card.dart', 'w') as f:
+    f.write(new_content)
