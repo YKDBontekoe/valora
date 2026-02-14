@@ -74,10 +74,11 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             "AfstandTotHuisartsenpraktijk_115,AfstandTotGroteSupermarkt_116,AfstandTotKinderdagverblijf_117,AfstandTotSchool_118,ScholenBinnen3Km_119";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
+
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogWarning("CBS lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
-            return null;
+            response.EnsureSuccessStatusCode();
         }
 
         JsonDocument document;

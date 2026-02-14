@@ -143,31 +143,24 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        try
+        using var response = await _httpClient.SendAsync(request, ct);
+
+        if (!response.IsSuccessStatusCode)
         {
-            using var response = await _httpClient.SendAsync(request, ct);
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Overpass lookup failed with status {StatusCode}", response.StatusCode);
-                return default;
-            }
-
-            using var content = await response.Content.ReadAsStreamAsync(ct);
-            var overpassResponse = await JsonSerializer.DeserializeAsync<OverpassResponse>(content, cancellationToken: ct);
-
-            if (overpassResponse?.Elements is null)
-            {
-                _logger.LogWarning("Overpass lookup response was missing expected elements array");
-                return default;
-            }
-
-            return processor(overpassResponse.Elements);
+            _logger.LogWarning("Overpass lookup failed with status {StatusCode}", response.StatusCode);
+            response.EnsureSuccessStatusCode();
         }
-        catch (Exception ex)
+
+        using var content = await response.Content.ReadAsStreamAsync(ct);
+        var overpassResponse = await JsonSerializer.DeserializeAsync<OverpassResponse>(content, cancellationToken: ct);
+
+        if (overpassResponse?.Elements is null)
         {
-            _logger.LogError(ex, "Overpass request failed");
+            _logger.LogWarning("Overpass lookup response was missing expected elements array");
             return default;
         }
+
+        return processor(overpassResponse.Elements);
     }
 
     private static string BuildOverpassQuery(double latitude, double longitude, int radiusMeters)

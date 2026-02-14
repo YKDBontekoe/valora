@@ -146,8 +146,11 @@ class ApiService {
     try {
       uri = Uri.parse('$baseUrl/listings/lookup').replace(queryParameters: {'id': id});
       
-      final response = await _authenticatedRequest(
-        (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
@@ -172,6 +175,9 @@ class ApiService {
         'radiusMeters': radiusMeters,
       });
 
+      // POST requests are generally not idempotent, so we don't retry by default
+      // unless we are sure. Here generating a report might be expensive but safe to retry if failed early.
+      // But let's stick to GET retries for now as per plan.
       final response = await _authenticatedRequest(
         (headers) => _client
             .post(uri, headers: headers, body: payload)
@@ -227,9 +233,12 @@ class ApiService {
         },
       );
 
-      final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(uri!, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri!, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
@@ -244,9 +253,12 @@ class ApiService {
   Future<int> getUnreadNotificationCount() async {
     final uri = Uri.parse('$baseUrl/notifications/unread-count');
     try {
-      final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
@@ -441,9 +453,12 @@ class ApiService {
   Future<List<MapCityInsight>> getCityInsights() async {
     final uri = Uri.parse('$baseUrl/map/cities');
     try {
-      final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return _handleResponse(
@@ -474,9 +489,12 @@ class ApiService {
       if (types != null) 'types': types.join(','),
     });
     try {
-      final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return _handleResponse(
@@ -506,9 +524,12 @@ class ApiService {
       'metric': metric,
     });
     try {
-      final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(uri, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return _handleResponse(

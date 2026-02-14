@@ -169,33 +169,27 @@ public class OverpassAmenityClientTests
     }
 
     [Fact]
-    public async Task GetAmenitiesAsync_WhenHttpFails_ReturnsNull()
+    public async Task GetAmenitiesAsync_WhenHttpFails_Throws()
     {
         // Arrange
         var handlerMock = CreateHandlerMock(HttpStatusCode.InternalServerError, "{}");
         var httpClient = new HttpClient(handlerMock.Object);
         var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
 
-        // Act
-        var result = await client.GetAmenitiesAsync(_location, 1000);
-
-        // Assert
-        Assert.Null(result);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAmenitiesAsync(_location, 1000));
     }
 
     [Fact]
-    public async Task GetAmenitiesAsync_WhenResponseIsInvalid_ReturnsNull()
+    public async Task GetAmenitiesAsync_WhenResponseIsInvalid_Throws()
     {
         // Arrange
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, "{ invalid json }");
         var httpClient = new HttpClient(handlerMock.Object);
         var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
 
-        // Act
-        var result = await client.GetAmenitiesAsync(_location, 1000);
-
-        // Assert
-        Assert.Null(result);
+        // Act & Assert
+        await Assert.ThrowsAsync<JsonException>(() => client.GetAmenitiesAsync(_location, 1000));
     }
 
     [Fact]
