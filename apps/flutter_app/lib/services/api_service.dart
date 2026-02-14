@@ -44,7 +44,7 @@ class ApiService {
         _retryOptions = retryOptions ?? const RetryOptions(maxAttempts: 3);
 
   static Future<R> _defaultRunner<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel}) async {
-    return await callback(message);
+    return await compute(callback, message, debugLabel: debugLabel);
   }
 
   Future<http.Response> _authenticatedRequest(
@@ -70,19 +70,19 @@ class ApiService {
     return response;
   }
 
-  Listing _parseListing(String body) {
+  static Listing _parseListing(String body) {
     return Listing.fromJson(json.decode(body));
   }
 
-  ListingResponse _parseListings(String body) {
+  static ListingResponse _parseListings(String body) {
     return ListingResponse.fromJson(json.decode(body));
   }
 
-  ContextReport _parseContextReport(String body) {
+  static ContextReport _parseContextReport(String body) {
     return ContextReport.fromJson(json.decode(body));
   }
 
-  List<ValoraNotification> _parseNotifications(String body) {
+  static List<ValoraNotification> _parseNotifications(String body) {
     final List<dynamic> jsonList = json.decode(body);
     return jsonList.map((e) => ValoraNotification.fromJson(e)).toList();
   }

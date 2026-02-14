@@ -61,21 +61,24 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: widget.listing.imageUrl != null
-                            ? Hero(
-                                tag: widget.listing.id,
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.listing.imageUrl!,
-                                  memCacheWidth: 300,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      const ValoraShimmer(
-                                        width: ValoraSpacing.thumbnailSizeLg,
-                                        height: ValoraSpacing.thumbnailSizeLg,
+                            ? RepaintBoundary(
+                                child: Hero(
+                                  tag: widget.listing.id,
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.listing.imageUrl!,
+                                    memCacheWidth: 300,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const ValoraShimmer(
+                                          width: ValoraSpacing.thumbnailSizeLg,
+                                          height: ValoraSpacing.thumbnailSizeLg,
+                                        ),
+                                    errorWidget: (context, url, error) =>
+                                        Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: ValoraColors.neutral400,
                                       ),
-                                  errorWidget: (context, url, error) => Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      color: ValoraColors.neutral400,
                                     ),
                                   ),
                                 ),
