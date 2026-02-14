@@ -29,9 +29,8 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             c => c!.ToList());
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, string>>(
-            (c1, c2) => c1!.Count == c2!.Count && !c1.Except(c2).Any(),
-            // Order by key to ensure GetHashCode is consistent regardless of insertion order
-            c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
+            (c1, c2) => c1!.Count == c2!.Count && c1.All(kv => c2.ContainsKey(kv.Key) && c2[kv.Key] == kv.Value),
+            c => c!.Aggregate(0, (a, v) => a ^ HashCode.Combine(v.Key, v.Value)),
             c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
 
         var dateListComparer = new ValueComparer<List<DateTime>>(
@@ -140,9 +139,9 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
 
             // Phase 5: Context Report JSONB
             var contextReportComparer = new ValueComparer<Valora.Domain.Models.ContextReportModel?>(
-                (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
-                c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
-                c => c == null ? null : JsonHelper.Deserialize<Valora.Domain.Models.ContextReportModel>(JsonHelper.Serialize(c))!);
+                (c1, c2) => ContextReportComparer.Equals(c1, c2),
+                c => ContextReportComparer.GetHashCode(c),
+                c => ContextReportComparer.Clone(c));
 
             entity.Property(e => e.ContextReport)
                 .HasColumnType("jsonb")
