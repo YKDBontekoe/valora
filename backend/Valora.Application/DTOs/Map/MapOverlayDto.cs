@@ -8,4 +8,8 @@ public record MapOverlayDto(
     string MetricName,
     double MetricValue,
     string DisplayValue,
-    JsonElement GeoJson);
+    JsonElement GeoJson,
+    double? SecondaryMetricValue = null,
+    string? SecondaryDisplayValue = null,
+    int? SampleSize = null,
+    bool HasSufficientData = true);
