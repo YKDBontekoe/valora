@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/widgets/report/context_report_view.dart';
-import 'package:valora_app/widgets/report/score_gauge.dart';
 import 'package:valora_app/widgets/report/report_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 
 class MockApiService extends Mock implements ApiService {}
 

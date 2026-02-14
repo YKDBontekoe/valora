@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/context_report.dart';
-import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/screens/context_report_screen.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/report/metric_category_card.dart';
