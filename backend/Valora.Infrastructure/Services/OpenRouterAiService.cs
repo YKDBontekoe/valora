@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using OpenAI;
 using OpenAI.Chat;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Models;
 
 namespace Valora.Infrastructure.Services;
 
@@ -32,32 +33,43 @@ public class OpenRouterAiService : IAiService
         _siteName = configuration["OPENROUTER_SITE_NAME"] ?? "Valora";
     }
 
-    public async Task<string> ChatAsync(string prompt, string? model = null, CancellationToken cancellationToken = default)
+    public async Task<string> ChatAsync(string prompt, string? model = null, AiExecutionOptions? options = null, CancellationToken cancellationToken = default)
     {
         var modelToUse = !string.IsNullOrEmpty(model) ? model : _defaultModel;
 
-        var options = new OpenAIClientOptions
+        var clientOptions = new OpenAIClientOptions
         {
             Endpoint = _endpoint
         };
 
         // Add policies to handle OpenRouter specifics
-        // Headers for attribution - configurable via settings
-        options.AddPolicy(new OpenRouterHeadersPolicy(_siteUrl, _siteName), PipelinePosition.PerCall);
+        clientOptions.AddPolicy(new OpenRouterHeadersPolicy(_siteUrl, _siteName), PipelinePosition.PerCall);
+        clientOptions.AddPolicy(new OpenRouterDefaultModelPolicy(), PipelinePosition.PerCall);
 
-        // Policy to remove "model" field if it matches our placeholder (triggering user default at OpenRouter)
-        options.AddPolicy(new OpenRouterDefaultModelPolicy(), PipelinePosition.PerCall);
-
-        // ChatClient is lightweight and designed to be created for specific models.
         var client = new ChatClient(
             model: modelToUse,
             credential: new ApiKeyCredential(_apiKey),
-            options: options
+            options: clientOptions
         );
+
+        var completionOptions = new ChatCompletionOptions();
+
+        if (options?.MaxOutputTokens is > 0)
+        {
+            completionOptions.MaxOutputTokenCount = options.MaxOutputTokens;
+        }
+
+        if (options?.TelemetryTags is { Count: > 0 })
+        {
+            foreach (var tag in options.TelemetryTags)
+            {
+                completionOptions.Metadata[tag.Key] = tag.Value;
+            }
+        }
 
         ChatCompletion completion = await client.CompleteChatAsync(
             [new UserChatMessage(prompt)],
-            options: null,
+            options: completionOptions,
             cancellationToken
         );
 
