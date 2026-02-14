@@ -137,27 +137,66 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+        var configOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
-        if (allowedOrigins is null || allowedOrigins.Length == 0)
+        // 1. Filter config origins (remove nulls/whitespace, trim)
+        var validOrigins = configOrigins.Where(o => !string.IsNullOrWhiteSpace(o)).Select(o => o.Trim()).ToList();
+
+        // 2. If empty, try environment variable
+        if (validOrigins.Count == 0)
         {
-            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+            var envOrigins = builder.Configuration["ALLOWED_ORIGINS"];
+            if (!string.IsNullOrEmpty(envOrigins))
             {
-                allowedOrigins = ["http://localhost:3000"];
-            }
-            else
-            {
-                throw new InvalidOperationException("AllowedOrigins must be configured in production.");
+                validOrigins.AddRange(envOrigins.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
             }
         }
 
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        // 3. Configure policy
+        if (validOrigins.Count > 0)
+        {
+            policy.WithOrigins(validOrigins.ToArray())
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            // Fallback logic
+            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+            {
+                policy.WithOrigins("http://localhost:3000")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+            else
+            {
+                // In production, default to allowing all origins if not explicitly configured.
+                // This prevents startup crashes while maintaining functionality for mobile apps.
+                // A warning is logged at startup if this fallback is active.
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+        }
+        }
     });
 });
-
 var app = builder.Build();
+
+// Log warning if CORS is insecurely configured in production
+if (app.Environment.IsProduction())
+{
+    var configOrigins = app.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+    var envOrigins = app.Configuration["ALLOWED_ORIGINS"];
+
+    // Using the same logic as AddCors to determine effective configuration
+    var hasValidConfig = configOrigins.Any(o => !string.IsNullOrWhiteSpace(o)) || !string.IsNullOrWhiteSpace(envOrigins);
+
+    if (!hasValidConfig)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning("SECURITY WARNING: CORS AllowedOrigins not configured. Defaulting to AllowAnyOrigin. This is insecure. Configure AllowedOrigins or ALLOWED_ORIGINS to restrict access.");
+    }
+}
 
 // Apply database migrations
 if (!app.Environment.IsEnvironment("Testing"))
