@@ -50,7 +50,7 @@ public sealed class OverpassAmenityClient : IAmenityClient
             var transitCount = 0;
             double? nearestDistance = null;
 
-            foreach (var element in elements.EnumerateArray())
+            foreach (var element in elements)
             {
                 if (!TryGetCoordinates(element, out var lat, out var lon)) continue;
 
@@ -112,14 +112,14 @@ public sealed class OverpassAmenityClient : IAmenityClient
         var query = BuildOverpassBboxQuery(minLat, minLon, maxLat, maxLon, types);
         var results = await FetchAndProcessAsync(query, elements => {
             var list = new List<MapAmenityDto>();
-            foreach (var element in elements.EnumerateArray())
+            foreach (var element in elements)
             {
                 if (!TryGetCoordinates(element, out var lat, out var lon)) continue;
 
                 var tags = GetTags(element);
                 var name = tags.GetValueOrDefault("name") ?? tags.GetValueOrDefault("operator") ?? "Amenity";
                 var type = GetAmenityType(tags);
-                var id = element.TryGetProperty("id", out var idProp) ? idProp.ToString() : Guid.NewGuid().ToString();
+                var id = element.Id != 0 ? element.Id.ToString() : Guid.NewGuid().ToString();
 
                 list.Add(new MapAmenityDto(id, type, name, lat, lon, tags));
             }
@@ -131,7 +131,7 @@ public sealed class OverpassAmenityClient : IAmenityClient
         return results;
     }
 
-    private async Task<T?> FetchAndProcessAsync<T>(string query, Func<JsonElement, T> processor, CancellationToken ct)
+    private async Task<T?> FetchAndProcessAsync<T>(string query, Func<List<OverpassElement>, T> processor, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.OverpassBaseUrl.TrimEnd('/')}/api/interpreter")
         {
@@ -150,15 +150,15 @@ public sealed class OverpassAmenityClient : IAmenityClient
             }
 
             using var content = await response.Content.ReadAsStreamAsync(ct);
-            using var document = await JsonDocument.ParseAsync(content, cancellationToken: ct);
+            var overpassResponse = await JsonSerializer.DeserializeAsync<OverpassResponse>(content, cancellationToken: ct);
 
-            if (!document.RootElement.TryGetProperty("elements", out var elements) || elements.ValueKind != JsonValueKind.Array)
+            if (overpassResponse?.Elements is null)
             {
                 _logger.LogWarning("Overpass lookup response was missing expected elements array");
                 return default;
             }
 
-            return processor(elements);
+            return processor(overpassResponse.Elements);
         }
         catch (Exception ex)
         {
@@ -220,12 +220,12 @@ public sealed class OverpassAmenityClient : IAmenityClient
         return "other";
     }
 
-    private static Dictionary<string, string> GetTags(JsonElement element)
+    private static Dictionary<string, string> GetTags(OverpassElement element)
     {
         var tags = new Dictionary<string, string>();
-        if (element.TryGetProperty("tags", out var tagsElem) && tagsElem.ValueKind == JsonValueKind.Object)
+        if (element.Tags.HasValue && element.Tags.Value.ValueKind == JsonValueKind.Object)
         {
-            foreach (var prop in tagsElem.EnumerateObject())
+            foreach (var prop in element.Tags.Value.EnumerateObject())
             {
                 if (prop.Value.ValueKind == JsonValueKind.String)
                 {
@@ -236,22 +236,22 @@ public sealed class OverpassAmenityClient : IAmenityClient
         return tags;
     }
 
-    private static bool TryGetCoordinates(JsonElement element, out double latitude, out double longitude)
+    private static bool TryGetCoordinates(OverpassElement element, out double latitude, out double longitude)
     {
         latitude = 0;
         longitude = 0;
 
-        if (element.TryGetProperty("lat", out var lat) && element.TryGetProperty("lon", out var lon) &&
-            lat.TryGetDouble(out latitude) && lon.TryGetDouble(out longitude))
+        if (element.Lat.HasValue && element.Lon.HasValue)
         {
+            latitude = element.Lat.Value;
+            longitude = element.Lon.Value;
             return true;
         }
 
-        if (element.TryGetProperty("center", out var center) &&
-            center.TryGetProperty("lat", out var centerLat) &&
-            center.TryGetProperty("lon", out var centerLon) &&
-            centerLat.TryGetDouble(out latitude) && centerLon.TryGetDouble(out longitude))
+        if (element.Center is not null)
         {
+            latitude = element.Center.Lat;
+            longitude = element.Center.Lon;
             return true;
         }
 

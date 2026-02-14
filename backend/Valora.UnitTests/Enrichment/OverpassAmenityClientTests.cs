@@ -168,6 +168,78 @@ public class OverpassAmenityClientTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public async Task GetAmenitiesAsync_WhenHttpFails_ReturnsNull()
+    {
+        // Arrange
+        var handlerMock = CreateHandlerMock(HttpStatusCode.InternalServerError, "{}");
+        var httpClient = new HttpClient(handlerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetAmenitiesAsync(_location, 1000);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetAmenitiesAsync_WhenResponseIsInvalid_ReturnsNull()
+    {
+        // Arrange
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, "{ invalid json }");
+        var httpClient = new HttpClient(handlerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetAmenitiesAsync(_location, 1000);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task FetchAndProcessAsync_HandlesNullDeserialization()
+    {
+        // Arrange
+        // Simulate a response that deserializes to null (unlikely with valid JSON, but possible if response is "null")
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, "null");
+        var httpClient = new HttpClient(handlerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetAmenitiesAsync(_location, 1000);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task TryGetCoordinates_HandlesElementsWithoutLocationData()
+    {
+        // Arrange
+        var jsonResponse = """
+        {
+          "elements": [
+            { "id": 1 },
+            { "id": 2, "lat": 52.0 },
+            { "id": 3, "center": { "lat": 52.0 } }
+          ]
+        }
+        """;
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetAmenitiesAsync(_location, 1000);
+
+        // Assert
+        // Result should be valid but counts should be 0 since no elements have valid coords
+        Assert.NotNull(result);
+        Assert.Equal(0, result.SchoolCount);
+    }
+
     private static Mock<HttpMessageHandler> CreateHandlerMock(HttpStatusCode statusCode, string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
