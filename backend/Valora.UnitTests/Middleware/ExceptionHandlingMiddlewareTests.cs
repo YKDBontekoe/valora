@@ -43,11 +43,12 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_NotFoundException_ReturnsNotFound()
+    public async Task InvokeAsync_NotFoundException_InProduction_HidesDetail()
     {
         // Arrange
+        _envMock.Setup(e => e.EnvironmentName).Returns(Environments.Production);
         var middleware = new ExceptionHandlingMiddleware(
-            next: (innerHttpContext) => throw new NotFoundException("Not found"),
+            next: (innerHttpContext) => throw new NotFoundException("Sensitive Info"),
             logger: _loggerMock.Object,
             env: _envMock.Object);
 
@@ -59,6 +60,81 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal((int)HttpStatusCode.NotFound, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.DoesNotContain("Sensitive Info", body);
+        Assert.Contains("The requested resource was not found", body);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_NotFoundException_InDevelopment_ShowsDetail()
+    {
+        // Arrange
+        _envMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new NotFoundException("Specific Resource Missing"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.NotFound, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("Specific Resource Missing", body);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_GenericException_InProduction_HidesDetail()
+    {
+        // Arrange
+        _envMock.Setup(e => e.EnvironmentName).Returns(Environments.Production);
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Database connection string leaked"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.DoesNotContain("Database connection string leaked", body);
+        Assert.Contains("An unexpected error occurred", body);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_GenericException_InDevelopment_ShowsDetailAndStackTrace()
+    {
+        // Arrange
+        _envMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Dev Error Detail"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("Dev Error Detail", body);
+        Assert.Contains("stackTrace", body);
     }
 
     [Fact]
@@ -116,25 +192,6 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_GenericException_ReturnsInternalServerError()
-    {
-        // Arrange
-        var middleware = new ExceptionHandlingMiddleware(
-            next: (innerHttpContext) => throw new Exception("Boom"),
-            logger: _loggerMock.Object,
-            env: _envMock.Object);
-
-        var context = new DefaultHttpContext();
-        context.Response.Body = new MemoryStream();
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
     }
 
     [Fact]
