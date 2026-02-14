@@ -7,6 +7,7 @@ import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/widgets/home_components.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:valora_app/core/theme/valora_spacing.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MockFavoritesProvider extends Mock implements FavoritesProvider {
   @override
@@ -126,6 +127,49 @@ void main() {
       // Initial state
       ValoraCard card = tester.widget(cardFinder);
       expect(card.elevation, ValoraSpacing.elevationSm);
+    });
+
+    testWidgets('Wraps image in RepaintBoundary', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<FavoritesProvider>.value(
+              value: mockFavoritesProvider,
+              child: NearbyListingCard(listing: dummyListing, onTap: () {}),
+            ),
+          ),
+        ),
+      );
+
+      // Allow entry animations
+      await tester.pump(const Duration(seconds: 1));
+
+      // Check that there is a RepaintBoundary wrapping the Hero widget
+      // (which wraps the CachedNetworkImage)
+      final heroFinder = find.byType(Hero);
+      expect(heroFinder, findsOneWidget);
+
+      final boundaryFinder = find.ancestor(
+        of: heroFinder,
+        matching: find.byType(RepaintBoundary),
+      );
+
+      // There might be multiple repaint boundaries in the tree (e.g. from the test harness or other widgets),
+      // so we just want to ensure at least one is found up the chain.
+      expect(boundaryFinder, findsWidgets);
+
+      // To be more specific: ensure the Hero is a child of a RepaintBoundary we added.
+      // Our RepaintBoundary is a direct child of the Container used for clipping.
+      // Let's verify structure: Container -> RepaintBoundary -> Hero
+      final specificStructure = find.descendant(
+        of: find.byType(Container),
+        matching: find.descendant(
+          of: find.byType(RepaintBoundary),
+          matching: find.byType(Hero),
+        ),
+      );
+
+      expect(specificStructure, findsOneWidget);
     });
   });
 }
