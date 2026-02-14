@@ -59,7 +59,7 @@ public class PdokListingService : IPdokListingService
             var (contextReport, compositeScore, safetyScore) = await FetchContextReportAsync(address, pdokId, cancellationToken);
 
             // 5. Fetch WOZ Value (Exclusively from CBS Context Data)
-            var (wozValue, wozReferenceDate, wozValueSource) = PdokListingMapper.EstimateWozValue(contextReport);
+            var (wozValue, wozReferenceDate, wozValueSource) = contextReport?.EstimateWozValue() ?? (null, null, null);
 
             // 6. Map to ListingDto
             var listing = PdokListingMapper.MapFromPdok(

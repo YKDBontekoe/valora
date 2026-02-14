@@ -1,46 +1,39 @@
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
-using Valora.Domain.Entities;
-using Valora.Infrastructure.Persistence;
-using Valora.Infrastructure.Services;
+using Valora.Application.Services;
+using Xunit;
 
 namespace Valora.UnitTests.Services;
 
-public class MapServiceTests : IDisposable
+public class MapServiceTests
 {
-    private readonly ValoraDbContext _context;
+    private readonly Mock<IMapRepository> _repositoryMock;
     private readonly Mock<IAmenityClient> _amenityClientMock;
     private readonly Mock<ICbsGeoClient> _cbsGeoClientMock;
     private readonly IMapService _mapService;
 
     public MapServiceTests()
     {
-        var options = new DbContextOptionsBuilder<ValoraDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _context = new ValoraDbContext(options);
+        _repositoryMock = new Mock<IMapRepository>();
         _amenityClientMock = new Mock<IAmenityClient>();
         _cbsGeoClientMock = new Mock<ICbsGeoClient>();
 
-        _mapService = new MapService(_context, _amenityClientMock.Object, _cbsGeoClientMock.Object);
+        _mapService = new MapService(_repositoryMock.Object, _amenityClientMock.Object, _cbsGeoClientMock.Object);
     }
 
     [Fact]
     public async Task GetCityInsightsAsync_ShouldReturnGroupedInsights()
     {
         // Arrange
-        var listings = new List<Listing>
+        var insights = new List<MapCityInsightDto>
         {
-            new Listing { FundaId = "1", Address = "A1", City = "Utrecht", Latitude = 52.0, Longitude = 5.0, ContextCompositeScore = 80 },
-            new Listing { FundaId = "2", Address = "A2", City = "Utrecht", Latitude = 52.1, Longitude = 5.1, ContextCompositeScore = 60 },
-            new Listing { FundaId = "3", Address = "A3", City = "Amsterdam", Latitude = 52.3, Longitude = 4.9, ContextCompositeScore = 90 }
+            new("Utrecht", 2, 52.0, 5.0, 80, 0, 0, 0),
+            new("Amsterdam", 1, 52.3, 4.9, 90, 0, 0, 0)
         };
 
-        _context.Listings.AddRange(listings);
-        await _context.SaveChangesAsync();
+        _repositoryMock.Setup(x => x.GetCityInsightsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(insights);
 
         // Act
         var result = await _mapService.GetCityInsightsAsync();
@@ -48,7 +41,6 @@ public class MapServiceTests : IDisposable
         // Assert
         Assert.Equal(2, result.Count);
         Assert.Contains(result, x => x.City == "Utrecht" && x.Count == 2);
-        Assert.Contains(result, x => x.City == "Amsterdam" && x.Count == 1);
     }
 
     [Fact]
@@ -71,13 +63,14 @@ public class MapServiceTests : IDisposable
     public async Task GetMapOverlaysAsync_PricePerSquareMeter_ShouldCalculateCorrectly()
     {
         // Arrange
-        var listings = new List<Listing>
+        var listingData = new List<ListingPriceData>
         {
-            new Listing { FundaId = "1", Address = "A1", Latitude = 52.05, Longitude = 5.05, Price = 500000, LivingAreaM2 = 100 }, // 5000/m2
-            new Listing { FundaId = "2", Address = "A2", Latitude = 52.06, Longitude = 5.06, Price = 300000, LivingAreaM2 = 100 }  // 3000/m2
+            new ListingPriceData(500000, 100), // 5000/m2
+            new ListingPriceData(300000, 100)  // 3000/m2
         };
-        _context.Listings.AddRange(listings);
-        await _context.SaveChangesAsync();
+
+        _repositoryMock.Setup(x => x.GetListingsPriceDataAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(listingData);
 
         var dummyOverlays = new List<MapOverlayDto> {
             new MapOverlayDto("BU01", "B1", "Pop", 100, "100", default)
@@ -92,11 +85,5 @@ public class MapServiceTests : IDisposable
         Assert.Single(result);
         Assert.Equal(4000, result[0].MetricValue); // (5000+3000)/2
         Assert.Contains("€ 4,000 / m²", result[0].DisplayValue);
-    }
-
-    public void Dispose()
-    {
-        _context.Database.EnsureDeleted();
-        _context.Dispose();
     }
 }

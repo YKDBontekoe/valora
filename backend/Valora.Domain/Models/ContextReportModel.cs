@@ -44,6 +44,22 @@ public sealed record ContextReportModel
         Sources = sources;
         Warnings = warnings;
     }
+
+    public (int? Value, DateTime? ReferenceDate, string? Source) EstimateWozValue()
+    {
+        var avgWozMetric = SocialMetrics.FirstOrDefault(m => m.Key == "average_woz");
+        if (avgWozMetric?.Value.HasValue == true)
+        {
+            // Value is in k€ (e.g. 450), convert to absolute value
+            var value = (int)(avgWozMetric.Value.Value * 1000);
+            var source = "CBS Neighborhood Average";
+            // CBS data is typically from the previous year
+            var referenceDate = new DateTime(DateTime.UtcNow.Year - 1, 1, 1);
+            return (value, referenceDate, source);
+        }
+
+        return (null, null, null);
+    }
 }
 
 public sealed record ResolvedLocationModel
