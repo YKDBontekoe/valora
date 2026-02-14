@@ -117,7 +117,7 @@ class _GaugePainter extends CustomPainter {
     if (hasGradient) {
       paint.shader = SweepGradient(
         startAngle: startAngle,
-        endAngle: startAngle + sweepAngle,
+        endAngle: startAngle + math.max(0.001, sweepAngle),
         colors: [
           color.withValues(alpha: 0.6),
           color,
