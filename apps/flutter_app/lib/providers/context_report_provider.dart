@@ -12,7 +12,7 @@ class ContextReportProvider extends ChangeNotifier {
     SearchHistoryService? historyService,
     int initialRadius = 1000,
   }) : _apiService = apiService,
-       _radiusMeters = initialRadius,
+       _radiusMeters = initialRadius.clamp(100, 5000),
        _historyService = historyService ?? SearchHistoryService() {
     _loadHistory();
   }

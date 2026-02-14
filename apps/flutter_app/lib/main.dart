@@ -95,8 +95,17 @@ Future<void> main() async {
           ),
           ChangeNotifierProxyProvider<ApiService, UserProfileProvider>(
             create: (context) => UserProfileProvider(apiService: context.read<ApiService>()),
-            update: (context, apiService, previous) =>
-                (previous ?? UserProfileProvider(apiService: apiService))..fetchProfile(),
+            update: (context, apiService, previous) {
+              final provider = previous ?? UserProfileProvider(apiService: apiService);
+              provider.update(apiService);
+
+              // Only fetch if authenticated and we don't have a profile yet (or service changed)
+              final auth = context.read<AuthProvider>();
+              if (auth.isAuthenticated && provider.profile == null && !provider.isLoading) {
+                provider.fetchProfile();
+              }
+              return provider;
+            },
           ),
         ],
         child: const ValoraApp(),

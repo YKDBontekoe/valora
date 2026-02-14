@@ -4,7 +4,7 @@ import '../models/user_profile.dart';
 import '../services/api_service.dart';
 
 class UserProfileProvider extends ChangeNotifier {
-  final ApiService _apiService;
+  ApiService _apiService;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   UserProfile? _profile;
@@ -16,6 +16,10 @@ class UserProfileProvider extends ChangeNotifier {
   String? get error => _error;
 
   UserProfileProvider({required ApiService apiService}) : _apiService = apiService;
+
+  void update(ApiService apiService) {
+    _apiService = apiService;
+  }
 
   Future<void> fetchProfile() async {
     _isLoading = true;
@@ -53,10 +57,10 @@ class UserProfileProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return false;
     } finally {
       _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -70,10 +74,10 @@ class UserProfileProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return false;
     } finally {
       _isLoading = false;
+      notifyListeners();
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:valora_app/models/user_profile.dart';
 import 'package:valora_app/providers/user_profile_provider.dart';
+import 'package:valora_app/services/api_service.dart';
 
 class MockUserProfileProvider extends ChangeNotifier implements UserProfileProvider {
   UserProfile? _profile = UserProfile(
@@ -19,6 +20,9 @@ class MockUserProfileProvider extends ChangeNotifier implements UserProfileProvi
 
   @override
   String? get error => null;
+
+  @override
+  void update(ApiService apiService) {}
 
   @override
   Future<void> fetchProfile() async {}

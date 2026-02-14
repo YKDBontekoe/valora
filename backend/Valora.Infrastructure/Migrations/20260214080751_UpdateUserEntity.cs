@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -22,19 +22,24 @@ namespace Valora.Infrastructure.Migrations
                 table: "AspNetUsers",
                 type: "integer",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: 1000);
 
             migrationBuilder.AddColumn<string>(
                 name: "FirstName",
                 table: "AspNetUsers",
-                type: "text",
+                type: "character varying(100)",
+                maxLength: 100,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "LastName",
                 table: "AspNetUsers",
-                type: "text",
+                type: "character varying(100)",
+                maxLength: 100,
                 nullable: true);
+
+            // Explicit backfill just to be safe if defaultValue behavior varies by provider or state
+            migrationBuilder.Sql("UPDATE \"AspNetUsers\" SET \"DefaultRadiusMeters\" = 1000 WHERE \"DefaultRadiusMeters\" < 100 OR \"DefaultRadiusMeters\" > 5000");
         }
 
         /// <inheritdoc />

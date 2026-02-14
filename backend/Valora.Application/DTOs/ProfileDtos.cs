@@ -12,7 +12,10 @@ public record UserProfileDto(
 
 public record UpdateProfileDto
 {
+    [StringLength(100)]
     public string? FirstName { get; init; }
+
+    [StringLength(100)]
     public string? LastName { get; init; }
 
     [Range(100, 5000)]

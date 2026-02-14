@@ -36,9 +36,12 @@ public static class ProfileEndpoints
         group.MapPut("/", async (
             [FromBody] UpdateProfileDto dto,
             IIdentityService identityService,
-            ClaimsPrincipal user) =>
+            ClaimsPrincipal user,
+            ILoggerFactory loggerFactory) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var logger = loggerFactory.CreateLogger("ProfileEndpoints");
+
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
             var result = await identityService.UpdateProfileAsync(
@@ -48,16 +51,25 @@ public static class ProfileEndpoints
                 dto.DefaultRadiusMeters,
                 dto.BiometricsEnabled);
 
-            return result.Succeeded ? Results.Ok() : Results.BadRequest(result.Errors);
+            if (result.Succeeded)
+            {
+                return Results.Ok();
+            }
+
+            logger.LogWarning("Profile update failed for user {UserId}: {Errors}", userId, string.Join(", ", result.Errors));
+            return Results.BadRequest(new { error = "Failed to update profile. Please check your input and try again." });
         })
         .AddEndpointFilter<ValidationFilter<UpdateProfileDto>>();
 
         group.MapPost("/change-password", async (
             [FromBody] ChangePasswordDto dto,
             IIdentityService identityService,
-            ClaimsPrincipal user) =>
+            ClaimsPrincipal user,
+            ILoggerFactory loggerFactory) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var logger = loggerFactory.CreateLogger("ProfileEndpoints");
+
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
             var result = await identityService.ChangePasswordAsync(
@@ -65,7 +77,13 @@ public static class ProfileEndpoints
                 dto.CurrentPassword,
                 dto.NewPassword);
 
-            return result.Succeeded ? Results.Ok() : Results.BadRequest(result.Errors);
+            if (result.Succeeded)
+            {
+                return Results.Ok();
+            }
+
+            logger.LogWarning("Password change failed for user {UserId}: {Errors}", userId, string.Join(", ", result.Errors));
+            return Results.BadRequest(new { error = "Failed to change password. Ensure your current password is correct." });
         })
         .AddEndpointFilter<ValidationFilter<ChangePasswordDto>>();
     }

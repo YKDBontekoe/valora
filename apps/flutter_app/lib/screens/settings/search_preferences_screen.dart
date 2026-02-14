@@ -17,7 +17,7 @@ class _SearchPreferencesScreenState extends State<SearchPreferencesScreen> {
   @override
   void initState() {
     super.initState();
-    _radius = context.read<UserProfileProvider>().profile?.defaultRadiusMeters ?? 1000;
+    _radius = (context.read<UserProfileProvider>().profile?.defaultRadiusMeters ?? 1000).clamp(100, 5000);
   }
 
   Future<void> _save() async {
