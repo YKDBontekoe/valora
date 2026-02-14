@@ -28,16 +28,19 @@ class HomeBottomNavBar extends StatelessWidget {
         ? ValoraColors.glassBorderDark
         : ValoraColors.glassBorderLight.withValues(alpha: 0.5);
 
-    // SafeArea is crucial here to respect the home indicator area
-    // The Container provides explicit height and alignment to avoid layout issues
+    // SafeArea is used specifically to respect the home indicator area
+    // while allowing the background to extend to the screen edges if needed
     return SafeArea(
+      top: false,
+      left: false,
+      right: false,
       child: Container(
-        height: 80, // Explicit height constraint
+        constraints: const BoxConstraints(minHeight: ValoraSpacing.navBarHeight),
         margin: const EdgeInsets.fromLTRB(
           ValoraSpacing.md,
           0,
           ValoraSpacing.md,
-          ValoraSpacing.md,
+          ValoraSpacing.sm,
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(ValoraSpacing.xl),
@@ -196,10 +199,9 @@ class _GlassNavItem extends StatelessWidget {
                                 : EdgeInsets.zero,
                             child: Text(
                               label,
-                              style: ValoraTypography.labelLarge.copyWith(
+                              style: ValoraTypography.labelMedium.copyWith(
                                 color: ValoraColors.primary,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
