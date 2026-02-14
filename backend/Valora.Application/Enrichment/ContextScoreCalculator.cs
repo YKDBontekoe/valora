@@ -12,6 +12,23 @@ public static class ContextScoreCalculator
     private const string CategoryAmenities = "Amenities";
     private const string CategoryEnvironment = "Environment";
 
+    // Weighted average with emphasis on safety and amenities
+    // These weights are chosen based on user research indicating that:
+    // 1. Amenities (25%) are the primary driver for daily convenience (supermarkets, schools).
+    // 2. Safety (20%) and Social (20%) are critical "hygiene factors" for feeling at home.
+    // 3. Environment/Demographics/Housing (10% each) provide context but are less critical deal-breakers.
+    // 4. Mobility (5%) is often specific to car owners vs public transport users, so it has lower general weight.
+    private static readonly Dictionary<string, double> Weights = new()
+    {
+        [CategorySocial] = 0.20,
+        [CategorySafety] = 0.20,
+        [CategoryDemographics] = 0.10,
+        [CategoryHousing] = 0.10,
+        [CategoryMobility] = 0.05,
+        [CategoryAmenities] = 0.25,
+        [CategoryEnvironment] = 0.10
+    };
+
     public static Dictionary<string, double> ComputeCategoryScores(
         IReadOnlyList<ContextMetricDto> socialMetrics,
         IReadOnlyList<ContextMetricDto> crimeMetrics,
@@ -23,26 +40,13 @@ public static class ContextScoreCalculator
     {
         var scores = new Dictionary<string, double>();
 
-        var social = AverageScore(socialMetrics);
-        if (social.HasValue) scores[CategorySocial] = Math.Round(social.Value, 1);
-
-        var crime = AverageScore(crimeMetrics);
-        if (crime.HasValue) scores[CategorySafety] = Math.Round(crime.Value, 1);
-
-        var demographics = AverageScore(demographicsMetrics);
-        if (demographics.HasValue) scores[CategoryDemographics] = Math.Round(demographics.Value, 1);
-
-        var housing = AverageScore(housingMetrics);
-        if (housing.HasValue) scores[CategoryHousing] = Math.Round(housing.Value, 1);
-
-        var mobility = AverageScore(mobilityMetrics);
-        if (mobility.HasValue) scores[CategoryMobility] = Math.Round(mobility.Value, 1);
-
-        var amenity = AverageScore(amenityMetrics);
-        if (amenity.HasValue) scores[CategoryAmenities] = Math.Round(amenity.Value, 1);
-
-        var environment = AverageScore(environmentMetrics);
-        if (environment.HasValue) scores[CategoryEnvironment] = Math.Round(environment.Value, 1);
+        AddScore(scores, CategorySocial, socialMetrics);
+        AddScore(scores, CategorySafety, crimeMetrics);
+        AddScore(scores, CategoryDemographics, demographicsMetrics);
+        AddScore(scores, CategoryHousing, housingMetrics);
+        AddScore(scores, CategoryMobility, mobilityMetrics);
+        AddScore(scores, CategoryAmenities, amenityMetrics);
+        AddScore(scores, CategoryEnvironment, environmentMetrics);
 
         return scores;
     }
@@ -50,12 +54,6 @@ public static class ContextScoreCalculator
     /// <summary>
     /// Calculates the final 0-100 "Valora Score" based on weighted category scores.
     /// </summary>
-    /// <remarks>
-    /// Weights are determined heuristically based on general resident priorities:
-    /// - Amenities (25%) and Safety (20%) are the strongest drivers for location desirability.
-    /// - Social (20%) reflects the neighborhood vibe and stability.
-    /// - Environment, Demographics, and Housing have lower weights as they are often secondary or highly subjective factors.
-    /// </remarks>
     public static double ComputeCompositeScore(IReadOnlyDictionary<string, double> categoryScores)
     {
         if (categoryScores.Count == 0)
@@ -63,29 +61,12 @@ public static class ContextScoreCalculator
             return 0;
         }
 
-        // Weighted average with emphasis on safety and amenities
-        // These weights are chosen based on user research indicating that:
-        // 1. Amenities (25%) are the primary driver for daily convenience (supermarkets, schools).
-        // 2. Safety (20%) and Social (20%) are critical "hygiene factors" for feeling at home.
-        // 3. Environment/Demographics/Housing (10% each) provide context but are less critical deal-breakers.
-        // 4. Mobility (5%) is often specific to car owners vs public transport users, so it has lower general weight.
-        var weights = new Dictionary<string, double>
-        {
-            [CategorySocial] = 0.20,
-            [CategorySafety] = 0.20,
-            [CategoryDemographics] = 0.10,
-            [CategoryHousing] = 0.10,
-            [CategoryMobility] = 0.05,
-            [CategoryAmenities] = 0.25,
-            [CategoryEnvironment] = 0.10
-        };
-
         double totalWeight = 0;
         double weightedSum = 0;
 
         foreach (var kvp in categoryScores)
         {
-            if (weights.TryGetValue(kvp.Key, out var weight))
+            if (Weights.TryGetValue(kvp.Key, out var weight))
             {
                 weightedSum += kvp.Value * weight;
                 totalWeight += weight;
@@ -93,6 +74,15 @@ public static class ContextScoreCalculator
         }
 
         return totalWeight > 0 ? weightedSum / totalWeight : 0;
+    }
+
+    private static void AddScore(Dictionary<string, double> scores, string category, IReadOnlyList<ContextMetricDto> metrics)
+    {
+        var average = AverageScore(metrics);
+        if (average.HasValue)
+        {
+            scores[category] = Math.Round(average.Value, 1);
+        }
     }
 
     private static double? AverageScore(IReadOnlyList<ContextMetricDto> metrics)

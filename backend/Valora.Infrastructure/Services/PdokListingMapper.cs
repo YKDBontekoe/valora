@@ -90,6 +90,38 @@ public static class PdokListingMapper
         );
     }
 
+    public static bool TryParsePdokResponse(JsonElement response, out JsonElement firstDoc)
+    {
+        firstDoc = default;
+        if (!response.TryGetProperty("response", out var responseObj) ||
+            !responseObj.TryGetProperty("docs", out var docs) ||
+            docs.GetArrayLength() == 0)
+        {
+            return false;
+        }
+
+        firstDoc = docs[0];
+        return true;
+    }
+
+    public static (int? Value, DateTime? ReferenceDate, string? Source) EstimateWozValue(ContextReportModel? contextReport)
+    {
+        if (contextReport == null) return (null, null, null);
+
+        var avgWozMetric = contextReport.SocialMetrics.FirstOrDefault(m => m.Key == "average_woz");
+        if (avgWozMetric?.Value.HasValue == true)
+        {
+            // Value is in k€ (e.g. 450), convert to absolute value
+            var value = (int)(avgWozMetric.Value.Value * 1000);
+            var source = "CBS Neighborhood Average";
+            // CBS data is typically from the previous year
+            var referenceDate = new DateTime(DateTime.UtcNow.Year - 1, 1, 1);
+            return (value, referenceDate, source);
+        }
+
+        return (null, null, null);
+    }
+
     public static string? GetString(JsonElement doc, string key)
     {
         if (doc.TryGetProperty(key, out var prop))

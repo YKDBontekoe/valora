@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Valora.Api.Endpoints;
+using Valora.Api.Extensions;
 using Valora.Api.Middleware;
 using Valora.Application;
 using Valora.Application.Common.Exceptions;
@@ -133,131 +134,14 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // Add CORS for Flutter
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        var configOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-
-        // 1. Filter config origins (remove nulls/whitespace, trim)
-        var validOrigins = configOrigins.Where(o => !string.IsNullOrWhiteSpace(o)).Select(o => o.Trim()).ToList();
-
-        // 2. If empty, try environment variable
-        if (validOrigins.Count == 0)
-        {
-            var envOrigins = builder.Configuration["ALLOWED_ORIGINS"];
-            if (!string.IsNullOrEmpty(envOrigins))
-            {
-                validOrigins.AddRange(envOrigins.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-            }
-        }
-
-        // 3. Configure policy
-        if (validOrigins.Count > 0)
-        {
-            policy.WithOrigins(validOrigins.ToArray())
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        }
-        else
-        {
-            // Fallback logic
-            if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
-            {
-                policy.WithOrigins("http://localhost:3000")
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
-            }
-            else
-            {
-                // In production, default to allowing all origins if not explicitly configured.
-                // This prevents startup crashes while maintaining functionality for mobile apps.
-                // A warning is logged at startup if this fallback is active.
-                policy.AllowAnyOrigin()
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
-        }
-        }
-    });
-});
+builder.Services.AddCustomCors(builder.Configuration, builder.Environment);
 var app = builder.Build();
 
 // Log warning if CORS is insecurely configured in production
-if (app.Environment.IsProduction())
-{
-    var configOrigins = app.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-    var envOrigins = app.Configuration["ALLOWED_ORIGINS"];
-
-    // Using the same logic as AddCors to determine effective configuration
-    var hasValidConfig = configOrigins.Any(o => !string.IsNullOrWhiteSpace(o)) || !string.IsNullOrWhiteSpace(envOrigins);
-
-    if (!hasValidConfig)
-    {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning("SECURITY WARNING: CORS AllowedOrigins not configured. Defaulting to AllowAnyOrigin. This is insecure. Configure AllowedOrigins or ALLOWED_ORIGINS to restrict access.");
-    }
-}
+app.LogCorsWarning();
 
 // Apply database migrations
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-        try
-        {
-            if (dbContext.Database.IsRelational())
-            {
-                dbContext.Database.Migrate();
-            }
-
-            // Seed Admin User
-            var adminEmail = app.Configuration["ADMIN_EMAIL"];
-            var adminPassword = app.Configuration["ADMIN_PASSWORD"];
-
-            if (!string.IsNullOrEmpty(adminEmail) && !string.IsNullOrEmpty(adminPassword))
-            {
-                var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-                await identityService.EnsureRoleAsync("Admin");
-                
-                var user = await identityService.GetUserByEmailAsync(adminEmail);
-                if (user == null)
-                {
-                    // Only create and promote if user does NOT exist (prevents takeover of existing accounts)
-                    var (createResult, userId) = await identityService.CreateUserAsync(adminEmail, adminPassword);
-                    if (createResult.Succeeded)
-                    {
-                        var roleResult = await identityService.AddToRoleAsync(userId, "Admin");
-                        if (roleResult.Succeeded)
-                        {
-                            logger.LogInformation("Successfully seeded initial Admin user.");
-                        }
-                        else
-                        {
-                            logger.LogWarning("Created Admin user but failed to assign role. Check identity logs.");
-                        }
-                    }
-                    else
-                    {
-                        logger.LogWarning("Failed to create initial Admin user. Check identity logs.");
-                    }
-                }
-                else
-                {
-                    logger.LogWarning("Admin seeding: User configured in ADMIN_EMAIL already exists. Skipping automatic promotion to prevent privilege escalation.");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log error or handle it (e.g., if database is not ready yet)
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "An error occurred while migrating the database.");
-        }
-    }
-}
+await DbInitializer.InitializeAsync(app.Services, app.Configuration, app.Environment);
 
 if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION"))
 {
@@ -303,17 +187,9 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 /// Retrieves a paginated list of listings based on filter criteria.
 /// Requires Authentication.
 /// </summary>
-api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingService service, CancellationToken ct) =>
 {
-    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(filter);
-    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-
-    if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(filter, validationContext, validationResults, true))
-    {
-        return Results.BadRequest(validationResults.Select(r => new { Property = r.MemberNames.FirstOrDefault(), Error = r.ErrorMessage }));
-    }
-
-    var paginatedList = await repo.GetSummariesAsync(filter, ct);
+    var paginatedList = await service.GetListingsAsync(filter, ct);
 
     return Results.Ok(new
     {
@@ -331,11 +207,9 @@ api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingR
 /// Looks up property details from PDOK by ID and enriches with neighborhood analytics.
 /// Requires Authentication.
 /// </summary>
-api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService, CancellationToken ct) =>
+api.MapGet("/listings/lookup", async (string id, IListingService service, CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(id)) return Results.BadRequest("ID is required");
-    
-    var listing = await pdokService.GetListingDetailsAsync(id, ct);
+    var listing = await service.GetPdokListingAsync(id, ct);
     if (listing is null) return Results.NotFound();
 
     return Results.Ok(listing);
@@ -347,13 +221,12 @@ api.MapGet("/listings/lookup", async (string id, IPdokListingService pdokService
 /// Retrieves detailed information for a specific listing by ID.
 /// Requires Authentication.
 /// </summary>
-api.MapGet("/listings/{id:guid}", async (Guid id, IListingRepository repo, CancellationToken ct) =>
+api.MapGet("/listings/{id:guid}", async (Guid id, IListingService service, CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
+    var listing = await service.GetListingByIdAsync(id, ct);
     if (listing is null) return Results.NotFound();
     
-    var dto = ListingMapper.ToDto(listing);
-    return Results.Ok(dto);
+    return Results.Ok(listing);
 })
 .RequireAuthorization();
 
@@ -371,36 +244,11 @@ api.MapPost("/context/report", async (
 
 api.MapPost("/listings/{id:guid}/enrich", async (
     Guid id,
-    IListingRepository repo,
-    IContextReportService contextReportService,
+    IListingService service,
     CancellationToken ct) =>
 {
-    var listing = await repo.GetByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
-
-    // 1. Generate Report
-    ContextReportRequestDto request = new(Input: listing.Address); // Default 1km radius
-    
-    // We use the application DTO for the service call...
-    var reportDto = await contextReportService.BuildAsync(request, ct);
-
-    // ...and map it to the Domain model for storage
-    var contextReportModel = ListingMapper.MapToDomain(reportDto);
-
-    // 2. Update Entity
-    listing.ContextReport = contextReportModel;
-    listing.ContextCompositeScore = reportDto.CompositeScore;
-
-    if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
-    if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime; // Mapping "Safety" to "Safety" score
-    if (reportDto.CategoryScores.TryGetValue("Demographics", out var demo)) { /* No specific column yet */ }
-    if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
-    if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
-
-    // 3. Save
-    await repo.UpdateAsync(listing, ct);
-
-    return Results.Ok(new { message = "Listing enriched successfully", compositeScore = reportDto.CompositeScore });
+    var compositeScore = await service.EnrichListingAsync(id, ct);
+    return Results.Ok(new { message = "Listing enriched successfully", compositeScore });
 })
 .RequireAuthorization("Admin")
 .RequireRateLimiting("strict");
