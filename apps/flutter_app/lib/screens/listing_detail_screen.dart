@@ -92,153 +92,151 @@ class ListingDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    [
-                          ListingHeader(listing: listing),
-                          const SizedBox(height: ValoraSpacing.lg),
-                          ListingAddress(listing: listing),
-                          const SizedBox(height: ValoraSpacing.lg),
-                          Divider(color: colorScheme.outlineVariant),
-                          const SizedBox(height: ValoraSpacing.lg),
-                          ListingSpecs(listing: listing),
-                          const SizedBox(height: ValoraSpacing.xl),
+                children: [
+                  ListingHeader(listing: listing),
+                  const SizedBox(height: ValoraSpacing.lg),
+                  ListingAddress(listing: listing),
+                  const SizedBox(height: ValoraSpacing.lg),
+                  Divider(color: colorScheme.outlineVariant),
+                  const SizedBox(height: ValoraSpacing.lg),
+                  ListingSpecs(listing: listing),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                          // Description
-                          if (listing.description != null) ...[
-                            Text(
-                              'About this home',
-                              style: ValoraTypography.titleLarge.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: ValoraSpacing.sm),
-                            Text(
-                              listing.description!,
-                              style: ValoraTypography.bodyMedium.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                height: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: ValoraSpacing.xl),
-                          ],
+                  // Description
+                  if (listing.description != null) ...[
+                    Text(
+                      'About this home',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.sm),
+                    Text(
+                      listing.description!,
+                      style: ValoraTypography.bodyMedium.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.xl),
+                  ],
 
-                          // Key Features Grid (Highlights)
-                          ListingHighlights(listing: listing),
-                          const SizedBox(height: ValoraSpacing.xl),
+                  // Key Features Grid (Highlights)
+                  ListingHighlights(listing: listing),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                          // Technical Details
-                          ListingTechnicalDetails(listing: listing),
-                          const SizedBox(height: ValoraSpacing.xl),
+                  // Technical Details
+                  ListingTechnicalDetails(listing: listing),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                          if (contextReport != null) ...[
-                             Text(
-                              'Neighborhood Analytics',
-                              style: ValoraTypography.titleLarge.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
-                             ),
-                             const SizedBox(height: ValoraSpacing.md),
-                             ContextReportView(
-                               report: contextReport,
-                               showHeader: false,
-                             ),
-                             const SizedBox(height: ValoraSpacing.xl),
-                          ],
+                  if (contextReport != null) ...[
+                    Text(
+                      'Neighborhood Analytics',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.md),
+                    ContextReportView(
+                      report: contextReport,
+                      showHeader: false,
+                    ),
+                    const SizedBox(height: ValoraSpacing.xl),
+                  ],
 
-                          if (listing.virtualTourUrl != null ||
-                              listing.videoUrl != null ||
-                              listing.floorPlanUrls.isNotEmpty ||
-                              listing.latitude != null ||
-                              listing.longitude != null) ...[
-                            Text(
-                              'Explore',
-                              style: ValoraTypography.titleLarge.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: ValoraSpacing.md),
-                            Wrap(
-                              spacing: ValoraSpacing.sm,
-                              runSpacing: ValoraSpacing.sm,
-                              children: [
-                                if (listing.latitude != null ||
-                                    listing.longitude != null)
-                                  ValoraButton(
-                                    label: 'Open Map',
-                                    icon: Icons.map_rounded,
-                                    variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => ListingUrlLauncher.openMap(context, listing.latitude, listing.longitude, listing.address, listing.city),
-                                  ),
-                                if (listing.virtualTourUrl != null)
-                                  ValoraButton(
-                                    label: 'Virtual Tour',
-                                    icon: Icons.view_in_ar_rounded,
-                                    variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => ListingUrlLauncher.openVirtualTour(context, listing.virtualTourUrl),
-                                  ),
-                                if (listing.videoUrl != null)
-                                  ValoraButton(
-                                    label: 'Watch Video',
-                                    icon: Icons.play_circle_outline_rounded,
-                                    variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => ListingUrlLauncher.openVideo(context, listing.videoUrl),
-                                  ),
-                                if (listing.floorPlanUrls.isNotEmpty)
-                                  ValoraButton(
-                                    label: 'Floorplan',
-                                    icon: Icons.map_outlined,
-                                    variant: ValoraButtonVariant.secondary,
-                                    onPressed: () =>
-                                        ListingUrlLauncher.openFirstFloorPlan(context, listing.floorPlanUrls),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: ValoraSpacing.xl),
-                          ],
+                  if (listing.virtualTourUrl != null ||
+                      listing.videoUrl != null ||
+                      listing.floorPlanUrls.isNotEmpty ||
+                      listing.latitude != null ||
+                      listing.longitude != null) ...[
+                    Text(
+                      'Explore',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.md),
+                    Wrap(
+                      spacing: ValoraSpacing.sm,
+                      runSpacing: ValoraSpacing.sm,
+                      children: [
+                        if (listing.latitude != null ||
+                            listing.longitude != null)
+                          ValoraButton(
+                            label: 'Open Map',
+                            icon: Icons.map_rounded,
+                            variant: ValoraButtonVariant.secondary,
+                            onPressed: () => ListingUrlLauncher.openMap(context, listing.latitude, listing.longitude, listing.address, listing.city),
+                          ),
+                        if (listing.virtualTourUrl != null)
+                          ValoraButton(
+                            label: 'Virtual Tour',
+                            icon: Icons.view_in_ar_rounded,
+                            variant: ValoraButtonVariant.secondary,
+                            onPressed: () => ListingUrlLauncher.openVirtualTour(context, listing.virtualTourUrl),
+                          ),
+                        if (listing.videoUrl != null)
+                          ValoraButton(
+                            label: 'Watch Video',
+                            icon: Icons.play_circle_outline_rounded,
+                            variant: ValoraButtonVariant.secondary,
+                            onPressed: () => ListingUrlLauncher.openVideo(context, listing.videoUrl),
+                          ),
+                        if (listing.floorPlanUrls.isNotEmpty)
+                          ValoraButton(
+                            label: 'Floorplan',
+                            icon: Icons.map_outlined,
+                            variant: ValoraButtonVariant.secondary,
+                            onPressed: () =>
+                                ListingUrlLauncher.openFirstFloorPlan(context, listing.floorPlanUrls),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: ValoraSpacing.xl),
+                  ],
 
-                          // Features List (Detailed)
-                          ListingDetailedFeatures(listing: listing),
+                  // Features List (Detailed)
+                  ListingDetailedFeatures(listing: listing),
 
-                          // Broker Section
-                          if (listing.brokerLogoUrl != null ||
-                              listing.brokerPhone != null) ...[
-                            ListingBrokerCard(listing: listing),
-                            const SizedBox(height: ValoraSpacing.md),
-                          ],
+                  // Broker Section
+                  if (listing.brokerLogoUrl != null ||
+                      listing.brokerPhone != null) ...[
+                    ListingBrokerCard(listing: listing),
+                    const SizedBox(height: ValoraSpacing.md),
+                  ],
 
-                          if (listing.url != null) ...[
-                            const SizedBox(height: ValoraSpacing.sm),
-                            ValoraButton(
-                              label: 'View on Funda',
-                              icon: Icons.open_in_new_rounded,
-                              isFullWidth: true,
-                              onPressed: () => ListingUrlLauncher.openExternalLink(context, listing.url),
-                            ),
-                          ],
+                  if (listing.url != null) ...[
+                    const SizedBox(height: ValoraSpacing.sm),
+                    ValoraButton(
+                      label: 'View on Funda',
+                      icon: Icons.open_in_new_rounded,
+                      isFullWidth: true,
+                      onPressed: () => ListingUrlLauncher.openExternalLink(context, listing.url),
+                    ),
+                  ],
 
-                          if (listing.brokerPhone != null) ...[
-                            const SizedBox(height: ValoraSpacing.md),
-                            ValoraButton(
-                              label: 'Contact Broker',
-                              icon: Icons.phone_rounded,
-                              variant: ValoraButtonVariant.outline,
-                              isFullWidth: true,
-                              onPressed: () => _contactBroker(context),
-                            ),
-                          ],
+                  if (listing.brokerPhone != null) ...[
+                    const SizedBox(height: ValoraSpacing.md),
+                    ValoraButton(
+                      label: 'Contact Broker',
+                      icon: Icons.phone_rounded,
+                      variant: ValoraButtonVariant.outline,
+                      isFullWidth: true,
+                      onPressed: () => _contactBroker(context),
+                    ),
+                  ],
 
-                          const SizedBox(height: ValoraSpacing.xl),
-                        ]
-                        .animate(interval: 50.ms)
-                        .fade(duration: ValoraAnimations.slow)
-                        .slideY(
-                          begin: 0.1,
-                          end: 0,
-                          curve: ValoraAnimations.deceleration,
-                        ),
+                  const SizedBox(height: ValoraSpacing.xl),
+                ].animate(
+                  // Use a single animation wrapper for the whole group to avoid list extension issues
+                ).fade(duration: ValoraAnimations.slow).slideY(
+                      begin: 0.05,
+                      end: 0,
+                      curve: ValoraAnimations.deceleration,
+                    ),
               ),
             ),
           ),
