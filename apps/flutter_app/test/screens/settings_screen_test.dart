@@ -6,7 +6,9 @@ import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
+import 'package:valora_app/providers/user_profile_provider.dart';
 import 'package:valora_app/screens/settings_screen.dart';
+import '../mocks/mock_user_profile_provider.dart';
 
 @GenerateMocks([AuthProvider, ThemeProvider])
 @GenerateNiceMocks([
@@ -148,6 +150,7 @@ void main() {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
         ChangeNotifierProvider<ThemeProvider>.value(value: mockThemeProvider),
+        ChangeNotifierProvider<UserProfileProvider>.value(value: MockUserProfileProvider()),
       ],
       child: const MaterialApp(home: SettingsScreen()),
     );

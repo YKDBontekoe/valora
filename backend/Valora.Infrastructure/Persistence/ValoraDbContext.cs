@@ -19,6 +19,12 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(e => e.FirstName).HasMaxLength(100);
+            entity.Property(e => e.LastName).HasMaxLength(100);
+            entity.Property(e => e.DefaultRadiusMeters).HasDefaultValue(1000);
+        });
 
         // Value Comparers
         // Suppress null warnings with ! because these properties are initialized to empty collections

@@ -10,10 +10,12 @@ import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
+import 'package:valora_app/providers/user_profile_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'mocks/mock_notification_service.dart';
+import 'mocks/mock_user_profile_provider.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/screens/search_screen.dart';
 
@@ -63,6 +65,9 @@ void main() {
               create: (context) => InsightsProvider(context.read<ApiService>()),
               update: (context, apiService, previous) =>
                   (previous ?? InsightsProvider(apiService))..update(apiService),
+            ),
+            ChangeNotifierProvider<UserProfileProvider>.value(
+              value: MockUserProfileProvider(),
             ),
           ],
           child: const ValoraApp(),

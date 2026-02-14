@@ -1,3 +1,4 @@
+import 'providers/user_profile_provider.dart';
 import 'providers/insights_provider.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -91,6 +92,20 @@ Future<void> main() async {
             create: (context) => InsightsProvider(context.read<ApiService>()),
             update: (context, apiService, previous) =>
                 (previous ?? InsightsProvider(apiService))..update(apiService),
+          ),
+          ChangeNotifierProxyProvider<ApiService, UserProfileProvider>(
+            create: (context) => UserProfileProvider(apiService: context.read<ApiService>()),
+            update: (context, apiService, previous) {
+              final provider = previous ?? UserProfileProvider(apiService: apiService);
+              provider.update(apiService);
+
+              // Only fetch if authenticated and we don't have a profile yet (or service changed)
+              final auth = context.read<AuthProvider>();
+              if (auth.isAuthenticated && provider.profile == null && !provider.isLoading) {
+                provider.fetchProfile();
+              }
+              return provider;
+            },
           ),
         ],
         child: const ValoraApp(),

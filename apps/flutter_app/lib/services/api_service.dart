@@ -1,3 +1,4 @@
+import '../models/user_profile.dart';
 import '../models/map_city_insight.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -477,6 +478,64 @@ class ApiService {
       );
     } catch (e, stack) {
       final uri = Uri.parse('$baseUrl/map/cities');
+      throw _handleException(e, stack, uri);
+    }
+  }
+  Future<UserProfile> getUserProfile() async {
+    final uri = Uri.parse("$baseUrl/profile");
+    try {
+      final response = await _authenticatedRequest(
+        (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
+
+      return await _handleResponse(
+        response,
+        (body) => UserProfile.fromJson(json.decode(body)),
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<void> updateProfile({String? firstName, String? lastName, int? defaultRadiusMeters, bool? biometricsEnabled}) async {
+    final uri = Uri.parse("$baseUrl/profile");
+    try {
+      final payload = json.encode({
+        "firstName": firstName,
+        "lastName": lastName,
+        "defaultRadiusMeters": defaultRadiusMeters,
+        "biometricsEnabled": biometricsEnabled,
+      });
+
+      final response = await _authenticatedRequest(
+        (headers) => _client
+            .put(uri, headers: headers, body: payload)
+            .timeout(timeoutDuration),
+      );
+
+      await _handleResponse(response, (_) => null);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<void> changePassword(String currentPassword, String newPassword, String confirmNewPassword) async {
+    final uri = Uri.parse("$baseUrl/profile/change-password");
+    try {
+      final payload = json.encode({
+        "currentPassword": currentPassword,
+        "newPassword": newPassword,
+        "confirmNewPassword": confirmNewPassword,
+      });
+
+      final response = await _authenticatedRequest(
+        (headers) => _client
+            .post(uri, headers: headers, body: payload)
+            .timeout(timeoutDuration),
+      );
+
+      await _handleResponse(response, (_) => null);
+    } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
   }
