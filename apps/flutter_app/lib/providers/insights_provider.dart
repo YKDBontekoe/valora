@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/map_city_insight.dart';
+import '../models/map_amenity.dart';
+import '../models/map_overlay.dart';
 import '../services/api_service.dart';
 
 enum InsightMetric {
@@ -14,16 +18,33 @@ class InsightsProvider extends ChangeNotifier {
   ApiService _apiService;
 
   List<MapCityInsight> _cities = [];
+  List<MapAmenity> _amenities = [];
+  List<MapOverlay> _overlays = [];
+
   bool _isLoading = false;
   String? _error;
+  String? _mapError;
   InsightMetric _selectedMetric = InsightMetric.composite;
+
+  // Layer Toggles
+  bool _showAmenities = false;
+  bool _showOverlays = false;
+  MapOverlayMetric _selectedOverlayMetric = MapOverlayMetric.pricePerSquareMeter;
 
   InsightsProvider(this._apiService);
 
   List<MapCityInsight> get cities => _cities;
+  List<MapAmenity> get amenities => _amenities;
+  List<MapOverlay> get overlays => _overlays;
+
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get mapError => _mapError;
   InsightMetric get selectedMetric => _selectedMetric;
+
+  bool get showAmenities => _showAmenities;
+  bool get showOverlays => _showOverlays;
+  MapOverlayMetric get selectedOverlayMetric => _selectedOverlayMetric;
 
   void update(ApiService apiService) {
     _apiService = apiService;
@@ -40,6 +61,87 @@ class InsightsProvider extends ChangeNotifier {
       _error = e is AppException ? e.message : 'Failed to load insights';
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchMapData({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    double zoom = 7.5,
+  }) async {
+    if (!_showAmenities && !_showOverlays) return;
+
+    _mapError = null;
+    bool hasAnyChange = false;
+
+    // Split work for amenities
+    if (_showAmenities && zoom >= 13) {
+      try {
+        final newAmenities = await _apiService.getMapAmenities(
+          minLat: minLat,
+          minLon: minLon,
+          maxLat: maxLat,
+          maxLon: maxLon,
+        );
+        _amenities = newAmenities;
+        hasAnyChange = true;
+      } catch (e) {
+        developer.log('Failed to fetch amenities', error: e, name: 'InsightsProvider');
+        _amenities = [];
+        _mapError = 'Some map features could not be loaded.';
+        hasAnyChange = true;
+      }
+    } else if (_amenities.isNotEmpty) {
+      _amenities = [];
+      hasAnyChange = true;
+    }
+
+    // Split work for overlays
+    if (_showOverlays && zoom >= 11) {
+      try {
+        final newOverlays = await _apiService.getMapOverlays(
+          minLat: minLat,
+          minLon: minLon,
+          maxLat: maxLat,
+          maxLon: maxLon,
+          metric: _getOverlayMetricString(_selectedOverlayMetric),
+        );
+        _overlays = newOverlays;
+        hasAnyChange = true;
+      } catch (e) {
+        developer.log('Failed to fetch overlays', error: e, name: 'InsightsProvider');
+        _overlays = [];
+        _mapError = 'Some map features could not be loaded.';
+        hasAnyChange = true;
+      }
+    } else if (_overlays.isNotEmpty) {
+      _overlays = [];
+      hasAnyChange = true;
+    }
+
+    if (hasAnyChange) {
+      notifyListeners();
+    }
+  }
+
+  void toggleAmenities() {
+    _showAmenities = !_showAmenities;
+    if (!_showAmenities) _amenities = [];
+    notifyListeners();
+  }
+
+  void toggleOverlays() {
+    _showOverlays = !_showOverlays;
+    if (!_showOverlays) _overlays = [];
+    notifyListeners();
+  }
+
+  void setOverlayMetric(MapOverlayMetric metric) {
+    if (_selectedOverlayMetric != metric) {
+      _selectedOverlayMetric = metric;
       notifyListeners();
     }
   }
@@ -61,6 +163,19 @@ class InsightsProvider extends ChangeNotifier {
         return city.socialScore;
       case InsightMetric.amenities:
         return city.amenitiesScore;
+    }
+  }
+
+  String _getOverlayMetricString(MapOverlayMetric metric) {
+    switch (metric) {
+      case MapOverlayMetric.pricePerSquareMeter:
+        return 'PricePerSquareMeter';
+      case MapOverlayMetric.crimeRate:
+        return 'CrimeRate';
+      case MapOverlayMetric.populationDensity:
+        return 'PopulationDensity';
+      case MapOverlayMetric.averageWoz:
+        return 'AverageWoz';
     }
   }
 }

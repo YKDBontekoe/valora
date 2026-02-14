@@ -126,6 +126,48 @@ public class OverpassAmenityClientTests
             ItExpr.IsAny<CancellationToken>());
     }
 
+    [Fact]
+    public async Task GetAmenitiesInBboxAsync_ReturnsParsedAmenities()
+    {
+        // Arrange
+        var elements = new[]
+        {
+            new { id = 123, lat = 52.0, lon = 4.0, tags = new Dictionary<string, string> { ["amenity"] = "charging_station", ["name"] = "Fast Charge" } },
+            new { id = 456, lat = 52.1, lon = 4.1, tags = new Dictionary<string, string> { ["shop"] = "supermarket", ["name"] = "AH" } }
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(new { elements });
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetAmenitiesInBboxAsync(52.0, 4.0, 52.5, 4.5);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, a => a.Type == "charging_station" && a.Name == "Fast Charge");
+        Assert.Contains(result, a => a.Type == "supermarket" && a.Name == "AH");
+    }
+
+    [Fact]
+    public async Task GetAmenitiesInBboxAsync_HandlesEmptyResponse()
+    {
+        // Arrange
+        var jsonResponse = JsonSerializer.Serialize(new { elements = Array.Empty<object>() });
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetAmenitiesInBboxAsync(52.0, 4.0, 52.5, 4.5);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
     private static Mock<HttpMessageHandler> CreateHandlerMock(HttpStatusCode statusCode, string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);

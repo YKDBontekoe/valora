@@ -8,12 +8,16 @@ using Valora.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Valora.Application.Common.Interfaces;
+using Moq;
 
 namespace Valora.IntegrationTests;
 
 public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
+    public Mock<IAmenityClient> AmenityClientMock { get; } = new();
+    public Mock<ICbsGeoClient> CbsGeoClientMock { get; } = new();
 
     public IntegrationTestWebAppFactory(string connectionString)
     {
@@ -22,7 +26,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing"); // Ensure tests run in Testing mode
+        builder.UseEnvironment("Testing");
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
@@ -44,7 +48,6 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             services.RemoveAll<DbContextOptions>();
             services.RemoveAll<ValoraDbContext>();
 
-            // Remove implicit configuration that might hold the old delegate
             var configType = Type.GetType("Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration`1, Microsoft.EntityFrameworkCore");
             if (configType != null)
             {
@@ -52,14 +55,11 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                  services.RemoveAll(genericConfigType);
             }
 
-            // Also try to find it via interface matching if reflection fails or assembly issues
             var configServices = services.Where(d => d.ServiceType.Name.Contains("IDbContextOptionsConfiguration") &&
                                                      d.ServiceType.IsGenericType &&
                                                      d.ServiceType.GetGenericArguments()[0] == typeof(ValoraDbContext)).ToList();
             foreach (var s in configServices) services.Remove(s);
 
-
-            // Nuclear cleanup of Npgsql if present
             var npgsqlServices = services.Where(d =>
                 d.ServiceType.FullName?.Contains("Npgsql") == true ||
                 d.ImplementationType?.FullName?.Contains("Npgsql") == true).ToList();
@@ -84,18 +84,16 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
 
-            // Ensure Identity uses the new DbContext
-            // When we replaced DbContext, the previous Identity configuration might be stale or broken
-            // because AddEntityFrameworkStores<TContext>() registers stores bound to the original TContext configuration.
-            // We need to re-register Identity stores to bind them to the new DbContext registration.
-
-            // Note: AddIdentityCore adds the core services (UserManager, etc.).
-            // We shouldn't need to call AddIdentityCore again if it was already called in Program.cs,
-            // BUT we definitely need to re-bind the EF stores to the new context.
-
             services.AddIdentityCore<ApplicationUser>()
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ValoraDbContext>();
+
+            // Mock external map clients
+            services.RemoveAll<IAmenityClient>();
+            services.AddSingleton<IAmenityClient>(AmenityClientMock.Object);
+
+            services.RemoveAll<ICbsGeoClient>();
+            services.AddSingleton<ICbsGeoClient>(CbsGeoClientMock.Object);
         });
     }
 }

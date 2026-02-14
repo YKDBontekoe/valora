@@ -149,6 +149,12 @@ class MockNotificationService extends _i1.Mock
           as _i5.Future<void>);
 
   @override
+  void undoDelete(String? id) => super.noSuchMethod(
+    Invocation.method(#undoDelete, [id]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,

@@ -105,6 +105,14 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        services.AddHttpClient<ICbsGeoClient, CbsGeoClient>()
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+        });
+
 
         services.AddHttpClient<IWozValuationService, WozValuationService>()
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler

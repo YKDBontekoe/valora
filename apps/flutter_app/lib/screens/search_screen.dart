@@ -156,9 +156,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final fullListing = await context.read<ApiService>().getListing(
           listing.id,
         );
-        if (fullListing != null) {
-          listingToDisplay = fullListing;
-        }
+        listingToDisplay = fullListing;
       }
 
       listingToDisplay = await _enrichListingWithRealPhotos(listingToDisplay);
