@@ -47,60 +47,19 @@ public class PdokListingService : IPdokListingService
             var lookupUrl = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/lookup?id={encodedId}&fl=*";
             var response = await _httpClient.GetFromJsonAsync<JsonElement>(lookupUrl, cancellationToken);
             
-            if (!response.TryGetProperty("response", out var responseObj) || 
-                !responseObj.TryGetProperty("docs", out var docs) || 
-                docs.GetArrayLength() == 0)
+            if (!PdokListingMapper.TryParsePdokResponse(response, out var doc))
             {
                 return null;
             }
-
-            var doc = docs[0];
 
             // 2. Extract Basic Info
             var address = PdokListingMapper.GetString(doc, "weergavenaam");
 
             // 4. Enrich with Context Report
-            Valora.Domain.Models.ContextReportModel? contextReport = null;
-            double? compositeScore = null;
-            double? safetyScore = null;
-
-            if (!string.IsNullOrWhiteSpace(address))
-            {
-                try
-                {
-                    // Using address as input for context report
-                    var reportRequest = new ContextReportRequestDto(Input: address, RadiusMeters: 1000);
-                    var reportDto = await _contextReportService.BuildAsync(reportRequest, cancellationToken);
-                    
-                    compositeScore = reportDto.CompositeScore;
-                    if (reportDto.CategoryScores.TryGetValue("Safety", out var sScore)) safetyScore = sScore;
-
-                    // Map DTO to Domain Model
-                    contextReport = ListingMapper.MapToDomain(reportDto);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to fetch context report for PDOK listing: {PdokId}", pdokId);
-                }
-            }
+            var (contextReport, compositeScore, safetyScore) = await FetchContextReportAsync(address, pdokId, cancellationToken);
 
             // 5. Fetch WOZ Value (Exclusively from CBS Context Data)
-            int? wozValue = null;
-            DateTime? wozReferenceDate = null;
-            string? wozValueSource = null;
-
-            if (contextReport != null)
-            {
-                var avgWozMetric = contextReport.SocialMetrics.FirstOrDefault(m => m.Key == "average_woz");
-                if (avgWozMetric?.Value.HasValue == true)
-                {
-                    // Value is in k€ (e.g. 450), convert to absolute value
-                    wozValue = (int)(avgWozMetric.Value.Value * 1000);
-                    wozValueSource = "CBS Neighborhood Average";
-                    // CBS data is typically from the previous year
-                    wozReferenceDate = new DateTime(DateTime.UtcNow.Year - 1, 1, 1);
-                }
-            }
+            var (wozValue, wozReferenceDate, wozValueSource) = PdokListingMapper.EstimateWozValue(contextReport);
 
             // 6. Map to ListingDto
             var listing = PdokListingMapper.MapFromPdok(
@@ -124,4 +83,34 @@ public class PdokListingService : IPdokListingService
         }
     }
 
+    private async Task<(Valora.Domain.Models.ContextReportModel? Report, double? CompositeScore, double? SafetyScore)> FetchContextReportAsync(
+        string? address,
+        string pdokId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            return (null, null, null);
+        }
+
+        try
+        {
+            // Using address as input for context report
+            var reportRequest = new ContextReportRequestDto(Input: address, RadiusMeters: 1000);
+            var reportDto = await _contextReportService.BuildAsync(reportRequest, cancellationToken);
+
+            double? safetyScore = null;
+            if (reportDto.CategoryScores.TryGetValue("Safety", out var sScore)) safetyScore = sScore;
+
+            // Map DTO to Domain Model
+            var contextReport = ListingMapper.MapToDomain(reportDto);
+
+            return (contextReport, reportDto.CompositeScore, safetyScore);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch context report for PDOK listing: {PdokId}", pdokId);
+            return (null, null, null);
+        }
+    }
 }

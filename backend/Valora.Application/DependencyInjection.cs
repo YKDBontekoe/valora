@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
         services.AddScoped<IContextDataProvider, ContextDataProvider>();
+        services.AddScoped<IListingService, ListingService>();
         return services;
     }
 }

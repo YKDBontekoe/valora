@@ -108,7 +108,7 @@ public class CorsConfigurationTests
     }
 
     [Fact]
-    public async Task Get_Health_Production_WithoutConfig_ShouldAllowAnyOrigin()
+    public async Task Get_Health_Production_WithoutConfig_ShouldBlockOrigin()
     {
         var origin = "http://random-origin.com";
         var config = new Dictionary<string, string?>();
@@ -121,10 +121,8 @@ public class CorsConfigurationTests
 
         var response = await client.SendAsync(request);
 
-        Assert.True(response.Headers.Contains("Access-Control-Allow-Origin"),
-            $"Expected CORS header. Status: {response.StatusCode}. Headers: {string.Join(", ", response.Headers)}");
-
-        var allowedOrigin = response.Headers.GetValues("Access-Control-Allow-Origin").FirstOrDefault();
-        Assert.Equal("*", allowedOrigin);
+        // In production without config, we expect the origin to be BLOCKED (no CORS header returned)
+        Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"),
+            $"Did NOT expect CORS header. Status: {response.StatusCode}. Headers: {string.Join(", ", response.Headers)}");
     }
 }
