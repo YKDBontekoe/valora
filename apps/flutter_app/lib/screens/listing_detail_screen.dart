@@ -1,3 +1,6 @@
+import '../services/api_service.dart';
+import '../providers/context_report_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_spacing.dart';
@@ -139,9 +142,15 @@ class ListingDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: ValoraSpacing.md),
-                    ContextReportView(
-                      report: contextReport,
-                      showHeader: false,
+                    ChangeNotifierProvider(
+                      create: (_) => ContextReportProvider(
+                        apiService: context.read<ApiService>(),
+                        loadHistory: false,
+                      ),
+                      child: ContextReportView(
+                        report: contextReport,
+                        showHeader: false,
+                      ),
                     ),
                     const SizedBox(height: ValoraSpacing.xl),
                   ],
@@ -230,14 +239,12 @@ class ListingDetailScreen extends StatelessWidget {
                   ],
 
                   const SizedBox(height: ValoraSpacing.xl),
-                ].animate(
-                  // Use a single animation wrapper for the whole group to avoid list extension issues
-                ).fade(duration: ValoraAnimations.slow).slideY(
-                      begin: 0.05,
-                      end: 0,
-                      curve: ValoraAnimations.deceleration,
-                    ),
-              ),
+                ],
+              ).animate().fade(duration: ValoraAnimations.slow).slideY(
+                    begin: 0.05,
+                    end: 0,
+                    curve: ValoraAnimations.deceleration,
+                  ),
             ),
           ),
           // Add extra padding at bottom to ensure scrollability

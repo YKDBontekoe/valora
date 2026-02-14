@@ -1,3 +1,5 @@
+import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/models/context_report.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +37,7 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          Provider<ApiService>(create: (_) => FakeApiService()),
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),
@@ -81,6 +84,7 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          Provider<ApiService>(create: (_) => FakeApiService()),
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),
@@ -126,4 +130,54 @@ void main() {
     // Verify dialog closed
     expect(find.text('Call Broker?'), findsNothing);
   });
+
+  testWidgets('ListingDetailScreen renders neighborhood analytics without crashing', (
+    WidgetTester tester,
+  ) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Test Address 123',
+      contextReport: {
+        'location': {
+          'lat': 52.3702,
+          'lon': 4.8952,
+          'displayAddress': 'Damrak 1, Amsterdam',
+        },
+        'compositeScore': 85.0,
+        'categoryScores': {'Social': 80.0, 'Safety': 90.0},
+        'socialMetrics': [],
+        'crimeMetrics': [],
+        'demographicsMetrics': [],
+        'housingMetrics': [],
+        'mobilityMetrics': [],
+        'amenityMetrics': [],
+        'environmentMetrics': [],
+        'sources': [],
+        'warnings': [],
+      },
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiService>(create: (_) => FakeApiService()),
+          ChangeNotifierProvider<FavoritesProvider>(
+            create: (_) => FavoritesProvider(),
+          ),
+        ],
+        child: MaterialApp(home: ListingDetailScreen(listing: listing)),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Neighborhood Analytics'), findsOneWidget);
+  });
+}
+
+class FakeApiService extends Fake implements ApiService {
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async => 'Test AI Insight';
 }
