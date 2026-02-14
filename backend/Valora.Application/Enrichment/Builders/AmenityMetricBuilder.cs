@@ -20,6 +20,7 @@ public static class AmenityMetricBuilder
                 new("parks", "Parks in Radius", amenities.ParkCount, "count", null, "OpenStreetMap / Overpass"),
                 new("healthcare", "Healthcare in Radius", amenities.HealthcareCount, "count", null, "OpenStreetMap / Overpass"),
                 new("transit_stops", "Transit Stops in Radius", amenities.TransitStopCount, "count", null, "OpenStreetMap / Overpass"),
+                new("charging_stations", "Charging Stations in Radius", amenities.ChargingStationCount, "count", null, "OpenStreetMap / Overpass"),
                 new("amenity_diversity", "Amenity Diversity", amenities.DiversityScore, "score", amenities.DiversityScore, "OpenStreetMap / Overpass"),
                 new("amenity_proximity", "Nearest Amenity Distance", amenities.NearestAmenityDistanceMeters, "m", proximityScore, "OpenStreetMap / Overpass"),
                 new("amenity_count_score", "Amenity Volume Score", countScore, "score", countScore, "OpenStreetMap / Overpass")
@@ -52,8 +53,14 @@ public static class AmenityMetricBuilder
     /// </remarks>
     private static double ScoreAmenityCount(AmenityStatsDto amenities)
     {
-        var total = amenities.SchoolCount + amenities.SupermarketCount + amenities.ParkCount + amenities.HealthcareCount + amenities.TransitStopCount;
-        return Math.Clamp(total * 5, 0, 100);
+        var total =
+            amenities.SchoolCount +
+            amenities.SupermarketCount +
+            amenities.ParkCount +
+            amenities.HealthcareCount +
+            amenities.TransitStopCount +
+            amenities.ChargingStationCount;
+        return Math.Clamp(total * 4, 0, 100);
     }
 
     /// <summary>

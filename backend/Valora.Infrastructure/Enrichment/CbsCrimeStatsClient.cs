@@ -66,7 +66,7 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
         // VernielingMisdrijfTegenOpenbareOrde_107 (Vandalism/Public Order)
         // GeweldsEnSeksueleMisdrijven_108 (Violent/Sexual crimes)
         var url =
-            $"{_options.CbsBaseUrl.TrimEnd('/')}/83765NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,TotaalDiefstalUitWoningSchuurED_106,VernielingMisdrijfTegenOpenbareOrde_107,GeweldsEnSeksueleMisdrijven_108";
+            $"{_options.CbsBaseUrl.TrimEnd('/')}/83765NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,AantalInwoners_5,TotaalDiefstalUitWoningSchuurED_106,VernielingMisdrijfTegenOpenbareOrde_107,GeweldsEnSeksueleMisdrijven_108";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -99,23 +99,26 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
 
             var row = values[0];
 
-            // Note: These are absolute numbers or per 1000 residents depending on the specific metric in Kerncijfers.
-            // Documentation for 83765NED usually implies per 1000 for crime rates or absolute counts.
-            // Given typical values (e.g. 50 for violence in a neighborhood of 1000 people), it's likely absolute counts or rates per 1000.
-            // We will treat them as raw values which fit the generated DTO structure.
-            
+            var residents = GetInt(row, "AantalInwoners_5");
             var theft = GetInt(row, "TotaalDiefstalUitWoningSchuurED_106");
             var vandalism = GetInt(row, "VernielingMisdrijfTegenOpenbareOrde_107");
             var violent = GetInt(row, "GeweldsEnSeksueleMisdrijven_108");
-            
-            var total = (theft ?? 0) + (vandalism ?? 0) + (violent ?? 0);
+
+            var theftRate = ToRatePer1000(theft, residents);
+            var vandalismRate = ToRatePer1000(vandalism, residents);
+            var violentRate = ToRatePer1000(violent, residents);
+            int? totalRate = null;
+            if (theftRate.HasValue || vandalismRate.HasValue || violentRate.HasValue)
+            {
+                totalRate = (theftRate ?? 0) + (vandalismRate ?? 0) + (violentRate ?? 0);
+            }
 
             var result = new CrimeStatsDto(
-                TotalCrimesPer1000: total > 0 ? total : null,
-                BurglaryPer1000: theft, // Mapping theft from home/shed to Burglary
-                ViolentCrimePer1000: violent,
-                TheftPer1000: null, // No generic theft column
-                VandalismPer1000: vandalism,
+                TotalCrimesPer1000: totalRate,
+                BurglaryPer1000: theftRate, // Mapping theft from home/shed to Burglary
+                ViolentCrimePer1000: violentRate,
+                TheftPer1000: theftRate,
+                VandalismPer1000: vandalismRate,
                 YearOverYearChangePercent: null,
                 RetrievedAtUtc: DateTimeOffset.UtcNow);
 
@@ -163,5 +166,20 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
         }
 
         return null;
+    }
+
+    private static int? ToRatePer1000(int? count, int? residents)
+    {
+        if (!count.HasValue)
+        {
+            return null;
+        }
+
+        if (!residents.HasValue || residents.Value <= 0)
+        {
+            return count;
+        }
+
+        return (int)Math.Round((double)count.Value * 1000d / residents.Value, MidpointRounding.AwayFromZero);
     }
 }

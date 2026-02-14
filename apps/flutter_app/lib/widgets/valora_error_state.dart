@@ -42,12 +42,8 @@ class ValoraErrorState extends StatelessWidget {
       icon: icon,
       title: title,
       subtitle: message,
-      action: ValoraButton(
-        label: 'Try Again',
-        icon: Icons.refresh,
-        onPressed: onRetry,
-        variant: ValoraButtonVariant.primary,
-      ),
+      actionLabel: 'Try Again',
+      onAction: onRetry,
     );
   }
 }

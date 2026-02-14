@@ -188,8 +188,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                           icon: Icons.auto_awesome,
                           label: 'AI Pick',
                           isActive: true,
-                          backgroundColor: ValoraColors.primary,
-                          textColor: Colors.white,
+                          selectedColor: ValoraColors.primary,
                         ),
                         const SizedBox(width: 8),
                         _buildFilterChip(context, label: 'Under \$500k'),
@@ -217,16 +216,14 @@ class _HomeHeaderState extends State<HomeHeader> {
     IconData? icon,
     required String label,
     bool isActive = false,
-    Color? backgroundColor,
-    Color? textColor,
+    Color? selectedColor,
   }) {
     return ValoraChip(
       icon: icon,
       label: label,
       isSelected: isActive,
       onSelected: (_) {}, // Enable tap feedback
-      backgroundColor: backgroundColor,
-      textColor: textColor,
+      selectedColor: selectedColor,
     );
   }
 }

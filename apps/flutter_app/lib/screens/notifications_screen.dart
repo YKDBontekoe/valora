@@ -185,10 +185,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             icon: Icons.error_outline_rounded,
                             title: 'Something went wrong',
                             subtitle: 'We couldn\'t load your notifications. Please try again.',
-                            action: ValoraButton(
-                              label: 'Retry',
-                              onPressed: _handleRefresh,
-                            ),
+                            actionLabel: 'Retry',
+                            onAction: _handleRefresh,
                           );
                         },
                       ),

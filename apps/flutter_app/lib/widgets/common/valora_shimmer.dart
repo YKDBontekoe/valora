@@ -3,47 +3,42 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 
-/// A shimmer effect widget for loading states.
+/// Premium shimmer loading placeholder.
 class ValoraShimmer extends StatelessWidget {
   const ValoraShimmer({
     super.key,
-    required this.width,
-    required this.height,
+    this.width,
+    this.height,
     this.borderRadius,
   });
 
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
   final double? borderRadius;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark
-        ? ValoraColors.surfaceVariantDark
-        : ValoraColors.neutral100;
-
-    // flutter_animate's shimmer is easier to use
-    const bool isTest = bool.fromEnvironment('FLUTTER_TEST');
+    final baseColor =
+        isDark ? ValoraColors.neutral800 : ValoraColors.neutral100;
+    final highlightColor =
+        isDark ? ValoraColors.neutral700 : ValoraColors.neutral200;
 
     return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: baseColor,
-            borderRadius: BorderRadius.circular(
-              borderRadius ?? ValoraSpacing.radiusMd,
-            ),
-          ),
-        )
-        .animate(onPlay: (controller) {
-          if (!isTest) {
-            controller.repeat();
-          }
-        })
-        .shimmer(
-          duration: 1500.ms,
-          color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral50,
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(
+          borderRadius ?? ValoraSpacing.radiusMd,
+        ),
+      ),
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .tint(
+          color: highlightColor,
+          duration: 1200.ms,
+          curve: Curves.easeInOut,
         );
   }
 }

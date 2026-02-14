@@ -87,7 +87,8 @@ public sealed record AmenityStatsDto(
     int TransitStopCount,
     double? NearestAmenityDistanceMeters,
     double DiversityScore,
-    DateTimeOffset RetrievedAtUtc);
+    DateTimeOffset RetrievedAtUtc,
+    int ChargingStationCount = 0);
 
 public sealed record AirQualitySnapshotDto(
     string StationId,
@@ -95,7 +96,10 @@ public sealed record AirQualitySnapshotDto(
     double StationDistanceMeters,
     double? Pm25,
     DateTimeOffset? MeasuredAtUtc,
-    DateTimeOffset RetrievedAtUtc);
+    DateTimeOffset RetrievedAtUtc,
+    double? Pm10 = null,
+    double? No2 = null,
+    double? O3 = null);
 
 public sealed record ContextMetricDto(
     string Key,

@@ -1,53 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 
-/// Loading indicator with optional message.
+/// Premium loading indicator with optional animated message.
 class ValoraLoadingIndicator extends StatelessWidget {
-  const ValoraLoadingIndicator({super.key, this.message});
+  const ValoraLoadingIndicator({super.key, this.message, this.size});
 
-  /// Optional loading message
   final String? message;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    const bool isTest = bool.fromEnvironment('FLUTTER_TEST');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: ValoraSpacing.iconSizeLg,
-            height: ValoraSpacing.iconSizeLg,
+            width: size ?? ValoraSpacing.xl + ValoraSpacing.md,
+            height: size ?? ValoraSpacing.xl + ValoraSpacing.md,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation(colorScheme.primary),
+              strokeCap: StrokeCap.round,
+              valueColor: AlwaysStoppedAnimation(
+                isDark ? ValoraColors.primaryLight : ValoraColors.primary,
+              ),
+              backgroundColor: isDark
+                  ? ValoraColors.neutral800
+                  : ValoraColors.neutral200,
             ),
           ),
           if (message != null) ...[
             const SizedBox(height: ValoraSpacing.md),
-            _buildMessage(context, isTest, colorScheme),
+            Text(
+              message!,
+              style: ValoraTypography.bodySmall.copyWith(
+                color: isDark
+                    ? ValoraColors.neutral400
+                    : ValoraColors.neutral500,
+              ),
+              textAlign: TextAlign.center,
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .fadeIn(duration: ValoraAnimations.verySlow)
+                .then()
+                .fade(
+                  begin: 1,
+                  end: 0.4,
+                  duration: ValoraAnimations.verySlow,
+                ),
           ],
         ],
       ),
     );
-  }
-
-  Widget _buildMessage(BuildContext context, bool isTest, ColorScheme colorScheme) {
-    final text = Text(
-      message!,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-    );
-
-    if (isTest) {
-      return text;
-    }
-
-    return text.animate().fade().shimmer(duration: ValoraAnimations.verySlow);
   }
 }

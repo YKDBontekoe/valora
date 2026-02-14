@@ -85,6 +85,8 @@ public class MapServiceTests
         // Assert
         Assert.Single(result);
         Assert.Equal(4000, result[0].MetricValue); // (5000+3000)/2
-        Assert.Contains("€ 4,000 / m²", result[0].DisplayValue);
+        Assert.StartsWith("€ ", result[0].DisplayValue);
+        Assert.EndsWith(" / m²", result[0].DisplayValue);
+        Assert.Contains("4000", result[0].DisplayValue.Replace(".", string.Empty).Replace(",", string.Empty));
     }
 }

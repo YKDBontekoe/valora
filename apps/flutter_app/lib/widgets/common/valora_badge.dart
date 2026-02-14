@@ -6,64 +6,78 @@ import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 
-/// Badge component for status indicators.
+/// A premium glassmorphic badge for status indicators.
 class ValoraBadge extends StatelessWidget {
-  const ValoraBadge({super.key, required this.label, this.color, this.icon});
+  const ValoraBadge({
+    super.key,
+    required this.label,
+    this.icon,
+    this.color,
+    this.textColor,
+    this.size = ValoraBadgeSize.medium,
+  });
 
-  /// Badge text
   final String label;
-
-  /// Background color
-  final Color? color;
-
-  /// Optional icon
   final IconData? icon;
+  final Color? color;
+  final Color? textColor;
+  final ValoraBadgeSize size;
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = color ?? ValoraColors.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor = color ?? ValoraColors.primary;
+    final effectiveTextColor = textColor ?? effectiveColor;
+
+    final isSmall = size == ValoraBadgeSize.small;
+    final fontSize = isSmall ? 10.0 : 11.0;
+    final iconSize = isSmall ? 10.0 : 12.0;
+    final hPad = isSmall ? ValoraSpacing.xs + 2 : ValoraSpacing.sm;
+    final vPad = isSmall ? 2.0 : 4.0;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: ValoraSpacing.sm,
-            vertical: ValoraSpacing.xs,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
           decoration: BoxDecoration(
-            color: bgColor.withValues(alpha: 0.8), // Glass opacity
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+            color: effectiveColor.withValues(alpha: isDark ? 0.15 : 0.1),
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
-              width: 1,
+              color: effectiveColor.withValues(alpha: 0.2),
+              width: 0.5,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: ValoraSpacing.iconSizeSm, color: Colors.white),
-                const SizedBox(width: ValoraSpacing.xs),
+                Icon(icon, size: iconSize, color: effectiveTextColor),
+                SizedBox(width: isSmall ? 3 : ValoraSpacing.xs),
               ],
               Text(
                 label,
                 style: ValoraTypography.labelSmall.copyWith(
-                  color: Colors.white,
+                  color: effectiveTextColor,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 2,
-                    ),
-                  ],
                 ),
               ),
             ],
           ),
-        ),
+        )
+            .animate()
+            .fadeIn(duration: ValoraAnimations.normal)
+            .scale(
+              begin: const Offset(0.92, 0.92),
+              end: const Offset(1, 1),
+              duration: ValoraAnimations.normal,
+              curve: ValoraAnimations.deceleration,
+            ),
       ),
-    ).animate().fadeIn().scale(curve: ValoraAnimations.emphatic);
+    );
   }
 }
+
+enum ValoraBadgeSize { small, medium }

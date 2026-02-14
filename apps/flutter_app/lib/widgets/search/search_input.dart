@@ -41,7 +41,7 @@ class SearchInput extends StatelessWidget {
             focusNode: focusNode,
             label: '',
             hint: 'City, address, or zip code...',
-            prefixIcon: Icons.search_rounded,
+            prefixIcon: const Icon(Icons.search_rounded),
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => onSubmitted(),
           );

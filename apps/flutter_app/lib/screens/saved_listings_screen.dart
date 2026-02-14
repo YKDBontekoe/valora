@@ -144,7 +144,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                       controller: _searchController,
                       label: '',
                       hint: 'Search saved listings...',
-                      prefixIcon: Icons.search_rounded,
+                      prefixIcon: const Icon(Icons.search_rounded),
                     ),
                     const SizedBox(height: 12),
                     SingleChildScrollView(
@@ -185,13 +185,8 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                     subtitle: _searchQuery.isNotEmpty
                         ? 'Try adjusting your search terms.'
                         : 'Listings you save will appear here.',
-                    action: _searchQuery.isNotEmpty
-                        ? ValoraButton(
-                            label: 'Clear Search',
-                            variant: ValoraButtonVariant.secondary,
-                            onPressed: () => _searchController.clear(),
-                          )
-                        : const SizedBox.shrink(),
+                    actionLabel: _searchQuery.isNotEmpty ? 'Clear Search' : null,
+                    onAction: _searchQuery.isNotEmpty ? () => _searchController.clear() : null,
                   ),
                 ),
               )

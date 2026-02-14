@@ -73,4 +73,23 @@ void main() {
       ),
     ).called(1);
   });
+
+  testWidgets('SortOptionsSheet is scrollable in constrained height', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            height: 260,
+            child: SortOptionsSheet(provider: mockProvider, onClose: () {}),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
 }

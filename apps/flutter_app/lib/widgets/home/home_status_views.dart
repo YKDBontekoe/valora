@@ -126,12 +126,8 @@ class HomeDisconnectedSliver extends StatelessWidget {
           icon: Icons.cloud_off_outlined,
           title: 'Backend not connected',
           subtitle: 'Unable to connect to Valora Server.',
-          action: ValoraButton(
-            label: 'Retry',
-            variant: ValoraButtonVariant.primary,
-            icon: Icons.refresh,
-            onPressed: onRetry,
-          ),
+          actionLabel: 'Retry',
+          onAction: onRetry,
         ),
       ),
     );
@@ -181,22 +177,15 @@ class HomeEmptySliver extends StatelessWidget {
                 icon: Icons.home_work_outlined,
                 title: 'No listings yet',
                 subtitle: 'Get started by scraping some listings.',
-                action: ValoraButton(
-                  label: 'Scrape 10 Items',
-                  variant: ValoraButtonVariant.primary,
-                  icon: Icons.cloud_download,
-                  onPressed: onScrape,
-                ),
+                actionLabel: 'Scrape 10 Items',
+                onAction: onScrape,
               )
             : ValoraEmptyState(
                 icon: Icons.search_off,
                 title: 'No listings found',
                 subtitle: 'Try adjusting your filters or search term.',
-                action: ValoraButton(
-                  label: 'Clear Filters',
-                  variant: ValoraButtonVariant.outline,
-                  onPressed: onClearFilters,
-                ),
+                actionLabel: 'Clear Filters',
+                onAction: onClearFilters,
               ),
       ),
     );

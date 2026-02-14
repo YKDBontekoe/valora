@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 
+/// A styled tag / pill component with hover and tap interactivity.
 class ValoraTag extends StatefulWidget {
   const ValoraTag({
     super.key,
@@ -32,67 +34,73 @@ class _ValoraTagState extends State<ValoraTag> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final bg = widget.backgroundColor ??
-        colorScheme.secondaryContainer.withValues(alpha: 0.5);
-    final text = widget.textColor ?? colorScheme.onSecondaryContainer;
-    final border = widget.borderColor ??
-        colorScheme.outlineVariant.withValues(alpha: 0.3);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final container = AnimatedContainer(
+    final bgColor = widget.backgroundColor ??
+        (isDark
+            ? ValoraColors.neutral800.withValues(alpha: 0.6)
+            : ValoraColors.neutral100);
+    final textColor = widget.textColor ??
+        (isDark ? ValoraColors.neutral300 : ValoraColors.neutral600);
+    final effectiveBorderColor = widget.borderColor ??
+        (isDark
+            ? ValoraColors.neutral700.withValues(alpha: 0.4)
+            : ValoraColors.neutral200.withValues(alpha: 0.8));
+
+    Widget tag = AnimatedContainer(
       duration: ValoraAnimations.fast,
       padding: const EdgeInsets.symmetric(
-        horizontal: ValoraSpacing.md - 4,
-        vertical: ValoraSpacing.sm,
+        horizontal: ValoraSpacing.sm + 2,
+        vertical: ValoraSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-        border: Border.all(color: border),
+        color: _isHovered ? bgColor.withValues(alpha: 0.9) : bgColor,
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+        border: Border.all(color: effectiveBorderColor, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.icon != null) ...[
-            Icon(widget.icon, size: ValoraSpacing.iconSizeSm, color: text),
-            const SizedBox(width: ValoraSpacing.sm),
+            Icon(widget.icon, size: 12, color: textColor),
+            const SizedBox(width: ValoraSpacing.xs),
           ],
           Text(
             widget.label,
-            style: ValoraTypography.labelLarge.copyWith(color: text),
+            style: ValoraTypography.labelSmall.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
     );
 
-    if (widget.onTap == null) {
-      return container;
+    if (widget.onTap != null) {
+      tag = MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() {
+          _isHovered = false;
+          _isPressed = false;
+        }),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: widget.onTap,
+          child: tag,
+        ),
+      );
+
+      tag = tag
+          .animate(target: _isPressed ? 1 : 0)
+          .scale(
+            end: const Offset(0.95, 0.95),
+            duration: ValoraAnimations.fast,
+          );
     }
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() {
-        _isHovered = false;
-        _isPressed = false;
-      }),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: container
-            .animate(target: _isPressed ? 1 : 0)
-            .scale(
-              end: const Offset(0.95, 0.95),
-              duration: ValoraAnimations.fast,
-            )
-            .animate(target: _isHovered && !_isPressed ? 1 : 0)
-            .scale(
-              end: const Offset(1.05, 1.05),
-              duration: ValoraAnimations.normal,
-              curve: ValoraAnimations.standard,
-            ),
-      ),
-    );
+    return tag;
   }
 }

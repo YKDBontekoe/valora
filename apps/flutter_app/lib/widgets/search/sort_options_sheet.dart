@@ -33,18 +33,16 @@ class SortOptionsSheet extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
       title: Text(
         label,
-        style:
-            isSelected
-                ? ValoraTypography.bodyLarge.copyWith(
-                  color: ValoraColors.primary,
-                  fontWeight: FontWeight.bold,
-                )
-                : ValoraTypography.bodyLarge,
+        style: isSelected
+            ? ValoraTypography.bodyLarge.copyWith(
+                color: ValoraColors.primary,
+                fontWeight: FontWeight.bold,
+              )
+            : ValoraTypography.bodyLarge,
       ),
-      trailing:
-          isSelected
-              ? const Icon(Icons.check_rounded, color: ValoraColors.primary)
-              : null,
+      trailing: isSelected
+          ? const Icon(Icons.check_rounded, color: ValoraColors.primary)
+          : null,
       onTap: () {
         provider.applyFilters(
           minPrice: provider.minPrice,
@@ -65,80 +63,94 @@ class SortOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final maxSheetHeight = mediaQuery.size.height * 0.8;
+
     return ValoraGlassContainer(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(ValoraSpacing.radiusXl),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: EdgeInsets.all(ValoraSpacing.lg),
-            child: Text(
-              'Sort By',
-              style: ValoraTypography.titleLarge,
-              textAlign: TextAlign.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxSheetHeight),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.all(ValoraSpacing.lg),
+              child: Text(
+                'Sort By',
+                style: ValoraTypography.titleLarge,
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          _buildSortOption(
-            context,
-            'Newest',
-            'date',
-            'desc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          _buildSortOption(
-            context,
-            'Price: Low to High',
-            'price',
-            'asc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          _buildSortOption(
-            context,
-            'Price: High to Low',
-            'price',
-            'desc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          _buildSortOption(
-            context,
-            'Area: Small to Large',
-            'livingarea',
-            'asc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          _buildSortOption(
-            context,
-            'Area: Large to Small',
-            'livingarea',
-            'desc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          _buildSortOption(
-            context,
-            'Composite Score: High to Low',
-            'contextcompositescore',
-            'desc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          _buildSortOption(
-            context,
-            'Safety Score: High to Low',
-            'contextsafetyscore',
-            'desc',
-            provider.sortBy,
-            provider.sortOrder,
-          ),
-          SizedBox(height: ValoraSpacing.xl),
-        ],
+            Flexible(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  _buildSortOption(
+                    context,
+                    'Newest',
+                    'date',
+                    'desc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  _buildSortOption(
+                    context,
+                    'Price: Low to High',
+                    'price',
+                    'asc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  _buildSortOption(
+                    context,
+                    'Price: High to Low',
+                    'price',
+                    'desc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  _buildSortOption(
+                    context,
+                    'Area: Small to Large',
+                    'livingarea',
+                    'asc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  _buildSortOption(
+                    context,
+                    'Area: Large to Small',
+                    'livingarea',
+                    'desc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  _buildSortOption(
+                    context,
+                    'Composite Score: High to Low',
+                    'contextcompositescore',
+                    'desc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  _buildSortOption(
+                    context,
+                    'Safety Score: High to Low',
+                    'contextsafetyscore',
+                    'desc',
+                    provider.sortBy,
+                    provider.sortOrder,
+                  ),
+                  SizedBox(height: ValoraSpacing.xl),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

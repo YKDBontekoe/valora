@@ -71,4 +71,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(selectedIndex, 0);
   });
+
+  testWidgets('HomeBottomNavBar hides selected labels in compact layouts', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(size: Size(360, 800)),
+        child: MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: HomeBottomNavBar(
+              currentIndex: 2,
+              onTap: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Report'), findsNothing);
+    expect(find.byTooltip('Report'), findsOneWidget);
+  });
 }

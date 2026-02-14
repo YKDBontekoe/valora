@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_shadows.dart';
 import '../../providers/insights_provider.dart';
 import '../../models/map_city_insight.dart';
 import '../../models/map_amenity.dart';
@@ -42,18 +43,19 @@ class _InsightsScreenState extends State<InsightsScreen> {
       if (!mounted) return;
       final bounds = _mapController.camera.visibleBounds;
       context.read<InsightsProvider>().fetchMapData(
-            minLat: bounds.south,
-            minLon: bounds.west,
-            maxLat: bounds.north,
-            maxLon: bounds.east,
-            zoom: _mapController.camera.zoom,
-          );
+        minLat: bounds.south,
+        minLon: bounds.west,
+        maxLat: bounds.north,
+        maxLon: bounds.east,
+        zoom: _mapController.camera.zoom,
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ValoraColors.backgroundLight,
       body: Consumer<InsightsProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.cities.isEmpty) {
@@ -65,77 +67,158 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 icon: Icons.error_outline_rounded,
                 title: 'Failed to load insights',
                 subtitle: provider.error,
-                action: ValoraButton(
-                  label: 'Retry',
-                  onPressed: provider.loadInsights,
-                ),
+                actionLabel: 'Retry',
+                onAction: provider.loadInsights,
               ),
             );
           }
 
-          return Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: const LatLng(52.1326, 5.2913),
-                  initialZoom: 7.5,
-                  minZoom: 6.0,
-                  maxZoom: 18.0,
-                  onPositionChanged: (position, hasGesture) {
-                    if (hasGesture) _onMapChanged();
-                  },
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: ValoraShadows.lg,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Stack(
+                    children: [
+                      FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: const LatLng(52.1326, 5.2913),
+                          initialZoom: 7.5,
+                          minZoom: 6.0,
+                          maxZoom: 18.0,
+                          onPositionChanged: (position, hasGesture) {
+                            if (hasGesture) _onMapChanged();
+                          },
+                          interactionOptions: const InteractionOptions(
+                            flags:
+                                InteractiveFlag.all & ~InteractiveFlag.rotate,
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                            userAgentPackageName: 'com.valora.app',
+                            subdomains: const ['a', 'b', 'c', 'd'],
+                            retinaMode: RetinaMode.isHighDensity(context),
+                          ),
+                          if (provider.showOverlays)
+                            PolygonLayer(
+                              polygons: provider.overlays.map((overlay) {
+                                return _buildPolygon(context, overlay);
+                              }).toList(),
+                            ),
+                          if (provider.showAmenities)
+                            MarkerLayer(
+                              markers: provider.amenities.map((amenity) {
+                                return _buildAmenityMarker(context, amenity);
+                              }).toList(),
+                            ),
+                          MarkerLayer(
+                            markers: provider.cities.map((city) {
+                              return _buildCityMarker(context, city, provider);
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                      IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.white.withValues(alpha: 0.72),
+                                Colors.white.withValues(alpha: 0.02),
+                                Colors.white.withValues(alpha: 0.14),
+                              ],
+                              stops: const [0, 0.42, 1],
+                            ),
+                          ),
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                      _buildMapHeader(context, provider),
+                      _buildMetricSelector(context, provider),
+                      _buildMapLegend(context, provider),
+                      _buildLayerToggle(context, provider),
+                      if (provider.mapError != null)
+                        Positioned(
+                          bottom: 152,
+                          left: 16,
+                          right: 16,
+                          child: _buildMapError(provider.mapError!),
+                        ),
+                    ],
                   ),
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.valora.app',
-                  ),
-                  if (provider.showOverlays)
-                    PolygonLayer(
-                      polygons: provider.overlays.map((overlay) {
-                        return _buildPolygon(context, overlay);
-                      }).toList(),
-                    ),
-                  if (provider.showAmenities)
-                    MarkerLayer(
-                      markers: provider.amenities.map((amenity) {
-                        return _buildAmenityMarker(context, amenity);
-                      }).toList(),
-                    ),
-                  MarkerLayer(
-                    markers: provider.cities.map((city) {
-                      return _buildCityMarker(context, city, provider);
-                    }).toList(),
-                  ),
-                ],
               ),
-              _buildMetricSelector(context, provider),
-              _buildLayerToggle(context, provider),
-              if (provider.mapError != null)
-                Positioned(
-                  bottom: 120,
-                  left: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      provider.mapError!,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-            ],
+            ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildMapHeader(BuildContext context, InsightsProvider provider) {
+    return Positioned(
+      top: 12,
+      left: 12,
+      right: 12,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.93),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: ValoraColors.neutral200),
+          boxShadow: ValoraShadows.md,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient: ValoraColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.insights_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Area Insights',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: ValoraColors.neutral900,
+                      ),
+                    ),
+                    Text(
+                      '${provider.cities.length} cities',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: ValoraColors.neutral600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -146,23 +229,30 @@ class _InsightsScreenState extends State<InsightsScreen> {
       final geometry = overlay.geoJson['geometry'];
       if (geometry != null && geometry['type'] == 'Polygon') {
         final List<dynamic> ring = geometry['coordinates'][0];
-        points = ring.map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble())).toList();
+        points = ring
+            .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
+            .toList();
       } else if (geometry != null && geometry['type'] == 'MultiPolygon') {
         final List<dynamic> poly = geometry['coordinates'][0];
         final List<dynamic> ring = poly[0];
-        points = ring.map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble())).toList();
+        points = ring
+            .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
+            .toList();
       }
     } catch (e) {
       debugPrint('Failed to parse polygon: $e');
     }
 
-    final color = _getOverlayColor(overlay.metricValue, context.read<InsightsProvider>().selectedOverlayMetric);
+    final color = _getOverlayColor(
+      overlay.metricValue,
+      context.read<InsightsProvider>().selectedOverlayMetric,
+    );
 
     return Polygon(
       points: points,
-      color: color.withValues(alpha: 0.4),
+      color: color.withValues(alpha: 0.26),
       borderColor: color,
-      borderStrokeWidth: 1,
+      borderStrokeWidth: 1.5,
       label: overlay.displayValue,
     );
   }
@@ -170,19 +260,25 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Marker _buildAmenityMarker(BuildContext context, MapAmenity amenity) {
     return Marker(
       point: amenity.location,
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       child: GestureDetector(
         onTap: () => _showAmenityDetails(context, amenity),
-        child: Container(
+        child: DecoratedBox(
           decoration: const BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
           child: Icon(
             _getAmenityIcon(amenity.type),
-            size: 20,
+            size: 18,
             color: ValoraColors.primary,
           ),
         ),
@@ -191,10 +287,17 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   Marker _buildCityMarker(
-      BuildContext context, MapCityInsight city, InsightsProvider provider) {
+    BuildContext context,
+    MapCityInsight city,
+    InsightsProvider provider,
+  ) {
     final score = provider.getScore(city);
     final color = _getColorForScore(score);
-    final size = 30.0 + (city.count > 100 ? 10 : 0);
+    final size = city.count >= 120
+        ? 58.0
+        : city.count >= 60
+        ? 52.0
+        : 46.0;
 
     return Marker(
       point: city.location,
@@ -202,19 +305,33 @@ class _InsightsScreenState extends State<InsightsScreen> {
       height: size,
       child: GestureDetector(
         onTap: () => _showCityDetails(context, city),
-        child: Container(
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.8),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: 0.95),
+                color.withValues(alpha: 0.72),
+              ],
+            ),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
+            border: Border.all(color: Colors.white, width: 2.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Center(
             child: Text(
-              score != null ? score.toStringAsFixed(1) : '-',
+              score != null ? score.round().toString() : '-',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 10,
+                fontSize: 14,
               ),
             ),
           ),
@@ -234,7 +351,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
           children: [
             Row(
               children: [
-                Icon(_getAmenityIcon(amenity.type), color: ValoraColors.primary),
+                Icon(
+                  _getAmenityIcon(amenity.type),
+                  color: ValoraColors.primary,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -247,14 +367,22 @@ class _InsightsScreenState extends State<InsightsScreen> {
             const SizedBox(height: 8),
             Text(
               amenity.type.toUpperCase(),
-              style: const TextStyle(color: Colors.grey, letterSpacing: 1.2, fontSize: 12),
+              style: const TextStyle(
+                color: Colors.grey,
+                letterSpacing: 1.2,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 16),
             if (amenity.metadata != null)
-              ...amenity.metadata!.entries.take(5).map((e) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Text('${e.key}: ${e.value}'),
-              )),
+              ...amenity.metadata!.entries
+                  .take(5)
+                  .map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Text('${e.key}: ${e.value}'),
+                    ),
+                  ),
             const SizedBox(height: 24),
           ],
         ),
@@ -276,16 +404,25 @@ class _InsightsScreenState extends State<InsightsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              city.city,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
             _buildDetailRow('Listings', city.count.toString()),
-            _buildDetailRow('Composite Score', city.compositeScore?.toStringAsFixed(1)),
-            _buildDetailRow('Safety Score', city.safetyScore?.toStringAsFixed(1)),
-            _buildDetailRow('Social Score', city.socialScore?.toStringAsFixed(1)),
-            _buildDetailRow('Amenities Score', city.amenitiesScore?.toStringAsFixed(1)),
+            _buildDetailRow(
+              'Composite Score',
+              city.compositeScore?.toStringAsFixed(1),
+            ),
+            _buildDetailRow(
+              'Safety Score',
+              city.safetyScore?.toStringAsFixed(1),
+            ),
+            _buildDetailRow(
+              'Social Score',
+              city.socialScore?.toStringAsFixed(1),
+            ),
+            _buildDetailRow(
+              'Amenities Score',
+              city.amenitiesScore?.toStringAsFixed(1),
+            ),
             const SizedBox(height: 24),
           ],
         ),
@@ -300,7 +437,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            value ?? '-',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
@@ -308,13 +448,20 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   IconData _getAmenityIcon(String type) {
     switch (type) {
-      case 'school': return Icons.school_rounded;
-      case 'supermarket': return Icons.shopping_basket_rounded;
-      case 'park': return Icons.park_rounded;
-      case 'healthcare': return Icons.medical_services_rounded;
-      case 'transit': return Icons.directions_bus_rounded;
-      case 'charging_station': return Icons.ev_station_rounded;
-      default: return Icons.place_rounded;
+      case 'school':
+        return Icons.school_rounded;
+      case 'supermarket':
+        return Icons.shopping_basket_rounded;
+      case 'park':
+        return Icons.park_rounded;
+      case 'healthcare':
+        return Icons.medical_services_rounded;
+      case 'transit':
+        return Icons.directions_bus_rounded;
+      case 'charging_station':
+        return Icons.ev_station_rounded;
+      default:
+        return Icons.place_rounded;
     }
   }
 
@@ -350,7 +497,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   Widget _buildMetricSelector(BuildContext context, InsightsProvider provider) {
     return Positioned(
-      top: 50,
+      top: 92,
       left: 16,
       right: 16,
       child: SingleChildScrollView(
@@ -364,12 +511,82 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 label: Text(_getMetricLabel(metric)),
                 selected: isSelected,
                 onSelected: (_) => provider.setMetric(metric),
-                backgroundColor: Colors.white.withValues(alpha: 0.9),
-                selectedColor: ValoraColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: ValoraColors.primaryDark,
+                side: BorderSide(
+                  color: isSelected
+                      ? ValoraColors.primary
+                      : ValoraColors.neutral300,
+                ),
+                backgroundColor: Colors.white.withValues(alpha: 0.88),
+                selectedColor: ValoraColors.primaryLight.withValues(
+                  alpha: 0.25,
+                ),
+                shadowColor: Colors.black.withValues(alpha: 0.08),
+                elevation: 2,
               ),
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMapLegend(BuildContext context, InsightsProvider provider) {
+    final metric = provider.selectedMetric;
+    return Positioned(
+      left: 16,
+      bottom: 24,
+      child: Container(
+        key: const Key('insights_map_legend'),
+        width: 168,
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: ValoraColors.neutral200),
+          boxShadow: ValoraShadows.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${_getMetricLabel(metric)} score',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: ValoraColors.neutral900,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildLegendRow('80+', ValoraColors.success),
+            _buildLegendRow('60-79', ValoraColors.warning),
+            _buildLegendRow('40-59', Colors.orange),
+            _buildLegendRow('<40', ValoraColors.error),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendRow(String label, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Row(
+        children: [
+          Container(
+            width: 9,
+            height: 9,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: ValoraColors.neutral700,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -384,68 +601,150 @@ class _InsightsScreenState extends State<InsightsScreen> {
           if (provider.showOverlays)
             Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                color: Colors.white.withValues(alpha: 0.94),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: ValoraColors.neutral200),
+                boxShadow: ValoraShadows.sm,
               ),
-              child: DropdownButton<MapOverlayMetric>(
-                value: provider.selectedOverlayMetric,
-                underline: const SizedBox(),
-                items: MapOverlayMetric.values.map((m) {
-                  return DropdownMenuItem(
-                    value: m,
-                    child: Text(_getOverlayLabel(m), style: const TextStyle(fontSize: 12)),
-                  );
-                }).toList(),
-                onChanged: (m) {
-                  if (m != null) {
-                    provider.setOverlayMetric(m);
-                    _onMapChanged();
-                  }
-                },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: DropdownButton<MapOverlayMetric>(
+                  value: provider.selectedOverlayMetric,
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  items: MapOverlayMetric.values.map((m) {
+                    return DropdownMenuItem(
+                      value: m,
+                      child: Text(
+                        _getOverlayLabel(m),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (m) {
+                    if (m != null) {
+                      provider.setOverlayMetric(m);
+                      _onMapChanged();
+                    }
+                  },
+                ),
               ),
             ),
-          FloatingActionButton.small(
-            heroTag: 'toggle_amenities',
+          _buildActionButton(
+            key: const Key('insights_zoom_in_button'),
+            icon: Icons.add_rounded,
+            onPressed: () => _zoomMap(0.7),
+          ),
+          const SizedBox(height: 8),
+          _buildActionButton(
+            key: const Key('insights_zoom_out_button'),
+            icon: Icons.remove_rounded,
+            onPressed: () => _zoomMap(-0.7),
+          ),
+          const SizedBox(height: 8),
+          _buildActionButton(
+            icon: Icons.place_rounded,
+            isActive: provider.showAmenities,
             onPressed: () {
               provider.toggleAmenities();
               _onMapChanged();
             },
-            backgroundColor: provider.showAmenities ? ValoraColors.primary : Colors.white,
-            child: Icon(Icons.place, color: provider.showAmenities ? Colors.white : Colors.black),
           ),
           const SizedBox(height: 8),
-          FloatingActionButton.small(
-            heroTag: 'toggle_overlays',
+          _buildActionButton(
+            icon: Icons.layers_rounded,
+            isActive: provider.showOverlays,
             onPressed: () {
               provider.toggleOverlays();
               _onMapChanged();
             },
-            backgroundColor: provider.showOverlays ? ValoraColors.primary : Colors.white,
-            child: Icon(Icons.layers, color: provider.showOverlays ? Colors.white : Colors.black),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildActionButton({
+    Key? key,
+    required IconData icon,
+    required VoidCallback onPressed,
+    bool isActive = false,
+  }) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isActive
+            ? ValoraColors.primary
+            : Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? ValoraColors.primaryDark : ValoraColors.neutral200,
+        ),
+        boxShadow: ValoraShadows.sm,
+      ),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: IconButton(
+          key: key,
+          onPressed: onPressed,
+          icon: Icon(
+            icon,
+            color: isActive ? Colors.white : ValoraColors.neutral800,
+            size: 21,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapError(String error) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Text(
+          error,
+          style: const TextStyle(color: Colors.white, fontSize: 12.5),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  void _zoomMap(double delta) {
+    final current = _mapController.camera;
+    final targetZoom = (current.zoom + delta).clamp(6.0, 18.0);
+    _mapController.move(current.center, targetZoom);
+    _onMapChanged();
+  }
+
   String _getMetricLabel(InsightMetric metric) {
     switch (metric) {
-      case InsightMetric.composite: return 'Overall';
-      case InsightMetric.safety: return 'Safety';
-      case InsightMetric.social: return 'Social';
-      case InsightMetric.amenities: return 'Amenities';
+      case InsightMetric.composite:
+        return 'Overall';
+      case InsightMetric.safety:
+        return 'Safety';
+      case InsightMetric.social:
+        return 'Social';
+      case InsightMetric.amenities:
+        return 'Amenities';
     }
   }
 
   String _getOverlayLabel(MapOverlayMetric metric) {
     switch (metric) {
-      case MapOverlayMetric.pricePerSquareMeter: return 'Price/m²';
-      case MapOverlayMetric.crimeRate: return 'Crime Rate';
-      case MapOverlayMetric.populationDensity: return 'Pop. Density';
-      case MapOverlayMetric.averageWoz: return 'Avg WOZ';
+      case MapOverlayMetric.pricePerSquareMeter:
+        return 'Price/m²';
+      case MapOverlayMetric.crimeRate:
+        return 'Crime Rate';
+      case MapOverlayMetric.populationDensity:
+        return 'Pop. Density';
+      case MapOverlayMetric.averageWoz:
+        return 'Avg WOZ';
     }
   }
 }

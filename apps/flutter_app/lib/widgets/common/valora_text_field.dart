@@ -1,42 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_animations.dart';
 
-/// A premium text field with consistent styling.
+/// Premium text field with refined focus animations and labels.
 class ValoraTextField extends StatefulWidget {
   const ValoraTextField({
     super.key,
     this.controller,
     this.focusNode,
-    required this.label,
+    this.label,
     this.hint,
     this.keyboardType,
-    this.prefixIcon,
-    this.prefixText,
-    this.onChanged,
-    this.validator,
     this.obscureText = false,
-    this.textInputAction,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.onChanged,
     this.onSubmitted,
-    this.autofillHints,
+    this.validator,
     this.inputFormatters,
+    this.textInputAction,
+    this.maxLines = 1,
+    this.autofocus = false,
+    this.enabled = true,
+    this.fillColor,
   });
 
   final TextEditingController? controller;
   final FocusNode? focusNode;
-  final String label;
+  final String? label;
   final String? hint;
   final TextInputType? keyboardType;
-  final IconData? prefixIcon;
-  final String? prefixText;
-  final ValueChanged<String>? onChanged;
-  final FormFieldValidator<String>? validator;
   final bool obscureText;
-  final TextInputAction? textInputAction;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
-  final Iterable<String>? autofillHints;
+  final String? Function(String?)? validator;
   final List<TextInputFormatter>? inputFormatters;
+  final TextInputAction? textInputAction;
+  final int maxLines;
+  final bool autofocus;
+  final bool enabled;
+  final Color? fillColor;
 
   @override
   State<ValoraTextField> createState() => _ValoraTextFieldState();
@@ -50,39 +58,17 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    _focusNode.addListener(_handleFocusChange);
-    _isFocused = _focusNode.hasFocus;
+    _focusNode.addListener(_onFocusChange);
   }
 
-  void _handleFocusChange() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-    });
-  }
-
-  @override
-  void didUpdateWidget(ValoraTextField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.focusNode != oldWidget.focusNode) {
-      if (oldWidget.focusNode == null) {
-        // We were using the internal node, dispose it
-        _focusNode.removeListener(_handleFocusChange);
-        _focusNode.dispose();
-      } else {
-        // Remove listener from the old external node
-        oldWidget.focusNode!.removeListener(_handleFocusChange);
-      }
-      
-      _focusNode = widget.focusNode ?? FocusNode();
-      _focusNode.addListener(_handleFocusChange);
-      _isFocused = _focusNode.hasFocus;
-    }
+  void _onFocusChange() {
+    setState(() => _isFocused = _focusNode.hasFocus);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
     if (widget.focusNode == null) {
+      _focusNode.removeListener(_onFocusChange);
       _focusNode.dispose();
     }
     super.dispose();
@@ -90,39 +76,106 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final effectiveFillColor = widget.fillColor ??
+        (isDark
+            ? ValoraColors.surfaceVariantDark.withValues(alpha: 0.5)
+            : ValoraColors.neutral50);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.label.isNotEmpty) ...[
-          Text(
-            widget.label,
+        // Animated label
+        if (widget.label != null) ...[
+          AnimatedDefaultTextStyle(
+            duration: ValoraAnimations.normal,
             style: ValoraTypography.labelMedium.copyWith(
               color: _isFocused
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ? (isDark ? ValoraColors.primaryLight : ValoraColors.primary)
+                  : (isDark
+                      ? ValoraColors.neutral400
+                      : ValoraColors.neutral500),
+              fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w500,
             ),
+            child: Text(widget.label!),
           ),
           const SizedBox(height: ValoraSpacing.xs),
         ],
-        TextFormField(
-          controller: widget.controller,
-          focusNode: _focusNode,
-          keyboardType: widget.keyboardType,
-          onChanged: widget.onChanged,
-          validator: widget.validator,
-          obscureText: widget.obscureText,
-          textInputAction: widget.textInputAction,
-          onFieldSubmitted: widget.onSubmitted,
-          autofillHints: widget.autofillHints,
-          inputFormatters: widget.inputFormatters,
-          style: ValoraTypography.bodyMedium,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, size: ValoraSpacing.iconSizeSm)
-                : null,
-            prefixText: widget.prefixText,
-            prefixStyle: ValoraTypography.bodyMedium,
+
+        // Input field with animated shadow
+        AnimatedContainer(
+          duration: ValoraAnimations.normal,
+          curve: ValoraAnimations.smooth,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+            boxShadow: _isFocused
+                ? [
+                    BoxShadow(
+                      color: (isDark
+                              ? ValoraColors.primaryLight
+                              : ValoraColors.primary)
+                          .withValues(alpha: 0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                      spreadRadius: -2,
+                    ),
+                  ]
+                : [],
+          ),
+          child: TextFormField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            keyboardType: widget.keyboardType,
+            obscureText: widget.obscureText,
+            onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onSubmitted,
+            validator: widget.validator,
+            maxLines: widget.maxLines,
+            autofocus: widget.autofocus,
+            enabled: widget.enabled,
+            inputFormatters: widget.inputFormatters,
+            textInputAction: widget.textInputAction,
+            style: ValoraTypography.bodyMedium.copyWith(
+              color:
+                  isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+            ),
+            decoration: InputDecoration(
+              hintText: widget.hint,
+              prefixIcon: widget.prefixIcon,
+              suffixIcon: widget.suffixIcon,
+              filled: true,
+              fillColor: effectiveFillColor,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: ValoraSpacing.lg,
+                vertical: ValoraSpacing.md,
+              ),
+              border: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(ValoraSpacing.radiusLg),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(ValoraSpacing.radiusLg),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? ValoraColors.neutral700.withValues(alpha: 0.4)
+                      : ValoraColors.neutral200.withValues(alpha: 0.8),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(ValoraSpacing.radiusLg),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? ValoraColors.primaryLight
+                      : ValoraColors.primary,
+                  width: 1.5,
+                ),
+              ),
+            ),
           ),
         ),
       ],

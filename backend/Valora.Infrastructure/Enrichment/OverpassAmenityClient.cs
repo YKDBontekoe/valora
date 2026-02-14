@@ -48,6 +48,7 @@ public sealed class OverpassAmenityClient : IAmenityClient
             var parkCount = 0;
             var healthcareCount = 0;
             var transitCount = 0;
+            var chargingStationCount = 0;
             double? nearestDistance = null;
 
             foreach (var element in elements)
@@ -71,11 +72,12 @@ public sealed class OverpassAmenityClient : IAmenityClient
                 if (shop == "supermarket") supermarketCount++;
                 if (leisure == "park") parkCount++;
                 if (amenity is "hospital" or "clinic" or "doctors" or "pharmacy") healthcareCount++;
+                if (amenity == "charging_station") chargingStationCount++;
                 if (highway == "bus_stop" || railway == "station") transitCount++;
             }
 
-            var populatedCategoryCount = new[] { schoolCount, supermarketCount, parkCount, healthcareCount, transitCount }.Count(c => c > 0);
-            var diversityScore = populatedCategoryCount / 5d * 100d;
+            var populatedCategoryCount = new[] { schoolCount, supermarketCount, parkCount, healthcareCount, transitCount, chargingStationCount }.Count(c => c > 0);
+            var diversityScore = populatedCategoryCount / 6d * 100d;
 
             return new AmenityStatsDto(
                 SchoolCount: schoolCount,
@@ -85,7 +87,8 @@ public sealed class OverpassAmenityClient : IAmenityClient
                 TransitStopCount: transitCount,
                 NearestAmenityDistanceMeters: nearestDistance,
                 DiversityScore: diversityScore,
-                RetrievedAtUtc: DateTimeOffset.UtcNow);
+                RetrievedAtUtc: DateTimeOffset.UtcNow,
+                ChargingStationCount: chargingStationCount);
         }, cancellationToken);
 
         if (result != null)
@@ -179,6 +182,7 @@ public sealed class OverpassAmenityClient : IAmenityClient
              + $"nwr(around:{radiusMeters},{lat},{lon})[amenity~\"hospital|clinic|doctors|pharmacy\"];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[highway=bus_stop];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[railway=station];"
+             + $"nwr(around:{radiusMeters},{lat},{lon})[amenity=charging_station];"
              + ");out center tags;";
     }
 

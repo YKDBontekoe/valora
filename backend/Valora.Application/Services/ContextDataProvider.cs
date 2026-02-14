@@ -105,7 +105,7 @@ public sealed class ContextDataProvider : IContextDataProvider
 
         if (crime is not null)
         {
-            sources.Add(new SourceAttributionDto("CBS StatLine 47018NED", "https://opendata.cbs.nl", "Publiek", crime.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto("CBS StatLine 83765NED", "https://opendata.cbs.nl", "Publiek", crime.RetrievedAtUtc));
         }
 
         if (amenities is not null)

@@ -441,10 +441,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           icon: Icons.error_outline_rounded,
                           title: 'Search Failed',
                           subtitle: provider.error,
-                          action: ValoraButton(
-                            label: 'Retry',
-                            onPressed: provider.refresh,
-                          ),
+                          actionLabel: 'Retry',
+                          onAction: provider.refresh,
                         ),
                       ),
                     )

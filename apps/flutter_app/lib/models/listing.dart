@@ -67,6 +67,11 @@ class Listing {
   final bool isSoldOrRented;
   final List<String> labels;
 
+  // WOZ
+  final int? wozValue;
+  final DateTime? wozReferenceDate;
+  final String? wozValueSource;
+
   // Phase 5: Context
   final double? contextCompositeScore;
   final double? contextSafetyScore;
@@ -124,6 +129,9 @@ class Listing {
     this.publicationDate,
     this.isSoldOrRented = false,
     this.labels = const [],
+    this.wozValue,
+    this.wozReferenceDate,
+    this.wozValueSource,
     this.contextCompositeScore,
     this.contextSafetyScore,
     this.contextReport,
@@ -212,6 +220,11 @@ class Listing {
               ?.map((e) => e.toString())
               .toList() ??
           [],
+      wozValue: json['wozValue'],
+      wozReferenceDate: json['wozReferenceDate'] != null
+          ? DateTime.parse(json['wozReferenceDate'])
+          : null,
+      wozValueSource: json['wozValueSource'],
       contextCompositeScore: json['contextCompositeScore']?.toDouble(),
       contextSafetyScore: json['contextSafetyScore']?.toDouble(),
       contextReport: json['contextReport'],
@@ -279,6 +292,9 @@ class Listing {
       'publicationDate': publicationDate?.toIso8601String(),
       'isSoldOrRented': isSoldOrRented,
       'labels': labels,
+      'wozValue': wozValue,
+      'wozReferenceDate': wozReferenceDate?.toIso8601String(),
+      'wozValueSource': wozValueSource,
 
       'contextCompositeScore': contextCompositeScore,
       'contextSafetyScore': contextSafetyScore,

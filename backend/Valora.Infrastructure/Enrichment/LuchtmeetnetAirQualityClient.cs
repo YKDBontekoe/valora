@@ -43,21 +43,28 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             return null;
         }
 
-        var measurementUrl = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{station.Value.Id}/measurements?formula=PM25&order_by=timestamp_measured&order_direction=desc&page=1";
-
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
-            var first = response?.Data?.FirstOrDefault();
+            var pm25Task = GetLatestMeasurementAsync(station.Value.Id, "PM25", cancellationToken);
+            var pm10Task = GetLatestMeasurementAsync(station.Value.Id, "PM10", cancellationToken);
+            var no2Task = GetLatestMeasurementAsync(station.Value.Id, "NO2", cancellationToken);
+            var o3Task = GetLatestMeasurementAsync(station.Value.Id, "O3", cancellationToken);
+            await Task.WhenAll(pm25Task, pm10Task, no2Task, o3Task);
 
-            if (first is null)
+            var pm25 = await pm25Task;
+            var pm10 = await pm10Task;
+            var no2 = await no2Task;
+            var o3 = await o3Task;
+
+            if (pm25 is null && pm10 is null && no2 is null && o3 is null)
             {
-                _logger.LogWarning("Luchtmeetnet measurement lookup did not include data for station {StationId}", station.Value.Id);
+                _logger.LogWarning("Luchtmeetnet measurement lookup did not include supported formulas for station {StationId}", station.Value.Id);
                 return null;
             }
 
+            var latest = pm25 ?? pm10 ?? no2 ?? o3;
             DateTimeOffset? measuredAt = null;
-            if (DateTimeOffset.TryParse(first.TimestampMeasured, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var timestamp))
+            if (latest is not null && DateTimeOffset.TryParse(latest.TimestampMeasured, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var timestamp))
             {
                 measuredAt = timestamp;
             }
@@ -66,9 +73,12 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                 StationId: station.Value.Id,
                 StationName: station.Value.Name,
                 StationDistanceMeters: station.Value.DistanceMeters,
-                Pm25: first.Value,
+                Pm25: pm25?.Value,
                 MeasuredAtUtc: measuredAt,
-                RetrievedAtUtc: DateTimeOffset.UtcNow);
+                RetrievedAtUtc: DateTimeOffset.UtcNow,
+                Pm10: pm10?.Value,
+                No2: no2?.Value,
+                O3: o3?.Value);
 
             _cache.Set(cacheKey, snapshot, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
             return snapshot;
@@ -77,6 +87,24 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         {
              _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed for station {StationId}", station.Value.Id);
              return null;
+        }
+    }
+
+    private async Task<LuchtmeetnetMeasurement?> GetLatestMeasurementAsync(string stationId, string formula, CancellationToken cancellationToken)
+    {
+        var encodedStationId = Uri.EscapeDataString(stationId);
+        var encodedFormula = Uri.EscapeDataString(formula);
+        var measurementUrl = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedStationId}/measurements?formula={encodedFormula}&order_by=timestamp_measured&order_direction=desc&page=1";
+
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
+            return response?.Data?.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Luchtmeetnet formula lookup failed for station {StationId}, formula {Formula}", stationId, formula);
+            return null;
         }
     }
 

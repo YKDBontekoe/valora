@@ -65,19 +65,19 @@ abstract final class ValoraSpacing {
   static const double radiusNone = 0.0;
 
   /// Small radius - subtle rounding
-  static const double radiusSm = 4.0;
+  static const double radiusSm = 6.0;
 
   /// Medium radius - standard components
-  static const double radiusMd = 8.0;
+  static const double radiusMd = 12.0;
 
   /// Large radius - cards, modals
-  static const double radiusLg = 12.0;
+  static const double radiusLg = 16.0;
 
   /// Extra large radius - floating elements
-  static const double radiusXl = 16.0;
+  static const double radiusXl = 22.0;
 
   /// Extra extra large radius - prominent cards
-  static const double radiusXxl = 24.0;
+  static const double radiusXxl = 30.0;
 
   /// Full/circular radius
   static const double radiusFull = 9999.0;

@@ -29,6 +29,9 @@ class HomeBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mediaQuery = MediaQuery.of(context);
+    final isCompactNav =
+        mediaQuery.size.width < 390 || mediaQuery.textScaler.scale(1) > 1.1;
 
     // Using semantic glass tokens from design system
     final glassColor = isDark
@@ -44,7 +47,9 @@ class HomeBottomNavBar extends StatelessWidget {
       left: false,
       right: false,
       child: Container(
-        constraints: const BoxConstraints(minHeight: ValoraSpacing.navBarHeight),
+        constraints: const BoxConstraints(
+          minHeight: ValoraSpacing.navBarHeight,
+        ),
         margin: const EdgeInsets.fromLTRB(
           ValoraSpacing.md,
           0,
@@ -68,11 +73,14 @@ class HomeBottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: _navItems.map((item) {
+              final isSelected = currentIndex == item.index;
               return Expanded(
+                flex: isSelected && !isCompactNav ? 2 : 1,
                 child: _GlassNavItem(
                   icon: item.icon,
                   label: item.label,
-                  isSelected: currentIndex == item.index,
+                  isSelected: isSelected,
+                  showSelectedLabel: !isCompactNav,
                   onTap: () => onTap(item.index),
                 ),
               );
@@ -100,12 +108,14 @@ class _GlassNavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
+  final bool showSelectedLabel;
   final VoidCallback onTap;
 
   const _GlassNavItem({
     required this.icon,
     required this.label,
     required this.isSelected,
+    required this.showSelectedLabel,
     required this.onTap,
   });
 
@@ -133,7 +143,6 @@ class _GlassNavItem extends StatelessWidget {
             child: AnimatedContainer(
               duration: ValoraAnimations.medium,
               curve: ValoraAnimations.emphatic,
-              alignment: Alignment.center,
               padding: EdgeInsets.symmetric(
                 horizontal: isSelected ? ValoraSpacing.sm : ValoraSpacing.xs,
                 vertical: ValoraSpacing.radiusMd,
@@ -180,37 +189,36 @@ class _GlassNavItem extends StatelessWidget {
                             duration: ValoraAnimations.fast,
                             curve: ValoraAnimations.emphatic,
                           )
-                          .tint(
-                            color: ValoraColors.primary,
-                            end: 1,
-                          ),
-                      Flexible(
-                        child: AnimatedSize(
-                          duration: ValoraAnimations.medium,
-                          curve: ValoraAnimations.emphatic,
-                          child: SizedBox(
-                            width: isSelected ? null : 0,
-                            child: ExcludeSemantics(
-                              child: Padding(
-                                padding: isSelected
-                                    ? const EdgeInsets.only(left: ValoraSpacing.xs)
-                                    : EdgeInsets.zero,
-                                child: Text(
-                                  label,
-                                  style: ValoraTypography.labelMedium.copyWith(
-                                    color: ValoraColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.2,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
-                                ),
-                              ),
-                            ),
+                          .tint(color: ValoraColors.primary, end: 1),
+                      if (showSelectedLabel) ...[
+                        Flexible(
+                          child: AnimatedSize(
+                            duration: ValoraAnimations.medium,
+                            curve: ValoraAnimations.emphatic,
+                            child: isSelected
+                                ? ExcludeSemantics(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: ValoraSpacing.xs,
+                                      ),
+                                      child: Text(
+                                        label,
+                                        style: ValoraTypography.labelMedium
+                                            .copyWith(
+                                              color: ValoraColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.2,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: ValoraSpacing.xs),

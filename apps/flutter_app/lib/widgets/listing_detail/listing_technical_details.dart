@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/formatters/currency_formatter.dart';
 import '../../models/listing.dart';
 import '../valora_glass_container.dart';
 
@@ -20,7 +21,23 @@ class ListingTechnicalDetails extends StatelessWidget {
       'Construction': listing.constructionPeriod,
       'Insulation': listing.insulationType,
       'Parking': listing.parkingType,
+      'Ownership': listing.ownershipType,
+      'Cadastral': listing.cadastralDesignation,
+      'VvE Contribution': listing.vveContribution != null
+          ? '${CurrencyFormatter.formatEur(listing.vveContribution!)} / month'
+          : null,
       'Orientation': listing.gardenOrientation,
+      'Energy Label': listing.energyLabel,
+      'Fiber': listing.fiberAvailable == null
+          ? null
+          : (listing.fiberAvailable! ? 'Available' : 'Unavailable'),
+      'WOZ Value': listing.wozValue != null
+          ? CurrencyFormatter.formatEur(listing.wozValue!.toDouble())
+          : null,
+      'WOZ Reference': listing.wozReferenceDate != null
+          ? '${listing.wozReferenceDate!.year}'
+          : null,
+      'WOZ Source': listing.wozValueSource,
       'Boiler': listing.cvBoilerBrand != null
           ? '${listing.cvBoilerBrand} (${listing.cvBoilerYear ?? "Unknown"})'
           : null,

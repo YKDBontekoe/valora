@@ -226,10 +226,8 @@ class _InputForm extends StatelessWidget {
             icon: Icons.error_outline_rounded,
             title: 'Report Generation Failed',
             subtitle: provider.error,
-            action: ValoraButton(
-              label: 'Try Again',
-              onPressed: () => provider.generate(controller.text),
-            ),
+            actionLabel: 'Try Again',
+            onAction: () => provider.generate(controller.text),
           ),
         ],
         // Recent Searches

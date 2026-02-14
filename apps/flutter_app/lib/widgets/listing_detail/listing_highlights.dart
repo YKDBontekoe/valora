@@ -55,6 +55,30 @@ class ListingHighlights extends StatelessWidget {
         ),
       );
     }
+    if (listing.fiberAvailable != null) {
+      features.add(
+        ValoraTag(
+          icon: Icons.wifi_rounded,
+          label: listing.fiberAvailable! ? 'Fiber Available' : 'No Fiber',
+        ),
+      );
+    }
+    if (listing.contextCompositeScore != null) {
+      features.add(
+        ValoraTag(
+          icon: Icons.analytics_rounded,
+          label: 'Valora ${listing.contextCompositeScore!.toStringAsFixed(1)}',
+        ),
+      );
+    }
+    if (listing.contextSafetyScore != null) {
+      features.add(
+        ValoraTag(
+          icon: Icons.shield_rounded,
+          label: 'Safety ${listing.contextSafetyScore!.toStringAsFixed(1)}',
+        ),
+      );
+    }
 
     if (features.isEmpty) return const SizedBox.shrink();
 

@@ -200,7 +200,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                 child: ValoraTextField(
                   controller: _minPriceController,
                   label: 'Min Price',
-                  prefixText: '€ ',
+                  hint: '€ 0',
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
@@ -210,7 +210,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
                 child: ValoraTextField(
                   controller: _maxPriceController,
                   label: 'Max Price',
-                  prefixText: '€ ',
+                  hint: '€ 0',
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
@@ -228,7 +228,7 @@ class _ValoraFilterDialogState extends State<ValoraFilterDialog> {
             controller: _minBedroomsController,
             label: 'Min Bedrooms',
             keyboardType: TextInputType.number,
-            prefixIcon: Icons.bed_outlined,
+            prefixIcon: const Icon(Icons.bed_outlined),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
           const SizedBox(height: ValoraSpacing.lg),
