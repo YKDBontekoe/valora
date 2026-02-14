@@ -135,6 +135,181 @@ public class LuchtmeetnetAirQualityClientTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task GetSnapshotAsync_HandlesPagination_AndSkipsFailedDetails()
+    {
+        var handler = new RecordingHandler(request =>
+        {
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            var query = request.RequestUri?.Query ?? string.Empty;
+
+            // Page 1: S1 (fails detail fetch)
+            if (path == "/open_api/stations" && query == "?page=1")
+            {
+                return JsonResponse("""
+                {
+                  "pagination": { "last_page": 2 },
+                  "data": [ { "number": "S1", "location": "Station One" } ]
+                }
+                """);
+            }
+
+            // Page 2: S2 (succeeds)
+            if (path == "/open_api/stations" && query == "?page=2")
+            {
+                return JsonResponse("""
+                {
+                  "pagination": { "last_page": 2 },
+                  "data": [ { "number": "S2", "location": "Station Two" } ]
+                }
+                """);
+            }
+
+            // S1 detail failure (e.g. invalid JSON or 404)
+            if (path == "/open_api/stations/S1")
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+            }
+
+            // S2 detail success
+            if (path == "/open_api/stations/S2")
+            {
+                 return JsonResponse("""
+                {
+                  "data": {
+                    "number": "S2",
+                    "location": "Station Two",
+                    "geometry": { "coordinates": [4.898, 52.377] }
+                  }
+                }
+                """);
+            }
+
+            // Measurement for S2
+            if (path == "/open_api/stations/S2/measurements")
+            {
+                return JsonResponse("""
+                {
+                  "data": [ { "value": 15.0, "timestamp_measured": "2026-01-01T10:00:00Z" } ]
+                }
+                """);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var client = CreateClient(handler);
+        var result = await client.GetSnapshotAsync(CreateLocation());
+
+        Assert.NotNull(result);
+        Assert.Equal("S2", result!.StationId);
+    }
+
+    [Fact]
+    public async Task GetSnapshotAsync_WhenMeasurementHttpFails_ReturnsNull()
+    {
+        var handler = new RecordingHandler(request =>
+        {
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+            if (path == "/open_api/stations" && request.RequestUri?.Query == "?page=1")
+            {
+                return JsonResponse("""
+                {
+                  "pagination": { "last_page": 1 },
+                  "data": [ { "number": "S1", "location": "Station One" } ]
+                }
+                """);
+            }
+
+            if (path == "/open_api/stations/S1")
+            {
+                 return JsonResponse("""
+                {
+                  "data": {
+                    "number": "S1",
+                    "location": "Station One",
+                    "geometry": { "coordinates": [4.898, 52.377] }
+                  }
+                }
+                """);
+            }
+
+            if (path == "/open_api/stations/S1/measurements")
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var client = CreateClient(handler);
+        var result = await client.GetSnapshotAsync(CreateLocation());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetSnapshotAsync_WhenStationListHttpFails_ContinuesToNextPage()
+    {
+        // This test simulates a failure on page 1, but success on page 2 (if logic permitted retry/skip).
+        // However, the current implementation continues on failure ("continue" in loop).
+        // Let's verify that if page 1 fails, it tries page 2.
+
+        var handler = new RecordingHandler(request =>
+        {
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            var query = request.RequestUri?.Query ?? string.Empty;
+
+            if (path == "/open_api/stations" && query == "?page=1")
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+
+            if (path == "/open_api/stations" && query == "?page=2")
+            {
+                return JsonResponse("""
+                {
+                  "pagination": { "last_page": 2 },
+                  "data": [ { "number": "S2", "location": "Station Two" } ]
+                }
+                """);
+            }
+
+            if (path == "/open_api/stations/S2")
+            {
+                 return JsonResponse("""
+                {
+                  "data": {
+                    "number": "S2",
+                    "location": "Station Two",
+                    "geometry": { "coordinates": [4.898, 52.377] }
+                  }
+                }
+                """);
+            }
+
+            if (path == "/open_api/stations/S2/measurements")
+            {
+                return JsonResponse("""
+                {
+                  "data": [ { "value": 10.0, "timestamp_measured": "2026-01-01T10:00:00Z" } ]
+                }
+                """);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var client = CreateClient(handler);
+        var result = await client.GetSnapshotAsync(CreateLocation());
+
+        // Note: The loop runs up to 10 pages. If page 1 fails, it should fetch page 2.
+        // If page 2 returns data, it processes it.
+        Assert.NotNull(result);
+        Assert.Equal("S2", result!.StationId);
+    }
+
     private static LuchtmeetnetAirQualityClient CreateClient(RecordingHandler handler)
     {
         return new LuchtmeetnetAirQualityClient(
