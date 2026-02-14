@@ -45,16 +45,13 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
         try
         {
-            var pm25Task = GetLatestMeasurementAsync(station.Value.Id, "PM25", cancellationToken);
-            var pm10Task = GetLatestMeasurementAsync(station.Value.Id, "PM10", cancellationToken);
-            var no2Task = GetLatestMeasurementAsync(station.Value.Id, "NO2", cancellationToken);
-            var o3Task = GetLatestMeasurementAsync(station.Value.Id, "O3", cancellationToken);
-            await Task.WhenAll(pm25Task, pm10Task, no2Task, o3Task);
+            // Optimization: Fetch all formulas in one request instead of 4 separate ones
+            var measurements = await GetLatestMeasurementsAsync(station.Value.Id, cancellationToken);
 
-            var pm25 = await pm25Task;
-            var pm10 = await pm10Task;
-            var no2 = await no2Task;
-            var o3 = await o3Task;
+            var pm25 = measurements.FirstOrDefault(m => m.Formula == "PM25");
+            var pm10 = measurements.FirstOrDefault(m => m.Formula == "PM10");
+            var no2 = measurements.FirstOrDefault(m => m.Formula == "NO2");
+            var o3 = measurements.FirstOrDefault(m => m.Formula == "O3");
 
             if (pm25 is null && pm10 is null && no2 is null && o3 is null)
             {
@@ -90,21 +87,21 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         }
     }
 
-    private async Task<LuchtmeetnetMeasurement?> GetLatestMeasurementAsync(string stationId, string formula, CancellationToken cancellationToken)
+    private async Task<List<LuchtmeetnetMeasurement>> GetLatestMeasurementsAsync(string stationId, CancellationToken cancellationToken)
     {
         var encodedStationId = Uri.EscapeDataString(stationId);
-        var encodedFormula = Uri.EscapeDataString(formula);
-        var measurementUrl = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedStationId}/measurements?formula={encodedFormula}&order_by=timestamp_measured&order_direction=desc&page=1";
+        // Omit formula to get all components for the station
+        var measurementUrl = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedStationId}/measurements?order_by=timestamp_measured&order_direction=desc&page=1";
 
         try
         {
             var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
-            return response?.Data?.FirstOrDefault();
+            return response?.Data ?? new List<LuchtmeetnetMeasurement>();
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Luchtmeetnet formula lookup failed for station {StationId}, formula {Formula}", stationId, formula);
-            return null;
+            _logger.LogDebug(ex, "Luchtmeetnet measurements lookup failed for station {StationId}", stationId);
+            return new List<LuchtmeetnetMeasurement>();
         }
     }
 
@@ -112,16 +109,75 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         ResolvedLocationDto location,
         CancellationToken cancellationToken)
     {
-        var stationIds = await FetchAllStationIdsAsync(cancellationToken);
-        if (stationIds.Count == 0) return null;
+        // Optimization: Cache the entire station coordinates list to avoid hundreds of requests on every cache miss
+        var allStations = await GetCachedStationListAsync(cancellationToken);
+        if (allStations.Count == 0) return null;
 
-        return await FindNearestFromIdsAsync(stationIds, location, cancellationToken);
+        (string Id, string Name, double Lat, double Lon)? nearest = null;
+        double minDistance = double.MaxValue;
+
+        foreach (var station in allStations)
+        {
+            var distance = GeoDistance.BetweenMeters(location.Latitude, location.Longitude, station.Lat, station.Lon);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearest = station;
+            }
+        }
+
+        if (nearest == null) return null;
+        return (nearest.Value.Id, nearest.Value.Name, minDistance);
+    }
+
+    private async Task<List<(string Id, string Name, double Lat, double Lon)>> GetCachedStationListAsync(CancellationToken cancellationToken)
+    {
+        const string cacheKey = "lucht:all-stations-metadata";
+        if (_cache.TryGetValue(cacheKey, out List<(string Id, string Name, double Lat, double Lon)>? cached))
+        {
+            return cached!;
+        }
+
+        var stations = await DiscoverAllStationsWithCoordinatesAsync(cancellationToken);
+        if (stations.Count > 0)
+        {
+            _cache.Set(cacheKey, stations, TimeSpan.FromHours(24));
+        }
+        return stations;
+    }
+
+    private async Task<List<(string Id, string Name, double Lat, double Lon)>> DiscoverAllStationsWithCoordinatesAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting Luchtmeetnet station discovery...");
+        var stationIds = await FetchAllStationIdsAsync(cancellationToken);
+        var results = new List<(string Id, string Name, double Lat, double Lon)>();
+
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = 5,
+            CancellationToken = cancellationToken
+        };
+        var lockObj = new object();
+
+        await Parallel.ForEachAsync(stationIds, parallelOptions, async (stationId, token) =>
+        {
+            var detail = await GetStationDetailAsync(stationId, token);
+            if (detail is null) return;
+
+            lock (lockObj)
+            {
+                results.Add((stationId, detail.Value.Name, detail.Value.Latitude, detail.Value.Longitude));
+            }
+        });
+
+        _logger.LogInformation("Discovered {Count} Luchtmeetnet stations with coordinates.", results.Count);
+        return results;
     }
 
     private async Task<HashSet<string>> FetchAllStationIdsAsync(CancellationToken cancellationToken)
     {
         var stationIds = new HashSet<string>();
-        for (var page = 1; page <= 10; page++)
+        for (var page = 1; page <= 15; page++)
         {
             var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations?page={page}";
             try
@@ -158,43 +214,9 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         return stationIds;
     }
 
-    private async Task<(string Id, string Name, double DistanceMeters)?> FindNearestFromIdsAsync(
-        HashSet<string> stationIds,
-        ResolvedLocationDto location,
-        CancellationToken cancellationToken)
-    {
-        (string Id, string Name, double DistanceMeters)? nearest = null;
-        var parallelOptions = new ParallelOptions 
-        { 
-            MaxDegreeOfParallelism = 5,
-            CancellationToken = cancellationToken 
-        };
-        var lockObj = new object();
-
-        await Parallel.ForEachAsync(stationIds, parallelOptions, async (stationId, token) =>
-        {
-            // Fetch detail to get coordinates
-            var detail = await GetStationDetailAsync(stationId, token);
-            if (detail is null) return;
-
-            var (name, lat, lon) = detail.Value;
-            var distance = GeoDistance.BetweenMeters(location.Latitude, location.Longitude, lat, lon);
-
-            lock (lockObj)
-            {
-                if (!nearest.HasValue || distance < nearest.Value.DistanceMeters)
-                {
-                    nearest = (stationId, name, distance);
-                }
-            }
-        });
-
-        return nearest;
-    }
-
     private async Task<(string Name, double Latitude, double Longitude)?> GetStationDetailAsync(string stationId, CancellationToken cancellationToken)
     {
-        var cacheKey = $"lucht:station:{stationId}";
+        var cacheKey = $"lucht:station-detail:{stationId}";
         if (_cache.TryGetValue(cacheKey, out (string Name, double Latitude, double Longitude) cached))
         {
             return cached;
@@ -216,7 +238,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             var name = !string.IsNullOrWhiteSpace(response.Data.Name) ? response.Data.Name : stationId;
 
             var result = (name, lat, lon);
-            _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
+            _cache.Set(cacheKey, result, TimeSpan.FromHours(48));
             
             return result;
         }

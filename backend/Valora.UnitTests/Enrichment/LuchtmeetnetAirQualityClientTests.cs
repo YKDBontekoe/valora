@@ -54,7 +54,7 @@ public class LuchtmeetnetAirQualityClientTests
                 {
                   "data": [
                     {
-                      "value": 11.2,
+                      "formula": "PM25", "value": 11.2,
                       "timestamp_measured": "2026-01-01T10:00:00Z"
                     }
                   ]
@@ -190,7 +190,7 @@ public class LuchtmeetnetAirQualityClientTests
             {
                 return JsonResponse("""
                 {
-                  "data": [ { "value": 15.0, "timestamp_measured": "2026-01-01T10:00:00Z" } ]
+                  "data": [ { "formula": "PM25", "value": 15.0, "timestamp_measured": "2026-01-01T10:00:00Z" } ]
                 }
                 """);
             }
@@ -290,7 +290,7 @@ public class LuchtmeetnetAirQualityClientTests
             {
                 return JsonResponse("""
                 {
-                  "data": [ { "value": 10.0, "timestamp_measured": "2026-01-01T10:00:00Z" } ]
+                  "data": [ { "formula": "PM25", "value": 10.0, "timestamp_measured": "2026-01-01T10:00:00Z" } ]
                 }
                 """);
             }
@@ -339,7 +339,7 @@ public class LuchtmeetnetAirQualityClientTests
             {
                 return JsonResponse("""
                 {
-                  "data": [ { "value": 10.0, "timestamp_measured": "INVALID-TIMESTAMP" } ]
+                  "data": [ { "formula": "PM25", "value": 10.0, "timestamp_measured": "INVALID-TIMESTAMP" } ]
                 }
                 """);
             }

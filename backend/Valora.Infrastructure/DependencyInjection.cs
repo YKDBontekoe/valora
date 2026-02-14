@@ -73,7 +73,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
-        services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>()
+        services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client => { client.DefaultRequestVersion = HttpVersion.Version11; client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; })
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
@@ -97,7 +97,7 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
-        services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>()
+        services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client => { client.DefaultRequestVersion = HttpVersion.Version11; client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; })
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
