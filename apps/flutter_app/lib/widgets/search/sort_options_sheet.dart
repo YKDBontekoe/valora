@@ -16,6 +16,7 @@ class SortOptionsSheet extends StatelessWidget {
     required this.onClose,
   });
 
+
   Widget _buildSortOption(
     BuildContext context,
     String label,
@@ -29,8 +30,30 @@ class SortOptionsSheet extends StatelessWidget {
     final isSelected =
         effectiveSortBy == sortBy && effectiveSortOrder == sortOrder;
 
+    IconData icon;
+    switch (sortBy) {
+      case 'date': icon = Icons.calendar_today_rounded; break;
+      case 'price': icon = sortOrder == 'asc' ? Icons.trending_up_rounded : Icons.trending_down_rounded; break;
+      case 'livingarea': icon = sortOrder == 'asc' ? Icons.square_foot_rounded : Icons.zoom_out_map_rounded; break;
+      case 'contextcompositescore': icon = Icons.analytics_rounded; break;
+      case 'contextsafetyscore': icon = Icons.security_rounded; break;
+      default: icon = Icons.sort_rounded;
+    }
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? ValoraColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isSelected ? ValoraColors.primary : ValoraColors.neutral500,
+        ),
+      ),
       title: Text(
         label,
         style:
@@ -62,6 +85,7 @@ class SortOptionsSheet extends StatelessWidget {
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
