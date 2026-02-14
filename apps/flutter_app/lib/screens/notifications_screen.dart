@@ -54,6 +54,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await context.read<NotificationService>().fetchNotifications(refresh: true);
   }
 
+  Future<void> _confirmMarkAllRead() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ValoraDialog(
+        title: 'Mark all as read?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ValoraButton(
+            label: 'Confirm',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+        child: const Text(
+          'Are you sure you want to mark all notifications as read?',
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      context.read<NotificationService>().markAllAsRead();
+    }
+  }
+
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -129,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   actions: [
                     if (provider.unreadCount > 0)
                       TextButton.icon(
-                        onPressed: () => provider.markAllAsRead(),
+                        onPressed: _confirmMarkAllRead,
                         icon: const Icon(Icons.done_all_rounded, size: 18),
                         label: const Text('Mark all read'),
                         style: TextButton.styleFrom(
@@ -258,8 +286,7 @@ class _NotificationItem extends StatelessWidget {
             action: SnackBarAction(
               label: 'Undo',
               onPressed: () {
-                // Ideally we would restore it, but simple delete for now
-                // provider.undoDelete(); // Not implemented yet
+                provider.undoDelete(notification.id);
               },
             ),
           ),

@@ -15,6 +15,9 @@ class NotificationService extends ChangeNotifier {
   String? _error;
   Timer? _pollingTimer;
 
+  final Map<String, Timer> _pendingDeletions = {};
+  final Map<String, (int index, ValoraNotification notification)> _pendingDeletedNotifications = {};
+
   NotificationService(this._apiService);
 
 
@@ -58,38 +61,41 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<void> deleteNotification(String id) async {
+    // Cancel any existing timer for this ID to prevent double deletion
+    _pendingDeletions[id]?.cancel();
+    _pendingDeletions.remove(id);
+
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index == -1) return;
 
     final removed = _notifications[index];
 
-    // Optimistic update
+    // Store for potential restoration
+    _pendingDeletedNotifications[id] = (index, removed);
+
+    // Optimistic update: Remove from list immediately
     _notifications.removeAt(index);
     if (!removed.isRead) {
       _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
     }
     notifyListeners();
 
-    try {
-      await _apiService.deleteNotification(id);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting notification: $e');
-      }
-      // Revert state on failure
-      if (index <= _notifications.length) {
-        _notifications.insert(index, removed);
-      } else {
-        _notifications.add(removed);
-      }
+    // Schedule API call
+    _pendingDeletions[id] = Timer(const Duration(seconds: 4), () async {
+      _pendingDeletions.remove(id);
+      _pendingDeletedNotifications.remove(id);
 
-      if (!removed.isRead) {
-        _unreadCount++;
+      try {
+        await _apiService.deleteNotification(id);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error deleting notification: $e');
+        }
+        // Note: If API fails, we could restore the notification here,
+        // but it might be confusing to the user if it reappears after 4s.
+        // For now, we log the error.
       }
-      notifyListeners();
-
-      rethrow;
-    }
+    });
   }
 
   Future<void> fetchNotifications({bool refresh = false}) async {
@@ -202,9 +208,39 @@ class NotificationService extends ChangeNotifier {
     }
   }
 
+  void undoDelete(String id) {
+    if (!_pendingDeletions.containsKey(id)) return;
+
+    // Cancel deletion
+    _pendingDeletions[id]?.cancel();
+    _pendingDeletions.remove(id);
+
+    // Restore notification
+    if (_pendingDeletedNotifications.containsKey(id)) {
+      final (index, notification) = _pendingDeletedNotifications[id]!;
+      _pendingDeletedNotifications.remove(id);
+
+      if (index >= 0 && index <= _notifications.length) {
+        _notifications.insert(index, notification);
+      } else {
+        _notifications.add(notification);
+      }
+
+      if (!notification.isRead) {
+        _unreadCount++;
+      }
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    for (final timer in _pendingDeletions.values) {
+      timer.cancel();
+    }
+    _pendingDeletions.clear();
+    _pendingDeletedNotifications.clear();
     super.dispose();
   }
 }
