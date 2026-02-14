@@ -51,6 +51,16 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
           borderRadius: ValoraSpacing.radiusXl,
           // Let ValoraCard handle elevation changes based on hover/press
           elevation: ValoraSpacing.elevationMd,
+          gradientBorder: LinearGradient(
+            colors: _isHovered
+                ? [
+                    ValoraColors.primary.withValues(alpha: 0.5),
+                    ValoraColors.accent.withValues(alpha: 0.5),
+                  ]
+                : [Colors.transparent, Colors.transparent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -106,11 +116,12 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            ValoraColors.neutral900.withValues(alpha: 0.4),
+                            ValoraColors.neutral900.withValues(alpha: 0.5),
+                            ValoraColors.neutral900.withValues(alpha: 0.1),
                             Colors.transparent,
                             Colors.transparent,
                           ],
-                          stops: const [0.0, 0.5, 1.0],
+                          stops: const [0.0, 0.3, 0.6, 1.0],
                         ),
                       ),
                     ),

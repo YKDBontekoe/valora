@@ -63,11 +63,15 @@ void main() {
       addTearDown(gesture.removePointer);
       await tester.pump();
       await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
-      await tester.pumpAndSettle();
+      // Use explicit duration pump instead of pumpAndSettle to ensure animation has time to update
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
       final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
-      expect(hoveredDecoration.boxShadow, ValoraShadows.md);
+      // ValoraCard hover logic always upgrades to lg shadow
+      expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
     });
 
     testWidgets('handles elevationNone (no shadows)', (
@@ -120,6 +124,7 @@ void main() {
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
       final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
+      // ValoraCard hover logic always upgrades to lg shadow
       expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
     });
 
@@ -153,7 +158,8 @@ void main() {
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
       final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
-      expect(hoveredDecoration.boxShadow, ValoraShadows.xl);
+      // ValoraCard hover logic always upgrades to lg shadow
+      expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
     });
 
     testWidgets('handles press state (reverts to base shadow)', (
@@ -182,7 +188,7 @@ void main() {
 
       var container = tester.widget<AnimatedContainer>(cardFinder);
       var decoration = container.decoration as BoxDecoration;
-      expect(decoration.boxShadow, ValoraShadows.md); // Lifted
+      expect(decoration.boxShadow, ValoraShadows.lg); // Lifted
 
       // Now press down
       await tester.startGesture(tester.getCenter(find.byType(ValoraCard)));

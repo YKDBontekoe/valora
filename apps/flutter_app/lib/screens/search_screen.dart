@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -321,10 +322,16 @@ class _SearchScreenState extends State<SearchScreen> {
                     pinned: true,
                     backgroundColor:
                         isDark
-                            ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
+                            ? ValoraColors.backgroundDark.withValues(alpha: 0.8)
                             : ValoraColors.backgroundLight.withValues(
-                              alpha: 0.95,
+                              alpha: 0.8,
                             ),
+                    flexibleSpace: ClipRRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(color: Colors.transparent),
+                      ),
+                    ),
                     surfaceTintColor: Colors.transparent,
                     title: Text(
                       'Search',
@@ -406,26 +413,31 @@ class _SearchScreenState extends State<SearchScreen> {
                       preferredSize: Size.fromHeight(
                         provider.hasActiveFiltersOrSort ? 130 : 80,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SearchInput(
-                            controller: _searchController,
-                            pdokService: _pdokService,
-                            onSuggestionSelected: _onSuggestionSelected,
-                            onSubmitted: () {
-                                _debounce?.cancel();
-                                _searchProvider!.refresh();
-                            },
+                      child: ClipRRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SearchInput(
+                                controller: _searchController,
+                                pdokService: _pdokService,
+                                onSuggestionSelected: _onSuggestionSelected,
+                                onSubmitted: () {
+                                    _debounce?.cancel();
+                                    _searchProvider!.refresh();
+                                },
+                              ),
+                              ActiveFiltersList(
+                                provider: provider,
+                                onFilterTap: _openFilterDialog,
+                                onSortTap: _showSortOptions,
+                              ),
+                              if (provider.hasActiveFiltersOrSort)
+                                const SizedBox(height: ValoraSpacing.radiusLg),
+                            ],
                           ),
-                          ActiveFiltersList(
-                            provider: provider,
-                            onFilterTap: _openFilterDialog,
-                            onSortTap: _showSortOptions,
-                          ),
-                          if (provider.hasActiveFiltersOrSort)
-                            const SizedBox(height: ValoraSpacing.radiusLg),
-                        ],
+                        ),
                       ),
                     ),
                   ),
