@@ -47,21 +47,21 @@ public static class DbInitializer
                         var roleResult = await identityService.AddToRoleAsync(userId, "Admin");
                         if (roleResult.Succeeded)
                         {
-                            logger.LogInformation("Successfully seeded initial Admin user.");
+                            logger.LogInformation("Successfully seeded initial Admin user with UserId: {UserId}.", userId);
                         }
                         else
                         {
-                            logger.LogWarning("Created Admin user but failed to assign role. Check identity logs.");
+                            logger.LogWarning("Created Admin user {UserId} but failed to assign 'Admin' role. Check identity logs for details.", userId);
                         }
                     }
                     else
                     {
-                        logger.LogWarning("Failed to create initial Admin user. Check identity logs.");
+                        logger.LogWarning("Failed to create initial Admin user for {Email}. Check identity logs for details.", adminEmail);
                     }
                 }
                 else
                 {
-                    logger.LogWarning("Admin seeding: User configured in ADMIN_EMAIL already exists. Skipping automatic promotion to prevent privilege escalation.");
+                    logger.LogWarning("Admin seeding: User configured in ADMIN_EMAIL ({Email}) already exists (UserId: {UserId}). Skipping automatic promotion to prevent privilege escalation.", adminEmail, user.Id);
                 }
             }
         }

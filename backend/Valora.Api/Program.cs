@@ -189,17 +189,29 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 /// </summary>
 api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingService service, CancellationToken ct) =>
 {
-    var paginatedList = await service.GetListingsAsync(filter, ct);
-
-    return Results.Ok(new
+    try
     {
-        paginatedList.Items,
-        paginatedList.PageIndex,
-        paginatedList.TotalPages,
-        paginatedList.TotalCount,
-        paginatedList.HasNextPage,
-        paginatedList.HasPreviousPage
-    });
+        var paginatedList = await service.GetListingsAsync(filter, ct);
+
+        return Results.Ok(new
+        {
+            paginatedList.Items,
+            paginatedList.PageIndex,
+            paginatedList.TotalPages,
+            paginatedList.TotalCount,
+            paginatedList.HasNextPage,
+            paginatedList.HasPreviousPage
+        });
+    }
+    catch (Valora.Application.Common.Exceptions.ValidationException ex)
+    {
+        // Maintain legacy error format for backward compatibility
+        // Format: [{ "property": "PropertyName", "error": "ErrorMessage" }]
+        var legacyErrors = ex.Errors.SelectMany(kvp =>
+            kvp.Value.Select(error => new { Property = kvp.Key, Error = error }));
+
+        return Results.BadRequest(legacyErrors);
+    }
 })
 .RequireAuthorization();
 

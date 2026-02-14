@@ -61,7 +61,8 @@ public class ExceptionHandlingMiddleware
             case NotFoundException:
                 statusCode = (int)HttpStatusCode.NotFound;
                 title = "Resource Not Found";
-                detail = exception.Message;
+                // Hide specific not found details in production to prevent enumeration/leakage
+                detail = _env.IsProduction() ? "The requested resource was not found." : exception.Message;
                 break;
             case UnauthorizedAccessException:
                 statusCode = (int)HttpStatusCode.Unauthorized;

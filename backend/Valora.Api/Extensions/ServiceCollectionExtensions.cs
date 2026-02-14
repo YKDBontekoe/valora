@@ -47,12 +47,10 @@ public static class ServiceCollectionExtensions
                     }
                     else
                     {
-                        // In production, default to allowing all origins if not explicitly configured.
-                        // This prevents startup crashes while maintaining functionality for mobile apps.
-                        // A warning is logged at startup if this fallback is active.
-                        policy.AllowAnyOrigin()
-                              .AllowAnyMethod()
-                              .AllowAnyHeader();
+                        // In production, do NOT allow any origin by default.
+                        // This forces explicit configuration.
+                        // A warning will be logged at startup if no origins are configured.
+                        policy.SetIsOriginAllowed(origin => false);
                     }
                 }
             });
@@ -74,7 +72,7 @@ public static class ServiceCollectionExtensions
             if (!hasValidConfig)
             {
                 var logger = app.Services.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning("SECURITY WARNING: CORS AllowedOrigins not configured. Defaulting to AllowAnyOrigin. This is insecure. Configure AllowedOrigins or ALLOWED_ORIGINS to restrict access.");
+                logger.LogWarning("SECURITY WARNING: CORS AllowedOrigins not configured. Defaulting to DenyAll. This is secure but may break clients. Configure AllowedOrigins or ALLOWED_ORIGINS to allow access.");
             }
         }
     }
