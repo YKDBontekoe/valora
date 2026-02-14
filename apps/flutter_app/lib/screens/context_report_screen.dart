@@ -29,9 +29,6 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
       child: Consumer<ContextReportProvider>(
         builder: (context, provider, _) {
           final report = provider.report;
-          final reportChildren = report != null
-              ? ContextReportView.buildChildren(context, report: report)
-              : null;
 
           return Scaffold(
             appBar: AppBar(
@@ -46,11 +43,15 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
               ],
             ),
             body: SafeArea(
-              child: reportChildren != null
+              child: report != null
                   ? ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      itemCount: reportChildren.length,
-                      itemBuilder: (context, index) => reportChildren[index],
+                      itemCount: ContextReportView.childCount(report),
+                      itemBuilder: (context, index) => ContextReportView.buildChild(
+                        context,
+                        index,
+                        report,
+                      ),
                     )
                   : _InputForm(
                       controller: _inputController,

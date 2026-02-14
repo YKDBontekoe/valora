@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/context_report.dart';
+import '../../providers/context_report_provider.dart';
 import 'report_widgets.dart';
 import 'ai_insight_card.dart';
 
@@ -15,27 +17,49 @@ class ContextReportView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We use a Column by default, which is compatible with being embedded in other ScrollViews.
-    // For lazy loading in a ListView, use buildChildren directly.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: buildChildren(context, report: report, showHeader: showHeader),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: childCount(report, showHeader: showHeader),
+      itemBuilder: (context, index) => buildChild(context, index, report, showHeader: showHeader),
     );
   }
 
-  /// Builds the individual components of the report as a list of widgets.
-  /// This allows for lazy loading when used in a ListView.builder or similar.
-  static List<Widget> buildChildren(
-    BuildContext context, {
-    required ContextReport report,
+  static int childCount(ContextReport report, {bool showHeader = true}) {
+    int count = 0;
+    if (showHeader) count += 2; // Header + Spacing
+    count += 2; // AI Insight + Spacing
+    count += 2; // Scores + Spacing
+
+    if (report.socialMetrics.isNotEmpty) count++;
+    if (report.crimeMetrics.isNotEmpty) count++;
+    if (report.demographicsMetrics.isNotEmpty) count++;
+    if (report.housingMetrics.isNotEmpty) count++;
+    if (report.mobilityMetrics.isNotEmpty) count++;
+    if (report.amenityMetrics.isNotEmpty) count++;
+    if (report.environmentMetrics.isNotEmpty) count++;
+
+    if (report.warnings.isNotEmpty) count += 2; // Spacing + Warnings
+    count += 2; // Spacing + Sources
+    count += 1; // Bottom Spacing
+
+    return count;
+  }
+
+  static Widget buildChild(
+    BuildContext context,
+    int index,
+    ContextReport report, {
     bool showHeader = true,
   }) {
     final theme = Theme.of(context);
+    int currentIndex = 0;
 
-    return [
-      // Header with address
-      if (showHeader) ...[
-        Container(
+    // Header
+    if (showHeader) {
+      if (index == currentIndex++) {
+        return Container(
+          key: const ValueKey('report-header'),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -82,19 +106,26 @@ class ContextReportView extends StatelessWidget {
               ],
             ],
           ),
-        ),
-        const SizedBox(height: 24),
-      ],
+        );
+      }
+      if (index == currentIndex++) return const SizedBox(key: ValueKey('report-header-spacing'), height: 24);
+    }
 
-      // AI Insight
-      AiInsightCard(report: report),
-      const SizedBox(height: 24),
+    // AI Insight
+    if (index == currentIndex++) {
+      return AiInsightCard(
+        key: const ValueKey('report-ai-insight'),
+        report: report,
+      );
+    }
+    if (index == currentIndex++) return const SizedBox(key: ValueKey('report-ai-insight-spacing'), height: 24);
 
-      // Score overview
-      Row(
+    // Score overview
+    if (index == currentIndex++) {
+      return Row(
+        key: const ValueKey('report-scores'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main gauge
           Expanded(
             child: Center(
               child: ScoreGauge(
@@ -105,7 +136,6 @@ class ContextReportView extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Radar chart
           if (report.categoryScores.isNotEmpty) ...[
             const SizedBox(width: 16),
             Expanded(
@@ -116,72 +146,130 @@ class ContextReportView extends StatelessWidget {
             ),
           ],
         ],
-      ),
-      const SizedBox(height: 24),
+      );
+    }
+    if (index == currentIndex++) return const SizedBox(key: ValueKey('report-scores-spacing'), height: 24);
 
-      // Category cards
-      if (report.socialMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Social',
-          icon: Icons.people_rounded,
-          metrics: report.socialMetrics,
-          score: report.categoryScores['Social'],
-          accentColor: const Color(0xFF3B82F6),
-          initiallyExpanded: true,
-        ),
-      if (report.crimeMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Safety',
-          icon: Icons.shield_rounded,
-          metrics: report.crimeMetrics,
-          score: report.categoryScores['Safety'],
-          accentColor: const Color(0xFF10B981),
-        ),
-      if (report.demographicsMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Demographics',
-          icon: Icons.family_restroom_rounded,
-          metrics: report.demographicsMetrics,
-          score: report.categoryScores['Demographics'],
-          accentColor: const Color(0xFF8B5CF6),
-        ),
-      if (report.housingMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Housing',
-          icon: Icons.home_work_rounded,
-          metrics: report.housingMetrics,
-          score: report.categoryScores['Housing'],
-          accentColor: const Color(0xFFEC4899),
-        ),
-      if (report.mobilityMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Mobility',
-          icon: Icons.directions_car_rounded,
-          metrics: report.mobilityMetrics,
-          score: report.categoryScores['Mobility'],
-          accentColor: const Color(0xFF0EA5E9),
-        ),
-      if (report.amenityMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Amenities',
-          icon: Icons.store_rounded,
-          metrics: report.amenityMetrics,
-          score: report.categoryScores['Amenities'],
-          accentColor: const Color(0xFFF59E0B),
-        ),
-      if (report.environmentMetrics.isNotEmpty)
-        MetricCategoryCard(
-          title: 'Environment',
-          icon: Icons.eco_rounded,
-          metrics: report.environmentMetrics,
-          score: report.categoryScores['Environment'],
-          accentColor: const Color(0xFF22C55E),
-        ),
+    // Category cards
+    if (report.socialMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Social'),
+            title: 'Social',
+            icon: Icons.people_rounded,
+            metrics: report.socialMetrics,
+            score: report.categoryScores['Social'],
+            accentColor: const Color(0xFF3B82F6),
+            isExpanded: provider.isExpanded('Social', defaultValue: true),
+            onToggle: (expanded) => provider.setExpanded('Social', expanded),
+          ),
+        );
+      }
+    }
+    if (report.crimeMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Safety'),
+            title: 'Safety',
+            icon: Icons.shield_rounded,
+            metrics: report.crimeMetrics,
+            score: report.categoryScores['Safety'],
+            accentColor: const Color(0xFF10B981),
+            isExpanded: provider.isExpanded('Safety'),
+            onToggle: (expanded) => provider.setExpanded('Safety', expanded),
+          ),
+        );
+      }
+    }
+    if (report.demographicsMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Demographics'),
+            title: 'Demographics',
+            icon: Icons.family_restroom_rounded,
+            metrics: report.demographicsMetrics,
+            score: report.categoryScores['Demographics'],
+            accentColor: const Color(0xFF8B5CF6),
+            isExpanded: provider.isExpanded('Demographics'),
+            onToggle: (expanded) => provider.setExpanded('Demographics', expanded),
+          ),
+        );
+      }
+    }
+    if (report.housingMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Housing'),
+            title: 'Housing',
+            icon: Icons.home_work_rounded,
+            metrics: report.housingMetrics,
+            score: report.categoryScores['Housing'],
+            accentColor: const Color(0xFFEC4899),
+            isExpanded: provider.isExpanded('Housing'),
+            onToggle: (expanded) => provider.setExpanded('Housing', expanded),
+          ),
+        );
+      }
+    }
+    if (report.mobilityMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Mobility'),
+            title: 'Mobility',
+            icon: Icons.directions_car_rounded,
+            metrics: report.mobilityMetrics,
+            score: report.categoryScores['Mobility'],
+            accentColor: const Color(0xFF0EA5E9),
+            isExpanded: provider.isExpanded('Mobility'),
+            onToggle: (expanded) => provider.setExpanded('Mobility', expanded),
+          ),
+        );
+      }
+    }
+    if (report.amenityMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Amenities'),
+            title: 'Amenities',
+            icon: Icons.store_rounded,
+            metrics: report.amenityMetrics,
+            score: report.categoryScores['Amenities'],
+            accentColor: const Color(0xFFF59E0B),
+            isExpanded: provider.isExpanded('Amenities'),
+            onToggle: (expanded) => provider.setExpanded('Amenities', expanded),
+          ),
+        );
+      }
+    }
+    if (report.environmentMetrics.isNotEmpty) {
+      if (index == currentIndex++) {
+        return Consumer<ContextReportProvider>(
+          builder: (context, provider, _) => MetricCategoryCard(
+            key: const ValueKey('report-category-Environment'),
+            title: 'Environment',
+            icon: Icons.eco_rounded,
+            metrics: report.environmentMetrics,
+            score: report.categoryScores['Environment'],
+            accentColor: const Color(0xFF22C55E),
+            isExpanded: provider.isExpanded('Environment'),
+            onToggle: (expanded) => provider.setExpanded('Environment', expanded),
+          ),
+        );
+      }
+    }
 
-      // Warnings
-      if (report.warnings.isNotEmpty) ...[
-        const SizedBox(height: 12),
-        Container(
+    // Warnings
+    if (report.warnings.isNotEmpty) {
+      if (index == currentIndex++) return const SizedBox(key: ValueKey('report-warnings-spacing-top'), height: 12);
+      if (index == currentIndex++) {
+        return Container(
+          key: const ValueKey('report-warnings'),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
@@ -223,12 +311,15 @@ class ContextReportView extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ],
+        );
+      }
+    }
 
-      // Source attributions
-      const SizedBox(height: 16),
-      ExpansionTile(
+    // Source attributions
+    if (index == currentIndex++) return const SizedBox(key: ValueKey('report-sources-spacing-top'), height: 16);
+    if (index == currentIndex++) {
+      return ExpansionTile(
+        key: const ValueKey('report-sources'),
         tilePadding: EdgeInsets.zero,
         title: Text(
           'Data Sources',
@@ -244,8 +335,11 @@ class ContextReportView extends StatelessWidget {
               ),
             )
             .toList(),
-      ),
-      const SizedBox(height: 24),
-    ];
+      );
+    }
+
+    if (index == currentIndex++) return const SizedBox(key: ValueKey('report-bottom-spacing'), height: 24);
+
+    return const SizedBox.shrink();
   }
 }
