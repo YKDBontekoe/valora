@@ -12,6 +12,14 @@ import 'providers/theme_provider.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
+import 'services/http/clients/ai_api_client.dart';
+import 'services/http/clients/context_report_api_client.dart';
+import 'services/http/clients/listings_api_client.dart';
+import 'services/http/clients/map_api_client.dart';
+import 'services/http/clients/notifications_api_client.dart';
+import 'services/http/core/http_transport.dart';
+import 'services/http/core/api_runner.dart';
+import 'package:http/http.dart' as http;
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/notification_service.dart';
@@ -76,10 +84,48 @@ Future<void> main() async {
             update: (context, authService, previous) =>
                 previous ?? AuthProvider(authService: authService),
           ),
-          ProxyProvider2<AuthService, AuthProvider, ApiService>(
-            update: (context, authService, authProvider, _) => ApiService(
-              authToken: authProvider.token,
-              refreshTokenCallback: authProvider.refreshSession,
+          ProxyProvider<AuthProvider, HttpTransport>(
+            update: (context, authProvider, _) => HttpTransport(
+              client: http.Client(),
+              authTokenReader: () => authProvider.token,
+              refreshToken: authProvider.refreshSession,
+            ),
+          ),
+          ProxyProvider<HttpTransport, ListingsApiClient>(
+            update: (context, transport, _) => ListingsApiClient(
+              transport: transport,
+              runner: defaultApiRunner,
+            ),
+          ),
+          ProxyProvider<HttpTransport, ContextReportApiClient>(
+            update: (context, transport, _) => ContextReportApiClient(
+              transport: transport,
+              runner: defaultApiRunner,
+            ),
+          ),
+          ProxyProvider<HttpTransport, MapApiClient>(
+            update: (context, transport, _) => MapApiClient(transport: transport),
+          ),
+          ProxyProvider<HttpTransport, NotificationsApiClient>(
+            update: (context, transport, _) => NotificationsApiClient(transport: transport),
+          ),
+          ProxyProvider<HttpTransport, AiApiClient>(
+            update: (context, transport, _) => AiApiClient(transport: transport),
+          ),
+          ProxyProvider5<
+              ListingsApiClient,
+              ContextReportApiClient,
+              MapApiClient,
+              NotificationsApiClient,
+              AiApiClient,
+              ApiService>(
+            update: (context, listings, contextReports, map, notifications, ai, _) =>
+                ApiService.fromClients(
+              listingsApiClient: listings,
+              contextReportApiClient: contextReports,
+              mapApiClient: map,
+              notificationsApiClient: notifications,
+              aiApiClient: ai,
             ),
           ),
           ChangeNotifierProxyProvider<ApiService, NotificationService>(
