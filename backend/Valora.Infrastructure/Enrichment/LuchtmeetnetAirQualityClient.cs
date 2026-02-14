@@ -108,19 +108,43 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         }
     }
 
+    /// <summary>
+    /// Implements a "Two-Phase Lookup" to find the nearest air quality station.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why Two Phases?</b>
+    /// The Luchtmeetnet API does not support geospatial queries (e.g., "find stations near X,Y").
+    /// It only lists stations with basic metadata.
+    /// </para>
+    /// <para>
+    /// <b>Phase 1:</b> Fetch all available station IDs by iterating through pagination pages.
+    /// </para>
+    /// <para>
+    /// <b>Phase 2:</b> For each ID, fetch the station details (coordinates) to calculate the distance.
+    /// This is done in parallel using <see cref="Parallel.ForEachAsync{T}"/>.
+    /// </para>
+    /// <para>
+    /// <b>Optimization:</b> Station details are heavily cached (24h) since locations don't move.
+    /// This makes the seemingly expensive "fetch all details" operation fast after the first run.
+    /// </para>
+    /// </remarks>
     private async Task<(string Id, string Name, double DistanceMeters)?> FindNearestStationAsync(
         ResolvedLocationDto location,
         CancellationToken cancellationToken)
     {
+        // Phase 1: Get all IDs
         var stationIds = await FetchAllStationIdsAsync(cancellationToken);
         if (stationIds.Count == 0) return null;
 
+        // Phase 2: Parallel fetch details + distance calculation
         return await FindNearestFromIdsAsync(stationIds, location, cancellationToken);
     }
 
     private async Task<HashSet<string>> FetchAllStationIdsAsync(CancellationToken cancellationToken)
     {
         var stationIds = new HashSet<string>();
+        // API usually has < 10 pages of stations (approx 100-150 stations total in NL)
         for (var page = 1; page <= 10; page++)
         {
             var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations?page={page}";

@@ -79,11 +79,13 @@ classDiagram
 -   **Valora.Infrastructure**: Defines *how* it works (External APIs, Database). Implements Application interfaces.
 -   **Valora.Api**: The entry point. Wires everything together and handles HTTP requests.
 
+See **[Developer Guide](docs/developer-guide.md)** for detailed architectural patterns and decision records.
+
 ## Documentation Index
 
 -   **[Onboarding Guide](docs/onboarding.md)**: Setup instructions.
--   **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Deep dive into the "Fan-Out" process.
--   **[Data Flow: Enrichment](docs/data-flow-enrichment.md)**: How listings are stored and updated.
+-   **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Deep dive into the "Fan-Out" process from API to external sources.
+-   **[Data Flow: Persistence & Enrichment](docs/data-flow-enrichment.md)**: Walkthrough from API request to database persistence.
 -   **[Developer Guide](docs/developer-guide.md)**: Coding standards, patterns, and testing.
 -   **[User Guide](docs/user-guide.md)**: App features walkthrough.
 

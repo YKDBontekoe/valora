@@ -34,6 +34,25 @@ public sealed class CbsGeoClient : ICbsGeoClient
         _logger = logger;
     }
 
+    /// <summary>
+    /// Fetches neighborhood boundaries (GeoJSON) from the PDOK WFS service within a bounding box.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Uses the WFS 2.0.0 protocol. The <c>typeName=buurten</c> specifies we want neighborhood polygons.
+    /// </para>
+    /// <para>
+    /// <b>Coordinate Systems:</b>
+    /// We request <c>srsName=EPSG:4326</c> (WGS84 Lat/Lon) to match our internal model and frontend maps (Leaflet/Mapbox).
+    /// The BBOX parameter must also be explicitly typed as <c>urn:ogc:def:crs:EPSG::4326</c> to ensure the server interprets
+    /// the coordinates as Lat/Lon instead of X/Y.
+    /// </para>
+    /// <para>
+    /// <b>Caching:</b>
+    /// Results are cached for 24 hours because neighborhood boundaries and their associated annual statistics (CBS)
+    /// change very infrequently (yearly updates).
+    /// </para>
+    /// </remarks>
     public async Task<List<MapOverlayDto>> GetNeighborhoodOverlaysAsync(
         double minLat,
         double minLon,
@@ -48,11 +67,20 @@ public sealed class CbsGeoClient : ICbsGeoClient
             return cached!;
         }
 
+        // Construct BBOX string for WFS request.
+        // Format: minLat,minLon,maxLat,maxLon
         var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
+
+        // PDOK WFS URL:
+        // - typeName=buurten: Neighborhoods dataset
+        // - srsName=EPSG:4326: Return GeoJSON in WGS84
+        // - bbox=...,urn:ogc:def:crs:EPSG::4326: Filter by bounds using WGS84 definition
         var url = $"https://service.pdok.nl/cbs/wijkenenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
 
         try
         {
+            // Note: The HTTP client should have a longer timeout (e.g., 60s) for this call
+            // as WFS responses for dense urban areas can be large (MBs of GeoJSON).
             using var response = await _httpClient.GetAsync(url, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
