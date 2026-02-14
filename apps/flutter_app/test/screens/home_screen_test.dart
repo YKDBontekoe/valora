@@ -46,8 +46,6 @@ void main() {
     expect(find.text('Insights'), findsAtLeastNWidgets(1));
     expect(find.text('Saved'), findsAtLeastNWidgets(1));
     expect(find.text('Settings'), findsAtLeastNWidgets(1));
-
-    // ignore timer issues in this test
   }, skip: true);
 
   testWidgets('HomeScreen switches tabs when tapped', (WidgetTester tester) async {

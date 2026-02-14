@@ -104,6 +104,8 @@ class _GaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (score <= 0) return; // Nothing to paint
+
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
     final startAngle = math.pi * 0.75;
@@ -114,7 +116,7 @@ class _GaugePainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    if (hasGradient) {
+    if (hasGradient && sweepAngle > 0) {
       paint.shader = SweepGradient(
         startAngle: startAngle,
         endAngle: startAngle + sweepAngle,
