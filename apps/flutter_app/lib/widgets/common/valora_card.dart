@@ -47,7 +47,12 @@ class _ValoraCardState extends State<ValoraCard> {
 
   List<BoxShadow> _resolveShadow(bool isDark) {
     if (_isPressed) return isDark ? ValoraShadows.smDark : ValoraShadows.sm;
-    if (_isHovered) return isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+    if (_isHovered) {
+      if (widget.elevation <= ValoraSpacing.elevationNone) return [];
+      if (widget.elevation <= ValoraSpacing.elevationSm) return isDark ? ValoraShadows.mdDark : ValoraShadows.md;
+      if (widget.elevation <= ValoraSpacing.elevationMd) return isDark ? ValoraShadows.lgDark : ValoraShadows.lg;
+      return isDark ? ValoraShadows.xlDark : ValoraShadows.xl;
+    }
 
     if (widget.elevation <= ValoraSpacing.elevationNone) return [];
     if (widget.elevation <= ValoraSpacing.elevationSm) {

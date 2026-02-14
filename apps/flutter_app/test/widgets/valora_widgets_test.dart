@@ -67,7 +67,7 @@ void main() {
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
       final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
-      expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
+      expect(hoveredDecoration.boxShadow, ValoraShadows.md);
     });
 
     testWidgets('handles elevationNone (no shadows)', (
@@ -153,7 +153,7 @@ void main() {
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
       final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
-      expect(hoveredDecoration.boxShadow, ValoraShadows.lg);
+      expect(hoveredDecoration.boxShadow, ValoraShadows.xl);
     });
 
     testWidgets('handles press state (reverts to base shadow)', (
@@ -182,7 +182,7 @@ void main() {
 
       var container = tester.widget<AnimatedContainer>(cardFinder);
       var decoration = container.decoration as BoxDecoration;
-      expect(decoration.boxShadow, ValoraShadows.lg); // Lifted
+      expect(decoration.boxShadow, ValoraShadows.md); // Lifted
 
       // Now press down
       await tester.startGesture(tester.getCenter(find.byType(ValoraCard)));
