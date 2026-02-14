@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Text.Json;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -43,69 +43,40 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             return null;
         }
 
-        var measurementUrl =
-            $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{station.Value.Id}/measurements?formula=PM25&order_by=timestamp_measured&order_direction=desc&page=1";
+        var measurementUrl = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{station.Value.Id}/measurements?formula=PM25&order_by=timestamp_measured&order_direction=desc&page=1";
 
-        using var measurementResponse = await _httpClient.GetAsync(measurementUrl, cancellationToken);
-        if (!measurementResponse.IsSuccessStatusCode)
-        {
-            _logger.LogWarning(
-                "Luchtmeetnet measurement lookup failed for station {StationId} with status {StatusCode}",
-                station.Value.Id,
-                measurementResponse.StatusCode);
-            return null;
-        }
-
-        JsonDocument measurementDocument;
         try
         {
-            using var measurementContent = await measurementResponse.Content.ReadAsStreamAsync(cancellationToken);
-            measurementDocument = await JsonDocument.ParseAsync(measurementContent, cancellationToken: cancellationToken);
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Luchtmeetnet measurement lookup returned invalid JSON for station {StationId}", station.Value.Id);
-            return null;
-        }
+            var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
+            var first = response?.Data?.FirstOrDefault();
 
-        using (measurementDocument)
-        {
-            if (!measurementDocument.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            if (first is null)
             {
-                _logger.LogWarning("Luchtmeetnet measurement lookup did not include a data array for station {StationId}", station.Value.Id);
+                _logger.LogWarning("Luchtmeetnet measurement lookup did not include data for station {StationId}", station.Value.Id);
                 return null;
             }
 
-            var first = data.EnumerateArray().FirstOrDefault();
-
-            double? pm25 = null;
             DateTimeOffset? measuredAt = null;
-
-            if (first.ValueKind == JsonValueKind.Object)
+            if (DateTimeOffset.TryParse(first.TimestampMeasured, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var timestamp))
             {
-                if (first.TryGetProperty("value", out var valueElement) && valueElement.TryGetDouble(out var parsedValue))
-                {
-                    pm25 = parsedValue;
-                }
-
-                if (first.TryGetProperty("timestamp_measured", out var tsElement) &&
-                    tsElement.ValueKind == JsonValueKind.String &&
-                    DateTimeOffset.TryParse(tsElement.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var timestamp))
-                {
-                    measuredAt = timestamp;
-                }
+                measuredAt = timestamp;
             }
 
             var snapshot = new AirQualitySnapshotDto(
                 StationId: station.Value.Id,
                 StationName: station.Value.Name,
                 StationDistanceMeters: station.Value.DistanceMeters,
-                Pm25: pm25,
+                Pm25: first.Value,
                 MeasuredAtUtc: measuredAt,
                 RetrievedAtUtc: DateTimeOffset.UtcNow);
 
             _cache.Set(cacheKey, snapshot, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
             return snapshot;
+        }
+        catch (Exception ex)
+        {
+             _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed for station {StationId}", station.Value.Id);
+             return null;
         }
     }
 
@@ -113,84 +84,69 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         ResolvedLocationDto location,
         CancellationToken cancellationToken)
     {
-        // Phase 1: Get all station IDs (lightweight list)
+        var stationIds = await FetchAllStationIdsAsync(cancellationToken);
+        if (stationIds.Count == 0) return null;
+
+        return await FindNearestFromIdsAsync(stationIds, location, cancellationToken);
+    }
+
+    private async Task<HashSet<string>> FetchAllStationIdsAsync(CancellationToken cancellationToken)
+    {
         var stationIds = new HashSet<string>();
-        
-        // Loop through pages to get all station IDs
-        // Pagination seems to go up to ~5-6 pages currently
         for (var page = 1; page <= 10; page++)
         {
             var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations?page={page}";
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Luchtmeetnet station list lookup failed for page {Page} with status {StatusCode}", page, response.StatusCode);
-                continue;
-            }
-
-            JsonDocument document;
             try
             {
-                using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-                document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogWarning(ex, "Luchtmeetnet station list returned invalid JSON for page {Page}", page);
-                continue;
-            }
+                var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetStationListResponse>(url, cancellationToken);
 
-            using (document)
-            {
-                if (!document.RootElement.TryGetProperty("data", out var stations) || stations.ValueKind != JsonValueKind.Array)
+                if (response?.Data is not null)
                 {
-                    _logger.LogWarning("Luchtmeetnet station list did not include a data array for page {Page}", page);
-                    break; // Likely end of pages or bad response
-                }
-
-                if (stations.GetArrayLength() == 0)
-                {
-                    break; // End of pages
-                }
-
-                foreach (var station in stations.EnumerateArray())
-                {
-                    if (station.TryGetProperty("number", out var idElement) && idElement.ValueKind == JsonValueKind.String)
+                    foreach (var station in response.Data)
                     {
-                        var id = idElement.GetString();
-                        if (!string.IsNullOrWhiteSpace(id))
+                        if (!string.IsNullOrWhiteSpace(station.Id))
                         {
-                            stationIds.Add(id);
+                            stationIds.Add(station.Id);
                         }
                     }
                 }
+
+                if (response?.Pagination is not null && page >= response.Pagination.LastPage)
+                {
+                    break;
+                }
                 
-                // Check if we reached the last page
-                if (document.RootElement.TryGetProperty("pagination", out var pagination) && 
-                    pagination.TryGetProperty("last_page", out var lastPageElement) &&
-                    lastPageElement.TryGetInt32(out var lastPage) &&
-                    page >= lastPage)
+                if (response?.Data is null || response.Data.Count == 0)
                 {
                     break;
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Luchtmeetnet station list lookup failed for page {Page}", page);
+                continue;
+            }
         }
+        return stationIds;
+    }
 
-        // Phase 2: Fetch details for each station to get coordinates (Parallel with limits)
+    private async Task<(string Id, string Name, double DistanceMeters)?> FindNearestFromIdsAsync(
+        HashSet<string> stationIds,
+        ResolvedLocationDto location,
+        CancellationToken cancellationToken)
+    {
         (string Id, string Name, double DistanceMeters)? nearest = null;
         var parallelOptions = new ParallelOptions 
         { 
             MaxDegreeOfParallelism = 5,
             CancellationToken = cancellationToken 
         };
-
-        // We use a lock to safely update the 'nearest' variable from parallel tasks
         var lockObj = new object();
 
-        await Parallel.ForEachAsync(stationIds, parallelOptions, async (id, token) =>
+        await Parallel.ForEachAsync(stationIds, parallelOptions, async (stationId, token) =>
         {
-            var detail = await GetStationDetailAsync(id, token);
+            // Fetch detail to get coordinates
+            var detail = await GetStationDetailAsync(stationId, token);
             if (detail is null) return;
 
             var (name, lat, lon) = detail.Value;
@@ -200,7 +156,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             {
                 if (!nearest.HasValue || distance < nearest.Value.DistanceMeters)
                 {
-                    nearest = (id, name, distance);
+                    nearest = (stationId, name, distance);
                 }
             }
         });
@@ -218,25 +174,20 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
         var encodedId = Uri.EscapeDataString(stationId);
         var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedId}";
+
         try 
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
+            var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetStationDetailResponse>(url, cancellationToken);
+            if (response?.Data?.Geometry?.Coordinates is null || response.Data.Geometry.Coordinates.Length < 2)
+            {
+                return null;
+            }
 
-            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-
-            if (!document.RootElement.TryGetProperty("data", out var data)) return null;
-
-            if (!TryGetStationCoordinates(data, out var lat, out var lon)) return null;
-
-            var name = data.TryGetProperty("location", out var nameElement) && nameElement.ValueKind == JsonValueKind.String
-                ? nameElement.GetString() ?? stationId
-                : stationId;
+            var lon = response.Data.Geometry.Coordinates[0];
+            var lat = response.Data.Geometry.Coordinates[1];
+            var name = !string.IsNullOrWhiteSpace(response.Data.Name) ? response.Data.Name : stationId;
 
             var result = (name, lat, lon);
-            
-            // Cache station metadata for 24 hours since coordinates rarely change
             _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
             
             return result;
@@ -246,28 +197,5 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             _logger.LogWarning(ex, "Failed to fetch details for station {StationId}", stationId);
             return null;
         }
-    }
-
-    private static bool TryGetStationCoordinates(JsonElement station, out double latitude, out double longitude)
-    {
-        latitude = 0;
-        longitude = 0;
-
-        if (!station.TryGetProperty("geometry", out var geometry) ||
-            !geometry.TryGetProperty("coordinates", out var coordinates) ||
-            coordinates.ValueKind != JsonValueKind.Array ||
-            coordinates.GetArrayLength() < 2)
-        {
-            return false;
-        }
-
-        var lonElement = coordinates[0];
-        var latElement = coordinates[1];
-        if (!lonElement.TryGetDouble(out longitude) || !latElement.TryGetDouble(out latitude))
-        {
-            return false;
-        }
-
-        return true;
     }
 }
