@@ -118,6 +118,11 @@ public sealed class OverpassAmenityClient : IAmenityClient
                     else if (property.NameEquals("leisure")) leisure = property.Value.GetString();
                     else if (property.NameEquals("highway")) highway = property.Value.GetString();
                     else if (property.NameEquals("railway")) railway = property.Value.GetString();
+
+                    if (amenity is not null && shop is not null && leisure is not null && highway is not null && railway is not null)
+                    {
+                        break;
+                    }
                 }
 
                 if (amenity == "school") schoolCount++;
