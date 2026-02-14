@@ -51,63 +51,56 @@ public sealed class CbsGeoClient : ICbsGeoClient
         var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
         var url = $"https://service.pdok.nl/cbs/wijkenenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
 
-        try
+        using var response = await _httpClient.GetAsync(url, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("PDOK WFS failed with status {StatusCode}", response.StatusCode);
-                return [];
-            }
-
-            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-
-            if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
-            {
-                return [];
-            }
-
-            var results = new List<MapOverlayDto>();
-            foreach (var feature in features.EnumerateArray())
-            {
-                if (!feature.TryGetProperty("properties", out var props)) continue;
-
-                if (!props.TryGetProperty("buurtcode", out var codeElem) || codeElem.ValueKind != JsonValueKind.String)
-                {
-                    continue;
-                }
-                var neighborhoodCode = codeElem.GetString();
-                if (string.IsNullOrEmpty(neighborhoodCode)) continue;
-
-                var neighborhoodName = "Unknown";
-                if (props.TryGetProperty("buurtnaam", out var nameElem) && nameElem.ValueKind == JsonValueKind.String)
-                {
-                    neighborhoodName = nameElem.GetString() ?? "Unknown";
-                }
-
-                var (value, display) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
-
-                if (value.HasValue)
-                {
-                    results.Add(new MapOverlayDto(
-                        neighborhoodCode,
-                        neighborhoodName,
-                        metric.ToString(),
-                        value.Value,
-                        display,
-                        feature.Clone()));
-                }
-            }
-
-            _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
-            return results;
+            _logger.LogWarning("PDOK WFS failed with status {StatusCode}", response.StatusCode);
+            response.EnsureSuccessStatusCode();
         }
-        catch (Exception ex)
+
+        using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+
+        if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
         {
-            _logger.LogError(ex, "Failed to fetch CBS Geo overlays");
             return [];
         }
+
+        var results = new List<MapOverlayDto>();
+        foreach (var feature in features.EnumerateArray())
+        {
+            if (!feature.TryGetProperty("properties", out var props)) continue;
+
+            if (!props.TryGetProperty("buurtcode", out var codeElem) || codeElem.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+            var neighborhoodCode = codeElem.GetString();
+            if (string.IsNullOrEmpty(neighborhoodCode)) continue;
+
+            var neighborhoodName = "Unknown";
+            if (props.TryGetProperty("buurtnaam", out var nameElem) && nameElem.ValueKind == JsonValueKind.String)
+            {
+                neighborhoodName = nameElem.GetString() ?? "Unknown";
+            }
+
+            var (value, display) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
+
+            if (value.HasValue)
+            {
+                results.Add(new MapOverlayDto(
+                    neighborhoodCode,
+                    neighborhoodName,
+                    metric.ToString(),
+                    value.Value,
+                    display,
+                    feature.Clone()));
+            }
+        }
+
+        _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
+        return results;
     }
 
     private async Task<(double? Value, string Display)> GetMetricValueAsync(string code, MapOverlayMetric metric, CancellationToken ct)

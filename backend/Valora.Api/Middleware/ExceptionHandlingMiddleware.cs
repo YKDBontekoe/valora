@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Valora.Application.Common.Exceptions;
 
