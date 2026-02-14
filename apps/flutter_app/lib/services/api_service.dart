@@ -44,6 +44,11 @@ class ApiService {
         _retryOptions = retryOptions ?? const RetryOptions(maxAttempts: 3);
 
   static Future<R> _defaultRunner<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel}) async {
+    // Optimization: Avoid isolate overhead for small responses.
+    // 10KB is a heuristic threshold where the cost of spawning an isolate outweighs the main thread parsing cost.
+    if (message is String && message.length < 10240) {
+      return callback(message);
+    }
     return await compute(callback, message, debugLabel: debugLabel);
   }
 

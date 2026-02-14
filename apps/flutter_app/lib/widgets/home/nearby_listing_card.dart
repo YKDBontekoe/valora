@@ -62,6 +62,9 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                         clipBehavior: Clip.antiAlias,
                         child: widget.listing.imageUrl != null
                             ? RepaintBoundary(
+                                // Isolating the repaint boundary for the image prevents
+                                // unnecessary painting of the complex image layer during
+                                // list scrolling or parent widget rebuilds.
                                 child: Hero(
                                   tag: widget.listing.id,
                                   child: CachedNetworkImage(
