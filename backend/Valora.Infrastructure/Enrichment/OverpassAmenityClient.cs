@@ -100,11 +100,30 @@ public sealed class OverpassAmenityClient : IAmenityClient
                     continue;
                 }
 
-                var amenity = GetTag(tags, "amenity");
-                var shop = GetTag(tags, "shop");
-                var leisure = GetTag(tags, "leisure");
-                var highway = GetTag(tags, "highway");
-                var railway = GetTag(tags, "railway");
+                string? amenity = null;
+                string? shop = null;
+                string? leisure = null;
+                string? highway = null;
+                string? railway = null;
+
+                foreach (var property in tags.EnumerateObject())
+                {
+                    if (property.Value.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    if (property.NameEquals("amenity")) amenity = property.Value.GetString();
+                    else if (property.NameEquals("shop")) shop = property.Value.GetString();
+                    else if (property.NameEquals("leisure")) leisure = property.Value.GetString();
+                    else if (property.NameEquals("highway")) highway = property.Value.GetString();
+                    else if (property.NameEquals("railway")) railway = property.Value.GetString();
+
+                    if (amenity is not null && shop is not null && leisure is not null && highway is not null && railway is not null)
+                    {
+                        break;
+                    }
+                }
 
                 if (amenity == "school") schoolCount++;
                 if (shop == "supermarket") supermarketCount++;
@@ -144,16 +163,6 @@ public sealed class OverpassAmenityClient : IAmenityClient
              + $"nwr(around:{radiusMeters},{lat},{lon})[highway=bus_stop];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[railway=station];"
              + ");out center tags;";
-    }
-
-    private static string? GetTag(JsonElement tags, string key)
-    {
-        if (!tags.TryGetProperty(key, out var value) || value.ValueKind != JsonValueKind.String)
-        {
-            return null;
-        }
-
-        return value.GetString();
     }
 
     private static bool TryGetCoordinates(JsonElement element, out double latitude, out double longitude)

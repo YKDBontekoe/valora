@@ -7,6 +7,7 @@ import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/providers/user_profile_provider.dart';
 import 'package:valora_app/widgets/report/metric_category_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../mocks/mock_user_profile_provider.dart';
 
 class _FakeApiService extends ApiService {
@@ -83,7 +84,10 @@ void main() {
 
     expect(find.text('Test Address'), findsOneWidget);
 
-    // 2. Find Safety and expand it
+    // 2. Verify Lazy Loading
+    expect(find.byType(MetricCategoryCard).evaluate().length, lessThan(7));
+
+    // 3. Find Safety and expand it
     final listFinder = find.byType(ListView);
     await tester.dragUntilVisible(find.text('Safety'), listFinder, const Offset(0, -100));
     await tester.pumpAndSettle();
@@ -91,16 +95,19 @@ void main() {
     await tester.tap(find.text('Safety'));
     await tester.pumpAndSettle();
 
+    // Verify it's expanded
     expect(find.text('SafetyMetric'), findsWidgets);
 
-    // 3. Scroll away
+    // 4. Scroll it way off-screen
     await tester.drag(listFinder, const Offset(0, -3000));
     await tester.pumpAndSettle();
+    expect(find.text('Safety'), findsNothing);
 
-    // 4. Scroll back
+    // 5. Scroll back and find Safety again
     await tester.dragUntilVisible(find.text('Safety'), listFinder, const Offset(0, 300));
     await tester.pumpAndSettle();
 
+    // 6. Verify expansion state was preserved
     expect(find.text('SafetyMetric'), findsWidgets);
 
     addTearDown(() {
