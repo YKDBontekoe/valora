@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/report/context_report_view.dart';
-
 import '../widgets/valora_widgets.dart';
 
 class ContextReportScreen extends StatefulWidget {
@@ -29,11 +28,16 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
       create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
       child: Consumer<ContextReportProvider>(
         builder: (context, provider, _) {
+          final report = provider.report;
+          final reportChildren = report != null
+              ? ContextReportView.buildChildren(context, report: report)
+              : null;
+
           return Scaffold(
             appBar: AppBar(
               title: const Text('Property Analytics'),
               actions: [
-                if (provider.report != null)
+                if (report != null)
                   IconButton(
                     tooltip: 'New Report',
                     onPressed: provider.clear,
@@ -42,12 +46,11 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
               ],
             ),
             body: SafeArea(
-              child: provider.report != null
-                  ? ListView(
+              child: reportChildren != null
+                  ? ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      children: [
-                        ContextReportView(report: provider.report!),
-                      ],
+                      itemCount: reportChildren.length,
+                      itemBuilder: (context, index) => reportChildren[index],
                     )
                   : _InputForm(
                       controller: _inputController,
@@ -319,5 +322,3 @@ class _InputForm extends StatelessWidget {
     }
   }
 }
-
-
