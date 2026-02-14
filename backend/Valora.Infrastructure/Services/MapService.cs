@@ -70,34 +70,30 @@ public class MapService : IMapService
     private async Task<List<MapOverlayDto>> GetPricePerSquareMeterOverlaysAsync(
         double minLat, double minLon, double maxLat, double maxLon, CancellationToken ct)
     {
-        // For PricePerSquareMeter, we first get the boundaries, then enrich with our listing data.
+        // Fetch boundaries first
         var overlays = await _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity, ct);
 
-        // Neighborhood codes from our listings are stored in the ContextReport JSON.
-        // This is tricky to query directly in EF without proper columns.
-        // However, we have NeighborhoodAvgPriceM2 on the Listing entity for some listings.
+        // Fix N+1: Query all relevant listings in the bbox once
+        var listingsInBbox = await _context.Listings
+            .Where(l => l.Latitude >= minLat && l.Latitude <= maxLat &&
+                        l.Longitude >= minLon && l.Longitude <= maxLon &&
+                        l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2 > 0)
+            .Select(l => new { l.Price, l.LivingAreaM2 })
+            .ToListAsync(ct);
+
+        double? avgPrice = null;
+        if (listingsInBbox.Any())
+        {
+            avgPrice = (double)listingsInBbox.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
+        }
 
         var results = new List<MapOverlayDto>();
         foreach (var overlay in overlays)
         {
-            // We use the neighborhood code to find relevant listings.
-            // Since we don't have a direct neighborhood column yet (it's in JSON),
-            // we'll fallback to a simplified approach:
-            // Query listings in the bbox and group them if possible, or use the pre-fetched CBS data if available.
-
-            // For now, let's use the average price from listings in our DB that fall within the vicinity.
-            // In a production app, we'd have a 'NeighborhoodCode' column on the Listing table.
-
-            var avgPrice = await _context.Listings
-                .Where(l => l.Latitude >= minLat && l.Latitude <= maxLat &&
-                            l.Longitude >= minLon && l.Longitude <= maxLon &&
-                            l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2 > 0)
-                .AverageAsync(l => (double)(l.Price!.Value / l.LivingAreaM2!.Value), ct);
-
             results.Add(overlay with {
                 MetricName = "PricePerSquareMeter",
-                MetricValue = avgPrice,
-                DisplayValue = $"€ {avgPrice:N0} / m²"
+                MetricValue = avgPrice ?? 0,
+                DisplayValue = avgPrice.HasValue ? $"€ {avgPrice:N0} / m²" : "No listing data"
             });
         }
 

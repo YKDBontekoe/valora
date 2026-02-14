@@ -5,7 +5,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
 import 'package:retry/retry.dart';
 
 import '../core/config/app_config.dart';
@@ -23,7 +22,7 @@ import 'crash_reporting_service.dart';
 typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
 
 class ApiService {
-  final String? _authToken;
+  String? _authToken;
   final Future<String?> Function()? _refreshTokenCallback;
   final http.Client _client;
   final ApiRunner _runner;
@@ -60,8 +59,9 @@ class ApiService {
     var response = await request(headers);
 
     if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback!();
+      final newToken = await _refreshTokenCallback();
       if (newToken != null) {
+        _authToken = newToken;
         headers['Authorization'] = 'Bearer $newToken';
         response = await request(headers);
       }
@@ -102,8 +102,11 @@ class ApiService {
 
       uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
 
-      final response = await _authenticatedRequest(
-        (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
@@ -121,9 +124,12 @@ class ApiService {
       final sanitizedId = _sanitizeListingId(id);
       listingUri = Uri.parse('$baseUrl/listings/$sanitizedId');
 
-      final response = await _authenticatedRequest(
-        (headers) =>
-            _client.get(listingUri!, headers: headers).timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(listingUri!, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
@@ -481,7 +487,7 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, uri);
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities'));
     }
   }
 
@@ -513,7 +519,7 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, uri);
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays'));
     }
   }
 }

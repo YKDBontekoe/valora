@@ -17,12 +17,12 @@ class MapAmenity {
 
   factory MapAmenity.fromJson(Map<String, dynamic> json) {
     return MapAmenity(
-      id: json['id'] ?? '',
-      type: json['type'] ?? 'other',
-      name: json['name'] ?? 'Amenity',
+      id: json['id']?.toString() ?? '',
+      type: json['type']?.toString() ?? 'other',
+      name: json['name']?.toString() ?? 'Amenity',
       location: LatLng(
-        (json['latitude'] as num).toDouble(),
-        (json['longitude'] as num).toDouble(),
+        (json['latitude'] as num?)?.toDouble() ?? 0.0,
+        (json['longitude'] as num?)?.toDouble() ?? 0.0,
       ),
       metadata: json['metadata'] != null
           ? Map<String, String>.from(json['metadata'])

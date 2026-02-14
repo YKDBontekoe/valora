@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/map_city_insight.dart';
@@ -21,6 +23,7 @@ class InsightsProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _error;
+  String? _mapError;
   InsightMetric _selectedMetric = InsightMetric.composite;
 
   // Layer Toggles
@@ -36,6 +39,7 @@ class InsightsProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get mapError => _mapError;
   InsightMetric get selectedMetric => _selectedMetric;
 
   bool get showAmenities => _showAmenities;
@@ -70,33 +74,56 @@ class InsightsProvider extends ChangeNotifier {
   }) async {
     if (!_showAmenities && !_showOverlays) return;
 
-    try {
-      if (_showAmenities && zoom >= 13) {
-        _amenities = await _apiService.getMapAmenities(
+    _mapError = null;
+    bool hasAnyChange = false;
+
+    // Split work for amenities
+    if (_showAmenities && zoom >= 13) {
+      try {
+        final newAmenities = await _apiService.getMapAmenities(
           minLat: minLat,
           minLon: minLon,
           maxLat: maxLat,
           maxLon: maxLon,
         );
-      } else {
+        _amenities = newAmenities;
+        hasAnyChange = true;
+      } catch (e) {
+        developer.log('Failed to fetch amenities', error: e, name: 'InsightsProvider');
         _amenities = [];
+        _mapError = 'Some map features could not be loaded.';
+        hasAnyChange = true;
       }
+    } else if (_amenities.isNotEmpty) {
+      _amenities = [];
+      hasAnyChange = true;
+    }
 
-      if (_showOverlays && zoom >= 11) {
-        _overlays = await _apiService.getMapOverlays(
+    // Split work for overlays
+    if (_showOverlays && zoom >= 11) {
+      try {
+        final newOverlays = await _apiService.getMapOverlays(
           minLat: minLat,
           minLon: minLon,
           maxLat: maxLat,
           maxLon: maxLon,
           metric: _getOverlayMetricString(_selectedOverlayMetric),
         );
-      } else {
+        _overlays = newOverlays;
+        hasAnyChange = true;
+      } catch (e) {
+        developer.log('Failed to fetch overlays', error: e, name: 'InsightsProvider');
         _overlays = [];
+        _mapError = 'Some map features could not be loaded.';
+        hasAnyChange = true;
       }
+    } else if (_overlays.isNotEmpty) {
+      _overlays = [];
+      hasAnyChange = true;
+    }
 
+    if (hasAnyChange) {
       notifyListeners();
-    } catch (e) {
-      developer.log('Failed to fetch map data: $e');
     }
   }
 
@@ -113,8 +140,10 @@ class InsightsProvider extends ChangeNotifier {
   }
 
   void setOverlayMetric(MapOverlayMetric metric) {
-    _selectedOverlayMetric = metric;
-    notifyListeners();
+    if (_selectedOverlayMetric != metric) {
+      _selectedOverlayMetric = metric;
+      notifyListeners();
+    }
   }
 
   void setMetric(InsightMetric metric) {
@@ -150,6 +179,3 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 }
-
-// Added this import for logging
-import 'dart:developer' as developer;

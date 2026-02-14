@@ -48,8 +48,6 @@ public sealed class CbsGeoClient : ICbsGeoClient
             return cached!;
         }
 
-        // PDOK WFS for 2023 neighborhoods
-        // BBOX order for EPSG:4326 in WFS 2.0.0 is typically Lat,Lon
         var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
         var url = $"https://service.pdok.nl/cbs/wijkenenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
 
@@ -75,14 +73,18 @@ public sealed class CbsGeoClient : ICbsGeoClient
             {
                 if (!feature.TryGetProperty("properties", out var props)) continue;
 
-                var neighborhoodCode = props.GetProperty("buurtcode").GetString();
+                if (!props.TryGetProperty("buurtcode", out var codeElem) || codeElem.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+                var neighborhoodCode = codeElem.GetString();
                 if (string.IsNullOrEmpty(neighborhoodCode)) continue;
 
-                var neighborhoodName = props.GetProperty("buurtnaam").GetString() ?? "Unknown";
-
-                // Fetch stats for this neighborhood
-                // In a real high-traffic app, we'd batch this or use a pre-populated spatial DB.
-                // For this implementation, we'll use the existing clients (which have caching).
+                var neighborhoodName = "Unknown";
+                if (props.TryGetProperty("buurtnaam", out var nameElem) && nameElem.ValueKind == JsonValueKind.String)
+                {
+                    neighborhoodName = nameElem.GetString() ?? "Unknown";
+                }
 
                 var (value, display) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
 
@@ -110,7 +112,6 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
     private async Task<(double? Value, string Display)> GetMetricValueAsync(string code, MapOverlayMetric metric, CancellationToken ct)
     {
-        // ResolvedLocationDto just needs the code for the clients
         var loc = new Application.DTOs.ResolvedLocationDto(
             "", "", 0, 0, null, null, null, null, null, null, code, null, null);
 
@@ -125,8 +126,8 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 return (stats?.PopulationDensity, $"{(stats?.PopulationDensity?.ToString() ?? "N/A")} / km²");
 
             case MapOverlayMetric.AverageWoz:
-                var woz = await _statsClient.GetStatsAsync(loc, ct);
-                return (woz?.AverageWozValueKeur, $"€ {(woz?.AverageWozValueKeur * 1000)?.ToString("N0") ?? "N/A"}");
+                var statsWoz = await _statsClient.GetStatsAsync(loc, ct);
+                return (statsWoz?.AverageWozValueKeur, $"€ {(statsWoz?.AverageWozValueKeur * 1000)?.ToString("N0") ?? "N/A"}");
 
             default:
                 return (null, "N/A");

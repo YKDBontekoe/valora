@@ -17,12 +17,12 @@ class MapOverlay {
 
   factory MapOverlay.fromJson(Map<String, dynamic> json) {
     return MapOverlay(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      metricName: json['metricName'] ?? '',
-      metricValue: (json['metricValue'] as num).toDouble(),
-      displayValue: json['displayValue'] ?? '',
-      geoJson: json['geoJson'] ?? {},
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      metricName: json['metricName']?.toString() ?? '',
+      metricValue: (json['metricValue'] as num?)?.toDouble() ?? 0.0,
+      displayValue: json['displayValue']?.toString() ?? '',
+      geoJson: json['geoJson'] != null ? Map<String, dynamic>.from(json['geoJson']) : {},
     );
   }
 }

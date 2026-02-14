@@ -11,6 +11,8 @@ class AuthProvider extends ChangeNotifier {
   String? _token;
   String? _email;
 
+  Future<String?>? _refreshFuture;
+
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get token => _token;
@@ -81,6 +83,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<String?> refreshSession() async {
+    if (_refreshFuture != null) return _refreshFuture;
+
+    _refreshFuture = _doRefresh();
+    try {
+      return await _refreshFuture;
+    } finally {
+      _refreshFuture = null;
+    }
+  }
+
+  Future<String?> _doRefresh() async {
     try {
       final newToken = await _authService.refreshToken();
       if (newToken != null) {

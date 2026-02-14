@@ -115,6 +115,24 @@ class _InsightsScreenState extends State<InsightsScreen> {
               ),
               _buildMetricSelector(context, provider),
               _buildLayerToggle(context, provider),
+              if (provider.mapError != null)
+                Positioned(
+                  bottom: 120,
+                  left: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      provider.mapError!,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
             ],
           );
         },
@@ -307,6 +325,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
       if (value > 3000) return Colors.yellow;
       return Colors.green;
     }
+
+    if (metric == MapOverlayMetric.crimeRate) {
+      // For crime rate, higher is WORSE (invert scale)
+      if (value > 100) return Colors.red;
+      if (value > 50) return Colors.orange;
+      if (value > 20) return Colors.yellow;
+      return Colors.green;
+    }
+
+    // Default gradient (higher is better)
     if (value > 80) return Colors.green;
     if (value > 50) return Colors.orange;
     return Colors.red;

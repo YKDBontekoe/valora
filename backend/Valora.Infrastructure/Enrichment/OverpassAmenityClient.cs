@@ -42,57 +42,56 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
         var query = BuildOverpassQuery(location.Latitude, location.Longitude, radiusMeters);
 
-        var elements = await FetchOverpassElementsAsync(query, cancellationToken);
-        if (elements == null) return null;
+        var result = await FetchAndProcessAsync(query, elements => {
+            var schoolCount = 0;
+            var supermarketCount = 0;
+            var parkCount = 0;
+            var healthcareCount = 0;
+            var transitCount = 0;
+            double? nearestDistance = null;
 
-        var schoolCount = 0;
-        var supermarketCount = 0;
-        var parkCount = 0;
-        var healthcareCount = 0;
-        var transitCount = 0;
-        double? nearestDistance = null;
+            foreach (var element in elements.EnumerateArray())
+            {
+                if (!TryGetCoordinates(element, out var lat, out var lon)) continue;
 
-        foreach (var element in elements)
+                var distance = GeoDistance.BetweenMeters(location.Latitude, location.Longitude, lat, lon);
+                if (!nearestDistance.HasValue || distance < nearestDistance.Value)
+                {
+                    nearestDistance = distance;
+                }
+
+                var tags = GetTags(element);
+                var amenity = tags.GetValueOrDefault("amenity");
+                var shop = tags.GetValueOrDefault("shop");
+                var leisure = tags.GetValueOrDefault("leisure");
+                var highway = tags.GetValueOrDefault("highway");
+                var railway = tags.GetValueOrDefault("railway");
+
+                if (amenity == "school") schoolCount++;
+                if (shop == "supermarket") supermarketCount++;
+                if (leisure == "park") parkCount++;
+                if (amenity is "hospital" or "clinic" or "doctors" or "pharmacy") healthcareCount++;
+                if (highway == "bus_stop" || railway == "station") transitCount++;
+            }
+
+            var populatedCategoryCount = new[] { schoolCount, supermarketCount, parkCount, healthcareCount, transitCount }.Count(c => c > 0);
+            var diversityScore = populatedCategoryCount / 5d * 100d;
+
+            return new AmenityStatsDto(
+                SchoolCount: schoolCount,
+                SupermarketCount: supermarketCount,
+                ParkCount: parkCount,
+                HealthcareCount: healthcareCount,
+                TransitStopCount: transitCount,
+                NearestAmenityDistanceMeters: nearestDistance,
+                DiversityScore: diversityScore,
+                RetrievedAtUtc: DateTimeOffset.UtcNow);
+        }, cancellationToken);
+
+        if (result != null)
         {
-            if (!TryGetCoordinates(element, out var lat, out var lon))
-            {
-                continue;
-            }
-
-            var distance = GeoDistance.BetweenMeters(location.Latitude, location.Longitude, lat, lon);
-            if (!nearestDistance.HasValue || distance < nearestDistance.Value)
-            {
-                nearestDistance = distance;
-            }
-
-            var tags = GetTags(element);
-            var amenity = tags.GetValueOrDefault("amenity");
-            var shop = tags.GetValueOrDefault("shop");
-            var leisure = tags.GetValueOrDefault("leisure");
-            var highway = tags.GetValueOrDefault("highway");
-            var railway = tags.GetValueOrDefault("railway");
-
-            if (amenity == "school") schoolCount++;
-            if (shop == "supermarket") supermarketCount++;
-            if (leisure == "park") parkCount++;
-            if (amenity is "hospital" or "clinic" or "doctors" or "pharmacy") healthcareCount++;
-            if (highway == "bus_stop" || railway == "station") transitCount++;
+            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.AmenitiesCacheMinutes));
         }
-
-        var populatedCategoryCount = new[] { schoolCount, supermarketCount, parkCount, healthcareCount, transitCount }.Count(c => c > 0);
-        var diversityScore = populatedCategoryCount / 5d * 100d;
-
-        var result = new AmenityStatsDto(
-            SchoolCount: schoolCount,
-            SupermarketCount: supermarketCount,
-            ParkCount: parkCount,
-            HealthcareCount: healthcareCount,
-            TransitStopCount: transitCount,
-            NearestAmenityDistanceMeters: nearestDistance,
-            DiversityScore: diversityScore,
-            RetrievedAtUtc: DateTimeOffset.UtcNow);
-
-        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.AmenitiesCacheMinutes));
         return result;
     }
 
@@ -111,27 +110,28 @@ public sealed class OverpassAmenityClient : IAmenityClient
         }
 
         var query = BuildOverpassBboxQuery(minLat, minLon, maxLat, maxLon, types);
-        var elements = await FetchOverpassElementsAsync(query, cancellationToken);
-        if (elements == null) return [];
+        var results = await FetchAndProcessAsync(query, elements => {
+            var list = new List<MapAmenityDto>();
+            foreach (var element in elements.EnumerateArray())
+            {
+                if (!TryGetCoordinates(element, out var lat, out var lon)) continue;
 
-        var results = new List<MapAmenityDto>();
-        foreach (var element in elements)
-        {
-            if (!TryGetCoordinates(element, out var lat, out var lon)) continue;
+                var tags = GetTags(element);
+                var name = tags.GetValueOrDefault("name") ?? tags.GetValueOrDefault("operator") ?? "Amenity";
+                var type = GetAmenityType(tags);
+                var id = element.TryGetProperty("id", out var idProp) ? idProp.ToString() : Guid.NewGuid().ToString();
 
-            var tags = GetTags(element);
-            var name = tags.GetValueOrDefault("name") ?? tags.GetValueOrDefault("operator") ?? "Amenity";
-            var type = GetAmenityType(tags);
-            var id = element.TryGetProperty("id", out var idProp) ? idProp.ToString() : Guid.NewGuid().ToString();
+                list.Add(new MapAmenityDto(id, type, name, lat, lon, tags));
+            }
+            return list;
+        }, cancellationToken);
 
-            results.Add(new MapAmenityDto(id, type, name, lat, lon, tags));
-        }
-
+        results ??= [];
         _cache.Set(cacheKey, results, TimeSpan.FromMinutes(_options.AmenitiesCacheMinutes));
         return results;
     }
 
-    private async Task<List<JsonElement>?> FetchOverpassElementsAsync(string query, CancellationToken cancellationToken)
+    private async Task<T?> FetchAndProcessAsync<T>(string query, Func<JsonElement, T> processor, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.OverpassBaseUrl.TrimEnd('/')}/api/interpreter")
         {
@@ -142,28 +142,28 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
         try
         {
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            using var response = await _httpClient.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Overpass lookup failed with status {StatusCode}", response.StatusCode);
-                return null;
+                return default;
             }
 
-            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+            using var content = await response.Content.ReadAsStreamAsync(ct);
+            using var document = await JsonDocument.ParseAsync(content, cancellationToken: ct);
 
             if (!document.RootElement.TryGetProperty("elements", out var elements) || elements.ValueKind != JsonValueKind.Array)
             {
                 _logger.LogWarning("Overpass lookup response was missing expected elements array");
-                return null;
+                return default;
             }
 
-            return elements.EnumerateArray().ToList();
+            return processor(elements);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Overpass request failed");
-            return null;
+            return default;
         }
     }
 
