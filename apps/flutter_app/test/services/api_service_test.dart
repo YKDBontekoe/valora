@@ -447,6 +447,30 @@ void main() {
       await apiService.deleteNotification('123');
     });
 
+    // Test default runner behavior (compute vs sync) without mocking runner
+    test('default runner uses sync for small payloads', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'id': '1', 'fundaId': 'f1', 'address': 'Small'}), 200);
+      });
+
+      // No runner provided -> uses default
+      final apiService = ApiService(client: client);
+      final listing = await apiService.getListing('1');
+      expect(listing.address, 'Small');
+    });
+
+    test('default runner handles large payloads', () async {
+      final largeString = 'A' * 10240; // > 10KB
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'id': '1', 'fundaId': 'f1', 'address': 'Large', 'description': largeString}), 200);
+      });
+
+      // No runner provided -> uses default with compute
+      final apiService = ApiService(client: client);
+      final listing = await apiService.getListing('1');
+      expect(listing.description, largeString);
+    });
+
     test('deleteNotification throws ServerException on 500', () async {
       final client = MockClient((request) async {
         return http.Response('Error', 500);

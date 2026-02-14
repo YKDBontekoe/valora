@@ -107,12 +107,14 @@ public class ListingRepository : IListingRepository
     public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Listings
+            .AsNoTracking()
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
     public async Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default)
     {
         return await _context.Listings
+            .AsNoTracking()
             .FirstOrDefaultAsync(l => l.FundaId == fundaId, cancellationToken);
     }
 
@@ -157,6 +159,7 @@ public class ListingRepository : IListingRepository
         // Return listings that are not explicitly sold or withdrawn
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
         return await _context.Listings
+            .AsNoTracking()
             .WhereActive()
             .ToListAsync(cancellationToken);
     }
