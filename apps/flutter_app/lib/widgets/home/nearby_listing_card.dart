@@ -43,6 +43,16 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
         padding: const EdgeInsets.all(ValoraSpacing.sm),
         borderRadius: ValoraSpacing.radiusLg,
         elevation: ValoraSpacing.elevationSm,
+        gradientBorder: LinearGradient(
+          colors: _isHovered
+              ? [
+                  ValoraColors.primary.withValues(alpha: 0.3),
+                  ValoraColors.accent.withValues(alpha: 0.3),
+                ]
+              : [Colors.transparent, Colors.transparent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         child: Row(
           children: [
               // Image

@@ -40,7 +40,7 @@ class HomeBottomNavBar extends StatelessWidget {
 
     final borderColor = isDark
         ? ValoraColors.glassBorderDark
-        : ValoraColors.glassBorderLight.withValues(alpha: 0.5);
+        : ValoraColors.glassBorderLight.withValues(alpha: 0.3);
 
     return SafeArea(
       top: false,
@@ -65,7 +65,7 @@ class HomeBottomNavBar extends StatelessWidget {
             horizontal: ValoraSpacing.sm,
             vertical: ValoraSpacing.sm,
           ),
-          blur: ValoraSpacing.lg,
+          blur: ValoraSpacing.xl,
           borderRadius: BorderRadius.circular(ValoraSpacing.xl),
           color: glassColor,
           borderColor: borderColor,

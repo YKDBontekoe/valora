@@ -21,6 +21,7 @@ class ValoraCard extends StatefulWidget {
     this.gradient,
     this.backgroundColor,
     this.borderColor,
+    this.gradientBorder,
     this.borderWidth,
     this.clipBehavior = Clip.antiAlias,
   });
@@ -34,6 +35,7 @@ class ValoraCard extends StatefulWidget {
   final Gradient? gradient;
   final Color? backgroundColor;
   final Color? borderColor;
+  final Gradient? gradientBorder;
   final double? borderWidth;
   final Clip clipBehavior;
 
@@ -73,29 +75,57 @@ class _ValoraCardState extends State<ValoraCard> {
 
     final effectiveBorderWidth = widget.borderWidth ?? (_isHovered ? 1.5 : 1.0);
 
-    Widget card = AnimatedContainer(
-      duration: ValoraAnimations.normal,
-      curve: ValoraAnimations.smooth,
-      margin: widget.margin,
-      decoration: BoxDecoration(
-        color: widget.gradient != null ? null : backgroundColor,
-        gradient: widget.gradient,
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        border: Border.all(
-          color: _isHovered
-              ? (isDark
-                  ? ValoraColors.neutral600.withValues(alpha: 0.7)
-                  : ValoraColors.neutral300.withValues(alpha: 0.9))
-              : borderColor,
-          width: effectiveBorderWidth,
+    Widget cardContent = widget.padding != null
+        ? Padding(padding: widget.padding!, child: widget.child)
+        : widget.child;
+
+    Widget card;
+    if (widget.gradientBorder != null) {
+      card = AnimatedContainer(
+        duration: ValoraAnimations.normal,
+        curve: ValoraAnimations.smooth,
+        margin: widget.margin,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          gradient: widget.gradientBorder,
+          boxShadow: _resolveShadow(isDark),
         ),
-        boxShadow: _resolveShadow(isDark),
-      ),
-      clipBehavior: widget.clipBehavior,
-      child: widget.padding != null
-          ? Padding(padding: widget.padding!, child: widget.child)
-          : widget.child,
-    );
+        padding: EdgeInsets.all(effectiveBorderWidth),
+        child: Container(
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(
+              widget.borderRadius - effectiveBorderWidth,
+            ),
+            gradient: widget.gradient,
+          ),
+          clipBehavior: widget.clipBehavior,
+          child: cardContent,
+        ),
+      );
+    } else {
+      card = AnimatedContainer(
+        duration: ValoraAnimations.normal,
+        curve: ValoraAnimations.smooth,
+        margin: widget.margin,
+        decoration: BoxDecoration(
+          color: widget.gradient != null ? null : backgroundColor,
+          gradient: widget.gradient,
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          border: Border.all(
+            color: _isHovered
+                ? (isDark
+                    ? ValoraColors.neutral600.withValues(alpha: 0.7)
+                    : ValoraColors.neutral300.withValues(alpha: 0.9))
+                : borderColor,
+            width: effectiveBorderWidth,
+          ),
+          boxShadow: _resolveShadow(isDark),
+        ),
+        clipBehavior: widget.clipBehavior,
+        child: cardContent,
+      );
+    }
 
     if (widget.onTap != null) {
       card = MouseRegion(
@@ -114,8 +144,14 @@ class _ValoraCardState extends State<ValoraCard> {
         ),
       );
 
-      // Press animation
+      // Hover and Press animations
       card = card
+          .animate(target: _isHovered && !_isPressed ? 1 : 0)
+          .scale(
+            end: const Offset(1.02, 1.02),
+            duration: ValoraAnimations.normal,
+            curve: ValoraAnimations.smooth,
+          )
           .animate(target: _isPressed ? 1 : 0)
           .scale(
             end: const Offset(0.97, 0.97),

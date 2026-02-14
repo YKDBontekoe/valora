@@ -321,10 +321,16 @@ class _SearchScreenState extends State<SearchScreen> {
                     pinned: true,
                     backgroundColor:
                         isDark
-                            ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
+                            ? ValoraColors.backgroundDark.withValues(alpha: 0.8)
                             : ValoraColors.backgroundLight.withValues(
-                              alpha: 0.95,
+                              alpha: 0.8,
                             ),
+                    flexibleSpace: ClipRRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(color: Colors.transparent),
+                      ),
+                    ),
                     surfaceTintColor: Colors.transparent,
                     title: Text(
                       'Search',

@@ -170,11 +170,11 @@ abstract final class ValoraTheme {
 
   static CardThemeData get _lightCardTheme => CardThemeData(
     elevation: ValoraSpacing.elevationNone,
-    shadowColor: Colors.black.withValues(alpha: 0.06),
+    shadowColor: Colors.black.withValues(alpha: 0.04),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
       side: BorderSide(
-        color: ValoraColors.neutral200.withValues(alpha: 0.8),
+        color: ValoraColors.neutral200.withValues(alpha: 0.6),
         width: 1,
       ),
     ),
@@ -186,11 +186,11 @@ abstract final class ValoraTheme {
 
   static CardThemeData get _darkCardTheme => CardThemeData(
     elevation: ValoraSpacing.elevationNone,
-    shadowColor: Colors.black.withValues(alpha: 0.4),
+    shadowColor: Colors.black.withValues(alpha: 0.3),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
       side: BorderSide(
-        color: ValoraColors.neutral700.withValues(alpha: 0.6),
+        color: ValoraColors.neutral700.withValues(alpha: 0.4),
         width: 1,
       ),
     ),
@@ -292,7 +292,7 @@ abstract final class ValoraTheme {
 
   static InputDecorationTheme get _lightInputTheme => InputDecorationTheme(
     filled: true,
-    fillColor: ValoraColors.neutral50,
+    fillColor: ValoraColors.neutral50.withValues(alpha: 0.5),
     contentPadding: const EdgeInsets.symmetric(
       horizontal: ValoraSpacing.lg,
       vertical: ValoraSpacing.md,
@@ -304,7 +304,7 @@ abstract final class ValoraTheme {
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
       borderSide: BorderSide(
-        color: ValoraColors.neutral200.withValues(alpha: 0.8),
+        color: ValoraColors.neutral200.withValues(alpha: 0.5),
       ),
     ),
     focusedBorder: OutlineInputBorder(
@@ -313,7 +313,10 @@ abstract final class ValoraTheme {
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-      borderSide: const BorderSide(color: ValoraColors.error, width: 1),
+      borderSide: BorderSide(
+        color: ValoraColors.error.withValues(alpha: 0.5),
+        width: 1,
+      ),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
@@ -327,7 +330,7 @@ abstract final class ValoraTheme {
 
   static InputDecorationTheme get _darkInputTheme => InputDecorationTheme(
     filled: true,
-    fillColor: ValoraColors.surfaceVariantDark.withValues(alpha: 0.5),
+    fillColor: ValoraColors.surfaceVariantDark.withValues(alpha: 0.3),
     contentPadding: const EdgeInsets.symmetric(
       horizontal: ValoraSpacing.lg,
       vertical: ValoraSpacing.md,
@@ -339,7 +342,7 @@ abstract final class ValoraTheme {
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
       borderSide: BorderSide(
-        color: ValoraColors.neutral700.withValues(alpha: 0.6),
+        color: ValoraColors.neutral700.withValues(alpha: 0.5),
       ),
     ),
     focusedBorder: OutlineInputBorder(
@@ -351,7 +354,10 @@ abstract final class ValoraTheme {
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-      borderSide: const BorderSide(color: ValoraColors.errorLight, width: 1),
+      borderSide: BorderSide(
+        color: ValoraColors.errorLight.withValues(alpha: 0.5),
+        width: 1,
+      ),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
@@ -440,19 +446,19 @@ abstract final class ValoraTheme {
   static DialogThemeData get _lightDialogTheme => DialogThemeData(
     backgroundColor: ValoraColors.surfaceLight,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(ValoraSpacing.radiusXxl),
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusXxl + 4),
     ),
     elevation: ValoraSpacing.elevationLg,
-    shadowColor: Colors.black.withValues(alpha: 0.1),
+    shadowColor: Colors.black.withValues(alpha: 0.08),
   );
 
   static DialogThemeData get _darkDialogTheme => DialogThemeData(
     backgroundColor: ValoraColors.surfaceVariantDark,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(ValoraSpacing.radiusXxl),
+      borderRadius: BorderRadius.circular(ValoraSpacing.radiusXxl + 4),
     ),
     elevation: ValoraSpacing.elevationLg,
-    shadowColor: Colors.black.withValues(alpha: 0.4),
+    shadowColor: Colors.black.withValues(alpha: 0.3),
   );
 
   // ============================================
