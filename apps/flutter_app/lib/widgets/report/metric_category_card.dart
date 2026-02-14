@@ -10,8 +10,7 @@ class MetricCategoryCard extends StatefulWidget {
     required this.metrics,
     required this.score,
     this.accentColor,
-    this.isExpanded = false,
-    this.onToggle,
+    this.initiallyExpanded = false,
   });
 
   final String title;
@@ -19,8 +18,7 @@ class MetricCategoryCard extends StatefulWidget {
   final List<ContextMetric> metrics;
   final double? score;
   final Color? accentColor;
-  final bool isExpanded;
-  final ValueChanged<bool>? onToggle;
+  final bool initiallyExpanded;
 
   @override
   State<MetricCategoryCard> createState() => _MetricCategoryCardState();
@@ -30,10 +28,12 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _expandAnimation;
+  late bool _isExpanded;
 
   @override
   void initState() {
     super.initState();
+    _isExpanded = widget.initiallyExpanded;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 250),
@@ -42,25 +42,24 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    if (widget.isExpanded) _controller.value = 1.0;
-  }
-
-  @override
-  void didUpdateWidget(MetricCategoryCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isExpanded != oldWidget.isExpanded) {
-      if (widget.isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    }
+    if (_isExpanded) _controller.value = 1.0;
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
   }
 
   @override
@@ -81,7 +80,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
         children: [
           // Header
           InkWell(
-            onTap: () => widget.onToggle?.call(!widget.isExpanded),
+            onTap: _toggleExpanded,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -117,7 +116,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                     ),
                   ),
                   AnimatedRotation(
-                    turns: widget.isExpanded ? 0.5 : 0,
+                    turns: _isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 250),
                     child: Icon(
                       Icons.expand_more,

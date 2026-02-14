@@ -28,86 +28,72 @@ class HomeBottomNavBar extends StatelessWidget {
         ? ValoraColors.glassBorderDark
         : ValoraColors.glassBorderLight.withValues(alpha: 0.5);
 
-    // SafeArea is used specifically to respect the home indicator area
-    // while allowing the background to extend to the screen edges if needed
-    return SafeArea(
-      top: false,
-      left: false,
-      right: false,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: ValoraSpacing.navBarHeight),
-        margin: const EdgeInsets.fromLTRB(
-          ValoraSpacing.md,
-          0,
-          ValoraSpacing.md,
-          ValoraSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ValoraSpacing.xl),
-          boxShadow: ValoraShadows.xl,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(ValoraSpacing.xl),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: ValoraSpacing.lg,
-              sigmaY: ValoraSpacing.lg,
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: ValoraSpacing.sm,
-                vertical: ValoraSpacing.sm,
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(
+            ValoraSpacing.lg,
+            0,
+            ValoraSpacing.lg,
+            ValoraSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(ValoraSpacing.xl),
+            boxShadow: ValoraShadows.xl,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(ValoraSpacing.xl),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: ValoraSpacing.lg,
+                sigmaY: ValoraSpacing.lg,
               ),
-              decoration: BoxDecoration(
-                color: glassColor,
-                borderRadius: BorderRadius.circular(ValoraSpacing.xl),
-                border: Border.all(color: borderColor, width: 1),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Ensure even distribution
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: _GlassNavItem(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ValoraSpacing.radiusLg, // 12
+                  vertical: ValoraSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: glassColor,
+                  borderRadius: BorderRadius.circular(ValoraSpacing.xl),
+                  border: Border.all(color: borderColor, width: 1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _GlassNavItem(
                       icon: Icons.search_rounded,
                       label: 'Search',
                       isSelected: currentIndex == 0,
                       onTap: () => onTap(0),
                     ),
-                  ),
-                  Expanded(
-                    child: _GlassNavItem(
+                    _GlassNavItem(
                       icon: Icons.map_rounded,
                       label: 'Insights',
                       isSelected: currentIndex == 1,
                       onTap: () => onTap(1),
                     ),
-                  ),
-                  Expanded(
-                    child: _GlassNavItem(
+                    _GlassNavItem(
                       icon: Icons.analytics_rounded,
                       label: 'Report',
                       isSelected: currentIndex == 2,
                       onTap: () => onTap(2),
                     ),
-                  ),
-                  Expanded(
-                    child: _GlassNavItem(
+                    _GlassNavItem(
                       icon: Icons.favorite_rounded,
                       label: 'Saved',
                       isSelected: currentIndex == 3,
                       onTap: () => onTap(3),
                     ),
-                  ),
-                  Expanded(
-                    child: _GlassNavItem(
+                    _GlassNavItem(
                       icon: Icons.settings_rounded,
                       label: 'Settings',
                       isSelected: currentIndex == 4,
                       onTap: () => onTap(4),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -154,10 +140,9 @@ class _GlassNavItem extends StatelessWidget {
             child: AnimatedContainer(
               duration: ValoraAnimations.medium,
               curve: ValoraAnimations.emphatic,
-              alignment: Alignment.center,
               padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? ValoraSpacing.sm : ValoraSpacing.xs,
-                vertical: ValoraSpacing.radiusLg,
+                horizontal: isSelected ? ValoraSpacing.lg - 4 : ValoraSpacing.md, // 20 vs 16
+                vertical: ValoraSpacing.radiusLg, // 12
               ),
               decoration: BoxDecoration(
                 color: isSelected
@@ -166,7 +151,7 @@ class _GlassNavItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(ValoraSpacing.lg),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                         icon,
@@ -186,27 +171,24 @@ class _GlassNavItem extends StatelessWidget {
                       .then()
                       .scale(end: const Offset(1.0, 1.0)),
 
-                  Flexible(
-                    child: AnimatedSize(
-                      duration: ValoraAnimations.medium,
-                      curve: ValoraAnimations.emphatic,
-                      child: SizedBox(
-                        width: isSelected ? null : 0,
-                        child: ExcludeSemantics(
-                          child: Padding(
-                            padding: isSelected
-                                ? const EdgeInsets.only(left: ValoraSpacing.xs)
-                                : EdgeInsets.zero,
-                            child: Text(
-                              label,
-                              style: ValoraTypography.labelMedium.copyWith(
-                                color: ValoraColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
+                  AnimatedSize(
+                    duration: ValoraAnimations.medium,
+                    curve: ValoraAnimations.emphatic,
+                    child: SizedBox(
+                      width: isSelected ? null : 0,
+                      child: ExcludeSemantics(
+                        child: Padding(
+                          padding: isSelected
+                              ? const EdgeInsets.only(left: ValoraSpacing.sm)
+                              : EdgeInsets.zero,
+                          child: Text(
+                            label,
+                            style: ValoraTypography.labelLarge.copyWith(
+                              color: ValoraColors.primary,
+                              fontWeight: FontWeight.bold,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),

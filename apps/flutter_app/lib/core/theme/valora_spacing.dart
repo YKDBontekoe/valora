@@ -119,9 +119,6 @@ abstract final class ValoraSpacing {
   static const double avatarMd = 40.0;
   static const double avatarLg = 56.0;
 
-  /// Navigation bar height
-  static const double navBarHeight = 64.0;
-
   /// Button heights
   static const double buttonHeightSm = 32.0;
   static const double buttonHeightMd = 44.0;

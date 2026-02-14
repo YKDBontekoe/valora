@@ -2,27 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../models/context_report.dart';
-import '../../providers/context_report_provider.dart';
+import '../../services/api_service.dart';
 import '../common/valora_button.dart';
 import '../common/valora_card.dart';
 import '../common/valora_shimmer.dart';
 
-class AiInsightCard extends StatelessWidget {
+class AiInsightCard extends StatefulWidget {
   const AiInsightCard({super.key, required this.report});
 
   final ContextReport report;
 
   @override
+  State<AiInsightCard> createState() => _AiInsightCardState();
+}
+
+class _AiInsightCardState extends State<AiInsightCard> {
+  bool _isLoading = false;
+  String? _summary;
+  String? _error;
+
+  Future<void> _generateInsight() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final apiService = context.read<ApiService>();
+      final summary = await apiService.getAiAnalysis(widget.report);
+      if (mounted) {
+        setState(() {
+          _summary = summary;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final provider = context.watch<ContextReportProvider>();
-    final location = report.location.displayAddress;
 
-    final summary = provider.getAiInsight(location);
-    final isLoading = provider.isAiInsightLoading(location);
-    final error = provider.getAiInsightError(location);
-
-    if (summary != null) {
+    if (_summary != null) {
       return ValoraCard(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -44,14 +72,14 @@ class AiInsightCard extends StatelessWidget {
             const SizedBox(height: 12),
             _MarkdownText(
               key: const Key('ai-summary-text'),
-              text: summary,
+              text: _summary!,
             ),
           ],
         ),
       ).animate().fadeIn().scale(alignment: Alignment.topCenter);
     }
 
-    if (isLoading) {
+    if (_isLoading) {
       return const ValoraShimmer(
         width: double.infinity,
         height: 150,
@@ -59,7 +87,7 @@ class AiInsightCard extends StatelessWidget {
       );
     }
 
-    if (error != null) {
+    if (_error != null) {
       return ValoraCard(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -71,7 +99,7 @@ class AiInsightCard extends StatelessWidget {
             const SizedBox(height: 8),
             ValoraButton(
               label: 'Retry',
-              onPressed: () => provider.generateAiInsight(report),
+              onPressed: _generateInsight,
               variant: ValoraButtonVariant.secondary,
             ),
           ],
@@ -109,7 +137,7 @@ class AiInsightCard extends StatelessWidget {
             width: double.infinity,
             child: ValoraButton(
               label: 'Generate Insight',
-              onPressed: () => provider.generateAiInsight(report),
+              onPressed: _generateInsight,
               icon: Icons.auto_awesome,
             ),
           ),

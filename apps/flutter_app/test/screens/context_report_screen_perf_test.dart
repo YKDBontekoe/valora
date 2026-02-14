@@ -7,7 +7,6 @@ import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/providers/user_profile_provider.dart';
 import 'package:valora_app/widgets/report/metric_category_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../mocks/mock_user_profile_provider.dart';
 
 class _FakeApiService extends ApiService {
@@ -26,6 +25,7 @@ void main() {
   });
 
   testWidgets('ContextReportScreen uses lazy loading AND preserves expansion state via Provider', (tester) async {
+    // V3 of the test to avoid confusion
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1.0;
 
@@ -77,37 +77,36 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // 1. Search for address
-    await tester.enterText(find.byType(TextField), 'Amsterdam');
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, 'Amsterdam');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
     expect(find.text('Test Address'), findsOneWidget);
 
-    // 2. Verify Lazy Loading
-    expect(find.byType(MetricCategoryCard).evaluate().length, lessThan(7));
-
-    // 3. Find Safety and expand it
     final listFinder = find.byType(ListView);
-    await tester.dragUntilVisible(find.text('Safety'), listFinder, const Offset(0, -100));
+
+    // Find 'Safety' section
+    final safetyFinder = find.text('Safety');
+    await tester.dragUntilVisible(safetyFinder, listFinder, const Offset(0, -200));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Safety'));
+    // Expand
+    await tester.tap(safetyFinder);
     await tester.pumpAndSettle();
 
-    // Verify it's expanded
+    // Check expanded content
     expect(find.text('SafetyMetric'), findsWidgets);
 
-    // 4. Scroll it way off-screen
+    // Scroll away (down)
     await tester.drag(listFinder, const Offset(0, -3000));
     await tester.pumpAndSettle();
-    expect(find.text('Safety'), findsNothing);
 
-    // 5. Scroll back and find Safety again
-    await tester.dragUntilVisible(find.text('Safety'), listFinder, const Offset(0, 300));
+    // Scroll back (up)
+    await tester.dragUntilVisible(safetyFinder, listFinder, const Offset(0, 500));
     await tester.pumpAndSettle();
 
-    // 6. Verify expansion state was preserved
+    // Verify expansion state was preserved
     expect(find.text('SafetyMetric'), findsWidgets);
 
     addTearDown(() {

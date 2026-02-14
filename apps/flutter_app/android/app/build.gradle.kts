@@ -1,27 +1,8 @@
-import java.util.Properties
-import java.io.FileInputStream
-
 plugins {
     id("com.android.application")
     // id("kotlin-android") // Removed as it is now built-in with AGP 9+
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-}
-
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-var hasValidSigningConfig = false
-
-if (keystorePropertiesFile.exists()) {
-    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
-    val requiredProperties = listOf("keyAlias", "keyPassword", "storeFile", "storePassword")
-    val missingProperties = requiredProperties.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
-
-    if (missingProperties.isEmpty()) {
-        hasValidSigningConfig = true
-    } else {
-        project.logger.warn("key.properties exists but is missing required properties: ${missingProperties.joinToString()}. Falling back to debug signing.")
-    }
 }
 
 android {
@@ -34,31 +15,30 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // defaultConfig { ... } remains same
+    // kotlinOptions block is deprecated/removed in newer AGP versions with built-in Kotlin support.
+    // JVM target is usually inferred from compileOptions, or configured via kotlin { ... } if needed.
+    // For AGP 9 migration with simple setup, we might not need this block if compileOptions is set.
+    // Or we try the new syntax if required. For now, commenting it out as per error.
+    // kotlinOptions {
+    //    jvmTarget = JavaVersion.VERSION_17.toString()
+    // }
+
     defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "nl.valora.valora_app"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
-            storePassword = keystoreProperties.getProperty("storePassword")
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig = if (hasValidSigningConfig) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so  works.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

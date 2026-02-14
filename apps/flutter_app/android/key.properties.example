@@ -1,4 +1,0 @@
-storePassword=<password-from-keystore>
-keyPassword=<password-from-key>
-keyAlias=<key-alias>
-storeFile=<location-of-keystore-file>

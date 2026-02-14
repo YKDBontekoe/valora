@@ -28,12 +28,6 @@ class ContextReportProvider extends ChangeNotifier {
   List<SearchHistoryItem> _history = [];
   int _historyLoadSeq = 0;
 
-  // Persistent state for report children
-  final Map<String, bool> _expansionStates = {};
-  final Map<String, String> _aiInsights = {};
-  final Map<String, String> _aiInsightErrors = {};
-  final Set<String> _loadingAiInsights = {};
-
   bool get isLoading => _isLoading;
   String? get error => _error;
   ContextReport? get report => _report;
@@ -49,45 +43,6 @@ class ContextReportProvider extends ChangeNotifier {
   void setRadiusMeters(int value) {
     _radiusMeters = value.clamp(100, 5000);
     notifyListeners();
-  }
-
-  // Expansion state management
-  bool isExpanded(String category, {bool defaultValue = false}) {
-    return _expansionStates[category] ?? defaultValue;
-  }
-
-  void setExpanded(String category, bool expanded) {
-    if (_expansionStates[category] == expanded) return;
-    _expansionStates[category] = expanded;
-    notifyListeners();
-  }
-
-  // AI Insight state management
-  String? getAiInsight(String location) => _aiInsights[location];
-  String? getAiInsightError(String location) => _aiInsightErrors[location];
-  bool isAiInsightLoading(String location) => _loadingAiInsights.contains(location);
-
-  Future<void> generateAiInsight(ContextReport report) async {
-    final location = report.location.displayAddress;
-    if (_loadingAiInsights.contains(location)) return;
-
-    _loadingAiInsights.add(location);
-    _aiInsightErrors.remove(location);
-    notifyListeners();
-
-    try {
-      final insight = await _apiService.getAiAnalysis(report);
-      if (_isDisposed) return;
-      _aiInsights[location] = insight;
-    } catch (e) {
-      if (_isDisposed) return;
-      _aiInsightErrors[location] = e.toString();
-    } finally {
-      if (!_isDisposed) {
-        _loadingAiInsights.remove(location);
-        notifyListeners();
-      }
-    }
   }
 
   Future<void> _loadHistory() async {
@@ -126,9 +81,6 @@ class ContextReportProvider extends ChangeNotifier {
       _report = report;
       _error = null;
 
-      // Reset expansion states for new report
-      _expansionStates.clear();
-
       // 2. Update History (Failures here should not fail the report)
       try {
         await _historyService.addToHistory(trimmed);
@@ -152,7 +104,6 @@ class ContextReportProvider extends ChangeNotifier {
   void clear() {
     _error = null;
     _report = null;
-    _expansionStates.clear();
     notifyListeners();
   }
 
