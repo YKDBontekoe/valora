@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:valora_app/controllers/search_screen_controller.dart';
 import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/models/listing_filter.dart';
 import 'package:valora_app/models/listing_response.dart';
@@ -171,6 +172,9 @@ void main() {
   });
 
   Widget createWidgetUnderTest({SearchListingsProvider? searchProvider}) {
+    final SearchListingsProvider resolvedSearchProvider =
+        searchProvider ?? SearchListingsProvider(apiService: mockApiService);
+
     return MultiProvider(
       providers: [
         Provider<ApiService>.value(value: mockApiService),
@@ -180,14 +184,71 @@ void main() {
         ChangeNotifierProvider<NotificationService>.value(
           value: fakeNotificationService,
         ),
-        if (searchProvider != null)
-          ChangeNotifierProvider<SearchListingsProvider>.value(
-            value: searchProvider,
-          ),
+        ChangeNotifierProvider<SearchListingsProvider>.value(
+          value: resolvedSearchProvider,
+        ),
+        ChangeNotifierProvider<SearchScreenController>(
+          create:
+              (_) => SearchScreenController(
+                searchProvider: resolvedSearchProvider,
+              ),
+        ),
       ],
       child: MaterialApp(home: SearchScreen(pdokService: mockPdokService)),
     );
   }
+
+
+  testWidgets('SearchScreen requires explicit SearchScreenController DI', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiService>.value(value: mockApiService),
+          ChangeNotifierProvider<FavoritesProvider>.value(
+            value: mockFavoritesProvider,
+          ),
+          ChangeNotifierProvider<NotificationService>.value(
+            value: fakeNotificationService,
+          ),
+          ChangeNotifierProvider<SearchListingsProvider>(
+            create: (_) => SearchListingsProvider(apiService: mockApiService),
+          ),
+        ],
+        child: MaterialApp(home: SearchScreen(pdokService: mockPdokService)),
+      ),
+    );
+
+    final Object? exception = tester.takeException();
+    expect(exception, isNotNull);
+  });
+
+  testWidgets('SearchScreen keeps loading indicator visible before debounce fires', (
+    WidgetTester tester,
+  ) async {
+    when(mockApiService.getListings(any)).thenAnswer((_) async {
+      return ListingResponse(
+        items: [],
+        pageIndex: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      );
+    });
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), 'amst');
+    await tester.pump(const Duration(milliseconds: 700));
+
+    verifyNever(mockApiService.getListings(any));
+
+    await tester.pump(const Duration(milliseconds: 60));
+    verify(mockApiService.getListings(any)).called(1);
+  });
 
   testWidgets('SearchScreen shows empty state initially', (
     WidgetTester tester,

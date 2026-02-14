@@ -2,6 +2,9 @@ import 'insights/insights_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../controllers/search_screen_controller.dart';
+import '../providers/search_listings_provider.dart';
+import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/home/home_bottom_nav_bar.dart';
 import 'context_report_screen.dart';
@@ -53,12 +56,32 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     return IndexedStack(
       index: _currentNavIndex,
-      children: const [
-        SearchScreen(),
-        InsightsScreen(),
-        ContextReportScreen(),
-        SavedListingsScreen(),
-        SettingsScreen(),
+      children: [
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SearchListingsProvider>(
+              create:
+                  (context) => SearchListingsProvider(
+                    apiService: context.read<ApiService>(),
+                  ),
+            ),
+            ChangeNotifierProxyProvider<
+              SearchListingsProvider,
+              SearchScreenController
+            >(
+              create:
+                  (context) => SearchScreenController(
+                    searchProvider: context.read<SearchListingsProvider>(),
+                  ),
+              update: (_, __, previous) => previous!,
+            ),
+          ],
+          child: const SearchScreen(),
+        ),
+        const InsightsScreen(),
+        const ContextReportScreen(),
+        const SavedListingsScreen(),
+        const SettingsScreen(),
       ],
     );
   }
