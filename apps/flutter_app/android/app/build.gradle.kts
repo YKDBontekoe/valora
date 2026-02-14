@@ -10,8 +10,18 @@ plugins {
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
+var hasValidSigningConfig = false
+
 if (keystorePropertiesFile.exists()) {
     FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
+    val requiredProperties = listOf("keyAlias", "keyPassword", "storeFile", "storePassword")
+    val missingProperties = requiredProperties.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
+
+    if (missingProperties.isEmpty()) {
+        hasValidSigningConfig = true
+    } else {
+        project.logger.warn("key.properties exists but is missing required properties: ${missingProperties.joinToString()}. Falling back to debug signing.")
+    }
 }
 
 android {
@@ -44,7 +54,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (hasValidSigningConfig) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
