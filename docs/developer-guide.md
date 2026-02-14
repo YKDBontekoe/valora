@@ -146,6 +146,30 @@ API key expectations:
 - `OPENROUTER_API_KEY` is required only for AI chat endpoints.
 - Optional future connectors may require keys (for example ORS/KNMI/DUO); keep those values in `.env` and never commit secrets.
 
+### AI Safety, Privacy, and Cost Controls
+
+The `/api/ai/analyze-report` path applies deterministic prompt shaping before calling OpenRouter:
+
+- Location precision is minimized (house numbers/postcodes removed) to reduce sensitive leakage.
+- Prompt content uses pre-summarized metrics only:
+  - top-K strongest positives and negatives by score distance from neutral,
+  - category deltas versus baseline (`score - 50`) instead of full raw metric dumps.
+- Prompt size is bounded deterministically by a max char/token budget to control spend and avoid model overflows.
+- In `AI_PROMPT__STRICT_MODE=true`, over-budget sections are dropped entirely (no partial section append).
+
+Supported settings (via environment variable binding):
+
+- `AI_PROMPT__STRICT_MODE`
+- `AI_PROMPT__DEFAULT_MAX_PROMPT_CHARS`
+- `AI_PROMPT__DEFAULT_MAX_PROMPT_TOKENS`
+- `AI_PROMPT__TOP_METRIC_COUNT`
+- `AI_PROMPT__MODEL_LIMITS__<model>__MAX_PROMPT_CHARS`
+- `AI_PROMPT__MODEL_LIMITS__<model>__MAX_PROMPT_TOKENS`
+- `AI_PROMPT__MODEL_LIMITS__<model>__MAX_OUTPUT_TOKENS`
+- `AI_PROMPT__MODEL_LIMITS__<model>__TELEMETRY_TAG`
+
+When configured, model-specific limits are applied and the OpenRouter request can include max output token constraints and metadata tags for telemetry/cost monitoring.
+
 ## Testing
 
 ### Backend

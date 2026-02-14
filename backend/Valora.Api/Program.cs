@@ -12,6 +12,7 @@ using Valora.Application;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Mappings;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
@@ -132,6 +133,8 @@ builder.Services.AddRateLimiter(options =>
         limiterOptions.QueueLimit = 2;
     });
 });
+
+builder.Services.Configure<AiPromptOptions>(builder.Configuration.GetSection("AI_PROMPT"));
 
 // Add CORS for Flutter
 builder.Services.AddCustomCors(builder.Configuration, builder.Environment);
