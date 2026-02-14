@@ -85,4 +85,10 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
 
   @override
   void update(dynamic apiService) {}
+
+  @override
+  void undoDelete(String id) {
+    // Basic mock implementation for now - could be enhanced if tests require it
+    notifyListeners();
+  }
 }

@@ -47,7 +47,15 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> _fetchUnreadCount() async {
     try {
-      final count = await _apiService.getUnreadNotificationCount();
+      int count = await _apiService.getUnreadNotificationCount();
+
+      // Adjust count to account for locally pending deletes
+      for (final pending in _pendingDeletedNotifications.values) {
+        if (!pending.$2.isRead) {
+          count = count > 0 ? count - 1 : 0;
+        }
+      }
+
       if (_unreadCount != count) {
         _unreadCount = count;
         notifyListeners();
@@ -61,9 +69,13 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<void> deleteNotification(String id) async {
-    // Cancel any existing timer for this ID to prevent double deletion
-    _pendingDeletions[id]?.cancel();
-    _pendingDeletions.remove(id);
+    // If it's already pending deletion, ignore or just let it continue.
+    // However, if the user triggered delete again, we shouldn't cancel the old one
+    // unless we want to reset the timer. But if it's not in _notifications,
+    // we can't remove it again.
+    if (_pendingDeletions.containsKey(id)) {
+        return;
+    }
 
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index == -1) return;
@@ -83,7 +95,11 @@ class NotificationService extends ChangeNotifier {
     // Schedule API call
     _pendingDeletions[id] = Timer(const Duration(seconds: 4), () async {
       _pendingDeletions.remove(id);
-      _pendingDeletedNotifications.remove(id);
+      // We keep it in _pendingDeletedNotifications until success or failure is handled
+      // But actually, once the timer fires, the undo window is closed.
+      // So we remove it from there too. But we need a reference for restoration on failure.
+
+      final pendingRestore = _pendingDeletedNotifications.remove(id);
 
       try {
         await _apiService.deleteNotification(id);
@@ -91,9 +107,25 @@ class NotificationService extends ChangeNotifier {
         if (kDebugMode) {
           print('Error deleting notification: $e');
         }
-        // Note: If API fails, we could restore the notification here,
-        // but it might be confusing to the user if it reappears after 4s.
-        // For now, we log the error.
+
+        // Restore on failure
+        if (pendingRestore != null) {
+          final (idx, notification) = pendingRestore;
+          // We need to re-insert carefully. The list might have changed (other deletions/additions).
+          // Using the old index is a best-effort.
+          if (idx >= 0 && idx <= _notifications.length) {
+            _notifications.insert(idx, notification);
+          } else {
+            _notifications.add(notification);
+          }
+          // Restore unread count
+          if (!notification.isRead) {
+            _unreadCount++;
+          }
+
+          _error = "Failed to delete notification";
+          notifyListeners();
+        }
       }
     });
   }
@@ -112,8 +144,18 @@ class NotificationService extends ChangeNotifier {
         _apiService.getUnreadNotificationCount(),
       ]);
 
-      final fetched = results[0] as List<ValoraNotification>;
-      final count = results[1] as int;
+      var fetched = results[0] as List<ValoraNotification>;
+      var count = results[1] as int;
+
+      // Filter out items that are currently pending deletion
+      fetched = fetched.where((n) => !_pendingDeletions.containsKey(n.id)).toList();
+
+      // Adjust unread count
+      for (final pending in _pendingDeletedNotifications.values) {
+        if (!pending.$2.isRead) {
+          count = count > 0 ? count - 1 : 0;
+        }
+      }
 
       _notifications = fetched;
       _unreadCount = count;
