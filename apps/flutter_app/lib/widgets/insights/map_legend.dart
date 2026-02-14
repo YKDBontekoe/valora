@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../models/map_overlay.dart';
-import '../../core/theme/valora_colors.dart';
-import '../../core/theme/valora_spacing.dart';
 import '../valora_glass_container.dart';
 
 class MapLegend extends StatelessWidget {
