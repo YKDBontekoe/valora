@@ -38,15 +38,24 @@ public sealed class ContextReportService : IContextReportService
     /// </summary>
     /// <remarks>
     /// <para>
-    /// This method employs a "fan-out" pattern to query all external APIs in parallel via <see cref="IContextDataProvider"/>.
+    /// <b>Pattern: Fan-Out / Fan-In</b>
+    /// This method delegates the parallel fetching of data to <see cref="IContextDataProvider"/>.
+    /// This ensures that the latency is determined by the slowest data source rather than the sum of all sources.
     /// </para>
     /// <para>
-    /// The process involves:
-    /// 1. Resolving the input to a standardized Dutch address/location.
-    /// 2. Checking the cache for an existing report.
-    /// 3. Fetching data from CBS, PDOK, Overpass, etc., using the data provider.
-    /// 4. Normalizing raw data into 0-100 scores using heuristics.
-    /// 5. Aggregating scores into categories and a final composite score.
+    /// <b>Resilience:</b>
+    /// If non-critical sources (like Air Quality) fail, the report is still generated with partial data.
+    /// Warnings are appended to the report to inform the client of missing sections.
+    /// </para>
+    /// <para>
+    /// <b>Process:</b>
+    /// <list type="number">
+    /// <item>Resolve input to standardized Dutch address/coordinates (PDOK).</item>
+    /// <item>Check in-memory cache using a coordinate-based key (ignoring address string variations).</item>
+    /// <item>Fan-Out: Query CBS, Overpass, and Luchtmeetnet in parallel.</item>
+    /// <item>Fan-In: Normalize raw stats into 0-100 scores using domain heuristics.</item>
+    /// <item>Aggregate: Compute category scores and final composite score.</item>
+    /// </list>
     /// </para>
     /// </remarks>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)

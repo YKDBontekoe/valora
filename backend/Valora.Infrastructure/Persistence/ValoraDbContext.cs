@@ -21,6 +21,12 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
         base.OnModelCreating(modelBuilder);
 
         // Value Comparers
+        //
+        // Why? EF Core cannot natively detect changes in mutable objects (like Lists/Dictionaries)
+        // stored as JSONB strings when using .HasConversion().
+        // Without a ValueComparer, EF assumes the property is unchanged unless the reference itself changes.
+        // These comparers ensure that changes to the *contents* of the collection are detected for change tracking.
+        //
         // Suppress null warnings with ! because these properties are initialized to empty collections
         // and JsonHelper ensures non-null returns from DB.
         var stringListComparer = new ValueComparer<List<string>>(

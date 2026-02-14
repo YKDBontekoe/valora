@@ -170,6 +170,21 @@ public sealed class OverpassAmenityClient : IAmenityClient
         }
     }
 
+    /// <summary>
+    /// Constructs an Overpass QL query to find amenities within a radius.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Syntax Breakdown:</b>
+    /// <list type="bullet">
+    /// <item><c>[out:json][timeout:25]</c>: Request JSON output and set a strict 25s server-side timeout.</item>
+    /// <item><c>nwr</c>: Search nodes, ways, and relations (points, lines, polygons).</item>
+    /// <item><c>(around:{radius},{lat},{lon})</c>: Filter results to a circle around the point.</item>
+    /// <item><c>[amenity=school]</c>: Tag filter for schools, etc.</item>
+    /// <item><c>out center tags</c>: Return only the centroid (lat/lon) and tags, minimizing payload size.</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
     private static string BuildOverpassQuery(double latitude, double longitude, int radiusMeters)
     {
         var lat = latitude.ToString(CultureInfo.InvariantCulture);
@@ -179,7 +194,7 @@ public sealed class OverpassAmenityClient : IAmenityClient
              + $"nwr(around:{radiusMeters},{lat},{lon})[amenity=school];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[shop=supermarket];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[leisure=park];"
-             + $"nwr(around:{radiusMeters},{lat},{lon})[amenity~\"hospital|clinic|doctors|pharmacy\"];"
+             + $"nwr(around:{radiusMeters},{lat},{lon})[amenity~\"hospital|clinic|doctors|pharmacy\"];" // Regex match
              + $"nwr(around:{radiusMeters},{lat},{lon})[highway=bus_stop];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[railway=station];"
              + $"nwr(around:{radiusMeters},{lat},{lon})[amenity=charging_station];"
