@@ -111,6 +111,7 @@ public class ExceptionHandlingMiddleware
             case BadHttpRequestException:
                 statusCode = (int)HttpStatusCode.BadRequest;
                 title = "Bad Request";
+                detail = "The request payload is invalid.";
                 break;
             case ArgumentException:
                 statusCode = (int)HttpStatusCode.BadRequest;
