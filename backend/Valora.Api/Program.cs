@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Sentry;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,8 +22,34 @@ using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
+// Configure Sentry
+var sentryDsn = builder.Configuration["SENTRY_DSN"];
+if (!string.IsNullOrEmpty(sentryDsn))
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+
+        // TracesSampleRate is read from configuration, defaulting to 1.0 if not specified.
+        options.TracesSampleRate = builder.Configuration.GetValue<double>("SENTRY_TRACES_SAMPLE_RATE", 1.0);
+
+        // Enable Sentry SDK debug mode in development
+        options.Debug = builder.Environment.IsDevelopment();
+
+        // Add breadcrumbs for logger messages of level Information and higher
+        options.MinimumBreadcrumbLevel = LogLevel.Information;
+
+        // Capture events for logger messages of level Error and higher
+        options.MinimumEventLevel = LogLevel.Error;
+
+        // Disable request body capture to avoid leaking sensitive data
+        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.None;
+
+        // Do not send PII to Sentry
+        options.SendDefaultPii = false;
+    });
+}
 builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo { Title = "Valora API", Version = "v1" });
@@ -160,6 +188,22 @@ app.UseCors();
 app.UseRateLimiter();
 
 app.UseAuthentication();
+
+// Sentry User Enrichment Middleware
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var user = new SentryUser
+        {
+            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+        };
+
+        SentrySdk.ConfigureScope(scope => scope.User = user);
+    }
+    await next();
+});
+
 app.UseAuthorization();
 
 // Map Auth Endpoints (Injects IConfiguration into handler)

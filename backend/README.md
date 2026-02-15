@@ -3,6 +3,7 @@
 .NET 10 backend for location context enrichment.
 
 ## Responsibilities
+- Error tracking and performance monitoring (Sentry)
 
 - Authentication and authorization
 - Context report generation (`/api/context/report`)
@@ -23,6 +24,8 @@ Required `.env` keys:
 - `JWT_SECRET`
 - `JWT_ISSUER`
 - `JWT_AUDIENCE`
+- `SENTRY_DSN` (optional, for error logging and performance monitoring)
+- `SENTRY_TRACES_SAMPLE_RATE` (optional, default 1.0, set lower in production)
 
 Optional keys:
 

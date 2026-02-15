@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using Sentry;
 using Valora.Application.Common.Exceptions;
 
 namespace Valora.Api.Middleware;
@@ -33,11 +35,6 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            var user = context.User?.Identity?.Name ?? "Anonymous";
-            // Log with structured logging for better observability
-            _logger.LogError(ex, "Unhandled exception: {ExceptionType} processing {Method} {Path} for user {User}. RequestId: {RequestId}",
-                ex.GetType().Name, context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
-
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -145,13 +142,29 @@ public class ExceptionHandlingMiddleware
 
         context.Response.StatusCode = statusCode;
 
+        // Log and capture exceptions
+        if (statusCode >= 500)
+        {
+            var user = context.User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+            _logger.LogError(exception, "Unhandled exception: {ExceptionType} processing {Method} {Path} for user {User}. RequestId: {RequestId}",
+                exception.GetType().Name, context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
+
+            // Explicitly capture in Sentry since the middleware "handles" it (swallows it)
+            SentrySdk.CaptureException(exception);
+        }
+        else
+        {
+            _logger.LogWarning(exception, "Request failed with {StatusCode}: {ExceptionType} processing {Method} {Path}",
+                statusCode, exception.GetType().Name, context.Request.Method, context.Request.Path);
+        }
+
         var problemDetails = new ProblemDetails
         {
             Status = statusCode,
             Title = title,
             Detail = detail,
             Instance = context.Request.Path,
-            Type = $"https://httpstatuses.com/{statusCode}"
+            Type = "https://httpstatuses.com/" + statusCode
         };
 
         problemDetails.Extensions["traceId"] = context.TraceIdentifier;
