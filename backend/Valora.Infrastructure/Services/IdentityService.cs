@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence;
 
 namespace Valora.Infrastructure.Services;
 
@@ -9,11 +11,16 @@ public class IdentityService : IIdentityService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly ValoraDbContext _context;
 
-    public IdentityService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public IdentityService(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        ValoraDbContext context)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _context = context;
     }
 
     public async Task<(Result Result, string UserId)> CreateUserAsync(string email, string password)
@@ -69,6 +76,55 @@ public class IdentityService : IIdentityService
         }
 
         return Result.Success();
+    }
+
+    public async Task<PaginatedList<ApplicationUser>> GetUsersAsync(int pageNumber, int pageSize)
+    {
+        var count = await _userManager.Users.CountAsync();
+        var items = await _userManager.Users
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PaginatedList<ApplicationUser>(items, count, pageNumber, pageSize);
+    }
+
+    public async Task<Result> DeleteUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Result.Failure(new[] { "User not found." });
+
+        var result = await _userManager.DeleteAsync(user);
+        return ToApplicationResult(result);
+    }
+
+    public async Task<IList<string>> GetUserRolesAsync(ApplicationUser user)
+    {
+        return await _userManager.GetRolesAsync(user);
+    }
+
+    public async Task<int> CountAsync()
+    {
+        return await _userManager.Users.CountAsync();
+    }
+
+    public async Task<IDictionary<string, IList<string>>> GetRolesForUsersAsync(IEnumerable<ApplicationUser> users)
+    {
+        var userIds = users.Select(u => u.Id).ToList();
+
+        var userRoles = await _context.UserRoles
+            .Where(ur => userIds.Contains(ur.UserId))
+            .Join(_context.Roles,
+                ur => ur.RoleId,
+                r => r.Id,
+                (ur, r) => new { ur.UserId, RoleName = r.Name })
+            .ToListAsync();
+
+        return userRoles
+            .GroupBy(ur => ur.UserId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IList<string>)g.Select(ur => ur.RoleName!).ToList());
     }
 
     private static Result ToApplicationResult(IdentityResult result)
