@@ -143,6 +143,9 @@ class FavoritesProvider extends ChangeNotifier {
       imageUrl: listing.imageUrl,
       listedDate: listing.listedDate,
       createdAt: listing.createdAt,
+      energyLabel: listing.energyLabel,
+      contextCompositeScore: listing.contextCompositeScore,
+      contextSafetyScore: listing.contextSafetyScore,
     );
   }
 }

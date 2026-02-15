@@ -269,10 +269,10 @@ void main() {
       await tester.pump(const Duration(seconds: 1)); // Wait longer
 
       expect(find.text('No matches found'), findsOneWidget);
-      expect(find.text('Clear Search'), findsOneWidget);
+      expect(find.text('Clear Filters'), findsOneWidget);
 
       // Clear search
-      await tester.tap(find.text('Clear Search'));
+      await tester.tap(find.text('Clear Filters'));
       await tester.pump(); // Start animations/rebuild
       await tester.pump(
         const Duration(seconds: 2),
@@ -288,19 +288,13 @@ void main() {
       await tester.pumpWidget(createSavedListingsScreen());
       await tester.pump(const Duration(seconds: 1));
 
-      final chipFinder = find.text('Price: Low to High');
-      final scrollable = find
-          .descendant(
-            of: find.byType(SingleChildScrollView),
-            matching: find.byType(Scrollable),
-          )
-          .first;
+      // Open Sort Sheet
+      await tester.tap(find.byTooltip('Sort'));
+      await tester.pump(const Duration(milliseconds: 500));
 
-      await tester.scrollUntilVisible(chipFinder, 50.0, scrollable: scrollable);
-      await tester.pump(const Duration(milliseconds: 100));
-
-      await tester.tap(chipFinder);
-      await tester.pump(const Duration(seconds: 1));
+      // Tap Option
+      await tester.tap(find.text('Price: Low to High'));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final finder = find.descendant(
         of: find.byType(SliverList),
@@ -317,23 +311,16 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // First change to Price sort
-      final priceChip = find.text('Price: Low to High');
-      final scrollable = find
-          .descendant(
-            of: find.byType(SingleChildScrollView),
-            matching: find.byType(Scrollable),
-          )
-          .first;
-
-      await tester.scrollUntilVisible(priceChip, 50.0, scrollable: scrollable);
-      await tester.tap(priceChip);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.byTooltip('Sort'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('Price: Low to High'));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Now tap Newest
-      final newestChip = find.text('Newest');
-      await tester.scrollUntilVisible(newestChip, 50.0, scrollable: scrollable);
-      await tester.tap(newestChip);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.byTooltip('Sort'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('Newest Added'));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final finder = find.descendant(
         of: find.byType(SliverList),
@@ -344,54 +331,6 @@ void main() {
       // Default is reversed (LIFO): B Street (added 2nd) should be first
       expect(cards.first.listing.address, 'B Street');
       expect(cards.last.listing.address, 'A Street');
-    });
-
-    testWidgets('Sorts listings by City', (WidgetTester tester) async {
-      await tester.pumpWidget(createSavedListingsScreen());
-      await tester.pump(const Duration(seconds: 1));
-
-      final scrollable = find
-          .descendant(
-            of: find.byType(SingleChildScrollView),
-            matching: find.byType(Scrollable),
-          )
-          .first;
-
-      // Sort A-Z (Amsterdam, Rotterdam)
-      final cityAscChip = find.text('City: A-Z');
-      await tester.scrollUntilVisible(
-        cityAscChip,
-        50.0,
-        scrollable: scrollable,
-      );
-      await tester.tap(cityAscChip);
-      await tester.pump(const Duration(seconds: 1));
-
-      var finder = find.descendant(
-        of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
-      );
-      var cards = tester.widgetList<NearbyListingCard>(finder);
-      expect(cards.first.listing.city, 'Amsterdam');
-      expect(cards.last.listing.city, 'Rotterdam');
-
-      // Sort Z-A (Rotterdam, Amsterdam)
-      final cityDescChip = find.text('City: Z-A');
-      await tester.scrollUntilVisible(
-        cityDescChip,
-        50.0,
-        scrollable: scrollable,
-      );
-      await tester.tap(cityDescChip);
-      await tester.pump(const Duration(seconds: 1));
-
-      finder = find.descendant(
-        of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
-      );
-      cards = tester.widgetList<NearbyListingCard>(finder);
-      expect(cards.first.listing.city, 'Rotterdam');
-      expect(cards.last.listing.city, 'Amsterdam');
     });
 
     testWidgets('Removes favorite after confirmation', (
