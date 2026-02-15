@@ -1,26 +1,54 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { Listing } from '../types';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 const Listings = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const fetchListings = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const data = await adminService.getListings();
+      setListings(data.items || []);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const data = await adminService.getListings();
-        setListings(data.items || []);
-      } catch {
-        console.error('Failed to fetch listings');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchListings();
   }, []);
 
-  if (loading) return <div>Loading listings...</div>;
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+    );
+  }
+
+  if (error) {
+      return (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
+              <h3 className="text-lg font-medium text-red-800">Failed to load listings</h3>
+              <p className="text-sm text-red-600 mt-1">Please check your connection and try again.</p>
+              <button
+                onClick={fetchListings}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
+              >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+              </button>
+          </div>
+      );
+  }
 
   return (
     <div>

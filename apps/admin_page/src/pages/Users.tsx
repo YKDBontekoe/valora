@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { User } from '../types';
-import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const currentUserId = localStorage.getItem('admin_userId');
@@ -16,12 +18,13 @@ const Users = () => {
 
   const fetchUsers = async (pageNumber: number) => {
     setLoading(true);
+    setError(false);
     try {
       const data = await adminService.getUsers(pageNumber);
       setUsers(data.items);
       setTotalPages(data.totalPages);
     } catch {
-      console.error('Failed to fetch users');
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -29,7 +32,7 @@ const Users = () => {
 
   const handleDelete = async (user: User) => {
     if (user.id === currentUserId) {
-      alert('You cannot delete your own account.');
+      toast.error('You cannot delete your own account.');
       return;
     }
 
@@ -38,12 +41,36 @@ const Users = () => {
     try {
       await adminService.deleteUser(user.id);
       setUsers(users.filter(u => u.id !== user.id));
+      toast.success('User deleted successfully');
     } catch {
-      alert('Failed to delete user. It might be protected or you might have lost permissions.');
+       // Error is handled by api interceptor toast
     }
   };
 
-  if (loading && users.length === 0) return <div>Loading users...</div>;
+  if (loading && users.length === 0) {
+      return (
+        <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      );
+  }
+
+  if (error && users.length === 0) {
+      return (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
+              <h3 className="text-lg font-medium text-red-800">Failed to load users</h3>
+              <p className="text-sm text-red-600 mt-1">Please check your connection and try again.</p>
+              <button
+                onClick={() => fetchUsers(page)}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
+              >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+              </button>
+          </div>
+      );
+  }
 
   return (
     <div>
@@ -93,14 +120,14 @@ const Users = () => {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="p-2 border rounded-md disabled:opacity-30 cursor-pointer"
+            className="p-2 border rounded-md disabled:opacity-30 cursor-pointer hover:bg-gray-50"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="p-2 border rounded-md disabled:opacity-30 cursor-pointer"
+            className="p-2 border rounded-md disabled:opacity-30 cursor-pointer hover:bg-gray-50"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
