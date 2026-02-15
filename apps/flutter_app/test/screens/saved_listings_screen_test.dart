@@ -415,9 +415,7 @@ void main() {
       // Verify Dialog
       expect(find.text('Clear all saved listings?'), findsOneWidget);
 
-      // Find the 'Clear All' button in the dialog (it will be the second one usually, or use a more specific finder)
-      // Since we have 'Clear All' in the menu (which is closing) and in the dialog.
-      // We can look for the button specifically.
+      // Find the 'Clear All' button in the dialog
       final dialogButton = find.descendant(
         of: find.byType(ValoraDialog),
         matching: find.text('Clear All'),
