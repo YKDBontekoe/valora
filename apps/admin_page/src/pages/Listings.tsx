@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
+import type { Listing } from '../types';
 
 const Listings = () => {
-  const [listings, setListings] = useState<any[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -11,7 +12,7 @@ const Listings = () => {
         const data = await adminService.getListings();
         setListings(data.items || []);
       } catch (error) {
-        console.error('Failed to fetch listings', error);
+        console.error('Failed to fetch listings');
       } finally {
         setLoading(false);
       }
@@ -34,16 +35,16 @@ const Listings = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {listings.map((listing: any) => (
+            {listings.map((listing) => (
               <tr key={listing.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {listing.address?.street} {listing.address?.houseNumber}
+                  {listing.address}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  €{listing.price?.toLocaleString()}
+                  {listing.price != null ? `€${listing.price.toLocaleString()}` : '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {listing.address?.city}
+                  {listing.city}
                 </td>
               </tr>
             ))}

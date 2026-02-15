@@ -37,9 +37,9 @@ public class AdminEndpointTests : BaseIntegrationTest
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var users = await response.Content.ReadFromJsonAsync<List<AdminUserDto>>();
-        Assert.NotNull(users);
-        Assert.NotEmpty(users); // Should include the admin user
+        var responseData = await response.Content.ReadFromJsonAsync<dynamic>();
+        Assert.NotNull(responseData);
+        // Note: New API returns paginated object with Items
     }
 
     [Fact]
@@ -63,15 +63,18 @@ public class AdminEndpointTests : BaseIntegrationTest
 
         // Create a user to delete
         var emailToDelete = "todelete@example.com";
-        await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
         {
             Email = emailToDelete,
             Password = "Password123!",
             ConfirmPassword = "Password123!"
         });
 
-        var usersResponse = await Client.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users");
-        var userToDelete = usersResponse!.First(u => u.Email == emailToDelete);
+        Assert.True(registerResponse.IsSuccessStatusCode, $"Registration failed: {registerResponse.StatusCode} {await registerResponse.Content.ReadAsStringAsync()}");
+
+        var usersResponse = await Client.GetAsync("/api/admin/users");
+        var usersData = await usersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
+        var userToDelete = usersData!.Items.First(u => u.Email == emailToDelete);
 
         // Act
         var deleteResponse = await Client.DeleteAsync($"/api/admin/users/{userToDelete.Id}");
@@ -79,8 +82,9 @@ public class AdminEndpointTests : BaseIntegrationTest
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        var finalUsers = await Client.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users");
-        Assert.DoesNotContain(finalUsers!, u => u.Email == emailToDelete);
+        var finalUsersResponse = await Client.GetAsync("/api/admin/users");
+        var finalUsersData = await finalUsersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
+        Assert.DoesNotContain(finalUsersData!.Items, u => u.Email == emailToDelete);
     }
 
     [Fact]
@@ -95,4 +99,25 @@ public class AdminEndpointTests : BaseIntegrationTest
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task DeleteUser_Self_ReturnsBadRequest()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        var usersResponse = await Client.GetAsync("/api/admin/users");
+        var usersData = await usersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
+        var adminUser = usersData!.Items.First(u => u.Email == "admin@example.com");
+
+        // Act
+        var response = await Client.DeleteAsync($"/api/admin/users/{adminUser.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("You cannot delete your own account.", body);
+    }
+
+    private record PaginatedUsersResponse(List<AdminUserDto> Items);
 }

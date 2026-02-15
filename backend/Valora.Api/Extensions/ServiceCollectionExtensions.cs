@@ -41,7 +41,7 @@ public static class ServiceCollectionExtensions
                     // Fallback logic
                     if (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
                     {
-                        policy.WithOrigins("http://localhost:3000")
+                        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
                               .AllowAnyMethod()
                               .AllowAnyHeader();
                     }

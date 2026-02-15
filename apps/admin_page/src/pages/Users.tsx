@@ -1,39 +1,49 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { User } from '../types';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const currentUserId = localStorage.getItem('admin_userId');
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(page);
+  }, [page]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (pageNumber: number) => {
     setLoading(true);
     try {
-      const data = await adminService.getUsers();
-      setUsers(data);
+      const data = await adminService.getUsers(pageNumber);
+      setUsers(data.items);
+      setTotalPages(data.totalPages);
     } catch (error) {
-      console.error('Failed to fetch users', error);
+      console.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+  const handleDelete = async (user: User) => {
+    if (user.id === currentUserId) {
+      alert('You cannot delete your own account.');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete user ${user.email}?`)) return;
+
     try {
-      await adminService.deleteUser(id);
-      setUsers(users.filter(u => u.id !== id));
+      await adminService.deleteUser(user.id);
+      setUsers(users.filter(u => u.id !== user.id));
     } catch (error) {
-      alert('Failed to delete user');
+      alert('Failed to delete user. It might be protected or you might have lost permissions.');
     }
   };
 
-  if (loading) return <div>Loading users...</div>;
+  if (loading && users.length === 0) return <div>Loading users...</div>;
 
   return (
     <div>
@@ -60,8 +70,10 @@ const Users = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
-                    onClick={() => handleDelete(user.id)}
-                    className="text-red-600 hover:text-red-900"
+                    onClick={() => handleDelete(user)}
+                    disabled={user.id === currentUserId}
+                    className={`text-red-600 hover:text-red-900 ${user.id === currentUserId ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                    title={user.id === currentUserId ? 'You cannot delete yourself' : 'Delete user'}
                   >
                     <Trash2 className="h-5 w-5" />
                   </button>
@@ -70,6 +82,29 @@ const Users = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-gray-700">
+          Page {page} of {totalPages}
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 border rounded-md disabled:opacity-30 cursor-pointer"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 border rounded-md disabled:opacity-30 cursor-pointer"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ const Dashboard = () => {
         const data = await adminService.getStats();
         setStats(data);
       } catch (error) {
-        console.error('Failed to fetch stats', error);
+        console.error('Failed to fetch stats');
       } finally {
         setLoading(false);
       }

@@ -7,6 +7,9 @@ const Layout = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_refresh_token');
+    localStorage.removeItem('admin_email');
+    localStorage.removeItem('admin_userId');
     navigate('/login');
   };
 
@@ -46,7 +49,7 @@ const Layout = () => {
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+            className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
           >
             <LogOut className="mr-3 h-5 w-5" />
             Logout

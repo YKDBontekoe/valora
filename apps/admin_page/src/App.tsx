@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('admin_token');
+  // Simple check, real app might want to decode JWT and check roles
   return token ? <>{children}</> : <Navigate to="/login" />;
 };
 
