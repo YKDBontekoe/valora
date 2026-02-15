@@ -103,7 +103,7 @@ public class PdokListingService : IPdokListingService
             var reportDto = await _contextReportService.BuildAsync(reportRequest, cancellationToken);
 
             double? safetyScore = null;
-            if (reportDto.CategoryScores.TryGetValue("Safety", out var sScore)) safetyScore = sScore;
+            if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var sScore)) safetyScore = sScore;
 
             // Map DTO to Domain Model
             var contextReport = ListingMapper.MapToDomain(reportDto);

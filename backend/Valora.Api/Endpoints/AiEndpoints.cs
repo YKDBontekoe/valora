@@ -83,11 +83,11 @@ public static class AiEndpoints
 
         sb.AppendLine("**Key Metrics:**");
         // Flatten key metrics for context
-        AppendMetrics(sb, "Social", report.SocialMetrics);
-        AppendMetrics(sb, "Safety", report.CrimeMetrics);
-        AppendMetrics(sb, "Demographics", report.DemographicsMetrics);
-        AppendMetrics(sb, "Amenities", report.AmenityMetrics);
-        AppendMetrics(sb, "Environment", report.EnvironmentMetrics);
+        AppendMetrics(sb, Valora.Application.Enrichment.ContextScoreCalculator.CategorySocial, report.SocialMetrics);
+        AppendMetrics(sb, Valora.Application.Enrichment.ContextScoreCalculator.CategorySafety, report.CrimeMetrics);
+        AppendMetrics(sb, Valora.Application.Enrichment.ContextScoreCalculator.CategoryDemographics, report.DemographicsMetrics);
+        AppendMetrics(sb, Valora.Application.Enrichment.ContextScoreCalculator.CategoryAmenities, report.AmenityMetrics);
+        AppendMetrics(sb, Valora.Application.Enrichment.ContextScoreCalculator.CategoryEnvironment, report.EnvironmentMetrics);
 
         sb.AppendLine();
         sb.AppendLine("Based on this data, provide a **concise 3-4 sentence summary** of the neighborhood vibe.");

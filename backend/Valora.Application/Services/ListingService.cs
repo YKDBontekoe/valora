@@ -68,11 +68,14 @@ public class ListingService : IListingService
         var existing = await _repository.GetByFundaIdAsync(listingDto.FundaId, cancellationToken);
         if (existing is null)
         {
-            await _repository.AddAsync(ListingMapper.ToEntity(listingDto), cancellationToken);
+            var newListing = ListingMapper.ToEntity(listingDto);
+            newListing.LastFundaFetchUtc = DateTime.UtcNow;
+            await _repository.AddAsync(newListing, cancellationToken);
         }
         else
         {
             ListingMapper.UpdateEntity(existing, listingDto);
+            existing.LastFundaFetchUtc = DateTime.UtcNow;
             await _repository.UpdateAsync(existing, cancellationToken);
         }
 

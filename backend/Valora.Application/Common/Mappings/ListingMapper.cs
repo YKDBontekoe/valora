@@ -126,6 +126,5 @@ public static class ListingMapper
         listing.ContextCompositeScore = dto.ContextCompositeScore;
         listing.ContextSafetyScore = dto.ContextSafetyScore;
         listing.ContextReport = dto.ContextReport;
-        listing.LastFundaFetchUtc = DateTime.UtcNow;
     }
 }
