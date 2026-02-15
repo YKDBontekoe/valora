@@ -278,7 +278,7 @@ public class MapInsightsIntegrationTests : IAsyncLifetime
             .ReturnsAsync(new List<MapOverlayDto> { dummyOverlay });
 
         // Act
-        var url = $"/api/map/overlays?minLat={minLat}&minLon={minLon}&maxLat={maxLat}&maxLon={maxLon}&metric=PricePerSquareMeter";
+        var url = FormattableString.Invariant($"/api/map/overlays?minLat={minLat}&minLon={minLon}&maxLat={maxLat}&maxLon={maxLon}&metric=PricePerSquareMeter");
         var response = await Client.GetAsync(url);
 
         // Assert
