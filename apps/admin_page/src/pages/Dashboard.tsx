@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { Stats } from '../types';
 import { Users, List, Bell } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Dashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -21,39 +22,72 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
-  if (loading) return <div>Loading dashboard...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+    </div>
+  );
 
   const cards = [
-    { title: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { title: 'Total Listings', value: stats?.totalListings || 0, icon: List, color: 'text-green-600', bg: 'bg-green-100' },
-    { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { title: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Total Listings', value: stats?.totalListings || 0, icon: List, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-brand-900">Dashboard</h1>
+        <p className="text-brand-500 mt-1">Welcome back, here's what's happening today.</p>
+      </div>
+
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
+      >
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.title} className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <motion.div
+              key={card.title}
+              variants={item}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="bg-white overflow-hidden shadow-premium hover:shadow-premium-lg rounded-2xl transition-shadow duration-300"
+            >
+              <div className="p-8">
                 <div className="flex items-center">
-                  <div className={`flex-shrink-0 ${card.bg} rounded-md p-3`}>
-                    <Icon className={`h-6 w-6 ${card.color}`} />
+                  <div className={`flex-shrink-0 ${card.bg} rounded-xl p-4`}>
+                    <Icon className={`h-7 w-7 ${card.color}`} />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-6 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">{card.title}</dt>
-                      <dd className="text-lg font-medium text-gray-900">{card.value}</dd>
+                      <dt className="text-sm font-semibold text-brand-500 uppercase tracking-wider">{card.title}</dt>
+                      <dd className="text-3xl font-bold text-brand-900 mt-1">{card.value.toLocaleString()}</dd>
                     </dl>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 };
