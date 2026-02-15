@@ -308,31 +308,28 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return ChangeNotifierProvider<SearchListingsProvider>.value(
       value: _searchProvider!,
-      child: Consumer<SearchListingsProvider>(
-        builder: (context, provider, _) {
-          return Scaffold(
-            body: RefreshIndicator(
-              onRefresh: () => provider.refresh(clearData: false),
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                controller: _scrollController,
-                slivers: [
-                  SliverAppBar(
+      child: Scaffold(
+        body: RefreshIndicator(
+          onRefresh: () => _searchProvider!.refresh(clearData: false),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            controller: _scrollController,
+            slivers: [
+              Selector<SearchListingsProvider, bool>(
+                selector: (_, p) => p.hasActiveFiltersOrSort,
+                builder: (context, hasActiveFiltersOrSort, _) {
+                  return SliverAppBar(
                     pinned: true,
-                    backgroundColor:
-                        isDark
-                            ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
-                            : ValoraColors.backgroundLight.withValues(
-                              alpha: 0.95,
-                            ),
+                    backgroundColor: isDark
+                        ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
+                        : ValoraColors.backgroundLight.withValues(alpha: 0.95),
                     surfaceTintColor: Colors.transparent,
                     title: Text(
                       'Search',
                       style: ValoraTypography.headlineMedium.copyWith(
-                        color:
-                            isDark
-                                ? ValoraColors.neutral50
-                                : ValoraColors.neutral900,
+                        color: isDark
+                            ? ValoraColors.neutral50
+                            : ValoraColors.neutral900,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -347,9 +344,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const NotificationsScreen(),
+                                      builder: (context) =>
+                                          const NotificationsScreen(),
                                     ),
                                   );
                                 },
@@ -385,26 +381,33 @@ class _SearchScreenState extends State<SearchScreen> {
                             icon: const Icon(Icons.tune_rounded),
                             tooltip: 'Filters',
                           ),
-                          if (provider.hasActiveFilters)
-                            Positioned(
-                              top: ValoraSpacing.sm,
-                              right: ValoraSpacing.sm,
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: ValoraColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
+                          Selector<SearchListingsProvider, bool>(
+                            selector: (_, p) => p.hasActiveFilters,
+                            builder: (context, hasActiveFilters, _) {
+                              if (hasActiveFilters) {
+                                return Positioned(
+                                  top: ValoraSpacing.sm,
+                                  right: ValoraSpacing.sm,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: const BoxDecoration(
+                                      color: ValoraColors.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(width: ValoraSpacing.sm),
                     ],
                     bottom: PreferredSize(
                       preferredSize: Size.fromHeight(
-                        provider.hasActiveFiltersOrSort ? 130 : 80,
+                        hasActiveFiltersOrSort ? 130 : 80,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,41 +417,77 @@ class _SearchScreenState extends State<SearchScreen> {
                             pdokService: _pdokService,
                             onSuggestionSelected: _onSuggestionSelected,
                             onSubmitted: () {
-                                _debounce?.cancel();
-                                _searchProvider!.refresh();
+                              _debounce?.cancel();
+                              _searchProvider!.refresh();
                             },
                           ),
-                          ActiveFiltersList(
-                            provider: provider,
-                            onFilterTap: _openFilterDialog,
-                            onSortTap: _showSortOptions,
+                          Consumer<SearchListingsProvider>(
+                            builder: (context, provider, _) => ActiveFiltersList(
+                              provider: provider,
+                              onFilterTap: _openFilterDialog,
+                              onSortTap: _showSortOptions,
+                            ),
                           ),
-                          if (provider.hasActiveFiltersOrSort)
+                          if (hasActiveFiltersOrSort)
                             const SizedBox(height: ValoraSpacing.radiusLg),
                         ],
                       ),
                     ),
-                  ),
-                  if (provider.isLoading)
-                    const SliverFillRemaining(
+                  );
+                },
+              ),
+              Selector<SearchListingsProvider, bool>(
+                selector: (_, p) => p.isLoading,
+                builder: (context, isLoading, _) {
+                  if (isLoading) {
+                    return const SliverFillRemaining(
                       child: ValoraLoadingIndicator(message: 'Searching...'),
-                    )
-                  else if (provider.error != null && provider.listings.isEmpty)
-                    SliverFillRemaining(
+                    );
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
+              Selector<SearchListingsProvider, String?>(
+                selector: (_, p) => p.error,
+                builder: (context, error, _) {
+                  if (error != null && _searchProvider!.listings.isEmpty) {
+                    return SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
                           icon: Icons.error_outline_rounded,
                           title: 'Search Failed',
-                          subtitle: provider.error,
+                          subtitle: error,
                           actionLabel: 'Retry',
-                          onAction: provider.refresh,
+                          onAction: _searchProvider!.refresh,
                         ),
                       ),
-                    )
-                  else if (provider.listings.isEmpty &&
-                      (provider.query.isNotEmpty || provider.hasActiveFilters))
-                    const SliverFillRemaining(
+                    );
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
+              Selector<
+                SearchListingsProvider,
+                (bool isEmpty, String query, bool hasFilters)
+              >(
+                selector:
+                    (_, p) => (
+                      p.listings.isEmpty && !p.isLoading && p.error == null,
+                      p.query,
+                      p.hasActiveFilters,
+                    ),
+                builder: (context, state, _) {
+                  final isEmpty = state.$1;
+                  final query = state.$2;
+                  final hasFilters = state.$3;
+
+                  if (!isEmpty) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+
+                  if (query.isNotEmpty || hasFilters) {
+                    return const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
@@ -458,11 +497,9 @@ class _SearchScreenState extends State<SearchScreen> {
                               'Try adjusting your filters or search terms.',
                         ),
                       ),
-                    )
-                  else if (provider.listings.isEmpty &&
-                      provider.query.isEmpty &&
-                      !provider.hasActiveFilters)
-                    const SliverFillRemaining(
+                    );
+                  } else {
+                    return const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
@@ -472,42 +509,56 @@ class _SearchScreenState extends State<SearchScreen> {
                               'Enter a location or use filters to start searching.',
                         ),
                       ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: ValoraSpacing.lg,
-                        vertical: ValoraSpacing.md,
-                      ),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          if (index == provider.listings.length) {
-                            if (provider.isLoadingMore) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: ValoraSpacing.lg,
-                                ),
-                                child: ValoraLoadingIndicator(),
-                              );
-                            }
-                            return const SizedBox(height: 80);
-                          }
-
-                          final listing = provider.listings[index];
-                          return RepaintBoundary(
-                            child: NearbyListingCard(
-                              listing: listing,
-                              onTap: () => _openListingDetail(listing),
-                            ),
-                          );
-                        }, childCount: provider.listings.length + 1),
-                      ),
-                    ),
-                ],
+                    );
+                  }
+                },
               ),
-            ),
-          );
-        },
+              Selector<SearchListingsProvider, List<Listing>>(
+                selector: (_, p) => p.listings,
+                shouldRebuild: (prev, next) => prev != next,
+                builder: (context, listings, _) {
+                  if (listings.isEmpty) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: ValoraSpacing.lg,
+                      vertical: ValoraSpacing.md,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        if (index == listings.length) {
+                          return Selector<SearchListingsProvider, bool>(
+                            selector: (_, p) => p.isLoadingMore,
+                            builder: (context, isLoadingMore, _) {
+                              if (isLoadingMore) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: ValoraSpacing.lg,
+                                  ),
+                                  child: ValoraLoadingIndicator(),
+                                );
+                              }
+                              return const SizedBox(height: 80);
+                            },
+                          );
+                        }
+
+                        final listing = listings[index];
+                        return RepaintBoundary(
+                          child: NearbyListingCard(
+                            listing: listing,
+                            onTap: () => _openListingDetail(listing),
+                          ),
+                        );
+                      }, childCount: listings.length + 1),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

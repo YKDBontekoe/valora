@@ -21,6 +21,8 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.HasIndex(e => e.LastFundaFetchUtc);
         builder.HasIndex(e => e.ContextCompositeScore);
         builder.HasIndex(e => e.ContextSafetyScore);
+        builder.HasIndex(e => e.Status);
+        builder.HasIndex(e => e.IsSoldOrRented);
 
         // Composite indexes for common filters
         builder.HasIndex(e => new { e.City, e.Price });

@@ -80,7 +80,6 @@ class SearchListingsProvider extends ChangeNotifier {
 
   void setCity(String? value) {
     _city = value;
-    notifyListeners();
   }
 
   Future<void> refresh({bool clearData = true}) async {
@@ -147,52 +146,44 @@ class SearchListingsProvider extends ChangeNotifier {
     _minSafetyScore = minSafetyScore;
     _sortBy = sortBy;
     _sortOrder = sortOrder;
-    notifyListeners();
     await refresh(clearData: true);
   }
 
   Future<void> clearPriceFilter() async {
     _minPrice = null;
     _maxPrice = null;
-    notifyListeners();
     await refresh();
   }
 
   Future<void> clearCityFilter() async {
     _city = null;
-    notifyListeners();
     await refresh();
   }
 
   Future<void> clearBedroomsFilter() async {
     _minBedrooms = null;
-    notifyListeners();
     await refresh();
   }
 
   Future<void> clearLivingAreaFilter() async {
     _minLivingArea = null;
     _maxLivingArea = null;
-    notifyListeners();
     await refresh();
   }
 
   Future<void> clearCompositeScoreFilter() async {
     _minCompositeScore = null;
-    notifyListeners();
     await refresh();
   }
 
   Future<void> clearSafetyScoreFilter() async {
     _minSafetyScore = null;
-    notifyListeners();
     await refresh();
   }
 
   Future<void> clearSort() async {
     _sortBy = null;
     _sortOrder = null;
-    notifyListeners();
     await refresh();
   }
 
@@ -207,7 +198,6 @@ class SearchListingsProvider extends ChangeNotifier {
     _minSafetyScore = null;
     _sortBy = null;
     _sortOrder = null;
-    notifyListeners();
     await refresh();
   }
 

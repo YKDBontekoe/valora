@@ -152,11 +152,16 @@ public class ListingRepository : IListingRepository
         return await _context.Listings.CountAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Gets a list of all active listings without tracking changes.
+    /// Entities returned by this method are detached and modifications will not be persisted unless explicitly updated.
+    /// </summary>
+    /// <returns>A list of active listings (detached).</returns>
     public async Task<List<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default)
     {
         // Return listings that are not explicitly sold or withdrawn
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
-        return await _context.Listings
+        return await _context.Listings.AsNoTracking()
             .WhereActive()
             .ToListAsync(cancellationToken);
     }
