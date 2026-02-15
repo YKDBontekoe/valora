@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { User } from '../types';
-import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Users = () => {
@@ -48,13 +48,18 @@ const Users = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-brand-900">User Management</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-brand-900">User Management</h1>
+            {loading && users.length > 0 && (
+              <Loader2 className="h-6 w-6 text-primary-600 animate-spin" />
+            )}
+          </div>
           <p className="text-brand-500 mt-1">Manage administrative access and roles.</p>
         </div>
       </div>
 
-      <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100">
-        <div className="overflow-x-auto">
+      <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 relative">
+        <div className={`overflow-x-auto transition-opacity duration-200 ${loading && users.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
           <table className="min-w-full divide-y divide-brand-100">
             <thead className="bg-brand-50">
               <tr>
@@ -97,13 +102,13 @@ const Users = () => {
                       <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => handleDelete(user)}
-                          disabled={user.id === currentUserId}
+                          disabled={user.id === currentUserId || loading}
                           className={`p-2 rounded-lg transition-all ${
-                            user.id === currentUserId
+                            user.id === currentUserId || loading
                               ? 'text-brand-200 cursor-not-allowed'
                               : 'text-brand-400 hover:text-red-600 hover:bg-red-50 cursor-pointer'
                           }`}
-                          title={user.id === currentUserId ? 'You cannot delete yourself' : 'Delete user'}
+                          title={user.id === currentUserId ? 'You cannot delete yourself' : loading ? 'Please wait...' : 'Delete user'}
                         >
                           <Trash2 className="h-5 w-5" />
                         </button>
