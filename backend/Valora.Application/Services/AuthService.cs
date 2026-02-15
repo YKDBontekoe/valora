@@ -55,6 +55,8 @@ public class AuthService : IAuthService
         _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
 
         var token = await _tokenService.CreateJwtTokenAsync(user);
+        var roles = await _identityService.GetUserRolesAsync(user);
+
         var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
         await _tokenService.SaveRefreshTokenAsync(refreshToken);
 
@@ -62,7 +64,8 @@ public class AuthService : IAuthService
             token,
             refreshToken.RawToken,
             user.Email!,
-            user.Id
+            user.Id,
+            roles
         );
     }
 
@@ -87,18 +90,21 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Rotate Refresh Token
-        await _tokenService.RevokeRefreshTokenAsync(refreshToken);
-        var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
-        await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
-
+        // Generate new access token and lookup roles first
         var newAccessToken = await _tokenService.CreateJwtTokenAsync(existingToken.User);
+        var roles = await _identityService.GetUserRolesAsync(existingToken.User);
+
+        // If above operations succeed, then rotate refresh token
+        await _tokenService.RevokeRefreshTokenAsync(refreshToken); // Revoke old token
+        var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
+        await _tokenService.SaveRefreshTokenAsync(newRefreshToken); // Save new token
 
         return new AuthResponseDto(
             newAccessToken,
             newRefreshToken.RawToken,
             existingToken.User.Email!,
-            existingToken.User.Id
+            existingToken.User.Id,
+            roles
         );
     }
 }

@@ -17,7 +17,10 @@ fi
 echo "🔍 Running Linting..."
 npm run lint
 
-echo "🧪 Running Tests..."
-npm test
+echo "🏗️ Building App..."
+npm run build
+
+echo "🧪 Running Tests with Coverage..."
+npm run test:coverage
 
 echo "✅ Pipeline completed successfully!"
