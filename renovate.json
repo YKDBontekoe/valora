@@ -24,6 +24,22 @@
       "matchManagers": [
         "pub"
       ]
+    },
+    {
+      "groupName": "react-dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPaths": [
+        "apps/admin_page/**"
+      ],
+      "matchPackagePatterns": [
+        "^react",
+        "^@types/react",
+        "eslint-plugin-react",
+        "vitejs/plugin-react",
+        "lucide-react"
+      ]
     }
   ]
 }
