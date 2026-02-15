@@ -165,6 +165,8 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddCustomCors(builder.Configuration, builder.Environment);
 var app = builder.Build();
 
+app.UseCors();
+
 app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
 
 // Log warning if CORS is insecurely configured in production
@@ -184,7 +186,6 @@ if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_H
 
 app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
 
-app.UseCors();
 app.UseRateLimiter();
 
 app.UseAuthentication();
