@@ -37,6 +37,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                 { "JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!" },
                 { "JWT_ISSUER", "ValoraTest" },
                 { "JWT_AUDIENCE", "ValoraTest" },
+                { "SENTRY_DSN", "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456" },
+                { "SENTRY_TRACES_SAMPLE_RATE", "1.0" },
                 { "JWT_EXPIRY_MINUTES", "15" }
             });
         });
