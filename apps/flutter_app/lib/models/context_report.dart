@@ -12,6 +12,7 @@ class ContextReport {
     required this.categoryScores,
     required this.sources,
     required this.warnings,
+    this.score,
   });
 
   final ContextLocation location;
@@ -26,6 +27,7 @@ class ContextReport {
   final Map<String, double> categoryScores;
   final List<SourceAttribution> sources;
   final List<String> warnings;
+  final double? score;
 
   factory ContextReport.fromJson(Map<String, dynamic> json) {
     return ContextReport(
@@ -87,7 +89,13 @@ class ContextLocation {
     required this.displayAddress,
     required this.latitude,
     required this.longitude,
+    this.rdX,
+    this.rdY,
+    this.municipalityCode,
     this.municipalityName,
+    this.districtCode,
+    this.districtName,
+    this.neighborhoodCode,
     this.neighborhoodName,
     this.postalCode,
   });
@@ -96,7 +104,13 @@ class ContextLocation {
   final String displayAddress;
   final double latitude;
   final double longitude;
+  final double? rdX;
+  final double? rdY;
+  final String? municipalityCode;
   final String? municipalityName;
+  final String? districtCode;
+  final String? districtName;
+  final String? neighborhoodCode;
   final String? neighborhoodName;
   final String? postalCode;
 
@@ -106,7 +120,13 @@ class ContextLocation {
       displayAddress: json['displayAddress']?.toString() ?? '',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      rdX: (json['rdX'] as num?)?.toDouble(),
+      rdY: (json['rdY'] as num?)?.toDouble(),
+      municipalityCode: json['municipalityCode']?.toString(),
       municipalityName: json['municipalityName']?.toString(),
+      districtCode: json['districtCode']?.toString(),
+      districtName: json['districtName']?.toString(),
+      neighborhoodCode: json['neighborhoodCode']?.toString(),
       neighborhoodName: json['neighborhoodName']?.toString(),
       postalCode: json['postalCode']?.toString(),
     );
@@ -118,9 +138,15 @@ class ContextLocation {
       'displayAddress': displayAddress,
       'latitude': latitude,
       'longitude': longitude,
-      if (municipalityName != null) 'municipalityName': municipalityName,
-      if (neighborhoodName != null) 'neighborhoodName': neighborhoodName,
-      if (postalCode != null) 'postalCode': postalCode,
+      'rdX': rdX,
+      'rdY': rdY,
+      'municipalityCode': municipalityCode,
+      'municipalityName': municipalityName,
+      'districtCode': districtCode,
+      'districtName': districtName,
+      'neighborhoodCode': neighborhoodCode,
+      'neighborhoodName': neighborhoodName,
+      'postalCode': postalCode,
     };
   }
 }
@@ -194,5 +220,30 @@ class SourceAttribution {
       'url': url,
       'license': license,
     };
+  }
+}
+
+class ContextCategoryMetrics {
+  ContextCategoryMetrics({
+    required this.metrics,
+    required this.warnings,
+    this.score,
+  });
+
+  final List<ContextMetric> metrics;
+  final List<String> warnings;
+  final double? score;
+
+  factory ContextCategoryMetrics.fromJson(Map<String, dynamic> json) {
+    return ContextCategoryMetrics(
+      metrics: (json['metrics'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(ContextMetric.fromJson)
+          .toList(),
+      score: (json['score'] as num?)?.toDouble(),
+      warnings: (json['warnings'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
+    );
   }
 }

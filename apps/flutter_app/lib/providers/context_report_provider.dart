@@ -21,12 +21,33 @@ class ContextReportProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isDisposed = false;
   String? _error;
-  ContextReport? _report;
+  ContextLocation? _location;
+
+  // Metrics
+  List<ContextMetric>? _socialMetrics;
+  List<ContextMetric>? _crimeMetrics;
+  List<ContextMetric>? _demographicsMetrics;
+  List<ContextMetric>? _housingMetrics;
+  List<ContextMetric>? _mobilityMetrics;
+  List<ContextMetric>? _amenityMetrics;
+  List<ContextMetric>? _environmentMetrics;
+
+  // Scores
+  final Map<String, double> _categoryScores = {};
+
+  // Loading states
+  bool _loadingSocial = false;
+  bool _loadingCrime = false;
+  bool _loadingDemographics = false;
+  bool _loadingHousing = false;
+  bool _loadingMobility = false;
+  bool _loadingAmenities = false;
+  bool _loadingEnvironment = false;
+
   int _radiusMeters = 1000;
   List<SearchHistoryItem> _history = [];
   int _historyLoadSeq = 0;
 
-  // Persistent state for report children
   final Map<String, bool> _expansionStates = {};
   final Map<String, String> _aiInsights = {};
   final Map<String, String> _aiInsightErrors = {};
@@ -34,9 +55,52 @@ class ContextReportProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get error => _error;
-  ContextReport? get report => _report;
+  ContextLocation? get location => _location;
+
+  List<ContextMetric>? get socialMetrics => _socialMetrics;
+  List<ContextMetric>? get crimeMetrics => _crimeMetrics;
+  List<ContextMetric>? get demographicsMetrics => _demographicsMetrics;
+  List<ContextMetric>? get housingMetrics => _housingMetrics;
+  List<ContextMetric>? get mobilityMetrics => _mobilityMetrics;
+  List<ContextMetric>? get amenityMetrics => _amenityMetrics;
+  List<ContextMetric>? get environmentMetrics => _environmentMetrics;
+
+  Map<String, double> get categoryScores => Map.unmodifiable(_categoryScores);
+
+  bool get loadingSocial => _loadingSocial;
+  bool get loadingCrime => _loadingCrime;
+  bool get loadingDemographics => _loadingDemographics;
+  bool get loadingHousing => _loadingHousing;
+  bool get loadingMobility => _loadingMobility;
+  bool get loadingAmenities => _loadingAmenities;
+  bool get loadingEnvironment => _loadingEnvironment;
+
   int get radiusMeters => _radiusMeters;
   List<SearchHistoryItem> get history => List.unmodifiable(_history);
+
+  ContextReport? get report {
+    if (_location == null) return null;
+    return ContextReport(
+      location: _location!,
+      socialMetrics: _socialMetrics ?? [],
+      crimeMetrics: _crimeMetrics ?? [],
+      demographicsMetrics: _demographicsMetrics ?? [],
+      housingMetrics: _housingMetrics ?? [],
+      mobilityMetrics: _mobilityMetrics ?? [],
+      amenityMetrics: _amenityMetrics ?? [],
+      environmentMetrics: _environmentMetrics ?? [],
+      compositeScore: _calculateCompositeScore(),
+      categoryScores: _categoryScores,
+      sources: [],
+      warnings: [],
+    );
+  }
+
+  double _calculateCompositeScore() {
+    if (_categoryScores.isEmpty) return 0;
+    // Simple average for now as weights are on backend, but we could replicate them
+    return _categoryScores.values.reduce((a, b) => a + b) / _categoryScores.length;
+  }
 
   @override
   void dispose() {
@@ -49,7 +113,6 @@ class ContextReportProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Expansion state management
   bool isExpanded(String category, {bool defaultValue = false}) {
     return _expansionStates[category] ?? defaultValue;
   }
@@ -60,7 +123,6 @@ class ContextReportProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // AI Insight state management
   String? getAiInsight(String location) => _aiInsights[location];
   String? getAiInsightError(String location) => _aiInsightErrors[location];
   bool isAiInsightLoading(String location) => _loadingAiInsights.contains(location);
@@ -91,9 +153,7 @@ class ContextReportProvider extends ChangeNotifier {
   Future<void> _loadHistory() async {
     final int seq = ++_historyLoadSeq;
     final history = await _historyService.getHistory();
-
     if (_isDisposed || seq != _historyLoadSeq) return;
-
     _history = history;
     notifyListeners();
   }
@@ -110,46 +170,103 @@ class ContextReportProvider extends ChangeNotifier {
 
     _isLoading = true;
     _error = null;
+    _location = null;
+    _clearMetrics();
     notifyListeners();
 
     try {
-      // 1. Fetch Report
-      final report = await _apiService.getContextReport(
-        trimmed,
-        radiusMeters: _radiusMeters,
-      );
-
+      final location = await _apiService.resolveLocation(trimmed);
       if (_isDisposed) return;
+      if (location == null) {
+        _error = 'Could not resolve address.';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
 
-      _report = report;
-      _error = null;
+      _location = location;
+      _isLoading = false;
+      notifyListeners();
 
-      // Reset expansion states for new report
-      _expansionStates.clear();
+      _fetchMetrics(location);
 
-      // 2. Update History (Failures here should not fail the report)
       try {
         await _historyService.addToHistory(trimmed);
         await _loadHistory();
-      } catch (_) {
-        // Ignore history save errors
+      } catch (_) {}
+    } catch (e) {
+      if (_isDisposed) return;
+      _error = e is AppException ? e.message : 'Failed to resolve location.';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void _fetchMetrics(ContextLocation location) {
+    _fetchCategory('Social', (loc) => _apiService.getContextMetrics('social', loc),
+        (m) => _socialMetrics = m, (l) => _loadingSocial = l);
+    _fetchCategory('Safety', (loc) => _apiService.getContextMetrics('safety', loc),
+        (m) => _crimeMetrics = m, (l) => _loadingCrime = l);
+    _fetchCategory('Demographics', (loc) => _apiService.getContextMetrics('demographics', loc),
+        (m) => _demographicsMetrics = m, (l) => _loadingDemographics = l);
+    _fetchCategory('Housing', (loc) => _apiService.getContextMetrics('housing', loc),
+        (m) => _housingMetrics = m, (l) => _loadingHousing = l);
+    _fetchCategory('Mobility', (loc) => _apiService.getContextMetrics('mobility', loc),
+        (m) => _mobilityMetrics = m, (l) => _loadingMobility = l);
+    _fetchCategory('Amenities', (loc) => _apiService.getContextMetrics('amenities', loc, radiusMeters: _radiusMeters),
+        (m) => _amenityMetrics = m, (l) => _loadingAmenities = l);
+    _fetchCategory('Environment', (loc) => _apiService.getContextMetrics('environment', loc),
+        (m) => _environmentMetrics = m, (l) => _loadingEnvironment = l);
+  }
+
+  Future<void> _fetchCategory(
+    String name,
+    Future<ContextCategoryMetrics> Function(ContextLocation) fetcher,
+    void Function(List<ContextMetric>) setter,
+    void Function(bool) setLoading,
+  ) async {
+    setLoading(true);
+    notifyListeners();
+    try {
+      final result = await fetcher(_location!);
+      if (_isDisposed) return;
+      setter(result.metrics);
+      if (result.score != null) {
+        _categoryScores[name] = result.score!;
       }
     } catch (e) {
       if (_isDisposed) return;
-      _report = null;
-      _error =
-          e is AppException ? e.message : 'Failed to generate context report.';
     } finally {
       if (!_isDisposed) {
-        _isLoading = false;
+        setLoading(false);
         notifyListeners();
       }
     }
   }
 
+  void _clearMetrics() {
+    _socialMetrics = null;
+    _crimeMetrics = null;
+    _demographicsMetrics = null;
+    _housingMetrics = null;
+    _mobilityMetrics = null;
+    _amenityMetrics = null;
+    _environmentMetrics = null;
+    _categoryScores.clear();
+
+    _loadingSocial = false;
+    _loadingCrime = false;
+    _loadingDemographics = false;
+    _loadingHousing = false;
+    _loadingMobility = false;
+    _loadingAmenities = false;
+    _loadingEnvironment = false;
+  }
+
   void clear() {
     _error = null;
-    _report = null;
+    _location = null;
+    _clearMetrics();
     _expansionStates.clear();
     notifyListeners();
   }

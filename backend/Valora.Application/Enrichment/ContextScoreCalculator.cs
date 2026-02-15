@@ -29,6 +29,12 @@ public static class ContextScoreCalculator
         [CategoryEnvironment] = 0.10
     };
 
+    public static double? ComputeCategoryScore(IReadOnlyList<ContextMetricDto> metrics)
+    {
+        var average = AverageScore(metrics);
+        return average.HasValue ? Math.Round(average.Value, 1) : null;
+    }
+
     public static Dictionary<string, double> ComputeCategoryScores(
         IReadOnlyList<ContextMetricDto> socialMetrics,
         IReadOnlyList<ContextMetricDto> crimeMetrics,

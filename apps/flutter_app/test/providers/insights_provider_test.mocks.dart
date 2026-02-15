@@ -43,8 +43,9 @@ class _FakeListing_1 extends _i1.SmartFake implements _i3.Listing {
     : super(parent, parentInvocation);
 }
 
-class _FakeContextReport_2 extends _i1.SmartFake implements _i4.ContextReport {
-  _FakeContextReport_2(Object parent, Invocation parentInvocation)
+class _FakeContextCategoryMetrics_2 extends _i1.SmartFake
+    implements _i4.ContextCategoryMetrics {
+  _FakeContextCategoryMetrics_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -100,28 +101,37 @@ class MockApiService extends _i1.Mock implements _i5.ApiService {
           as _i6.Future<_i3.Listing?>);
 
   @override
-  _i6.Future<_i4.ContextReport> getContextReport(
-    String? input, {
-    int? radiusMeters = 1000,
+  _i6.Future<_i4.ContextLocation?> resolveLocation(String? input) =>
+      (super.noSuchMethod(
+            Invocation.method(#resolveLocation, [input]),
+            returnValue: _i6.Future<_i4.ContextLocation?>.value(),
+          )
+          as _i6.Future<_i4.ContextLocation?>);
+
+  @override
+  _i6.Future<_i4.ContextCategoryMetrics> getContextMetrics(
+    String? category,
+    _i4.ContextLocation? location, {
+    int? radiusMeters,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
-              #getContextReport,
-              [input],
+              #getContextMetrics,
+              [category, location],
               {#radiusMeters: radiusMeters},
             ),
-            returnValue: _i6.Future<_i4.ContextReport>.value(
-              _FakeContextReport_2(
+            returnValue: _i6.Future<_i4.ContextCategoryMetrics>.value(
+              _FakeContextCategoryMetrics_2(
                 this,
                 Invocation.method(
-                  #getContextReport,
-                  [input],
+                  #getContextMetrics,
+                  [category, location],
                   {#radiusMeters: radiusMeters},
                 ),
               ),
             ),
           )
-          as _i6.Future<_i4.ContextReport>);
+          as _i6.Future<_i4.ContextCategoryMetrics>);
 
   @override
   _i6.Future<String> getAiAnalysis(_i4.ContextReport? report) =>

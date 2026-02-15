@@ -78,8 +78,12 @@ class ApiService {
     return ListingResponse.fromJson(json.decode(body));
   }
 
-  ContextReport _parseContextReport(String body) {
-    return ContextReport.fromJson(json.decode(body));
+  static ContextLocation _parseContextLocation(String body) {
+    return ContextLocation.fromJson(json.decode(body));
+  }
+
+  static ContextCategoryMetrics _parseContextCategoryMetrics(String body) {
+    return ContextCategoryMetrics.fromJson(json.decode(body));
   }
 
   List<ValoraNotification> _parseNotifications(String body) {
@@ -164,20 +168,35 @@ class ApiService {
     }
   }
 
-  Future<ContextReport> getContextReport(
-    String input, {
-    int radiusMeters = 1000,
-  }) async {
-    final uri = Uri.parse('$baseUrl/context/report');
+  Future<ContextLocation?> resolveLocation(String input) async {
+    final uri = Uri.parse('$baseUrl/context/resolve').replace(queryParameters: {'input': input});
     try {
-      final payload = json.encode(<String, dynamic>{
-        'input': input,
-        'radiusMeters': radiusMeters,
-      });
+      final response = await _authenticatedRequest(
+        (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
+      );
 
-      // POST requests are generally not idempotent, so we don't retry by default
-      // unless we are sure. Here generating a report might be expensive but safe to retry if failed early.
-      // But let's stick to GET retries for now as per plan.
+      if (response.statusCode == 404) return null;
+
+      return await _handleResponse(
+        response,
+        (body) => _runner(_parseContextLocation, body),
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<ContextCategoryMetrics> getContextMetrics(
+    String category,
+    ContextLocation location, {
+    int? radiusMeters,
+  }) async {
+    final uri = Uri.parse('$baseUrl/context/metrics/$category');
+    try {
+      final payload = json.encode(radiusMeters != null
+          ? {'location': location.toJson(), 'radiusMeters': radiusMeters}
+          : location.toJson());
+
       final response = await _authenticatedRequest(
         (headers) => _client
             .post(uri, headers: headers, body: payload)
@@ -186,13 +205,12 @@ class ApiService {
 
       return await _handleResponse(
         response,
-        (body) => _runner(_parseContextReport, body),
+        (body) => _runner(_parseContextCategoryMetrics, body),
       );
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
   }
-
   Future<String> getAiAnalysis(ContextReport report) async {
     final uri = Uri.parse('$baseUrl/ai/analyze-report');
     try {

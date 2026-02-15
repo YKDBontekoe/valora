@@ -8,6 +8,7 @@ using Moq;
 using Moq.Protected;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure.Enrichment;
 
 namespace Valora.UnitTests.Enrichment;
@@ -15,6 +16,7 @@ namespace Valora.UnitTests.Enrichment;
 public class OverpassAmenityClientTests
 {
     private readonly Mock<ILogger<OverpassAmenityClient>> _loggerMock;
+    private readonly Mock<IContextCacheRepository> _dbCacheMock;
     private readonly IMemoryCache _cache;
     private readonly IOptions<ContextEnrichmentOptions> _options;
     private readonly ResolvedLocationDto _location;
@@ -22,6 +24,7 @@ public class OverpassAmenityClientTests
     public OverpassAmenityClientTests()
     {
         _loggerMock = new Mock<ILogger<OverpassAmenityClient>>();
+        _dbCacheMock = new Mock<IContextCacheRepository>();
         _cache = new MemoryCache(new MemoryCacheOptions());
         _options = Options.Create(new ContextEnrichmentOptions
         {
@@ -62,7 +65,7 @@ public class OverpassAmenityClientTests
         var jsonResponse = JsonSerializer.Serialize(new { elements });
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result = await client.GetAmenitiesAsync(_location, 1000);
@@ -93,7 +96,7 @@ public class OverpassAmenityClientTests
         """;
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result = await client.GetAmenitiesAsync(_location, 1000);
@@ -111,7 +114,7 @@ public class OverpassAmenityClientTests
         var jsonResponse = JsonSerializer.Serialize(new { elements = new[] { new { lat = 52.377, lon = 4.898, tags = new Dictionary<string, string> { ["amenity"] = "school" } } } });
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result1 = await client.GetAmenitiesAsync(_location, 1000);
@@ -139,7 +142,7 @@ public class OverpassAmenityClientTests
         var jsonResponse = JsonSerializer.Serialize(new { elements });
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result = await client.GetAmenitiesInBboxAsync(52.0, 4.0, 52.5, 4.5);
@@ -158,7 +161,7 @@ public class OverpassAmenityClientTests
         var jsonResponse = JsonSerializer.Serialize(new { elements = Array.Empty<object>() });
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result = await client.GetAmenitiesInBboxAsync(52.0, 4.0, 52.5, 4.5);
@@ -174,7 +177,7 @@ public class OverpassAmenityClientTests
         // Arrange
         var handlerMock = CreateHandlerMock(HttpStatusCode.InternalServerError, "{}");
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAmenitiesAsync(_location, 1000));
@@ -186,7 +189,7 @@ public class OverpassAmenityClientTests
         // Arrange
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, "{ invalid json }");
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<JsonException>(() => client.GetAmenitiesAsync(_location, 1000));
@@ -199,7 +202,7 @@ public class OverpassAmenityClientTests
         // Simulate a response that deserializes to null (unlikely with valid JSON, but possible if response is "null")
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, "null");
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result = await client.GetAmenitiesAsync(_location, 1000);
@@ -223,7 +226,7 @@ public class OverpassAmenityClientTests
         """;
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
-        var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
+        var client = new OverpassAmenityClient(httpClient, _cache, _dbCacheMock.Object, _options, _loggerMock.Object);
 
         // Act
         var result = await client.GetAmenitiesAsync(_location, 1000);

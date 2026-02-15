@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/common/valora_button.dart';
+import '../widgets/common/valora_dialog.dart';
+import '../widgets/common/valora_empty_state.dart';
 import '../widgets/report/context_report_view.dart';
-import '../widgets/valora_widgets.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key});
@@ -28,13 +30,13 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
       create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
       child: Consumer<ContextReportProvider>(
         builder: (context, provider, _) {
-          final report = provider.report;
+          final location = provider.location;
 
           return Scaffold(
             appBar: AppBar(
               title: const Text('Property Analytics'),
               actions: [
-                if (report != null)
+                if (location != null)
                   IconButton(
                     tooltip: 'New Report',
                     onPressed: provider.clear,
@@ -43,15 +45,12 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
               ],
             ),
             body: SafeArea(
-              child: report != null
-                  ? ListView.builder(
+              child: location != null
+                  ? ListView(
                       padding: const EdgeInsets.all(20),
-                      itemCount: ContextReportView.childCount(report),
-                      itemBuilder: (context, index) => ContextReportView.buildChild(
-                        context,
-                        index,
-                        report,
-                      ),
+                      children: const [
+                        ContextReportView(),
+                      ],
                     )
                   : _InputForm(
                       controller: _inputController,

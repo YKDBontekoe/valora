@@ -7,6 +7,7 @@ using Moq;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Infrastructure.Enrichment;
+using Valora.Application.Common.Interfaces;
 
 namespace Valora.UnitTests.Enrichment;
 
@@ -438,6 +439,7 @@ public class LuchtmeetnetAirQualityClientTests
         return new LuchtmeetnetAirQualityClient(
             new HttpClient(handler) { BaseAddress = new Uri("https://lucht.local") },
             new MemoryCache(new MemoryCacheOptions()),
+            new Mock<IContextCacheRepository>().Object,
             Options.Create(new ContextEnrichmentOptions
             {
                 LuchtmeetnetBaseUrl = "https://lucht.local",

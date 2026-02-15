@@ -12,61 +12,61 @@ namespace Valora.IntegrationTests;
 public class ContextReportEndpointTests
 {
     [Fact]
-    public async Task Post_ContextReport_ReturnsReport_WhenAuthenticated()
+    public async Task Get_Resolve_ReturnsLocation_WhenAuthenticated()
     {
-        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextReport");
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextResolve");
         var client = factory.CreateClient();
 
         await AuthenticateAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/context/report", new
-        {
-            input = "Damrak 1 Amsterdam",
-            radiusMeters = 800
-        });
+        var response = await client.GetAsync("/api/context/resolve?input=Damrak+1+Amsterdam");
 
         response.EnsureSuccessStatusCode();
 
-        var content = await response.Content.ReadAsStringAsync();
-        using var json = JsonDocument.Parse(content);
-
-        Assert.True(json.RootElement.TryGetProperty("location", out var location));
-        Assert.Equal("Damrak 1, 1012LG Amsterdam", location.GetProperty("displayAddress").GetString());
-        Assert.True(json.RootElement.TryGetProperty("compositeScore", out _));
+        var location = await response.Content.ReadFromJsonAsync<ResolvedLocationDto>();
+        Assert.NotNull(location);
+        Assert.Equal("Damrak 1, 1012LG Amsterdam", location.DisplayAddress);
     }
 
     [Fact]
-    public async Task Post_ContextReport_ReturnsUnauthorized_WhenNotAuthenticated()
+    public async Task Post_MetricsSocial_ReturnsMetrics()
     {
-        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextReportUnauthorized");
-        var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync("/api/context/report", new { input = "Damrak 1 Amsterdam" });
-
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Post_ContextReport_WhenServiceThrowsValidationException_ReturnsBadRequest()
-    {
-        await using var factory = new ThrowingContextReportTestWebAppFactory("InMemory:ContextReportValidation");
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextSocial");
         var client = factory.CreateClient();
 
         await AuthenticateAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/context/report", new
-        {
-            input = "unknown address",
-            radiusMeters = 800
-        });
+        var location = CreateLocation();
+        var response = await client.PostAsJsonAsync("/api/context/metrics/social", location);
 
-        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(content);
+        Assert.True(json.RootElement.TryGetProperty("metrics", out _));
+    }
+
+    private static ResolvedLocationDto CreateLocation()
+    {
+        return new ResolvedLocationDto(
+            Query: "Damrak 1 Amsterdam",
+            DisplayAddress: "Damrak 1, 1012LG Amsterdam",
+            Latitude: 52.37714,
+            Longitude: 4.89803,
+            RdX: 121691,
+            RdY: 487809,
+            MunicipalityCode: "GM0363",
+            MunicipalityName: "Amsterdam",
+            DistrictCode: "WK0363AD",
+            DistrictName: "Burgwallen-Nieuwe Zijde",
+            NeighborhoodCode: "BU0363AD03",
+            NeighborhoodName: "Nieuwendijk-Noord",
+            PostalCode: "1012LG");
     }
 
     private static async Task AuthenticateAsync(HttpClient client)
     {
         var password = "Password123!";
-        var email = "context@test.local";
+        var email = Guid.NewGuid().ToString() + "@test.local";
 
         await client.PostAsJsonAsync("/api/auth/register", new
         {
@@ -91,12 +91,8 @@ public class ContextReportEndpointTests
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", auth.Token);
     }
 
-    private sealed class ContextReportTestWebAppFactory : IntegrationTestWebAppFactory
+    private sealed class ContextReportTestWebAppFactory(string connectionString) : IntegrationTestWebAppFactory(connectionString)
     {
-        public ContextReportTestWebAppFactory(string connectionString) : base(connectionString)
-        {
-        }
-
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             base.ConfigureWebHost(builder);
@@ -107,51 +103,38 @@ public class ContextReportEndpointTests
         }
     }
 
-    private sealed class ThrowingContextReportTestWebAppFactory : IntegrationTestWebAppFactory
-    {
-        public ThrowingContextReportTestWebAppFactory(string connectionString) : base(connectionString)
-        {
-        }
-
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            base.ConfigureWebHost(builder);
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddScoped<IContextReportService, ThrowingContextReportService>();
-            });
-        }
-    }
-
     private sealed class FakeContextReportService : IContextReportService
     {
+        public Task<ResolvedLocationDto?> ResolveLocationAsync(string input, CancellationToken ct = default)
+        {
+            return Task.FromResult<ResolvedLocationDto?>(CreateLocation());
+        }
+
+        public Task<List<ContextMetricDto>> GetSocialMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
+        public Task<List<ContextMetricDto>> GetSafetyMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
+        public Task<List<ContextMetricDto>> GetAmenityMetricsAsync(ResolvedLocationDto location, int radiusMeters, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
+        public Task<List<ContextMetricDto>> GetEnvironmentMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
+        public Task<List<ContextMetricDto>> GetDemographicsMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
+        public Task<List<ContextMetricDto>> GetHousingMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
+        public Task<List<ContextMetricDto>> GetMobilityMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+            => Task.FromResult(new List<ContextMetricDto>());
+
         public Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
         {
-            var location = new ResolvedLocationDto(
-                Query: request.Input,
-                DisplayAddress: "Damrak 1, 1012LG Amsterdam",
-                Latitude: 52.37714,
-                Longitude: 4.89803,
-                RdX: 121691,
-                RdY: 487809,
-                MunicipalityCode: "GM0363",
-                MunicipalityName: "Amsterdam",
-                DistrictCode: "WK0363AD",
-                DistrictName: "Burgwallen-Nieuwe Zijde",
-                NeighborhoodCode: "BU0363AD03",
-                NeighborhoodName: "Nieuwendijk-Noord",
-                PostalCode: "1012LG");
-
-            var categoryScores = new Dictionary<string, double>
-            {
-                ["Social"] = 80,
-                ["Safety"] = 75,
-                ["Demographics"] = 70,
-                ["Amenities"] = 85,
-                ["Environment"] = 72
-            };
-
-            var report = new ContextReportDto(
+            var location = CreateLocation();
+            return Task.FromResult(new ContextReportDto(
                 Location: location,
                 SocialMetrics: [],
                 CrimeMetrics: [],
@@ -160,20 +143,10 @@ public class ContextReportEndpointTests
                 MobilityMetrics: [],
                 AmenityMetrics: [],
                 EnvironmentMetrics: [],
-                CompositeScore: 75,
-                CategoryScores: categoryScores,
+                CompositeScore: 0,
+                CategoryScores: new Dictionary<string, double>(),
                 Sources: [],
-                Warnings: []);
-
-            return Task.FromResult(report);
-        }
-    }
-
-    private sealed class ThrowingContextReportService : IContextReportService
-    {
-        public Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
-        {
-            throw new ValidationException(new[] { "Could not resolve input to a Dutch address." });
+                Warnings: []));
         }
     }
 }

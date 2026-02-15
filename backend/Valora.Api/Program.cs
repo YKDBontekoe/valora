@@ -167,6 +167,7 @@ app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 app.MapMapEndpoints();
+app.MapContextEndpoints();
 
 // API Endpoints
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");
@@ -242,18 +243,6 @@ api.MapGet("/listings/{id:guid}", async (Guid id, IListingService service, Cance
     return Results.Ok(listing);
 })
 .RequireAuthorization();
-
-api.MapPost("/context/report", async (
-    ContextReportRequestDto request,
-    IContextReportService contextReportService,
-    CancellationToken ct) =>
-{
-    var report = await contextReportService.BuildAsync(request, ct);
-    return Results.Ok(report);
-})
-.RequireAuthorization()
-.RequireRateLimiting("strict")
-.AddEndpointFilter<Valora.Api.Filters.ValidationFilter<ContextReportRequestDto>>();
 
 api.MapPost("/listings/{id:guid}/enrich", async (
     Guid id,

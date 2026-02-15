@@ -5,9 +5,6 @@ using Valora.Application.DTOs;
 
 namespace Valora.Application.Services;
 
-/// <summary>
-/// Provides data from multiple external sources for context reports.
-/// </summary>
 public sealed class ContextDataProvider : IContextDataProvider
 {
     private readonly ICbsNeighborhoodStatsClient _cbsClient;
@@ -30,15 +27,10 @@ public sealed class ContextDataProvider : IContextDataProvider
         _logger = logger;
     }
 
-    /// <summary>
-    /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
-    /// </summary>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
 
-        // Fetch all data sources in parallel (Fan-out)
-        // Each task is wrapped in a safe executor that returns null on failure instead of throwing
         var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), warnings, cancellationToken);
         var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), warnings, cancellationToken);
         var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, radiusMeters, token), warnings, cancellationToken);
@@ -62,9 +54,11 @@ public sealed class ContextDataProvider : IContextDataProvider
             Warnings: warnings.ToList());
     }
 
-    /// <summary>
-    /// Wraps an external API call in a try-catch block to ensure partial success.
-    /// </summary>
+    public Task<NeighborhoodStatsDto?> GetNeighborhoodStatsAsync(ResolvedLocationDto location, CancellationToken ct) => _cbsClient.GetStatsAsync(location, ct);
+    public Task<CrimeStatsDto?> GetCrimeStatsAsync(ResolvedLocationDto location, CancellationToken ct) => _crimeClient.GetStatsAsync(location, ct);
+    public Task<AmenityStatsDto?> GetAmenityStatsAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken ct) => _amenityClient.GetAmenitiesAsync(location, radiusMeters, ct);
+    public Task<AirQualitySnapshotDto?> GetAirQualitySnapshotAsync(ResolvedLocationDto location, CancellationToken ct) => _airQualityClient.GetSnapshotAsync(location, ct);
+
     private async Task<T?> TryGetSourceAsync<T>(
         string sourceName,
         Func<CancellationToken, Task<T?>> sourceCall,

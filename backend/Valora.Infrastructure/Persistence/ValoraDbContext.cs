@@ -15,6 +15,11 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<CbsNeighborhoodStats> CbsNeighborhoodStats => Set<CbsNeighborhoodStats>();
+    public DbSet<CbsCrimeStats> CbsCrimeStats => Set<CbsCrimeStats>();
+    public DbSet<AirQualitySnapshot> AirQualitySnapshots => Set<AirQualitySnapshot>();
+    public DbSet<AmenityCache> AmenityCaches => Set<AmenityCache>();
+    public DbSet<SourceMetadata> SourceMetadata => Set<SourceMetadata>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -192,5 +197,47 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.ActionUrl).HasMaxLength(500);
         });
 
+
+        modelBuilder.Entity<CbsNeighborhoodStats>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.RegionCode);
+            entity.HasIndex(e => e.ExpiresAtUtc);
+            entity.Property(e => e.RegionCode).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DatasetId).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<CbsCrimeStats>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.RegionCode);
+            entity.HasIndex(e => e.ExpiresAtUtc);
+            entity.Property(e => e.RegionCode).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DatasetId).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<AirQualitySnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.StationId);
+            entity.HasIndex(e => e.ExpiresAtUtc);
+            entity.Property(e => e.StationId).IsRequired().HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<AmenityCache>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.LocationKey).IsUnique();
+            entity.HasIndex(e => e.ExpiresAtUtc);
+            entity.Property(e => e.LocationKey).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<SourceMetadata>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Source);
+            entity.Property(e => e.Source).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DatasetId).IsRequired().HasMaxLength(50);
+        });
     }
 }

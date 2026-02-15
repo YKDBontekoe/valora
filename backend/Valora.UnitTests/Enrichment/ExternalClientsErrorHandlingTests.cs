@@ -6,6 +6,7 @@ using Moq;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Infrastructure.Enrichment;
+using Valora.Application.Common.Interfaces;
 
 namespace Valora.UnitTests.Enrichment;
 
@@ -18,6 +19,7 @@ public class ExternalClientsErrorHandlingTests
         var client = new OverpassAmenityClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.BadGateway))),
             new MemoryCache(new MemoryCacheOptions()),
+            new Mock<IContextCacheRepository>().Object,
             Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
             logger.Object);
 
@@ -32,6 +34,7 @@ public class ExternalClientsErrorHandlingTests
         var client = new CbsNeighborhoodStatsClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))),
             new MemoryCache(new MemoryCacheOptions()),
+            new Mock<IContextCacheRepository>().Object,
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 

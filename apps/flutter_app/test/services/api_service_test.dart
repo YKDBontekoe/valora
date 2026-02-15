@@ -7,6 +7,7 @@ import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/models/listing_filter.dart';
 import 'package:flutter_test/flutter_test.dart';
+import "package:valora_app/models/context_report.dart";
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -334,52 +335,57 @@ void main() {
       );
     });
 
-    test('getContextReport makes correct request', () async {
+    test('resolveLocation makes correct request', () async {
       final client = MockClient((request) async {
-        expect(request.url.path, '/api/context/report');
-        expect(request.method, 'POST');
-        final body = json.decode(request.body) as Map<String, dynamic>;
-        expect(body['input'], 'Damrak 1 Amsterdam');
-        expect(body['radiusMeters'], 900);
+        expect(request.url.path, '/api/context/resolve');
+        expect(request.url.queryParameters['input'], 'Damrak 1 Amsterdam');
         return http.Response(
           json.encode({
-            'location': {
-              'query': 'Damrak 1 Amsterdam',
-              'displayAddress': 'Damrak 1, 1012LG Amsterdam',
-              'latitude': 52.3771,
-              'longitude': 4.8980,
-            },
-            'socialMetrics': [],
-            'safetyMetrics': [],
-            'amenityMetrics': [],
-            'environmentMetrics': [],
-            'compositeScore': 78.4,
-            'sources': [],
-            'warnings': [],
+            'query': 'Damrak 1 Amsterdam',
+            'displayAddress': 'Damrak 1, 1012LG Amsterdam',
+            'latitude': 52.3771,
+            'longitude': 4.8980,
           }),
           200,
         );
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
-      final report = await apiService.getContextReport(
-        'Damrak 1 Amsterdam',
-        radiusMeters: 900,
-      );
-      expect(report.location.displayAddress, 'Damrak 1, 1012LG Amsterdam');
-      expect(report.compositeScore, 78.4);
+      final location = await apiService.resolveLocation('Damrak 1 Amsterdam');
+      expect(location?.displayAddress, 'Damrak 1, 1012LG Amsterdam');
     });
 
-    test('getContextReport throws ServerException on failure', () async {
+    test('getContextMetrics makes correct request', () async {
       final client = MockClient((request) async {
-        return http.Response('Error', 500);
+        expect(request.url.path, '/api/context/metrics/social');
+        expect(request.method, 'POST');
+        return http.Response(
+          json.encode({
+            'metrics': [
+              {
+                'key': 'm1',
+                'label': 'Metric 1',
+                'value': 10,
+                'source': 'test'
+              }
+            ],
+            'warnings': [],
+            'score': 85.0
+          }),
+          200,
+        );
       });
 
       final apiService = ApiService(runner: syncRunner, client: client);
-      expect(
-        () => apiService.getContextReport('Damrak 1 Amsterdam'),
-        throwsA(isA<ServerException>()),
+      final location = ContextLocation(
+        query: 'test',
+        displayAddress: 'test',
+        latitude: 52,
+        longitude: 4,
       );
+      final result = await apiService.getContextMetrics('social', location);
+      expect(result.metrics.length, 1);
+      expect(result.score, 85.0);
     });
 
     test('getListings retries on 401 if refresh callback succeeds', () async {

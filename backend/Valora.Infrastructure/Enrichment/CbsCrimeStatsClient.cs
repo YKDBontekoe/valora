@@ -4,29 +4,33 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Enrichment;
 
-/// <summary>
-/// Fetches crime statistics from CBS Open Data table 83765NED (Kerncijfers wijken en buurten).
-/// </summary>
 public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
+    private readonly IContextCacheRepository _dbCache;
     private readonly ContextEnrichmentOptions _options;
     private readonly ILogger<CbsCrimeStatsClient> _logger;
+
+    private const string TableId = "83765NED";
 
     public CbsCrimeStatsClient(
         HttpClient httpClient,
         IMemoryCache cache,
+        IContextCacheRepository dbCache,
         IOptions<ContextEnrichmentOptions> options,
         ILogger<CbsCrimeStatsClient> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
+        _dbCache = dbCache;
         _options = options.Value;
         _logger = logger;
     }
@@ -53,26 +57,31 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
 
     private async Task<CrimeStatsDto?> GetForCodeAsync(string regionCode, CancellationToken cancellationToken)
     {
-        var cacheKey = $"cbs-crime:{regionCode}";
+        var trimmedCode = regionCode.Trim();
+        var cacheKey = $"cbs-crime:{trimmedCode}";
+
         if (_cache.TryGetValue(cacheKey, out CrimeStatsDto? cached))
         {
             return cached;
         }
 
+        var dbStats = await _dbCache.GetCrimeStatsAsync(trimmedCode, cancellationToken);
+        if (dbStats != null)
+        {
+            var dto = dbStats.ToDto();
+            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+            return dto;
+        }
+
         var escapedCode = Uri.EscapeDataString(regionCode);
-        // Using table 83765NED (Kerncijfers wijken en buurten) as it contains crime stats
-        // Columns: 
-        // TotaalDiefstalUitWoningSchuurED_106 (Theft from home/shed)
-        // VernielingMisdrijfTegenOpenbareOrde_107 (Vandalism/Public Order)
-        // GeweldsEnSeksueleMisdrijven_108 (Violent/Sexual crimes)
         var url =
-            $"{_options.CbsBaseUrl.TrimEnd('/')}/83765NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,AantalInwoners_5,TotaalDiefstalUitWoningSchuurED_106,VernielingMisdrijfTegenOpenbareOrde_107,GeweldsEnSeksueleMisdrijven_108";
+            $"{_options.CbsBaseUrl.TrimEnd('/')}/{TableId}/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,AantalInwoners_5,TotaalDiefstalUitWoningSchuurED_106,VernielingMisdrijfTegenOpenbareOrde_107,GeweldsEnSeksueleMisdrijven_108";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("CBS crime lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
-            return null;
+            _logger.LogWarning("CBS crime lookup failed for region {RegionCode} with status {StatusCode}", trimmedCode, response.StatusCode);
+            response.EnsureSuccessStatusCode();
         }
 
         JsonDocument document;
@@ -83,7 +92,7 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "CBS crime lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
+            _logger.LogWarning(ex, "CBS crime lookup returned invalid JSON for region {RegionCode}", trimmedCode);
             return null;
         }
 
@@ -93,7 +102,6 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
                 values.ValueKind != JsonValueKind.Array ||
                 values.GetArrayLength() == 0)
             {
-                _cache.Set(cacheKey, null as CrimeStatsDto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
                 return null;
             }
 
@@ -113,24 +121,26 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
                 totalRate = (theftRate ?? 0) + (vandalismRate ?? 0) + (violentRate ?? 0);
             }
 
-            var result = new CrimeStatsDto(
+            var resultDto = new CrimeStatsDto(
                 TotalCrimesPer1000: totalRate,
-                BurglaryPer1000: theftRate, // Mapping theft from home/shed to Burglary
+                BurglaryPer1000: theftRate,
                 ViolentCrimePer1000: violentRate,
                 TheftPer1000: theftRate,
                 VandalismPer1000: vandalismRate,
                 YearOverYearChangePercent: null,
                 RetrievedAtUtc: DateTimeOffset.UtcNow);
 
-            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
-            return result;
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.CbsCacheMinutes);
+            await _dbCache.UpsertCrimeStatsAsync(resultDto.ToEntity(TableId, expiresAt, trimmedCode), cancellationToken);
+
+            _cache.Set(cacheKey, resultDto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+
+            return resultDto;
         }
     }
 
     private static IEnumerable<string> BuildCandidates(ResolvedLocationDto location)
     {
-        // CBS crime data uses GM/WK/BU codes like neighborhood stats
-        // Codes must be padded to 10 characters to match CBS OData format
         if (!string.IsNullOrWhiteSpace(location.NeighborhoodCode))
         {
             yield return location.NeighborhoodCode.Trim().PadRight(10);

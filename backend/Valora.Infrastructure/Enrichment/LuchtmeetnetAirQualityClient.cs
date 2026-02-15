@@ -4,9 +4,11 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Domain.Common;
+using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Enrichment;
 
@@ -14,25 +16,28 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
+    private readonly IContextCacheRepository _dbCache;
     private readonly ContextEnrichmentOptions _options;
     private readonly ILogger<LuchtmeetnetAirQualityClient> _logger;
 
     public LuchtmeetnetAirQualityClient(
         HttpClient httpClient,
         IMemoryCache cache,
+        IContextCacheRepository dbCache,
         IOptions<ContextEnrichmentOptions> options,
         ILogger<LuchtmeetnetAirQualityClient> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
+        _dbCache = dbCache;
         _options = options.Value;
         _logger = logger;
     }
 
     public async Task<AirQualitySnapshotDto?> GetSnapshotAsync(ResolvedLocationDto location, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"lucht:{location.Latitude:F4}:{location.Longitude:F4}";
-        if (_cache.TryGetValue(cacheKey, out AirQualitySnapshotDto? cached))
+        var memCacheKey = $"lucht:{location.Latitude:F4}:{location.Longitude:F4}";
+        if (_cache.TryGetValue(memCacheKey, out AirQualitySnapshotDto? cached))
         {
             return cached;
         }
@@ -43,9 +48,18 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             return null;
         }
 
+        // Check DB Cache by StationId
+        var dbSnapshot = await _dbCache.GetAirQualitySnapshotAsync(station.Value.Id, cancellationToken);
+        if (dbSnapshot != null)
+        {
+            // Re-calculate distance based on current location
+            var dto = dbSnapshot.ToDto() with { StationDistanceMeters = station.Value.DistanceMeters };
+            _cache.Set(memCacheKey, dto, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
+            return dto;
+        }
+
         try
         {
-            // Optimization: Fetch all formulas in one request instead of 4 separate ones
             var measurements = await GetLatestMeasurementsAsync(station.Value.Id, cancellationToken);
 
             var pm25 = measurements.FirstOrDefault(m => m.Formula == "PM25");
@@ -55,7 +69,6 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
             if (pm25 is null && pm10 is null && no2 is null && o3 is null)
             {
-                _logger.LogWarning("Luchtmeetnet measurement lookup did not include supported formulas for station {StationId}", station.Value.Id);
                 return null;
             }
 
@@ -66,7 +79,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                 measuredAt = timestamp;
             }
 
-            var snapshot = new AirQualitySnapshotDto(
+            var resultDto = new AirQualitySnapshotDto(
                 StationId: station.Value.Id,
                 StationName: station.Value.Name,
                 StationDistanceMeters: station.Value.DistanceMeters,
@@ -77,8 +90,12 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                 No2: no2?.Value,
                 O3: o3?.Value);
 
-            _cache.Set(cacheKey, snapshot, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
-            return snapshot;
+            // Save to DB
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.AirQualityCacheMinutes);
+            await _dbCache.UpsertAirQualitySnapshotAsync(resultDto.ToEntity(expiresAt), cancellationToken);
+
+            _cache.Set(memCacheKey, resultDto, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
+            return resultDto;
         }
         catch (Exception ex)
         {
@@ -90,7 +107,6 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
     private async Task<List<LuchtmeetnetMeasurement>> GetLatestMeasurementsAsync(string stationId, CancellationToken cancellationToken)
     {
         var encodedStationId = Uri.EscapeDataString(stationId);
-        // Omit formula to get all components for the station
         var measurementUrl = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedStationId}/measurements?order_by=timestamp_measured&order_direction=desc&page=1";
 
         try
@@ -98,9 +114,8 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
             return response?.Data ?? new List<LuchtmeetnetMeasurement>();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogDebug(ex, "Luchtmeetnet measurements lookup failed for station {StationId}", stationId);
             return new List<LuchtmeetnetMeasurement>();
         }
     }
@@ -109,7 +124,6 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         ResolvedLocationDto location,
         CancellationToken cancellationToken)
     {
-        // Optimization: Cache the entire station coordinates list to avoid hundreds of requests on every cache miss
         var allStations = await GetCachedStationListAsync(cancellationToken);
         if (allStations.Count == 0) return null;
 
@@ -148,7 +162,6 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
     private async Task<List<(string Id, string Name, double Lat, double Lon)>> DiscoverAllStationsWithCoordinatesAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting Luchtmeetnet station discovery...");
         var stationIds = await FetchAllStationIdsAsync(cancellationToken);
         var results = new List<(string Id, string Name, double Lat, double Lon)>();
 
@@ -170,7 +183,6 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             }
         });
 
-        _logger.LogInformation("Discovered {Count} Luchtmeetnet stations with coordinates.", results.Count);
         return results;
     }
 
@@ -183,31 +195,18 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             try
             {
                 var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetStationListResponse>(url, cancellationToken);
-
                 if (response?.Data is not null)
                 {
                     foreach (var station in response.Data)
                     {
-                        if (!string.IsNullOrWhiteSpace(station.Id))
-                        {
-                            stationIds.Add(station.Id);
-                        }
+                        if (!string.IsNullOrWhiteSpace(station.Id)) stationIds.Add(station.Id);
                     }
                 }
-
-                if (response?.Pagination is not null && page >= response.Pagination.LastPage)
-                {
-                    break;
-                }
-                
-                if (response?.Data is null || response.Data.Count == 0)
-                {
-                    break;
-                }
+                if (response?.Pagination is not null && page >= response.Pagination.LastPage) break;
+                if (response?.Data is null || response.Data.Count == 0) break;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogWarning(ex, "Luchtmeetnet station list lookup failed for page {Page}", page);
                 continue;
             }
         }
@@ -228,10 +227,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         try 
         {
             var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetStationDetailResponse>(url, cancellationToken);
-            if (response?.Data?.Geometry?.Coordinates is null || response.Data.Geometry.Coordinates.Length < 2)
-            {
-                return null;
-            }
+            if (response?.Data?.Geometry?.Coordinates is null || response.Data.Geometry.Coordinates.Length < 2) return null;
 
             var lon = response.Data.Geometry.Coordinates[0];
             var lat = response.Data.Geometry.Coordinates[1];
@@ -239,12 +235,10 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
             var result = (name, lat, lon);
             _cache.Set(cacheKey, result, TimeSpan.FromHours(48));
-            
             return result;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogWarning(ex, "Failed to fetch details for station {StationId}", stationId);
             return null;
         }
     }

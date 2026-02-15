@@ -8,9 +8,6 @@ using Valora.Application.Enrichment.Builders;
 
 namespace Valora.Application.Services;
 
-/// <summary>
-/// Orchestrates the generation of context reports by aggregating data from multiple external sources.
-/// </summary>
 public sealed class ContextReportService : IContextReportService
 {
     private readonly ILocationResolver _locationResolver;
@@ -33,22 +30,54 @@ public sealed class ContextReportService : IContextReportService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Coordinates the retrieval of data from multiple public sources and builds a unified context report.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This method employs a "fan-out" pattern to query all external APIs in parallel via <see cref="IContextDataProvider"/>.
-    /// </para>
-    /// <para>
-    /// The process involves:
-    /// 1. Resolving the input to a standardized Dutch address/location.
-    /// 2. Checking the cache for an existing report.
-    /// 3. Fetching data from CBS, PDOK, Overpass, etc., using the data provider.
-    /// 4. Normalizing raw data into 0-100 scores using heuristics.
-    /// 5. Aggregating scores into categories and a final composite score.
-    /// </para>
-    /// </remarks>
+    public async Task<ResolvedLocationDto?> ResolveLocationAsync(string input, CancellationToken ct = default)
+    {
+        return await _locationResolver.ResolveAsync(input, ct);
+    }
+
+    public async Task<List<ContextMetricDto>> GetSocialMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+    {
+        var data = await _contextDataProvider.GetNeighborhoodStatsAsync(location, ct);
+        return SocialMetricBuilder.Build(data, warnings);
+    }
+
+    public async Task<List<ContextMetricDto>> GetSafetyMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+    {
+        var data = await _contextDataProvider.GetCrimeStatsAsync(location, ct);
+        return CrimeMetricBuilder.Build(data, warnings);
+    }
+
+    public async Task<List<ContextMetricDto>> GetAmenityMetricsAsync(ResolvedLocationDto location, int radiusMeters, List<string> warnings, CancellationToken ct = default)
+    {
+        var amenities = await _contextDataProvider.GetAmenityStatsAsync(location, radiusMeters, ct);
+        var cbs = await _contextDataProvider.GetNeighborhoodStatsAsync(location, ct);
+        return AmenityMetricBuilder.Build(amenities, cbs, warnings);
+    }
+
+    public async Task<List<ContextMetricDto>> GetEnvironmentMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+    {
+        var data = await _contextDataProvider.GetAirQualitySnapshotAsync(location, ct);
+        return EnvironmentMetricBuilder.Build(data, warnings);
+    }
+
+    public async Task<List<ContextMetricDto>> GetDemographicsMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+    {
+        var data = await _contextDataProvider.GetNeighborhoodStatsAsync(location, ct);
+        return DemographicsMetricBuilder.Build(data, warnings);
+    }
+
+    public async Task<List<ContextMetricDto>> GetHousingMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+    {
+        var data = await _contextDataProvider.GetNeighborhoodStatsAsync(location, ct);
+        return HousingMetricBuilder.Build(data, warnings);
+    }
+
+    public async Task<List<ContextMetricDto>> GetMobilityMetricsAsync(ResolvedLocationDto location, List<string> warnings, CancellationToken ct = default)
+    {
+        var data = await _contextDataProvider.GetNeighborhoodStatsAsync(location, ct);
+        return MobilityMetricBuilder.Build(data, warnings);
+    }
+
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Input))
@@ -56,25 +85,13 @@ public sealed class ContextReportService : IContextReportService
             throw new ValidationException(new[] { "Input is required." });
         }
 
-        // Radius is clamped to prevent excessive load on Overpass/external APIs.
-        // Queries > 5km can cause timeouts or massive memory usage in the Overpass client.
-        // Minimum 200m ensures we have a meaningful neighborhood scope.
         var normalizedRadius = Math.Clamp(request.RadiusMeters, 200, 5000);
-
-        // 1. Resolve Location First
-        // The location resolver has its own cache. We need the resolved coordinates/IDs
-        // to build a stable cache key for the expensive report generation.
         var location = await _locationResolver.ResolveAsync(request.Input, cancellationToken);
         if (location is null)
         {
             throw new ValidationException(new[] { "Could not resolve input to a Dutch address." });
         }
 
-        // 2. Check Report Cache using stable location key
-        // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
-        // Using 5 decimal places (F5) gives precision to ~1 meter.
-        // This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
-        // if they resolve to the same coordinate, preventing duplicate expensive API calls.
         var latKey = location.Latitude.ToString("F5");
         var lonKey = location.Longitude.ToString("F5");
         var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
@@ -84,14 +101,7 @@ public sealed class ContextReportService : IContextReportService
             return cached;
         }
 
-        // 3. Fetch Data from Provider
         var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
-
-        var cbs = sourceData.NeighborhoodStats;
-        var crime = sourceData.CrimeStats;
-        var amenities = sourceData.AmenityStats;
-        var air = sourceData.AirQualitySnapshot;
-
         var warnings = new List<string>(sourceData.Warnings);
 
         if (normalizedRadius != request.RadiusMeters)
@@ -99,16 +109,14 @@ public sealed class ContextReportService : IContextReportService
             warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
         }
 
-        // Build normalized metrics for each category (Fan-in)
-        var socialMetrics = SocialMetricBuilder.Build(cbs, warnings);
-        var crimeMetrics = CrimeMetricBuilder.Build(crime, warnings);
-        var demographicsMetrics = DemographicsMetricBuilder.Build(cbs, warnings);
-        var housingMetrics = HousingMetricBuilder.Build(cbs, warnings); // Phase 2
-        var mobilityMetrics = MobilityMetricBuilder.Build(cbs, warnings); // Phase 2
-        var amenityMetrics = AmenityMetricBuilder.Build(amenities, cbs, warnings); // Phase 2: CBS Proximity
-        var environmentMetrics = EnvironmentMetricBuilder.Build(air, warnings);
+        var socialMetrics = SocialMetricBuilder.Build(sourceData.NeighborhoodStats, warnings);
+        var crimeMetrics = CrimeMetricBuilder.Build(sourceData.CrimeStats, warnings);
+        var demographicsMetrics = DemographicsMetricBuilder.Build(sourceData.NeighborhoodStats, warnings);
+        var housingMetrics = HousingMetricBuilder.Build(sourceData.NeighborhoodStats, warnings);
+        var mobilityMetrics = MobilityMetricBuilder.Build(sourceData.NeighborhoodStats, warnings);
+        var amenityMetrics = AmenityMetricBuilder.Build(sourceData.AmenityStats, sourceData.NeighborhoodStats, warnings);
+        var environmentMetrics = EnvironmentMetricBuilder.Build(sourceData.AirQualitySnapshot, warnings);
 
-        // Compute category scores for radar chart
         var categoryScores = ContextScoreCalculator.ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, housingMetrics, mobilityMetrics, amenityMetrics, environmentMetrics);
         var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
 
@@ -117,8 +125,8 @@ public sealed class ContextReportService : IContextReportService
             SocialMetrics: socialMetrics,
             CrimeMetrics: crimeMetrics,
             DemographicsMetrics: demographicsMetrics,
-            HousingMetrics: housingMetrics, // Phase 2
-            MobilityMetrics: mobilityMetrics, // Phase 2
+            HousingMetrics: housingMetrics,
+            MobilityMetrics: mobilityMetrics,
             AmenityMetrics: amenityMetrics,
             EnvironmentMetrics: environmentMetrics,
             CompositeScore: Math.Round(compositeScore, 1),

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Application.DTOs.Map;
 using Valora.Application.Enrichment;
@@ -17,27 +18,40 @@ public sealed class OverpassAmenityClient : IAmenityClient
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
+    private readonly IContextCacheRepository _dbCache;
     private readonly ContextEnrichmentOptions _options;
     private readonly ILogger<OverpassAmenityClient> _logger;
 
     public OverpassAmenityClient(
         HttpClient httpClient,
         IMemoryCache cache,
+        IContextCacheRepository dbCache,
         IOptions<ContextEnrichmentOptions> options,
         ILogger<OverpassAmenityClient> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
+        _dbCache = dbCache;
         _options = options.Value;
         _logger = logger;
     }
 
     public async Task<AmenityStatsDto?> GetAmenitiesAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"overpass:{location.Latitude:F5}:{location.Longitude:F5}:{radiusMeters}";
-        if (_cache.TryGetValue(cacheKey, out AmenityStatsDto? cached))
+        var locationKey = $"{location.Latitude:F5}:{location.Longitude:F5}:{radiusMeters}";
+        var memCacheKey = $"overpass:{locationKey}";
+
+        if (_cache.TryGetValue(memCacheKey, out AmenityStatsDto? cached))
         {
             return cached;
+        }
+
+        var dbCache = await _dbCache.GetAmenityCacheAsync(locationKey, cancellationToken);
+        if (dbCache != null)
+        {
+            var dto = dbCache.ToDto();
+            _cache.Set(memCacheKey, dto, TimeSpan.FromMinutes(_options.AmenitiesCacheMinutes));
+            return dto;
         }
 
         var query = BuildOverpassQuery(location.Latitude, location.Longitude, radiusMeters);
@@ -93,7 +107,9 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
         if (result != null)
         {
-            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.AmenitiesCacheMinutes));
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.AmenitiesCacheMinutes);
+            await _dbCache.UpsertAmenityCacheAsync(result.ToEntity(locationKey, location.Latitude, location.Longitude, radiusMeters, expiresAt), cancellationToken);
+            _cache.Set(memCacheKey, result, TimeSpan.FromMinutes(_options.AmenitiesCacheMinutes));
         }
         return result;
     }
@@ -156,7 +172,6 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
         if (overpassResponse?.Elements is null)
         {
-            _logger.LogWarning("Overpass lookup response was missing expected elements array");
             return default;
         }
 

@@ -4,8 +4,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Enrichment;
 
@@ -13,17 +15,22 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
+    private readonly IContextCacheRepository _dbCache;
     private readonly ContextEnrichmentOptions _options;
     private readonly ILogger<CbsNeighborhoodStatsClient> _logger;
+
+    private const string TableId = "85618NED";
 
     public CbsNeighborhoodStatsClient(
         HttpClient httpClient,
         IMemoryCache cache,
+        IContextCacheRepository dbCache,
         IOptions<ContextEnrichmentOptions> options,
         ILogger<CbsNeighborhoodStatsClient> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
+        _dbCache = dbCache;
         _options = options.Value;
         _logger = logger;
     }
@@ -50,34 +57,41 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
 
     private async Task<NeighborhoodStatsDto?> GetForCodeAsync(string regionCode, CancellationToken cancellationToken)
     {
-        var cacheKey = $"cbs:{regionCode}";
+        var trimmedCode = regionCode.Trim();
+        var cacheKey = $"cbs:{trimmedCode}";
+
         if (_cache.TryGetValue(cacheKey, out NeighborhoodStatsDto? cached))
         {
             return cached;
         }
 
+        var dbStats = await _dbCache.GetNeighborhoodStatsAsync(trimmedCode, cancellationToken);
+        if (dbStats != null)
+        {
+            var dto = dbStats.ToDto();
+            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+            return dto;
+        }
+
         var escapedCode = Uri.EscapeDataString(regionCode);
         var url =
-            $"{_options.CbsBaseUrl.TrimEnd('/')}/85618NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=" +
+            $"{_options.CbsBaseUrl.TrimEnd('/')}/{TableId}/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=" +
             "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_34,GemiddeldeWOZWaardeVanWoningen_36,HuishoudensMetEenLaagInkomen_87," +
             "Mannen_6,Vrouwen_7,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12," +
             "Eenpersoonshuishoudens_30,HuishoudensZonderKinderen_31,HuishoudensMetKinderen_32,GemiddeldeHuishoudensgrootte_33," +
             "MateVanStedelijkheid_125," +
             "GemiddeldInkomenPerInkomensontvanger_80,GemiddeldInkomenPerInwoner_81," +
             "BasisonderwijsVmboMbo1_70,HavoVwoMbo24_71,HboWo_72," +
-            // Phase 2: Housing
             "Koopwoningen_41,HuurwoningenTotaal_42,InBezitWoningcorporatie_43,InBezitOverigeVerhuurders_44," +
             "BouwjaarVoor2000_46,BouwjaarVanaf2000_47,PercentageMeergezinswoning_38," +
-            // Phase 2: Mobility
             "PersonenautoSPerHuishouden_112,PersonenautoSNaarOppervlakte_113,PersonenautoSTotaal_109," +
-            // Phase 2: Proximity
             "AfstandTotHuisartsenpraktijk_115,AfstandTotGroteSupermarkt_116,AfstandTotKinderdagverblijf_117,AfstandTotSchool_118,ScholenBinnen3Km_119";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("CBS lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
+            _logger.LogWarning("CBS lookup failed for region {RegionCode} with status {StatusCode}", trimmedCode, response.StatusCode);
             response.EnsureSuccessStatusCode();
         }
 
@@ -89,7 +103,7 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "CBS lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
+            _logger.LogWarning(ex, "CBS lookup returned invalid JSON for region {RegionCode}", trimmedCode);
             return null;
         }
 
@@ -99,7 +113,6 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
                 values.ValueKind != JsonValueKind.Array ||
                 values.GetArrayLength() == 0)
             {
-                _cache.Set(cacheKey, null as NeighborhoodStatsDto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
                 return null;
             }
 
@@ -110,20 +123,13 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             var woz = GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_36");
             var lowIncome = GetDouble(row, "HuishoudensMetEenLaagInkomen_87");
 
-            if (residents == null || density == null || woz == null || lowIncome == null)
-            {
-                _logger.LogDebug("CBS 85618NED partial data for {RegionCode}: Residents={R}, Density={D}, WOZ={W}, LowIncome={L}", 
-                    regionCode.Trim(), residents, density, woz, lowIncome);
-            }
-
-            var result = new NeighborhoodStatsDto(
-                RegionCode: GetString(row, "WijkenEnBuurten")?.Trim() ?? regionCode.Trim(),
+            var resultDto = new NeighborhoodStatsDto(
+                RegionCode: GetString(row, "WijkenEnBuurten")?.Trim() ?? trimmedCode,
                 RegionType: GetString(row, "SoortRegio_2")?.Trim() ?? "Onbekend",
                 Residents: residents,
                 PopulationDensity: density,
                 AverageWozValueKeur: woz,
                 LowIncomeHouseholdsPercent: lowIncome,
-                // New Fields Sourcing
                 Men: GetInt(row, "Mannen_6"),
                 Women: GetInt(row, "Vrouwen_7"),
                 Age0To15: GetInt(row, "k_0Tot15Jaar_8"),
@@ -141,7 +147,6 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
                 EducationLow: GetInt(row, "BasisonderwijsVmboMbo1_70"),
                 EducationMedium: GetInt(row, "HavoVwoMbo24_71"),
                 EducationHigh: GetInt(row, "HboWo_72"),
-                // Phase 2: Housing
                 PercentageOwnerOccupied: GetInt(row, "Koopwoningen_41"),
                 PercentageRental: GetInt(row, "HuurwoningenTotaal_42"),
                 PercentageSocialHousing: GetInt(row, "InBezitWoningcorporatie_43"),
@@ -149,11 +154,9 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
                 PercentagePre2000: GetInt(row, "BouwjaarVoor2000_46"),
                 PercentagePost2000: GetInt(row, "BouwjaarVanaf2000_47"),
                 PercentageMultiFamily: GetInt(row, "PercentageMeergezinswoning_38"),
-                // Phase 2: Mobility
                 CarsPerHousehold: GetDouble(row, "PersonenautoSPerHuishouden_112"),
                 CarDensity: GetInt(row, "PersonenautoSNaarOppervlakte_113"),
                 TotalCars: GetInt(row, "PersonenautoSTotaal_109"),
-                // Phase 2: Proximity
                 DistanceToGp: GetDouble(row, "AfstandTotHuisartsenpraktijk_115"),
                 DistanceToSupermarket: GetDouble(row, "AfstandTotGroteSupermarkt_116"),
                 DistanceToDaycare: GetDouble(row, "AfstandTotKinderdagverblijf_117"),
@@ -161,8 +164,12 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
                 SchoolsWithin3km: GetDouble(row, "ScholenBinnen3Km_119"),
                 RetrievedAtUtc: DateTimeOffset.UtcNow);
 
-            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
-            return result;
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.CbsCacheMinutes);
+            await _dbCache.UpsertNeighborhoodStatsAsync(resultDto.ToEntity(TableId, expiresAt), cancellationToken);
+
+            _cache.Set(cacheKey, resultDto, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
+
+            return resultDto;
         }
     }
 
