@@ -100,7 +100,7 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
             .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
-                v => JsonHelper.Deserialize<ContextReportModel?>(v))
+                v => string.IsNullOrWhiteSpace(v) ? null : JsonHelper.Deserialize<ContextReportModel?>(v))
             .Metadata.SetValueComparer(ValueComparers.ContextReportComparer);
 
         // Check Constraints
