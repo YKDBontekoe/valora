@@ -25,6 +25,10 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        // Keep assembly configurations (main) AND keep explicit entity config + JSON comparers (feature branch).
+        // If you also have IEntityTypeConfiguration<T> for these entities, remove one to avoid duplicate config.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ValoraDbContext).Assembly);
+
         // Value Comparers
         // Suppress null warnings with ! because these properties are initialized to empty collections
         // and JsonHelper ensures non-null returns from DB.
@@ -36,7 +40,8 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
         var dictionaryComparer = new ValueComparer<Dictionary<string, string>>(
             (c1, c2) => c1!.Count == c2!.Count && !c1.Except(c2).Any(),
             // Order by key to ensure GetHashCode is consistent regardless of insertion order
-            c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
+            c => c!.OrderBy(kv => kv.Key)
+                  .Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.GetHashCode())),
             c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
 
         var dateListComparer = new ValueComparer<List<DateTime>>(
@@ -79,6 +84,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => new { e.City, e.LastFundaFetchUtc });
             entity.HasIndex(e => e.Address);
             entity.HasIndex(e => e.PropertyType);
+
             entity.Property(e => e.Address).IsRequired();
 
             // Constraints
@@ -105,6 +111,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.BrokerAssociationCode).HasMaxLength(20);
 
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+
             // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)
             entity.Property(e => e.Features)
                 .HasColumnType("jsonb") // Hint for Postgres
@@ -112,30 +119,30 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<Dictionary<string, string>>(v))
                 .Metadata.SetValueComparer(dictionaryComparer);
-            
-            // Phase 4: JSON conversions for list properties
+
+            // JSON conversions for list properties
             entity.Property(e => e.ImageUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
                 .Metadata.SetValueComparer(stringListComparer);
-            
+
             entity.Property(e => e.FloorPlanUrls)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<string>>(v))
                 .Metadata.SetValueComparer(stringListComparer);
-            
+
             entity.Property(e => e.OpenHouseDates)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonHelper.Serialize(v),
                     v => JsonHelper.Deserialize<List<DateTime>>(v))
                 .Metadata.SetValueComparer(dateListComparer);
-            
-            // New: Labels from Summary API (e.g., "Nieuw", "Open huis")
+
+            // Labels from Summary API (e.g., "Nieuw", "Open huis")
             entity.Property(e => e.Labels)
                 .HasColumnType("jsonb")
                 .HasConversion(
@@ -143,7 +150,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
                     v => JsonHelper.Deserialize<List<string>>(v))
                 .Metadata.SetValueComparer(stringListComparer);
 
-            // Phase 5: Context Report JSONB
+            // Context Report JSONB
             var contextReportComparer = new ValueComparer<Valora.Domain.Models.ContextReportModel?>(
                 (c1, c2) => JsonHelper.Serialize(c1) == JsonHelper.Serialize(c2),
                 c => c == null ? 0 : JsonHelper.Serialize(c).GetHashCode(),
@@ -196,7 +203,6 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Body).IsRequired().HasMaxLength(2000);
             entity.Property(e => e.ActionUrl).HasMaxLength(500);
         });
-
 
         modelBuilder.Entity<CbsNeighborhoodStats>(entity =>
         {
