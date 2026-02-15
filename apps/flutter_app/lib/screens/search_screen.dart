@@ -467,18 +467,26 @@ class _SearchScreenState extends State<SearchScreen> {
                   return const SliverToBoxAdapter(child: SizedBox.shrink());
                 },
               ),
-              Selector<SearchListingsProvider, bool>(
-                selector: (_, p) =>
-                    p.listings.isEmpty && !p.isLoading && p.error == null,
-                builder: (context, isEmpty, _) {
+              Selector<
+                SearchListingsProvider,
+                (bool isEmpty, String query, bool hasFilters)
+              >(
+                selector:
+                    (_, p) => (
+                      p.listings.isEmpty && !p.isLoading && p.error == null,
+                      p.query,
+                      p.hasActiveFilters,
+                    ),
+                builder: (context, state, _) {
+                  final isEmpty = state.$1;
+                  final query = state.$2;
+                  final hasFilters = state.$3;
+
                   if (!isEmpty) {
                     return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
 
-                  // We need to check query and filters to determine which empty state to show.
-                  // Since we are in a Selector, we can access the provider directly or via context.
-                  final provider = context.read<SearchListingsProvider>();
-                  if (provider.query.isNotEmpty || provider.hasActiveFilters) {
+                  if (query.isNotEmpty || hasFilters) {
                     return const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
