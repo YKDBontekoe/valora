@@ -74,6 +74,36 @@ class FavoritesProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> removeFavorites(List<Listing> listings) async {
+    bool changed = false;
+    for (final listing in listings) {
+      final existingIndex = _favorites.indexWhere(
+        (item) => item.id == listing.id,
+      );
+      if (existingIndex >= 0) {
+        _savedAtByListingId.remove(listing.id);
+        _favorites.removeAt(existingIndex);
+        changed = true;
+      }
+    }
+
+    if (!changed) return;
+
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favoritesJson = _favorites
+          .map((item) => json.encode(_toStorageRecord(item)))
+          .toList();
+
+      await prefs.setStringList(_storageKey, favoritesJson);
+      await prefs.remove(_legacyStorageKey);
+    } catch (e) {
+      debugPrint('Error saving favorites: $e');
+    }
+  }
+
   void _loadV2Records(List<String> favoritesJson) {
     _favorites = <Listing>[];
     _savedAtByListingId.clear();

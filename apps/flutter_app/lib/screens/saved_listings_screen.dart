@@ -218,9 +218,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
       final toRemove = allListings
           .where((l) => _selectedListingIds.contains(l.id))
           .toList();
-      for (final listing in toRemove) {
-        await favoritesProvider.toggleFavorite(listing);
-      }
+      await favoritesProvider.removeFavorites(toRemove);
       _clearSelection();
     }
   }
@@ -245,7 +243,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
     await Share.share(sb.toString());
   }
 
-  Future<void> _clearAll(List<Listing> listings) async {
+  Future<void> _clearAll() async {
     final favoritesProvider = Provider.of<FavoritesProvider>(
       context,
       listen: false,
@@ -274,11 +272,8 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
     );
 
     if (confirmed == true) {
-      // Create a copy to iterate
-      final toRemove = List<Listing>.from(listings);
-      for (final listing in toRemove) {
-        await favoritesProvider.toggleFavorite(listing);
-      }
+      final allFavorites = List<Listing>.from(favoritesProvider.favorites);
+      await favoritesProvider.removeFavorites(allFavorites);
       _clearSelection();
     }
   }
@@ -450,7 +445,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                         if (value == 'share') {
                           _shareListings(listings);
                         } else if (value == 'clear') {
-                          _clearAll(listings);
+                          _clearAll();
                         }
                       },
                       itemBuilder: (context) => [

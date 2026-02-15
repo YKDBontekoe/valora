@@ -131,7 +131,7 @@ class _SavedListingsFilterDialogState extends State<SavedListingsFilterDialog> {
       return;
     }
 
-    Navigator.pop(context, {
+    final result = <String, dynamic>{
       'minPrice': minPrice,
       'maxPrice': maxPrice,
       'city': city,
@@ -140,7 +140,11 @@ class _SavedListingsFilterDialogState extends State<SavedListingsFilterDialog> {
       'maxLivingArea': maxLivingArea,
       'minCompositeScore': minCompositeScore,
       'minSafetyScore': minSafetyScore,
-    });
+    };
+
+    result.removeWhere((key, value) => value == null);
+
+    Navigator.pop(context, result);
   }
 
   void _clear() {
