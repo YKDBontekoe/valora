@@ -103,9 +103,10 @@ class _ValoraListingCardState extends State<ValoraListingCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Price
-                  if (widget.listing.price != null)
+                  if (widget.listing.price != null) ...[
                     ValoraPrice(price: widget.listing.price!),
-                  const SizedBox(height: ValoraSpacing.sm),
+                    const SizedBox(height: ValoraSpacing.sm),
+                  ],
 
                   // Address
                   Text(
