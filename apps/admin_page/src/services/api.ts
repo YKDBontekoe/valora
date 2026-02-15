@@ -15,6 +15,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const clearAdminStorage = () => {
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_refresh_token');
+  localStorage.removeItem('admin_email');
+  localStorage.removeItem('admin_userId');
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -33,9 +40,12 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         } catch (refreshError) {
-          localStorage.clear();
+          clearAdminStorage();
           window.location.href = '/login';
         }
+      } else {
+        clearAdminStorage();
+        window.location.href = '/login';
       }
     }
     // Avoid logging full error object to prevent token leakage
