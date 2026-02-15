@@ -10,6 +10,10 @@ using Valora.Application.Enrichment;
 
 namespace Valora.Infrastructure.Services;
 
+/// <summary>
+/// Provides listing data enriched with context reports by combining PDOK Locatieserver data
+/// with Valora's context aggregation engine.
+/// </summary>
 public class PdokListingService : IPdokListingService
 {
     private readonly HttpClient _httpClient;
@@ -35,6 +39,21 @@ public class PdokListingService : IPdokListingService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves detailed information for a PDOK location object and enriches it with a context report.
+    /// </summary>
+    /// <param name="pdokId">The unique ID from the PDOK Locatieserver.</param>
+    /// <returns>A fully enriched ListingDto or null if not found.</returns>
+    /// <remarks>
+    /// <para>
+    /// This method performs a multi-step enrichment process:
+    /// 1. Look up the raw address details from PDOK.
+    /// 2. Parse the response to extract the address string.
+    /// 3. Call the <see cref="IContextReportService"/> to generate a context report for that address.
+    /// 4. Extract specific metrics (Safety Score, WOZ Value) for the listing summary.
+    /// 5. Map everything into a <see cref="ListingDto"/>.
+    /// </para>
+    /// </remarks>
     public async Task<ListingDto?> GetListingDetailsAsync(string pdokId, CancellationToken cancellationToken = default)
     {
         var cacheKey = $"pdok-listing:{pdokId}";
@@ -45,7 +64,8 @@ public class PdokListingService : IPdokListingService
 
         try
         {
-            // 1. Lookup address details
+            // 1. Lookup address details from PDOK Locatieserver
+            // We use the 'lookup' API to get the full object details including geometry.
             var encodedId = Uri.EscapeDataString(pdokId);
             var lookupUrl = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/lookup?id={encodedId}&fl=*";
             var response = await _httpClient.GetFromJsonAsync<JsonElement>(lookupUrl, cancellationToken);
@@ -55,16 +75,19 @@ public class PdokListingService : IPdokListingService
                 return null;
             }
 
-            // 2. Extract Basic Info
+            // 2. Extract Basic Info (Address string)
             var address = PdokListingMapper.GetString(doc, "weergavenaam");
 
-            // 4. Enrich with Context Report
+            // 3. Enrich with Context Report
+            // This triggers the internal "fan-out" to CBS/Overpass to get neighborhood stats.
+            // We extract the composite and safety scores to display on the listing card.
             var (contextReport, compositeScore, safetyScore) = await FetchContextReportAsync(address, pdokId, cancellationToken);
 
-            // 5. Fetch WOZ Value (Exclusively from CBS Context Data)
+            // 4. Fetch WOZ Value (Exclusively from CBS Context Data)
+            // The context report includes housing metrics which may contain the average WOZ value for the neighborhood.
             var (wozValue, wozReferenceDate, wozValueSource) = contextReport?.EstimateWozValue(_timeProvider) ?? (null, null, null);
 
-            // 6. Map to ListingDto
+            // 5. Map to ListingDto
             var listing = PdokListingMapper.MapFromPdok(
                 doc,
                 pdokId,
@@ -76,6 +99,7 @@ public class PdokListingService : IPdokListingService
                 wozValueSource);
 
 
+            // Cache the enriched listing to avoid re-fetching heavy context reports.
             _cache.Set(cacheKey, listing, TimeSpan.FromMinutes(_options.PdokListingCacheMinutes));
             return listing;
         }
@@ -86,6 +110,11 @@ public class PdokListingService : IPdokListingService
         }
     }
 
+    /// <summary>
+    /// Helper method to fetch the context report and map it to the domain model.
+    /// Handles failures gracefully by returning nulls instead of throwing, allowing the listing
+    /// to be returned even if enrichment fails.
+    /// </summary>
     private async Task<(Valora.Domain.Models.ContextReportModel? Report, double? CompositeScore, double? SafetyScore)> FetchContextReportAsync(
         string? address,
         string pdokId,
@@ -112,6 +141,7 @@ public class PdokListingService : IPdokListingService
         }
         catch (Exception ex)
         {
+            // Log but don't crash. Listing without context is better than no listing.
             _logger.LogWarning(ex, "Failed to fetch context report for PDOK listing: {PdokId}", pdokId);
             return (null, null, null);
         }

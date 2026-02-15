@@ -1,73 +1,81 @@
-# React + TypeScript + Vite
+# Valora Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The Admin Dashboard is a React-based web application for managing the Valora platform. It provides tools for user management, system monitoring, and listing oversight.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **User Management**: View, delete, and manage user roles (Admin/User).
+-   **System Statistics**: Real-time counts of users, listings, and notifications.
+-   **Listing Oversight**: View enriched listings and their context scores (planned).
+-   **Secure**: Protected by JWT authentication and "Admin" role policy.
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The Admin App is a Single Page Application (SPA) built with Vite and React. It communicates with the Valora Backend API.
 
-## Expanding the ESLint configuration
+```mermaid
+graph TD
+    Admin((Admin User)) -->|Browser| AdminApp[React SPA]
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+    subgraph "Admin App"
+        Router[React Router]
+        Store[Context/State]
+        Client[Axios Client]
+    end
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+    AdminApp --> Router
+    Router --> Store
+    Store --> Client
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+    Client -->|HTTP /api/admin| API[Valora Backend]
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    subgraph "Backend"
+        API -->|Auth| Identity[Identity Service]
+        API -->|Data| DB[(PostgreSQL)]
+    end
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Setup & Run
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
+- Node.js 18+
+- Valora Backend running (default: `http://localhost:5001`)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Configuration
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set the API URL:
+```ini
+VITE_API_URL=http://localhost:5001/api
+```
+*Note: Ensure the port matches your backend configuration.*
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Run Development Server
+```bash
+npm run dev
+```
+Access the dashboard at `http://localhost:5173`.
+
+## Project Structure
+
+-   `src/components`: Reusable UI components (Cards, Tables, etc.).
+-   `src/pages`: Top-level page views (Dashboard, Users, Login).
+-   `src/services`: API client and endpoint definitions.
+-   `src/context`: React Context for global state (Auth).
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
 ```

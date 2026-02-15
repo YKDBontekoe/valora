@@ -43,7 +43,7 @@ public sealed class ContextReportService : IContextReportService
     /// <para>
     /// The process involves:
     /// 1. Resolving the input to a standardized Dutch address/location.
-    /// 2. Checking the cache for an existing report.
+    /// 2. Checking the cache for an existing report using a high-precision coordinate key.
     /// 3. Fetching data from CBS, PDOK, Overpass, etc., using the data provider.
     /// 4. Normalizing raw data into 0-100 scores using heuristics.
     /// 5. Aggregating scores into categories and a final composite score.
@@ -84,7 +84,9 @@ public sealed class ContextReportService : IContextReportService
             return cached;
         }
 
-        // 3. Fetch Data from Provider
+        // 3. Fetch Data from Provider (Fan-Out)
+        // The IContextDataProvider implementation handles the parallel execution of
+        // CBS, PDOK, Overpass, and Luchtmeetnet clients.
         var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
 
         var cbs = sourceData.NeighborhoodStats;
@@ -99,7 +101,8 @@ public sealed class ContextReportService : IContextReportService
             warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
         }
 
-        // Build normalized metrics for each category (Fan-in)
+        // 4. Build normalized metrics for each category (Fan-In)
+        // Raw data is converted to uniform ContextMetricDto objects.
         var socialMetrics = SocialMetricBuilder.Build(cbs, warnings);
         var crimeMetrics = CrimeMetricBuilder.Build(crime, warnings);
         var demographicsMetrics = DemographicsMetricBuilder.Build(cbs, warnings);
@@ -108,7 +111,9 @@ public sealed class ContextReportService : IContextReportService
         var amenityMetrics = AmenityMetricBuilder.Build(amenities, cbs, warnings); // Phase 2: CBS Proximity
         var environmentMetrics = EnvironmentMetricBuilder.Build(air, warnings);
 
-        // Compute category scores for radar chart
+        // 5. Compute scores
+        // The ContextScoreCalculator applies weights to these metrics to produce category scores
+        // and a final weighted composite score.
         var categoryScores = ContextScoreCalculator.ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, housingMetrics, mobilityMetrics, amenityMetrics, environmentMetrics);
         var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
 
@@ -126,6 +131,7 @@ public sealed class ContextReportService : IContextReportService
             Sources: sourceData.Sources,
             Warnings: warnings);
 
+        // Cache the result for the configured duration (default: 24h)
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
         return report;
     }
