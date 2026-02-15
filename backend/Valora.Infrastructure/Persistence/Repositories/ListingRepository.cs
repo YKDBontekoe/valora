@@ -156,7 +156,7 @@ public class ListingRepository : IListingRepository
     {
         // Return listings that are not explicitly sold or withdrawn
         // This covers "Beschikbaar", "Onder bod", "Onder optie", etc.
-        return await _context.Listings
+        return await _context.Listings.AsNoTracking()
             .WhereActive()
             .ToListAsync(cancellationToken);
     }
