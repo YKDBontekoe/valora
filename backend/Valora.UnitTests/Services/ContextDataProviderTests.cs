@@ -92,4 +92,36 @@ public class ContextDataProviderTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task GranularMethods_ShouldCallClients()
+    {
+        var location = new ResolvedLocationDto("q", "Address", 52, 4, null, null, null, null, null, null, null, null, null);
+        var provider = new ContextDataProvider(_cbsClient.Object, _crimeClient.Object, _amenityClient.Object, _airClient.Object, _logger.Object);
+
+        await provider.GetNeighborhoodStatsAsync(location, CancellationToken.None);
+        _cbsClient.Verify(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()), Times.Once);
+
+        await provider.GetCrimeStatsAsync(location, CancellationToken.None);
+        _crimeClient.Verify(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()), Times.Once);
+
+        await provider.GetAmenityStatsAsync(location, 1000, CancellationToken.None);
+        _amenityClient.Verify(x => x.GetAmenitiesAsync(location, 1000, It.IsAny<CancellationToken>()), Times.Once);
+
+        await provider.GetAirQualitySnapshotAsync(location, CancellationToken.None);
+        _airClient.Verify(x => x.GetSnapshotAsync(location, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetNeighborhoodStatsAsync_WhenClientReturnsNull_ReturnsNull()
+    {
+        var location = new ResolvedLocationDto("q", "Address", 52, 4, null, null, null, null, null, null, null, null, null);
+        _cbsClient.Setup(x => x.GetStatsAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NeighborhoodStatsDto?)null);
+
+        var provider = new ContextDataProvider(_cbsClient.Object, _crimeClient.Object, _amenityClient.Object, _airClient.Object, _logger.Object);
+        var result = await provider.GetNeighborhoodStatsAsync(location, CancellationToken.None);
+
+        Assert.Null(result);
+    }
 }

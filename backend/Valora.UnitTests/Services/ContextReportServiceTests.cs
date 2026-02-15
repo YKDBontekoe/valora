@@ -138,6 +138,117 @@ public class ContextReportServiceTests
             service.BuildAsync(new ContextReportRequestDto(string.Empty)));
     }
 
+    [Fact]
+    public async Task ResolveLocationAsync_ShouldCallResolver()
+    {
+        var location = CreateLocation();
+        _locationResolver.Setup(x => x.ResolveAsync("input", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        var service = CreateService();
+        var result = await service.ResolveLocationAsync("input");
+
+        Assert.Equal(location, result);
+    }
+
+    [Fact]
+    public async Task GetSocialMetricsAsync_ShouldReturnMetrics()
+    {
+        var location = CreateLocation();
+        var stats = new NeighborhoodStatsDto("R1", "Region", 100, 100, 300, 5, 50, 50, 10, 10, 30, 30, 20, 40, 40, 20, 2.5, "Urban", 30, 25, 20, 40, 40, 45, 55, 20, 35, 90, 10, 80, 1.5, 600, 1000, 0.5, 0.4, 0.3, 0.2, 5, DateTimeOffset.UtcNow);
+        _contextDataProvider.Setup(x => x.GetNeighborhoodStatsAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stats);
+
+        var service = CreateService();
+        var result = await service.GetSocialMetricsAsync(location, new List<string>());
+
+        Assert.NotEmpty(result);
+        Assert.Contains(result, m => m.Key == "residents");
+    }
+
+    [Fact]
+    public async Task GetSafetyMetricsAsync_ShouldReturnMetrics()
+    {
+        var location = CreateLocation();
+        var stats = new CrimeStatsDto(50, 5, 5, 20, 20, 0, DateTimeOffset.UtcNow);
+        _contextDataProvider.Setup(x => x.GetCrimeStatsAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stats);
+
+        var service = CreateService();
+        var result = await service.GetSafetyMetricsAsync(location, new List<string>());
+
+        Assert.NotEmpty(result);
+        Assert.Contains(result, m => m.Key == "total_crimes");
+    }
+
+    [Fact]
+    public async Task GetAmenityMetricsAsync_ShouldReturnMetrics()
+    {
+        var location = CreateLocation();
+        var amen = new AmenityStatsDto(1, 1, 1, 1, 1, 100, 100, DateTimeOffset.UtcNow);
+        _contextDataProvider.Setup(x => x.GetAmenityStatsAsync(location, 1000, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(amen);
+
+        var service = CreateService();
+        var result = await service.GetAmenityMetricsAsync(location, 1000, new List<string>());
+
+        Assert.NotEmpty(result);
+    }
+
+    [Fact]
+    public async Task GetEnvironmentMetricsAsync_ShouldReturnMetrics()
+    {
+        var location = CreateLocation();
+        var air = new AirQualitySnapshotDto("S1", "Station", 100, 10.5, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        _contextDataProvider.Setup(x => x.GetAirQualitySnapshotAsync(location, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(air);
+
+        var service = CreateService();
+        var result = await service.GetEnvironmentMetricsAsync(location, new List<string>());
+
+        Assert.NotEmpty(result);
+        Assert.Contains(result, m => m.Key == "pm25");
+    }
+
+    [Fact]
+    public async Task BuildAsync_WhenRadiusClamped_AddsWarning()
+    {
+        var location = CreateLocation();
+        _locationResolver.Setup(x => x.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        var sourceData = new ContextSourceData(
+            NeighborhoodStats: null, CrimeStats: null, AmenityStats: null, AirQualitySnapshot: null,
+            Sources: [], Warnings: []);
+
+        _contextDataProvider.Setup(x => x.GetSourceDataAsync(location, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sourceData);
+
+        var service = CreateService();
+        var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam", RadiusMeters: 6000));
+
+        Assert.Contains(report.Warnings, w => w.Contains("Radius clamped"));
+    }
+
+    [Fact]
+    public async Task BuildAsync_WhenCached_ReturnsCachedReport()
+    {
+        var location = CreateLocation();
+        _locationResolver.Setup(x => x.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(location);
+
+        var cachedReport = new ContextReportDto(location, [], [], [], [], [], [], [], 80, new Dictionary<string, double>(), [], []);
+
+        _cacheService.Setup(x => x.TryGetValue(It.IsAny<string>(), out cachedReport))
+            .Returns(true);
+
+        var service = CreateService();
+        var report = await service.BuildAsync(new ContextReportRequestDto("Damrak 1 Amsterdam"));
+
+        Assert.Equal(80, report.CompositeScore);
+        _contextDataProvider.Verify(x => x.GetSourceDataAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private ContextReportService CreateService()
     {
         return new ContextReportService(

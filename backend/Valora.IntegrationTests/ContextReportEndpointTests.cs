@@ -45,6 +45,66 @@ public class ContextReportEndpointTests
         Assert.True(json.RootElement.TryGetProperty("metrics", out _));
     }
 
+    [Fact]
+    public async Task Post_MetricsSafety_ReturnsMetrics()
+    {
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextSafety");
+        var client = factory.CreateClient();
+        await AuthenticateAsync(client);
+        var response = await client.PostAsJsonAsync("/api/context/metrics/safety", CreateLocation());
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Post_MetricsAmenities_ReturnsMetrics()
+    {
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextAmenities");
+        var client = factory.CreateClient();
+        await AuthenticateAsync(client);
+        var response = await client.PostAsJsonAsync("/api/context/metrics/amenities", new { Location = CreateLocation(), RadiusMeters = 1000 });
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Post_MetricsEnvironment_ReturnsMetrics()
+    {
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextEnvironment");
+        var client = factory.CreateClient();
+        await AuthenticateAsync(client);
+        var response = await client.PostAsJsonAsync("/api/context/metrics/environment", CreateLocation());
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Post_MetricsDemographics_ReturnsMetrics()
+    {
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextDemographics");
+        var client = factory.CreateClient();
+        await AuthenticateAsync(client);
+        var response = await client.PostAsJsonAsync("/api/context/metrics/demographics", CreateLocation());
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Post_MetricsHousing_ReturnsMetrics()
+    {
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextHousing");
+        var client = factory.CreateClient();
+        await AuthenticateAsync(client);
+        var response = await client.PostAsJsonAsync("/api/context/metrics/housing", CreateLocation());
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Post_MetricsMobility_ReturnsMetrics()
+    {
+        await using var factory = new ContextReportTestWebAppFactory("InMemory:ContextMobility");
+        var client = factory.CreateClient();
+        await AuthenticateAsync(client);
+        var response = await client.PostAsJsonAsync("/api/context/metrics/mobility", CreateLocation());
+        response.EnsureSuccessStatusCode();
+    }
+
     private static ResolvedLocationDto CreateLocation()
     {
         return new ResolvedLocationDto(
