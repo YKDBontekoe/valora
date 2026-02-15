@@ -135,6 +135,37 @@ public class AiServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ChatAsync_WithSystemPrompt_ShouldIncludeSystemMessage()
+    {
+        // Arrange
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""id"": ""chatcmpl-123"",
+                    ""choices"": [{
+                        ""message"": { ""role"": ""assistant"", ""content"": ""Response"" }
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(_validConfig);
+        var systemPrompt = "You are a helpful assistant";
+
+        // Act
+        await sut.ChatAsync("Hello", null, systemPrompt);
+
+        // Assert
+        var request = _server.LogEntries.Last().RequestMessage;
+        var body = request.BodyData?.BodyAsString;
+
+        Assert.NotNull(body);
+        // Verify messages array contains system message
+        Assert.Contains("system", body);
+        Assert.Contains(systemPrompt, body);
+    }
+
+    [Fact]
     public void Constructor_Throws_WhenApiKeyMissing()
     {
         // Arrange

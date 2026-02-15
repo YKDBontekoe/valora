@@ -32,7 +32,7 @@ public class OpenRouterAiService : IAiService
         _siteName = configuration["OPENROUTER_SITE_NAME"] ?? "Valora";
     }
 
-    public async Task<string> ChatAsync(string prompt, string? model = null, CancellationToken cancellationToken = default)
+    public async Task<string> ChatAsync(string prompt, string? model = null, string? systemPrompt = null, CancellationToken cancellationToken = default)
     {
         var modelToUse = !string.IsNullOrEmpty(model) ? model : _defaultModel;
 
@@ -55,8 +55,17 @@ public class OpenRouterAiService : IAiService
             options: options
         );
 
+        var messages = new List<ChatMessage>();
+
+        if (!string.IsNullOrEmpty(systemPrompt))
+        {
+            messages.Add(new SystemChatMessage(systemPrompt));
+        }
+
+        messages.Add(new UserChatMessage(prompt));
+
         ChatCompletion completion = await client.CompleteChatAsync(
-            [new UserChatMessage(prompt)],
+            messages,
             options: null,
             cancellationToken
         );
