@@ -72,7 +72,6 @@ public class PdokListingService : IPdokListingService
             
             if (!PdokListingMapper.TryParsePdokResponse(response, out var doc))
             {
-                _logger.LogWarning("PDOK lookup returned empty or invalid response for ID: {PdokId}", pdokId);
                 return null;
             }
 

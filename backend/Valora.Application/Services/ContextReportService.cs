@@ -81,7 +81,6 @@ public sealed class ContextReportService : IContextReportService
 
         if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
         {
-            _logger.LogDebug("Cache hit for context report: {Key}", cacheKey);
             return cached;
         }
 
