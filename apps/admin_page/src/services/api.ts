@@ -14,12 +14,11 @@ axiosRetry(api, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) => {
-    // Retry on network errors or 5xx server errors
-    // axios-retry default is network or idempotent (GET/HEAD/OPTIONS/PUT/DELETE)
-    // We explicitly add 5xx check just to be sure, although typically 5xx means idempotent might fail?
-    // Actually, retrying 503 is good. Retrying 500 might be risky for POST, but safe for GET.
-    // isNetworkOrIdempotentRequestError handles GET 5xx.
-    return axiosRetry.isNetworkOrIdempotentRequestError(error) || (error.response?.status ? error.response.status >= 500 : false);
+    // Retry on network errors or idempotent requests
+    // Also retry on 503 (Service Unavailable) which is safe to retry
+    // Avoiding blanket 5xx retry to prevent non-idempotent side effects
+    return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+           (error.response?.status === 503);
   },
 });
 
@@ -86,9 +85,7 @@ api.interceptors.response.use(
         message = error.message;
     }
 
-    // Don't show toast for 401 (handled by redirect) or 404 (maybe handled by UI)?
-    // Actually 404 might be important.
-    // 401 we just redirected, so no need to toast "Unauthorized".
+    // Don't show toast for 401 (handled by redirect)
     if (error.response?.status !== 401) {
         toast.error(message);
     }

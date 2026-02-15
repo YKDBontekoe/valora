@@ -1,4 +1,5 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -44,7 +45,7 @@ class ErrorBoundary extends Component<Props, State> {
                 An unexpected error occurred. Please try reloading the page.
               </p>
 
-              {this.state.error && (
+              {this.state.error && import.meta.env.DEV && (
                 <div className="mb-6 bg-red-50 p-3 rounded text-left overflow-auto max-h-40">
                   <p className="text-xs text-red-800 font-mono">
                     {this.state.error.toString()}
