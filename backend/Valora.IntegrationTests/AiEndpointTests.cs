@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Api.Endpoints;
 using Xunit;
 
 namespace Valora.IntegrationTests;
@@ -62,8 +63,15 @@ public class AiEndpointTests
         // Arrange
         await AuthenticateAsync();
         var request = new AiChatRequest { Prompt = "Hello", Model = "openai/gpt-4o" };
+
+        // Fix: Verify system prompt is passed correctly (security check)
+        // Updated signature: prompt, systemPrompt, model, ct
         _mockAiService
-            .Setup(x => x.ChatAsync("Hello", "openai/gpt-4o", It.IsAny<CancellationToken>()))
+            .Setup(x => x.ChatAsync(
+                "Hello",
+                AiEndpoints.ChatSystemPrompt, // Explicitly verify system prompt
+                "openai/gpt-4o",
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync("AI Response");
 
         // Act
@@ -73,6 +81,13 @@ public class AiEndpointTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<AiChatResponse>();
         Assert.Equal("AI Response", result?.Response);
+
+        // Verify mock call to ensure system prompt was indeed passed
+        _mockAiService.Verify(x => x.ChatAsync(
+            "Hello",
+            AiEndpoints.ChatSystemPrompt,
+            "openai/gpt-4o",
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

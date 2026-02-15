@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Valora.Infrastructure.Services;
 using WireMock.RequestBuilders;
@@ -45,7 +46,8 @@ public class AiServiceTests : IDisposable
         var sut = new OpenRouterAiService(_validConfig);
 
         // Act
-        var result = await sut.ChatAsync("Hello");
+        // Updated signature: prompt, systemPrompt, model, ct
+        var result = await sut.ChatAsync("Hello", null, null);
 
         // Assert
         Assert.Equal("Response from default model", result);
@@ -91,7 +93,7 @@ public class AiServiceTests : IDisposable
         var sut = new OpenRouterAiService(customConfig);
 
         // Act
-        await sut.ChatAsync("Hello");
+        await sut.ChatAsync("Hello", null, null);
 
         // Assert
         var request = _server.LogEntries.Last().RequestMessage;
@@ -120,7 +122,8 @@ public class AiServiceTests : IDisposable
         var sut = new OpenRouterAiService(_validConfig);
 
         // Act
-        var result = await sut.ChatAsync("Hello", "gpt-4");
+        // Updated signature: prompt, systemPrompt, model, ct
+        var result = await sut.ChatAsync("Hello", null, "gpt-4");
 
         // Assert
         Assert.Equal("Response from specific model", result);
@@ -132,6 +135,54 @@ public class AiServiceTests : IDisposable
         Assert.NotNull(body);
         Assert.Contains("model", body);
         Assert.Contains("gpt-4", body);
+    }
+
+    [Fact]
+    public async Task ChatAsync_WithSystemPrompt_ShouldIncludeSystemMessage()
+    {
+        // Arrange
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""id"": ""chatcmpl-123"",
+                    ""choices"": [{
+                        ""message"": { ""role"": ""assistant"", ""content"": ""Response"" }
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(_validConfig);
+        var systemPrompt = "You are a helpful assistant";
+        var userPrompt = "Hello";
+
+        // Act
+        // Updated signature: prompt, systemPrompt, model, ct
+        await sut.ChatAsync(userPrompt, systemPrompt);
+
+        // Assert
+        var request = _server.LogEntries.Last().RequestMessage;
+        var body = request.BodyData?.BodyAsString;
+
+        Assert.NotNull(body);
+
+        // Robust JSON parsing
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        Assert.True(root.TryGetProperty("messages", out var messages));
+        Assert.Equal(JsonValueKind.Array, messages.ValueKind);
+        Assert.Equal(2, messages.GetArrayLength());
+
+        // Verify System Message (first)
+        var sysMsg = messages[0];
+        Assert.Equal("system", sysMsg.GetProperty("role").GetString());
+        Assert.Equal(systemPrompt, sysMsg.GetProperty("content").GetString());
+
+        // Verify User Message (second)
+        var usrMsg = messages[1];
+        Assert.Equal("user", usrMsg.GetProperty("role").GetString());
+        Assert.Equal(userPrompt, usrMsg.GetProperty("content").GetString());
     }
 
     [Fact]
@@ -161,7 +212,8 @@ public class AiServiceTests : IDisposable
         var sut = new OpenRouterAiService(_validConfig);
 
         // Act
-        var result = await sut.ChatAsync("Hello");
+        // Updated signature: prompt, systemPrompt, model, ct
+        var result = await sut.ChatAsync("Hello", null, null);
 
         // Assert
         Assert.Equal(string.Empty, result);
