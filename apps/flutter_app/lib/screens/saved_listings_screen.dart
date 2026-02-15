@@ -241,6 +241,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
     }
 
     // ignore: deprecated_member_use
+    // ignore: deprecated_member_use
     await Share.share(sb.toString());
   }
 
@@ -376,7 +377,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
 
         return PopScope(
           canPop: !_isSelectionMode,
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, result) {
             if (didPop) {
               return;
             }
