@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, List, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -20,13 +21,18 @@ const Layout = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-100 w-full overflow-hidden">
+    <div className="flex h-screen bg-brand-50 w-full overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-indigo-600">Valora Admin</h1>
+      <aside className="w-64 bg-white border-r border-brand-200 flex flex-col shadow-premium z-10">
+        <div className="p-8">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-200">
+              <span className="text-white font-bold text-lg">V</span>
+            </div>
+            <h1 className="text-xl font-bold text-brand-900 tracking-tight">Valora Admin</h1>
+          </div>
         </div>
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-4 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -34,22 +40,22 @@ const Layout = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-primary-50 text-primary-700 shadow-sm'
+                    : 'text-brand-500 hover:bg-brand-100 hover:text-brand-900'
                 }`}
               >
-                <Icon className="mr-3 h-5 w-5" />
+                <Icon className={`mr-3 h-5 w-5 transition-colors ${isActive ? 'text-primary-600' : 'text-brand-400 group-hover:text-brand-600'}`} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-brand-100">
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
+            className="flex items-center w-full px-4 py-3 text-sm font-medium text-brand-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
           >
             <LogOut className="mr-3 h-5 w-5" />
             Logout
@@ -58,8 +64,20 @@ const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-8">
-        <Outlet />
+      <main className="flex-1 overflow-auto relative">
+        <div className="max-w-7xl mx-auto p-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
     </div>
   );
