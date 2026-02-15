@@ -98,7 +98,7 @@ classDiagram
 -   Docker Desktop
 -   .NET 10 SDK
 -   Flutter SDK
--   Node.js (for Admin App)
+-   Node.js 18+ (for Admin App)
 
 ### 1. Infrastructure
 ```bash
