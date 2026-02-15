@@ -240,6 +240,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
       sb.writeln('');
     }
 
+    // ignore: deprecated_member_use
     await Share.share(sb.toString());
   }
 
@@ -308,21 +309,35 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
             final minSafety = _activeFilters['minSafetyScore'] as double?;
             final minComposite = _activeFilters['minCompositeScore'] as double?;
 
-            if (minPrice != null && (l.price ?? 0) < minPrice) return false;
-            if (maxPrice != null && (l.price ?? 0) > maxPrice) return false;
+            if (minPrice != null && (l.price ?? 0) < minPrice) {
+              return false;
+            }
+            if (maxPrice != null && (l.price ?? 0) > maxPrice) {
+              return false;
+            }
             if (city != null &&
-                !(l.city?.toLowerCase().contains(city.toLowerCase()) ?? false))
+                !(l.city?.toLowerCase().contains(city.toLowerCase()) ??
+                    false)) {
               return false;
-            if (minBedrooms != null && (l.bedrooms ?? 0) < minBedrooms)
+            }
+            if (minBedrooms != null && (l.bedrooms ?? 0) < minBedrooms) {
               return false;
-            if (minLivingArea != null && (l.livingAreaM2 ?? 0) < minLivingArea)
+            }
+            if (minLivingArea != null &&
+                (l.livingAreaM2 ?? 0) < minLivingArea) {
               return false;
-            if (maxLivingArea != null && (l.livingAreaM2 ?? 0) > maxLivingArea)
+            }
+            if (maxLivingArea != null &&
+                (l.livingAreaM2 ?? 0) > maxLivingArea) {
               return false;
-            if (minSafety != null && (l.contextSafetyScore ?? 0) < minSafety)
+            }
+            if (minSafety != null && (l.contextSafetyScore ?? 0) < minSafety) {
               return false;
+            }
             if (minComposite != null &&
-                (l.contextCompositeScore ?? 0) < minComposite) return false;
+                (l.contextCompositeScore ?? 0) < minComposite) {
+              return false;
+            }
 
             return true;
           }).toList();
@@ -359,13 +374,15 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
             break;
         }
 
-        return WillPopScope(
-          onWillPop: () async {
+        return PopScope(
+          canPop: !_isSelectionMode,
+          onPopInvoked: (didPop) {
+            if (didPop) {
+              return;
+            }
             if (_isSelectionMode) {
               _clearSelection();
-              return false;
             }
-            return true;
           },
           child: CustomScrollView(
             slivers: [
