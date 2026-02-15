@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Sentry;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,6 +21,31 @@ using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Sentry
+builder.WebHost.UseSentry(options =>
+{
+    options.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";
+
+    // Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+    // We recommend adjusting this value in production.
+    options.TracesSampleRate = 1.0;
+
+    // Enable Sentry SDK debug mode in development
+    options.Debug = builder.Environment.IsDevelopment();
+
+    // Add breadcrumbs for logger messages of level Information and higher
+    options.MinimumBreadcrumbLevel = LogLevel.Information;
+
+    // Capture events for logger messages of level Error and higher
+    options.MinimumEventLevel = LogLevel.Error;
+
+    // Attach request body to Sentry events when it is small enough
+    options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Medium;
+
+    // Send PII (like User.Identity.Name) to Sentry if available
+    options.SendDefaultPii = true;
+});
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
@@ -160,6 +187,24 @@ app.UseCors();
 app.UseRateLimiter();
 
 app.UseAuthentication();
+
+// Sentry User Enrichment Middleware
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var user = new SentryUser
+        {
+            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
+            Email = context.User.Identity.Name, // UserName is email in this app
+            Username = context.User.Identity.Name
+        };
+
+        SentrySdk.ConfigureScope(scope => scope.User = user);
+    }
+    await next();
+});
+
 app.UseAuthorization();
 
 // Map Auth Endpoints (Injects IConfiguration into handler)
