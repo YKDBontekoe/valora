@@ -66,3 +66,38 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: frontend
           fail_ci_if_error: true
+
+  admin-page:
+    name: Admin Page (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin_page
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-working-directory: apps/admin_page
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: admin-page
+          fail_ci_if_error: true

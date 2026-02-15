@@ -57,12 +57,14 @@ public class AuthService : IAuthService
         var token = await _tokenService.CreateJwtTokenAsync(user);
         var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
         await _tokenService.SaveRefreshTokenAsync(refreshToken);
+        var roles = await _identityService.GetUserRolesAsync(user);
 
         return new AuthResponseDto(
             token,
             refreshToken.RawToken,
             user.Email!,
-            user.Id
+            user.Id,
+            roles
         );
     }
 
@@ -93,12 +95,14 @@ public class AuthService : IAuthService
         await _tokenService.SaveRefreshTokenAsync(newRefreshToken);
 
         var newAccessToken = await _tokenService.CreateJwtTokenAsync(existingToken.User);
+        var roles = await _identityService.GetUserRolesAsync(existingToken.User);
 
         return new AuthResponseDto(
             newAccessToken,
             newRefreshToken.RawToken,
             existingToken.User.Email!,
-            existingToken.User.Id
+            existingToken.User.Id,
+            roles
         );
     }
 }

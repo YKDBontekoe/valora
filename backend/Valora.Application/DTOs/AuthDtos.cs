@@ -27,7 +27,8 @@ public record AuthResponseDto(
     string Token,
     string RefreshToken,
     string Email,
-    string UserId
+    string UserId,
+    IEnumerable<string> Roles
 );
 
 public record RefreshTokenRequestDto(
