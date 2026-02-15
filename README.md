@@ -17,7 +17,9 @@ Valora acts as an intelligent aggregator between the user and Dutch open data ec
 ```mermaid
 graph TD
     User((User)) -->|Input Address/URL| App[Flutter App]
+    Admin((Admin)) -->|Manage| AdminApp[Admin Dashboard]
     App -->|API Request| Backend[Valora Backend]
+    AdminApp -->|API Request| Backend
 
     subgraph "External Data Sources"
         Backend -->|Geocoding| PDOK[PDOK Locatieserver]
@@ -34,6 +36,7 @@ graph TD
 
 -   **Context Reports**: Generate on-demand reports for any Dutch address with scores for Safety, Social, Amenities, and Environment.
 -   **Listing Enrichment**: Enhance real estate listings with persistent context data for advanced filtering.
+-   **Admin Dashboard**: Web-based interface for user management, system statistics, and listing oversight.
 -   **Explainable Scoring**: Transparent 0-100 scores derived from raw data (e.g., crime rates, distance to schools).
 -   **Clean Architecture**: Modular, testable backend design separating Domain, Application, and Infrastructure.
 -   **Resilience**: "Fan-out" data fetching ensures partial reports are generated even if one data source is down.
@@ -82,10 +85,12 @@ classDiagram
 ## Documentation Index
 
 -   **[Onboarding Guide](docs/onboarding.md)**: Setup instructions.
+-   **[API Reference](docs/api-reference.md)**: Detailed API documentation.
 -   **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Deep dive into the "Fan-Out" process.
 -   **[Data Flow: Enrichment](docs/data-flow-enrichment.md)**: How listings are stored and updated.
 -   **[Developer Guide](docs/developer-guide.md)**: Coding standards, patterns, and testing.
 -   **[User Guide](docs/user-guide.md)**: App features walkthrough.
+-   **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
 
 ## Quick Setup
 
@@ -93,6 +98,7 @@ classDiagram
 -   Docker Desktop
 -   .NET 10 SDK
 -   Flutter SDK
+-   Node.js (for Admin App)
 
 ### 1. Infrastructure
 ```bash
@@ -106,12 +112,20 @@ cp .env.example .env  # CRITICAL: Configure JWT_SECRET and DATABASE_URL
 dotnet run --project Valora.Api
 ```
 
-### 3. Frontend
+### 3. Frontend (Mobile)
 ```bash
 cd apps/flutter_app
 cp .env.example .env  # CRITICAL: Set API_URL (use 10.0.2.2 for Android Emulator)
 flutter pub get
 flutter run
+```
+
+### 4. Admin Dashboard (Web)
+```bash
+cd apps/admin_page
+cp .env.example .env
+npm install
+npm run dev
 ```
 
 ## API Reference
@@ -122,4 +136,4 @@ flutter run
 | `POST` | `/api/listings/{id}/enrich` | Update listing with context data. |
 | `POST` | `/api/auth/login` | Authenticate user. |
 
-See [Developer Guide](docs/developer-guide.md) for full API details.
+See [API Reference](docs/api-reference.md) for full details.
