@@ -39,7 +39,7 @@ api.interceptors.response.use(
           localStorage.setItem('admin_refresh_token', newRefreshToken);
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
-        } catch (refreshError) {
+        } catch {
           clearAdminStorage();
           window.location.href = '/login';
         }

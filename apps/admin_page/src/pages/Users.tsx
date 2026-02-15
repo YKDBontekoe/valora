@@ -20,7 +20,7 @@ const Users = () => {
       const data = await adminService.getUsers(pageNumber);
       setUsers(data.items);
       setTotalPages(data.totalPages);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch users');
     } finally {
       setLoading(false);
@@ -38,7 +38,7 @@ const Users = () => {
     try {
       await adminService.deleteUser(user.id);
       setUsers(users.filter(u => u.id !== user.id));
-    } catch (error) {
+    } catch {
       alert('Failed to delete user. It might be protected or you might have lost permissions.');
     }
   };

@@ -28,7 +28,7 @@ const Login = () => {
       localStorage.setItem('admin_email', data.email);
       localStorage.setItem('admin_userId', data.userId);
       navigate('/');
-    } catch (err: any) {
+    } catch {
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
