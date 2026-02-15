@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Domain.Entities;
@@ -69,6 +70,25 @@ public class IdentityService : IIdentityService
         }
 
         return Result.Success();
+    }
+
+    public async Task<List<ApplicationUser>> GetUsersAsync()
+    {
+        return await _userManager.Users.ToListAsync();
+    }
+
+    public async Task<Result> DeleteUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Result.Failure(new[] { "User not found." });
+
+        var result = await _userManager.DeleteAsync(user);
+        return ToApplicationResult(result);
+    }
+
+    public async Task<IList<string>> GetUserRolesAsync(ApplicationUser user)
+    {
+        return await _userManager.GetRolesAsync(user);
     }
 
     private static Result ToApplicationResult(IdentityResult result)

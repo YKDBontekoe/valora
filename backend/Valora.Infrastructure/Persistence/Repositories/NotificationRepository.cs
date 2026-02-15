@@ -75,6 +75,11 @@ public class NotificationRepository : INotificationRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Notifications.CountAsync(cancellationToken);
+    }
+
     public async Task MarkAllAsReadAsync(string userId, CancellationToken cancellationToken = default)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;

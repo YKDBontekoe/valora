@@ -10,4 +10,7 @@ public interface IIdentityService
     Task<ApplicationUser?> GetUserByEmailAsync(string email);
     Task EnsureRoleAsync(string roleName);
     Task<Result> AddToRoleAsync(string userId, string roleName);
+    Task<List<ApplicationUser>> GetUsersAsync();
+    Task<Result> DeleteUserAsync(string userId);
+    Task<IList<string>> GetUserRolesAsync(ApplicationUser user);
 }
