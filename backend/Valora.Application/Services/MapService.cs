@@ -45,13 +45,13 @@ public class MapService : IMapService
     {
         if (metric == MapOverlayMetric.PricePerSquareMeter)
         {
-            return await GetPricePerSquareMeterOverlaysAsync(minLat, minLon, maxLat, maxLon, cancellationToken);
+            return await CalculateAveragePriceOverlayAsync(minLat, minLon, maxLat, maxLon, cancellationToken);
         }
 
         return await _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, metric, cancellationToken);
     }
 
-    private async Task<List<MapOverlayDto>> GetPricePerSquareMeterOverlaysAsync(
+    private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
         double minLat, double minLon, double maxLat, double maxLon, CancellationToken ct)
     {
         // Fetch boundaries first
@@ -60,10 +60,8 @@ public class MapService : IMapService
         // Query listing data via repository
         var listingData = await _repository.GetListingsPriceDataAsync(minLat, minLon, maxLat, maxLon, ct);
 
+        var validListings = GetValidListings(listingData);
         double? avgPrice = null;
-        var validListings = listingData
-            .Where(l => l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2.Value > 0)
-            .ToList();
 
         if (validListings.Any())
         {
@@ -81,5 +79,12 @@ public class MapService : IMapService
         }
 
         return results;
+    }
+
+    private static List<ListingPriceData> GetValidListings(IEnumerable<ListingPriceData> listings)
+    {
+        return listings
+            .Where(l => l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2.Value > 0)
+            .ToList();
     }
 }
