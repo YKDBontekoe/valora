@@ -75,4 +75,46 @@ void main() {
     expect(storedListing['address'], 'Nieuwe Straat 10');
     expect(storedListing['description'], isNull);
   });
+
+  test('removes multiple favorites efficiently', () async {
+    final FavoritesProvider provider = FavoritesProvider();
+    await _waitForLoaded(provider);
+
+    final Listing listing1 = Listing(
+      id: 'listing-1',
+      fundaId: 'funda-1',
+      address: 'Street 1',
+    );
+    final Listing listing2 = Listing(
+      id: 'listing-2',
+      fundaId: 'funda-2',
+      address: 'Street 2',
+    );
+    final Listing listing3 = Listing(
+      id: 'listing-3',
+      fundaId: 'funda-3',
+      address: 'Street 3',
+    );
+
+    await provider.toggleFavorite(listing1);
+    await provider.toggleFavorite(listing2);
+    await provider.toggleFavorite(listing3);
+
+    expect(provider.favorites, hasLength(3));
+
+    await provider.removeFavorites([listing1, listing3]);
+
+    expect(provider.favorites, hasLength(1));
+    expect(provider.favorites.first.id, 'listing-2');
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final List<String> persisted =
+        prefs.getStringList('favorite_listings_v2') ?? <String>[];
+    expect(persisted, hasLength(1));
+    final Map<String, dynamic> record =
+        json.decode(persisted.first) as Map<String, dynamic>;
+    final Map<String, dynamic> storedListing =
+        record['listing'] as Map<String, dynamic>;
+    expect(storedListing['id'], 'listing-2');
+  });
 }
