@@ -37,8 +37,9 @@
         "^react",
         "^@types/react",
         "eslint-plugin-react",
-        "vitejs/plugin-react",
-        "lucide-react"
+        "@vitejs/plugin-react",
+        "lucide-react",
+        "@tailwindcss/vite"
       ]
     }
   ]
