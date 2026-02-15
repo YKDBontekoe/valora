@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import api from './api';
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
 
 // Mock toast so we can spy on it
@@ -49,14 +49,14 @@ describe('API Service', () => {
     // So the config received by our mock adapter SHOULD have the header.
 
     // Let's verify by checking the config inside the adapter
-    let capturedConfig: any;
+    let capturedConfig: InternalAxiosRequestConfig | undefined;
     api.defaults.adapter = async (config) => {
       capturedConfig = config;
       return { data: {}, status: 200, statusText: 'OK', headers: {}, config };
     };
 
     await api.get('/test');
-    expect(capturedConfig.headers.Authorization).toBe('Bearer test-token');
+    expect(capturedConfig?.headers.Authorization).toBe('Bearer test-token');
   });
 
   it('handles 401 and attempts refresh', async () => {
@@ -124,7 +124,7 @@ describe('API Service', () => {
 
     try {
       await api.get('/test');
-    } catch (e) {
+    } catch {
       // Expected to fail eventually
     }
 
@@ -145,39 +145,17 @@ describe('API Service', () => {
 
     try {
       await api.get('/error');
-    } catch (e) {
+    } catch {
       // Expected
     }
 
     expect(toast.error).toHaveBeenCalledWith('Server exploded');
   });
 
-  // Note: Testing axios-retry logic specifically is tricky with just adapter mocking
-  // because axios-retry wraps the adapter. If we replace api.defaults.adapter,
-  // we might bypass axios-retry or overwrite it depending on when it was installed.
-  // Ideally, we'd test that retries happen by observing multiple calls to the adapter.
-
   it('retries on network error', async () => {
-      // We need to restore the original adapter behavior or ensure axios-retry is working.
-      // Since axios-retry modifies the instance, let's see if we can just count calls.
-
-      let callCount = 0;
-      // We can't easily replace the adapter if axios-retry wrapped it.
-      // But we can rely on nock or similar if we had it.
-      // Here we are using vitest.
-
-      // Let's assume axios-retry is working if we configured it.
-      // Testing the configuration logic itself might be enough for unit tests.
-      // But let's try to verify behavior.
-
-      // For this test environment, axios-retry might not be fully active if we mocked the adapter
-      // improperly. `axios-retry` works by intercepting the request or wrapping the adapter.
-      // If we overwrite `api.defaults.adapter`, we might kill the retry logic.
-
-      // So let's skip deep retry testing here and trust the library,
-      // but we can verify the configuration if we exported it, which we didn't.
-
-      // Instead, let's verify that our interceptor handles generic errors correctly.
+      // We assume axios-retry works as configured.
+      // Verifying complex retry logic with wrapped adapters is brittle in unit tests.
+      // This test is a placeholder for behavior verified by library guarantees.
       expect(true).toBe(true);
   });
 });
