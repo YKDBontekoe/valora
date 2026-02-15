@@ -117,8 +117,8 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
                               ? ValoraColors.primaryLight
                               : ValoraColors.primary)
                           .withValues(alpha: 0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
                       spreadRadius: -2,
                     ),
                   ]

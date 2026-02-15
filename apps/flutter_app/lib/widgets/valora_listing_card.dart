@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -5,13 +6,14 @@ import '../core/utils/listing_utils.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_animations.dart';
 import '../models/listing.dart';
 import 'valora_widgets.dart';
 
 /// Property listing card with image, price, and details.
 ///
 /// Designed for use in list views and grids.
-class ValoraListingCard extends StatelessWidget {
+class ValoraListingCard extends StatefulWidget {
   const ValoraListingCard({
     super.key,
     required this.listing,
@@ -33,97 +35,113 @@ class ValoraListingCard extends StatelessWidget {
   final bool isFavorite;
 
   @override
+  State<ValoraListingCard> createState() => _ValoraListingCardState();
+}
+
+class _ValoraListingCardState extends State<ValoraListingCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return ValoraCard(
-      padding: EdgeInsets.zero,
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image Section
-          Stack(
-            children: [
-              _ListingImage(
-                imageUrl: listing.imageUrl,
-                listingId: listing.id,
-                isDark: isDark,
-              ),
-              if (listing.status != null)
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: ValoraCard(
+        padding: EdgeInsets.zero,
+        onTap: widget.onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Section
+            Stack(
+              children: [
+                _ListingImage(
+                  imageUrl: widget.listing.imageUrl,
+                  listingId: widget.listing.id,
+                  isDark: isDark,
+                  isHovered: _isHovered,
+                ),
+                if (widget.listing.status != null)
+                  Positioned(
+                    top: ValoraSpacing.sm,
+                    left: ValoraSpacing.sm,
+                    child: ValoraBadge(
+                      label: widget.listing.status!.toUpperCase(),
+                      color: ListingUtils.getStatusColor(widget.listing.status!),
+                    ),
+                  ),
                 Positioned(
                   top: ValoraSpacing.sm,
-                  left: ValoraSpacing.sm,
-                  child: ValoraBadge(
-                    label: listing.status!.toUpperCase(),
-                    color: ListingUtils.getStatusColor(listing.status!),
-                  ),
-                ),
-              Positioned(
-                top: ValoraSpacing.sm,
-                right: ValoraSpacing.sm,
-                child: _FavoriteButton(
-                  isFavorite: isFavorite,
-                  onFavorite: onFavorite,
-                ),
-              ),
-              if (listing.contextCompositeScore != null)
-                Positioned(
-                  bottom: ValoraSpacing.sm,
                   right: ValoraSpacing.sm,
-                  child: ValoraBadge(
-                    label: listing.contextCompositeScore!.toStringAsFixed(1),
-                    color: ListingUtils.getScoreColor(listing.contextCompositeScore!),
-                    icon: Icons.insights,
+                  child: _FavoriteButton(
+                    isFavorite: widget.isFavorite,
+                    onFavorite: widget.onFavorite,
                   ),
                 ),
-            ],
-          ),
-
-          // Content Section
-          Padding(
-            padding: const EdgeInsets.all(ValoraSpacing.cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Price
-                if (listing.price != null) ValoraPrice(price: listing.price!),
-                const SizedBox(height: ValoraSpacing.sm),
-
-                // Address
-                Text(
-                  listing.address,
-                  style: ValoraTypography.addressDisplay.copyWith(
-                    color: colorScheme.onSurface,
+                if (widget.listing.contextCompositeScore != null)
+                  Positioned(
+                    bottom: ValoraSpacing.sm,
+                    right: ValoraSpacing.sm,
+                    child: ValoraBadge(
+                      label: widget.listing.contextCompositeScore!.toStringAsFixed(1),
+                      color: ListingUtils.getScoreColor(
+                          widget.listing.contextCompositeScore!),
+                      icon: Icons.insights,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: ValoraSpacing.xs),
-
-                // Location
-                Text(
-                  '${listing.city ?? ''} ${listing.postalCode ?? ''}'.trim(),
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: ValoraSpacing.md),
-
-                // Specs Row
-                _ListingSpecs(
-                  bedrooms: listing.bedrooms,
-                  bathrooms: listing.bathrooms,
-                  livingAreaM2: listing.livingAreaM2,
-                  plotAreaM2: listing.plotAreaM2,
-                  colorScheme: colorScheme,
-                ),
               ],
             ),
-          ),
-        ],
+
+            // Content Section
+            Padding(
+              padding: const EdgeInsets.all(ValoraSpacing.cardPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Price
+                  if (widget.listing.price != null) ...[
+                    ValoraPrice(price: widget.listing.price!),
+                    const SizedBox(height: ValoraSpacing.sm),
+                  ],
+
+                  // Address
+                  Text(
+                    widget.listing.address,
+                    style: ValoraTypography.addressDisplay.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: ValoraSpacing.xs),
+
+                  // Location
+                  Text(
+                    '${widget.listing.city ?? ''} ${widget.listing.postalCode ?? ''}'
+                        .trim(),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: ValoraSpacing.md),
+
+                  // Specs Row
+                  _ListingSpecs(
+                    bedrooms: widget.listing.bedrooms,
+                    bathrooms: widget.listing.bathrooms,
+                    livingAreaM2: widget.listing.livingAreaM2,
+                    plotAreaM2: widget.listing.plotAreaM2,
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -134,11 +152,13 @@ class _ListingImage extends StatelessWidget {
     required this.imageUrl,
     required this.listingId,
     required this.isDark,
+    required this.isHovered,
   });
 
   final String? imageUrl;
   final String listingId;
   final bool isDark;
+  final bool isHovered;
 
   @override
   Widget build(BuildContext context) {
@@ -149,19 +169,27 @@ class _ListingImage extends StatelessWidget {
       tag: listingId,
       child: AspectRatio(
         aspectRatio: 16 / 10,
-        child: hasValidImage
-            ? CachedNetworkImage(
-                imageUrl: validImageUrl,
-                memCacheWidth: 800, // Optimize memory usage
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    _Placeholder(isDark: isDark, isLoading: true),
-                errorWidget: (context, url, error) =>
-                    _Placeholder(isDark: isDark),
-                fadeInDuration: const Duration(milliseconds: 500),
-                fadeInCurve: Curves.easeOut,
-              )
-            : _Placeholder(isDark: isDark),
+        child: ClipRect(
+          child: (hasValidImage
+              ? CachedNetworkImage(
+                  imageUrl: validImageUrl,
+                  memCacheWidth: 800, // Optimize memory usage
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) =>
+                      _Placeholder(isDark: isDark, isLoading: true),
+                  errorWidget: (context, url, error) =>
+                      _Placeholder(isDark: isDark),
+                  fadeInDuration: const Duration(milliseconds: 500),
+                  fadeInCurve: Curves.easeOut,
+                )
+              : _Placeholder(isDark: isDark))
+          .animate(target: isHovered ? 1 : 0)
+          .scale(
+            end: const Offset(1.05, 1.05),
+            duration: ValoraAnimations.slow,
+            curve: ValoraAnimations.deceleration,
+          ),
+        ),
       ),
     );
   }
@@ -204,40 +232,47 @@ class _FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.9),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onFavorite,
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(ValoraSpacing.sm),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) {
-              return ScaleTransition(scale: animation, child: child);
-            },
-            child: isFavorite
-                ? Icon(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ClipOval(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Material(
+          color: (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight)
+              .withValues(alpha: 0.7),
+          child: InkWell(
+            onTap: onFavorite,
+            customBorder: const CircleBorder(),
+            child: Padding(
+              padding: const EdgeInsets.all(ValoraSpacing.sm),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: isFavorite
+                    ? Icon(
                         Icons.favorite,
                         key: const ValueKey(true),
                         size: ValoraSpacing.iconSizeMd,
                         color: ValoraColors.error,
                       )
-                      .animate()
-                      .scale(
-                        duration: 400.ms,
-                        curve: Curves.elasticOut,
-                        begin: const Offset(0.5, 0.5),
-                        end: const Offset(1, 1),
-                      )
-                      .shimmer(delay: 200.ms, duration: 600.ms)
-                : Icon(
-                    Icons.favorite_border,
-                    key: const ValueKey(false),
-                    size: ValoraSpacing.iconSizeMd,
-                    color: ValoraColors.neutral600,
-                  ),
+                        .animate()
+                        .scale(
+                          duration: 400.ms,
+                          curve: Curves.elasticOut,
+                          begin: const Offset(0.5, 0.5),
+                          end: const Offset(1, 1),
+                        )
+                        .shimmer(delay: 200.ms, duration: 600.ms)
+                    : Icon(
+                        Icons.favorite_border,
+                        key: const ValueKey(false),
+                        size: ValoraSpacing.iconSizeMd,
+                        color: ValoraColors.neutral600,
+                      ),
+              ),
+            ),
           ),
         ),
       ),

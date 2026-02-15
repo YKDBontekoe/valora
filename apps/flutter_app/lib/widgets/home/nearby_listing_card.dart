@@ -7,6 +7,7 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
+import '../../core/theme/valora_shadows.dart';
 import '../../models/listing.dart';
 import '../../providers/favorites_provider.dart';
 import '../valora_widgets.dart';
@@ -49,44 +50,50 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
               Stack(
                 children: [
                   Container(
-                        width: ValoraSpacing.thumbnailSizeLg,
-                        height: ValoraSpacing.thumbnailSizeLg,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            ValoraSpacing.radiusMd,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                      boxShadow: ValoraShadows.sm,
+                    ),
+                    child: Container(
+                          width: ValoraSpacing.thumbnailSizeLg,
+                          height: ValoraSpacing.thumbnailSizeLg,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              ValoraSpacing.radiusMd,
+                            ),
+                            color: isDark
+                                ? ValoraColors.neutral700
+                                : ValoraColors.neutral200,
                           ),
-                          color: isDark
-                              ? ValoraColors.neutral700
-                              : ValoraColors.neutral200,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: widget.listing.imageUrl != null
-                            ? Hero(
-                                tag: widget.listing.id,
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.listing.imageUrl!,
-                                  memCacheWidth: 300,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      const ValoraShimmer(
-                                        width: ValoraSpacing.thumbnailSizeLg,
-                                        height: ValoraSpacing.thumbnailSizeLg,
+                          clipBehavior: Clip.antiAlias,
+                          child: widget.listing.imageUrl != null
+                              ? Hero(
+                                  tag: widget.listing.id,
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.listing.imageUrl!,
+                                    memCacheWidth: 300,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const ValoraShimmer(
+                                          width: ValoraSpacing.thumbnailSizeLg,
+                                          height: ValoraSpacing.thumbnailSizeLg,
+                                        ),
+                                    errorWidget: (context, url, error) => Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: ValoraColors.neutral400,
                                       ),
-                                  errorWidget: (context, url, error) => Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      color: ValoraColors.neutral400,
                                     ),
                                   ),
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.home,
+                                    color: ValoraColors.neutral400,
+                                  ),
                                 ),
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.home,
-                                  color: ValoraColors.neutral400,
-                                ),
-                              ),
-                      )
+                        ),
+                  )
                       .animate(target: _isHovered ? 1 : 0)
                       .scale(
                         end: const Offset(1.05, 1.05),
@@ -181,27 +188,10 @@ class _NearbyListingCardState extends State<NearbyListingCard> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: ValoraSpacing.sm,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ValoraColors.success.withValues(
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                ValoraSpacing.radiusSm,
-                              ),
-                            ),
-                            child: Text(
-                              'Active',
-                              style: ValoraTypography.labelSmall.copyWith(
-                                color: ValoraColors.success,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                          const ValoraBadge(
+                            label: 'Active',
+                            color: ValoraColors.success,
+                            size: ValoraBadgeSize.small,
                           ),
                         ],
                       ),
