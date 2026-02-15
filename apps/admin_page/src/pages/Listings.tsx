@@ -11,7 +11,7 @@ const Listings = () => {
       try {
         const data = await adminService.getListings();
         setListings(data.items || []);
-      } catch (error) {
+      } catch {
         console.error('Failed to fetch listings');
       } finally {
         setLoading(false);
