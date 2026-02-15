@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
@@ -144,7 +145,7 @@ public class ExceptionHandlingMiddleware
         // Log and capture exceptions
         if (statusCode >= 500)
         {
-            var user = context.User?.Identity?.Name ?? "Anonymous";
+            var user = context.User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
             _logger.LogError(exception, "Unhandled exception: {ExceptionType} processing {Method} {Path} for user {User}. RequestId: {RequestId}",
                 exception.GetType().Name, context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
 
@@ -153,7 +154,7 @@ public class ExceptionHandlingMiddleware
         }
         else
         {
-            _logger.LogWarning("Request failed with {StatusCode}: {ExceptionType} processing {Method} {Path}",
+            _logger.LogWarning(exception, "Request failed with {StatusCode}: {ExceptionType} processing {Method} {Path}",
                 statusCode, exception.GetType().Name, context.Request.Method, context.Request.Path);
         }
 

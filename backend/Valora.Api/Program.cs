@@ -22,33 +22,34 @@ using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Sentry
-builder.WebHost.UseSentry(options =>
-{
-    options.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";
-
-    // Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-    // We recommend adjusting this value in production.
-    options.TracesSampleRate = 1.0;
-
-    // Enable Sentry SDK debug mode in development
-    options.Debug = builder.Environment.IsDevelopment();
-
-    // Add breadcrumbs for logger messages of level Information and higher
-    options.MinimumBreadcrumbLevel = LogLevel.Information;
-
-    // Capture events for logger messages of level Error and higher
-    options.MinimumEventLevel = LogLevel.Error;
-
-    // Attach request body to Sentry events when it is small enough
-    options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Medium;
-
-    // Send PII (like User.Identity.Name) to Sentry if available
-    options.SendDefaultPii = true;
-});
-
-// Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
+// Configure Sentry
+var sentryDsn = builder.Configuration["SENTRY_DSN"];
+if (!string.IsNullOrEmpty(sentryDsn))
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+
+        // TracesSampleRate is read from configuration, defaulting to 1.0 if not specified.
+        options.TracesSampleRate = builder.Configuration.GetValue<double>("SENTRY_TRACES_SAMPLE_RATE", 1.0);
+
+        // Enable Sentry SDK debug mode in development
+        options.Debug = builder.Environment.IsDevelopment();
+
+        // Add breadcrumbs for logger messages of level Information and higher
+        options.MinimumBreadcrumbLevel = LogLevel.Information;
+
+        // Capture events for logger messages of level Error and higher
+        options.MinimumEventLevel = LogLevel.Error;
+
+        // Disable request body capture to avoid leaking sensitive data
+        options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.None;
+
+        // Do not send PII to Sentry
+        options.SendDefaultPii = false;
+    });
+}
 builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo { Title = "Valora API", Version = "v1" });
@@ -195,9 +196,7 @@ app.Use(async (context, next) =>
     {
         var user = new SentryUser
         {
-            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-            Email = context.User.Identity.Name, // UserName is email in this app
-            Username = context.User.Identity.Name
+            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
         };
 
         SentrySdk.ConfigureScope(scope => scope.User = user);
