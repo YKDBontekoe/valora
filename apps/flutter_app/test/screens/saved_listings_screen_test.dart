@@ -368,5 +368,58 @@ void main() {
         expect(find.byType(NearbyListingCard), findsOneWidget);
       }
     });
+
+    testWidgets('Selection mode and bulk actions', (WidgetTester tester) async {
+      await tester.pumpWidget(createSavedListingsScreen());
+      await tester.pump(const Duration(seconds: 1));
+
+      // Enter selection mode via long press
+      await tester.longPress(find.text('A Street'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('1 Selected'), findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.share_rounded), findsOneWidget);
+
+      // Select another item
+      await tester.tap(find.text('B Street'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('2 Selected'), findsOneWidget);
+
+      // Deselect item
+      await tester.tap(find.text('A Street'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('1 Selected'), findsOneWidget);
+
+      // Exit selection mode via back button (simulated or UI)
+      final backButton = find.byIcon(Icons.close_rounded);
+      await tester.tap(backButton);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Saved Listings'), findsOneWidget);
+    });
+
+    testWidgets('Clear all listings', (WidgetTester tester) async {
+      await tester.pumpWidget(createSavedListingsScreen());
+      await tester.pump(const Duration(seconds: 1));
+
+      // Open menu
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Tap Clear All
+      await tester.ensureVisible(find.text('Clear All'));
+      await tester.tap(find.text('Clear All'));
+      await tester.pumpAndSettle();
+
+      // Verify Dialog
+      expect(find.text('Clear all saved listings?'), findsOneWidget);
+      await tester.tap(find.text('Clear All').last);
+      // Wait for dialog close and UI update
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify empty state
+      expect(find.text('No saved listings'), findsOneWidget);
+    });
   });
 }
