@@ -30,7 +30,13 @@ public static class ServiceCollectionExtensions
                 }
 
                 // 3. Configure policy
-                if (validOrigins.Count > 0)
+                if (validOrigins.Any(o => o == "*"))
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                }
+                else if (validOrigins.Count > 0)
                 {
                     policy.WithOrigins(validOrigins.ToArray())
                           .AllowAnyMethod()
