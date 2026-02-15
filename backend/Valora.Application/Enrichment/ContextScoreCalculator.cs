@@ -4,13 +4,13 @@ namespace Valora.Application.Enrichment;
 
 public static class ContextScoreCalculator
 {
-    private const string CategorySocial = "Social";
-    private const string CategorySafety = "Safety";
-    private const string CategoryDemographics = "Demographics";
-    private const string CategoryHousing = "Housing";
-    private const string CategoryMobility = "Mobility";
-    private const string CategoryAmenities = "Amenities";
-    private const string CategoryEnvironment = "Environment";
+    public const string CategorySocial = "Social";
+    public const string CategorySafety = "Safety";
+    public const string CategoryDemographics = "Demographics";
+    public const string CategoryHousing = "Housing";
+    public const string CategoryMobility = "Mobility";
+    public const string CategoryAmenities = "Amenities";
+    public const string CategoryEnvironment = "Environment";
 
     // Weighted average with emphasis on safety and amenities
     // These weights are chosen based on user research indicating that:

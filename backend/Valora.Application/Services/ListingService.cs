@@ -4,6 +4,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Mappings;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
+using Valora.Application.Enrichment;
 using ValidationException = Valora.Application.Common.Exceptions.ValidationException;
 
 namespace Valora.Application.Services;
@@ -67,11 +68,14 @@ public class ListingService : IListingService
         var existing = await _repository.GetByFundaIdAsync(listingDto.FundaId, cancellationToken);
         if (existing is null)
         {
-            await _repository.AddAsync(MapToListingEntity(listingDto), cancellationToken);
+            var newListing = ListingMapper.ToEntity(listingDto);
+            newListing.LastFundaFetchUtc = DateTime.UtcNow;
+            await _repository.AddAsync(newListing, cancellationToken);
         }
         else
         {
-            UpdateListingEntity(existing, listingDto);
+            ListingMapper.UpdateEntity(existing, listingDto);
+            existing.LastFundaFetchUtc = DateTime.UtcNow;
             await _repository.UpdateAsync(existing, cancellationToken);
         }
 
@@ -99,131 +103,14 @@ public class ListingService : IListingService
         listing.ContextReport = contextReportModel;
         listing.ContextCompositeScore = reportDto.CompositeScore;
 
-        if (reportDto.CategoryScores.TryGetValue("Social", out var social)) listing.ContextSocialScore = social;
-        if (reportDto.CategoryScores.TryGetValue("Safety", out var crime)) listing.ContextSafetyScore = crime;
-        if (reportDto.CategoryScores.TryGetValue("Amenities", out var amenities)) listing.ContextAmenitiesScore = amenities;
-        if (reportDto.CategoryScores.TryGetValue("Environment", out var env)) listing.ContextEnvironmentScore = env;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var crime)) listing.ContextSafetyScore = crime;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
 
         // 3. Save
         await _repository.UpdateAsync(listing, cancellationToken);
 
         return reportDto.CompositeScore;
-    }
-
-    private static Valora.Domain.Entities.Listing MapToListingEntity(ListingDto dto)
-    {
-        return new Valora.Domain.Entities.Listing
-        {
-            Id = dto.Id,
-            FundaId = dto.FundaId,
-            Address = dto.Address,
-            City = dto.City,
-            PostalCode = dto.PostalCode,
-            Price = dto.Price,
-            Bedrooms = dto.Bedrooms,
-            Bathrooms = dto.Bathrooms,
-            LivingAreaM2 = dto.LivingAreaM2,
-            PlotAreaM2 = dto.PlotAreaM2,
-            PropertyType = dto.PropertyType,
-            Status = dto.Status,
-            Url = dto.Url,
-            ImageUrl = dto.ImageUrl,
-            ListedDate = dto.ListedDate,
-            Description = dto.Description,
-            EnergyLabel = dto.EnergyLabel,
-            YearBuilt = dto.YearBuilt,
-            ImageUrls = dto.ImageUrls,
-            OwnershipType = dto.OwnershipType,
-            CadastralDesignation = dto.CadastralDesignation,
-            VVEContribution = dto.VVEContribution,
-            HeatingType = dto.HeatingType,
-            InsulationType = dto.InsulationType,
-            GardenOrientation = dto.GardenOrientation,
-            HasGarage = dto.HasGarage,
-            ParkingType = dto.ParkingType,
-            AgentName = dto.AgentName,
-            VolumeM3 = dto.VolumeM3,
-            BalconyM2 = dto.BalconyM2,
-            GardenM2 = dto.GardenM2,
-            ExternalStorageM2 = dto.ExternalStorageM2,
-            Features = dto.Features,
-            Latitude = dto.Latitude,
-            Longitude = dto.Longitude,
-            VideoUrl = dto.VideoUrl,
-            VirtualTourUrl = dto.VirtualTourUrl,
-            FloorPlanUrls = dto.FloorPlanUrls,
-            BrochureUrl = dto.BrochureUrl,
-            RoofType = dto.RoofType,
-            NumberOfFloors = dto.NumberOfFloors,
-            ConstructionPeriod = dto.ConstructionPeriod,
-            CVBoilerBrand = dto.CVBoilerBrand,
-            CVBoilerYear = dto.CVBoilerYear,
-            BrokerPhone = dto.BrokerPhone,
-            BrokerLogoUrl = dto.BrokerLogoUrl,
-            FiberAvailable = dto.FiberAvailable,
-            PublicationDate = dto.PublicationDate,
-            IsSoldOrRented = dto.IsSoldOrRented,
-            Labels = dto.Labels,
-            ContextCompositeScore = dto.ContextCompositeScore,
-            ContextSafetyScore = dto.ContextSafetyScore,
-            ContextReport = dto.ContextReport,
-            LastFundaFetchUtc = DateTime.UtcNow
-        };
-    }
-
-    private static void UpdateListingEntity(Valora.Domain.Entities.Listing listing, ListingDto dto)
-    {
-        listing.Address = dto.Address;
-        listing.City = dto.City;
-        listing.PostalCode = dto.PostalCode;
-        listing.Price = dto.Price;
-        listing.Bedrooms = dto.Bedrooms;
-        listing.Bathrooms = dto.Bathrooms;
-        listing.LivingAreaM2 = dto.LivingAreaM2;
-        listing.PlotAreaM2 = dto.PlotAreaM2;
-        listing.PropertyType = dto.PropertyType;
-        listing.Status = dto.Status;
-        listing.Url = dto.Url;
-        listing.ImageUrl = dto.ImageUrl;
-        listing.ListedDate = dto.ListedDate;
-        listing.Description = dto.Description;
-        listing.EnergyLabel = dto.EnergyLabel;
-        listing.YearBuilt = dto.YearBuilt;
-        listing.ImageUrls = dto.ImageUrls;
-        listing.OwnershipType = dto.OwnershipType;
-        listing.CadastralDesignation = dto.CadastralDesignation;
-        listing.VVEContribution = dto.VVEContribution;
-        listing.HeatingType = dto.HeatingType;
-        listing.InsulationType = dto.InsulationType;
-        listing.GardenOrientation = dto.GardenOrientation;
-        listing.HasGarage = dto.HasGarage;
-        listing.ParkingType = dto.ParkingType;
-        listing.AgentName = dto.AgentName;
-        listing.VolumeM3 = dto.VolumeM3;
-        listing.BalconyM2 = dto.BalconyM2;
-        listing.GardenM2 = dto.GardenM2;
-        listing.ExternalStorageM2 = dto.ExternalStorageM2;
-        listing.Features = dto.Features;
-        listing.Latitude = dto.Latitude;
-        listing.Longitude = dto.Longitude;
-        listing.VideoUrl = dto.VideoUrl;
-        listing.VirtualTourUrl = dto.VirtualTourUrl;
-        listing.FloorPlanUrls = dto.FloorPlanUrls;
-        listing.BrochureUrl = dto.BrochureUrl;
-        listing.RoofType = dto.RoofType;
-        listing.NumberOfFloors = dto.NumberOfFloors;
-        listing.ConstructionPeriod = dto.ConstructionPeriod;
-        listing.CVBoilerBrand = dto.CVBoilerBrand;
-        listing.CVBoilerYear = dto.CVBoilerYear;
-        listing.BrokerPhone = dto.BrokerPhone;
-        listing.BrokerLogoUrl = dto.BrokerLogoUrl;
-        listing.FiberAvailable = dto.FiberAvailable;
-        listing.PublicationDate = dto.PublicationDate;
-        listing.IsSoldOrRented = dto.IsSoldOrRented;
-        listing.Labels = dto.Labels;
-        listing.ContextCompositeScore = dto.ContextCompositeScore;
-        listing.ContextSafetyScore = dto.ContextSafetyScore;
-        listing.ContextReport = dto.ContextReport;
-        listing.LastFundaFetchUtc = DateTime.UtcNow;
     }
 }

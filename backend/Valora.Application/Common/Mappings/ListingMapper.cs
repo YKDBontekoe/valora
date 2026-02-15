@@ -60,4 +60,71 @@ public static class ListingMapper
             reportDto.Warnings.ToList()
         );
     }
+
+    public static Listing ToEntity(ListingDto dto)
+    {
+        var listing = new Listing
+        {
+            Id = dto.Id,
+            FundaId = dto.FundaId,
+            Address = dto.Address
+        };
+        UpdateEntity(listing, dto);
+        return listing;
+    }
+
+    public static void UpdateEntity(Listing listing, ListingDto dto)
+    {
+        listing.Address = dto.Address;
+        listing.City = dto.City;
+        listing.PostalCode = dto.PostalCode;
+        listing.Price = dto.Price;
+        listing.Bedrooms = dto.Bedrooms;
+        listing.Bathrooms = dto.Bathrooms;
+        listing.LivingAreaM2 = dto.LivingAreaM2;
+        listing.PlotAreaM2 = dto.PlotAreaM2;
+        listing.PropertyType = dto.PropertyType;
+        listing.Status = dto.Status;
+        listing.Url = dto.Url;
+        listing.ImageUrl = dto.ImageUrl;
+        listing.ListedDate = dto.ListedDate;
+        listing.Description = dto.Description;
+        listing.EnergyLabel = dto.EnergyLabel;
+        listing.YearBuilt = dto.YearBuilt;
+        listing.ImageUrls = dto.ImageUrls;
+        listing.OwnershipType = dto.OwnershipType;
+        listing.CadastralDesignation = dto.CadastralDesignation;
+        listing.VVEContribution = dto.VVEContribution;
+        listing.HeatingType = dto.HeatingType;
+        listing.InsulationType = dto.InsulationType;
+        listing.GardenOrientation = dto.GardenOrientation;
+        listing.HasGarage = dto.HasGarage;
+        listing.ParkingType = dto.ParkingType;
+        listing.AgentName = dto.AgentName;
+        listing.VolumeM3 = dto.VolumeM3;
+        listing.BalconyM2 = dto.BalconyM2;
+        listing.GardenM2 = dto.GardenM2;
+        listing.ExternalStorageM2 = dto.ExternalStorageM2;
+        listing.Features = dto.Features;
+        listing.Latitude = dto.Latitude;
+        listing.Longitude = dto.Longitude;
+        listing.VideoUrl = dto.VideoUrl;
+        listing.VirtualTourUrl = dto.VirtualTourUrl;
+        listing.FloorPlanUrls = dto.FloorPlanUrls;
+        listing.BrochureUrl = dto.BrochureUrl;
+        listing.RoofType = dto.RoofType;
+        listing.NumberOfFloors = dto.NumberOfFloors;
+        listing.ConstructionPeriod = dto.ConstructionPeriod;
+        listing.CVBoilerBrand = dto.CVBoilerBrand;
+        listing.CVBoilerYear = dto.CVBoilerYear;
+        listing.BrokerPhone = dto.BrokerPhone;
+        listing.BrokerLogoUrl = dto.BrokerLogoUrl;
+        listing.FiberAvailable = dto.FiberAvailable;
+        listing.PublicationDate = dto.PublicationDate;
+        listing.IsSoldOrRented = dto.IsSoldOrRented;
+        listing.Labels = dto.Labels;
+        listing.ContextCompositeScore = dto.ContextCompositeScore;
+        listing.ContextSafetyScore = dto.ContextSafetyScore;
+        listing.ContextReport = dto.ContextReport;
+    }
 }
