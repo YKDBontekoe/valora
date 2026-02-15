@@ -81,7 +81,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-working-directory: apps/admin_page
+          cache-dependency-path: apps/admin_page/package-lock.json
 
       - name: Install dependencies
         run: npm ci
