@@ -406,17 +406,27 @@ void main() {
       await tester.tap(find.byType(PopupMenuButton<String>));
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Tap Clear All
-      await tester.ensureVisible(find.text('Clear All'));
-      await tester.tap(find.text('Clear All'));
-      await tester.pumpAndSettle();
+      // Tap Clear All in menu
+      final menuFinder = find.text('Clear All');
+      await tester.ensureVisible(menuFinder);
+      await tester.tap(menuFinder);
+      await tester.pump(const Duration(seconds: 1)); // Wait for dialog to open
 
       // Verify Dialog
       expect(find.text('Clear all saved listings?'), findsOneWidget);
-      await tester.tap(find.text('Clear All').last);
+
+      // Find the 'Clear All' button in the dialog (it will be the second one usually, or use a more specific finder)
+      // Since we have 'Clear All' in the menu (which is closing) and in the dialog.
+      // We can look for the button specifically.
+      final dialogButton = find.descendant(
+        of: find.byType(ValoraDialog),
+        matching: find.text('Clear All'),
+      );
+
+      await tester.tap(dialogButton);
       // Wait for dialog close and UI update
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
 
       // Verify empty state
       expect(find.text('No saved listings'), findsOneWidget);
