@@ -32,7 +32,8 @@ public class OpenRouterAiService : IAiService
         _siteName = configuration["OPENROUTER_SITE_NAME"] ?? "Valora";
     }
 
-    public async Task<string> ChatAsync(string prompt, string? model = null, string? systemPrompt = null, CancellationToken cancellationToken = default)
+    // Refactored signature
+    public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string? model = null, CancellationToken cancellationToken = default)
     {
         var modelToUse = !string.IsNullOrEmpty(model) ? model : _defaultModel;
 
