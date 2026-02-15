@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import api from './api';
 import axios from 'axios';
 
@@ -8,6 +8,11 @@ describe('API Service', () => {
     localStorage.clear();
     delete api.defaults.adapter;
     vi.stubGlobal('location', { href: '' });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('request interceptor adds authorization header if token exists', async () => {

@@ -36,6 +36,9 @@ describe('Layout Component', () => {
   it('handles logout correctly', () => {
     // Set some initial data
     localStorage.setItem('admin_token', 'test-token');
+    localStorage.setItem('admin_refresh_token', 'test-refresh-token');
+    localStorage.setItem('admin_email', 'admin@example.com');
+    localStorage.setItem('admin_userId', '123');
 
     render(
       <MemoryRouter>
@@ -49,6 +52,8 @@ describe('Layout Component', () => {
     // Verify localStorage is cleared
     expect(localStorage.getItem('admin_token')).toBeNull();
     expect(localStorage.getItem('admin_refresh_token')).toBeNull();
+    expect(localStorage.getItem('admin_email')).toBeNull();
+    expect(localStorage.getItem('admin_userId')).toBeNull();
 
     // Verify navigation to login
     expect(mockNavigate).toHaveBeenCalledWith('/login');
