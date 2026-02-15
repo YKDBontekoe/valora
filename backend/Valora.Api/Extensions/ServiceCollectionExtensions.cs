@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
                 // 1. Filter config origins (remove nulls/whitespace, trim)
                 var validOrigins = configOrigins.Where(o => !string.IsNullOrWhiteSpace(o)).Select(o => o.Trim()).ToList();
 
-                // 2. If empty, try environment variable
+                // 2. If empty, try environment variables
                 if (validOrigins.Count == 0)
                 {
                     var envOrigins = configuration["ALLOWED_ORIGINS"];
@@ -29,7 +29,17 @@ public static class ServiceCollectionExtensions
                     }
                 }
 
-                // 3. Configure policy
+                // 3. Fallback to ALLOWED_HOSTS if still empty (common user expectation)
+                if (validOrigins.Count == 0)
+                {
+                    var allowedHosts = configuration["ALLOWED_HOSTS"];
+                    if (allowedHosts == "*")
+                    {
+                        validOrigins.Add("*");
+                    }
+                }
+
+                // 4. Configure policy
                 if (validOrigins.Any(o => o == "*"))
                 {
                     policy.AllowAnyOrigin()

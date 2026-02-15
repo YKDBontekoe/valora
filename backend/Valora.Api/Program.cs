@@ -175,7 +175,10 @@ app.LogCorsWarning();
 // Apply database migrations
 await DbInitializer.InitializeAsync(app.Services, app.Configuration, app.Environment);
 
-if (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION"))
+// Only use HTTPS redirection if specifically enabled and NOT on Render
+// Render handles SSL termination and redirection at the load balancer level.
+var isOnRender = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RENDER"));
+if (!isOnRender && (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION")))
 {
     if (app.Environment.IsProduction())
     {
