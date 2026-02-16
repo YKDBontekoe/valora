@@ -11,7 +11,7 @@ import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/widgets/home_components.dart';
+import 'package:valora_app/widgets/valora_listing_card_horizontal.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
@@ -410,7 +410,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     // Verify first page loaded
-    expect(find.byType(NearbyListingCard), findsWidgets);
+    expect(find.byType(ValoraListingCardHorizontal), findsWidgets);
 
     // Scroll to bottom
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -2000));

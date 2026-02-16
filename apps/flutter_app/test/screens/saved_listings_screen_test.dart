@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/saved_listings_screen.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
-import 'package:valora_app/widgets/home_components.dart';
+import 'package:valora_app/widgets/valora_listing_card_horizontal.dart';
 
 // Reuse HttpOverrides logic
 class TestHttpOverrides extends HttpOverrides {
@@ -304,9 +304,9 @@ void main() {
 
       final finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCardHorizontal),
       );
-      final cards = tester.widgetList<NearbyListingCard>(finder);
+      final cards = tester.widgetList<ValoraListingCardHorizontal>(finder);
 
       expect(cards.first.listing.price, 300000.0);
       expect(cards.last.listing.price, 500000.0);
@@ -337,9 +337,9 @@ void main() {
 
       final finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCardHorizontal),
       );
-      final cards = tester.widgetList<NearbyListingCard>(finder);
+      final cards = tester.widgetList<ValoraListingCardHorizontal>(finder);
 
       // Default is reversed (LIFO): B Street (added 2nd) should be first
       expect(cards.first.listing.address, 'B Street');
@@ -369,9 +369,9 @@ void main() {
 
       var finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCardHorizontal),
       );
-      var cards = tester.widgetList<NearbyListingCard>(finder);
+      var cards = tester.widgetList<ValoraListingCardHorizontal>(finder);
       expect(cards.first.listing.city, 'Amsterdam');
       expect(cards.last.listing.city, 'Rotterdam');
 
@@ -387,9 +387,9 @@ void main() {
 
       finder = find.descendant(
         of: find.byType(SliverList),
-        matching: find.byType(NearbyListingCard),
+        matching: find.byType(ValoraListingCardHorizontal),
       );
-      cards = tester.widgetList<NearbyListingCard>(finder);
+      cards = tester.widgetList<ValoraListingCardHorizontal>(finder);
       expect(cards.first.listing.city, 'Rotterdam');
       expect(cards.last.listing.city, 'Amsterdam');
     });
@@ -411,7 +411,7 @@ void main() {
           await tester.tap(borderIcon.first);
         } else {
           // Hard fallback: find ANY icon in the card
-          final firstCard = find.byType(NearbyListingCard).first;
+          final firstCard = find.byType(ValoraListingCardHorizontal).first;
           final anyIcon = find
               .descendant(of: firstCard, matching: find.byType(Icon))
               .first;
@@ -426,7 +426,7 @@ void main() {
         expect(find.text('Remove Favorite?'), findsOneWidget);
         await tester.tap(find.text('Remove'));
         await tester.pump(const Duration(seconds: 1)); // Animation
-        expect(find.byType(NearbyListingCard), findsOneWidget);
+        expect(find.byType(ValoraListingCardHorizontal), findsOneWidget);
       }
     });
   });

@@ -23,6 +23,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize search listener
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -199,7 +200,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final listing = listings[index];
-                    return NearbyListingCard(
+                    return ValoraListingCardHorizontal(
                       listing: listing,
                       onFavoriteTap: () => _confirmRemove(context, listing),
                       onTap: () {

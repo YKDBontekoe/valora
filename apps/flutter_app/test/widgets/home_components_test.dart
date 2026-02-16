@@ -102,7 +102,7 @@ void main() {
     });
   });
 
-  group('NearbyListingCard Tests', () {
+  group('ValoraListingCardHorizontal Tests', () {
     testWidgets('Renders with correct base elevation', (
       WidgetTester tester,
     ) async {
@@ -111,7 +111,10 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<FavoritesProvider>.value(
               value: mockFavoritesProvider,
-              child: NearbyListingCard(listing: dummyListing, onTap: () {}),
+              child: ValoraListingCardHorizontal(
+                listing: dummyListing,
+                onTap: () {},
+              ),
             ),
           ),
         ),
