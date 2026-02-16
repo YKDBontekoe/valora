@@ -66,13 +66,21 @@ public static class ListingMapper
     {
         // Address is required, but we must ensure it fits
         var address = dto.Address.Truncate(ValidationConstants.Listing.AddressMaxLength)
-                      ?? throw new InvalidOperationException("Address cannot be null");
+                      ?? throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]> { { "Address", new[] { "Address cannot be null or empty." } } });
+
+        // FundaId must be exact and valid. No silent truncation.
+        if (dto.FundaId.Length > ValidationConstants.Listing.FundaIdMaxLength)
+        {
+             throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+             {
+                 { "FundaId", new[] { $"FundaId exceeds maximum length of {ValidationConstants.Listing.FundaIdMaxLength}." } }
+             });
+        }
 
         var listing = new Listing
         {
             Id = dto.Id,
-            FundaId = dto.FundaId.Truncate(ValidationConstants.Listing.FundaIdMaxLength)
-                      ?? throw new InvalidOperationException("FundaId cannot be null"),
+            FundaId = dto.FundaId,
             Address = address
         };
         UpdateEntity(listing, dto);
@@ -81,8 +89,30 @@ public static class ListingMapper
 
     public static void UpdateEntity(Listing listing, ListingDto dto)
     {
+        // Address is required
         listing.Address = dto.Address.Truncate(ValidationConstants.Listing.AddressMaxLength)
-                          ?? throw new InvalidOperationException("Address cannot be null");
+                          ?? throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]> { { "Address", new[] { "Address cannot be null or empty." } } });
+
+        // URL validation (Prevent truncation which breaks links)
+        if (dto.Url?.Length > ValidationConstants.Listing.UrlMaxLength)
+        {
+             throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+             {
+                 { "Url", new[] { $"Url exceeds maximum length of {ValidationConstants.Listing.UrlMaxLength}." } }
+             });
+        }
+        listing.Url = dto.Url;
+
+        // ImageUrl validation
+        if (dto.ImageUrl?.Length > ValidationConstants.Listing.ImageUrlMaxLength)
+        {
+             throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+             {
+                 { "ImageUrl", new[] { $"ImageUrl exceeds maximum length of {ValidationConstants.Listing.ImageUrlMaxLength}." } }
+             });
+        }
+        listing.ImageUrl = dto.ImageUrl;
+
         listing.City = dto.City.Truncate(ValidationConstants.Listing.CityMaxLength);
         listing.PostalCode = dto.PostalCode.Truncate(ValidationConstants.Listing.PostalCodeMaxLength);
         listing.Price = dto.Price;
@@ -92,8 +122,6 @@ public static class ListingMapper
         listing.PlotAreaM2 = dto.PlotAreaM2;
         listing.PropertyType = dto.PropertyType.Truncate(ValidationConstants.Listing.PropertyTypeMaxLength);
         listing.Status = dto.Status.Truncate(ValidationConstants.Listing.StatusMaxLength);
-        listing.Url = dto.Url.Truncate(ValidationConstants.Listing.UrlMaxLength);
-        listing.ImageUrl = dto.ImageUrl.Truncate(ValidationConstants.Listing.ImageUrlMaxLength);
         listing.ListedDate = dto.ListedDate;
         listing.Description = dto.Description; // No max length on Description? Usually unbounded or large.
         listing.EnergyLabel = dto.EnergyLabel.Truncate(ValidationConstants.Listing.EnergyLabelMaxLength);
