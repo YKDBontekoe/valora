@@ -22,6 +22,8 @@ class ListingSliverAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final expandedHeight = screenHeight * 0.45;
 
     // Use imageUrls if available, otherwise fallback to single imageUrl, otherwise empty list
     final images = listing.imageUrls.isNotEmpty
@@ -29,7 +31,7 @@ class ListingSliverAppBar extends StatelessWidget {
         : (listing.imageUrl != null ? [listing.imageUrl!] : <String>[]);
 
     return SliverAppBar(
-      expandedHeight: 400,
+      expandedHeight: expandedHeight,
       pinned: true,
       stretch: true,
       backgroundColor: Colors.transparent,
@@ -39,21 +41,36 @@ class ListingSliverAppBar extends StatelessWidget {
           IconButton(
             // ignore: deprecated_member_use
             onPressed: () => Share.share(listing.url!),
-            icon: const Icon(Icons.share_rounded, color: Colors.white),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+            ),
           ),
         Consumer<FavoritesProvider>(
           builder: (context, favorites, _) {
             final isFav = favorites.isFavorite(listing.id);
             return IconButton(
               onPressed: () => favorites.toggleFavorite(listing),
-              icon: Icon(
-                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: isFav ? ValoraColors.error : Colors.white,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFav ? ValoraColors.error : Colors.white,
+                  size: 20,
+                ),
               ),
             );
           },
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: ValoraSpacing.sm),
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
@@ -91,7 +108,7 @@ class ListingSliverAppBar extends StatelessWidget {
                     Colors.transparent,
                     Colors.black.withValues(alpha: 0.7),
                   ],
-                  stops: const [0.0, 0.3, 0.7, 1.0],
+                  stops: const [0.0, 0.25, 0.7, 1.0],
                 ),
               ),
             ),
@@ -99,17 +116,20 @@ class ListingSliverAppBar extends StatelessWidget {
             // Photo Counter
             if (images.length > 1)
               Positioned(
-                bottom:
-                    ValoraSpacing.lg + 20, // Adjust for rounded corners of body
+                bottom: ValoraSpacing.xl,
                 right: ValoraSpacing.md,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: ValoraSpacing.md,
+                    vertical: ValoraSpacing.xs,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -119,7 +139,7 @@ class ListingSliverAppBar extends StatelessWidget {
                         size: 14,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: ValoraSpacing.xs),
                       Text(
                         '${images.length} Photos',
                         style: ValoraTypography.labelMedium.copyWith(

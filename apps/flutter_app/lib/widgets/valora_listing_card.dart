@@ -170,24 +170,23 @@ class _ListingImage extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 16 / 10,
         child: ClipRect(
-          child: (hasValidImage
-              ? CachedNetworkImage(
-                  imageUrl: validImageUrl,
-                  memCacheWidth: 800, // Optimize memory usage
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) =>
-                      _Placeholder(isDark: isDark, isLoading: true),
-                  errorWidget: (context, url, error) =>
-                      _Placeholder(isDark: isDark),
-                  fadeInDuration: const Duration(milliseconds: 500),
-                  fadeInCurve: Curves.easeOut,
-                )
-              : _Placeholder(isDark: isDark))
-          .animate(target: isHovered ? 1 : 0)
-          .scale(
-            end: const Offset(1.05, 1.05),
+          child: AnimatedScale(
+            scale: isHovered ? 1.05 : 1.0,
             duration: ValoraAnimations.slow,
             curve: ValoraAnimations.deceleration,
+            child: hasValidImage
+                ? CachedNetworkImage(
+                    imageUrl: validImageUrl!,
+                    memCacheWidth: 800, // Optimize memory usage
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                        _Placeholder(isDark: isDark, isLoading: true),
+                    errorWidget: (context, url, error) =>
+                        _Placeholder(isDark: isDark),
+                    fadeInDuration: const Duration(milliseconds: 500),
+                    fadeInCurve: Curves.easeOut,
+                  )
+                : _Placeholder(isDark: isDark),
           ),
         ),
       ),

@@ -546,7 +546,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
                         final listing = listings[index];
                         return RepaintBoundary(
-                          child: NearbyListingCard(
+                          child: ValoraListingCardHorizontal(
                             listing: listing,
                             onTap: () => _openListingDetail(listing),
                           ),
