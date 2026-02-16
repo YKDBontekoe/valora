@@ -35,3 +35,14 @@ export interface PaginatedResponse<T> {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
+
+export interface ListingFilterDto {
+  searchTerm?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  city?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Stats, User, Listing, PaginatedResponse } from '../types';
+import type { AuthResponse, Stats, User, Listing, PaginatedResponse, ListingFilterDto } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -66,15 +66,33 @@ export const adminService = {
     const response = await api.get<Stats>('/admin/stats');
     return response.data;
   },
-  getUsers: async (page = 1, pageSize = 10): Promise<PaginatedResponse<User>> => {
-    const response = await api.get<PaginatedResponse<User>>(`/admin/users?page=${page}&pageSize=${pageSize}`);
+  getUsers: async (page = 1, pageSize = 10, searchTerm?: string, sortBy?: string, sortOrder?: string): Promise<PaginatedResponse<User>> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    });
+    if (searchTerm) params.append('searchTerm', searchTerm);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+
+    const response = await api.get<PaginatedResponse<User>>(`/admin/users?${params.toString()}`);
     return response.data;
   },
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);
   },
-  getListings: async (): Promise<PaginatedResponse<Listing>> => {
-    const response = await api.get<PaginatedResponse<Listing>>('/listings');
+  getListings: async (filters: ListingFilterDto = {}): Promise<PaginatedResponse<Listing>> => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('Page', filters.page.toString());
+    if (filters.pageSize) params.append('PageSize', filters.pageSize.toString());
+    if (filters.searchTerm) params.append('SearchTerm', filters.searchTerm);
+    if (filters.minPrice) params.append('MinPrice', filters.minPrice.toString());
+    if (filters.maxPrice) params.append('MaxPrice', filters.maxPrice.toString());
+    if (filters.city) params.append('City', filters.city);
+    if (filters.sortBy) params.append('SortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('SortOrder', filters.sortOrder);
+
+    const response = await api.get<PaginatedResponse<Listing>>(`/listings?${params.toString()}`);
     return response.data;
   }
 };

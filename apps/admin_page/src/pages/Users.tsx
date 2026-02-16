@@ -1,24 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../services/api';
 import type { User } from '../types';
-import { Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Pagination from '../components/Pagination';
+import ConfirmationDialog from '../components/ConfirmationDialog';
+import DebouncedInput from '../components/DebouncedInput';
+import SortableHeader from '../components/SortableHeader';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // New state for filtering/sorting
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Confirmation Dialog State
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const currentUserId = localStorage.getItem('admin_userId');
 
-  useEffect(() => {
-    fetchUsers(page);
-  }, [page]);
-
-  const fetchUsers = async (pageNumber: number) => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminService.getUsers(pageNumber);
+      const data = await adminService.getUsers(page, 10, searchTerm, sortBy, sortOrder);
       setUsers(data.items);
       setTotalPages(data.totalPages);
     } catch {
@@ -26,21 +36,43 @@ const Users = () => {
     } finally {
       setLoading(false);
     }
+  }, [page, searchTerm, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setPage(1); // Reset to first page on sort change
   };
 
-  const handleDelete = async (user: User) => {
-    if (user.id === currentUserId) {
-      alert('You cannot delete your own account.');
-      return;
-    }
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setPage(1); // Reset to first page on search
+  };
 
-    if (!window.confirm(`Are you sure you want to delete user ${user.email}?`)) return;
+  const handleDeleteClick = (user: User) => {
+    if (user.id === currentUserId) return;
+    setUserToDelete(user);
+  };
 
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
     try {
-      await adminService.deleteUser(user.id);
-      setUsers(users.filter(u => u.id !== user.id));
+      await adminService.deleteUser(userToDelete.id);
+      setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+      setUserToDelete(null);
     } catch {
       alert('Failed to delete user. It might be protected or you might have lost permissions.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -56,6 +88,13 @@ const Users = () => {
           </div>
           <p className="text-brand-500 mt-1">Manage administrative access and roles.</p>
         </div>
+        <div className="w-full sm:w-64">
+          <DebouncedInput
+            value={searchTerm}
+            onChange={handleSearch}
+            placeholder="Search by email..."
+          />
+        </div>
       </div>
 
       <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 relative">
@@ -63,7 +102,13 @@ const Users = () => {
           <table className="min-w-full divide-y divide-brand-100">
             <thead className="bg-brand-50">
               <tr>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Email</th>
+                <SortableHeader
+                  label="Email"
+                  field="email"
+                  currentSortBy={sortBy}
+                  currentSortOrder={sortOrder}
+                  onSort={handleSort}
+                />
                 <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Roles</th>
                 <th className="px-8 py-4 text-right text-xs font-bold text-brand-500 uppercase tracking-widest">Actions</th>
               </tr>
@@ -77,6 +122,12 @@ const Users = () => {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
                         <span className="text-brand-500 font-medium">Loading users...</span>
                       </div>
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-8 py-12 text-center text-brand-500">
+                      No users found matching your search.
                     </td>
                   </tr>
                 ) : (
@@ -101,7 +152,7 @@ const Users = () => {
                       </td>
                       <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleDelete(user)}
+                          onClick={() => handleDeleteClick(user)}
                           disabled={user.id === currentUserId || loading}
                           className={`p-2 rounded-lg transition-all ${
                             user.id === currentUserId || loading
@@ -120,32 +171,26 @@ const Users = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          isLoading={loading}
+        />
       </div>
 
-      {/* Pagination */}
-      <div className="mt-8 flex items-center justify-between px-2">
-        <div className="text-sm font-medium text-brand-500">
-          Page <span className="text-brand-900">{page}</span> of <span className="text-brand-900">{totalPages}</span>
-        </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1 || loading}
-            className="flex items-center px-4 py-2 border border-brand-200 rounded-xl text-sm font-semibold text-brand-700 bg-white hover:bg-brand-50 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer"
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Previous
-          </button>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || loading}
-            className="flex items-center px-4 py-2 border border-brand-200 rounded-xl text-sm font-semibold text-brand-700 bg-white hover:bg-brand-50 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer"
-          >
-            Next
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      <ConfirmationDialog
+        isOpen={!!userToDelete}
+        title="Delete User"
+        message={`Are you sure you want to delete ${userToDelete?.email}? This action cannot be undone.`}
+        isDestructive={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setUserToDelete(null)}
+        isLoading={isDeleting}
+        confirmLabel="Delete User"
+      />
     </div>
   );
 };

@@ -18,12 +18,15 @@ public static class AdminEndpoints
             IIdentityService identityService,
             ILoggerFactory loggerFactory,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10) =>
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] string? sortOrder = null) =>
         {
             var logger = loggerFactory.CreateLogger("AdminEndpoints");
-            logger.LogInformation("Admin user listing requested. Page: {Page}, PageSize: {PageSize}", page, pageSize);
+            logger.LogInformation("Admin user listing requested. Page: {Page}, PageSize: {PageSize}, Search: {Search}, Sort: {Sort}", page, pageSize, searchTerm, sortBy);
 
-            var paginatedUsers = await identityService.GetUsersAsync(page, pageSize);
+            var paginatedUsers = await identityService.GetUsersAsync(page, pageSize, searchTerm, sortBy, sortOrder);
             var rolesMap = await identityService.GetRolesForUsersAsync(paginatedUsers.Items);
 
             var userDtos = paginatedUsers.Items.Select(user => new AdminUserDto(
