@@ -211,19 +211,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 
 // Sentry User Enrichment Middleware
-app.Use(async (context, next) =>
-{
-    if (context.User.Identity?.IsAuthenticated == true)
-    {
-        var user = new SentryUser
-        {
-            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-        };
-
-        SentrySdk.ConfigureScope(scope => scope.User = user);
-    }
-    await next();
-});
+app.UseMiddleware<Valora.Api.Middleware.SentryUserMiddleware>();
 
 app.UseAuthorization();
 

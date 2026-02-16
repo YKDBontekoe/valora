@@ -1,0 +1,40 @@
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Xunit;
+
+namespace Valora.IntegrationTests;
+
+public class SentryConfigurationTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly WebApplicationFactory<Program> _factory;
+
+    public SentryConfigurationTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public void BuildHost_WithSentryProfilingEnabled_DoesNotCrash()
+    {
+        // Arrange
+        var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "SENTRY_DSN", "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456" },
+                    { "SENTRY_PROFILES_SAMPLE_RATE", "1.0" },
+                    { "SENTRY_RELEASE", "test-release" }
+                });
+            });
+        });
+
+        // Act
+        var client = factory.CreateClient();
+
+        // Assert
+        Assert.NotNull(client);
+    }
+
+    }
