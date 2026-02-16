@@ -7,6 +7,6 @@ public interface IListingService
 {
     Task<PaginatedList<ListingSummaryDto>> GetListingsAsync(ListingFilterDto filter, CancellationToken cancellationToken = default);
     Task<ListingDto?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<ListingDto?> GetPdokListingAsync(string id, CancellationToken cancellationToken = default);
+    Task<ListingDto?> GetPdokListingAsync(string externalId, CancellationToken cancellationToken = default);
     Task<double> EnrichListingAsync(Guid id, CancellationToken cancellationToken = default);
 }
