@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { notificationService } from '../services/notification';
@@ -11,9 +11,16 @@ interface Notification {
 
 const NotificationToast = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const timeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const removeNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+
+    // Clear timeout if it exists
+    if (timeouts.current.has(id)) {
+      clearTimeout(timeouts.current.get(id));
+      timeouts.current.delete(id);
+    }
   }, []);
 
   useEffect(() => {
@@ -24,13 +31,24 @@ const NotificationToast = () => {
       setNotifications((prev) => [...prev, newNotification]);
 
       // Auto dismiss after 5 seconds
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         removeNotification(id);
       }, 5000);
+
+      timeouts.current.set(id, timeoutId);
     };
 
     const unsubscribe = notificationService.subscribe(handleNotification);
-    return () => unsubscribe();
+
+    // Copy ref to variable for cleanup
+    const currentTimeouts = timeouts.current;
+
+    return () => {
+      unsubscribe();
+      // Clear all pending timeouts on unmount
+      currentTimeouts.forEach((id) => clearTimeout(id));
+      currentTimeouts.clear();
+    };
   }, [removeNotification]);
 
   const getIcon = (type: string) => {

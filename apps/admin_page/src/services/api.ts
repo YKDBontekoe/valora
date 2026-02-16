@@ -59,9 +59,7 @@ api.interceptors.response.use(
 
     if (status === 400) {
       if (Array.isArray(data)) {
-         message = data.map((e: any) => e.error || e.message).join('\n') || 'Validation failed';
-      } else if (data?.detail) {
-        message = data.detail;
+         message = data.map((e: { error?: string; message?: string }) => e.error || e.message).join('\n') || 'Validation failed';
       } else {
         message = 'Invalid request. Please check your input.';
       }

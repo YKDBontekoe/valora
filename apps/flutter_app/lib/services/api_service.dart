@@ -202,13 +202,10 @@ class ApiService {
         'report': report.toJson(),
       });
 
-      final response = await _retryOptions.retry(
-        () => _authenticatedRequest(
-          (headers) => _client
-              .post(uri, headers: headers, body: payload)
-              .timeout(const Duration(seconds: 60)), // AI takes longer
-        ),
-        retryIf: (e) => e is SocketException || e is TimeoutException,
+      final response = await _authenticatedRequest(
+        (headers) => _client
+            .post(uri, headers: headers, body: payload)
+            .timeout(const Duration(seconds: 60)), // AI takes longer
       );
 
       return await _handleResponse(

@@ -106,7 +106,7 @@ public class OpenRouterAiService : IAiService
             {
                 if (i == maxRetries)
                 {
-                    _logger.LogError(ex, "Failed to complete chat after {MaxRetries} attempts. Status: {Status}", maxRetries, ex.Status);
+                    _logger.LogError(ex, "Failed to complete chat after {TotalAttempts} attempts. Status: {Status}", maxRetries + 1, ex.Status);
                     // Map to a standard exception that middleware understands as ServiceUnavailable
                     throw new HttpRequestException("The AI service is currently unavailable.", ex, System.Net.HttpStatusCode.ServiceUnavailable);
                 }
@@ -115,10 +115,11 @@ public class OpenRouterAiService : IAiService
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 delayMilliseconds *= 2; // Exponential backoff
             }
-            catch (ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException ex)
             {
                  // Accessing .Content property getter might throw if the collection is empty/malformed internally in the SDK.
                  // This is defensive coding against SDK behavior when choices is empty.
+                 _logger.LogWarning(ex, "ArgumentOutOfRangeException caught while accessing chat completion content. Returning empty string.");
                  return string.Empty;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
