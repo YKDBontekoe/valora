@@ -38,6 +38,9 @@ public class ListingLookupIntegrationTests : IAsyncLifetime
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         context.Listings.RemoveRange(context.Listings);
+        context.Notifications.RemoveRange(context.Notifications);
+        context.RefreshTokens.RemoveRange(context.RefreshTokens);
+
         if (context.Users.Any())
         {
             context.Users.RemoveRange(context.Users);
