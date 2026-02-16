@@ -12,6 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Sentry.AspNetCore" Version="6.1.0" />
+    <PackageReference Include="Sentry.Profiling" Version="6.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.2" />
   </ItemGroup>
 

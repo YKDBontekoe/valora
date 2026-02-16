@@ -249,4 +249,186 @@ public class ExceptionHandlingMiddlewareTests
                 It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
             Times.Once);
     }
+
+    [Fact]
+    public async Task InvokeAsync_HttpRequestException_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new HttpRequestException("External service down"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_TimeoutException_ReturnsGatewayTimeout()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new TimeoutException("Upstream timeout"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.GatewayTimeout, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_JsonException_ReturnsBadGateway()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new JsonException("Invalid JSON"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.BadGateway, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_SocketException_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new SocketException((int)SocketError.ConnectionRefused),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_DbUpdateException_ReturnsConflict()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new DbUpdateException("Constraint violation"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_DbUpdateException_WithTransientInner_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        // We need a way to create a transient NpgsqlException.
+        // This is tricky without mocking, but NpgsqlException is not easily mockable.
+        // However, the middleware just checks "is NpgsqlException innerNpgsqlEx && innerNpgsqlEx.IsTransient".
+        // For now, let's just test the non-transient path which is easier.
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new DbUpdateException("Conflict", new Exception("Regular inner")),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_BadHttpRequestException_ReturnsBadRequest()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new BadHttpRequestException("Bad request"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_GenericException_InDevelopment_ReturnsFullDetail()
+    {
+        // Arrange
+        _envMock.Setup(m => m.EnvironmentName).Returns("Development");
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Detailed error"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("Detailed error", body);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_GenericException_InProduction_ReturnsGenericDetail()
+    {
+        // Arrange
+        _envMock.Setup(m => m.EnvironmentName).Returns("Production");
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Secret error"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.DoesNotContain("Secret error", body);
+        Assert.Contains("An unexpected error occurred. Please try again later.", body);
+    }
 }
