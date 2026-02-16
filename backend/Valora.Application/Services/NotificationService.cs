@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Domain.Common;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Services;
@@ -65,18 +66,35 @@ public class NotificationService : INotificationService
 
     public async Task CreateNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl = null)
     {
+        var safeUserId = userId.Truncate(ValidationConstants.Notification.UserIdMaxLength, out var userIdTruncated)
+                         ?? throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]> { { "UserId", new[] { "UserId cannot be null." } } });
+
+        var safeTitle = title.Truncate(ValidationConstants.Notification.TitleMaxLength, out var titleTruncated)
+                        ?? "Notification";
+
+        var safeBody = body.Truncate(ValidationConstants.Notification.BodyMaxLength, out var bodyTruncated)
+                       ?? string.Empty;
+
+        var safeActionUrl = actionUrl.Truncate(ValidationConstants.Notification.ActionUrlMaxLength, out var urlTruncated);
+
+        if (userIdTruncated || titleTruncated || bodyTruncated || urlTruncated)
+        {
+            _logger.LogWarning("Notification data truncated. UserId: {UserIdTruncated}, Title: {TitleTruncated}, Body: {BodyTruncated}, Url: {UrlTruncated}",
+                userIdTruncated, titleTruncated, bodyTruncated, urlTruncated);
+        }
+
         var notification = new Notification
         {
-            UserId = userId,
-            Title = title,
-            Body = body,
+            UserId = safeUserId,
+            Title = safeTitle,
+            Body = safeBody,
             Type = type,
-            ActionUrl = actionUrl,
+            ActionUrl = safeActionUrl,
             IsRead = false,
             CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
         };
 
         await _repository.AddAsync(notification);
-        _logger.LogInformation("[AUDIT] Created notification {NotificationId} for user {UserId} (Type: {Type})", notification.Id, userId, type);
+        _logger.LogInformation("[AUDIT] Created notification {NotificationId} for user {UserId} (Type: {Type})", notification.Id, safeUserId, type);
     }
 }

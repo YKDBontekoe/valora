@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Valora.Domain.Entities;
+using Valora.Domain.Common;
 using Valora.Domain.Models;
 using Valora.Infrastructure.Persistence;
 
@@ -36,27 +37,27 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.Property(e => e.Address).IsRequired();
 
         // Constraints
-        builder.Property(e => e.FundaId).HasMaxLength(50);
-        builder.Property(e => e.Address).HasMaxLength(200);
-        builder.Property(e => e.City).HasMaxLength(100);
-        builder.Property(e => e.PostalCode).HasMaxLength(20);
-        builder.Property(e => e.Url).HasMaxLength(500);
-        builder.Property(e => e.ImageUrl).HasMaxLength(500);
-        builder.Property(e => e.PropertyType).HasMaxLength(100);
-        builder.Property(e => e.Status).HasMaxLength(50);
-        builder.Property(e => e.EnergyLabel).HasMaxLength(20);
-        builder.Property(e => e.OwnershipType).HasMaxLength(100);
-        builder.Property(e => e.CadastralDesignation).HasMaxLength(100);
-        builder.Property(e => e.HeatingType).HasMaxLength(100);
-        builder.Property(e => e.InsulationType).HasMaxLength(100);
-        builder.Property(e => e.GardenOrientation).HasMaxLength(50);
-        builder.Property(e => e.ParkingType).HasMaxLength(100);
-        builder.Property(e => e.AgentName).HasMaxLength(200);
-        builder.Property(e => e.RoofType).HasMaxLength(100);
-        builder.Property(e => e.ConstructionPeriod).HasMaxLength(100);
-        builder.Property(e => e.CVBoilerBrand).HasMaxLength(100);
-        builder.Property(e => e.BrokerPhone).HasMaxLength(50);
-        builder.Property(e => e.BrokerAssociationCode).HasMaxLength(20);
+        builder.Property(e => e.FundaId).HasMaxLength(ValidationConstants.Listing.FundaIdMaxLength);
+        builder.Property(e => e.Address).HasMaxLength(ValidationConstants.Listing.AddressMaxLength);
+        builder.Property(e => e.City).HasMaxLength(ValidationConstants.Listing.CityMaxLength);
+        builder.Property(e => e.PostalCode).HasMaxLength(ValidationConstants.Listing.PostalCodeMaxLength);
+        builder.Property(e => e.Url).HasMaxLength(ValidationConstants.Listing.UrlMaxLength);
+        builder.Property(e => e.ImageUrl).HasMaxLength(ValidationConstants.Listing.ImageUrlMaxLength);
+        builder.Property(e => e.PropertyType).HasMaxLength(ValidationConstants.Listing.PropertyTypeMaxLength);
+        builder.Property(e => e.Status).HasMaxLength(ValidationConstants.Listing.StatusMaxLength);
+        builder.Property(e => e.EnergyLabel).HasMaxLength(ValidationConstants.Listing.EnergyLabelMaxLength);
+        builder.Property(e => e.OwnershipType).HasMaxLength(ValidationConstants.Listing.OwnershipTypeMaxLength);
+        builder.Property(e => e.CadastralDesignation).HasMaxLength(ValidationConstants.Listing.CadastralDesignationMaxLength);
+        builder.Property(e => e.HeatingType).HasMaxLength(ValidationConstants.Listing.HeatingTypeMaxLength);
+        builder.Property(e => e.InsulationType).HasMaxLength(ValidationConstants.Listing.InsulationTypeMaxLength);
+        builder.Property(e => e.GardenOrientation).HasMaxLength(ValidationConstants.Listing.GardenOrientationMaxLength);
+        builder.Property(e => e.ParkingType).HasMaxLength(ValidationConstants.Listing.ParkingTypeMaxLength);
+        builder.Property(e => e.AgentName).HasMaxLength(ValidationConstants.Listing.AgentNameMaxLength);
+        builder.Property(e => e.RoofType).HasMaxLength(ValidationConstants.Listing.RoofTypeMaxLength);
+        builder.Property(e => e.ConstructionPeriod).HasMaxLength(ValidationConstants.Listing.ConstructionPeriodMaxLength);
+        builder.Property(e => e.CVBoilerBrand).HasMaxLength(ValidationConstants.Listing.CVBoilerBrandMaxLength);
+        builder.Property(e => e.BrokerPhone).HasMaxLength(ValidationConstants.Listing.BrokerPhoneMaxLength);
+        builder.Property(e => e.BrokerAssociationCode).HasMaxLength(ValidationConstants.Listing.BrokerAssociationCodeMaxLength);
 
         builder.Property(e => e.Price).HasColumnType("decimal(18,2)");
 
