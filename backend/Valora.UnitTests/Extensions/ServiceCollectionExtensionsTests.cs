@@ -66,7 +66,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddCustomCors_InDevelopment_WithoutConfig_AllowsLocalhost()
+    public void AddCustomCors_InDevelopment_WithoutConfig_AllowsAnyOrigin()
     {
         // Arrange
         _environment.Setup(e => e.EnvironmentName).Returns("Development");
@@ -77,7 +77,8 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(policy);
-        Assert.Contains("http://localhost:3000", policy.Origins);
+        // In development, if no origins are specified, we should allow any origin
+        Assert.True(policy.AllowAnyOrigin);
     }
 
     [Fact]
