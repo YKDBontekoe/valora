@@ -67,6 +67,7 @@ public class ListingMapperTests
 
         ListingMapper.UpdateEntity(entity, dto);
 
-        entity.City.Length.Should().Be(ValidationConstants.Listing.CityMaxLength);
+        entity.City.Should().NotBeNull();
+        entity.City!.Length.Should().Be(ValidationConstants.Listing.CityMaxLength);
     }
 }
