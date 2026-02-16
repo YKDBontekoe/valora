@@ -142,6 +142,12 @@ public class ExceptionHandlingMiddleware
 
         context.Response.StatusCode = statusCode;
 
+        // Add breadcrumb for the handled error
+        SentrySdk.AddBreadcrumb(
+            message: $"Request failed with status {statusCode}: {title}",
+            category: "exception.handler",
+            level: statusCode >= 500 ? BreadcrumbLevel.Error : BreadcrumbLevel.Info);
+
         // Log and capture exceptions
         if (statusCode >= 500)
         {
@@ -150,6 +156,12 @@ public class ExceptionHandlingMiddleware
                 exception.GetType().Name, context.Request.Method, context.Request.Path, user, context.TraceIdentifier);
 
             // Explicitly capture in Sentry since the middleware "handles" it (swallows it)
+            SentrySdk.ConfigureScope(scope =>
+            {
+                scope.SetTag("status_code", statusCode.ToString());
+                scope.SetTag("exception_type", exception.GetType().Name);
+                scope.SetExtra("request_id", context.TraceIdentifier);
+            });
             SentrySdk.CaptureException(exception);
         }
         else

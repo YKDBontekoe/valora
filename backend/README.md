@@ -26,6 +26,8 @@ Required `.env` keys:
 - `JWT_AUDIENCE`
 - `SENTRY_DSN` (optional, for error logging and performance monitoring)
 - `SENTRY_TRACES_SAMPLE_RATE` (optional, default 1.0, set lower in production)
+- `SENTRY_PROFILES_SAMPLE_RATE` (optional, default 0.0 (disabled), increase in production to enable profiling)
+- `SENTRY_RELEASE` (optional, manually specify the release version)
 
 Optional keys:
 
