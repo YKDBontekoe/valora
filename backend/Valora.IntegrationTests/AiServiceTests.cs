@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
+using System.ClientModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using OpenAI;
 using Valora.Infrastructure.Services;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -287,6 +289,26 @@ public class AiServiceTests : IDisposable
 
         // Skip specific exception injection for now as it requires mocking internal SDK behavior.
         // Rely on code review for the catch block change.
+    }
+
+    [Fact]
+    public async Task ChatAsync_Does_Not_Retry_On_BadRequest()
+    {
+        // Arrange: 400 Bad Request
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(400)
+                .WithBody("Bad Request"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance);
+
+        // Act & Assert
+        // Should throw ClientResultException immediately, not wrapped in HttpRequestException
+        await Assert.ThrowsAsync<ClientResultException>(() => sut.ChatAsync("Hello", null, null));
+
+        // 1 attempt only
+        Assert.Equal(1, _server.LogEntries.Count());
     }
 
     public void Dispose()

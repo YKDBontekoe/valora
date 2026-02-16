@@ -56,7 +56,8 @@ public class OpenRouterAiService : IAiService
 
         var options = new OpenAIClientOptions
         {
-            Endpoint = _endpoint
+            Endpoint = _endpoint,
+            RetryPolicy = new System.ClientModel.Primitives.ClientRetryPolicy(0) // Disable SDK internal retries
         };
 
         // Add policies to handle OpenRouter specifics
