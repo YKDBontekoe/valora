@@ -16,7 +16,6 @@ public class ServiceCollectionExtensionsTests
     private readonly Mock<IHostEnvironment> _environment = new();
     private readonly IServiceCollection _services = new ServiceCollection();
 
-    // Helper to get the CorsPolicy from the service provider
     private CorsPolicy? GetDefaultPolicy(IConfiguration config)
     {
         _services.AddCustomCors(config, _environment.Object);
@@ -28,7 +27,6 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddCustomCors_WithAllowedOrigins_AllowsSpecificOrigins()
     {
-        // Arrange
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -36,10 +34,8 @@ public class ServiceCollectionExtensionsTests
             })
             .Build();
 
-        // Act
         var policy = GetDefaultPolicy(config);
 
-        // Assert
         Assert.NotNull(policy);
         Assert.Contains("http://example.com", policy.Origins);
         Assert.False(policy.AllowAnyOrigin);
@@ -48,7 +44,6 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddCustomCors_WithEnvVar_AllowsSpecificOrigins()
     {
-        // Arrange
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -56,44 +51,62 @@ public class ServiceCollectionExtensionsTests
             })
             .Build();
 
-        // Act
         var policy = GetDefaultPolicy(config);
 
-        // Assert
         Assert.NotNull(policy);
         Assert.Contains("http://env-example.com", policy.Origins);
         Assert.Contains("https://secure.com", policy.Origins);
     }
 
     [Fact]
-    public void AddCustomCors_InDevelopment_WithoutConfig_AllowsLocalhost()
+    public void AddCustomCors_WithAllowedHostsWildcard_AllowsAnyOrigin()
     {
-        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ALLOWED_HOSTS", "*" }
+            })
+            .Build();
+
+        var policy = GetDefaultPolicy(config);
+
+        Assert.NotNull(policy);
+        Assert.True(policy.AllowAnyOrigin);
+    }
+
+    [Fact]
+    public void AddCustomCors_InDevelopment_WithoutConfig_AllowsAnyOrigin()
+    {
         _environment.Setup(e => e.EnvironmentName).Returns("Development");
         var config = new ConfigurationBuilder().Build();
 
-        // Act
         var policy = GetDefaultPolicy(config);
 
-        // Assert
         Assert.NotNull(policy);
-        Assert.Contains("http://localhost:3000", policy.Origins);
+        Assert.True(policy.AllowAnyOrigin);
+    }
+
+    [Fact]
+    public void AddCustomCors_InTesting_WithoutConfig_AllowsAnyOrigin()
+    {
+        _environment.Setup(e => e.EnvironmentName).Returns("Testing");
+        var config = new ConfigurationBuilder().Build();
+
+        var policy = GetDefaultPolicy(config);
+
+        Assert.NotNull(policy);
+        Assert.True(policy.AllowAnyOrigin);
     }
 
     [Fact]
     public void AddCustomCors_InProduction_WithoutConfig_BlocksOrigins()
     {
-        // Arrange
         _environment.Setup(e => e.EnvironmentName).Returns("Production");
         var config = new ConfigurationBuilder().Build();
 
-        // Act
         var policy = GetDefaultPolicy(config);
 
-        // Assert
         Assert.NotNull(policy);
-        // In production fallback, we use SetIsOriginAllowed(origin => false)
-        // Origins list might be empty, and IsOriginAllowed should return false
         Assert.Empty(policy.Origins);
         Assert.False(policy.IsOriginAllowed("http://example.com"));
     }
