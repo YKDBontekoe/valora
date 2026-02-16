@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { adminService } from '../services/api';
+import { useState, useEffect, useRef } from 'react';
+import { listingService } from '../services/api';
 import type { Listing } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Euro, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -9,17 +9,21 @@ const Listings = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const lastSuccessPage = useRef(1);
   const pageSize = 10;
 
   useEffect(() => {
     const fetchListings = async () => {
       setLoading(true);
       try {
-        const data = await adminService.getListings(page, pageSize);
+        const data = await listingService.getListings(page, pageSize);
         setListings(data.items || []);
         setTotalPages(data.totalPages || 1);
+        lastSuccessPage.current = page;
       } catch {
         console.error('Failed to fetch listings');
+        // Revert page on failure to keep UI in sync
+        setPage(lastSuccessPage.current);
       } finally {
         setLoading(false);
       }

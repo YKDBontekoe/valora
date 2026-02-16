@@ -71,7 +71,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
               child: ValoraEmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'Failed to load insights',
-                subtitle: error,
+                subtitle: 'An unexpected error occurred while loading data.',
                 actionLabel: 'Retry',
                 onAction: context.read<InsightsProvider>().loadInsights,
               ),
@@ -136,8 +136,36 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   Widget _buildMap(BuildContext context) {
-    return Consumer<InsightsProvider>(
-      builder: (context, provider, _) {
+    return Selector<
+      InsightsProvider,
+      (
+        bool,
+        bool,
+        List<MapOverlay>,
+        List<MapAmenity>,
+        List<MapCityInsight>,
+        MapOverlayMetric
+      )
+    >(
+      selector:
+          (_, p) => (
+            p.showOverlays,
+            p.showAmenities,
+            p.overlays,
+            p.amenities,
+            p.cities,
+            p.selectedOverlayMetric,
+          ),
+      builder: (context, data, _) {
+        final showOverlays = data.$1;
+        final showAmenities = data.$2;
+        final overlays = data.$3;
+        final amenities = data.$4;
+        final cities = data.$5;
+        // metric needed for polygon color, assumed accessed via provider in _buildPolygon or passed here
+        // _buildPolygon uses context.read(), which is fine for data that changes less often or is acceptable
+        // However, selectedOverlayMetric IS in the selector to trigger rebuild.
+
         return FlutterMap(
           mapController: _mapController,
           options: MapOptions(
@@ -160,22 +188,29 @@ class _InsightsScreenState extends State<InsightsScreen> {
               subdomains: const ['a', 'b', 'c', 'd'],
               retinaMode: RetinaMode.isHighDensity(context),
             ),
-            if (provider.showOverlays)
+            if (showOverlays)
               PolygonLayer(
-                polygons: provider.overlays.map((overlay) {
-                  return _buildPolygon(context, overlay);
-                }).toList(),
+                polygons:
+                    overlays.map((overlay) {
+                      return _buildPolygon(context, overlay);
+                    }).toList(),
               ),
-            if (provider.showAmenities)
+            if (showAmenities)
               MarkerLayer(
-                markers: provider.amenities.map((amenity) {
-                  return _buildAmenityMarker(context, amenity);
-                }).toList(),
+                markers:
+                    amenities.map((amenity) {
+                      return _buildAmenityMarker(context, amenity);
+                    }).toList(),
               ),
             MarkerLayer(
-              markers: provider.cities.map((city) {
-                return _buildCityMarker(context, city, provider);
-              }).toList(),
+              markers:
+                  cities.map((city) {
+                    return _buildCityMarker(
+                      context,
+                      city,
+                      context.read<InsightsProvider>(),
+                    );
+                  }).toList(),
             ),
           ],
         );
