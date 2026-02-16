@@ -8,6 +8,11 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 > **[Get Started in 10 Minutes](docs/onboarding.md)**: Follow the step-by-step onboarding guide to set up your environment and run the app.
 
+### Quick Troubleshooting
+- **Backend won't start?** Check if you created `backend/.env` with a `JWT_SECRET`.
+- **Database error?** Ensure Docker is running: `docker-compose -f docker/docker-compose.yml up -d`.
+- **App can't connect?** Android Emulator needs `API_URL=http://10.0.2.2:5001/api`.
+
 ---
 
 ## System Context
@@ -32,15 +37,6 @@ graph TD
     Backend -->|Cache| Cache[(Memory/Redis)]
 ```
 
-## Key Features
-
--   **Context Reports**: Generate on-demand reports for any Dutch address with scores for Safety, Social, Amenities, and Environment.
--   **Listing Enrichment**: Enhance real estate listings with persistent context data for advanced filtering.
--   **Admin Dashboard**: Web-based interface for user management, system statistics, and listing oversight.
--   **Explainable Scoring**: Transparent 0-100 scores derived from raw data (e.g., crime rates, distance to schools).
--   **Clean Architecture**: Modular, testable backend design separating Domain, Application, and Infrastructure.
--   **Resilience**: "Fan-out" data fetching ensures partial reports are generated even if one data source is down.
-
 ## Architecture
 
 Valora follows **Clean Architecture** principles to separate concerns and maintain testability.
@@ -50,7 +46,7 @@ classDiagram
     class Domain {
         +Entities (Listing, Notification)
         +Business Rules
-        +No Dependencies
+        +No Dependencies on Other Layers
     }
     class Application {
         +Use Cases (GetContextReport)
@@ -77,17 +73,34 @@ classDiagram
 
 ### Layer Responsibilities
 
--   **Valora.Domain**: Core entities and business rules. The heart of the system.
+-   **Valora.Domain**: Core entities and business rules. The heart of the system. Has **no dependencies on other project layers**.
 -   **Valora.Application**: Defines *what* the system does (Interfaces, Use Cases). Depends only on Domain.
 -   **Valora.Infrastructure**: Defines *how* it works (External APIs, Database). Implements Application interfaces.
 -   **Valora.Api**: The entry point. Wires everything together and handles HTTP requests.
+
+**Why this architecture?**
+1.  **Testability**: We can unit test the core logic (Application/Domain) without spinning up a database or calling external APIs.
+2.  **Modularity**: We can swap out the Geocoder or Database implementation in `Infrastructure` without touching the business logic.
+3.  **Safety**: The Domain layer enforces invariants that the API layer cannot bypass.
+
+## Data Flow
+
+Valora processes data in two main pipelines:
+
+1.  **Report Generation (Read-Heavy)**:
+    -   **Goal**: Create a context report for a user on-the-fly.
+    -   **Mechanism**: "Fan-Out" to multiple external APIs in parallel.
+    -   **Docs**: [Report Generation Data Flow](docs/onboarding-data-flow.md)
+
+2.  **Listing Lifecycle (Write-Heavy)**:
+    -   **Goal**: Discover, persist, and enrich real estate listings.
+    -   **Mechanism**: Upsert on discovery, explicit enrichment via Admin API, JSONB persistence.
+    -   **Docs**: [Listing Lifecycle Data Flow](docs/data-flow-lifecycle.md)
 
 ## Documentation Index
 
 -   **[Onboarding Guide](docs/onboarding.md)**: Setup instructions.
 -   **[API Reference](docs/api-reference.md)**: Detailed API documentation.
--   **[Data Flow: Report Generation](docs/onboarding-data-flow.md)**: Deep dive into the "Fan-Out" process.
--   **[Data Flow: Enrichment](docs/data-flow-enrichment.md)**: How listings are stored and updated.
 -   **[Developer Guide](docs/developer-guide.md)**: Coding standards, patterns, and testing.
 -   **[User Guide](docs/user-guide.md)**: App features walkthrough.
 -   **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
