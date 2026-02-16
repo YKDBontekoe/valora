@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:latlong2/latlong.dart';
 
-import '../providers/context_report_provider.dart';
 import '../services/api_service.dart';
+import '../services/pdok_service.dart';
+import '../providers/context_report_provider.dart';
 import '../widgets/report/context_report_view.dart';
+import '../widgets/report/context_report_skeleton.dart';
+import '../widgets/report/location_picker.dart';
 import '../widgets/valora_widgets.dart';
+import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_animations.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key});
@@ -15,6 +24,7 @@ class ContextReportScreen extends StatefulWidget {
 
 class _ContextReportScreenState extends State<ContextReportScreen> {
   final TextEditingController _inputController = TextEditingController();
+  final PdokService _pdokService = PdokService();
 
   @override
   void dispose() {
@@ -29,6 +39,7 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
       child: Consumer<ContextReportProvider>(
         builder: (context, provider, _) {
           final report = provider.report;
+          final isLoading = provider.isLoading;
 
           return Scaffold(
             appBar: AppBar(
@@ -43,20 +54,30 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
               ],
             ),
             body: SafeArea(
-              child: report != null
-                  ? ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: ContextReportView.childCount(report),
-                      itemBuilder: (context, index) => ContextReportView.buildChild(
-                        context,
-                        index,
-                        report,
-                      ),
-                    )
-                  : _InputForm(
-                      controller: _inputController,
-                      provider: provider,
-                    ),
+              child: AnimatedSwitcher(
+                duration: ValoraAnimations.normal,
+                child: isLoading
+                    ? const ContextReportSkeleton(key: ValueKey('loading'))
+                    : report != null
+                        ? ListView.builder(
+                            key: const ValueKey('report-list'),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            itemCount: ContextReportView.childCount(report),
+                            itemBuilder: (context, index) => Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: ContextReportView.buildChild(
+                                context,
+                                index,
+                                report,
+                              ),
+                            ),
+                          )
+                        : _InputForm(
+                            controller: _inputController,
+                            provider: provider,
+                            pdokService: _pdokService,
+                          ),
+              ),
             ),
           );
         },
@@ -69,93 +90,162 @@ class _InputForm extends StatelessWidget {
   const _InputForm({
     required this.controller,
     required this.provider,
+    required this.pdokService,
   });
 
   final TextEditingController controller;
   final ContextReportProvider provider;
+  final PdokService pdokService;
+
+  Future<void> _pickLocation(BuildContext context) async {
+    final LatLng? result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(builder: (context) => const LocationPicker()),
+    );
+
+    if (result != null) {
+      final String? address = await pdokService.reverseLookup(result.latitude, result.longitude);
+
+      if (address != null) {
+        controller.text = address;
+        provider.generate(address);
+      } else {
+        final String coords = '${result.latitude.toStringAsFixed(6)},${result.longitude.toStringAsFixed(6)}';
+        controller.text = coords;
+        provider.generate(coords);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      key: const ValueKey('input-form'),
+      padding: const EdgeInsets.all(24),
       children: [
         // Hero section
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
                 theme.colorScheme.primaryContainer,
-                theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.analytics_rounded,
-                size: 48,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Neighborhood Analytics',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.analytics_rounded,
+                  size: 32,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
               Text(
-                'Get comprehensive insights about any Dutch address including demographics, safety, amenities, and environmental data.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                'Property Analytics',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Get deep neighborhood insights and environmental data for any Dutch address.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  height: 1.4,
                 ),
               ),
             ],
           ),
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+
+        const SizedBox(height: 32),
+
+        Text(
+          'Search Property',
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 24),
-        // Search field
-        ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            return TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'Enter address (e.g. Damrak 1 Amsterdam)',
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerLow,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: value.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () => controller.clear(),
-                      )
-                    : null,
+        const SizedBox(height: 12),
+
+        // Search field with TypeAhead
+        TypeAheadField<PdokSuggestion>(
+          controller: controller,
+          builder: (context, controller, focusNode) => TextField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: InputDecoration(
+              hintText: 'Address or location...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (controller.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      onPressed: () => controller.clear(),
+                    ),
+                  IconButton(
+                    tooltip: 'Pick on Map',
+                    icon: const Icon(Icons.map_outlined),
+                    onPressed: () => _pickLocation(context),
+                  ),
+                ],
               ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => provider.generate(controller.text),
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerLow,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+            ),
+            textInputAction: TextInputAction.search,
+            onSubmitted: (_) => provider.generate(controller.text),
+          ),
+          suggestionsCallback: (pattern) async {
+            if (pattern.length < 3) return [];
+            return await pdokService.search(pattern);
+          },
+          itemBuilder: (context, suggestion) {
+            return ListTile(
+              leading: const Icon(Icons.location_on_outlined, size: 20),
+              title: Text(suggestion.displayName),
+              subtitle: Text(suggestion.type, style: const TextStyle(fontSize: 12)),
             );
           },
+          onSelected: (suggestion) {
+            controller.text = suggestion.displayName;
+            provider.generate(suggestion.displayName);
+          },
         ),
-        const SizedBox(height: 20),
-        // Radius slider
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-          ),
+
+        const SizedBox(height: 24),
+
+        // Radius Selector
+        ValoraCard(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -164,21 +254,32 @@ class _InputForm extends StatelessWidget {
                 children: [
                   Text(
                     'Search Radius',
-                    style: theme.textTheme.labelLarge,
+                    style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  Text(
-                    '${provider.radiusMeters}m',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${provider.radiusMeters}m',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight: 6,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                  trackHeight: 8,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                  activeTrackColor: theme.colorScheme.primary,
+                  inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                 ),
                 child: Slider(
                   min: 200,
@@ -191,56 +292,39 @@ class _InputForm extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+
+        const SizedBox(height: 32),
+
         // Generate button
         SizedBox(
-          height: 56,
-          child: FilledButton.icon(
-            onPressed: provider.isLoading
-                ? null
-                : () => provider.generate(controller.text),
-            style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            icon: provider.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.search_rounded),
-            label: Text(
-              provider.isLoading ? 'Analyzing...' : 'Generate Report',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+          height: 60,
+          child: ValoraButton(
+            label: 'Generate Full Report',
+            onPressed: () => provider.generate(controller.text),
+            variant: ValoraButtonVariant.primary,
           ),
         ),
+
         if (provider.error != null) ...[
           const SizedBox(height: 24),
           ValoraEmptyState(
             icon: Icons.error_outline_rounded,
-            title: 'Report Generation Failed',
+            title: 'Analysis Failed',
             subtitle: provider.error,
             actionLabel: 'Try Again',
             onAction: () => provider.generate(controller.text),
           ),
         ],
-        // Recent Searches
+
+        // Recent Searches - Cards
         if (provider.history.isNotEmpty) ...[
-          const SizedBox(height: 32),
+          const SizedBox(height: 40),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Recent Searches',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () => _confirmClearHistory(context, provider),
@@ -248,37 +332,64 @@ class _InputForm extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ...provider.history.map((item) {
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.history_rounded),
-              title: Text(item.query),
-              subtitle: Text(
-                _formatDate(item.timestamp),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.close_rounded, size: 20),
-                onPressed: () => provider.removeFromHistory(item.query),
-              ),
-              onTap: () {
-                controller.text = item.query;
-                provider.generate(item.query);
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: provider.history.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final item = provider.history[index];
+                return GestureDetector(
+                  onTap: () {
+                    controller.text = item.query;
+                    provider.generate(item.query);
+                  },
+                  child: Container(
+                    width: 200,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.history_rounded, size: 20, color: ValoraColors.neutral400),
+                        const Spacer(),
+                        Text(
+                          item.query,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(item.timestamp),
+                          style: theme.textTheme.bodySmall?.copyWith(color: ValoraColors.neutral500),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               },
-            );
-          }),
+            ),
+          ),
         ],
       ],
     );
   }
 
-  Future<void> _confirmClearHistory(
-    BuildContext context,
-    ContextReportProvider provider,
-  ) async {
+  Future<void> _confirmClearHistory(BuildContext context, ContextReportProvider provider) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => ValoraDialog(
@@ -295,9 +406,7 @@ class _InputForm extends StatelessWidget {
             onPressed: () => Navigator.pop(context, true),
           ),
         ],
-        child: const Text(
-          'Are you sure you want to clear your search history?',
-        ),
+        child: const Text('Are you sure you want to clear your search history?'),
       ),
     );
 
@@ -308,16 +417,9 @@ class _InputForm extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final checkDate = DateTime(date.year, date.month, date.day);
-
-    if (checkDate == today) {
-      return 'Today';
-    } else if (checkDate == yesterday) {
-      return 'Yesterday';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
+    final diff = now.difference(date).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return '${date.day}\/${date.month}';
   }
 }
