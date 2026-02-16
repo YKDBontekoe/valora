@@ -61,7 +61,7 @@ public class ListingService : IListingService
     {
         if (string.IsNullOrWhiteSpace(externalId))
         {
-             throw new ValidationException(new[] { "ID is required" });
+             throw new ValidationException(new[] { "External ID is required" });
         }
 
         var listingDto = await _pdokService.GetListingDetailsAsync(externalId, cancellationToken);
@@ -124,7 +124,7 @@ public class ListingService : IListingService
     private static void UpdateContextScores(Listing listing, ContextReportDto reportDto)
     {
         if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var crime)) listing.ContextSafetyScore = crime;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var safety)) listing.ContextSafetyScore = safety;
         if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
         if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
     }
