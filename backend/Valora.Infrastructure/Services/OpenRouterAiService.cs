@@ -32,7 +32,21 @@ public class OpenRouterAiService : IAiService
         _siteName = configuration["OPENROUTER_SITE_NAME"] ?? "Valora";
     }
 
-    // Refactored signature
+    /// <summary>
+    /// Sends a chat prompt to the AI service (via OpenRouter) and returns the response.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>OpenRouter Integration Strategy:</strong>
+    /// We use the official <see cref="OpenAI"/> SDK but intercept the requests using
+    /// <see cref="System.ClientModel.Primitives.PipelinePolicy"/>.
+    /// </para>
+    /// <para>
+    /// This allows us to:
+    /// 1. Inject required OpenRouter headers (`HTTP-Referer`, `X-Title`) via <see cref="OpenRouterHeadersPolicy"/>.
+    /// 2. Handle the "default model" logic dynamically via <see cref="OpenRouterDefaultModelPolicy"/>.
+    /// </para>
+    /// </remarks>
     public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string? model = null, CancellationToken cancellationToken = default)
     {
         var modelToUse = !string.IsNullOrEmpty(model) ? model : _defaultModel;

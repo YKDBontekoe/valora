@@ -57,6 +57,20 @@ public class ListingService : IListingService
         return ListingMapper.ToDto(listing);
     }
 
+    /// <summary>
+    /// Retrieves a listing from the external PDOK service and persists it to the database.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This method acts as a "Read-Through" cache. If the listing is found in PDOK,
+    /// it is immediately upserted (created or updated) in the local database.
+    /// </para>
+    /// <para>
+    /// This ensures that:
+    /// 1. We always have the latest data (price, status) when a user views a listing.
+    /// 2. We build up our own database of listings organically without a massive scraper.
+    /// </para>
+    /// </remarks>
     public async Task<ListingDto?> GetPdokListingAsync(string externalId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(externalId))
@@ -75,6 +89,18 @@ public class ListingService : IListingService
         return listingDto;
     }
 
+    /// <summary>
+    /// Performs an upsert operation for the listing entity.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// We use the FundaId (or external ID) as the unique key for deduplication.
+    /// Even if the listing exists, we update it to capture price changes or status updates.
+    /// </para>
+    /// <para>
+    /// <c>LastFundaFetchUtc</c> is updated to track data freshness.
+    /// </para>
+    /// </remarks>
     private async Task CreateOrUpdateListingAsync(ListingDto listingDto, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByFundaIdAsync(listingDto.FundaId, cancellationToken);
@@ -92,6 +118,21 @@ public class ListingService : IListingService
         }
     }
 
+    /// <summary>
+    /// Generates a full context report for an existing listing and persists the results.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This process involves:
+    /// 1. Fetching the listing address.
+    /// 2. Generating a heavy-weight <see cref="ContextReportDto"/> via the <see cref="IContextReportService"/>.
+    /// 3. Mapping the report to a JSON-serializable domain model.
+    /// 4. Extracting key scores (Composite, Safety, etc.) into indexed columns for performant filtering.
+    /// </para>
+    /// <para>
+    /// This dual-storage strategy (JSON for details, Columns for queries) balances flexibility and performance.
+    /// </para>
+    /// </remarks>
     public async Task<double> EnrichListingAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var listing = await _repository.GetByIdAsync(id, cancellationToken);

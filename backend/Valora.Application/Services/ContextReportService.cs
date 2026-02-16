@@ -41,12 +41,18 @@ public sealed class ContextReportService : IContextReportService
     /// This method employs a "fan-out" pattern to query all external APIs in parallel via <see cref="IContextDataProvider"/>.
     /// </para>
     /// <para>
-    /// The process involves:
-    /// 1. Resolving the input to a standardized Dutch address/location.
-    /// 2. Checking the cache for an existing report using a high-precision coordinate key.
-    /// 3. Fetching data from CBS, PDOK, Overpass, etc., using the data provider.
-    /// 4. Normalizing raw data into 0-100 scores using heuristics.
-    /// 5. Aggregating scores into categories and a final composite score.
+    /// Key Decisions:
+    /// <list type="bullet">
+    /// <item>
+    /// <strong>Radius Clamping:</strong> The search radius is clamped between 200m and 5000m.
+    /// Values > 5km cause excessive load on the Overpass API (OSM) and result in timeouts.
+    /// </item>
+    /// <item>
+    /// <strong>High-Precision Caching:</strong> We resolve the location to coordinates first, then use
+    /// 5-decimal precision (~1 meter) for the cache key. This ensures "Damrak 1" and "Damrak 1, Amsterdam"
+    /// share the same expensive report generation.
+    /// </item>
+    /// </list>
     /// </para>
     /// </remarks>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
