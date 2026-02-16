@@ -56,19 +56,24 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ValoraColors.backgroundLight,
-      body: Consumer<InsightsProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && provider.cities.isEmpty) {
+      body: Selector<InsightsProvider, (bool, bool, String?)>(
+        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error),
+        builder: (context, state, child) {
+          final isLoading = state.$1;
+          final isEmpty = state.$2;
+          final error = state.$3;
+
+          if (isLoading && isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (provider.error != null && provider.cities.isEmpty) {
+          if (error != null && isEmpty) {
             return Center(
               child: ValoraEmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'Failed to load insights',
-                subtitle: provider.error,
+                subtitle: error,
                 actionLabel: 'Retry',
-                onAction: provider.loadInsights,
+                onAction: context.read<InsightsProvider>().loadInsights,
               ),
             );
           }
@@ -85,48 +90,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   borderRadius: BorderRadius.circular(26),
                   child: Stack(
                     children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: const LatLng(52.1326, 5.2913),
-                          initialZoom: 7.5,
-                          minZoom: 6.0,
-                          maxZoom: 18.0,
-                          onPositionChanged: (position, hasGesture) {
-                            if (hasGesture) _onMapChanged();
-                          },
-                          interactionOptions: const InteractionOptions(
-                            flags:
-                                InteractiveFlag.all & ~InteractiveFlag.rotate,
-                          ),
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                            userAgentPackageName: 'com.valora.app',
-                            subdomains: const ['a', 'b', 'c', 'd'],
-                            retinaMode: RetinaMode.isHighDensity(context),
-                          ),
-                          if (provider.showOverlays)
-                            PolygonLayer(
-                              polygons: provider.overlays.map((overlay) {
-                                return _buildPolygon(context, overlay);
-                              }).toList(),
-                            ),
-                          if (provider.showAmenities)
-                            MarkerLayer(
-                              markers: provider.amenities.map((amenity) {
-                                return _buildAmenityMarker(context, amenity);
-                              }).toList(),
-                            ),
-                          MarkerLayer(
-                            markers: provider.cities.map((city) {
-                              return _buildCityMarker(context, city, provider);
-                            }).toList(),
-                          ),
-                        ],
-                      ),
+                      _buildMap(context),
                       IgnorePointer(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
@@ -144,17 +108,22 @@ class _InsightsScreenState extends State<InsightsScreen> {
                           child: const SizedBox.expand(),
                         ),
                       ),
-                      _buildMapHeader(context, provider),
-                      _buildMetricSelector(context, provider),
-                      _buildMapLegend(context, provider),
-                      _buildLayerToggle(context, provider),
-                      if (provider.mapError != null)
-                        Positioned(
-                          bottom: 152,
-                          left: 16,
-                          right: 16,
-                          child: _buildMapError(provider.mapError!),
-                        ),
+                      _buildMapHeader(context),
+                      _buildMetricSelector(context),
+                      _buildMapLegend(context),
+                      _buildLayerToggle(context),
+                      Selector<InsightsProvider, String?>(
+                        selector: (_, p) => p.mapError,
+                        builder: (context, mapError, _) {
+                          if (mapError == null) return const SizedBox.shrink();
+                          return Positioned(
+                            bottom: 152,
+                            left: 16,
+                            right: 16,
+                            child: _buildMapError(mapError),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -166,7 +135,55 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildMapHeader(BuildContext context, InsightsProvider provider) {
+  Widget _buildMap(BuildContext context) {
+    return Consumer<InsightsProvider>(
+      builder: (context, provider, _) {
+        return FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: const LatLng(52.1326, 5.2913),
+            initialZoom: 7.5,
+            minZoom: 6.0,
+            maxZoom: 18.0,
+            onPositionChanged: (position, hasGesture) {
+              if (hasGesture) _onMapChanged();
+            },
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate:
+                  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+              userAgentPackageName: 'com.valora.app',
+              subdomains: const ['a', 'b', 'c', 'd'],
+              retinaMode: RetinaMode.isHighDensity(context),
+            ),
+            if (provider.showOverlays)
+              PolygonLayer(
+                polygons: provider.overlays.map((overlay) {
+                  return _buildPolygon(context, overlay);
+                }).toList(),
+              ),
+            if (provider.showAmenities)
+              MarkerLayer(
+                markers: provider.amenities.map((amenity) {
+                  return _buildAmenityMarker(context, amenity);
+                }).toList(),
+              ),
+            MarkerLayer(
+              markers: provider.cities.map((city) {
+                return _buildCityMarker(context, city, provider);
+              }).toList(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMapHeader(BuildContext context) {
     return Positioned(
       top: 12,
       left: 12,
@@ -495,75 +512,83 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return ValoraColors.error;
   }
 
-  Widget _buildMetricSelector(BuildContext context, InsightsProvider provider) {
+  Widget _buildMetricSelector(BuildContext context) {
     return Positioned(
       top: 92,
       left: 16,
       right: 16,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Row(
-          children: InsightMetric.values.map((metric) {
-            final isSelected = provider.selectedMetric == metric;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(_getMetricLabel(metric)),
-                selected: isSelected,
-                onSelected: (_) => provider.setMetric(metric),
-                checkmarkColor: ValoraColors.primaryDark,
-                side: BorderSide(
-                  color: isSelected
-                      ? ValoraColors.primary
-                      : ValoraColors.neutral300,
-                ),
-                backgroundColor: Colors.white.withValues(alpha: 0.88),
-                selectedColor: ValoraColors.primaryLight.withValues(
-                  alpha: 0.25,
-                ),
-                shadowColor: Colors.black.withValues(alpha: 0.08),
-                elevation: 2,
-              ),
+        child: Consumer<InsightsProvider>(
+          builder: (context, provider, _) {
+            return Row(
+              children: InsightMetric.values.map((metric) {
+                final isSelected = provider.selectedMetric == metric;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(_getMetricLabel(metric)),
+                    selected: isSelected,
+                    onSelected: (_) => provider.setMetric(metric),
+                    checkmarkColor: ValoraColors.primaryDark,
+                    side: BorderSide(
+                      color: isSelected
+                          ? ValoraColors.primary
+                          : ValoraColors.neutral300,
+                    ),
+                    backgroundColor: Colors.white.withValues(alpha: 0.88),
+                    selectedColor: ValoraColors.primaryLight.withValues(
+                      alpha: 0.25,
+                    ),
+                    shadowColor: Colors.black.withValues(alpha: 0.08),
+                    elevation: 2,
+                  ),
+                );
+              }).toList(),
             );
-          }).toList(),
+          },
         ),
       ),
     );
   }
 
-  Widget _buildMapLegend(BuildContext context, InsightsProvider provider) {
-    final metric = provider.selectedMetric;
-    return Positioned(
-      left: 16,
-      bottom: 24,
-      child: Container(
-        key: const Key('insights_map_legend'),
-        width: 168,
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: ValoraColors.neutral200),
-          boxShadow: ValoraShadows.md,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_getMetricLabel(metric)} score',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: ValoraColors.neutral900,
-                fontWeight: FontWeight.w700,
-              ),
+  Widget _buildMapLegend(BuildContext context) {
+    return Selector<InsightsProvider, InsightMetric>(
+      selector: (_, p) => p.selectedMetric,
+      builder: (context, metric, _) {
+        return Positioned(
+          left: 16,
+          bottom: 24,
+          child: Container(
+            key: const Key('insights_map_legend'),
+            width: 168,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.94),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: ValoraColors.neutral200),
+              boxShadow: ValoraShadows.md,
             ),
-            const SizedBox(height: 8),
-            _buildLegendRow('80+', ValoraColors.success),
-            _buildLegendRow('60-79', ValoraColors.warning),
-            _buildLegendRow('40-59', Colors.orange),
-            _buildLegendRow('<40', ValoraColors.error),
-          ],
-        ),
-      ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_getMetricLabel(metric)} score',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: ValoraColors.neutral900,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildLegendRow('80+', ValoraColors.success),
+                _buildLegendRow('60-79', ValoraColors.warning),
+                _buildLegendRow('40-59', Colors.orange),
+                _buildLegendRow('<40', ValoraColors.error),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -591,76 +616,80 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildLayerToggle(BuildContext context, InsightsProvider provider) {
+  Widget _buildLayerToggle(BuildContext context) {
     return Positioned(
       bottom: 24,
       right: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (provider.showOverlays)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.94),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: ValoraColors.neutral200),
-                boxShadow: ValoraShadows.sm,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: DropdownButton<MapOverlayMetric>(
-                  value: provider.selectedOverlayMetric,
-                  underline: const SizedBox(),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  items: MapOverlayMetric.values.map((m) {
-                    return DropdownMenuItem(
-                      value: m,
-                      child: Text(
-                        _getOverlayLabel(m),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (m) {
-                    if (m != null) {
-                      provider.setOverlayMetric(m);
-                      _onMapChanged();
-                    }
-                  },
+      child: Consumer<InsightsProvider>(
+        builder: (context, provider, _) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (provider.showOverlays)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: ValoraColors.neutral200),
+                    boxShadow: ValoraShadows.sm,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: DropdownButton<MapOverlayMetric>(
+                      value: provider.selectedOverlayMetric,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                      items: MapOverlayMetric.values.map((m) {
+                        return DropdownMenuItem(
+                          value: m,
+                          child: Text(
+                            _getOverlayLabel(m),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (m) {
+                        if (m != null) {
+                          provider.setOverlayMetric(m);
+                          _onMapChanged();
+                        }
+                      },
+                    ),
+                  ),
                 ),
+              _buildActionButton(
+                key: const Key('insights_zoom_in_button'),
+                icon: Icons.add_rounded,
+                onPressed: () => _zoomMap(0.7),
               ),
-            ),
-          _buildActionButton(
-            key: const Key('insights_zoom_in_button'),
-            icon: Icons.add_rounded,
-            onPressed: () => _zoomMap(0.7),
-          ),
-          const SizedBox(height: 8),
-          _buildActionButton(
-            key: const Key('insights_zoom_out_button'),
-            icon: Icons.remove_rounded,
-            onPressed: () => _zoomMap(-0.7),
-          ),
-          const SizedBox(height: 8),
-          _buildActionButton(
-            icon: Icons.place_rounded,
-            isActive: provider.showAmenities,
-            onPressed: () {
-              provider.toggleAmenities();
-              _onMapChanged();
-            },
-          ),
-          const SizedBox(height: 8),
-          _buildActionButton(
-            icon: Icons.layers_rounded,
-            isActive: provider.showOverlays,
-            onPressed: () {
-              provider.toggleOverlays();
-              _onMapChanged();
-            },
-          ),
-        ],
+              const SizedBox(height: 8),
+              _buildActionButton(
+                key: const Key('insights_zoom_out_button'),
+                icon: Icons.remove_rounded,
+                onPressed: () => _zoomMap(-0.7),
+              ),
+              const SizedBox(height: 8),
+              _buildActionButton(
+                icon: Icons.place_rounded,
+                isActive: provider.showAmenities,
+                onPressed: () {
+                  provider.toggleAmenities();
+                  _onMapChanged();
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildActionButton(
+                icon: Icons.layers_rounded,
+                isActive: provider.showOverlays,
+                onPressed: () {
+                  provider.toggleOverlays();
+                  _onMapChanged();
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }

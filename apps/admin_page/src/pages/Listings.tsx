@@ -2,17 +2,22 @@ import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { Listing } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Euro } from 'lucide-react';
+import { MapPin, Euro, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Listings = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     const fetchListings = async () => {
+      setLoading(true);
       try {
-        const data = await adminService.getListings();
+        const data = await adminService.getListings(page, pageSize);
         setListings(data.items || []);
+        setTotalPages(data.totalPages || 1);
       } catch {
         console.error('Failed to fetch listings');
       } finally {
@@ -20,7 +25,15 @@ const Listings = () => {
       }
     };
     fetchListings();
-  }, []);
+  }, [page]);
+
+  const handlePrevPage = () => {
+    if (page > 1) setPage(p => p - 1);
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(p => p + 1);
+  };
 
   return (
     <div>
@@ -29,8 +42,8 @@ const Listings = () => {
         <p className="text-brand-500 mt-1">Browse and monitor platform listings.</p>
       </div>
 
-      <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100">
-        <div className="overflow-x-auto">
+      <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 flex flex-col min-h-[600px]">
+        <div className="overflow-x-auto flex-grow">
           <table className="min-w-full divide-y divide-brand-100">
             <thead className="bg-brand-50">
               <tr>
@@ -89,6 +102,29 @@ const Listings = () => {
               </AnimatePresence>
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="bg-brand-50 px-8 py-4 border-t border-brand-100 flex items-center justify-between">
+            <span className="text-sm text-brand-500">
+                Page <span className="font-medium">{page}</span> of <span className="font-medium">{totalPages}</span>
+            </span>
+            <div className="flex space-x-2">
+                <button
+                    onClick={handlePrevPage}
+                    disabled={page === 1 || loading}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all text-brand-600"
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                    onClick={handleNextPage}
+                    disabled={page === totalPages || loading}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all text-brand-600"
+                >
+                    <ChevronRight className="h-5 w-5" />
+                </button>
+            </div>
         </div>
       </div>
     </div>
