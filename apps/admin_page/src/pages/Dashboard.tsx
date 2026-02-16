@@ -69,7 +69,7 @@ const Dashboard = () => {
               key={card.title}
               variants={item}
               whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
-              className="bg-white overflow-hidden shadow-premium hover:shadow-premium-lg rounded-2xl transition-all duration-300 border border-brand-100/50"
+              className="bg-white overflow-hidden shadow-premium hover:shadow-premium-lg rounded-2xl transition-all duration-300 border border-brand-100/50 group"
             >
               <div className="p-8">
                 <div className="flex items-center">
