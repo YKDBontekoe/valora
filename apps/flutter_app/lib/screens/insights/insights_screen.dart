@@ -259,11 +259,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         color: ValoraColors.neutral900,
                       ),
                     ),
-                    Text(
-                      '${provider.cities.length} cities',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: ValoraColors.neutral600,
-                      ),
+                    Selector<InsightsProvider, int>(
+                      selector: (_, p) => p.cities.length,
+                      builder: (context, count, _) {
+                        return Text(
+                          '$count cities',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: ValoraColors.neutral600,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
