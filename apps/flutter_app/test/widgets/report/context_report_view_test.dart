@@ -63,8 +63,7 @@ void main() {
     expect(find.text('Test Address'), findsOneWidget);
     expect(find.text('Social'), findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -96,8 +95,7 @@ void main() {
     expect(find.byType(ScoreGauge), findsOneWidget);
     expect(find.byType(MetricCategoryCard), findsNWidgets(2));
 
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -127,5 +125,15 @@ void main() {
     );
     await tester.pump();
     expect(find.text('100'), findsOneWidget);
+  });
+
+  testWidgets('ContextReportView respects showHeader parameter', (tester) async {
+    await tester.pumpWidget(createWidgetUnderTest(
+      ContextReportView(report: testReport, showHeader: false),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test Address'), findsNothing);
+    expect(find.byType(ScoreGauge), findsOneWidget);
   });
 }
