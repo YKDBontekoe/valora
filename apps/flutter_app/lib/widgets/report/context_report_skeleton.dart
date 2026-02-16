@@ -26,17 +26,24 @@ class ContextReportSkeleton extends StatelessWidget {
         // Smart Insights skeleton
         const ValoraShimmer(width: 150, height: 20, borderRadius: 4),
         const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.4,
-          ),
-          itemCount: 4,
-          itemBuilder: (context, index) => const ValoraShimmer(borderRadius: 20),
+        Column(
+          children: [
+            Row(
+              children: [
+                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+                const SizedBox(width: 16),
+                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+                const SizedBox(width: 16),
+                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 32),
 

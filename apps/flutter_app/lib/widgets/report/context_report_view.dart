@@ -23,15 +23,18 @@ class ContextReportView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: childCount(report, showHeader: showHeader),
-      itemBuilder: (context, index) => buildChild(
-        context,
-        index,
-        report,
-        showHeader: showHeader,
+    final count = childCount(report, showHeader: showHeader);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(
+        count,
+        (index) => buildChild(
+          context,
+          index,
+          report,
+          showHeader: showHeader,
+        ),
       ),
     );
   }
@@ -44,7 +47,7 @@ class ContextReportView extends StatelessWidget {
     }
     count++; // Score Overview (Gauge + Radar)
     count++; // Spacing
-    count++; // Smart Insights Grid
+    count++; // Neighborhood Profile Title + Grid
     count++; // Spacing
     count++; // AI Insight
     count++; // Spacing
