@@ -38,6 +38,9 @@ class _ValoraListingCardHorizontalState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
+    final validImageUrl = widget.listing.imageUrl?.trim();
+    final hasValidImage = validImageUrl != null && validImageUrl.isNotEmpty;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -65,11 +68,12 @@ class _ValoraListingCardHorizontalState
                       color: isDark
                           ? ValoraColors.neutral700
                           : ValoraColors.neutral200,
-                      child: widget.listing.imageUrl != null
+                      child: hasValidImage
                           ? Hero(
                               tag: widget.listing.id,
                               child: CachedNetworkImage(
-                                imageUrl: widget.listing.imageUrl!,
+                                // ignore: unnecessary_non_null_assertion
+                                imageUrl: validImageUrl!,
                                 memCacheWidth: 300,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) =>
