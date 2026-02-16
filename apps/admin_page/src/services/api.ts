@@ -73,8 +73,11 @@ export const adminService = {
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);
   },
-  getListings: async (): Promise<PaginatedResponse<Listing>> => {
-    const response = await api.get<PaginatedResponse<Listing>>('/listings');
+};
+
+export const listingService = {
+  getListings: async (page = 1, pageSize = 10): Promise<PaginatedResponse<Listing>> => {
+    const response = await api.get<PaginatedResponse<Listing>>(`/listings?page=${page}&pageSize=${pageSize}`);
     return response.data;
   }
 };

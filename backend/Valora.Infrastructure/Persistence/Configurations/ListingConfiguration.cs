@@ -25,6 +25,10 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => e.IsSoldOrRented);
 
+        // Geospatial Indexes
+        builder.HasIndex(e => e.Latitude);
+        builder.HasIndex(e => e.Longitude);
+
         // Composite indexes for common filters
         builder.HasIndex(e => new { e.City, e.Price });
         builder.HasIndex(e => new { e.City, e.Bedrooms });
