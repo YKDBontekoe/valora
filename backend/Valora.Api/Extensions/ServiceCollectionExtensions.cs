@@ -42,7 +42,7 @@ public static class ServiceCollectionExtensions
                 // 4. Configure policy
                 if (validOrigins.Any(o => o == "*"))
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins("http://localhost:3000", "http://localhost:5173").SetIsOriginAllowed(_ => true)
                           .AllowAnyMethod()
                           .AllowAnyHeader();
                 }
@@ -59,7 +59,7 @@ public static class ServiceCollectionExtensions
                     {
                         // In development, if no origins are specified, allow any origin 
                         // to support various mobile emulators and local web ports.
-                        policy.AllowAnyOrigin()
+                        policy.WithOrigins("http://localhost:3000", "http://localhost:5173").SetIsOriginAllowed(_ => true)
                               .AllowAnyMethod()
                               .AllowAnyHeader();
                     }
