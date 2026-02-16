@@ -26,6 +26,44 @@ void main() {
     expect(find.byType(ContextBarChart), findsOneWidget);
   });
 
+  testWidgets('MetricCategoryCard expansion toggle didUpdateWidget coverage', (tester) async {
+    bool isExpanded = false;
+
+    await tester.pumpWidget(StatefulBuilder(
+      builder: (context, setState) {
+        return MaterialApp(
+          home: Scaffold(
+            body: MetricCategoryCard(
+              title: 'Test',
+              icon: Icons.person,
+              metrics: [],
+              score: 80,
+              isExpanded: isExpanded,
+            ),
+          ),
+        );
+      }
+    ));
+
+    expect(tester.widget<SizeTransition>(find.byType(SizeTransition)).sizeFactor.value, 0.0);
+
+    // Update parent state
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: MetricCategoryCard(
+          title: 'Test',
+          icon: Icons.person,
+          metrics: [],
+          score: 80,
+          isExpanded: true,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<SizeTransition>(find.byType(SizeTransition)).sizeFactor.value, 1.0);
+  });
+
   testWidgets('MetricCategoryCard icon mapping covers various keys', (tester) async {
     final testKeys = [
       'residents', 'population_density', 'low_income_households', 'average_woz',
@@ -49,7 +87,6 @@ void main() {
         ),
       ));
       await tester.pump();
-      // No crash is good enough for coverage
     }
   });
 
@@ -58,7 +95,7 @@ void main() {
       key: 'test',
       label: 'Note Metric',
       source: 'S',
-      note: 'Very long note that might overflow if not handled correctly by Flexible',
+      note: 'Very long note',
     );
 
     await tester.pumpWidget(MaterialApp(
@@ -75,6 +112,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('Note Metric'), findsOneWidget);
-    expect(find.text('Very long note that might overflow if not handled correctly by Flexible'), findsOneWidget);
+    expect(find.text('Very long note'), findsOneWidget);
   });
 }

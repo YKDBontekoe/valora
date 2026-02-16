@@ -16,7 +16,8 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_animations.dart';
 
 class ContextReportScreen extends StatefulWidget {
-  const ContextReportScreen({super.key});
+  const ContextReportScreen({super.key, this.pdokService});
+  final PdokService? pdokService;
 
   @override
   State<ContextReportScreen> createState() => _ContextReportScreenState();
@@ -24,7 +25,14 @@ class ContextReportScreen extends StatefulWidget {
 
 class _ContextReportScreenState extends State<ContextReportScreen> {
   final TextEditingController _inputController = TextEditingController();
-  final PdokService _pdokService = PdokService();
+  late final PdokService _pdokService;
+
+  @override
+  @override
+  void initState() {
+    super.initState();
+    _pdokService = widget.pdokService ?? PdokService();
+  }
 
   @override
   void dispose() {

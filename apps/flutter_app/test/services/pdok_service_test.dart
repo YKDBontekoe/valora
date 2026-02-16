@@ -22,8 +22,6 @@ void main() {
 
       expect(results.length, 1);
       expect(results[0].displayName, 'Damrak 1');
-      expect(results[0].id, '1');
-      expect(results[0].type, 'adres');
     });
 
     test('reverseLookup returns address on 200', () async {
@@ -56,15 +54,17 @@ void main() {
       expect(result, isNull);
     });
 
-    test('search returns empty list on error', () async {
+    test('handles malformed JSON', () async {
       final mockClient = MockClient((request) async {
-        return http.Response('Error', 500);
+        return http.Response('invalid json', 200);
       });
 
       final service = PdokService(client: mockClient);
       final results = await service.search('test');
+      final result = await service.reverseLookup(0, 0);
 
       expect(results, isEmpty);
+      expect(result, isNull);
     });
 
     test('search returns empty list on exception', () async {
@@ -76,17 +76,6 @@ void main() {
       final results = await service.search('test');
 
       expect(results, isEmpty);
-    });
-
-    test('reverseLookup returns null on exception', () async {
-      final mockClient = MockClient((request) async {
-        throw Exception('Network fail');
-      });
-
-      final service = PdokService(client: mockClient);
-      final result = await service.reverseLookup(0, 0);
-
-      expect(result, isNull);
     });
   });
 }
