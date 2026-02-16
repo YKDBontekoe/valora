@@ -1,4 +1,5 @@
 using Moq;
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
 using Valora.Application.Services;
@@ -88,5 +89,25 @@ public class MapServiceTests
         Assert.StartsWith("€ ", result[0].DisplayValue);
         Assert.EndsWith(" / m²", result[0].DisplayValue);
         Assert.Contains("4000", result[0].DisplayValue.Replace(".", string.Empty).Replace(",", string.Empty));
+    }
+
+    [Theory]
+    [InlineData(91, 0, 52, 5)] // Invalid minLat
+    [InlineData(50, 0, 49, 5)] // minLat >= maxLat
+    [InlineData(50, 0, 51, 1)] // Too large span (> 0.5)
+    public async Task GetMapAmenitiesAsync_ShouldThrowValidationException_WhenArgsInvalid(double minLat, double minLon, double maxLat, double maxLon)
+    {
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _mapService.GetMapAmenitiesAsync(minLat, minLon, maxLat, maxLon));
+    }
+
+    [Theory]
+    [InlineData(50, 181, 51, 5)] // Invalid minLon
+    [InlineData(50, 0, 50.1, 0)] // minLon >= maxLon
+    [InlineData(50, 0, 50.1, 1)] // Too large span (> 0.5)
+    public async Task GetMapOverlaysAsync_ShouldThrowValidationException_WhenArgsInvalid(double minLat, double minLon, double maxLat, double maxLon)
+    {
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _mapService.GetMapOverlaysAsync(minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity));
     }
 }
