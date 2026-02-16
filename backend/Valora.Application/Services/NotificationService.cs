@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Domain.Common;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Services;
@@ -67,11 +68,14 @@ public class NotificationService : INotificationService
     {
         var notification = new Notification
         {
-            UserId = userId,
-            Title = title,
-            Body = body,
+            UserId = userId.Truncate(ValidationConstants.Notification.UserIdMaxLength)
+                     ?? throw new InvalidOperationException("UserId cannot be null"),
+            Title = title.Truncate(ValidationConstants.Notification.TitleMaxLength)
+                    ?? "Notification",
+            Body = body.Truncate(ValidationConstants.Notification.BodyMaxLength)
+                   ?? string.Empty,
             Type = type,
-            ActionUrl = actionUrl,
+            ActionUrl = actionUrl.Truncate(ValidationConstants.Notification.ActionUrlMaxLength),
             IsRead = false,
             CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
         };

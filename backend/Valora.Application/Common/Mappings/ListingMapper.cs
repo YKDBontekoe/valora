@@ -1,4 +1,5 @@
 using Valora.Application.DTOs;
+using Valora.Domain.Common;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Common.Mappings;
@@ -63,11 +64,16 @@ public static class ListingMapper
 
     public static Listing ToEntity(ListingDto dto)
     {
+        // Address is required, but we must ensure it fits
+        var address = dto.Address.Truncate(ValidationConstants.Listing.AddressMaxLength)
+                      ?? throw new InvalidOperationException("Address cannot be null");
+
         var listing = new Listing
         {
             Id = dto.Id,
-            FundaId = dto.FundaId,
-            Address = dto.Address
+            FundaId = dto.FundaId.Truncate(ValidationConstants.Listing.FundaIdMaxLength)
+                      ?? throw new InvalidOperationException("FundaId cannot be null"),
+            Address = address
         };
         UpdateEntity(listing, dto);
         return listing;
@@ -75,32 +81,33 @@ public static class ListingMapper
 
     public static void UpdateEntity(Listing listing, ListingDto dto)
     {
-        listing.Address = dto.Address;
-        listing.City = dto.City;
-        listing.PostalCode = dto.PostalCode;
+        listing.Address = dto.Address.Truncate(ValidationConstants.Listing.AddressMaxLength)
+                          ?? throw new InvalidOperationException("Address cannot be null");
+        listing.City = dto.City.Truncate(ValidationConstants.Listing.CityMaxLength);
+        listing.PostalCode = dto.PostalCode.Truncate(ValidationConstants.Listing.PostalCodeMaxLength);
         listing.Price = dto.Price;
         listing.Bedrooms = dto.Bedrooms;
         listing.Bathrooms = dto.Bathrooms;
         listing.LivingAreaM2 = dto.LivingAreaM2;
         listing.PlotAreaM2 = dto.PlotAreaM2;
-        listing.PropertyType = dto.PropertyType;
-        listing.Status = dto.Status;
-        listing.Url = dto.Url;
-        listing.ImageUrl = dto.ImageUrl;
+        listing.PropertyType = dto.PropertyType.Truncate(ValidationConstants.Listing.PropertyTypeMaxLength);
+        listing.Status = dto.Status.Truncate(ValidationConstants.Listing.StatusMaxLength);
+        listing.Url = dto.Url.Truncate(ValidationConstants.Listing.UrlMaxLength);
+        listing.ImageUrl = dto.ImageUrl.Truncate(ValidationConstants.Listing.ImageUrlMaxLength);
         listing.ListedDate = dto.ListedDate;
-        listing.Description = dto.Description;
-        listing.EnergyLabel = dto.EnergyLabel;
+        listing.Description = dto.Description; // No max length on Description? Usually unbounded or large.
+        listing.EnergyLabel = dto.EnergyLabel.Truncate(ValidationConstants.Listing.EnergyLabelMaxLength);
         listing.YearBuilt = dto.YearBuilt;
         listing.ImageUrls = dto.ImageUrls;
-        listing.OwnershipType = dto.OwnershipType;
-        listing.CadastralDesignation = dto.CadastralDesignation;
+        listing.OwnershipType = dto.OwnershipType.Truncate(ValidationConstants.Listing.OwnershipTypeMaxLength);
+        listing.CadastralDesignation = dto.CadastralDesignation.Truncate(ValidationConstants.Listing.CadastralDesignationMaxLength);
         listing.VVEContribution = dto.VVEContribution;
-        listing.HeatingType = dto.HeatingType;
-        listing.InsulationType = dto.InsulationType;
-        listing.GardenOrientation = dto.GardenOrientation;
+        listing.HeatingType = dto.HeatingType.Truncate(ValidationConstants.Listing.HeatingTypeMaxLength);
+        listing.InsulationType = dto.InsulationType.Truncate(ValidationConstants.Listing.InsulationTypeMaxLength);
+        listing.GardenOrientation = dto.GardenOrientation.Truncate(ValidationConstants.Listing.GardenOrientationMaxLength);
         listing.HasGarage = dto.HasGarage;
-        listing.ParkingType = dto.ParkingType;
-        listing.AgentName = dto.AgentName;
+        listing.ParkingType = dto.ParkingType.Truncate(ValidationConstants.Listing.ParkingTypeMaxLength);
+        listing.AgentName = dto.AgentName.Truncate(ValidationConstants.Listing.AgentNameMaxLength);
         listing.VolumeM3 = dto.VolumeM3;
         listing.BalconyM2 = dto.BalconyM2;
         listing.GardenM2 = dto.GardenM2;
@@ -112,13 +119,14 @@ public static class ListingMapper
         listing.VirtualTourUrl = dto.VirtualTourUrl;
         listing.FloorPlanUrls = dto.FloorPlanUrls;
         listing.BrochureUrl = dto.BrochureUrl;
-        listing.RoofType = dto.RoofType;
+        listing.RoofType = dto.RoofType.Truncate(ValidationConstants.Listing.RoofTypeMaxLength);
         listing.NumberOfFloors = dto.NumberOfFloors;
-        listing.ConstructionPeriod = dto.ConstructionPeriod;
-        listing.CVBoilerBrand = dto.CVBoilerBrand;
+        listing.ConstructionPeriod = dto.ConstructionPeriod.Truncate(ValidationConstants.Listing.ConstructionPeriodMaxLength);
+        listing.CVBoilerBrand = dto.CVBoilerBrand.Truncate(ValidationConstants.Listing.CVBoilerBrandMaxLength);
         listing.CVBoilerYear = dto.CVBoilerYear;
-        listing.BrokerPhone = dto.BrokerPhone;
-        listing.BrokerLogoUrl = dto.BrokerLogoUrl;
+        listing.BrokerPhone = dto.BrokerPhone.Truncate(ValidationConstants.Listing.BrokerPhoneMaxLength);
+        listing.BrokerLogoUrl = dto.BrokerLogoUrl; // No explicit max length in config, assumingly handled or large enough
+        // BrokerAssociationCode not present in DTO
         listing.FiberAvailable = dto.FiberAvailable;
         listing.PublicationDate = dto.PublicationDate;
         listing.IsSoldOrRented = dto.IsSoldOrRented;
