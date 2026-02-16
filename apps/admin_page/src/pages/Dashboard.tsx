@@ -29,9 +29,9 @@ const Dashboard = () => {
   );
 
   const cards = [
-    { title: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Total Listings', value: stats?.totalListings || 0, icon: List, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-violet-600', bg: 'bg-violet-50' },
+    { title: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-info-600', bg: 'bg-info-50' },
+    { title: 'Total Listings', value: stats?.totalListings || 0, icon: List, color: 'text-success-600', bg: 'bg-success-50' },
+    { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-primary-600', bg: 'bg-primary-50' },
   ];
 
   const container = {
@@ -68,18 +68,26 @@ const Dashboard = () => {
             <motion.div
               key={card.title}
               variants={item}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              className="bg-white overflow-hidden shadow-premium hover:shadow-premium-lg rounded-2xl transition-shadow duration-300"
+              whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
+              className="bg-white overflow-hidden shadow-premium hover:shadow-premium-lg rounded-2xl transition-all duration-300 border border-brand-100/50 group"
             >
               <div className="p-8">
                 <div className="flex items-center">
-                  <div className={`flex-shrink-0 ${card.bg} rounded-xl p-4`}>
-                    <Icon className={`h-7 w-7 ${card.color}`} />
+                  <div className={`flex-shrink-0 ${card.bg} rounded-2xl p-4 transition-transform group-hover:scale-110`}>
+                    <Icon className={`h-8 w-8 ${card.color}`} />
                   </div>
                   <div className="ml-6 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-semibold text-brand-500 uppercase tracking-wider">{card.title}</dt>
-                      <dd className="text-3xl font-bold text-brand-900 mt-1">{card.value.toLocaleString()}</dd>
+                      <dt className="text-xs font-bold text-brand-400 uppercase tracking-widest mb-1">{card.title}</dt>
+                      <dd className="text-4xl font-black text-brand-900 leading-none">
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.5, duration: 0.5 }}
+                        >
+                          {card.value.toLocaleString()}
+                        </motion.span>
+                      </dd>
                     </dl>
                   </div>
                 </div>
