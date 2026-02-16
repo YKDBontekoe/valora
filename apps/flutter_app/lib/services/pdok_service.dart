@@ -26,6 +26,9 @@ class PdokSuggestion {
 }
 
 class PdokService {
+  PdokService({http.Client? client}) : _client = client ?? http.Client();
+
+  final http.Client _client;
   static const String _authority = 'api.pdok.nl';
   static const String _path = '/bzk/locatieserver/search/v3_1/suggest';
   static const String _reversePath = '/bzk/locatieserver/search/v3_1/reverse';
@@ -42,7 +45,7 @@ class PdokService {
         'fq': 'type:(woonplaats OR weg OR adres OR postcode)',
       });
       
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await _client.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -67,7 +70,7 @@ class PdokService {
         'type': 'adres',
       });
 
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await _client.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
