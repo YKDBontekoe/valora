@@ -17,7 +17,6 @@ class SmartInsightsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     final insights = [
       _InsightData(
@@ -50,59 +49,88 @@ class SmartInsightsGrid extends StatelessWidget {
       ),
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.4,
-      ),
-      itemCount: insights.length,
-      itemBuilder: (context, index) {
-        final insight = insights[index];
-        return ValoraGlassContainer(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 1.4,
+                child: _buildInsightCard(context, insights[0]),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 1.4,
+                child: _buildInsightCard(context, insights[1]),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 1.4,
+                child: _buildInsightCard(context, insights[2]),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 1.4,
+                child: _buildInsightCard(context, insights[3]),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInsightCard(BuildContext context, _InsightData insight) {
+    final theme = Theme.of(context);
+    return ValoraGlassContainer(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(insight.icon, color: insight.color, size: 20),
-                  Text(
-                    insight.value > 0 ? '${insight.value.round()}%' : 'N/A',
-                    style: TextStyle(
-                      color: insight.color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
+              Icon(insight.icon, color: insight.color, size: 20),
               Text(
-                insight.title,
-                style: theme.textTheme.labelMedium?.copyWith(
+                insight.value > 0 ? '${insight.value.round()}%' : 'N/A',
+                style: TextStyle(
+                  color: insight.color,
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+                  fontSize: 12,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                insight.label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
-        );
-      },
+          const Spacer(),
+          Text(
+            insight.title,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            insight.label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
