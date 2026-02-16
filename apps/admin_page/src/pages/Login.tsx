@@ -58,7 +58,7 @@ const Login = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 mb-8 text-sm font-semibold text-red-600 bg-red-50 rounded-xl border border-red-100"
+              className="p-4 mb-8 text-sm font-bold text-error-700 bg-error-50 rounded-2xl border border-error-100/50"
             >
               {error}
             </motion.div>
@@ -66,9 +66,9 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-bold text-brand-700 mb-2 ml-1 uppercase tracking-wider">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-brand-400">
+              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2 ml-1 uppercase tracking-[0.2em]">Email Address</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
@@ -77,16 +77,16 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-11 pr-4 py-3 bg-brand-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-brand-300 font-medium text-brand-900"
+                  className="w-full pl-11 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-semibold text-brand-900 outline-none"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-bold text-brand-700 mb-2 ml-1 uppercase tracking-wider">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-brand-400">
+              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2 ml-1 uppercase tracking-[0.2em]">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -95,7 +95,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 bg-brand-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-brand-300 font-medium text-brand-900"
+                  className="w-full pl-11 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-semibold text-brand-900 outline-none"
                   required
                 />
               </div>

@@ -39,44 +39,48 @@ const ConfirmationDialog = ({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative z-50 border border-brand-100"
           >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-2 rounded-full ${isDestructive ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'}`}>
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className={`p-3 rounded-2xl ${isDestructive ? 'bg-error-50 text-error-600' : 'bg-info-50 text-info-600'}`}>
                   <AlertTriangle className="h-6 w-6" />
                 </div>
-                <button
+                <motion.button
+                  whileHover={{ rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={onClose}
-                  className="text-brand-400 hover:text-brand-600 transition-colors p-1 rounded-lg hover:bg-brand-50"
+                  className="text-brand-300 hover:text-brand-600 transition-colors p-2 rounded-xl hover:bg-brand-50"
                 >
                   <X className="h-5 w-5" />
-                </button>
+                </motion.button>
               </div>
 
-              <h3 className="text-xl font-bold text-brand-900 mb-2">{title}</h3>
-              <p className="text-brand-500 leading-relaxed mb-6">
+              <h3 className="text-2xl font-black text-brand-900 mb-2 tracking-tight">{title}</h3>
+              <p className="text-brand-500 font-medium leading-relaxed mb-8">
                 {message}
               </p>
 
-              <div className="flex justify-end gap-3">
-                <button
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-brand-600 hover:bg-brand-50 border border-transparent hover:border-brand-200 transition-all cursor-pointer"
+                  className="px-6 py-3 rounded-2xl text-sm font-bold text-brand-500 hover:bg-brand-50 border border-brand-100 hover:border-brand-200 transition-all cursor-pointer"
                 >
                   {cancelLabel}
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     onConfirm();
                     onClose();
                   }}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all cursor-pointer ${
+                  className={`px-6 py-3 rounded-2xl text-sm font-bold text-white shadow-lg transition-all cursor-pointer ${
                     isDestructive
-                      ? 'bg-red-600 hover:bg-red-700 shadow-red-200'
+                      ? 'bg-error-600 hover:bg-error-700 shadow-error-200'
                       : 'bg-primary-600 hover:bg-primary-700 shadow-primary-200'
                   }`}
                 >
                   {confirmLabel}
-                </button>
+                </motion.button>
               </div>
             </div>
           </motion.div>

@@ -77,26 +77,28 @@ const Listings = () => {
                   listings.map((listing) => (
                     <motion.tr
                       key={listing.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="hover:bg-brand-50/50 transition-colors"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      layout
+                      className="hover:bg-brand-50/50 transition-colors group"
                     >
                       <td className="px-8 py-5 whitespace-nowrap text-sm">
                         <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center mr-3">
-                            <MapPin className="h-4 w-4 text-brand-400" />
+                          <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center mr-4 group-hover:bg-primary-50 transition-colors">
+                            <MapPin className="h-5 w-5 text-brand-400 group-hover:text-primary-600 transition-colors" />
                           </div>
-                          <span className="font-semibold text-brand-900">{listing.address}</span>
+                          <span className="font-bold text-brand-900">{listing.address}</span>
                         </div>
                       </td>
                       <td className="px-8 py-5 whitespace-nowrap text-sm">
-                        <div className="flex items-center text-brand-700 font-medium">
+                        <div className="flex items-center text-brand-700 font-bold">
                           <Euro className="h-4 w-4 mr-1 text-brand-400" />
                           {listing.price != null ? listing.price.toLocaleString() : '-'}
                         </div>
                       </td>
                       <td className="px-8 py-5 whitespace-nowrap text-sm">
-                        <span className="px-3 py-1 rounded-lg bg-brand-100 text-brand-700 text-xs font-bold uppercase tracking-wider">
+                        <span className="px-3 py-1.5 rounded-lg bg-brand-100 text-brand-700 text-[10px] font-black uppercase tracking-widest border border-brand-200/50">
                           {listing.city}
                         </span>
                       </td>
@@ -109,25 +111,27 @@ const Listings = () => {
         </div>
 
         {/* Pagination Controls */}
-        <div className="bg-brand-50 px-8 py-4 border-t border-brand-100 flex items-center justify-between">
-            <span className="text-sm text-brand-500">
-                Page <span className="font-medium">{page}</span> of <span className="font-medium">{totalPages}</span>
+        <div className="bg-brand-50 px-8 py-6 border-t border-brand-100 flex items-center justify-between">
+            <span className="text-sm font-bold text-brand-400 uppercase tracking-widest">
+                Page <span className="text-brand-900">{page}</span> <span className="mx-1 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
             </span>
-            <div className="flex space-x-2">
-                <button
+            <div className="flex space-x-3">
+                <motion.button
+                    whileTap={{ scale: 0.95 }}
                     onClick={handlePrevPage}
                     disabled={page === 1 || loading}
-                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all text-brand-600"
+                    className="p-2.5 rounded-xl bg-white border border-brand-200 shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all text-brand-600 cursor-pointer"
                 >
                     <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleNextPage}
                     disabled={page === totalPages || loading}
-                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all text-brand-600"
+                    className="p-2.5 rounded-xl bg-white border border-brand-200 shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all text-brand-600 cursor-pointer"
                 >
                     <ChevronRight className="h-5 w-5" />
-                </button>
+                </motion.button>
             </div>
         </div>
       </div>

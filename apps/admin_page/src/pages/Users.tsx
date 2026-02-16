@@ -27,25 +27,27 @@ const UserRow = ({
     <td className="px-8 py-5 whitespace-nowrap text-sm text-brand-500">
       <div className="flex flex-wrap gap-2">
         {user.roles.map(role => (
-          <span key={role} className="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-primary-50 text-primary-700">
+          <span key={role} className="px-3 py-1 inline-flex text-[10px] leading-4 font-black uppercase tracking-widest rounded-lg bg-primary-50 text-primary-700 border border-primary-100/50">
             {role}
           </span>
         ))}
       </div>
     </td>
     <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-medium">
-      <button
+      <motion.button
+        whileHover={user.id === currentUserId || loading ? {} : { scale: 1.1, rotate: 5 }}
+        whileTap={user.id === currentUserId || loading ? {} : { scale: 0.9 }}
         onClick={() => onDeleteClick(user)}
         disabled={user.id === currentUserId || loading}
-        className={`p-2 rounded-lg transition-all ${
+        className={`p-2.5 rounded-xl transition-all ${
           user.id === currentUserId || loading
             ? 'text-brand-200 cursor-not-allowed'
-            : 'text-brand-400 hover:text-red-600 hover:bg-red-50 cursor-pointer'
+            : 'text-brand-400 hover:text-error-600 hover:bg-error-50 cursor-pointer'
         }`}
         title={user.id === currentUserId ? 'You cannot delete yourself' : loading ? 'Please wait...' : 'Delete user'}
       >
         <Trash2 className="h-5 w-5" />
-      </button>
+      </motion.button>
     </td>
   </motion.tr>
 );
@@ -136,26 +138,28 @@ const Users = () => {
 
       {/* Pagination */}
       <div className="mt-8 flex items-center justify-between px-2">
-        <div className="text-sm font-medium text-brand-500">
-          Page <span className="text-brand-900">{page}</span> of <span className="text-brand-900">{totalPages}</span>
+        <div className="text-sm font-bold text-brand-400 uppercase tracking-widest">
+          Page <span className="text-brand-900">{page}</span> <span className="mx-1 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
         </div>
         <div className="flex space-x-3">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={prevPage}
             disabled={page === 1 || loading}
-            className="flex items-center px-4 py-2 border border-brand-200 rounded-xl text-sm font-semibold text-brand-700 bg-white hover:bg-brand-50 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer"
+            className="flex items-center px-5 py-2.5 border border-brand-200 rounded-xl text-xs font-bold uppercase tracking-widest text-brand-700 bg-white shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all cursor-pointer"
           >
-            <ChevronLeft className="mr-1 h-4 w-4" />
+            <ChevronLeft className="mr-2 h-4 w-4" />
             Previous
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={nextPage}
             disabled={page === totalPages || loading}
-            className="flex items-center px-4 py-2 border border-brand-200 rounded-xl text-sm font-semibold text-brand-700 bg-white hover:bg-brand-50 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer"
+            className="flex items-center px-5 py-2.5 border border-brand-200 rounded-xl text-xs font-bold uppercase tracking-widest text-brand-700 bg-white shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all cursor-pointer"
           >
             Next
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </button>
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </motion.button>
         </div>
       </div>
 

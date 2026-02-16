@@ -37,29 +37,35 @@ const Layout = () => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
-              <Link
+              <motion.div
                 key={item.name}
-                to={item.path}
-                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-primary-50 text-primary-700 shadow-sm'
-                    : 'text-brand-500 hover:bg-brand-100 hover:text-brand-900'
-                }`}
+                whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Icon className={`mr-3 h-5 w-5 transition-colors ${isActive ? 'text-primary-600' : 'text-brand-400 group-hover:text-brand-600'}`} />
-                {item.name}
-              </Link>
+                <Link
+                  to={item.path}
+                  className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-primary-50 text-primary-700 shadow-premium border border-primary-100/50'
+                      : 'text-brand-500 hover:bg-brand-50 hover:text-brand-900'
+                  }`}
+                >
+                  <Icon className={`mr-3 h-5 w-5 transition-colors ${isActive ? 'text-primary-600' : 'text-brand-400 group-hover:text-brand-600'}`} />
+                  {item.name}
+                </Link>
+              </motion.div>
             );
           })}
         </nav>
         <div className="p-4 border-t border-brand-100">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-3 text-sm font-medium text-brand-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
+            className="flex items-center w-full px-4 py-3 text-sm font-semibold text-brand-500 rounded-xl hover:bg-error-50 hover:text-error-600 transition-all duration-200 cursor-pointer group"
           >
-            <LogOut className="mr-3 h-5 w-5" />
+            <LogOut className="mr-3 h-5 w-5 transition-transform group-hover:-translate-x-1" />
             Logout
-          </button>
+          </motion.button>
         </div>
       </aside>
 
