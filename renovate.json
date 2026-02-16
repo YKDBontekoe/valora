@@ -5,10 +5,7 @@
     ":semanticCommits"
   ],
   "description": "Agentic Renovate configuration for automated dependency updates",
-  "labels": [
-    "dependencies",
-    "auto-merge-candidate"
-  ],
+  "labels": ["dependencies", "auto-merge-candidate"],
   "prHourlyLimit": 3,
   "prConcurrentLimit": 10,
   "automerge": true,
@@ -21,99 +18,58 @@
   "dependencyDashboardTitle": "📦 Dependency Dashboard",
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": [
-      "security",
-      "priority/high"
-    ],
+    "labels": ["security", "priority/high"],
     "automerge": true
   },
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": [
-      "before 5am on monday"
-    ]
+    "schedule": ["before 5am on monday"]
   },
   "packageRules": [
     {
       "description": "Group all non-major dependencies",
       "groupName": "all non-major dependencies",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "matchPackageNames": [
-        "*"
-      ]
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": ["*"]
     },
     {
       "description": "Auto-merge patch and minor updates",
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
+      "matchUpdateTypes": ["patch", "minor"],
       "automerge": true,
-      "labels": [
-        "dependencies",
-        "auto-merge-candidate"
-      ]
+      "labels": ["dependencies", "auto-merge-candidate"]
     },
     {
       "description": "Major updates need review",
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchUpdateTypes": ["major"],
       "automerge": false,
-      "labels": [
-        "dependencies",
-        "breaking-change"
-      ]
+      "labels": ["dependencies", "breaking-change"]
     },
     {
       "description": "Group .NET dependencies",
       "groupName": "dotnet-dependencies",
-      "matchManagers": [
-        "nuget"
-      ]
+      "matchManagers": ["nuget"]
     },
     {
       "description": "Group Flutter dependencies",
       "groupName": "flutter-dependencies",
-      "matchManagers": [
-        "pub"
-      ]
+      "matchManagers": ["pub"]
     },
     {
       "description": "Group testing tools",
       "groupName": "Testing",
-      "labels": [
-        "dependencies",
-        "testing"
-      ],
-      "matchPackageNames": [
-        "/vitest/",
-        "/playwright/",
-        "/@testing-library/"
-      ]
+      "labels": ["dependencies", "testing"],
+      "matchPackageNames": ["/vitest/", "/playwright/", "/@testing-library/"]
     },
     {
       "description": "Group TypeScript ecosystem",
       "groupName": "TypeScript",
-      "labels": [
-        "dependencies",
-        "typescript"
-      ],
-      "matchPackageNames": [
-        "/^typescript/",
-        "/^@types\\//"
-      ]
+      "labels": ["dependencies", "typescript"],
+      "matchPackageNames": ["/^typescript/", "/^@types\\//"]
     },
     {
       "description": "Group React ecosystem updates",
       "groupName": "React",
-      "labels": [
-        "dependencies",
-        "react"
-      ],
+      "labels": ["dependencies", "react"],
       "matchPackageNames": [
         "/^react/",
         "/^@types\\/react/",
@@ -125,32 +81,19 @@
     {
       "description": "Group Drizzle ORM",
       "groupName": "Drizzle ORM",
-      "labels": [
-        "dependencies",
-        "database"
-      ],
-      "matchPackageNames": [
-        "/^drizzle/"
-      ]
+      "labels": ["dependencies", "database"],
+      "matchPackageNames": ["/^drizzle/"]
     },
     {
       "description": "Group Radix UI components",
       "groupName": "Radix UI",
-      "labels": [
-        "dependencies",
-        "ui"
-      ],
-      "matchPackageNames": [
-        "/^@radix-ui\\//"
-      ]
+      "labels": ["dependencies", "ui"],
+      "matchPackageNames": ["/^@radix-ui\\//"]
     },
     {
       "description": "Group shadcn/ui related packages",
       "groupName": "UI Utilities",
-      "labels": [
-        "dependencies",
-        "ui"
-      ],
+      "labels": ["dependencies", "ui"],
       "matchPackageNames": [
         "/^class-variance-authority/",
         "/^clsx/",
@@ -161,24 +104,18 @@
     {
       "description": "Group AI/LLM packages",
       "groupName": "AI/LLM",
-      "labels": [
-        "dependencies",
-        "ai"
-      ],
+      "labels": ["dependencies", "ai"],
       "matchPackageNames": [
         "/^@google\\//",
         "ai",
-        "/^openai/",
-        "/^@anthropic/"
+        "openai",
+        "/^@anthropic\\//"
       ]
     },
     {
       "description": "Group linting and formatting",
       "groupName": "Linting & Formatting",
-      "labels": [
-        "dependencies",
-        "tooling"
-      ],
+      "labels": ["dependencies", "tooling"],
       "matchPackageNames": [
         "/^eslint/",
         "/^@eslint/",
@@ -189,14 +126,8 @@
     {
       "description": "Security packages - always auto-merge minor/patch",
       "automerge": true,
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "labels": [
-        "dependencies",
-        "security"
-      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "labels": ["dependencies", "security"],
       "matchPackageNames": [
         "/^@auth\\//",
         "/^bcrypt/",
@@ -206,60 +137,33 @@
     },
     {
       "description": "Pin GitHub Actions to digest",
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "pinDigests": true
     },
     {
       "description": "Auto-merge GitHub Actions minor/patch",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
-      "labels": [
-        "dependencies",
-        "ci/cd",
-        "auto-merge-candidate"
-      ]
+      "labels": ["dependencies", "ci/cd", "auto-merge-candidate"]
     },
     {
       "description": "Weekly digest for dev dependencies",
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-      "schedule": [
-        "before 5am on monday"
-      ]
+      "matchDepTypes": ["devDependencies"],
+      "schedule": ["before 5am on monday"]
     },
     {
       "description": "pnpm updates",
-      "matchPackageNames": [
-        "pnpm"
-      ],
+      "matchPackageNames": ["pnpm"],
       "groupName": "pnpm",
       "automerge": true
     }
   ],
-  "commitMessageAction": "update",
-  "commitMessageTopic": "{{depName}}",
-  "commitMessageExtra": "to {{newVersion}}",
-  "prTitle": "deps: update {{depName}} to {{newVersion}}",
   "prBodyTemplate": "{{{header}}}\n\n{{{table}}}\n\n{{{notes}}}\n\n{{{changelogs}}}\n\n---\n\n🤖 This PR is auto-mergeable if all checks pass.\n\n{{{footer}}}",
   "assignees": [],
   "reviewers": [],
-  "ignoreDeps": [
-    "node"
-  ],
-  "ignorePaths": [
-    "**/node_modules/**",
-    "**/vendor/**",
-    "**/__fixtures__/**"
-  ],
+  "ignoreDeps": ["node"],
+  "ignorePaths": ["**/node_modules/**", "**/vendor/**", "**/__fixtures__/**"],
   "rangeStrategy": "pin",
   "schedule": [
     "after 10pm every weekday",
