@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:intl/intl.dart';
 
 import '../services/api_service.dart';
 import '../services/pdok_service.dart';
@@ -12,7 +13,6 @@ import '../widgets/report/context_report_skeleton.dart';
 import '../widgets/report/location_picker.dart';
 import '../widgets/valora_widgets.dart';
 import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_animations.dart';
 
 class ContextReportScreen extends StatefulWidget {
@@ -103,16 +103,26 @@ class _InputForm extends StatelessWidget {
       MaterialPageRoute(builder: (context) => const LocationPicker()),
     );
 
+    if (!context.mounted) return;
     if (result != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Resolving address...'), duration: Duration(seconds: 1)),
+      );
+
       final String? address = await pdokService.reverseLookup(result.latitude, result.longitude);
+
+      if (!context.mounted) return;
 
       if (address != null) {
         controller.text = address;
         provider.generate(address);
       } else {
-        final String coords = '${result.latitude.toStringAsFixed(6)},${result.longitude.toStringAsFixed(6)}';
-        controller.text = coords;
-        provider.generate(coords);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not resolve an address for this location. Please try searching by text.'),
+            backgroundColor: ValoraColors.error,
+          ),
+        );
       }
     }
   }
@@ -209,7 +219,7 @@ class _InputForm extends StatelessWidget {
                   IconButton(
                     tooltip: 'Pick on Map',
                     icon: const Icon(Icons.map_outlined),
-                    onPressed: () => _pickLocation(context),
+                    onPressed: provider.isLoading ? null : () => _pickLocation(context),
                   ),
                 ],
               ),
@@ -222,7 +232,7 @@ class _InputForm extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
             ),
             textInputAction: TextInputAction.search,
-            onSubmitted: (_) => provider.generate(controller.text),
+            onSubmitted: (val) => val.isNotEmpty ? provider.generate(val) : null,
           ),
           suggestionsCallback: (pattern) async {
             if (pattern.length < 3) return [];
@@ -299,8 +309,11 @@ class _InputForm extends StatelessWidget {
         SizedBox(
           height: 60,
           child: ValoraButton(
-            label: 'Generate Full Report',
-            onPressed: () => provider.generate(controller.text),
+            label: provider.isLoading ? 'Analyzing...' : 'Generate Full Report',
+            isLoading: provider.isLoading,
+            onPressed: provider.isLoading || controller.text.isEmpty
+                ? null
+                : () => provider.generate(controller.text),
             variant: ValoraButtonVariant.primary,
           ),
         ),
@@ -338,11 +351,11 @@ class _InputForm extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: provider.history.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final item = provider.history[index];
                 return GestureDetector(
-                  onTap: () {
+                  onTap: provider.isLoading ? null : () {
                     controller.text = item.query;
                     provider.generate(item.query);
                   },
@@ -417,9 +430,17 @@ class _InputForm extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
-    final diff = now.difference(date).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    return '${date.day}\/${date.month}';
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final midnightDate = DateTime(date.year, date.month, date.day);
+
+    if (midnightDate.isAfter(today)) {
+      return DateFormat('dd/MM/yyyy').format(date);
+    }
+
+    if (midnightDate == today) return 'Today';
+    if (midnightDate == yesterday) return 'Yesterday';
+
+    return DateFormat('dd/MM/yyyy').format(date);
   }
 }

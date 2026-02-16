@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../core/theme/valora_colors.dart';
 import '../../../models/context_report.dart';
 
 class ContextBarChart extends StatelessWidget {
@@ -55,7 +54,6 @@ class ContextBarChart extends StatelessWidget {
                       heightFactor: percentage.clamp(0.05, 1.0),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.8),
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -69,6 +67,7 @@ class ContextBarChart extends StatelessWidget {
                       ),
                     ).animate().scaleY(
                       begin: 0,
+                      alignment: Alignment.bottomCenter,
                       duration: 600.ms,
                       curve: Curves.easeOutBack,
                       delay: (index * 50).ms,

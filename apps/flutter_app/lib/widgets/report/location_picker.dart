@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/theme/valora_colors.dart';
-import '../../core/theme/valora_spacing.dart';
 import '../valora_widgets.dart';
 
 class LocationPicker extends StatefulWidget {
@@ -27,6 +26,12 @@ class _LocationPickerState extends State<LocationPicker> {
   void initState() {
     super.initState();
     _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   @override

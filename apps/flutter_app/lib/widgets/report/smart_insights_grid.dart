@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../models/context_report.dart';
 import '../valora_glass_container.dart';
-import '../../core/theme/valora_colors.dart';
 
 class SmartInsightsGrid extends StatelessWidget {
   const SmartInsightsGrid({super.key, required this.report});
 
   final ContextReport report;
+
+  ContextMetric? _findMetric(List<ContextMetric> metrics, String key) {
+    try {
+      return metrics.firstWhere((m) => m.key == key);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +72,7 @@ class SmartInsightsGrid extends StatelessWidget {
                 children: [
                   Icon(insight.icon, color: insight.color, size: 20),
                   Text(
-                    '${insight.value.round()}%',
+                    insight.value > 0 ? '${insight.value.round()}%' : 'N/A',
                     style: TextStyle(
                       color: insight.color,
                       fontWeight: FontWeight.bold,
@@ -100,13 +107,21 @@ class SmartInsightsGrid extends StatelessWidget {
   }
 
   double _calculateFamilyScore() {
-    final schoolScore = report.amenityMetrics.firstWhere((m) => m.key == 'dist_school', orElse: () => ContextMetric(key: '', label: '', source: '')).score ?? 70;
-    final familyMetric = report.demographicsMetrics.firstWhere((m) => m.key == 'households_with_children', orElse: () => ContextMetric(key: '', label: '', source: '')).score ?? 60;
-    return (schoolScore + familyMetric) / 2;
+    final familyMetric = _findMetric(report.demographicsMetrics, 'family_friendly');
+    if (familyMetric?.score != null) return familyMetric!.score!;
+
+    // Fallback logic if family_friendly isn't directly scored
+    final schoolMetric = _findMetric(report.amenityMetrics, 'dist_school');
+    final childrenMetric = _findMetric(report.demographicsMetrics, 'households_with_children');
+
+    if (schoolMetric == null && childrenMetric == null) return 0;
+
+    return ((schoolMetric?.score ?? 70) + (childrenMetric?.score ?? 60)) / 2;
   }
 
   String _getFamilyLabel() {
     final score = _calculateFamilyScore();
+    if (score == 0) return 'Data unavailable';
     if (score > 80) return 'Excellent for kids';
     if (score > 60) return 'Very family friendly';
     return 'Typical neighborhood';
@@ -114,6 +129,7 @@ class SmartInsightsGrid extends StatelessWidget {
 
   String _getSafetyLabel() {
     final score = report.categoryScores['Safety'] ?? 0;
+    if (score == 0) return 'Data unavailable';
     if (score > 80) return 'Very safe area';
     if (score > 60) return 'Safe neighborhood';
     return 'Moderate safety';
@@ -121,19 +137,24 @@ class SmartInsightsGrid extends StatelessWidget {
 
   String _getConnectivityLabel() {
     final score = report.categoryScores['Amenities'] ?? 0;
+    if (score == 0) return 'Data unavailable';
     if (score > 80) return 'Excellent transit';
     if (score > 60) return 'Well connected';
     return 'Car dependent';
   }
 
   double _calculateEconomicScore() {
-    final incomeScore = report.demographicsMetrics.firstWhere((m) => m.key == 'avg_income_inhabitant', orElse: () => ContextMetric(key: '', label: '', source: '')).score ?? 50;
-    final wozScore = report.demographicsMetrics.firstWhere((m) => m.key == 'average_woz', orElse: () => ContextMetric(key: '', label: '', source: '')).score ?? 50;
-    return (incomeScore + wozScore) / 2;
+    final incomeMetric = _findMetric(report.demographicsMetrics, 'income_per_inhabitant');
+    final wozMetric = _findMetric(report.socialMetrics, 'average_woz');
+
+    if (incomeMetric == null && wozMetric == null) return 0;
+
+    return ((incomeMetric?.score ?? 50) + (wozMetric?.score ?? 50)) / 2;
   }
 
   String _getEconomicLabel() {
     final score = _calculateEconomicScore();
+    if (score == 0) return 'Data unavailable';
     if (score > 80) return 'Affluent area';
     if (score > 60) return 'Upper middle class';
     return 'Balanced economy';

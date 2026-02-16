@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../models/context_report.dart';
 import '../../providers/context_report_provider.dart';
-import '../valora_widgets.dart';
 import '../valora_glass_container.dart';
 import 'ai_insight_card.dart';
 import 'category_radar.dart';
@@ -13,24 +12,36 @@ import 'score_gauge.dart';
 import 'smart_insights_grid.dart';
 
 class ContextReportView extends StatelessWidget {
-  const ContextReportView({super.key, required this.report});
+  const ContextReportView({
+    super.key,
+    required this.report,
+    this.showHeader = true,
+  });
 
   final ContextReport report;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: childCount(report),
-      itemBuilder: (context, index) => buildChild(context, index, report),
+      itemCount: childCount(report, showHeader: showHeader),
+      itemBuilder: (context, index) => buildChild(
+        context,
+        index,
+        report,
+        showHeader: showHeader,
+      ),
     );
   }
 
-  static int childCount(ContextReport report) {
+  static int childCount(ContextReport report, {bool showHeader = true}) {
     int count = 0;
-    count++; // Header (Location)
-    count++; // Spacing
+    if (showHeader) {
+      count++; // Header (Location)
+      count++; // Spacing
+    }
     count++; // Score Overview (Gauge + Radar)
     count++; // Spacing
     count++; // Smart Insights Grid
@@ -54,46 +65,58 @@ class ContextReportView extends StatelessWidget {
     return count;
   }
 
-  static Widget buildChild(BuildContext context, int index, ContextReport report) {
+  static Widget buildChild(
+    BuildContext context,
+    int index,
+    ContextReport report, {
+    bool showHeader = true,
+  }) {
     final theme = Theme.of(context);
     int currentIndex = 0;
 
     // Header: Location
-    if (index == currentIndex++) {
-      return ValoraGlassContainer(
-        padding: const EdgeInsets.all(24),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+    if (showHeader) {
+      if (index == currentIndex++) {
+        final subtitleParts = [
+          report.location.neighborhoodName,
+          report.location.municipalityName,
+        ].where((s) => s != null && s.isNotEmpty).toList();
+
+        return ValoraGlassContainer(
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.location_on_rounded, color: theme.colorScheme.primary),
               ),
-              child: Icon(Icons.location_on_rounded, color: theme.colorScheme.primary),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    report.location.displayAddress,
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  if (report.location.neighborhoodName != null)
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      '${report.location.neighborhoodName}, ${report.location.municipalityName}',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      report.location.displayAddress,
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                ],
+                    if (subtitleParts.isNotEmpty)
+                      Text(
+                        subtitleParts.join(', '),
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ).animate().fadeIn().slideY(begin: -0.1);
+            ],
+          ),
+        ).animate().fadeIn().slideY(begin: -0.1);
+      }
+      if (index == currentIndex++) return const SizedBox(height: 24);
     }
-    if (index == currentIndex++) return const SizedBox(height: 24);
 
     // Score Overview
     if (index == currentIndex++) {

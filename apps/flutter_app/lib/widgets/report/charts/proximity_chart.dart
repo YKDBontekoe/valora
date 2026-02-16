@@ -28,13 +28,17 @@ class ProximityChart extends StatelessWidget {
         final distance = metric.value ?? 0;
 
         // Normalize distance for bar width (max 5km)
-        final double maxDistance = 5.0;
+        const double maxDistance = 5.0;
         final double percentage = (distance / maxDistance).clamp(0.05, 1.0);
 
         Color color;
-        if (distance < 1.0) color = Colors.green;
-        else if (distance < 3.0) color = Colors.orange;
-        else color = Colors.red;
+        if (distance < 1.0) {
+          color = Colors.green;
+        } else if (distance < 3.0) {
+          color = Colors.orange;
+        } else {
+          color = Colors.red;
+        }
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),

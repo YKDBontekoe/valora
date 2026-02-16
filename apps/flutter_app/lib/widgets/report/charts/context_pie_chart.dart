@@ -18,6 +18,7 @@ class ContextPieChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final backgroundColor = theme.colorScheme.surface;
 
     // Filter out metrics with null or zero values
     final validMetrics = metrics.where((m) => (m.value ?? 0) > 0).toList();
@@ -44,6 +45,7 @@ class ContextPieChart extends StatelessWidget {
               total: total,
               colors: colors,
               holeRadiusPercent: holeRadiusPercent,
+              backgroundColor: backgroundColor,
             ),
           ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
         ),
@@ -98,12 +100,14 @@ class _PiePainter extends CustomPainter {
     required this.total,
     required this.colors,
     required this.holeRadiusPercent,
+    required this.backgroundColor,
   });
 
   final List<ContextMetric> metrics;
   final double total;
   final List<Color> colors;
   final double holeRadiusPercent;
+  final Color backgroundColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -124,13 +128,12 @@ class _PiePainter extends CustomPainter {
       startAngle += sweepAngle;
     }
 
-    // Draw hole for donut chart
+    // Draw hole for donut chart using background color
     if (holeRadiusPercent > 0) {
       final holePaint = Paint()
         ..style = PaintingStyle.fill
-        ..color = Colors.white; // Should ideally match background or be transparent with ClipPath
+        ..color = backgroundColor;
 
-      // Use BlendMode to make it transparent if possible, but white is safer for now
       canvas.drawCircle(center, radius * holeRadiusPercent, holePaint);
     }
 
@@ -138,7 +141,7 @@ class _PiePainter extends CustomPainter {
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = Colors.white;
+      ..color = backgroundColor; // Using background color for separators as well
 
     startAngle = -math.pi / 2;
     for (int i = 0; i < metrics.length; i++) {

@@ -202,10 +202,10 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                 children: [
                   const Divider(height: 1),
                   const SizedBox(height: 20),
-                  if (widget.isExpanded) ...[
-                    _buildChart() ?? const SizedBox.shrink(),
-                    ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
-                  ],
+                  // We remove the conditional check for widget.isExpanded here
+                  // to prevent children from vanishing before animation finishes.
+                  _buildChart() ?? const SizedBox.shrink(),
+                  ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
                 ],
               ),
             ),
@@ -259,6 +259,8 @@ class _MetricRow extends StatelessWidget {
         return Icons.savings_outlined;
       case 'average_woz':
         return Icons.home_work_rounded;
+      case 'income_per_recipient':
+      case 'income_per_inhabitant':
       case 'avg_income_recipient':
       case 'avg_income_inhabitant':
         return Icons.euro_rounded;
@@ -278,9 +280,13 @@ class _MetricRow extends StatelessWidget {
         return Icons.person_outline_rounded;
       case 'single_households':
         return Icons.person_rounded;
+      case 'age_0_14':
       case 'age_0_15':
+      case 'age_15_24':
       case 'age_15_25':
+      case 'age_25_44':
       case 'age_25_45':
+      case 'age_45_64':
       case 'age_45_65':
       case 'age_65_plus':
         return Icons.cake_rounded;
@@ -352,10 +358,16 @@ class _MetricRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            displayValue,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              displayValue,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           if (metric.score != null) ...[
