@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { AuthResponse, Stats, User, Listing, PaginatedResponse } from '../types';
+import { showNotification } from './notification';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -50,6 +51,36 @@ api.interceptors.response.use(
     }
     // Avoid logging full error object to prevent token leakage
     console.error('API Error:', error.message);
+
+    const status = error.response?.status;
+    const data = error.response?.data;
+
+    let message = 'An unexpected error occurred.';
+
+    if (status === 400) {
+      if (Array.isArray(data)) {
+         message = data.map((e: any) => e.error || e.message).join('\n') || 'Validation failed';
+      } else if (data?.detail) {
+        message = data.detail;
+      } else {
+        message = 'Invalid request. Please check your input.';
+      }
+    } else if (status === 403) {
+      message = 'You do not have permission to perform this action.';
+    } else if (status === 404) {
+      message = 'The requested resource was not found.';
+    } else if (status === 429) {
+      message = 'Too many requests. Please try again later.';
+    } else if (status >= 500) {
+      message = 'Server error. Please try again later.';
+    } else if (error.code === 'ERR_NETWORK') {
+      message = 'Network error. Please check your connection.';
+    }
+
+    if (status !== 401) {
+      showNotification(message, 'error');
+    }
+
     return Promise.reject(error);
   }
 );

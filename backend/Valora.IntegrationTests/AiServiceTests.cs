@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Valora.Infrastructure.Services;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -43,7 +44,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance);
 
         // Act
         // Updated signature: prompt, systemPrompt, model, ct
@@ -90,7 +91,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(customConfig);
+        var sut = new OpenRouterAiService(customConfig, NullLogger<OpenRouterAiService>.Instance);
 
         // Act
         await sut.ChatAsync("Hello", null, null);
@@ -119,7 +120,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance);
 
         // Act
         // Updated signature: prompt, systemPrompt, model, ct
@@ -152,7 +153,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance);
         var systemPrompt = "You are a helpful assistant";
         var userPrompt = "Hello";
 
@@ -194,7 +195,7 @@ public class AiServiceTests : IDisposable
             .Build();
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config));
+        Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config, NullLogger<OpenRouterAiService>.Instance));
     }
 
     [Fact]
@@ -209,7 +210,7 @@ public class AiServiceTests : IDisposable
                     ""choices"": []
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance);
 
         // Act
         // Updated signature: prompt, systemPrompt, model, ct

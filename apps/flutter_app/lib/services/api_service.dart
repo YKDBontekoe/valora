@@ -175,13 +175,15 @@ class ApiService {
         'radiusMeters': radiusMeters,
       });
 
-      // POST requests are generally not idempotent, so we don't retry by default
-      // unless we are sure. Here generating a report might be expensive but safe to retry if failed early.
-      // But let's stick to GET retries for now as per plan.
-      final response = await _authenticatedRequest(
-        (headers) => _client
-            .post(uri, headers: headers, body: payload)
-            .timeout(timeoutDuration),
+      // POST requests are generally not idempotent, so we don't retry by default.
+      // However, for context report generation, if it fails due to network issues, it's safe to retry.
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) => _client
+              .post(uri, headers: headers, body: payload)
+              .timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
@@ -200,10 +202,13 @@ class ApiService {
         'report': report.toJson(),
       });
 
-      final response = await _authenticatedRequest(
-        (headers) => _client
-            .post(uri, headers: headers, body: payload)
-            .timeout(const Duration(seconds: 60)), // AI takes longer
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) => _client
+              .post(uri, headers: headers, body: payload)
+              .timeout(const Duration(seconds: 60)), // AI takes longer
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
