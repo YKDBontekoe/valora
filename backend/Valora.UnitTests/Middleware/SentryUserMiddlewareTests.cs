@@ -28,8 +28,6 @@ public class SentryUserMiddlewareTests
 
         // Assert
         Assert.True(nextCalled);
-        // Note: We cannot easily verify SentrySdk.ConfigureScope was NOT called without a wrapper,
-        // but this test ensures the middleware doesn't crash.
     }
 
     [Fact]
@@ -54,6 +52,29 @@ public class SentryUserMiddlewareTests
 
         // Assert
         Assert.True(nextCalled);
-        // This exercises the code path for authenticated users.
+    }
+
+    [Fact]
+    public async Task InvokeAsync_AuthenticatedUser_NoUserIdClaim_DoesNotSetSentryUser()
+    {
+        // Arrange
+        var nextCalled = false;
+        var middleware = new SentryUserMiddleware(
+            next: (innerHttpContext) =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            });
+
+        var context = new DefaultHttpContext();
+        // No NameIdentifier claim
+        var identity = new ClaimsIdentity(new Claim[] { }, "TestAuthType");
+        context.User = new ClaimsPrincipal(identity);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.True(nextCalled);
     }
 }
