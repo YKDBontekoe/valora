@@ -115,6 +115,14 @@ public class PdokListingService : IPdokListingService
     /// Handles failures gracefully by returning nulls instead of throwing, allowing the listing
     /// to be returned even if enrichment fails.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Graceful Degradation.</strong>
+    /// If the context report service is down (e.g., CBS API failure) or times out,
+    /// we still want to show the basic listing details (Address, ID) to the user.
+    /// Therefore, we catch exceptions here and return a null report, rather than failing the whole request.
+    /// </para>
+    /// </remarks>
     private async Task<(Valora.Domain.Models.ContextReportModel? Report, double? CompositeScore, double? SafetyScore)> FetchContextReportAsync(
         string? address,
         string pdokId,
