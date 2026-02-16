@@ -176,6 +176,7 @@ class _ListingImage extends StatelessWidget {
             curve: ValoraAnimations.deceleration,
             child: hasValidImage
                 ? CachedNetworkImage(
+                    // ignore: unnecessary_non_null_assertion
                     imageUrl: validImageUrl!,
                     memCacheWidth: 800, // Optimize memory usage
                     fit: BoxFit.cover,
