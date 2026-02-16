@@ -37,6 +37,13 @@ if (!string.IsNullOrEmpty(sentryDsn))
         // Enable Sentry SDK debug mode in development
         options.Debug = builder.Environment.IsDevelopment();
 
+        // Set Environment based on ASPNETCORE_ENVIRONMENT
+        options.Environment = builder.Environment.EnvironmentName;
+
+        // Set Release from assembly version or environment variable
+        options.Release = builder.Configuration["SENTRY_RELEASE"]
+            ?? System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+
         // Add breadcrumbs for logger messages of level Information and higher
         options.MinimumBreadcrumbLevel = LogLevel.Information;
 
@@ -48,6 +55,13 @@ if (!string.IsNullOrEmpty(sentryDsn))
 
         // Do not send PII to Sentry
         options.SendDefaultPii = false;
+
+        // Enable stacktrace attachment
+        options.AttachStacktrace = true;
+
+        // Configure Profiling
+        options.ProfilesSampleRate = builder.Configuration.GetValue<double>("SENTRY_PROFILES_SAMPLE_RATE", 1.0);
+        options.AddProfilingIntegration();
     });
 }
 builder.Services.AddSwaggerGen(option =>
@@ -200,7 +214,9 @@ app.Use(async (context, next) =>
     {
         var user = new SentryUser
         {
-            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
+            Email = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
+            Username = context.User.Identity?.Name
         };
 
         SentrySdk.ConfigureScope(scope => scope.User = user);
