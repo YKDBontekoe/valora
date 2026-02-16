@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/context_report.dart';
+import 'charts/context_bar_chart.dart';
+import 'charts/context_pie_chart.dart';
+import 'charts/proximity_chart.dart';
 
-/// A collapsible card displaying metrics for a category with premium styling.
+/// A collapsible card displaying metrics for a category with premium styling and charts.
 class MetricCategoryCard extends StatefulWidget {
   const MetricCategoryCard({
     super.key,
@@ -36,11 +39,11 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 300),
     );
     _expandAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.fastOutSlowIn,
     );
     if (widget.isExpanded) _controller.value = 1.0;
   }
@@ -63,39 +66,95 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     super.dispose();
   }
 
+  Widget? _buildChart() {
+    if (widget.title == 'Demographics') {
+      final ageMetrics = widget.metrics.where((m) => m.key.startsWith('age_')).toList();
+      if (ageMetrics.isNotEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Age Distribution', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 12),
+            ContextBarChart(metrics: ageMetrics, height: 120),
+            const SizedBox(height: 24),
+          ],
+        );
+      }
+    }
+
+    if (widget.title == 'Housing') {
+      final housingTypeMetrics = widget.metrics.where((m) => m.key.startsWith('housing_')).toList();
+      if (housingTypeMetrics.isNotEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Housing Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 12),
+            ContextPieChart(metrics: housingTypeMetrics, size: 140),
+            const SizedBox(height: 24),
+          ],
+        );
+      }
+    }
+
+    if (widget.title == 'Amenities') {
+      final distMetrics = widget.metrics.where((m) => m.key.startsWith('dist_')).toList();
+      if (distMetrics.isNotEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Proximity to Amenities', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 12),
+            ProximityChart(metrics: distMetrics),
+            const SizedBox(height: 24),
+          ],
+        );
+      }
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accentColor = widget.accentColor ?? theme.colorScheme.primary;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.surface,
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           // Header
           InkWell(
             onTap: () => widget.onToggle?.call(!widget.isExpanded),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      color: accentColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(widget.icon, color: accentColor, size: 22),
+                    child: Icon(widget.icon, color: accentColor, size: 24),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,26 +162,31 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                         Text(
                           widget.title,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        if (widget.score != null)
-                          Text(
-                            'Score: ${widget.score!.round()}/100',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                        if (widget.score != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              _MiniScoreBar(score: widget.score!, color: accentColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${widget.score!.round()}% Score',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
+                        ],
                       ],
                     ),
                   ),
-                  AnimatedRotation(
-                    turns: widget.isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 250),
-                    child: Icon(
-                      Icons.expand_more,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                  Icon(
+                    widget.isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -132,17 +196,49 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           SizeTransition(
             sizeFactor: _expandAnimation,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Divider(height: 1),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
+                  // We remove the conditional check for widget.isExpanded here
+                  // to prevent children from vanishing before animation finishes.
+                  _buildChart() ?? const SizedBox.shrink(),
                   ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MiniScoreBar extends StatelessWidget {
+  const _MiniScoreBar({required this.score, required this.color});
+  final double score;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 60,
+      height: 6,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: (score / 100).clamp(0.0, 1.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
       ),
     );
   }
@@ -163,6 +259,8 @@ class _MetricRow extends StatelessWidget {
         return Icons.savings_outlined;
       case 'average_woz':
         return Icons.home_work_rounded;
+      case 'income_per_recipient':
+      case 'income_per_inhabitant':
       case 'avg_income_recipient':
       case 'avg_income_inhabitant':
         return Icons.euro_rounded;
@@ -183,12 +281,15 @@ class _MetricRow extends StatelessWidget {
       case 'single_households':
         return Icons.person_rounded;
       case 'age_0_14':
+      case 'age_0_15':
       case 'age_15_24':
+      case 'age_15_25':
       case 'age_25_44':
+      case 'age_25_45':
       case 'age_45_64':
+      case 'age_45_65':
       case 'age_65_plus':
         return Icons.cake_rounded;
-      // Phase 2: Housing
       case 'housing_owner':
       case 'housing_rental':
         return Icons.home_rounded;
@@ -199,13 +300,11 @@ class _MetricRow extends StatelessWidget {
       case 'housing_pre2000':
       case 'housing_post2000':
         return Icons.calendar_today_rounded;
-      // Phase 2: Mobility
       case 'mobility_cars_household':
       case 'mobility_total_cars':
         return Icons.directions_car_rounded;
       case 'mobility_car_density':
         return Icons.traffic_rounded;
-      // Phase 2: Proximity
       case 'dist_supermarket':
         return Icons.shopping_cart_rounded;
       case 'dist_gp':
@@ -216,7 +315,7 @@ class _MetricRow extends StatelessWidget {
       case 'dist_daycare':
         return Icons.child_care_rounded;
       default:
-        return null; // No icon for others
+        return null;
     }
   }
 
@@ -240,41 +339,34 @@ class _MetricRow extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, // Align to center for icon
         children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+            const SizedBox(width: 12),
+          ],
           Expanded(
-            flex: 3,
-            child: Row(
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    size: 16,
-                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Text(
-                    metric.label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            child: Text(
+              metric.label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-          Expanded(
-            flex: 2,
+          const SizedBox(width: 12),
+          Flexible(
             child: Text(
               displayValue,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.end,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -306,15 +398,15 @@ class _ScoreBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         score.round().toString(),
         style: TextStyle(
           color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
