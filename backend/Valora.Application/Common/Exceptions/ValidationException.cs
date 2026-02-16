@@ -9,7 +9,10 @@ public class ValidationException : Exception
 
     public ValidationException(string message) : base(message)
     {
-        Errors = new Dictionary<string, string[]>();
+        Errors = new Dictionary<string, string[]>
+        {
+            { "General", new[] { message } }
+        };
     }
 
     public ValidationException(IEnumerable<string> errors) : this()

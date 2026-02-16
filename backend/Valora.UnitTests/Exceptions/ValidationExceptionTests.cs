@@ -14,13 +14,15 @@ public class ValidationExceptionTests
     }
 
     [Fact]
-    public void MessageConstructor_SetsMessage()
+    public void MessageConstructor_SetsMessageAndGeneralError()
     {
         var message = "Custom error message";
         var ex = new ValidationException(message);
         Assert.NotNull(ex.Errors);
-        Assert.Empty(ex.Errors);
+        Assert.Single(ex.Errors);
         Assert.Equal(message, ex.Message);
+        Assert.True(ex.Errors.ContainsKey("General"));
+        Assert.Contains(message, ex.Errors["General"]);
     }
 
     [Fact]

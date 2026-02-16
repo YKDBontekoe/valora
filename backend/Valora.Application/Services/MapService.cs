@@ -1,3 +1,4 @@
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
 
@@ -32,6 +33,7 @@ public class MapService : IMapService
         List<string>? types = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateBbox(minLat, minLon, maxLat, maxLon);
         return await _amenityClient.GetAmenitiesInBboxAsync(minLat, minLon, maxLat, maxLon, types, cancellationToken);
     }
 
@@ -43,12 +45,43 @@ public class MapService : IMapService
         MapOverlayMetric metric,
         CancellationToken cancellationToken = default)
     {
+        ValidateBbox(minLat, minLon, maxLat, maxLon);
         if (metric == MapOverlayMetric.PricePerSquareMeter)
         {
             return await CalculateAveragePriceOverlayAsync(minLat, minLon, maxLat, maxLon, cancellationToken);
         }
 
         return await _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, metric, cancellationToken);
+    }
+
+    private void ValidateBbox(double minLat, double minLon, double maxLat, double maxLon)
+    {
+        if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90)
+        {
+            throw new ValidationException("Latitudes must be between -90 and 90.");
+        }
+
+        if (minLon < -180 || minLon > 180 || maxLon < -180 || maxLon > 180)
+        {
+            throw new ValidationException("Longitudes must be between -180 and 180.");
+        }
+
+        if (minLat >= maxLat)
+        {
+            throw new ValidationException("minLat must be less than maxLat.");
+        }
+
+        if (minLon >= maxLon)
+        {
+            throw new ValidationException("minLon must be less than maxLon.");
+        }
+
+        // Limit bbox size to prevent heavy queries (max 0.5 deg span in each direction)
+        const double maxSpan = 0.5;
+        if (maxLat - minLat > maxSpan || maxLon - minLon > maxSpan)
+        {
+            throw new ValidationException($"Bounding box span too large. Maximum allowed is {maxSpan} degrees.");
+        }
     }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
