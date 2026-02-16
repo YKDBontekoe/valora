@@ -5,6 +5,7 @@ using Valora.Application.Common.Mappings;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Entities;
 using ValidationException = Valora.Application.Common.Exceptions.ValidationException;
 
 namespace Valora.Application.Services;
@@ -27,6 +28,12 @@ public class ListingService : IListingService
 
     public async Task<PaginatedList<ListingSummaryDto>> GetListingsAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
+        ValidateFilter(filter);
+        return await _repository.GetSummariesAsync(filter, cancellationToken);
+    }
+
+    private static void ValidateFilter(ListingFilterDto filter)
+    {
         var validationContext = new ValidationContext(filter);
         var validationResults = new List<ValidationResult>();
 
@@ -38,8 +45,6 @@ public class ListingService : IListingService
 
             throw new ValidationException(errors);
         }
-
-        return await _repository.GetSummariesAsync(filter, cancellationToken);
     }
 
     public async Task<ListingDto?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -52,19 +57,26 @@ public class ListingService : IListingService
         return ListingMapper.ToDto(listing);
     }
 
-    public async Task<ListingDto?> GetPdokListingAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<ListingDto?> GetPdokListingAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(id))
+        if (string.IsNullOrWhiteSpace(externalId))
         {
              throw new ValidationException(new[] { "ID is required" });
         }
 
-        var listingDto = await _pdokService.GetListingDetailsAsync(id, cancellationToken);
+        var listingDto = await _pdokService.GetListingDetailsAsync(externalId, cancellationToken);
         if (listingDto is null)
         {
             return null;
         }
 
+        await CreateOrUpdateListingAsync(listingDto, cancellationToken);
+
+        return listingDto;
+    }
+
+    private async Task CreateOrUpdateListingAsync(ListingDto listingDto, CancellationToken cancellationToken)
+    {
         var existing = await _repository.GetByFundaIdAsync(listingDto.FundaId, cancellationToken);
         if (existing is null)
         {
@@ -78,8 +90,6 @@ public class ListingService : IListingService
             existing.LastFundaFetchUtc = DateTime.UtcNow;
             await _repository.UpdateAsync(existing, cancellationToken);
         }
-
-        return listingDto;
     }
 
     public async Task<double> EnrichListingAsync(Guid id, CancellationToken cancellationToken = default)
@@ -87,7 +97,7 @@ public class ListingService : IListingService
         var listing = await _repository.GetByIdAsync(id, cancellationToken);
         if (listing is null)
         {
-            throw new NotFoundException(nameof(Valora.Domain.Entities.Listing), id);
+            throw new NotFoundException(nameof(Listing), id);
         }
 
         // 1. Generate Report
@@ -103,14 +113,19 @@ public class ListingService : IListingService
         listing.ContextReport = contextReportModel;
         listing.ContextCompositeScore = reportDto.CompositeScore;
 
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var crime)) listing.ContextSafetyScore = crime;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
+        UpdateContextScores(listing, reportDto);
 
         // 3. Save
         await _repository.UpdateAsync(listing, cancellationToken);
 
         return reportDto.CompositeScore;
+    }
+
+    private static void UpdateContextScores(Listing listing, ContextReportDto reportDto)
+    {
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var crime)) listing.ContextSafetyScore = crime;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
+        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
     }
 }
