@@ -59,9 +59,12 @@ if (!string.IsNullOrEmpty(sentryDsn))
         // Enable stacktrace attachment
         options.AttachStacktrace = true;
 
-        // Configure Profiling
-        options.ProfilesSampleRate = builder.Configuration.GetValue<double>("SENTRY_PROFILES_SAMPLE_RATE", 1.0);
-        options.AddProfilingIntegration();
+        // Configure Profiling (Disabled by default)
+        options.ProfilesSampleRate = builder.Configuration.GetValue<double>("SENTRY_PROFILES_SAMPLE_RATE", 0.0);
+        if (options.ProfilesSampleRate > 0)
+        {
+            options.AddProfilingIntegration();
+        }
     });
 }
 builder.Services.AddSwaggerGen(option =>
@@ -214,9 +217,7 @@ app.Use(async (context, next) =>
     {
         var user = new SentryUser
         {
-            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-            Email = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
-            Username = context.User.Identity?.Name
+            Id = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
         };
 
         SentrySdk.ConfigureScope(scope => scope.User = user);
