@@ -27,7 +27,7 @@ public class ListingMapperTests
         var act = () => ListingMapper.ToEntity(dto);
 
         act.Should().Throw<ValidationException>()
-           .Where(e => e.Errors.ContainsKey("FundaId"));
+           .Where(e => e.Errors != null && e.Errors.ContainsKey("FundaId"));
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class ListingMapperTests
         var act = () => ListingMapper.UpdateEntity(entity, dto);
 
         act.Should().Throw<ValidationException>()
-           .Where(e => e.Errors.ContainsKey("Url"));
+           .Where(e => e.Errors != null && e.Errors.ContainsKey("Url"));
     }
 
     [Fact]
