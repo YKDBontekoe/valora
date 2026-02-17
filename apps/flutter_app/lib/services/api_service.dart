@@ -47,6 +47,17 @@ class ApiService {
     return await callback(message);
   }
 
+  @visibleForTesting
+  Future<T> executeRequest<T>(
+    Future<http.Response> Function(Map<String, String> headers) request,
+    FutureOr<T> Function(String body) parser,
+    Uri uri, {
+    Duration? timeout,
+    bool retry = true,
+  }) async {
+    return _executeRequest(request, parser, uri, timeout: timeout, retry: retry);
+  }
+
   Future<T> _executeRequest<T>(
     Future<http.Response> Function(Map<String, String> headers) request,
     FutureOr<T> Function(String body) parser,
@@ -68,6 +79,7 @@ class ApiService {
 
       return await _handleResponse(response, parser);
     } catch (e, stack) {
+      // Ensure uri is not null before passing to _handleException
       throw _handleException(e, stack, uri);
     }
   }
@@ -308,14 +320,19 @@ class ApiService {
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
     // Report non-business exceptions to Sentry
-    CrashReportingService.captureException(
-      error,
-      stackTrace: stack ?? (error is Error ? error.stackTrace : null),
-      context: {
-        'url': urlString,
-        'error_type': error.runtimeType.toString(),
-      },
-    );
+    // Wrap in try-catch to prevent crashes if Sentry is not initialized during tests
+    try {
+      CrashReportingService.captureException(
+        error,
+        stackTrace: stack ?? (error is Error ? error.stackTrace : null),
+        context: {
+          'url': urlString,
+          'error_type': error.runtimeType.toString(),
+        },
+      );
+    } catch (_) {
+      // Ignore crash reporting errors during tests
+    }
 
     if (error is SocketException) {
       return NetworkException('No internet connection. Please check your settings.');

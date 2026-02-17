@@ -1,19 +1,14 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode, type FC } from 'react';
+import { useEffect, useState, useCallback, type ReactNode, type FC } from 'react';
 import { notificationService } from '../services/notificationService';
 import Toast, { type ToastType } from '../components/Toast';
 import { AnimatePresence } from 'framer-motion';
+import { NotificationContext } from './NotificationContextTypes';
 
 interface ToastData {
   id: string;
   message: string;
   type: ToastType;
 }
-
-interface NotificationContextType {
-  showToast: (message: string, type: ToastType) => void;
-}
-
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastData[]>([]);
@@ -56,12 +51,4 @@ export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) 
       </div>
     </NotificationContext.Provider>
   );
-};
-
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotification must be used within a NotificationProvider');
-  }
-  return context;
 };

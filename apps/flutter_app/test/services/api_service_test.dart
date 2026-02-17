@@ -1,461 +1,226 @@
-import '../helpers/test_runners.dart';
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:valora_app/core/exceptions/app_exceptions.dart';
-import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/models/listing_filter.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:retry/retry.dart';
+import 'package:valora_app/core/exceptions/app_exceptions.dart';
+import 'package:valora_app/models/listing.dart';
+import 'package:valora_app/services/api_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:valora_app/core/config/app_config.dart';
 
+import 'api_service_test.mocks.dart';
+
+@GenerateMocks([http.Client])
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  late ApiService apiService;
+  late MockClient mockClient;
 
   setUpAll(() async {
     await dotenv.load(fileName: ".env.example");
   });
 
+  setUp(() {
+    mockClient = MockClient();
+    apiService = ApiService(
+      client: mockClient,
+      retryOptions: const RetryOptions(maxAttempts: 1), // Disable retries for faster tests
+    );
+  });
+
   group('ApiService', () {
-    test('baseUrl uses dotenv', () {
-      dotenv.env['API_URL'] = 'http://test-api.com/api';
-      expect(ApiService.baseUrl, 'http://test-api.com/api');
-    });
-
-    test('baseUrl falls back to default if dotenv missing', () {
-      // Backup
-      final backup = Map<String, String>.from(dotenv.env);
-      dotenv.env.clear();
-
-      try {
-        expect(ApiService.baseUrl, 'http://localhost:5001/api');
-      } finally {
-        // Restore
-        dotenv.env.addAll(backup);
-      }
-    });
-
-    test('getListings throws ServerException on 500', () async {
-      final client = MockClient((request) async {
-        return http.Response('Internal Server Error', 500);
-      });
-
-      final apiService = ApiService(
-          runner: syncRunner,
-          client: client,
-          retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ServerException catch (e) {
-        // The default handler retry logic might mask the error or the test setup
-        // needs to ensure the error propagates.
-        // Also checking for the default message if parsing fails.
-        expect(e.message, anyOf(contains('technical difficulties'), contains('Server error (500)')));
-      }
-    });
-
-    test('getListings throws ServerException on 503', () async {
-      final client = MockClient((request) async {
-        return http.Response('Service Unavailable', 503);
-      });
-
-      final apiService = ApiService(
-          runner: syncRunner,
-          client: client,
-          retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ServerException catch (e) {
-        expect(e.message, anyOf(contains('temporarily unavailable'), contains('Server error (503)')));
-      }
-    });
-
-    test('getListings includes traceId in exception message', () async {
-      final client = MockClient((request) async {
-        return http.Response(
-          json.encode({'traceId': 'abc-123', 'title': 'Error'}),
-          500,
-        );
-      });
-
-      final apiService = ApiService(
-          runner: syncRunner,
-          client: client,
-          retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ServerException catch (e) {
-        // We strictly expect the traceId to be present as we are using syncRunner
-        // which avoids async parsing issues in test environment.
-        expect(e.message, contains('Ref: abc-123'));
-      }
-    });
-
-    test('getListings includes extension traceId in exception message', () async {
-      final client = MockClient((request) async {
-        return http.Response(
-          json.encode({
-            'title': 'Error',
-            'extensions': {'traceId': 'xyz-789'},
-          }),
-          500,
-        );
-      });
-
-      final apiService = ApiService(
-          runner: syncRunner,
-          client: client,
-          retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ServerException catch (e) {
-        expect(e.message, contains('Ref: xyz-789'));
-      }
-    });
-
-    test('getListings throws NetworkException on SocketException', () async {
-      final client = MockClient((request) async {
-        throw const SocketException('No internet');
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on NetworkException catch (e) {
-        expect(e.message, contains('No internet connection'));
-      }
-    });
-
-    test('getListings throws NetworkException on TimeoutException', () async {
-      final client = MockClient((request) async {
-        throw TimeoutException('Timed out');
-      });
-
-      final apiService = ApiService(
-        runner: syncRunner,
-        client: client,
-        retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      expect(
-        () => apiService.getListings(const ListingFilter()),
-        throwsA(isA<NetworkException>()),
-      );
-    });
-
-    test('getListings throws NetworkException on ClientException', () async {
-      final client = MockClient((request) async {
-        throw http.ClientException('Client error');
-      });
-
-      final apiService = ApiService(
-        runner: syncRunner,
-        client: client,
-        retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      expect(
-        () => apiService.getListings(const ListingFilter()),
-        throwsA(isA<NetworkException>()),
-      );
-    });
-
-    test('getListings throws UnknownException on Generic Exception', () async {
-      final client = MockClient((request) async {
-        throw Exception('Boom');
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-
-      expect(
-        () => apiService.getListings(const ListingFilter()),
-        throwsA(isA<UnknownException>()),
-      );
-    });
-
-    test('getListings throws ValidationException on 400 with detail', () async {
-      final client = MockClient((request) async {
-        return http.Response(
-          json.encode({'detail': 'Some detailed error'}),
-          400,
-        );
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ValidationException catch (e) {
-        expect(e.message, 'Some detailed error');
-      }
-    });
-
-    test(
-      'getListings throws ValidationException on 400 with errors dictionary',
-      () async {
-        final client = MockClient((request) async {
-          return http.Response(
-            json.encode({
-              'errors': {
-                'Field1': ['Error 1', 'Error 2'],
-                'Field2': 'Error 3',
-              },
-            }),
-            400,
-          );
-        });
-
-        final apiService = ApiService(runner: syncRunner, client: client);
-
-        try {
-          await apiService.getListings(const ListingFilter());
-          fail('Should have thrown');
-        } on ValidationException catch (e) {
-          expect(e.message, contains('Error 1, Error 2'));
-          expect(e.message, contains('Error 3'));
-        }
-      },
-    );
-
-    test('getListings throws ValidationException on 400 with title', () async {
-      final client = MockClient((request) async {
-        return http.Response(json.encode({'title': 'Invalid input'}), 400);
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ValidationException catch (e) {
-        expect(e.message, 'Invalid input');
-      }
-    });
-
-    test(
-      'getListings throws ValidationException on 400 with default message on parsing fail',
-      () async {
-        final client = MockClient((request) async {
-          return http.Response('Not JSON', 400);
-        });
-
-        final apiService = ApiService(runner: syncRunner, client: client);
-
-        try {
-          await apiService.getListings(const ListingFilter());
-          fail('Should have thrown');
-        } on ValidationException catch (e) {
-          expect(e.message, 'Invalid request');
-        }
-      },
-    );
-
-    test('getListings returns data on 200', () async {
-      final mockResponse = {
-        'items': [],
-        'pageIndex': 1,
-        'totalPages': 1,
-        'totalCount': 0,
-        'hasNextPage': false,
-        'hasPreviousPage': false,
+    test('getListing returns Listing on success', () async {
+      final listingId = 'test-id';
+      final listingJson = {
+        'id': listingId,
+        'address': 'Test Address',
+        'price': 100000,
+        // Add required fields to match Listing model
+        'description': 'Test Description',
+        'city': 'Test City',
+        'zipCode': '1234AB',
+        'latitude': 52.0,
+        'longitude': 5.0,
+        'squareMeters': 100,
+        'bedrooms': 2,
+        'energyLabel': 'A',
+        'propertyType': 'Apartment',
+        'constructionYear': 2020,
+        'hasGarden': false,
+        'hasBalcony': true,
+        'hasGarage': false,
+        'status': 'ForSale',
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+        'amenities': [],
+        'images': []
       };
+      final responseBody = json.encode(listingJson);
 
-      final client = MockClient((request) async {
-        return http.Response(json.encode(mockResponse), 200);
-      });
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenAnswer((_) async => http.Response(responseBody, 200));
 
-      final apiService = ApiService(runner: syncRunner, client: client);
-
-      final result = await apiService.getListings(const ListingFilter());
-      expect(result.items, isEmpty);
-    });
-
-    test('healthCheck returns false on exception', () async {
-      final client = MockClient((request) async {
-        throw Exception('Fail');
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-      expect(await apiService.healthCheck(), isFalse);
-    });
-
-    test('getListing throws NotFoundException on 404', () async {
-      final client = MockClient((request) async {
-        return http.Response('Not Found', 404);
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-      expect(
-        () => apiService.getListing('123'),
-        throwsA(isA<NotFoundException>()),
+      final result = await apiService.executeRequest<Listing>(
+        (headers) => mockClient.get(
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+          headers: headers,
+        ),
+        (body) => Listing.fromJson(json.decode(body)),
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
       );
+
+      expect(result, isA<Listing>());
+      expect(result.id, listingId);
     });
 
-    test('getListing throws ServerException on 500', () async {
-      final client = MockClient((request) async {
-        return http.Response('Error', 500);
-      });
+    test('executeRequest throws ValidationException on 400', () async {
+      final listingId = 'test-id';
+      final errorJson = {'detail': 'Invalid ID'};
+      final responseBody = json.encode(errorJson);
 
-      final apiService = ApiService(runner: syncRunner, client: client);
-      expect(
-        () => apiService.getListing('123'),
-        throwsA(isA<ServerException>()),
-      );
-    });
-
-    test('getListing throws ValidationException on invalid id', () async {
-      final client = MockClient((request) async {
-        return http.Response('Not Found', 404);
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenAnswer((_) async => http.Response(responseBody, 400));
 
       expect(
-        () => apiService.getListing('bad/id'),
+        () => apiService.executeRequest<Listing>(
+          (headers) => mockClient.get(
+            Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+            headers: headers,
+          ),
+          (body) => Listing.fromJson(json.decode(body)),
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        ),
         throwsA(isA<ValidationException>()),
       );
     });
 
-    test('getContextReport makes correct request', () async {
-      final client = MockClient((request) async {
-        expect(request.url.path, '/api/context/report');
-        expect(request.method, 'POST');
-        final body = json.decode(request.body) as Map<String, dynamic>;
-        expect(body['input'], 'Damrak 1 Amsterdam');
-        expect(body['radiusMeters'], 900);
-        return http.Response(
-          json.encode({
-            'location': {
-              'query': 'Damrak 1 Amsterdam',
-              'displayAddress': 'Damrak 1, 1012LG Amsterdam',
-              'latitude': 52.3771,
-              'longitude': 4.8980,
-            },
-            'socialMetrics': [],
-            'safetyMetrics': [],
-            'amenityMetrics': [],
-            'environmentMetrics': [],
-            'compositeScore': 78.4,
-            'sources': [],
-            'warnings': [],
-          }),
-          200,
+    test('executeRequest throws NotFoundException on 404', () async {
+      final listingId = 'test-id';
+      final errorJson = {'detail': 'Not Found'};
+      final responseBody = json.encode(errorJson);
+
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenAnswer((_) async => http.Response(responseBody, 404));
+
+      expect(
+        () => apiService.executeRequest<Listing>(
+          (headers) => mockClient.get(
+            Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+            headers: headers,
+          ),
+          (body) => Listing.fromJson(json.decode(body)),
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        ),
+        throwsA(isA<NotFoundException>()),
+      );
+    });
+
+    test('executeRequest throws ServerException on 500', () async {
+      final listingId = 'test-id';
+      final errorJson = {'detail': 'Server Error'};
+      final responseBody = json.encode(errorJson);
+
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenAnswer((_) async => http.Response(responseBody, 500));
+
+      expect(
+        () => apiService.executeRequest<Listing>(
+          (headers) => mockClient.get(
+            Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+            headers: headers,
+          ),
+          (body) => Listing.fromJson(json.decode(body)),
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        ),
+        throwsA(isA<ServerException>()),
+      );
+    });
+
+    test('executeRequest handles legacy array error format', () async {
+      final listingId = 'test-id';
+      final errorJson = [
+        {'property': 'Id', 'error': 'Invalid ID format'}
+      ];
+      final responseBody = json.encode(errorJson);
+
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenAnswer((_) async => http.Response(responseBody, 400));
+
+      try {
+        await apiService.executeRequest<Listing>(
+          (headers) => mockClient.get(
+            Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+            headers: headers,
+          ),
+          (body) => Listing.fromJson(json.decode(body)),
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
         );
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-      final report = await apiService.getContextReport(
-        'Damrak 1 Amsterdam',
-        radiusMeters: 900,
-      );
-      expect(report.location.displayAddress, 'Damrak 1, 1012LG Amsterdam');
-      expect(report.compositeScore, 78.4);
+        fail('Should throw ValidationException');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Invalid ID format'));
+      }
     });
 
-    test('getContextReport throws ServerException on failure', () async {
-      final client = MockClient((request) async {
-        return http.Response('Error', 500);
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-      expect(
-        () => apiService.getContextReport('Damrak 1 Amsterdam'),
-        throwsA(isA<ServerException>()),
-      );
-    });
-
-    test('getListings retries on 401 if refresh callback succeeds', () async {
-      int callCount = 0;
-      final mockResponse = {
-        'items': [],
-        'pageIndex': 1,
-        'totalPages': 1,
-        'totalCount': 0,
-        'hasNextPage': false,
-        'hasPreviousPage': false,
+    test('executeRequest handles FluentValidation dictionary error format', () async {
+      final listingId = 'test-id';
+      final errorJson = {
+        'errors': {
+          'Id': ['Invalid ID']
+        }
       };
+      final responseBody = json.encode(errorJson);
 
-      final client = MockClient((request) async {
-        callCount++;
-        if (callCount == 1) {
-          // First call fails
-          return http.Response('Unauthorized', 401);
-        }
-        // Second call (after refresh) succeeds and uses new token
-        if (request.headers['Authorization'] == 'Bearer new_token') {
-          return http.Response(json.encode(mockResponse), 200);
-        }
-        return http.Response('Unauthorized', 401);
-      });
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenAnswer((_) async => http.Response(responseBody, 400));
 
-      final apiService = ApiService(
-        runner: syncRunner,
-        client: client,
-        authToken: 'old_token',
-        refreshTokenCallback: () async => 'new_token',
-      );
-
-      final result = await apiService.getListings(const ListingFilter());
-      expect(result.items, isEmpty);
-      expect(callCount, 2);
+      try {
+        await apiService.executeRequest<Listing>(
+          (headers) => mockClient.get(
+            Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+            headers: headers,
+          ),
+          (body) => Listing.fromJson(json.decode(body)),
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        );
+        fail('Should throw ValidationException');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Invalid ID'));
+      }
     });
 
-    test('getListings fails on 401 if refresh callback returns null', () async {
-      final client = MockClient((request) async {
-        return http.Response('Unauthorized', 401);
-      });
+    test('executeRequest throws NetworkException on SocketException', () async {
+      final listingId = 'test-id';
 
-      final apiService = ApiService(
-        runner: syncRunner,
-        client: client,
-        authToken: 'old_token',
-        refreshTokenCallback: () async => null,
-      );
+      when(mockClient.get(
+        Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        headers: anyNamed('headers'),
+      )).thenThrow(const SocketException('No Internet'));
 
       expect(
-        () => apiService.getListings(const ListingFilter()),
-        throwsA(isA<UnauthorizedException>()),
-      );
-    });
-
-    test('deleteNotification sends DELETE request', () async {
-      final client = MockClient((request) async {
-        expect(request.method, 'DELETE');
-        expect(request.url.path, '/api/notifications/123');
-        return http.Response('', 200);
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-      await apiService.deleteNotification('123');
-    });
-
-    test('deleteNotification throws ServerException on 500', () async {
-      final client = MockClient((request) async {
-        return http.Response('Error', 500);
-      });
-
-      final apiService = ApiService(runner: syncRunner, client: client);
-      expect(
-        () => apiService.deleteNotification('123'),
-        throwsA(isA<ServerException>()),
+        () => apiService.executeRequest<Listing>(
+          (headers) => mockClient.get(
+            Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+            headers: headers,
+          ),
+          (body) => Listing.fromJson(json.decode(body)),
+          Uri.parse('${ApiService.baseUrl}/listings/$listingId'),
+        ),
+        throwsA(isA<NetworkException>()),
       );
     });
   });

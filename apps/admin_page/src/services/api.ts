@@ -75,7 +75,12 @@ api.interceptors.response.use(
 
       if (Array.isArray(data)) {
         // Legacy error array format
-        message = data.map((e: any) => e.error || JSON.stringify(e)).join('\n');
+        message = data.map((e: unknown) => {
+          if (e && typeof e === 'object' && 'error' in e) {
+            return (e as { error: string }).error;
+          }
+          return JSON.stringify(e);
+        }).join('\n');
       } else if (data?.errors) {
         // FluentValidation errors
         message = Object.values(data.errors).flat().join('\n');
