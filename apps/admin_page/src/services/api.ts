@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Stats, User, Listing, PaginatedResponse } from '../types';
+import type { AuthResponse, Stats, User, Listing, ListingFilter, PaginatedResponse } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -76,8 +76,29 @@ export const adminService = {
 };
 
 export const listingService = {
-  getListings: async (page = 1, pageSize = 10): Promise<PaginatedResponse<Listing>> => {
-    const response = await api.get<PaginatedResponse<Listing>>(`/listings?page=${page}&pageSize=${pageSize}`);
+  getListings: async (filter: ListingFilter = {}): Promise<PaginatedResponse<Listing>> => {
+    const params = new URLSearchParams();
+
+    // Default values if not provided
+    const page = filter.page || 1;
+    const pageSize = filter.pageSize || 10;
+
+    params.append('page', page.toString());
+    params.append('pageSize', pageSize.toString());
+
+    if (filter.searchTerm) params.append('searchTerm', filter.searchTerm);
+    if (filter.minPrice) params.append('minPrice', filter.minPrice.toString());
+    if (filter.maxPrice) params.append('maxPrice', filter.maxPrice.toString());
+    if (filter.city) params.append('city', filter.city);
+    if (filter.minBedrooms) params.append('minBedrooms', filter.minBedrooms.toString());
+    if (filter.minLivingArea) params.append('minLivingArea', filter.minLivingArea.toString());
+    if (filter.maxLivingArea) params.append('maxLivingArea', filter.maxLivingArea.toString());
+    if (filter.minSafetyScore) params.append('minSafetyScore', filter.minSafetyScore.toString());
+    if (filter.minCompositeScore) params.append('minCompositeScore', filter.minCompositeScore.toString());
+    if (filter.sortBy) params.append('sortBy', filter.sortBy);
+    if (filter.sortOrder) params.append('sortOrder', filter.sortOrder);
+
+    const response = await api.get<PaginatedResponse<Listing>>(`/listings?${params.toString()}`);
     return response.data;
   }
 };

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { listingService } from '../services/api';
-import type { Listing } from '../types';
+import type { Listing, ListingFilter } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Euro, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Euro, ChevronLeft, ChevronRight, X, ArrowUpDown } from 'lucide-react';
 
 const Listings = () => {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -12,24 +12,59 @@ const Listings = () => {
   const lastSuccessPage = useRef(1);
   const pageSize = 10;
 
+  // Filter State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minPrice, setMinPrice] = useState<number | ''>('');
+  const [maxPrice, setMaxPrice] = useState<number | ''>('');
+  const [city, setCity] = useState('');
+  const [sortBy, setSortBy] = useState<ListingFilter['sortBy']>('Date');
+  const [sortOrder, setSortOrder] = useState<ListingFilter['sortOrder']>('desc');
+
+  // Debounce search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchTerm, minPrice, maxPrice, city, sortBy, sortOrder]);
+
   useEffect(() => {
     const fetchListings = async () => {
       setLoading(true);
       try {
-        const data = await listingService.getListings(page, pageSize);
+        const filter: ListingFilter = {
+          page,
+          pageSize,
+          searchTerm: debouncedSearchTerm || undefined,
+          minPrice: minPrice !== '' ? Number(minPrice) : undefined,
+          maxPrice: maxPrice !== '' ? Number(maxPrice) : undefined,
+          city: city || undefined,
+          sortBy,
+          sortOrder,
+        };
+
+        const data = await listingService.getListings(filter);
         setListings(data.items || []);
         setTotalPages(data.totalPages || 1);
         lastSuccessPage.current = page;
       } catch {
         console.error('Failed to fetch listings');
-        // Revert page on failure to keep UI in sync
+        // Revert page on failure to keep UI in sync, but only if filters didn't change
+        // Here we might just want to show an error state instead of reverting page
         setPage(lastSuccessPage.current);
       } finally {
         setLoading(false);
       }
     };
     fetchListings();
-  }, [page]);
+  }, [page, debouncedSearchTerm, minPrice, maxPrice, city, sortBy, sortOrder]);
 
   const handlePrevPage = () => {
     if (page > 1) setPage(p => p - 1);
@@ -39,11 +74,113 @@ const Listings = () => {
     if (page < totalPages) setPage(p => p + 1);
   };
 
+  // Helper to clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setMinPrice('');
+    setMaxPrice('');
+    setCity('');
+    setSortBy('Date');
+    setSortOrder('desc');
+    setPage(1);
+  };
+
+  const hasActiveFilters = searchTerm || minPrice !== '' || maxPrice !== '' || city;
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-900">Listing Management</h1>
         <p className="text-brand-500 mt-1">Browse and monitor platform listings.</p>
+      </div>
+
+      {/* Filters Section */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-brand-100 mb-6">
+        <div className="flex flex-col space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div>
+                <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Search</label>
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Address, City..."
+                    className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
+                />
+            </div>
+             {/* City */}
+             <div>
+                <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">City</label>
+                <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Filter by city..."
+                    className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
+                />
+            </div>
+            {/* Price Range */}
+            <div className="flex space-x-2">
+                <div className="flex-1">
+                    <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Min Price</label>
+                    <input
+                        type="number"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : '')}
+                        placeholder="€ 0"
+                        className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
+                    />
+                </div>
+                <div className="flex-1">
+                    <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Max Price</label>
+                    <input
+                        type="number"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : '')}
+                        placeholder="€ Any"
+                        className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
+                    />
+                </div>
+            </div>
+             {/* Sort */}
+             <div className="flex space-x-2">
+                <div className="flex-1">
+                    <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Sort By</label>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as ListingFilter['sortBy'])}
+                        className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm bg-white"
+                    >
+                        <option value="Date">Date Added</option>
+                        <option value="Price">Price</option>
+                        <option value="City">City</option>
+                    </select>
+                </div>
+                 <div className="w-1/3">
+                    <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Order</label>
+                     <button
+                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        className="w-full px-4 py-2 rounded-xl border border-brand-200 hover:bg-brand-50 flex items-center justify-center transition-all h-[38px] bg-white"
+                     >
+                        <ArrowUpDown className={`h-4 w-4 text-brand-500 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                     </button>
+                </div>
+            </div>
+          </div>
+
+          {hasActiveFilters && (
+              <div className="flex justify-end pt-2">
+                  <button
+                      onClick={clearFilters}
+                      className="flex items-center text-xs font-bold text-brand-400 hover:text-error-500 uppercase tracking-widest transition-colors"
+                  >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear Filters
+                  </button>
+              </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 flex flex-col min-h-[600px]">
@@ -70,7 +207,14 @@ const Listings = () => {
                 ) : listings.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-8 py-12 text-center text-brand-500 font-medium">
-                      No listings found.
+                        {hasActiveFilters ? (
+                            <div className="flex flex-col items-center">
+                                <span className="mb-2">No listings match your search criteria.</span>
+                                <button onClick={clearFilters} className="text-primary-600 hover:text-primary-700 font-bold text-sm">Clear filters</button>
+                            </div>
+                        ) : (
+                            "No listings found."
+                        )}
                     </td>
                   </tr>
                 ) : (
