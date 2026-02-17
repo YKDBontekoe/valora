@@ -121,7 +121,10 @@ class InsightsMap extends StatelessWidget {
       width: 36,
       height: 36,
       child: GestureDetector(
-        onTap: () => _showAmenityDetails(context, amenity),
+        onTap: () => showModalBottomSheet(
+          context: context,
+          builder: (context) => buildAmenityDetailsSheet(context, amenity),
+        ),
         child: DecoratedBox(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -161,7 +164,11 @@ class InsightsMap extends StatelessWidget {
       width: size,
       height: size,
       child: GestureDetector(
-        onTap: () => _showCityDetails(context, city),
+        onTap: () => showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          builder: (context) => buildCityDetailsSheet(context, city),
+        ),
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -197,97 +204,90 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static void _showAmenityDetails(BuildContext context, MapAmenity amenity) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MapUtils.getAmenityIcon(amenity.type),
-                  color: ValoraColors.primary,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    amenity.name,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              amenity.type.toUpperCase(),
-              style: const TextStyle(
-                color: Colors.grey,
-                letterSpacing: 1.2,
-                fontSize: 12,
+  static Widget buildAmenityDetailsSheet(BuildContext context, MapAmenity amenity) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                MapUtils.getAmenityIcon(amenity.type),
+                color: ValoraColors.primary,
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  amenity.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            amenity.type.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.grey,
+              letterSpacing: 1.2,
+              fontSize: 12,
             ),
-            const SizedBox(height: 16),
-            if (amenity.metadata != null)
-              ...amenity.metadata!.entries
-                  .take(5)
-                  .map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Text('${e.key}: ${e.value}'),
-                    ),
+          ),
+          const SizedBox(height: 16),
+          if (amenity.metadata != null)
+            ...amenity.metadata!.entries
+                .take(5)
+                .map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Text('${e.key}: ${e.value}'),
                   ),
-            const SizedBox(height: 24),
-          ],
-        ),
+                ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 
-  static void _showCityDetails(BuildContext context, MapCityInsight city) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            _buildDetailRow('Listings', city.count.toString()),
-            _buildDetailRow(
-              'Composite Score',
-              city.compositeScore?.toStringAsFixed(1),
-            ),
-            _buildDetailRow(
-              'Safety Score',
-              city.safetyScore?.toStringAsFixed(1),
-            ),
-            _buildDetailRow(
-              'Social Score',
-              city.socialScore?.toStringAsFixed(1),
-            ),
-            _buildDetailRow(
-              'Amenities Score',
-              city.amenitiesScore?.toStringAsFixed(1),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
+  static Widget buildCityDetailsSheet(BuildContext context, MapCityInsight city) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 16),
+          buildDetailRow('Listings', city.count.toString()),
+          buildDetailRow(
+            'Composite Score',
+            city.compositeScore?.toStringAsFixed(1),
+          ),
+          buildDetailRow(
+            'Safety Score',
+            city.safetyScore?.toStringAsFixed(1),
+          ),
+          buildDetailRow(
+            'Social Score',
+            city.socialScore?.toStringAsFixed(1),
+          ),
+          buildDetailRow(
+            'Amenities Score',
+            city.amenitiesScore?.toStringAsFixed(1),
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 
-  static Widget _buildDetailRow(String label, String? value) {
+  static Widget buildDetailRow(String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

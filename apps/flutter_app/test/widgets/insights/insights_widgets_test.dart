@@ -52,7 +52,7 @@ void main() {
     );
   }
 
-  // ... (Existing widget tests skipped for brevity, they passed) ...
+  // ... (Existing tests) ...
   group('InsightsHeader', () {
     testWidgets('displays title and city count', (WidgetTester tester) async {
       when(mockProvider.cities).thenReturn([
@@ -260,7 +260,6 @@ void main() {
       expect(polygon.points.first.latitude, 52.0);
       expect(polygon.points.first.longitude, 5.0);
       expect(polygon.color, isNotNull);
-      // MapUtils: if > 4500 orange. 5000 > 4500 -> Orange.
       expect(polygon.borderColor, Colors.orange);
     });
 
@@ -309,6 +308,61 @@ void main() {
       ));
 
       expect(find.text('85'), findsOneWidget);
+    });
+
+    testWidgets('buildDetailRow displays label and value', (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: InsightsMap.buildDetailRow('Label', 'Value'),
+      ));
+
+      expect(find.text('Label'), findsOneWidget);
+      expect(find.text('Value'), findsOneWidget);
+    });
+
+    testWidgets('buildCityDetailsSheet displays city info', (WidgetTester tester) async {
+      final city = MapCityInsight(
+        city: 'Test City',
+        count: 100,
+        location: const LatLng(0, 0),
+        compositeScore: 85.5,
+        safetyScore: 90.0,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(builder: (context) {
+            return InsightsMap.buildCityDetailsSheet(context, city);
+          }),
+        ),
+      ));
+
+      expect(find.text('Test City'), findsOneWidget);
+      expect(find.text('Listings'), findsOneWidget);
+      expect(find.text('100'), findsOneWidget);
+      expect(find.text('85.5'), findsOneWidget);
+      expect(find.text('90.0'), findsOneWidget);
+    });
+
+    testWidgets('buildAmenityDetailsSheet displays amenity info', (WidgetTester tester) async {
+      final amenity = MapAmenity(
+        id: '1',
+        type: 'school',
+        name: 'Test School',
+        location: const LatLng(0, 0),
+        metadata: {'Key': 'Value'},
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(builder: (context) {
+            return InsightsMap.buildAmenityDetailsSheet(context, amenity);
+          }),
+        ),
+      ));
+
+      expect(find.text('Test School'), findsOneWidget);
+      expect(find.text('SCHOOL'), findsOneWidget);
+      expect(find.text('Key: Value'), findsOneWidget);
     });
   });
 }
