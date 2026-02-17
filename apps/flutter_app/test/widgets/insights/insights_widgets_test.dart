@@ -280,11 +280,12 @@ void main() {
     */
 
     testWidgets('triggers onMapChanged on gesture', (WidgetTester tester) async {
+      bool mapChanged = false;
       final controller = MapController();
 
       await tester.pumpWidget(createWidget(InsightsMap(
         mapController: controller,
-        onMapChanged: () {},
+        onMapChanged: () => mapChanged = true,
       )));
 
       controller.move(const LatLng(52.0, 5.0), 10.0);
