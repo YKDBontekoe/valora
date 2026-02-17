@@ -47,7 +47,13 @@ public static class AdminEndpoints
                 return Results.NoContent();
             }
 
-            return Results.BadRequest(new { error = result.Errors.FirstOrDefault() ?? "Operation failed." });
+            // Map ErrorCode to HTTP Status
+            return result.ErrorCode switch
+            {
+                "Forbidden" => Results.Forbid(),
+                "NotFound" => Results.NotFound(new { error = result.Errors.FirstOrDefault() ?? "Resource not found." }),
+                _ => Results.BadRequest(new { error = result.Errors.FirstOrDefault() ?? "Operation failed." })
+            };
         });
 
         group.MapGet("/stats", async (

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
+using Valora.Domain.Entities;
 
 namespace Valora.Application.Services;
 
@@ -31,13 +32,21 @@ public class AdminService : IAdminService
         var paginatedUsers = await _identityService.GetUsersAsync(pageNumber, pageSize);
         var rolesMap = await _identityService.GetRolesForUsersAsync(paginatedUsers.Items);
 
-        var userDtos = paginatedUsers.Items.Select(user => new AdminUserDto(
-            user.Id,
-            user.Email ?? "No Email",
-            rolesMap.TryGetValue(user.Id, out var roles) ? roles : new List<string>()
-        )).ToList();
+        var userDtos = paginatedUsers.Items
+            .Select(user => MapToAdminUserDto(user, rolesMap))
+            .ToList();
 
         return new PaginatedList<AdminUserDto>(userDtos, paginatedUsers.TotalCount, paginatedUsers.PageIndex, pageSize);
+    }
+
+    private static AdminUserDto MapToAdminUserDto(ApplicationUser user, IDictionary<string, IList<string>> rolesMap)
+    {
+        var roles = rolesMap.TryGetValue(user.Id, out var userRoles) ? userRoles : new List<string>();
+        return new AdminUserDto(
+            user.Id,
+            user.Email ?? "No Email",
+            roles
+        );
     }
 
     public async Task<Result> DeleteUserAsync(string targetUserId, string currentUserId)
@@ -45,7 +54,7 @@ public class AdminService : IAdminService
         if (targetUserId == currentUserId)
         {
             _logger.LogWarning("Self-deletion attempted by user {UserId}", currentUserId);
-            return Result.Failure(new[] { "You cannot delete your own account." });
+            return Result.Failure(new[] { "Security Violation: You cannot delete your own account." }, "Forbidden");
         }
 
         _logger.LogInformation("Admin user deletion requested for user {TargetUserId} by admin {AdminId}", targetUserId, currentUserId);
@@ -58,7 +67,15 @@ public class AdminService : IAdminService
         }
 
         _logger.LogError("Failed to delete user {TargetUserId}: {Errors}", targetUserId, string.Join(", ", result.Errors));
-        return Result.Failure(new[] { "Operation failed. Please try again or contact support." });
+
+        // Check if error indicates "Not Found"
+        if (result.Errors.Any(e => e.Contains("User not found", StringComparison.OrdinalIgnoreCase)))
+        {
+            return Result.Failure(new[] { "User not found." }, "NotFound");
+        }
+
+        // Sanitize errors for external consumption
+        return Result.Failure(new[] { "Operation failed. Please try again later." }, "Internal");
     }
 
     public async Task<AdminStatsDto> GetSystemStatsAsync()

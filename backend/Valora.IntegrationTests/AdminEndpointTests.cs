@@ -88,7 +88,7 @@ public class AdminEndpointTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task DeleteUser_NonExistent_ReturnsBadRequest()
+    public async Task DeleteUser_NonExistent_ReturnsNotFound()
     {
         // Arrange
         await AuthenticateAsAdminAsync();
@@ -97,11 +97,11 @@ public class AdminEndpointTests : BaseIntegrationTest
         var response = await Client.DeleteAsync($"/api/admin/users/{Guid.NewGuid()}");
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task DeleteUser_Self_ReturnsBadRequest()
+    public async Task DeleteUser_Self_ReturnsForbidden()
     {
         // Arrange
         await AuthenticateAsAdminAsync();
@@ -114,9 +114,7 @@ public class AdminEndpointTests : BaseIntegrationTest
         var response = await Client.DeleteAsync($"/api/admin/users/{adminUser.Id}");
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("You cannot delete your own account.", body);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     private record PaginatedUsersResponse(List<AdminUserDto> Items);
