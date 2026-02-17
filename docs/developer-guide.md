@@ -72,13 +72,16 @@ The `ContextReportService` employs a parallel "Fan-Out" strategy to fetch data f
 
 ```mermaid
 graph LR
-    Start((Start)) -->|Input| Split{Fan-Out}
+    Start((Start)) -->|Input| Resolve[Resolve Location]
+    Resolve --> Split{Fan-Out}
 
     Split -->|Task 1| CBS[CBS Stats]
-    Split -->|Task 2| OSM[Overpass API]
-    Split -->|Task 3| Air[Luchtmeetnet]
+    Split -->|Task 2| Crime[CBS Crime]
+    Split -->|Task 3| OSM[Overpass API]
+    Split -->|Task 4| Air[Luchtmeetnet]
 
     CBS -->|Result/Fail| Join{Fan-In}
+    Crime -->|Result/Fail| Join
     OSM -->|Result/Fail| Join
     Air -->|Result/Fail| Join
 
@@ -104,14 +107,14 @@ graph TD
     API -->|Post/Put| Write
 
     Read -->|AsNoTracking| DB[(Database)]
-    Write -->|Tracked/ExecuteUpdate| DB
+    Write -->|Tracked Entities| DB
 
     note right of Read: Optimized for Speed\nNo Change Tracker overhead
     note right of Write: Optimized for Consistency\nEnsures Valid State
 ```
 
 -   **Reads:** Use `.AsNoTracking()` and projections (`.Select(...)`) to minimize memory usage and avoid change tracking overhead.
--   **Writes:** Use tracked entities for updates or `.ExecuteUpdateAsync` for bulk operations to avoid loading entities into memory at all.
+-   **Writes:** Use standard tracked entities (`.Add`, `.Update`) and `SaveChangesAsync` to ensure data consistency and valid state transitions.
 
 ### 3. Strategy Pattern (External Clients)
 External data providers are hidden behind Application interfaces (e.g., `ICbsNeighborhoodStatsClient`). This allows us to:

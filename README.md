@@ -94,7 +94,8 @@ graph LR
 
     subgraph "Read-Heavy"
     Report -->|Fan-Out Parallel Fetch| Ext[External APIs]
-    Ext -->|Aggregated Score| Client
+    Ext -->|Raw Data| Report
+    Report -->|Aggregated Score| Client
     end
 
     subgraph "Write-Heavy"
