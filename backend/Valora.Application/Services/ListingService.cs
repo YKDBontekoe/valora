@@ -5,6 +5,7 @@ using Valora.Application.Common.Mappings;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Common;
 using Valora.Domain.Entities;
 using ValidationException = Valora.Application.Common.Exceptions.ValidationException;
 
@@ -12,6 +13,8 @@ namespace Valora.Application.Services;
 
 public class ListingService : IListingService
 {
+    private const int DefaultSearchRadiusMeters = 1000;
+
     private readonly IListingRepository _repository;
     private readonly IPdokListingService _pdokService;
     private readonly IContextReportService _contextReportService;
@@ -41,7 +44,9 @@ public class ListingService : IListingService
         {
             var errors = validationResults
                 .GroupBy(x => x.MemberNames.FirstOrDefault() ?? "General")
-                .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage ?? "Unknown error").ToArray());
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.ErrorMessage ?? "Unknown error").ToArray());
 
             throw new ValidationException(errors);
         }
@@ -50,11 +55,7 @@ public class ListingService : IListingService
     public async Task<ListingDto?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var listing = await _repository.GetByIdAsync(id, cancellationToken);
-        if (listing == null)
-        {
-             return null;
-        }
-        return ListingMapper.ToDto(listing);
+        return listing == null ? null : ListingMapper.ToDto(listing);
     }
 
     /// <summary>
@@ -75,7 +76,12 @@ public class ListingService : IListingService
     {
         if (string.IsNullOrWhiteSpace(externalId))
         {
-             throw new ValidationException(new[] { "External ID is required" });
+             throw new ValidationException(new[] { "External ID (PDOK ID) is required." });
+        }
+
+        if (externalId.Length > ValidationConstants.Listing.FundaIdMaxLength || !externalId.All(c => char.IsLetterOrDigit(c) || c == '-'))
+        {
+             throw new ValidationException(new[] { "Invalid External ID format." });
         }
 
         var listingDto = await _pdokService.GetListingDetailsAsync(externalId, cancellationToken);
@@ -104,16 +110,18 @@ public class ListingService : IListingService
     private async Task CreateOrUpdateListingAsync(ListingDto listingDto, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByFundaIdAsync(listingDto.FundaId, cancellationToken);
+        var utcNow = DateTime.UtcNow;
+
         if (existing is null)
         {
             var newListing = ListingMapper.ToEntity(listingDto);
-            newListing.LastFundaFetchUtc = DateTime.UtcNow;
+            newListing.LastFundaFetchUtc = utcNow;
             await _repository.AddAsync(newListing, cancellationToken);
         }
         else
         {
             ListingMapper.UpdateEntity(existing, listingDto);
-            existing.LastFundaFetchUtc = DateTime.UtcNow;
+            existing.LastFundaFetchUtc = utcNow;
             await _repository.UpdateAsync(existing, cancellationToken);
         }
     }
@@ -142,7 +150,7 @@ public class ListingService : IListingService
         }
 
         // 1. Generate Report
-        ContextReportRequestDto request = new(Input: listing.Address); // Default 1km radius
+        ContextReportRequestDto request = new(Input: listing.Address, RadiusMeters: DefaultSearchRadiusMeters);
 
         // We use the application DTO for the service call...
         var reportDto = await _contextReportService.BuildAsync(request, cancellationToken);
@@ -164,9 +172,10 @@ public class ListingService : IListingService
 
     private static void UpdateContextScores(Listing listing, ContextReportDto reportDto)
     {
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategorySafety, out var safety)) listing.ContextSafetyScore = safety;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
-        if (reportDto.CategoryScores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
+        var scores = reportDto.CategoryScores;
+        if (scores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
+        if (scores.TryGetValue(ContextScoreCalculator.CategorySafety, out var safety)) listing.ContextSafetyScore = safety;
+        if (scores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
+        if (scores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
     }
 }

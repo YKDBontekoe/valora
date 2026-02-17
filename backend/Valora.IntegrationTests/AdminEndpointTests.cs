@@ -65,28 +65,63 @@ public class AdminEndpointTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task DeleteUser_NonExistent_ReturnsNotFound()
+    {
+        await AuthenticateAsAdminAsync();
+
+        var response = await Client.DeleteAsync($"/api/admin/users/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_Self_ReturnsForbidden()
+    {
+        await AuthenticateAsAdminAsync();
+
+        var usersResponse = await Client.GetAsync("/api/admin/users");
+        var usersData = await usersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
+        var adminUser = usersData!.Items.First(u => u.Email == "admin@example.com");
+
+        var response = await Client.DeleteAsync($"/api/admin/users/{adminUser.Id}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Jobs_Endpoints_Work_Correctly()
     {
         await AuthenticateAsAdminAsync();
 
-        var enqueueResponse = await Client.PostAsJsonAsync("/api/admin/jobs", new { Type = "CityIngestion", Target = "Amsterdam" });
+        var enqueueResponse = await Client.PostAsJsonAsync(
+            "/api/admin/jobs",
+            new { Type = "CityIngestion", Target = "Amsterdam" }
+        );
+
         Assert.Equal(HttpStatusCode.Accepted, enqueueResponse.StatusCode);
+
         var job = await enqueueResponse.Content.ReadFromJsonAsync<IntegrationBatchJobDto>();
         Assert.NotNull(job);
-        Assert.Equal("Amsterdam", job.Target);
+        Assert.Equal("Amsterdam", job!.Target);
 
         var listResponse = await Client.GetAsync("/api/admin/jobs?limit=5");
         listResponse.EnsureSuccessStatusCode();
+
         var jobs = await listResponse.Content.ReadFromJsonAsync<List<IntegrationBatchJobDto>>();
         Assert.NotNull(jobs);
-        Assert.Contains(jobs, j => j.Id == job.Id);
+        Assert.Contains(jobs!, j => j.Id == job.Id);
     }
 
     [Fact]
     public async Task EnqueueJob_InvalidType_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
-        var response = await Client.PostAsJsonAsync("/api/admin/jobs", new { Type = "InvalidType", Target = "Target" });
+
+        var response = await Client.PostAsJsonAsync(
+            "/api/admin/jobs",
+            new { Type = "InvalidType", Target = "Target" }
+        );
+
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 

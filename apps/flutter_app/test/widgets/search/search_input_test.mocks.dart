@@ -40,4 +40,13 @@ class MockPdokService extends _i1.Mock implements _i2.PdokService {
                 ),
           )
           as _i3.Future<List<_i2.PdokSuggestion>>);
+
+  @override
+  _i3.Future<String?> reverseLookup(double? lat, double? lon) =>
+      (super.noSuchMethod(
+            Invocation.method(#reverseLookup, [lat, lon]),
+            returnValue: _i3.Future<String?>.value(),
+            returnValueForMissingStub: _i3.Future<String?>.value(),
+          )
+          as _i3.Future<String?>);
 }

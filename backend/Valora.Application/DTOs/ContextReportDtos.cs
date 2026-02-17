@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Valora.Application.Common.Validation;
 
 namespace Valora.Application.DTOs;
 
@@ -10,19 +11,19 @@ public sealed record ContextReportRequestDto(
     int RadiusMeters = 1000);
 
 public sealed record ResolvedLocationDto(
-    string Query,
-    string DisplayAddress,
+    [property: StringLength(200)] string Query,
+    [property: StringLength(200)] string DisplayAddress,
     double Latitude,
     double Longitude,
     double? RdX,
     double? RdY,
-    string? MunicipalityCode,
-    string? MunicipalityName,
-    string? DistrictCode,
-    string? DistrictName,
-    string? NeighborhoodCode,
-    string? NeighborhoodName,
-    string? PostalCode);
+    [property: StringLength(50)] string? MunicipalityCode,
+    [property: StringLength(100)] string? MunicipalityName,
+    [property: StringLength(50)] string? DistrictCode,
+    [property: StringLength(100)] string? DistrictName,
+    [property: StringLength(50)] string? NeighborhoodCode,
+    [property: StringLength(100)] string? NeighborhoodName,
+    [property: StringLength(20)] string? PostalCode);
 
 public sealed record NeighborhoodStatsDto(
     string RegionCode,
@@ -102,18 +103,18 @@ public sealed record AirQualitySnapshotDto(
     double? O3 = null);
 
 public sealed record ContextMetricDto(
-    string Key,
-    string Label,
+    [property: Required] [property: StringLength(100)] string Key,
+    [property: Required] [property: StringLength(200)] string Label,
     double? Value,
-    string? Unit,
+    [property: StringLength(50)] string? Unit,
     double? Score,
-    string Source,
-    string? Note = null);
+    [property: StringLength(100)] string Source,
+    [property: StringLength(500)] string? Note = null);
 
 public sealed record SourceAttributionDto(
-    string Source,
-    string Url,
-    string License,
+    [property: StringLength(200)] string Source,
+    [property: StringLength(500)] string Url,
+    [property: StringLength(500)] string License,
     DateTimeOffset RetrievedAtUtc);
 
 public sealed record ContextSourceData(
@@ -125,15 +126,15 @@ public sealed record ContextSourceData(
     IReadOnlyList<string> Warnings);
 
 public sealed record ContextReportDto(
-    ResolvedLocationDto Location,
-    IReadOnlyList<ContextMetricDto> SocialMetrics,
-    IReadOnlyList<ContextMetricDto> CrimeMetrics,
-    IReadOnlyList<ContextMetricDto> DemographicsMetrics,
-    IReadOnlyList<ContextMetricDto> HousingMetrics, // Phase 2
-    IReadOnlyList<ContextMetricDto> MobilityMetrics, // Phase 2
-    IReadOnlyList<ContextMetricDto> AmenityMetrics,
-    IReadOnlyList<ContextMetricDto> EnvironmentMetrics,
+    [property: Required] ResolvedLocationDto Location,
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> SocialMetrics,
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> CrimeMetrics,
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> DemographicsMetrics,
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> HousingMetrics, // Phase 2
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> MobilityMetrics, // Phase 2
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> AmenityMetrics,
+    [property: MaxCollectionSize(50)] IReadOnlyList<ContextMetricDto> EnvironmentMetrics,
     double CompositeScore,
-    IReadOnlyDictionary<string, double> CategoryScores,
-    IReadOnlyList<SourceAttributionDto> Sources,
-    IReadOnlyList<string> Warnings);
+    [property: MaxCollectionSize(20)] IReadOnlyDictionary<string, double> CategoryScores,
+    [property: MaxCollectionSize(20)] IReadOnlyList<SourceAttributionDto> Sources,
+    [property: MaxCollectionSize(50)] IReadOnlyList<string> Warnings);

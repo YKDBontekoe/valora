@@ -692,7 +692,10 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("ListingId");
 
-                    b.ToTable("PriceHistories");
+                    b.ToTable("PriceHistories", t =>
+                        {
+                            t.HasCheckConstraint("CK_PriceHistory_Price", "\"Price\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.RefreshToken", b =>

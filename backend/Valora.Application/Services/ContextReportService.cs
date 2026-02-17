@@ -120,7 +120,16 @@ public sealed class ContextReportService : IContextReportService
         // 5. Compute scores
         // The ContextScoreCalculator applies weights to these metrics to produce category scores
         // and a final weighted composite score.
-        var categoryScores = ContextScoreCalculator.ComputeCategoryScores(socialMetrics, crimeMetrics, demographicsMetrics, housingMetrics, mobilityMetrics, amenityMetrics, environmentMetrics);
+        var metricsInput = new CategoryMetricsInput(
+            socialMetrics,
+            crimeMetrics,
+            demographicsMetrics,
+            housingMetrics,
+            mobilityMetrics,
+            amenityMetrics,
+            environmentMetrics);
+
+        var categoryScores = ContextScoreCalculator.ComputeCategoryScores(metricsInput);
         var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
 
         var report = new ContextReportDto(

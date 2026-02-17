@@ -43,7 +43,7 @@ void main() {
     return MaterialApp(
       home: ChangeNotifierProvider(
         create: (_) => ContextReportProvider(apiService: MockApiService()),
-        child: Scaffold(body: child),
+        child: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );
   }
@@ -53,11 +53,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest(
-      ListView(
-        children: [
-          ContextReportView(report: testReport),
-        ],
-      ),
+      ContextReportView(report: testReport),
     ));
 
     expect(find.text('Test Address'), findsOneWidget);
@@ -79,13 +75,12 @@ void main() {
       Builder(
         builder: (context) {
           final count = ContextReportView.childCount(testReport);
-          return ListView.builder(
-            itemCount: count,
-            itemBuilder: (context, index) => ContextReportView.buildChild(
+          return Column(
+            children: List.generate(count, (index) => ContextReportView.buildChild(
               context,
               index,
               testReport,
-            ),
+            )),
           );
         },
       ),
@@ -128,6 +123,9 @@ void main() {
   });
 
   testWidgets('ContextReportView respects showHeader parameter', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2000);
+    tester.view.devicePixelRatio = 1.0;
+
     await tester.pumpWidget(createWidgetUnderTest(
       ContextReportView(report: testReport, showHeader: false),
     ));
@@ -135,5 +133,10 @@ void main() {
 
     expect(find.text('Test Address'), findsNothing);
     expect(find.byType(ScoreGauge), findsOneWidget);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
   });
 }
