@@ -14,5 +14,7 @@ public class PriceHistoryConfiguration : IEntityTypeConfiguration<PriceHistory>
               .WithMany(l => l.PriceHistory)
               .HasForeignKey(e => e.ListingId)
               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.ToTable(t => t.HasCheckConstraint("CK_PriceHistory_Price", "\"Price\" > 0"));
     }
 }
