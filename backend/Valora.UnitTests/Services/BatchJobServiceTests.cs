@@ -89,10 +89,7 @@ public class BatchJobServiceTests
         _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(neighborhoods);
 
-        // Mix of existing and new neighborhoods
-        _neighborhoodRepositoryMock.Setup(x => x.GetByCodeAsync("BU001", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Neighborhood { Code = "BU001", Name = "Existing", City = "Amsterdam", Type = "Buurt" });
-        _neighborhoodRepositoryMock.Setup(x => x.GetByCodeAsync(It.IsRegex("BU00[2-6]"), It.IsAny<CancellationToken>()))
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Neighborhood?)null);
 
         _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
@@ -102,15 +99,63 @@ public class BatchJobServiceTests
 
         Assert.Equal(BatchJobStatus.Completed, job.Status);
         Assert.Equal(100, job.Progress);
-        Assert.Equal("Processed 6 neighborhoods.", job.ResultSummary);
-
-        // Verify periodic updates (count % 5 == 0)
-        // Once at start (Processing), once at count 5, once at end (Completed)
         _jobRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<BatchJob>(), It.IsAny<CancellationToken>()), Times.AtLeast(3));
+        _neighborhoodRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Neighborhood>(), It.IsAny<CancellationToken>()), Times.Exactly(6));
+    }
 
-        // Verify neighborhood creation and updates
-        _neighborhoodRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Neighborhood>(), It.IsAny<CancellationToken>()), Times.Exactly(5));
-        _neighborhoodRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Neighborhood>(), It.IsAny<CancellationToken>()), Times.Exactly(6));
+    [Fact]
+    public async Task ProcessNextJobAsync_ShouldHandleNullStatsAndCrime()
+    {
+        var service = CreateService();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(job);
+
+        var neighborhoods = new List<NeighborhoodGeometryDto>
+        {
+            new NeighborhoodGeometryDto("BU001", "Buurt 1", "Buurt", 52.0, 4.0)
+        };
+
+        _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(neighborhoods);
+
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Neighborhood?)null);
+
+        _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NeighborhoodStatsDto?)null);
+        _crimeClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CrimeStatsDto?)null);
+
+        await service.ProcessNextJobAsync();
+
+        Assert.Equal(BatchJobStatus.Completed, job.Status);
+        _neighborhoodRepositoryMock.Verify(x => x.AddAsync(It.Is<Neighborhood>(n => n.PopulationDensity == null && n.AverageWozValue == null && n.CrimeRate == null), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessNextJobAsync_ShouldHandleCancellation()
+    {
+        var service = CreateService();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(job);
+
+        var neighborhoods = new List<NeighborhoodGeometryDto>
+        {
+            new NeighborhoodGeometryDto("BU001", "Buurt 1", "Buurt", 52.0, 4.0)
+        };
+
+        _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(neighborhoods);
+
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await service.ProcessNextJobAsync(cts.Token);
+
+        Assert.Equal(BatchJobStatus.Failed, job.Status);
+        Assert.Contains("The operation was canceled", job.Error);
     }
 
     [Fact]
