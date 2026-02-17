@@ -68,7 +68,25 @@ classDiagram
 ## Key Design Patterns
 
 ### 1. Fan-Out / Fan-In (Context Generation)
-The `ContextReportService` employs a parallel "Fan-Out" strategy to fetch data from multiple independent sources (CBS, PDOK, Overpass) simultaneously.
+The `ContextReportService` employs a parallel "Fan-Out" strategy. First, it **resolves the location** using PDOK. Then, it fetches enrichment data from multiple independent sources (CBS, Overpass, Luchtmeetnet) simultaneously.
+
+```mermaid
+graph LR
+    Start((Start)) -->|Input| Resolve[Resolve Location]
+    Resolve --> Split{Fan-Out}
+
+    Split -->|Task 1| CBS[CBS Stats]
+    Split -->|Task 2| Crime[CBS Crime]
+    Split -->|Task 3| OSM[Overpass API]
+    Split -->|Task 4| Air[Luchtmeetnet]
+
+    CBS -->|Result/Fail| Join{Fan-In}
+    Crime -->|Result/Fail| Join
+    OSM -->|Result/Fail| Join
+    Air -->|Result/Fail| Join
+
+    Join -->|Aggregate| Report[Context Report]
+```
 
 -   **Why:** Reduce total latency. The report is as slow as the slowest source, rather than the sum of all sources.
 -   **Resilience:** Each source call is wrapped in a `TryGetSourceAsync` block. If a non-critical source (e.g., Luchtmeetnet) fails, the system logs the error and returns a partial report (Fan-In) rather than a 500 error.
@@ -76,8 +94,27 @@ The `ContextReportService` employs a parallel "Fan-Out" strategy to fetch data f
 ### 2. CQRS-Lite (Repositories)
 Our repositories explicitly separate read and write concerns for performance:
 
+```mermaid
+graph TD
+    API[API Layer]
+
+    subgraph "ListingRepository"
+        Read[Read Path]
+        Write[Write Path]
+    end
+
+    API -->|Get| Read
+    API -->|Post/Put| Write
+
+    Read -->|AsNoTracking| DB[(Database)]
+    Write -->|Tracked Entities| DB
+
+    note right of Read: Optimized for Speed\nNo Change Tracker overhead
+    note right of Write: Optimized for Consistency\nEnsures Valid State
+```
+
 -   **Reads:** Use `.AsNoTracking()` and projections (`.Select(...)`) to minimize memory usage and avoid change tracking overhead.
--   **Writes:** Use tracked entities for updates or `.ExecuteUpdateAsync` for bulk operations to avoid loading entities into memory at all.
+-   **Writes:** Use standard tracked entities (`.Add`, `.Update`) and `SaveChangesAsync` to ensure data consistency and valid state transitions.
 
 ### 3. Strategy Pattern (External Clients)
 External data providers are hidden behind Application interfaces (e.g., `ICbsNeighborhoodStatsClient`). This allows us to:
