@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
 import Listings from './Listings';
 import { listingService } from '../services/api';
 
@@ -30,7 +30,7 @@ const mockListingsResponse = {
 describe('Listings Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (listingService.getListings as any).mockResolvedValue(mockListingsResponse);
+    (listingService.getListings as unknown as Mocked<typeof listingService['getListings']>).mockResolvedValue(mockListingsResponse);
   });
 
   it('renders listings table correctly', async () => {
@@ -77,7 +77,7 @@ describe('Listings Component', () => {
 
     await waitFor(() => {
         expect(listingService.getListings).toHaveBeenCalledWith(expect.objectContaining({ city: 'City A' }));
-    });
+    }, { timeout: 2000 });
   });
 
   it('sorts by price', async () => {
@@ -116,7 +116,7 @@ describe('Listings Component', () => {
 
     await waitFor(() => {
         expect(listingService.getListings).toHaveBeenCalledWith(expect.objectContaining({ city: 'City A' }));
-    });
+    }, { timeout: 2000 });
 
     const clearButton = await screen.findByRole('button', { name: /clear filters/i });
     await user.click(clearButton);

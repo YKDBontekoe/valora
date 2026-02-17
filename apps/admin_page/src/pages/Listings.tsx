@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { listingService } from '../services/api';
 import type { Listing, ListingFilter } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
