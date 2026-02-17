@@ -6,12 +6,14 @@ interface ListingRowProps {
   listing: Listing;
 }
 
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 }
+};
+
 const ListingRow = ({ listing }: ListingRowProps) => (
   <motion.tr
-    variants={{
-      hidden: { opacity: 0, y: 10 },
-      visible: { opacity: 1, y: 0 }
-    }}
+    variants={rowVariants}
     exit={{ opacity: 0, scale: 0.98 }}
     layout
     className="hover:bg-brand-50/50 transition-colors group cursor-default"

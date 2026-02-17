@@ -3,6 +3,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import ListingRow from '../components/ListingRow';
 
+const tbodyVariants = {
+  visible: {
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
 const Listings = () => {
   const {
     listings,
@@ -33,13 +41,7 @@ const Listings = () => {
             <motion.tbody
               initial="hidden"
               animate="visible"
-              variants={{
-                visible: {
-                  transition: {
-                    staggerChildren: 0.05
-                  }
-                }
-              }}
+              variants={tbodyVariants}
               className="bg-white divide-y divide-brand-100"
             >
               <AnimatePresence mode="popLayout">

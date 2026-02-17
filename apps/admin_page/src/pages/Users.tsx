@@ -6,6 +6,14 @@ import { useUsers } from '../hooks/useUsers';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import UserRow from '../components/UserRow';
 
+const tbodyVariants = {
+  visible: {
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
 const Users = () => {
   const {
     users,
@@ -65,13 +73,7 @@ const Users = () => {
             <motion.tbody
               initial="hidden"
               animate="visible"
-              variants={{
-                visible: {
-                  transition: {
-                    staggerChildren: 0.05
-                  }
-                }
-              }}
+              variants={tbodyVariants}
               className="bg-white divide-y divide-brand-100"
             >
               <AnimatePresence mode="popLayout">

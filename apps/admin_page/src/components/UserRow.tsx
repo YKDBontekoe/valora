@@ -9,6 +9,11 @@ interface UserRowProps {
   onDeleteClick: (user: User) => void;
 }
 
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 }
+};
+
 const UserRow = ({
   user,
   currentUserId,
@@ -16,10 +21,7 @@ const UserRow = ({
   onDeleteClick
 }: UserRowProps) => (
   <motion.tr
-    variants={{
-      hidden: { opacity: 0, y: 10 },
-      visible: { opacity: 1, y: 0 }
-    }}
+    variants={rowVariants}
     exit={{ opacity: 0, scale: 0.98 }}
     layout
     className="hover:bg-brand-50/50 transition-colors group cursor-default"
