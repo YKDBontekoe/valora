@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:valora_app/core/utils/map_utils.dart';
 import 'package:valora_app/core/theme/valora_colors.dart';
 import 'package:valora_app/models/map_overlay.dart';
