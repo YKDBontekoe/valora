@@ -71,6 +71,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
       final ageMetrics = widget.metrics.where((m) => m.key.startsWith('age_')).toList();
       if (ageMetrics.isNotEmpty) {
         return Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Age Distribution', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -86,6 +87,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
       final housingTypeMetrics = widget.metrics.where((m) => m.key.startsWith('housing_')).toList();
       if (housingTypeMetrics.isNotEmpty) {
         return Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Housing Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -101,6 +103,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
       final distMetrics = widget.metrics.where((m) => m.key.startsWith('dist_')).toList();
       if (distMetrics.isNotEmpty) {
         return Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Proximity to Amenities', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -137,6 +140,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Header
           InkWell(
@@ -157,6 +161,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -198,12 +203,11 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Divider(height: 1),
                   const SizedBox(height: 20),
-                  // We remove the conditional check for widget.isExpanded here
-                  // to prevent children from vanishing before animation finishes.
                   _buildChart() ?? const SizedBox.shrink(),
                   ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
                 ],

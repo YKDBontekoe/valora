@@ -23,6 +23,7 @@ class ListingDetailedFeatures extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

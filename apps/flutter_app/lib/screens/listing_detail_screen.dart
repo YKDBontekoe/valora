@@ -91,6 +91,7 @@ class ListingDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(ValoraSpacing.lg),
               borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children:
                     [

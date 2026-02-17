@@ -49,6 +49,7 @@ class ListingTechnicalDetails extends StatelessWidget {
     if (validDetails.isEmpty) return const SizedBox.shrink();
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
