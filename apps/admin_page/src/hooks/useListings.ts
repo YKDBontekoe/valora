@@ -16,8 +16,9 @@ export const useListings = (pageSize = 10) => {
       setListings(data.items || []);
       setTotalPages(data.totalPages || 1);
       lastSuccessPage.current = pageNumber;
-    } catch (error) {
-      console.error('Failed to fetch listings', error);
+    } catch {
+      // Log sanitized error or nothing
+      console.error('Failed to fetch listings. Please try again.');
       // Revert page on failure to keep UI in sync
       setPage(lastSuccessPage.current);
     } finally {

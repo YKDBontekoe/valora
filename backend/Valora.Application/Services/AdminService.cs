@@ -54,7 +54,7 @@ public class AdminService : IAdminService
         if (targetUserId == currentUserId)
         {
             _logger.LogWarning("Self-deletion attempted by user {UserId}", currentUserId);
-            return Result.Failure(new[] { "Security Violation: You cannot delete your own account." });
+            return Result.Failure(new[] { "Security Violation: You cannot delete your own account." }, "Forbidden");
         }
 
         _logger.LogInformation("Admin user deletion requested for user {TargetUserId} by admin {AdminId}", targetUserId, currentUserId);
@@ -68,9 +68,8 @@ public class AdminService : IAdminService
 
         _logger.LogError("Failed to delete user {TargetUserId}: {Errors}", targetUserId, string.Join(", ", result.Errors));
 
-        return result.Errors.Any()
-            ? Result.Failure(result.Errors)
-            : Result.Failure(new[] { "Failed to delete user. The user might not exist or system constraints prevent deletion." });
+        // Sanitize errors for external consumption
+        return Result.Failure(new[] { "Operation failed. Please try again later." }, "Internal");
     }
 
     public async Task<AdminStatsDto> GetSystemStatsAsync()

@@ -38,6 +38,7 @@ public class AdminServiceTests
         // Assert
         Assert.False(result.Succeeded);
         Assert.Contains("Security Violation: You cannot delete your own account.", result.Errors);
+        Assert.Equal("Forbidden", result.ErrorCode);
         _identityServiceMock.Verify(x => x.DeleteUserAsync(It.IsAny<string>()), Times.Never);
     }
 
