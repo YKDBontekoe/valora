@@ -21,6 +21,7 @@ import 'package:valora_app/models/notification.dart' as _i11;
 import 'package:valora_app/providers/favorites_provider.dart' as _i15;
 import 'package:valora_app/services/api_service.dart' as _i8;
 import 'package:valora_app/services/pdok_service.dart' as _i17;
+import 'package:valora_app/services/property_photo_service.dart' as _i18;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -404,6 +405,40 @@ class MockPdokService extends _i1.Mock implements _i17.PdokService {
             ),
           )
           as _i7.Future<List<_i17.PdokSuggestion>>);
+
+  @override
+  _i7.Future<String?> reverseLookup(double? lat, double? lon) =>
+      (super.noSuchMethod(
+            Invocation.method(#reverseLookup, [lat, lon]),
+            returnValue: _i7.Future<String?>.value(),
+          )
+          as _i7.Future<String?>);
+}
+
+/// A class which mocks [PropertyPhotoService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockPropertyPhotoService extends _i1.Mock
+    implements _i18.PropertyPhotoService {
+  MockPropertyPhotoService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  List<String> getPropertyPhotos({
+    required double? latitude,
+    required double? longitude,
+    int? limit = 3,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPropertyPhotos, [], {
+              #latitude: latitude,
+              #longitude: longitude,
+              #limit: limit,
+            }),
+            returnValue: <String>[],
+          )
+          as List<String>);
 }
 
 /// A class which mocks [HttpClient].

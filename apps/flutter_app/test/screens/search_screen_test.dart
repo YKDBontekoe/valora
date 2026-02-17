@@ -11,13 +11,14 @@ import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/screens/search_screen.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 import 'package:valora_app/widgets/valora_listing_card_horizontal.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 
-@GenerateMocks([ApiService, FavoritesProvider, PdokService])
+@GenerateMocks([ApiService, FavoritesProvider, PdokService, PropertyPhotoService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
@@ -151,12 +152,14 @@ void main() {
   late MockApiService mockApiService;
   late MockFavoritesProvider mockFavoritesProvider;
   late MockPdokService mockPdokService;
+  late MockPropertyPhotoService mockPropertyPhotoService;
   late FakeNotificationService fakeNotificationService;
 
   setUp(() {
     mockApiService = MockApiService();
     mockFavoritesProvider = MockFavoritesProvider();
     mockPdokService = MockPdokService();
+    mockPropertyPhotoService = MockPropertyPhotoService();
     fakeNotificationService = FakeNotificationService();
 
     // Default favorites provider behavior
@@ -165,6 +168,9 @@ void main() {
 
     // Default PDOK service behavior
     when(mockPdokService.search(any)).thenAnswer((_) async => []);
+
+    // Default Photo service behavior
+    when(mockPropertyPhotoService.getPropertyPhotos(latitude: anyNamed('latitude'), longitude: anyNamed('longitude'))).thenReturn([]);
 
     // Install HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -180,6 +186,7 @@ void main() {
         ChangeNotifierProvider<NotificationService>.value(
           value: fakeNotificationService,
         ),
+        Provider<PropertyPhotoService>.value(value: mockPropertyPhotoService),
         if (searchProvider != null)
           ChangeNotifierProvider<SearchListingsProvider>.value(
             value: searchProvider,
@@ -542,9 +549,10 @@ void main() {
     verify(mockApiService.getListings(any)).called(greaterThan(1));
   });
 
-  testWidgets('SearchScreen fetches full details for summary listing on tap', (
+  testWidgets('SearchScreen navigates to detail on tap and fetches details there', (
     WidgetTester tester,
   ) async {
+    // Arrange
     final summaryListing = Listing(
       id: 'summary-id',
       fundaId: '123',
@@ -591,19 +599,22 @@ void main() {
 
     // Tap listing
     await tester.tap(find.text('Summary Address'));
-    await tester.pump(); // Trigger tap logic
+    await tester.pump(); // Trigger navigation
+    await tester.pumpAndSettle(); // Wait for navigation animation
 
-    // Wait for async enrich calls
+    // Now we are on ListingDetailScreen. Trigger the async load.
+    // The initState has already run. We might need a small pump for the future to complete.
+    await tester.pump(Duration.zero);
     await tester.pump(const Duration(milliseconds: 100));
 
-    // Verify full listing was fetched
+    // Verify full listing was fetched (by ListingDetailScreen)
     verify(mockApiService.getListing('summary-id')).called(1);
 
-    // Ensure all timers (e.g. animations) are settled
+    // Settle animations
     await tester.pumpAndSettle();
   });
 
-  testWidgets('SearchScreen does not fetch details for PDOK listing (no url)', (
+  testWidgets('SearchScreen does not fetch details for PDOK listing (no url) on navigation', (
     WidgetTester tester,
   ) async {
     final pdokListing = Listing(
@@ -640,15 +651,13 @@ void main() {
 
     // Tap listing
     await tester.tap(find.text('PDOK Address'));
-    await tester.pump();
-
-    // Wait for potential async calls
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(); // Navigation
+    await tester.pumpAndSettle();
 
     // Verify API was NOT called for details
     verifyNever(mockApiService.getListing(any));
 
-    // Ensure all timers are settled
+    // Settle animations
     await tester.pumpAndSettle();
   });
 }

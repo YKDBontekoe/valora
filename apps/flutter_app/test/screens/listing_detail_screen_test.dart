@@ -11,8 +11,10 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/listing_detail_screen.dart';
+import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 
-@GenerateMocks([FavoritesProvider])
+@GenerateMocks([FavoritesProvider, ApiService, PropertyPhotoService])
 import 'listing_detail_screen_test.mocks.dart';
 
 // Mock UrlLauncherPlatform
@@ -151,10 +153,17 @@ class _MockHttpClientResponse extends Mock implements HttpClientResponse {
 
 void main() {
   late MockFavoritesProvider mockFavoritesProvider;
+  late MockApiService mockApiService;
+  late MockPropertyPhotoService mockPropertyPhotoService;
 
   setUp(() {
     mockFavoritesProvider = MockFavoritesProvider();
+    mockApiService = MockApiService();
+    mockPropertyPhotoService = MockPropertyPhotoService();
+
     when(mockFavoritesProvider.isFavorite(any)).thenReturn(false);
+    when(mockPropertyPhotoService.getPropertyPhotos(latitude: anyNamed('latitude'), longitude: anyNamed('longitude'))).thenReturn([]);
+
     UrlLauncherPlatform.instance = MockUrlLauncher();
     HttpOverrides.global = MockHttpOverrides();
   });
@@ -165,6 +174,8 @@ void main() {
         ChangeNotifierProvider<FavoritesProvider>.value(
           value: mockFavoritesProvider,
         ),
+        Provider<ApiService>.value(value: mockApiService),
+        Provider<PropertyPhotoService>.value(value: mockPropertyPhotoService),
       ],
       child: MaterialApp(home: ListingDetailScreen(listing: listing)),
     );
@@ -310,5 +321,88 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('Fetches full details if listing is a summary', (tester) async {
+    final summaryListing = Listing(
+      id: 'summary-1',
+      fundaId: '123',
+      address: 'Summary Address',
+      url: 'https://example.com/123',
+      description: null,
+      features: {},
+    );
+
+    final fullListing = Listing(
+      id: 'summary-1',
+      fundaId: '123',
+      address: 'Summary Address',
+      url: 'https://example.com/123',
+      description: 'Full description loaded',
+      features: {'Key': 'Value'},
+    );
+
+    when(mockApiService.getListing('summary-1')).thenAnswer((_) async => fullListing);
+
+    await tester.pumpWidget(createWidgetUnderTest(summaryListing));
+    // Initial pump
+    await tester.pump();
+    // Run async logic in addPostFrameCallback
+    await tester.pump(Duration.zero);
+
+    // Wait for async fetch
+    verify(mockApiService.getListing('summary-1')).called(1);
+
+    // Rebuild with new data
+    await tester.pump();
+
+    // Settle animations
+    await tester.pumpAndSettle();
+
+    expect(find.text('Full description loaded'), findsOneWidget);
+  });
+
+  testWidgets('Does not fetch details if listing is already full', (tester) async {
+    final fullListing = Listing(
+      id: 'full-1',
+      fundaId: '123',
+      address: 'Full Address',
+      url: 'https://example.com/123',
+      description: 'Already has description',
+      features: {},
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest(fullListing));
+    await tester.pumpAndSettle();
+
+    verifyNever(mockApiService.getListing(any));
+    expect(find.text('Already has description'), findsOneWidget);
+  });
+
+  testWidgets('Enriches with photos if coordinates are present', (tester) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Address',
+      latitude: 52.0,
+      longitude: 4.0,
+      imageUrls: [],
+      description: 'Desc',
+      features: {'f': 'v'},
+    );
+
+    when(mockPropertyPhotoService.getPropertyPhotos(latitude: 52.0, longitude: 4.0))
+        .thenReturn(['http://photo1.com', 'http://photo2.com']);
+
+    await tester.pumpWidget(createWidgetUnderTest(listing));
+    // Initial pump
+    await tester.pump();
+    // Run async logic in addPostFrameCallback
+    await tester.pump(Duration.zero);
+
+    verify(mockPropertyPhotoService.getPropertyPhotos(latitude: 52.0, longitude: 4.0)).called(1);
+
+    // Settle animations (use timeout to be safe against infinite animations if any)
+    await tester.pump(const Duration(seconds: 2));
   });
 }
