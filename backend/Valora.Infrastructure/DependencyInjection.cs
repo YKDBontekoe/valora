@@ -42,6 +42,8 @@ public static class DependencyInjection
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IBatchJobRepository, BatchJobRepository>();
+        services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
 
         // Services
         services.AddSingleton(TimeProvider.System);

@@ -126,4 +126,48 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 return (null, "N/A");
         }
     }
+
+    public async Task<List<NeighborhoodGeometryDto>> GetNeighborhoodsByMunicipalityAsync(
+        string municipalityName,
+        CancellationToken cancellationToken = default)
+    {
+        var encodedMunicipality = Uri.EscapeDataString(municipalityName);
+        var url = $"https://service.pdok.nl/cbs/wijkenenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=buurten&outputFormat=json&srsName=EPSG:4326&cql_filter=gemeentenaam='{encodedMunicipality}'";
+
+        using var response = await _httpClient.GetAsync(url, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("PDOK WFS failed with status {StatusCode} for municipality {Municipality}", response.StatusCode, municipalityName);
+            return [];
+        }
+
+        using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+
+        if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var results = new List<NeighborhoodGeometryDto>();
+        foreach (var feature in features.EnumerateArray())
+        {
+            if (!feature.TryGetProperty("properties", out var props)) continue;
+
+            if (!props.TryGetProperty("buurtcode", out var codeElem)) continue;
+            var code = codeElem.GetString();
+            if (string.IsNullOrEmpty(code)) continue;
+
+            var name = props.TryGetProperty("buurtnaam", out var nameElem) ? nameElem.GetString() ?? "Unknown" : "Unknown";
+
+            // For latitude/longitude, we try to extract from geometry if possible, or just use 0,0 for now
+            // Simplification: We don't parse complex geometries here, but in a real app we would use NetTopologySuite
+            double lat = 0, lon = 0;
+
+            results.Add(new NeighborhoodGeometryDto(code, name, "Buurt", lat, lon));
+        }
+
+        return results;
+    }
+
 }

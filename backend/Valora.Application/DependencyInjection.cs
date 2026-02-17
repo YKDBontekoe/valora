@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IContextDataProvider, ContextDataProvider>();
         services.AddScoped<IListingService, ListingService>();
         services.AddScoped<IMapService, MapService>();
+        services.AddScoped<IBatchJobService, BatchJobService>();
         return services;
     }
 }
