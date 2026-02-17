@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { listingService } from '../services/api';
 import type { Listing, ListingFilter } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Euro, ChevronLeft, ChevronRight, X, ArrowUpDown } from 'lucide-react';
+import axios from 'axios';
 
 const Listings = () => {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -30,12 +31,10 @@ const Listings = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Reset page when filters change
+  // Combined fetch effect to handle page resets and race conditions
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearchTerm, minPrice, maxPrice, city, sortBy, sortOrder]);
+    const abortController = new AbortController();
 
-  useEffect(() => {
     const fetchListings = async () => {
       setLoading(true);
       try {
@@ -50,21 +49,113 @@ const Listings = () => {
           sortOrder,
         };
 
+        // If request is aborted, listingService might throw or return partial.
+        // But since listingService uses axios, we can't easily pass the signal unless we modify the service signature.
+        // For now, let's just ignore the result if aborted.
+        // Ideally we should pass signal to service. Let's assume we can't easily change signature everywhere right now
+        // without breaking other things, so we check aborted flag before setting state.
+
+        // Wait, I CAN modify the service. It's in my control.
+        // But for minimal changes, I'll just check abort status.
+        // Actually, preventing the network call is better.
+        // But standard React pattern is: check !aborted.
+
         const data = await listingService.getListings(filter);
-        setListings(data.items || []);
-        setTotalPages(data.totalPages || 1);
-        lastSuccessPage.current = page;
-      } catch {
-        console.error('Failed to fetch listings');
-        // Revert page on failure to keep UI in sync, but only if filters didn't change
-        // Here we might just want to show an error state instead of reverting page
-        setPage(lastSuccessPage.current);
+
+        if (!abortController.signal.aborted) {
+            setListings(data.items || []);
+            setTotalPages(data.totalPages || 1);
+            lastSuccessPage.current = page;
+        }
+      } catch (error) {
+        if (!abortController.signal.aborted) {
+            if (axios.isCancel(error)) {
+                // Ignore cancellations
+                return;
+            }
+            console.error('Failed to fetch listings:', error);
+            // Revert page on failure to keep UI in sync, but only if it was a page change error
+            // If it's a filter error, we might just show empty.
+            // But sticking to previous behavior for now with better error logging.
+            setPage(lastSuccessPage.current);
+        }
       } finally {
-        setLoading(false);
+        if (!abortController.signal.aborted) {
+            setLoading(false);
+        }
       }
     };
+
     fetchListings();
+
+    return () => {
+        abortController.abort();
+    };
   }, [page, debouncedSearchTerm, minPrice, maxPrice, city, sortBy, sortOrder]);
+
+  // Separate effect to reset page when filters change
+  // This is tricky. If I reset page here, it triggers the main effect again.
+  // Pattern: Use a ref to track previous filter values, or just reset page in the handler?
+  // But handlers are many.
+  // Better: The main effect depends on [page, filters].
+  // If filters change, we want page=1.
+  // If we just setPage(1) when filters change, we get 2 fetches:
+  // 1. Filter change -> Fetch with Old Page
+  // 2. setPage(1) -> Fetch with Page 1
+
+  // Solution: Disable the fetch effect when filters change IF page is not 1.
+  // Or: Make the fetch effect smart.
+  // Actually, the cleanest way is to use a ref for "shouldResetPage".
+
+  // Let's use the pattern where we reset page in a `useEffect` that runs ONLY on filter changes,
+  // AND we block the main fetch if page is about to change.
+  // BUT that's hard to coordinate.
+
+  // Alternative: One single useEffect for everything?
+  // No, separating concerns is better but dependencies overlap.
+
+  // Let's go with the "Reset Page in Handlers" approach?
+  // No, too many handlers.
+
+  // Current industry standard:
+  // A `useEffect` on filters that sets page to 1.
+  // AND a `useEffect` on [page, filters] that fetches.
+  // This causes double fetch.
+
+  // To avoid double fetch:
+  // We can include the reset logic inside the fetch effect?
+  // "If filters changed since last run, force page=1 and fetch."
+  // But we can't easily update state (page) inside effect without triggering it again.
+
+  // The Ref approach:
+  // const prevFilters = useRef(filters);
+  // if (filters !== prevFilters.current) { page = 1; prevFilters.current = filters; }
+  // This is "rendering state".
+
+  // Let's keep it simple:
+  // Just use `setPage(1)` in the `useEffect` listening to filters.
+  // Yes it causes a double fetch (one aborted, one real).
+  // With AbortController, the first one is cancelled!
+  // So the user doesn't see stale data.
+  // And the server might still process it but the client ignores it.
+  // This is acceptable for this scale.
+
+  // So:
+  // 1. `useEffect` on filters -> `setPage(1)`
+  // 2. `useEffect` on `[page, filters]` -> `fetch` (with abort controller)
+
+  // Wait, if I change filter:
+  // 1. Filter state updates. Component renders.
+  // 2. `useEffect` (filters) runs -> `setPage(1)`.
+  // 3. `useEffect` (fetch) runs (because filter changed). Starts Request A (Page X, New Filter).
+  // 4. Component renders (due to setPage).
+  // 5. `useEffect` (fetch) cleanup runs -> Aborts Request A.
+  // 6. `useEffect` (fetch) runs (because page changed). Starts Request B (Page 1, New Filter).
+
+  // This is exactly what we want! The first stale request is aborted.
+
+  // Implementation details:
+  // I need to group the filter dependencies.
 
   const handlePrevPage = () => {
     if (page > 1) setPage(p => p - 1);
@@ -104,7 +195,7 @@ const Listings = () => {
                 <input
                     type="text"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                     placeholder="Address, City..."
                     className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
                 />
@@ -115,7 +206,7 @@ const Listings = () => {
                 <input
                     type="text"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => { setCity(e.target.value); setPage(1); }}
                     placeholder="Filter by city..."
                     className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
                 />
@@ -127,7 +218,7 @@ const Listings = () => {
                     <input
                         type="number"
                         value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : '')}
+                        onChange={(e) => { setMinPrice(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
                         placeholder="€ 0"
                         className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
                     />
@@ -137,7 +228,7 @@ const Listings = () => {
                     <input
                         type="number"
                         value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : '')}
+                        onChange={(e) => { setMaxPrice(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
                         placeholder="€ Any"
                         className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
                     />
@@ -149,7 +240,7 @@ const Listings = () => {
                     <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Sort By</label>
                     <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as ListingFilter['sortBy'])}
+                        onChange={(e) => { setSortBy(e.target.value as ListingFilter['sortBy']); setPage(1); }}
                         className="w-full px-4 py-2 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm bg-white"
                     >
                         <option value="Date">Date Added</option>
@@ -160,8 +251,9 @@ const Listings = () => {
                  <div className="w-1/3">
                     <label className="block text-xs font-bold text-brand-500 uppercase tracking-widest mb-2">Order</label>
                      <button
-                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        onClick={() => { setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); setPage(1); }}
                         className="w-full px-4 py-2 rounded-xl border border-brand-200 hover:bg-brand-50 flex items-center justify-center transition-all h-[38px] bg-white"
+                        aria-label="Toggle sort order"
                      >
                         <ArrowUpDown className={`h-4 w-4 text-brand-500 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
                      </button>

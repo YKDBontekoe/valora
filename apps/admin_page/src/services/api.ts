@@ -87,14 +87,14 @@ export const listingService = {
     params.append('pageSize', pageSize.toString());
 
     if (filter.searchTerm) params.append('searchTerm', filter.searchTerm);
-    if (filter.minPrice) params.append('minPrice', filter.minPrice.toString());
-    if (filter.maxPrice) params.append('maxPrice', filter.maxPrice.toString());
+    if (filter.minPrice !== undefined) params.append('minPrice', filter.minPrice.toString());
+    if (filter.maxPrice !== undefined) params.append('maxPrice', filter.maxPrice.toString());
     if (filter.city) params.append('city', filter.city);
-    if (filter.minBedrooms) params.append('minBedrooms', filter.minBedrooms.toString());
-    if (filter.minLivingArea) params.append('minLivingArea', filter.minLivingArea.toString());
-    if (filter.maxLivingArea) params.append('maxLivingArea', filter.maxLivingArea.toString());
-    if (filter.minSafetyScore) params.append('minSafetyScore', filter.minSafetyScore.toString());
-    if (filter.minCompositeScore) params.append('minCompositeScore', filter.minCompositeScore.toString());
+    if (filter.minBedrooms !== undefined) params.append('minBedrooms', filter.minBedrooms.toString());
+    if (filter.minLivingArea !== undefined) params.append('minLivingArea', filter.minLivingArea.toString());
+    if (filter.maxLivingArea !== undefined) params.append('maxLivingArea', filter.maxLivingArea.toString());
+    if (filter.minSafetyScore !== undefined) params.append('minSafetyScore', filter.minSafetyScore.toString());
+    if (filter.minCompositeScore !== undefined) params.append('minCompositeScore', filter.minCompositeScore.toString());
     if (filter.sortBy) params.append('sortBy', filter.sortBy);
     if (filter.sortOrder) params.append('sortOrder', filter.sortOrder);
 
