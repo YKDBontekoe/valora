@@ -94,6 +94,21 @@ public class IdentityService : IIdentityService
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return Result.Failure(new[] { "User not found." });
 
+        // Manually clean up notifications because they don't have a navigation property/FK configured for cascade delete
+        if (_context.Database.ProviderName?.Contains("InMemory") == true)
+        {
+             var notifications = _context.Notifications.Where(n => n.UserId == userId);
+             _context.Notifications.RemoveRange(notifications);
+        }
+        else
+        {
+             await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .ExecuteDeleteAsync();
+        }
+
+        // RefreshTokens are configured with cascade delete, so they will be removed automatically
+
         var result = await _userManager.DeleteAsync(user);
         return ToApplicationResult(result);
     }
