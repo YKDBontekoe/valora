@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
+using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
 
@@ -61,6 +63,29 @@ public static class AdminEndpoints
         {
             var stats = await adminService.GetSystemStatsAsync();
             return Results.Ok(stats);
+        });
+
+        group.MapPost("/jobs", async (
+            BatchJobRequest request,
+            IBatchJobService jobService,
+            CancellationToken ct) =>
+        {
+            if (!Enum.TryParse<BatchJobType>(request.Type, out var jobType))
+            {
+                return Results.BadRequest(new { error = "Invalid job type." });
+            }
+
+            var job = await jobService.EnqueueJobAsync(jobType, request.Target, ct);
+            return Results.Accepted($"/api/admin/jobs/{job.Id}", job);
+        });
+
+        group.MapGet("/jobs", async (
+            IBatchJobService jobService,
+            CancellationToken ct,
+            [FromQuery] int limit = 10) =>
+        {
+            var jobs = await jobService.GetRecentJobsAsync(limit, ct);
+            return Results.Ok(jobs);
         });
     }
 }

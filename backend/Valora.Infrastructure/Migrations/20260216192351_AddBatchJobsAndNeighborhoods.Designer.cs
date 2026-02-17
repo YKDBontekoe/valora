@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Valora.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    partial class ValoraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260216192351_AddBatchJobsAndNeighborhoods")]
+    partial class AddBatchJobsAndNeighborhoods
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -692,10 +695,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("ListingId");
 
-                    b.ToTable("PriceHistories", t =>
-                        {
-                            t.HasCheckConstraint("CK_PriceHistory_Price", "\"Price\" > 0");
-                        });
+                    b.ToTable("PriceHistories");
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.RefreshToken", b =>

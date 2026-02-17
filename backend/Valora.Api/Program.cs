@@ -1,3 +1,4 @@
+using Valora.Api.Background;
 using System.Security.Claims;
 using Sentry;
 using System.Text;
@@ -98,6 +99,8 @@ builder.Services.AddSwaggerGen(option =>
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHostedService<BatchJobWorker>();
 
 // Add Identity
 builder.Services.AddIdentityCore<ApplicationUser>()

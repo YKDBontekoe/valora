@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Stats, User, Listing, PaginatedResponse } from '../types';
+import type { AuthResponse, Stats, User, Listing, PaginatedResponse, BatchJob } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -72,6 +72,14 @@ export const adminService = {
   },
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);
+  },
+  getJobs: async (limit = 10): Promise<BatchJob[]> => {
+    const response = await api.get<BatchJob[]>(`/admin/jobs?limit=${limit}`);
+    return response.data;
+  },
+  startJob: async (type: string, target: string): Promise<BatchJob> => {
+    const response = await api.post<BatchJob>("/admin/jobs", { type, target });
+    return response.data;
   },
 };
 

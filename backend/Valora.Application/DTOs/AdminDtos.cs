@@ -11,3 +11,8 @@ public record AdminStatsDto(
     int TotalListings,
     int TotalNotifications
 );
+
+public record BatchJobRequest(
+    string Type,
+    string Target
+);
