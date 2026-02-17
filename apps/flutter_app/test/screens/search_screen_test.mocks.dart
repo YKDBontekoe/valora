@@ -404,6 +404,14 @@ class MockPdokService extends _i1.Mock implements _i17.PdokService {
             ),
           )
           as _i7.Future<List<_i17.PdokSuggestion>>);
+
+  @override
+  _i7.Future<String?> reverseLookup(double? lat, double? lon) =>
+      (super.noSuchMethod(
+            Invocation.method(#reverseLookup, [lat, lon]),
+            returnValue: _i7.Future<String?>.value(),
+          )
+          as _i7.Future<String?>);
 }
 
 /// A class which mocks [HttpClient].

@@ -4,20 +4,29 @@ import '../../core/theme/valora_colors.dart';
 import '../../models/map_overlay.dart';
 
 class MapUtils {
-  static List<LatLng> parsePolygonGeometry(Map<String, dynamic> geometry) {
+  static List<LatLng> parsePolygonGeometry(Map<String, dynamic>? geometry) {
+    if (geometry == null) return [];
+
     List<LatLng> points = [];
     try {
-      if (geometry['type'] == 'Polygon') {
-        final List<dynamic> ring = geometry['coordinates'][0];
+      final type = geometry['type'];
+      final coordinates = geometry['coordinates'];
+
+      if (coordinates is! List || coordinates.isEmpty) return [];
+
+      if (type == 'Polygon') {
+        final List<dynamic> ring = coordinates[0];
         points = ring
             .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
             .toList();
-      } else if (geometry['type'] == 'MultiPolygon') {
-        final List<dynamic> poly = geometry['coordinates'][0];
-        final List<dynamic> ring = poly[0];
-        points = ring
-            .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
-            .toList();
+      } else if (type == 'MultiPolygon') {
+        final List<dynamic> poly = coordinates[0];
+        if (poly.isNotEmpty && poly[0] is List) {
+          final List<dynamic> ring = poly[0];
+          points = ring
+              .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
+              .toList();
+        }
       }
     } catch (e) {
       debugPrint('Failed to parse polygon: $e');
