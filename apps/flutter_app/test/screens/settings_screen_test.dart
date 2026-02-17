@@ -157,6 +157,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle(); // Wait for animations
 
     expect(find.text('test@example.com'), findsOneWidget);
   });
@@ -171,6 +172,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle(); // Wait for initial animations
 
     final logoutButtonFinder = find.text('Log Out').last;
 
@@ -190,6 +192,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle(); // Wait for initial animations
 
     final logoutButtonFinder = find.text('Log Out').last;
 
@@ -215,6 +218,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle(); // Wait for initial animations
 
     final logoutButtonFinder = find.text('Log Out').last;
 
