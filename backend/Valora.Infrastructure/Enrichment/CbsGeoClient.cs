@@ -49,7 +49,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
         }
 
         var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
-        var url = $"https://service.pdok.nl/cbs/wijkenenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
+        var url = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
 
@@ -131,8 +131,9 @@ public sealed class CbsGeoClient : ICbsGeoClient
         string municipalityName,
         CancellationToken cancellationToken = default)
     {
-        var encodedMunicipality = Uri.EscapeDataString(municipalityName);
-        var url = $"https://service.pdok.nl/cbs/wijkenenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=buurten&outputFormat=json&srsName=EPSG:4326&cql_filter=gemeentenaam='{encodedMunicipality}'";
+        var filter = $"<Filter><PropertyIsEqualTo matchCase=\"false\"><PropertyName>gemeentenaam</PropertyName><Literal>{municipalityName}</Literal></PropertyIsEqualTo></Filter>";
+        var encodedFilter = Uri.EscapeDataString(filter);
+        var url = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&FILTER={encodedFilter}";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
