@@ -68,7 +68,7 @@ classDiagram
 ## Key Design Patterns
 
 ### 1. Fan-Out / Fan-In (Context Generation)
-The `ContextReportService` employs a parallel "Fan-Out" strategy to fetch data from multiple independent sources (CBS, PDOK, Overpass) simultaneously.
+The `ContextReportService` employs a parallel "Fan-Out" strategy. First, it **resolves the location** using PDOK. Then, it fetches enrichment data from multiple independent sources (CBS, Overpass, Luchtmeetnet) simultaneously.
 
 ```mermaid
 graph LR

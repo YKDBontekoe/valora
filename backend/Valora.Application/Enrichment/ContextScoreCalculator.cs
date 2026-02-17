@@ -39,24 +39,17 @@ public static class ContextScoreCalculator
     /// Aggregates individual metrics into category scores (0-100).
     /// </summary>
     /// <returns>A dictionary mapping category names to their average scores.</returns>
-    public static Dictionary<string, double> ComputeCategoryScores(
-        IReadOnlyList<ContextMetricDto> socialMetrics,
-        IReadOnlyList<ContextMetricDto> crimeMetrics,
-        IReadOnlyList<ContextMetricDto> demographicsMetrics,
-        IReadOnlyList<ContextMetricDto> housingMetrics,
-        IReadOnlyList<ContextMetricDto> mobilityMetrics,
-        IReadOnlyList<ContextMetricDto> amenityMetrics,
-        IReadOnlyList<ContextMetricDto> environmentMetrics)
+    public static Dictionary<string, double> ComputeCategoryScores(CategoryMetricsInput input)
     {
         var scores = new Dictionary<string, double>();
 
-        AddScore(scores, CategorySocial, socialMetrics);
-        AddScore(scores, CategorySafety, crimeMetrics);
-        AddScore(scores, CategoryDemographics, demographicsMetrics);
-        AddScore(scores, CategoryHousing, housingMetrics);
-        AddScore(scores, CategoryMobility, mobilityMetrics);
-        AddScore(scores, CategoryAmenities, amenityMetrics);
-        AddScore(scores, CategoryEnvironment, environmentMetrics);
+        AddScore(scores, CategorySocial, input.SocialMetrics);
+        AddScore(scores, CategorySafety, input.CrimeMetrics);
+        AddScore(scores, CategoryDemographics, input.DemographicsMetrics);
+        AddScore(scores, CategoryHousing, input.HousingMetrics);
+        AddScore(scores, CategoryMobility, input.MobilityMetrics);
+        AddScore(scores, CategoryAmenities, input.AmenityMetrics);
+        AddScore(scores, CategoryEnvironment, input.EnvironmentMetrics);
 
         return scores;
     }
