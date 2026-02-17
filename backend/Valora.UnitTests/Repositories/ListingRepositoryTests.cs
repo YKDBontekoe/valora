@@ -265,6 +265,31 @@ public class ListingRepositoryTests
     }
 
     [Fact]
+    public async Task GetByIdAsNoTrackingAsync_ShouldReturnDetachedEntity()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        var listing = new Listing { FundaId = "1", Address = "NoTrack", City = "Amsterdam", CreatedAt = DateTime.UtcNow };
+        context.Listings.Add(listing);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var repository = new ListingRepository(context);
+
+        // Act
+        var result = await repository.GetByIdAsNoTrackingAsync(listing.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("NoTrack", result!.Address);
+
+        // Ensure the entity is not tracked by the context
+        var entry = context.ChangeTracker.Entries<Listing>()
+            .FirstOrDefault(e => e.Entity.Id == listing.Id);
+        Assert.Null(entry);
+    }
+
+    [Fact]
     public async Task DeleteAsync_ShouldRemoveListing()
     {
         // Arrange
