@@ -4,6 +4,21 @@ import type { Stats } from '../types';
 import { Users, List, Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
+
 const Dashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,21 +49,6 @@ const Dashboard = () => {
     { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-primary-600', bg: 'bg-primary-50' },
   ];
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
   return (
     <div>
       <div className="mb-10">
@@ -73,13 +73,13 @@ const Dashboard = () => {
             >
               <div className="p-8">
                 <div className="flex items-center">
-                  <div className={`flex-shrink-0 ${card.bg} rounded-2xl p-4 transition-transform group-hover:scale-110`}>
+                  <div className={`flex-shrink-0 ${card.bg} rounded-2xl p-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-brand-200/50`}>
                     <Icon className={`h-8 w-8 ${card.color}`} />
                   </div>
                   <div className="ml-6 w-0 flex-1">
                     <dl>
-                      <dt className="text-xs font-bold text-brand-400 uppercase tracking-widest mb-1">{card.title}</dt>
-                      <dd className="text-4xl font-black text-brand-900 leading-none">
+                      <dt className="text-[10px] font-black text-brand-400 uppercase tracking-[0.15em] mb-1.5">{card.title}</dt>
+                      <dd className="text-4xl font-black text-brand-900 leading-none tracking-tight">
                         <motion.span
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}

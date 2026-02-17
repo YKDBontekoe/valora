@@ -3,6 +3,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import ListingRow from '../components/ListingRow';
 
+const tbodyVariants = {
+  visible: {
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
 const Listings = () => {
   const {
     listings,
@@ -30,30 +38,45 @@ const Listings = () => {
                 <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">City</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-brand-100">
+            <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={tbodyVariants}
+              className="bg-white divide-y divide-brand-100"
+            >
               <AnimatePresence mode="popLayout">
                 {loading ? (
-                  <tr>
+                  <motion.tr
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
                     <td colSpan={3} className="px-8 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
                         <span className="text-brand-500 font-medium">Loading listings...</span>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ) : listings.length === 0 ? (
-                  <tr>
+                  <motion.tr
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
                     <td colSpan={3} className="px-8 py-12 text-center text-brand-500 font-medium">
                       No listings found.
                     </td>
-                  </tr>
+                  </motion.tr>
                 ) : (
                   listings.map((listing) => (
                     <ListingRow key={listing.id} listing={listing} />
                   ))
                 )}
               </AnimatePresence>
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
 

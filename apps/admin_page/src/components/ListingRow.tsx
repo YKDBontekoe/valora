@@ -6,13 +6,17 @@ interface ListingRowProps {
   listing: Listing;
 }
 
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 }
+};
+
 const ListingRow = ({ listing }: ListingRowProps) => (
   <motion.tr
-    initial={{ opacity: 0, y: 4 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -4 }}
+    variants={rowVariants}
+    exit={{ opacity: 0, scale: 0.98 }}
     layout
-    className="hover:bg-brand-50/50 transition-colors group"
+    className="hover:bg-brand-50/50 transition-colors group cursor-default"
   >
     <td className="px-8 py-5 whitespace-nowrap text-sm">
       <div className="flex items-center">
