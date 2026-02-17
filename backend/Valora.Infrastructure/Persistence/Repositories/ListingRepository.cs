@@ -16,25 +16,40 @@ public class ListingRepository : IListingRepository
         _context = context;
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of full listing DTOs based on the provided filter.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Performance Optimization:</strong>
+    /// This method uses <see cref="EntityFrameworkQueryableExtensions.AsNoTracking{TEntity}"/> to bypass the EF Core ChangeTracker.
+    /// This significantly reduces memory overhead and CPU usage for read-only scenarios.
+    /// </para>
+    /// <para>
+    /// <strong>Projection:</strong>
+    /// It projects directly to <see cref="ListingDto"/> in the database query. This prevents "Select N+1" issues
+    /// and ensures only the necessary columns are fetched from the database.
+    /// </para>
+    /// </remarks>
     public async Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
-        // AsNoTracking() is used for read-only queries.
-        // It bypasses the ChangeTracker, significantly reducing memory usage and CPU time
-        // when fetching large datasets where no updates will be performed in the same context scope.
         var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
 
         query = ApplyFilters(query, filter, isPostgres);
 
-        // Optimization: Projection to DTO
-        // We project directly to the DTO in the database query.
-        // This prevents fetching unnecessary columns (select N+1 avoidance)
-        // and ensures only the required data travels over the wire from the database.
         var dtoQuery = query.Select(ListingProjections.ToDto);
 
         return await dtoQuery.ToPaginatedListAsync(filter.Page ?? 1, filter.PageSize ?? 10, cancellationToken);
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of lightweight listing summaries.
+    /// </summary>
+    /// <remarks>
+    /// Similar to <see cref="GetAllAsync"/>, this method uses <see cref="EntityFrameworkQueryableExtensions.AsNoTracking{TEntity}"/>
+    /// and projects to <see cref="ListingSummaryDto"/> to minimize data transfer for list views.
+    /// </remarks>
     public async Task<PaginatedList<ListingSummaryDto>> GetSummariesAsync(ListingFilterDto filter, CancellationToken cancellationToken = default)
     {
         var query = _context.Listings.AsNoTracking().AsQueryable();

@@ -6,6 +6,18 @@ Get a local environment running, understand the architecture, and generate your 
 
 ## 1. Environment Setup (First 10 Minutes)
 
+Use this visual guide to understand the dependencies between the setup steps.
+
+```mermaid
+graph TD
+    Step1[1. Start Infrastructure] -->|docker-compose up| DB[(PostgreSQL)]
+    Step2[2. Configure Backend] -->|.env: DATABASE_URL, JWT_SECRET| API[Valora API]
+    Step3[3. Configure Frontend] -->|.env: API_URL| App[Flutter App]
+
+    API -->|Connects to| DB
+    App -->|Connects to| API
+```
+
 ### Prerequisites
 - Docker Desktop
 - .NET 10 SDK
@@ -87,7 +99,7 @@ To understand how your request was processed, read the **[Data Flow Deep Dive](o
 | Task | Files/Folders |
 |---|---|
 | **Add a new data source** | 1. Define interface in `Valora.Application/Common/Interfaces`<br>2. Implement client in `Valora.Infrastructure`<br>3. Add to `ContextReportService.cs` |
-| **Adjust Scoring Logic** | `backend/Valora.Infrastructure/Enrichment/ContextReportService.cs` (Look for `Score*` methods) |
+| **Adjust Scoring Logic** | `backend/Valora.Application/Services/ContextReportService.cs` (Look for `Score*` methods) |
 | **Modify API Endpoints** | `backend/Valora.Api/Program.cs` |
 | **Update UI Screens** | `apps/flutter_app/lib/screens/` |
 

@@ -85,17 +85,26 @@ classDiagram
 
 ## Data Flow
 
-Valora processes data in two main pipelines:
+Valora processes data in two main pipelines. Click the links for deep dives.
 
-1.  **Report Generation (Read-Heavy)**:
-    -   **Goal**: Create a context report for a user on-the-fly.
-    -   **Mechanism**: "Fan-Out" to multiple external APIs in parallel.
-    -   **Docs**: [Report Generation Data Flow](docs/onboarding-data-flow.md)
+```mermaid
+graph LR
+    Req[User Request] -->|Address Input| Report[Report Generation]
+    Req -->|Listing View| Lifecycle[Listing Lifecycle]
 
-2.  **Listing Lifecycle (Write-Heavy)**:
-    -   **Goal**: Discover, persist, and enrich real estate listings.
-    -   **Mechanism**: Upsert on discovery, background enrichment, JSONB persistence.
-    -   **Docs**: [Listing Lifecycle Data Flow](docs/data-flow-lifecycle.md)
+    subgraph "Read-Heavy"
+    Report -->|Fan-Out Parallel Fetch| Ext[External APIs]
+    Ext -->|Aggregated Score| Client
+    end
+
+    subgraph "Write-Heavy"
+    Lifecycle -->|Upsert Entity| DB[(Database)]
+    Lifecycle -->|Background Enrich| Context[Context Service]
+    end
+```
+
+1.  **[Report Generation Data Flow](docs/onboarding-data-flow.md)**: How we fetch, aggregate, and score data from 4+ sources in parallel.
+2.  **[Listing Lifecycle Data Flow](docs/data-flow-lifecycle.md)**: How we discover, persist, and enrich property listings.
 
 ## Documentation Index
 

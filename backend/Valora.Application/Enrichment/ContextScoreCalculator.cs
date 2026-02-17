@@ -12,12 +12,18 @@ public static class ContextScoreCalculator
     public const string CategoryAmenities = "Amenities";
     public const string CategoryEnvironment = "Environment";
 
-    // Weighted average with emphasis on safety and amenities
-    // These weights are chosen based on user research indicating that:
-    // 1. Amenities (25%) are the primary driver for daily convenience (supermarkets, schools).
-    // 2. Safety (20%) and Social (20%) are critical "hygiene factors" for feeling at home.
-    // 3. Environment/Demographics/Housing (10% each) provide context but are less critical deal-breakers.
-    // 4. Mobility (5%) is often specific to car owners vs public transport users, so it has lower general weight.
+    /// <summary>
+    /// Weights used for calculating the composite score.
+    /// </summary>
+    /// <remarks>
+    /// Based on user research:
+    /// <list type="bullet">
+    /// <item><strong>Amenities (25%):</strong> Primary driver for daily convenience.</item>
+    /// <item><strong>Safety (20%) &amp; Social (20%):</strong> Critical "hygiene factors".</item>
+    /// <item><strong>Environment/Demographics/Housing (10%):</strong> Contextual factors.</item>
+    /// <item><strong>Mobility (5%):</strong> User-specific preference.</item>
+    /// </list>
+    /// </remarks>
     private static readonly Dictionary<string, double> Weights = new()
     {
         [CategorySocial] = 0.20,
@@ -29,6 +35,10 @@ public static class ContextScoreCalculator
         [CategoryEnvironment] = 0.10
     };
 
+    /// <summary>
+    /// Aggregates individual metrics into category scores (0-100).
+    /// </summary>
+    /// <returns>A dictionary mapping category names to their average scores.</returns>
     public static Dictionary<string, double> ComputeCategoryScores(
         IReadOnlyList<ContextMetricDto> socialMetrics,
         IReadOnlyList<ContextMetricDto> crimeMetrics,
