@@ -1,15 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import Listings from './Listings';
 import { listingService } from '../services/api';
 
 // Mock the service
 vi.mock('../services/api', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('../services/api')>();
   return {
     ...actual,
     listingService: {
+      ...actual.listingService,
       getListings: vi.fn(),
     },
   };
@@ -30,7 +32,8 @@ const mockListingsResponse = {
 describe('Listings Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (listingService.getListings as unknown as Mocked<typeof listingService['getListings']>).mockResolvedValue(mockListingsResponse);
+    // Directly cast to Mock to get mock methods
+    (listingService.getListings as Mock).mockResolvedValue(mockListingsResponse);
   });
 
   it('renders listings table correctly', async () => {
