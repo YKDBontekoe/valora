@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import BatchJobs from './BatchJobs';
 import { adminService } from '../services/api';
 
@@ -29,7 +29,7 @@ describe('BatchJobs Page', () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    (adminService.getJobs as any).mockResolvedValue(mockJobs);
+    (adminService.getJobs as Mock).mockResolvedValue(mockJobs);
 
     render(
       <MemoryRouter>
@@ -47,8 +47,8 @@ describe('BatchJobs Page', () => {
   });
 
   it('starts a new job when form is submitted', async () => {
-    (adminService.getJobs as any).mockResolvedValue([]);
-    (adminService.startJob as any).mockResolvedValue({ id: '2' });
+    (adminService.getJobs as Mock).mockResolvedValue([]);
+    (adminService.startJob as Mock).mockResolvedValue({ id: '2' });
 
     render(
       <MemoryRouter>
@@ -91,7 +91,7 @@ describe('BatchJobs Page', () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    (adminService.getJobs as any).mockResolvedValue(mockJobs);
+    (adminService.getJobs as Mock).mockResolvedValue(mockJobs);
 
     render(
       <MemoryRouter>
