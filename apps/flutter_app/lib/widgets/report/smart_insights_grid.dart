@@ -50,6 +50,7 @@ class SmartInsightsGrid extends StatelessWidget {
     ];
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
@@ -95,6 +96,7 @@ class SmartInsightsGrid extends StatelessWidget {
     return ValoraGlassContainer(
       padding: const EdgeInsets.all(16),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
