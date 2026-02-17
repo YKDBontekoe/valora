@@ -68,6 +68,12 @@ public class AdminService : IAdminService
 
         _logger.LogError("Failed to delete user {TargetUserId}: {Errors}", targetUserId, string.Join(", ", result.Errors));
 
+        // Check if error indicates "Not Found"
+        if (result.Errors.Any(e => e.Contains("User not found", StringComparison.OrdinalIgnoreCase)))
+        {
+            return Result.Failure(new[] { "User not found." }, "NotFound");
+        }
+
         // Sanitize errors for external consumption
         return Result.Failure(new[] { "Operation failed. Please try again later." }, "Internal");
     }

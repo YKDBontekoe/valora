@@ -308,7 +308,7 @@ public class AiServiceTests : IDisposable
         await Assert.ThrowsAsync<ClientResultException>(() => sut.ChatAsync("Hello", null, null));
 
         // 1 attempt only
-        Assert.Equal(1, _server.LogEntries.Count());
+        Assert.Single(_server.LogEntries);
     }
 
     public void Dispose()
