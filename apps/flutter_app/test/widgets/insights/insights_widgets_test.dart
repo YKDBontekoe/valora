@@ -14,6 +14,7 @@ import 'package:valora_app/models/map_city_insight.dart';
 import 'package:valora_app/models/map_overlay.dart';
 import 'package:valora_app/models/map_amenity.dart';
 import 'package:latlong2/latlong.dart';
+import 'dart:io';
 
 @GenerateNiceMocks([MockSpec<InsightsProvider>()])
 import 'insights_widgets_test.mocks.dart';
@@ -32,6 +33,9 @@ void main() {
     when(mockProvider.selectedOverlayMetric)
         .thenReturn(MapOverlayMetric.pricePerSquareMeter);
     when(mockProvider.mapError).thenReturn(null);
+
+    // Disable HTTP calls
+    HttpOverrides.global = null;
   });
 
   Widget createWidget(Widget child) {
@@ -273,8 +277,12 @@ void main() {
         mapController: MapController(),
         onMapChanged: () {},
       )));
-      await tester.pumpAndSettle();
 
+      // Use pump instead of pumpAndSettle to avoid waiting for network/tiles
+      await tester.pump();
+
+      // Check if PolygonLayer is present. Note: We might not see the visual polygon if painting fails,
+      // but the widget should be in the tree.
       expect(find.byType(PolygonLayer), findsOneWidget);
     });
     */
