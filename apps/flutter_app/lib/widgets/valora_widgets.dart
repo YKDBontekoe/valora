@@ -9,3 +9,4 @@ export 'common/valora_shimmer.dart';
 export 'common/valora_chip.dart';
 export 'common/valora_dialog.dart';
 export 'common/valora_tag.dart';
+export 'common/valora_settings_tile.dart';
