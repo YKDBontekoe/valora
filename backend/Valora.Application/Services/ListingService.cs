@@ -5,6 +5,7 @@ using Valora.Application.Common.Mappings;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Common;
 using Valora.Domain.Entities;
 using ValidationException = Valora.Application.Common.Exceptions.ValidationException;
 
@@ -76,6 +77,11 @@ public class ListingService : IListingService
         if (string.IsNullOrWhiteSpace(externalId))
         {
              throw new ValidationException(new[] { "External ID (PDOK ID) is required." });
+        }
+
+        if (externalId.Length > ValidationConstants.Listing.FundaIdMaxLength || !externalId.All(c => char.IsLetterOrDigit(c) || c == '-'))
+        {
+             throw new ValidationException(new[] { "Invalid External ID format." });
         }
 
         var listingDto = await _pdokService.GetListingDetailsAsync(externalId, cancellationToken);
