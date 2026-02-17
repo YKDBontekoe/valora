@@ -77,10 +77,16 @@ public static class AiEndpoints
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
 
-        // Strip characters that are not letters, digits, standard punctuation, whitespace, or basic math symbols like < and >.
-        // This is a whitelist approach to remove potential control characters or weird unicode injection vectors.
-        // We explicitly allow < and > so we can escape them properly in the next step, rather than silently stripping them.
-        var sanitized = System.Text.RegularExpressions.Regex.Replace(input, @"[^\w\s\p{P}<>]", "");
+        // Truncate first to prevent massive strings from being processed by Regex
+        if (input.Length > maxLength)
+        {
+            input = input.Substring(0, maxLength);
+        }
+
+        // Strip characters that are not letters, digits, standard punctuation, whitespace, symbols (\p{S}), numbers (\p{N}), or basic math symbols like < and >.
+        // This whitelist allows currency symbols (€, $), units (m²), superscripts (²), and other common text while removing control characters.
+        // We explicitly allow < and > so we can escape them properly in the next step.
+        var sanitized = System.Text.RegularExpressions.Regex.Replace(input, @"[^\w\s\p{P}\p{S}\p{N}<>]", "");
 
         // Escape XML-like characters to prevent tag injection if we use XML-style wrapping
         // Note: Replace & first to avoid double-escaping entity references
@@ -88,11 +94,6 @@ public static class AiEndpoints
                              .Replace("\"", "&quot;")
                              .Replace("<", "&lt;")
                              .Replace(">", "&gt;");
-
-        if (sanitized.Length > maxLength)
-        {
-            sanitized = sanitized.Substring(0, maxLength);
-        }
 
         return sanitized.Trim();
     }
