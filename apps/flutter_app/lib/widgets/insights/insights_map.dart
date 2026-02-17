@@ -47,6 +47,8 @@ class InsightsMap extends StatelessWidget {
         final overlays = data.$3;
         final amenities = data.$4;
         final cities = data.$5;
+        // Access provider for methods used in builder
+        final provider = context.read<InsightsProvider>();
 
         return FlutterMap(
           mapController: mapController,
@@ -74,24 +76,20 @@ class InsightsMap extends StatelessWidget {
               PolygonLayer(
                 polygons:
                     overlays.map((overlay) {
-                      return _buildPolygon(context, overlay);
+                      return buildPolygon(overlay, provider.selectedOverlayMetric);
                     }).toList(),
               ),
             if (showAmenities)
               MarkerLayer(
                 markers:
                     amenities.map((amenity) {
-                      return _buildAmenityMarker(context, amenity);
+                      return buildAmenityMarker(context, amenity);
                     }).toList(),
               ),
             MarkerLayer(
               markers:
                   cities.map((city) {
-                    return _buildCityMarker(
-                      context,
-                      city,
-                      context.read<InsightsProvider>(),
-                    );
+                    return buildCityMarker(context, city, provider.getScore(city));
                   }).toList(),
             ),
           ],
@@ -100,12 +98,12 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  Polygon _buildPolygon(BuildContext context, MapOverlay overlay) {
+  static Polygon buildPolygon(MapOverlay overlay, MapOverlayMetric metric) {
     final points = MapUtils.parsePolygonGeometry(overlay.geoJson['geometry']);
 
     final color = MapUtils.getOverlayColor(
       overlay.metricValue,
-      context.read<InsightsProvider>().selectedOverlayMetric,
+      metric,
     );
 
     return Polygon(
@@ -117,7 +115,7 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  Marker _buildAmenityMarker(BuildContext context, MapAmenity amenity) {
+  static Marker buildAmenityMarker(BuildContext context, MapAmenity amenity) {
     return Marker(
       point: amenity.location,
       width: 36,
@@ -146,12 +144,11 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  Marker _buildCityMarker(
+  static Marker buildCityMarker(
     BuildContext context,
     MapCityInsight city,
-    InsightsProvider provider,
+    double? score,
   ) {
-    final score = provider.getScore(city);
     final color = MapUtils.getColorForScore(score);
     final size = city.count >= 120
         ? 58.0
@@ -200,7 +197,7 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  void _showAmenityDetails(BuildContext context, MapAmenity amenity) {
+  static void _showAmenityDetails(BuildContext context, MapAmenity amenity) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Padding(
@@ -250,7 +247,7 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  void _showCityDetails(BuildContext context, MapCityInsight city) {
+  static void _showCityDetails(BuildContext context, MapCityInsight city) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -290,7 +287,7 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String? value) {
+  static Widget _buildDetailRow(String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
