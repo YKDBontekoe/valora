@@ -59,6 +59,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   }
 
   Future<void> _enrichListing() async {
+    if (!mounted) return;
+
     if (_isLoading) {
       try {
         final fullListing = await context.read<ApiService>().getListing(
@@ -86,10 +88,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
     // 2. Enrich with real photos if needed
     // This is now done here instead of blocking the navigation
-    await _enrichWithPhotos();
+    if (mounted) {
+      await _enrichWithPhotos();
+    }
   }
 
   Future<void> _enrichWithPhotos() async {
+    if (!mounted) return;
+
     final hasPhotos =
         _listing.imageUrls.isNotEmpty ||
         (_listing.imageUrl?.trim().isNotEmpty ?? false);
@@ -114,8 +120,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           _listing = Listing.fromJson(serialized);
         });
       }
-    } catch (e) {
-      // Ignore photo errors
+    } catch (e, stack) {
+      developer.log(
+        'Failed to enrich listing with photos',
+        name: 'ListingDetailScreen',
+        error: e,
+        stackTrace: stack,
+      );
     }
   }
 

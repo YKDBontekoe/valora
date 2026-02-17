@@ -21,6 +21,53 @@ public class ListingServiceTests
     }
 
     [Fact]
+    public async Task GetListingByIdAsync_ReturnsDto_WhenListingExists()
+    {
+        // Arrange
+        var listingId = Guid.NewGuid();
+        var listing = new Listing
+        {
+            Id = listingId,
+            FundaId = "test-123",
+            Address = "Test Address 1",
+            City = "Test City"
+        };
+        var service = CreateService();
+
+        _repositoryMock
+            .Setup(x => x.GetByIdAsNoTrackingAsync(listingId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(listing);
+
+        // Act
+        var result = await service.GetListingByIdAsync(listingId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(listingId, result.Id);
+        Assert.Equal("Test Address 1", result.Address);
+        _repositoryMock.Verify(x => x.GetByIdAsNoTrackingAsync(listingId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetListingByIdAsync_ReturnsNull_WhenListingDoesNotExist()
+    {
+        // Arrange
+        var listingId = Guid.NewGuid();
+        var service = CreateService();
+
+        _repositoryMock
+            .Setup(x => x.GetByIdAsNoTrackingAsync(listingId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Listing?)null);
+
+        // Act
+        var result = await service.GetListingByIdAsync(listingId);
+
+        // Assert
+        Assert.Null(result);
+        _repositoryMock.Verify(x => x.GetByIdAsNoTrackingAsync(listingId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task GetPdokListingAsync_AddsListing_WhenNotStoredYet()
     {
         // Arrange

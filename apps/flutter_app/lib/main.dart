@@ -15,6 +15,7 @@ import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/notification_service.dart';
+import 'services/property_photo_service.dart';
 import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
@@ -92,6 +93,7 @@ Future<void> main() async {
             update: (context, apiService, previous) =>
                 (previous ?? InsightsProvider(apiService))..update(apiService),
           ),
+          Provider<PropertyPhotoService>(create: (_) => PropertyPhotoService()),
         ],
         child: const ValoraApp(),
       ),
