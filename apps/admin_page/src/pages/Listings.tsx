@@ -1,43 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { listingService } from '../services/api';
-import type { Listing } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Euro, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useListings } from '../hooks/useListings';
+import ListingRow from '../components/ListingRow';
 
 const Listings = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const lastSuccessPage = useRef(1);
-  const pageSize = 10;
-
-  useEffect(() => {
-    const fetchListings = async () => {
-      setLoading(true);
-      try {
-        const data = await listingService.getListings(page, pageSize);
-        setListings(data.items || []);
-        setTotalPages(data.totalPages || 1);
-        lastSuccessPage.current = page;
-      } catch {
-        console.error('Failed to fetch listings');
-        // Revert page on failure to keep UI in sync
-        setPage(lastSuccessPage.current);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchListings();
-  }, [page]);
-
-  const handlePrevPage = () => {
-    if (page > 1) setPage(p => p - 1);
-  };
-
-  const handleNextPage = () => {
-    if (page < totalPages) setPage(p => p + 1);
-  };
+  const {
+    listings,
+    loading,
+    page,
+    totalPages,
+    nextPage,
+    prevPage
+  } = useListings();
 
   return (
     <div>
@@ -75,34 +49,7 @@ const Listings = () => {
                   </tr>
                 ) : (
                   listings.map((listing) => (
-                    <motion.tr
-                      key={listing.id}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      layout
-                      className="hover:bg-brand-50/50 transition-colors group"
-                    >
-                      <td className="px-8 py-5 whitespace-nowrap text-sm">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center mr-4 group-hover:bg-primary-50 transition-colors">
-                            <MapPin className="h-5 w-5 text-brand-400 group-hover:text-primary-600 transition-colors" />
-                          </div>
-                          <span className="font-bold text-brand-900">{listing.address}</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 whitespace-nowrap text-sm">
-                        <div className="flex items-center text-brand-700 font-bold">
-                          <Euro className="h-4 w-4 mr-1 text-brand-400" />
-                          {listing.price != null ? listing.price.toLocaleString() : '-'}
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 whitespace-nowrap text-sm">
-                        <span className="px-3 py-1.5 rounded-lg bg-brand-100 text-brand-700 text-[10px] font-black uppercase tracking-widest border border-brand-200/50">
-                          {listing.city}
-                        </span>
-                      </td>
-                    </motion.tr>
+                    <ListingRow key={listing.id} listing={listing} />
                   ))
                 )}
               </AnimatePresence>
@@ -118,7 +65,7 @@ const Listings = () => {
             <div className="flex space-x-3">
                 <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={handlePrevPage}
+                    onClick={prevPage}
                     disabled={page === 1 || loading}
                     className="p-2.5 rounded-xl bg-white border border-brand-200 shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all text-brand-600 cursor-pointer"
                 >
@@ -126,7 +73,7 @@ const Listings = () => {
                 </motion.button>
                 <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={handleNextPage}
+                    onClick={nextPage}
                     disabled={page === totalPages || loading}
                     className="p-2.5 rounded-xl bg-white border border-brand-200 shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all text-brand-600 cursor-pointer"
                 >
