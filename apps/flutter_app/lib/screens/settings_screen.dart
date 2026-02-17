@@ -376,7 +376,14 @@ class SettingsScreen extends StatelessWidget {
           ValoraChip(
             label: 'Edit',
             isSelected: true,
-            onSelected: (_) {}, // TODO: Implement edit profile
+            onSelected: (_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Profile editing coming soon!'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
           ),
         ],
       ),

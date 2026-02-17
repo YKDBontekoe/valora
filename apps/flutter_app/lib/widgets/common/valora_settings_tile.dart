@@ -42,6 +42,7 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
+    final isInteractive = widget.onTap != null;
 
     final effectiveIconColor = widget.iconColor ?? colorScheme.primary;
     final effectiveIconBg = widget.iconBackgroundColor ??
@@ -58,26 +59,30 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
         ? ValoraColors.neutral800.withValues(alpha: 0.5)
         : ValoraColors.neutral100.withValues(alpha: 0.5);
 
+    final showHighlight = isInteractive && (_isHovered || _isPressed);
+
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() {
-        _isHovered = false;
-        _isPressed = false;
-      }),
-      cursor: SystemMouseCursors.click,
+      onEnter: isInteractive ? (_) => setState(() => _isHovered = true) : null,
+      onExit: isInteractive
+          ? (_) => setState(() {
+              _isHovered = false;
+              _isPressed = false;
+            })
+          : null,
+      cursor: isInteractive ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: () {
-          if (widget.onTap != null) {
-            HapticFeedback.lightImpact();
-            widget.onTap!();
-          }
-        },
+        onTapDown: isInteractive ? (_) => setState(() => _isPressed = true) : null,
+        onTapUp: isInteractive ? (_) => setState(() => _isPressed = false) : null,
+        onTapCancel: isInteractive ? () => setState(() => _isPressed = false) : null,
+        onTap: isInteractive
+            ? () {
+                HapticFeedback.lightImpact();
+                widget.onTap!();
+              }
+            : null,
         child: AnimatedContainer(
           duration: ValoraAnimations.fast,
-          color: (_isHovered || _isPressed) ? interactiveColor : Colors.transparent,
+          color: showHighlight ? interactiveColor : Colors.transparent,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -102,7 +107,7 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
                         size: ValoraSpacing.iconSizeSm,
                       ),
                     )
-                    .animate(target: (_isHovered || _isPressed) ? 1 : 0)
+                    .animate(target: showHighlight ? 1 : 0)
                     .scale(
                       begin: const Offset(1, 1),
                       end: const Offset(1.1, 1.1),
@@ -140,7 +145,7 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
                     // Trailing
                     if (widget.trailing != null)
                       widget.trailing!
-                    else if (widget.showChevron)
+                    else if (widget.showChevron && isInteractive)
                       Icon(
                         Icons.chevron_right_rounded,
                         color: isDark
@@ -148,7 +153,7 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
                             : ValoraColors.neutral300,
                         size: ValoraSpacing.iconSizeMd,
                       )
-                      .animate(target: (_isHovered || _isPressed) ? 1 : 0)
+                      .animate(target: showHighlight ? 1 : 0)
                       .moveX(
                         begin: 0,
                         end: 4,
