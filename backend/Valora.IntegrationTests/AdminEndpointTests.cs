@@ -134,7 +134,7 @@ public class AdminEndpointTests : BaseIntegrationTest
         Assert.Equal("Amsterdam", job.Target);
 
         // Act - List
-        var listResponse = await Client.GetAsync("/api/admin/jobs");
+        var listResponse = await Client.GetAsync("/api/admin/jobs?limit=5");
 
         // Assert
         listResponse.EnsureSuccessStatusCode();
