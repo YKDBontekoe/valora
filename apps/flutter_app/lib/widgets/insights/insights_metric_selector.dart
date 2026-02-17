@@ -14,22 +14,26 @@ class InsightsMetricSelector extends StatelessWidget {
       right: 16,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Consumer<InsightsProvider>(
-          builder: (context, provider, _) {
+        child: Selector<InsightsProvider, InsightMetric>(
+          selector: (_, p) => p.selectedMetric,
+          builder: (context, selectedMetric, _) {
             return Row(
               children: InsightMetric.values.map((metric) {
-                final isSelected = provider.selectedMetric == metric;
+                final isSelected = selectedMetric == metric;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
                     label: Text(_getMetricLabel(metric)),
                     selected: isSelected,
-                    onSelected: (_) => provider.setMetric(metric),
+                    onSelected:
+                        (_) =>
+                            context.read<InsightsProvider>().setMetric(metric),
                     checkmarkColor: ValoraColors.primaryDark,
                     side: BorderSide(
-                      color: isSelected
-                          ? ValoraColors.primary
-                          : ValoraColors.neutral300,
+                      color:
+                          isSelected
+                              ? ValoraColors.primary
+                              : ValoraColors.neutral300,
                     ),
                     backgroundColor: Colors.white.withValues(alpha: 0.88),
                     selectedColor: ValoraColors.primaryLight.withValues(
