@@ -62,17 +62,33 @@ const Users = () => {
                 <th className="px-8 py-4 text-right text-xs font-bold text-brand-500 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-brand-100">
+            <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+              className="bg-white divide-y divide-brand-100"
+            >
               <AnimatePresence mode="popLayout">
                 {loading && users.length === 0 ? (
-                  <tr>
+                  <motion.tr
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
                     <td colSpan={3} className="px-8 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
                         <span className="text-brand-500 font-medium">Loading users...</span>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ) : (
                   users.map((user) => (
                     <UserRow
@@ -85,7 +101,7 @@ const Users = () => {
                   ))
                 )}
               </AnimatePresence>
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
       </div>

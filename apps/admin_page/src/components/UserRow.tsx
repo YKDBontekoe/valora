@@ -16,11 +16,13 @@ const UserRow = ({
   onDeleteClick
 }: UserRowProps) => (
   <motion.tr
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
+    variants={{
+      hidden: { opacity: 0, y: 10 },
+      visible: { opacity: 1, y: 0 }
+    }}
+    exit={{ opacity: 0, scale: 0.98 }}
     layout
-    className="hover:bg-brand-50/50 transition-colors"
+    className="hover:bg-brand-50/50 transition-colors group cursor-default"
   >
     <td className="px-8 py-5 whitespace-nowrap text-sm font-semibold text-brand-900">{user.email}</td>
     <td className="px-8 py-5 whitespace-nowrap text-sm text-brand-500">

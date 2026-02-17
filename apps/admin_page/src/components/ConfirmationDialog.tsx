@@ -37,7 +37,7 @@ const ConfirmationDialog = ({
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative z-50 border border-brand-100"
+            className="bg-white rounded-3xl shadow-premium-xl w-full max-w-md overflow-hidden relative z-50 border border-brand-100"
           >
             <div className="p-8">
               <div className="flex items-center justify-between mb-6">
@@ -68,15 +68,16 @@ const ConfirmationDialog = ({
                   {cancelLabel}
                 </motion.button>
                 <motion.button
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     onConfirm();
                     onClose();
                   }}
-                  className={`px-6 py-3 rounded-2xl text-sm font-bold text-white shadow-lg transition-all cursor-pointer ${
+                  className={`px-6 py-3 rounded-2xl text-sm font-bold text-white shadow-premium transition-all cursor-pointer ${
                     isDestructive
-                      ? 'bg-error-600 hover:bg-error-700 shadow-error-200'
-                      : 'bg-primary-600 hover:bg-primary-700 shadow-primary-200'
+                      ? 'bg-error-600 hover:bg-error-700 shadow-error-200/50'
+                      : 'bg-primary-600 hover:bg-primary-700 shadow-primary-200/50'
                   }`}
                 >
                   {confirmLabel}
