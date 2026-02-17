@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/valora_spacing.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_animations.dart';
 import '../core/utils/listing_url_launcher.dart';
 import '../models/listing.dart';
+import '../services/api_service.dart';
+import '../services/property_photo_service.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/valora_glass_container.dart';
 import '../models/context_report.dart';
@@ -18,14 +21,106 @@ import '../widgets/listing_detail/listing_detailed_features.dart';
 import '../widgets/listing_detail/listing_technical_details.dart';
 import '../widgets/listing_detail/listing_broker_card.dart';
 import 'gallery/full_screen_gallery.dart';
+import 'dart:developer' as developer;
 
-class ListingDetailScreen extends StatelessWidget {
+class ListingDetailScreen extends StatefulWidget {
   const ListingDetailScreen({super.key, required this.listing});
 
   final Listing listing;
 
+  @override
+  State<ListingDetailScreen> createState() => _ListingDetailScreenState();
+}
+
+class _ListingDetailScreenState extends State<ListingDetailScreen> {
+  late Listing _listing;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _listing = widget.listing;
+
+    // Check if we need to fetch full details
+    // If the listing is a summary (missing description or features), fetch full details
+    // Only do this if we have a URL, which indicates a DB-backed listing (PDOK lookups lack URLs)
+    bool needsFetch = _listing.description == null &&
+        _listing.features.isEmpty &&
+        _listing.url != null;
+
+    if (needsFetch) {
+      _isLoading = true;
+    }
+
+    // Defer the async work to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _enrichListing();
+    });
+  }
+
+  Future<void> _enrichListing() async {
+    if (_isLoading) {
+      try {
+        final fullListing = await context.read<ApiService>().getListing(
+          _listing.id,
+        );
+        if (mounted) {
+          setState(() {
+            _listing = fullListing;
+          });
+        }
+      } catch (e, stack) {
+        developer.log(
+          'Failed to fetch full listing details',
+          name: 'ListingDetailScreen',
+          error: e,
+          stackTrace: stack,
+        );
+        // Continue with partial data
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+
+    // 2. Enrich with real photos if needed
+    // This is now done here instead of blocking the navigation
+    await _enrichWithPhotos();
+  }
+
+  Future<void> _enrichWithPhotos() async {
+    final hasPhotos =
+        _listing.imageUrls.isNotEmpty ||
+        (_listing.imageUrl?.trim().isNotEmpty ?? false);
+
+    if (hasPhotos || _listing.latitude == null || _listing.longitude == null) {
+      return;
+    }
+
+    // Move the photo enrichment logic here
+    try {
+      final photoService = context.read<PropertyPhotoService>();
+      final photoUrls = photoService.getPropertyPhotos(
+        latitude: _listing.latitude!,
+        longitude: _listing.longitude!,
+      );
+
+      if (photoUrls.isNotEmpty && mounted) {
+        final serialized = _listing.toJson();
+        serialized['imageUrl'] = photoUrls.first;
+        serialized['imageUrls'] = photoUrls;
+        setState(() {
+          _listing = Listing.fromJson(serialized);
+        });
+      }
+    } catch (e) {
+      // Ignore photo errors
+    }
+  }
+
   Future<void> _contactBroker(BuildContext context) async {
-    final phone = listing.brokerPhone;
+    final phone = _listing.brokerPhone;
     if (phone != null) {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -44,7 +139,7 @@ class ListingDetailScreen extends StatelessWidget {
             ),
           ],
           child: Text(
-            'Do you want to call ${listing.agentName ?? 'the broker'} at $phone?',
+            'Do you want to call ${_listing.agentName ?? 'the broker'} at $phone?',
           ),
         ),
       );
@@ -58,14 +153,14 @@ class ListingDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final contextReport = listing.contextReport != null
-        ? ContextReport.fromJson(listing.contextReport!)
+    final contextReport = _listing.contextReport != null
+        ? ContextReport.fromJson(_listing.contextReport!)
         : null;
 
     // Use imageUrls if available, otherwise fallback to single imageUrl, otherwise empty list
-    final images = listing.imageUrls.isNotEmpty
-        ? listing.imageUrls
-        : (listing.imageUrl != null ? [listing.imageUrl!] : <String>[]);
+    final images = _listing.imageUrls.isNotEmpty
+        ? _listing.imageUrls
+        : (_listing.imageUrl != null ? [_listing.imageUrl!] : <String>[]);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -73,7 +168,7 @@ class ListingDetailScreen extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         slivers: [
           ListingSliverAppBar(
-            listing: listing,
+            listing: _listing,
             onImageTap: (index) {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -94,17 +189,17 @@ class ListingDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children:
                     [
-                          ListingHeader(listing: listing),
+                          ListingHeader(listing: _listing),
                           const SizedBox(height: ValoraSpacing.lg),
-                          ListingAddress(listing: listing),
+                          ListingAddress(listing: _listing),
                           const SizedBox(height: ValoraSpacing.lg),
                           Divider(color: colorScheme.outlineVariant),
                           const SizedBox(height: ValoraSpacing.lg),
-                          ListingSpecs(listing: listing),
+                          ListingSpecs(listing: _listing),
                           const SizedBox(height: ValoraSpacing.xl),
 
                           // Description
-                          if (listing.description != null) ...[
+                          if (_listing.description != null) ...[
                             Text(
                               'About this home',
                               style: ValoraTypography.titleLarge.copyWith(
@@ -114,21 +209,31 @@ class ListingDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: ValoraSpacing.sm),
                             Text(
-                              listing.description!,
+                              _listing.description!,
                               style: ValoraTypography.bodyMedium.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                                 height: 1.5,
                               ),
                             ),
                             const SizedBox(height: ValoraSpacing.xl),
+                          ] else if (_isLoading) ...[
+                             // Loading skeleton for description
+                             const ValoraShimmer(width: 150, height: 24),
+                             const SizedBox(height: ValoraSpacing.sm),
+                             const ValoraShimmer(width: double.infinity, height: 16),
+                             const SizedBox(height: 8),
+                             const ValoraShimmer(width: double.infinity, height: 16),
+                             const SizedBox(height: 8),
+                             const ValoraShimmer(width: 200, height: 16),
+                             const SizedBox(height: ValoraSpacing.xl),
                           ],
 
                           // Key Features Grid (Highlights)
-                          ListingHighlights(listing: listing),
+                          ListingHighlights(listing: _listing),
                           const SizedBox(height: ValoraSpacing.xl),
 
                           // Technical Details
-                          ListingTechnicalDetails(listing: listing),
+                          ListingTechnicalDetails(listing: _listing),
                           const SizedBox(height: ValoraSpacing.xl),
 
                           if (contextReport != null) ...[
@@ -147,11 +252,11 @@ class ListingDetailScreen extends StatelessWidget {
                              const SizedBox(height: ValoraSpacing.xl),
                           ],
 
-                          if (listing.virtualTourUrl != null ||
-                              listing.videoUrl != null ||
-                              listing.floorPlanUrls.isNotEmpty ||
-                              listing.latitude != null ||
-                              listing.longitude != null) ...[
+                          if (_listing.virtualTourUrl != null ||
+                              _listing.videoUrl != null ||
+                              _listing.floorPlanUrls.isNotEmpty ||
+                              _listing.latitude != null ||
+                              _listing.longitude != null) ...[
                             Text(
                               'Explore',
                               style: ValoraTypography.titleLarge.copyWith(
@@ -164,35 +269,35 @@ class ListingDetailScreen extends StatelessWidget {
                               spacing: ValoraSpacing.sm,
                               runSpacing: ValoraSpacing.sm,
                               children: [
-                                if (listing.latitude != null ||
-                                    listing.longitude != null)
+                                if (_listing.latitude != null ||
+                                    _listing.longitude != null)
                                   ValoraButton(
                                     label: 'Open Map',
                                     icon: Icons.map_rounded,
                                     variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => ListingUrlLauncher.openMap(context, listing.latitude, listing.longitude, listing.address, listing.city),
+                                    onPressed: () => ListingUrlLauncher.openMap(context, _listing.latitude, _listing.longitude, _listing.address, _listing.city),
                                   ),
-                                if (listing.virtualTourUrl != null)
+                                if (_listing.virtualTourUrl != null)
                                   ValoraButton(
                                     label: 'Virtual Tour',
                                     icon: Icons.view_in_ar_rounded,
                                     variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => ListingUrlLauncher.openVirtualTour(context, listing.virtualTourUrl),
+                                    onPressed: () => ListingUrlLauncher.openVirtualTour(context, _listing.virtualTourUrl),
                                   ),
-                                if (listing.videoUrl != null)
+                                if (_listing.videoUrl != null)
                                   ValoraButton(
                                     label: 'Watch Video',
                                     icon: Icons.play_circle_outline_rounded,
                                     variant: ValoraButtonVariant.secondary,
-                                    onPressed: () => ListingUrlLauncher.openVideo(context, listing.videoUrl),
+                                    onPressed: () => ListingUrlLauncher.openVideo(context, _listing.videoUrl),
                                   ),
-                                if (listing.floorPlanUrls.isNotEmpty)
+                                if (_listing.floorPlanUrls.isNotEmpty)
                                   ValoraButton(
                                     label: 'Floorplan',
                                     icon: Icons.map_outlined,
                                     variant: ValoraButtonVariant.secondary,
                                     onPressed: () =>
-                                        ListingUrlLauncher.openFirstFloorPlan(context, listing.floorPlanUrls),
+                                        ListingUrlLauncher.openFirstFloorPlan(context, _listing.floorPlanUrls),
                                   ),
                               ],
                             ),
@@ -200,26 +305,26 @@ class ListingDetailScreen extends StatelessWidget {
                           ],
 
                           // Features List (Detailed)
-                          ListingDetailedFeatures(listing: listing),
+                          ListingDetailedFeatures(listing: _listing),
 
                           // Broker Section
-                          if (listing.brokerLogoUrl != null ||
-                              listing.brokerPhone != null) ...[
-                            ListingBrokerCard(listing: listing),
+                          if (_listing.brokerLogoUrl != null ||
+                              _listing.brokerPhone != null) ...[
+                            ListingBrokerCard(listing: _listing),
                             const SizedBox(height: ValoraSpacing.md),
                           ],
 
-                          if (listing.url != null) ...[
+                          if (_listing.url != null) ...[
                             const SizedBox(height: ValoraSpacing.sm),
                             ValoraButton(
                               label: 'View on Funda',
                               icon: Icons.open_in_new_rounded,
                               isFullWidth: true,
-                              onPressed: () => ListingUrlLauncher.openExternalLink(context, listing.url),
+                              onPressed: () => ListingUrlLauncher.openExternalLink(context, _listing.url),
                             ),
                           ],
 
-                          if (listing.brokerPhone != null) ...[
+                          if (_listing.brokerPhone != null) ...[
                             const SizedBox(height: ValoraSpacing.md),
                             ValoraButton(
                               label: 'Contact Broker',

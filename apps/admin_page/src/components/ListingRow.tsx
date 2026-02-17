@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Euro } from 'lucide-react';
 import type { Listing } from '../types';
@@ -6,7 +7,7 @@ interface ListingRowProps {
   listing: Listing;
 }
 
-const ListingRow = ({ listing }: ListingRowProps) => (
+const ListingRow = memo(({ listing }: ListingRowProps) => (
   <motion.tr
     initial={{ opacity: 0, y: 4 }}
     animate={{ opacity: 1, y: 0 }}
@@ -34,6 +35,8 @@ const ListingRow = ({ listing }: ListingRowProps) => (
       </span>
     </td>
   </motion.tr>
-);
+));
+
+ListingRow.displayName = 'ListingRow';
 
 export default ListingRow;

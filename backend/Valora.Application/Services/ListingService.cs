@@ -54,7 +54,7 @@ public class ListingService : IListingService
 
     public async Task<ListingDto?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var listing = await _repository.GetByIdAsync(id, cancellationToken);
+        var listing = await _repository.GetByIdAsNoTrackingAsync(id, cancellationToken);
         return listing == null ? null : ListingMapper.ToDto(listing);
     }
 
