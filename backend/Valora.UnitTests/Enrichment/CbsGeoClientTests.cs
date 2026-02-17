@@ -214,6 +214,40 @@ public class CbsGeoClientTests
         Assert.Equal("50 / 1000", result[0].DisplayValue);
     }
 
+    [Fact]
+    public async Task GetNeighborhoodsByMunicipalityAsync_ReturnsNeighborhoodsOnSuccess()
+    {
+        // Arrange
+        var features = new[]
+        {
+            new
+            {
+                type = "Feature",
+                properties = new { buurtcode = "BU03630101", buurtnaam = "Burgwallen-Oude Zijde" }
+            }
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        // Act
+        var result = await client.GetNeighborhoodsByMunicipalityAsync("Amsterdam");
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("BU03630101", result[0].Code);
+        Assert.Equal("Burgwallen-Oude Zijde", result[0].Name);
+    }
+
     private static Mock<HttpMessageHandler> CreateHandlerMock(HttpStatusCode statusCode, string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
