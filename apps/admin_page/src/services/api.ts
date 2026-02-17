@@ -1,10 +1,24 @@
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import { notificationService } from './notificationService';
 import type { AuthResponse, Stats, User, Listing, PaginatedResponse } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
+});
+
+axiosRetry(api, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) => {
+    return (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      error.response?.status === 429 ||
+      (error.response?.status !== undefined && error.response.status >= 500)
+    );
+  },
 });
 
 api.interceptors.request.use((config) => {
@@ -50,6 +64,43 @@ api.interceptors.response.use(
     }
     // Avoid logging full error object to prevent token leakage
     console.error('API Error:', error.message);
+
+    // Notify user about error
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+
+      // Determine error message
+      let message = data?.detail || data?.title || 'An unexpected error occurred';
+
+      if (Array.isArray(data)) {
+        // Legacy error array format
+        message = data.map((e: any) => e.error || JSON.stringify(e)).join('\n');
+      } else if (data?.errors) {
+        // FluentValidation errors
+        message = Object.values(data.errors).flat().join('\n');
+      }
+
+      if (status >= 500) {
+        notificationService.error(`Server Error: ${message}`);
+      } else if (status === 403) {
+        notificationService.warning('You do not have permission to perform this action.');
+      } else if (status === 404) {
+        notificationService.warning('Resource not found.');
+      } else if (status === 400) {
+        notificationService.error(message);
+      } else if (status === 429) {
+        notificationService.warning('Too many requests. Please try again later.');
+      } else if (status !== 401) {
+        // 401 is handled by retry logic above
+        notificationService.error(message);
+      }
+    } else if (error.request) {
+      notificationService.error('Network error. Please check your connection.');
+    } else {
+      notificationService.error(error.message);
+    }
+
     return Promise.reject(error);
   }
 );

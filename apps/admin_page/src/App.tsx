@@ -4,6 +4,8 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Listings from './pages/Listings';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
+import { NotificationProvider } from './context/NotificationContext';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('admin_token');
@@ -13,23 +15,27 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="users" element={<Users />} />
-          <Route path="listings" element={<Listings />} />
-        </Route>
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="users" element={<Users />} />
+              <Route path="listings" element={<Listings />} />
+            </Route>
+          </Routes>
+        </Router>
+      </NotificationProvider>
+    </ErrorBoundary>
   );
 }
 

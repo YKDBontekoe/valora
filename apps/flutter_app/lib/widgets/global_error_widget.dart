@@ -50,12 +50,17 @@ class GlobalErrorWidget extends StatelessWidget {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (context) => const StartupScreen(),
-                        ),
-                        (route) => false,
-                      );
+                      // Check if Navigator is available before trying to use it
+                      // This prevents crashes if the error occurred above the Navigator in the widget tree
+                      final navigator = Navigator.maybeOf(context);
+                      if (navigator != null) {
+                        navigator.pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const StartupScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
                     },
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('Restart'),
@@ -69,7 +74,7 @@ class GlobalErrorWidget extends StatelessWidget {
                             ClipboardData(text: details.exception.toString()),
                           );
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                               const SnackBar(
                                 content: Text('Error copied to clipboard'),
                               ),
@@ -77,7 +82,7 @@ class GlobalErrorWidget extends StatelessWidget {
                           }
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                               const SnackBar(
                                 content: Text('Failed to copy error'),
                               ),
