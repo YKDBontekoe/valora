@@ -95,22 +95,48 @@ public class IdentityService : IIdentityService
         if (user == null) return Result.Failure(new[] { "User not found." });
 
         // Manually clean up notifications because they don't have a navigation property/FK configured for cascade delete
-        if (_context.Database.ProviderName?.Contains("InMemory") == true)
+
+        // Transaction logic for Relational databases (Postgres)
+        if (_context.Database.IsRelational())
         {
-             var notifications = _context.Notifications.Where(n => n.UserId == userId);
-             _context.Notifications.RemoveRange(notifications);
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _context.Notifications
+                    .Where(n => n.UserId == userId)
+                    .ExecuteDeleteAsync();
+
+                // RefreshTokens are configured with cascade delete, so they will be removed automatically
+
+                var result = await _userManager.DeleteAsync(user);
+
+                if (result.Succeeded)
+                {
+                    await transaction.CommitAsync();
+                }
+                else
+                {
+                    await transaction.RollbackAsync();
+                }
+
+                return ToApplicationResult(result);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
         else
         {
-             await _context.Notifications
-                .Where(n => n.UserId == userId)
-                .ExecuteDeleteAsync();
+            // Fallback for Non-Relational (InMemory Tests) - No Transaction support
+            var notifications = _context.Notifications.Where(n => n.UserId == userId);
+            _context.Notifications.RemoveRange(notifications);
+            await _context.SaveChangesAsync();
+
+            var result = await _userManager.DeleteAsync(user);
+            return ToApplicationResult(result);
         }
-
-        // RefreshTokens are configured with cascade delete, so they will be removed automatically
-
-        var result = await _userManager.DeleteAsync(user);
-        return ToApplicationResult(result);
     }
 
     public async Task<IList<string>> GetUserRolesAsync(ApplicationUser user)

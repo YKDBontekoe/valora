@@ -79,13 +79,16 @@ public class UserCleanupIntegrationTests : IAsyncLifetime
         // Assert
         Assert.True(result.Succeeded, "DeleteUserAsync failed");
 
+        // Clear change tracker to ensure we query the database, not the local cache
+        _dbContext.ChangeTracker.Clear();
+
         // Verify User is gone
         var deletedUser = await _dbContext.Users.FindAsync(user.Id);
         Assert.Null(deletedUser);
 
         // Verify Notification is gone
         var deletedNotification = await _dbContext.Notifications.FindAsync(notification.Id);
-        Assert.Null(deletedNotification); // This will fail if cleanup is missing
+        Assert.Null(deletedNotification);
     }
 
     [Fact]
@@ -115,6 +118,9 @@ public class UserCleanupIntegrationTests : IAsyncLifetime
 
         // Assert
         Assert.True(result.Succeeded, "DeleteUserAsync failed");
+
+        // Clear change tracker to ensure we query the database, not the local cache
+        _dbContext.ChangeTracker.Clear();
 
         // Verify User is gone
         var deletedUser = await _dbContext.Users.FindAsync(user.Id);
