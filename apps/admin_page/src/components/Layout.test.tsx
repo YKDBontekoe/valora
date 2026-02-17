@@ -30,6 +30,7 @@ describe('Layout Component', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Users')).toBeInTheDocument();
     expect(screen.getByText('Listings')).toBeInTheDocument();
+    expect(screen.getByText('Batch Jobs')).toBeInTheDocument();
     expect(screen.getByText('Logout')).toBeInTheDocument();
   });
 

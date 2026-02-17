@@ -14,6 +14,8 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<BatchJob> BatchJobs => Set<BatchJob>();
+    public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

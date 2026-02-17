@@ -35,3 +35,16 @@ export interface PaginatedResponse<T> {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
+
+export interface BatchJob {
+  id: string;
+  type: string;
+  status: string;
+  target: string;
+  progress: number;
+  error: string | null;
+  resultSummary: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
