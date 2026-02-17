@@ -7,13 +7,7 @@ import 'package:valora_app/models/map_city_insight.dart';
 import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/screens/insights/insights_screen.dart';
 import 'package:valora_app/services/api_service.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'dart:io';
-
-// Generate mock for ApiService
-@GenerateNiceMocks([MockSpec<ApiService>()])
-import 'insights_screen_test.mocks.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService(this._cities);
