@@ -121,4 +121,33 @@ public class ListingMapperTests
 
         entity.Description.Should().Be("Line1 Line2");
     }
+
+    [Fact]
+    public void ToEntity_ShouldSanitizeFeatureKeys()
+    {
+        var features = new Dictionary<string, string>
+        {
+            { "<b>Key1</b>", "Value1" },
+            { "<script>alert(1)</script>Key2", "Value2" }
+        };
+        var dto = _validDto with { Features = features };
+
+        var entity = ListingMapper.ToEntity(dto);
+
+        entity.Features.Should().ContainKey(" Key1 ");
+        entity.Features.Should().ContainKey("Key2");
+        entity.Features[" Key1 "].Should().Be("Value1");
+    }
+
+    [Fact]
+    public void ToEntity_ShouldHandleNullFeatures()
+    {
+        var dto = _validDto with { Features = null! }; // Intentionally null to test robustness
+
+        var action = () => ListingMapper.ToEntity(dto);
+
+        action.Should().NotThrow();
+        var entity = ListingMapper.ToEntity(dto);
+        entity.Features.Should().NotBeNull().And.BeEmpty();
+    }
 }

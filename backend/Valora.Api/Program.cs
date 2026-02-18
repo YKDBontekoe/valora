@@ -198,7 +198,8 @@ await DbInitializer.InitializeAsync(app.Services, app.Configuration, app.Environ
 // Only use HTTPS redirection if specifically enabled and NOT on Render
 // Render handles SSL termination and redirection at the load balancer level.
 var isOnRender = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RENDER"));
-if (!isOnRender && (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION")))
+// Apply HSTS and HTTPS Redirection for all non-development environments
+if (!isOnRender && (!app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION")))
 {
     if (!app.Environment.IsDevelopment())
     {

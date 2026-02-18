@@ -141,7 +141,8 @@ public static class ListingMapper
         listing.BalconyM2 = dto.BalconyM2;
         listing.GardenM2 = dto.GardenM2;
         listing.ExternalStorageM2 = dto.ExternalStorageM2;
-        listing.Features = dto.Features.ToDictionary(k => k.Key, k => SanitizeHtml(k.Value) ?? string.Empty);
+        listing.Features = (dto.Features ?? new Dictionary<string, string>())
+            .ToDictionary(k => SanitizeHtml(k.Key) ?? string.Empty, k => SanitizeHtml(k.Value) ?? string.Empty);
         listing.Latitude = dto.Latitude;
         listing.Longitude = dto.Longitude;
         listing.VideoUrl = dto.VideoUrl;
@@ -165,17 +166,22 @@ public static class ListingMapper
         listing.ContextReport = dto.ContextReport;
     }
 
+    // Compiled regexes for performance and ReDoS protection (Timeouts)
+    private static readonly Regex ScriptRegex = new Regex(@"<script[^>]*?>[\s\S]*?</script>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
+    private static readonly Regex StyleRegex = new Regex(@"<style[^>]*?>[\s\S]*?</style>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
+    private static readonly Regex TagRegex = new Regex(@"<\/?[a-zA-Z][^>]*?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
+
     private static string? SanitizeHtml(string? input)
     {
         if (string.IsNullOrEmpty(input)) return input;
 
         // Remove script and style blocks with content (lazy match)
         // This prevents Stored XSS by removing HTML tags from user-controlled or external content.
-        input = Regex.Replace(input, @"<script[^>]*?>[\s\S]*?</script>", string.Empty, RegexOptions.IgnoreCase);
-        input = Regex.Replace(input, @"<style[^>]*?>[\s\S]*?</style>", string.Empty, RegexOptions.IgnoreCase);
+        input = ScriptRegex.Replace(input, string.Empty);
+        input = StyleRegex.Replace(input, string.Empty);
 
         // Replace other tags with a space to prevent concatenation (e.g. <br> -> " ")
         // This preserves mathematical comparisons like < 20 because the match must start with a letter (tag name).
-        return Regex.Replace(input, @"<\/?[a-zA-Z][^>]*?>", " ");
+        return TagRegex.Replace(input, " ");
     }
 }
