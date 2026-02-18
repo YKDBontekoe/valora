@@ -242,5 +242,20 @@ void main() {
       expect(authProvider.email, 'unexpected@example.com');
       verifyNever(mockAuthService.deleteToken());
     });
+
+    test('checkAuth handles JWT parsing error gracefully', () async {
+      // Valid JWT structure but invalid JSON payload
+      // header.invalid_json_payload.sig
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final invalidPayload = base64Url.encode(utf8.encode('this is not json'));
+      final token = '$header.$invalidPayload.signature';
+
+      when(mockAuthService.getToken()).thenAnswer((_) async => token);
+
+      await authProvider.checkAuth();
+
+      expect(authProvider.isAuthenticated, true); // Token exists, so authenticated
+      expect(authProvider.email, null); // Parsing failed, so email is null
+    });
   });
 }
