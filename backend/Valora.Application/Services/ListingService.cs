@@ -74,15 +74,7 @@ public class ListingService : IListingService
     /// </remarks>
     public async Task<ListingDto?> GetPdokListingAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(externalId))
-        {
-             throw new ValidationException(new[] { "External ID (PDOK ID) is required." });
-        }
-
-        if (externalId.Length > ValidationConstants.Listing.FundaIdMaxLength || !externalId.All(c => char.IsLetterOrDigit(c) || c == '-'))
-        {
-             throw new ValidationException(new[] { "Invalid External ID format." });
-        }
+        ValidateExternalId(externalId);
 
         var listingDto = await _pdokService.GetListingDetailsAsync(externalId, cancellationToken);
         if (listingDto is null)
@@ -117,13 +109,12 @@ public class ListingService : IListingService
             var newListing = ListingMapper.ToEntity(listingDto);
             newListing.LastFundaFetchUtc = utcNow;
             await _repository.AddAsync(newListing, cancellationToken);
+            return;
         }
-        else
-        {
-            ListingMapper.UpdateEntity(existing, listingDto);
-            existing.LastFundaFetchUtc = utcNow;
-            await _repository.UpdateAsync(existing, cancellationToken);
-        }
+
+        ListingMapper.UpdateEntity(existing, listingDto);
+        existing.LastFundaFetchUtc = utcNow;
+        await _repository.UpdateAsync(existing, cancellationToken);
     }
 
     /// <summary>
@@ -160,9 +151,7 @@ public class ListingService : IListingService
 
         // 2. Update Entity
         listing.ContextReport = contextReportModel;
-        listing.ContextCompositeScore = reportDto.CompositeScore;
-
-        UpdateContextScores(listing, reportDto);
+        ListingMapper.UpdateContextScores(listing, reportDto);
 
         // 3. Save
         await _repository.UpdateAsync(listing, cancellationToken);
@@ -170,12 +159,16 @@ public class ListingService : IListingService
         return reportDto.CompositeScore;
     }
 
-    private static void UpdateContextScores(Listing listing, ContextReportDto reportDto)
+    private static void ValidateExternalId(string externalId)
     {
-        var scores = reportDto.CategoryScores;
-        if (scores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
-        if (scores.TryGetValue(ContextScoreCalculator.CategorySafety, out var safety)) listing.ContextSafetyScore = safety;
-        if (scores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
-        if (scores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
+        if (string.IsNullOrWhiteSpace(externalId))
+        {
+            throw new ValidationException(new[] { "External ID (PDOK ID) is required." });
+        }
+
+        if (externalId.Length > ValidationConstants.Listing.FundaIdMaxLength || !externalId.All(c => char.IsLetterOrDigit(c) || c == '-'))
+        {
+            throw new ValidationException(new[] { "Invalid External ID format." });
+        }
     }
 }

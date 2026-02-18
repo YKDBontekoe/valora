@@ -1,4 +1,5 @@
 using Valora.Application.DTOs;
+using Valora.Application.Enrichment;
 using Valora.Domain.Common;
 using Valora.Domain.Entities;
 
@@ -162,5 +163,16 @@ public static class ListingMapper
         listing.ContextCompositeScore = dto.ContextCompositeScore;
         listing.ContextSafetyScore = dto.ContextSafetyScore;
         listing.ContextReport = dto.ContextReport;
+    }
+
+    public static void UpdateContextScores(Listing listing, ContextReportDto reportDto)
+    {
+        var scores = reportDto.CategoryScores;
+        if (scores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social)) listing.ContextSocialScore = social;
+        if (scores.TryGetValue(ContextScoreCalculator.CategorySafety, out var safety)) listing.ContextSafetyScore = safety;
+        if (scores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities)) listing.ContextAmenitiesScore = amenities;
+        if (scores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env)) listing.ContextEnvironmentScore = env;
+
+        listing.ContextCompositeScore = reportDto.CompositeScore;
     }
 }
