@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_typography.dart';
 
 /// An animated circular gauge displaying a score from 0-100
 /// with gradient coloring and smooth animation.
@@ -20,17 +22,18 @@ class ScoreGauge extends StatelessWidget {
   final Duration animationDuration;
 
   Color _getScoreColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981); // Emerald
-    if (score >= 60) return const Color(0xFF3B82F6); // Blue
-    if (score >= 40) return const Color(0xFFF59E0B); // Amber
-    return const Color(0xFFEF4444); // Red
+    if (score >= 80) return ValoraColors.scoreExcellent;
+    if (score >= 60) return ValoraColors.scoreGood;
+    if (score >= 40) return ValoraColors.scoreAverage;
+    return ValoraColors.scorePoor;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scoreColor = _getScoreColor(score);
-    
+    final isDark = theme.brightness == Brightness.dark;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: score.clamp(0, 100)),
       duration: animationDuration,
@@ -48,7 +51,9 @@ class ScoreGauge extends StatelessWidget {
                 painter: _GaugePainter(
                   score: 100,
                   strokeWidth: strokeWidth,
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: isDark
+                      ? ValoraColors.neutral800
+                      : ValoraColors.neutral200,
                 ),
               ),
               // Animated score arc
@@ -67,15 +72,15 @@ class ScoreGauge extends StatelessWidget {
                 children: [
                   Text(
                     animatedScore.round().toString(),
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: ValoraTypography.scoreDisplay.copyWith(
                       color: scoreColor,
+                      fontSize: size * 0.28, // Responsive font size
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     label,
-                    style: theme.textTheme.labelMedium?.copyWith(
+                    style: ValoraTypography.labelMedium.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -106,8 +111,13 @@ class _GaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
+
+    // Start at 135 degrees (bottom left)
     final startAngle = math.pi * 0.75;
-    final sweepAngle = (score / 100) * math.pi * 1.5;
+
+    // Sweep 270 degrees max (3/4 circle)
+    final maxSweep = math.pi * 1.5;
+    final sweepAngle = (score / 100) * maxSweep;
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
@@ -115,13 +125,16 @@ class _GaugePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     if (hasGradient) {
+      // Create a gradient that follows the arc
       paint.shader = SweepGradient(
         startAngle: startAngle,
-        endAngle: startAngle + math.max(0.001, sweepAngle),
+        endAngle: startAngle + maxSweep,
         colors: [
           color.withValues(alpha: 0.6),
           color,
         ],
+        // Rotate gradient to match start angle
+        transform: GradientRotation(startAngle - (math.pi * 0.05)),
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     } else {
       paint.color = color;

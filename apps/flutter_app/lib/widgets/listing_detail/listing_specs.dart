@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_animations.dart';
 import '../../models/listing.dart';
+import '../valora_widgets.dart';
 
 class ListingSpecs extends StatelessWidget {
   const ListingSpecs({
@@ -67,10 +71,19 @@ class ListingSpecs extends StatelessWidget {
       clipBehavior: Clip.none,
       child: Row(
         children: specs
+            .asMap()
+            .entries
             .map(
-              (widget) => Padding(
+              (entry) => Padding(
                 padding: const EdgeInsets.only(right: ValoraSpacing.lg),
-                child: widget,
+                child: entry.value
+                    .animate(delay: (100 * entry.key).ms)
+                    .fade(duration: ValoraAnimations.normal)
+                    .slideX(
+                      begin: 0.2,
+                      end: 0,
+                      curve: ValoraAnimations.deceleration,
+                    ),
               ),
             )
             .toList(),
@@ -84,15 +97,9 @@ class ListingSpecs extends StatelessWidget {
     String value,
     ColorScheme colorScheme,
   ) {
-    return Container(
+    return ValoraCard(
       padding: const EdgeInsets.all(ValoraSpacing.md),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
+      backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -101,6 +108,13 @@ class ListingSpecs extends StatelessWidget {
             decoration: BoxDecoration(
               color: colorScheme.surface,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(icon, size: 20, color: colorScheme.primary),
           ),

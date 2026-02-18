@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:mockito/mockito.dart';
+import 'package:valora_app/widgets/report/score_gauge.dart';
+import 'package:valora_app/widgets/report/metric_category_card.dart';
 
 class MockApiService extends Mock implements ApiService {}
 
@@ -49,48 +51,24 @@ void main() {
   }
 
   testWidgets('ContextReportView renders correctly', (tester) async {
-    tester.view.physicalSize = const Size(1200, 2000);
+    tester.view.physicalSize = const Size(1200, 3000); // Increased height to avoid overflow/truncation
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest(
       ContextReportView(report: testReport),
     ));
 
+    await tester.pumpAndSettle();
+
     expect(find.text('Test Address'), findsOneWidget);
+
+    // Check for categories
     expect(find.text('Social'), findsOneWidget);
+    expect(find.text('Safety'), findsOneWidget);
 
-    await tester.pumpAndSettle();
-
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-  });
-
-  testWidgets('ContextReportView.buildChild returns expected components', (tester) async {
-    tester.view.physicalSize = const Size(1200, 2000);
-    tester.view.devicePixelRatio = 1.0;
-
-    await tester.pumpWidget(createWidgetUnderTest(
-      Builder(
-        builder: (context) {
-          final count = ContextReportView.childCount(testReport);
-          return Column(
-            children: List.generate(count, (index) => ContextReportView.buildChild(
-              context,
-              index,
-              testReport,
-            )),
-          );
-        },
-      ),
-    ));
-
-    expect(find.text('Test Address'), findsOneWidget);
+    // Check for components
     expect(find.byType(ScoreGauge), findsOneWidget);
-    expect(find.byType(MetricCategoryCard), findsNWidgets(2));
-
-    await tester.pumpAndSettle();
+    expect(find.byType(MetricCategoryCard), findsNWidgets(2)); // Social and Safety
 
     addTearDown(() {
       tester.view.resetPhysicalSize();
