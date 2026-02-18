@@ -175,5 +175,7 @@ void main() {
 
     expect(tappedListing, isNotNull);
     expect(tappedListing!.id, '1');
+
+    await tester.pumpAndSettle();
   });
 }
