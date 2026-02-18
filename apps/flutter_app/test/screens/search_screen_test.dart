@@ -14,6 +14,7 @@ import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/valora_listing_card_horizontal.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
+import 'package:valora_app/screens/notifications_screen.dart';
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/services/property_photo_service.dart';
@@ -668,5 +669,30 @@ void main() {
 
     // Ensure all timers are settled
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('SearchScreen opens sort sheet on sort button tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.sort_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sort By'), findsOneWidget);
+    expect(find.text('Newest'), findsOneWidget);
+  });
+
+  testWidgets('SearchScreen navigates to notifications on notification button tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.notifications_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NotificationsScreen), findsOneWidget);
   });
 }

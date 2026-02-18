@@ -8,8 +8,8 @@ import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i4;
-import 'package:valora_app/models/listing.dart' as _i3;
-import 'package:valora_app/providers/search_listings_provider.dart' as _i2;
+import 'package:valora_app/models/listing.dart' as _i2;
+import 'package:valora_app/providers/search_listings_provider.dart' as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -26,19 +26,24 @@ import 'package:valora_app/providers/search_listings_provider.dart' as _i2;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
+class _FakeListing_0 extends _i1.SmartFake implements _i2.Listing {
+  _FakeListing_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [SearchListingsProvider].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSearchListingsProvider extends _i1.Mock
-    implements _i2.SearchListingsProvider {
+    implements _i3.SearchListingsProvider {
   @override
-  List<_i3.Listing> get listings =>
+  List<_i2.Listing> get listings =>
       (super.noSuchMethod(
             Invocation.getter(#listings),
-            returnValue: <_i3.Listing>[],
-            returnValueForMissingStub: <_i3.Listing>[],
+            returnValue: <_i2.Listing>[],
+            returnValueForMissingStub: <_i2.Listing>[],
           )
-          as List<_i3.Listing>);
+          as List<_i2.Listing>);
 
   @override
   bool get isLoading =>
@@ -250,6 +255,44 @@ class MockSearchListingsProvider extends _i1.Mock
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
           as _i5.Future<void>);
+
+  @override
+  _i5.Future<_i2.Listing> fetchFullListingDetails(_i2.Listing? listing) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchFullListingDetails, [listing]),
+            returnValue: _i5.Future<_i2.Listing>.value(
+              _FakeListing_0(
+                this,
+                Invocation.method(#fetchFullListingDetails, [listing]),
+              ),
+            ),
+            returnValueForMissingStub: _i5.Future<_i2.Listing>.value(
+              _FakeListing_0(
+                this,
+                Invocation.method(#fetchFullListingDetails, [listing]),
+              ),
+            ),
+          )
+          as _i5.Future<_i2.Listing>);
+
+  @override
+  _i5.Future<_i2.Listing> enrichListingWithPhotos(_i2.Listing? listing) =>
+      (super.noSuchMethod(
+            Invocation.method(#enrichListingWithPhotos, [listing]),
+            returnValue: _i5.Future<_i2.Listing>.value(
+              _FakeListing_0(
+                this,
+                Invocation.method(#enrichListingWithPhotos, [listing]),
+              ),
+            ),
+            returnValueForMissingStub: _i5.Future<_i2.Listing>.value(
+              _FakeListing_0(
+                this,
+                Invocation.method(#enrichListingWithPhotos, [listing]),
+              ),
+            ),
+          )
+          as _i5.Future<_i2.Listing>);
 
   @override
   void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
