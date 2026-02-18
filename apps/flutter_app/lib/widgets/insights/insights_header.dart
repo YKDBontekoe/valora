@@ -19,7 +19,7 @@ class InsightsHeader extends StatelessWidget {
           color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
-          boxShadow: ValoraShadows.md,
+          boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -47,7 +47,6 @@ class InsightsHeader extends StatelessWidget {
                       'Area Insights',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                     ),
                     Selector<InsightsProvider, int>(
@@ -55,9 +54,7 @@ class InsightsHeader extends StatelessWidget {
                       builder: (context, count, _) {
                         return Text(
                           '$count cities',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
                         );
                       },
                     ),
