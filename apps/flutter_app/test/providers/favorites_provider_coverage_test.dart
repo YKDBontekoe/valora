@@ -1,7 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:valora_app/models/listing.dart';
-import 'package:valora_app/providers/favorites_provider.dart';
 
 void main() {
   test('FavoritesProvider handles SharedPreferences load error', () async {
