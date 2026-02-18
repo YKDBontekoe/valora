@@ -6,7 +6,12 @@ class AppConfig {
   static const String _fallbackApiUrl = 'http://localhost:5001/api';
 
   static String get apiUrl {
-    String url = dotenv.env['API_URL']?.trim() ?? '';
+    String url;
+    try {
+      url = dotenv.env['API_URL']?.trim() ?? '';
+    } catch (_) {
+      url = '';
+    }
     if (url.isEmpty) {
       url = _fallbackApiUrl;
     }
@@ -20,8 +25,12 @@ class AppConfig {
   }
 
   static bool get isApiUrlConfigured {
-    final configured = dotenv.env['API_URL']?.trim();
-    return configured != null && configured.isNotEmpty;
+    try {
+      final configured = dotenv.env['API_URL']?.trim();
+      return configured != null && configured.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   static bool get isUsingFallbackApiUrl => !isApiUrlConfigured;

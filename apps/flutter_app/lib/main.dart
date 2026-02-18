@@ -24,10 +24,23 @@ Future<void> main() async {
 
   try {
     // Prefer local overrides when available, but always fall back to committed defaults.
+    // In release/profile mode, dotenv can only load files declared in pubspec.yaml assets.
+    bool envLoaded = false;
     try {
       await dotenv.load(fileName: ".env");
+      envLoaded = true;
     } catch (_) {
-      await dotenv.load(fileName: ".env.example");
+      // .env not found in asset bundle, try .env.example
+    }
+    if (!envLoaded) {
+      try {
+        await dotenv.load(fileName: ".env.example");
+      } catch (_) {
+        // Neither file available — app will use AppConfig fallback values
+        if (kDebugMode) {
+          debugPrint('Warning: No .env file found. Using fallback configuration.');
+        }
+      }
     }
 
     // Catch Flutter framework errors
