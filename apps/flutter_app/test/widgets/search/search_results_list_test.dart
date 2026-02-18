@@ -97,6 +97,8 @@ void main() {
 
     expect(find.byType(ValoraListingCardHorizontal), findsOneWidget);
     expect(find.text('Test Address'), findsOneWidget);
+
+    await tester.pumpAndSettle();
   });
 
   testWidgets('SearchResultsList renders loading indicator when loading more', (
