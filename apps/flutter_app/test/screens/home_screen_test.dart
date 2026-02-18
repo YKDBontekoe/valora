@@ -12,6 +12,7 @@ import 'package:valora_app/screens/settings_screen.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/auth_service.dart';
 import 'package:valora_app/services/notification_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 
 void main() {
   setUp(() {
@@ -26,6 +27,7 @@ void main() {
         ChangeNotifierProvider<FavoritesProvider>(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider(authService: AuthService())),
         Provider<ApiService>(create: (_) => ApiService()),
+        Provider<PropertyPhotoService>(create: (_) => PropertyPhotoService()),
         ChangeNotifierProvider<NotificationService>(
           create: (_) => NotificationService(ApiService()),
         ),
