@@ -16,8 +16,9 @@ import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/notification_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 
-@GenerateMocks([ApiService, FavoritesProvider, PdokService])
+@GenerateMocks([ApiService, FavoritesProvider, PdokService, PropertyPhotoService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
@@ -152,12 +153,14 @@ void main() {
   late MockFavoritesProvider mockFavoritesProvider;
   late MockPdokService mockPdokService;
   late FakeNotificationService fakeNotificationService;
+  late MockPropertyPhotoService mockPropertyPhotoService;
 
   setUp(() {
     mockApiService = MockApiService();
     mockFavoritesProvider = MockFavoritesProvider();
     mockPdokService = MockPdokService();
     fakeNotificationService = FakeNotificationService();
+    mockPropertyPhotoService = MockPropertyPhotoService();
 
     // Default favorites provider behavior
     when(mockFavoritesProvider.favorites).thenReturn([]);
@@ -165,6 +168,10 @@ void main() {
 
     // Default PDOK service behavior
     when(mockPdokService.search(any)).thenAnswer((_) async => []);
+
+    // Default Property Photo service behavior
+    when(mockPropertyPhotoService.getPropertyPhotos(latitude: anyNamed('latitude'), longitude: anyNamed('longitude')))
+        .thenReturn([]);
 
     // Install HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -174,6 +181,7 @@ void main() {
     return MultiProvider(
       providers: [
         Provider<ApiService>.value(value: mockApiService),
+        Provider<PropertyPhotoService>.value(value: mockPropertyPhotoService),
         ChangeNotifierProvider<FavoritesProvider>.value(
           value: mockFavoritesProvider,
         ),
@@ -591,9 +599,9 @@ void main() {
 
     // Tap listing
     await tester.tap(find.text('Summary Address'));
-    await tester.pump(); // Trigger tap logic
 
-    // Wait for async enrich calls
+    // Pump frames to allow navigation and async call in ListingDetailScreen to start
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     // Verify full listing was fetched

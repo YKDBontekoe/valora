@@ -1,12 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/models/listing.dart';
 import 'package:valora_app/providers/favorites_provider.dart';
 import 'package:valora_app/screens/listing_detail_screen.dart';
+import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
+
+@GenerateMocks([ApiService, PropertyPhotoService])
+import 'listing_detail_test.mocks.dart';
 
 void main() {
+  late MockApiService mockApiService;
+  late MockPropertyPhotoService mockPropertyPhotoService;
+
+  setUp(() {
+    mockApiService = MockApiService();
+    mockPropertyPhotoService = MockPropertyPhotoService();
+    // Default stubs
+    when(mockPropertyPhotoService.getPropertyPhotos(
+      latitude: anyNamed('latitude'),
+      longitude: anyNamed('longitude'),
+    )).thenReturn([]);
+  });
+
   setUpAll(() {
     SharedPreferences.setMockInitialValues({});
   });
@@ -35,6 +55,8 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          Provider<ApiService>.value(value: mockApiService),
+          Provider<PropertyPhotoService>.value(value: mockPropertyPhotoService),
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),
@@ -81,6 +103,8 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          Provider<ApiService>.value(value: mockApiService),
+          Provider<PropertyPhotoService>.value(value: mockPropertyPhotoService),
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),

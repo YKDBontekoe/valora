@@ -202,7 +202,7 @@ class _ValoraListingCardHorizontalState
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: ValoraSpacing.md),
-                  _buildSpecsRow(context),
+                  ListingSpecsRow(listing: widget.listing),
                 ],
               ),
             ),
@@ -211,30 +211,33 @@ class _ValoraListingCardHorizontalState
       ),
     );
   }
+}
 
-  Widget _buildSpecsRow(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+class ListingSpecsRow extends StatelessWidget {
+  const ListingSpecsRow({super.key, required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
     final specs = <Widget>[];
 
-    if (widget.listing.bedrooms != null) {
-      specs.add(_buildSpec(
-        Icons.bed_outlined,
-        '${widget.listing.bedrooms}',
-        colorScheme,
+    if (listing.bedrooms != null) {
+      specs.add(ListingSpecItem(
+        icon: Icons.bed_outlined,
+        label: '${listing.bedrooms}',
       ));
     }
-    if (widget.listing.bathrooms != null) {
-      specs.add(_buildSpec(
-        Icons.bathtub_outlined,
-        '${widget.listing.bathrooms}',
-        colorScheme,
+    if (listing.bathrooms != null) {
+      specs.add(ListingSpecItem(
+        icon: Icons.bathtub_outlined,
+        label: '${listing.bathrooms}',
       ));
     }
-    if (widget.listing.livingAreaM2 != null) {
-      specs.add(_buildSpec(
-        Icons.square_foot_outlined,
-        '${widget.listing.livingAreaM2} m²',
-        colorScheme,
+    if (listing.livingAreaM2 != null) {
+      specs.add(ListingSpecItem(
+        icon: Icons.square_foot_outlined,
+        label: '${listing.livingAreaM2} m²',
       ));
     }
 
@@ -249,8 +252,17 @@ class _ValoraListingCardHorizontalState
       ],
     );
   }
+}
 
-  Widget _buildSpec(IconData icon, String label, ColorScheme colorScheme) {
+class ListingSpecItem extends StatelessWidget {
+  const ListingSpecItem({super.key, required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
