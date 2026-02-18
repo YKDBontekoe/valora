@@ -1,21 +1,27 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/services/auth_service.dart';
 
-@GenerateMocks([AuthService])
+@GenerateMocks([AuthService, GoogleSignIn, GoogleSignInAccount, GoogleSignInAuthentication])
 import 'auth_provider_test.mocks.dart';
 
 void main() {
   late MockAuthService mockAuthService;
+  late MockGoogleSignIn mockGoogleSignIn;
   late AuthProvider authProvider;
 
   setUp(() {
     mockAuthService = MockAuthService();
-    authProvider = AuthProvider(authService: mockAuthService);
+    mockGoogleSignIn = MockGoogleSignIn();
+    authProvider = AuthProvider(
+      authService: mockAuthService,
+      googleSignIn: mockGoogleSignIn,
+    );
   });
 
   group('AuthProvider', () {
@@ -244,8 +250,6 @@ void main() {
     });
 
     test('checkAuth handles JWT parsing error gracefully', () async {
-      // Valid JWT structure but invalid JSON payload
-      // header.invalid_json_payload.sig
       final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
       final invalidPayload = base64Url.encode(utf8.encode('this is not json'));
       final token = '$header.$invalidPayload.signature';
@@ -254,8 +258,52 @@ void main() {
 
       await authProvider.checkAuth();
 
-      expect(authProvider.isAuthenticated, true); // Token exists, so authenticated
-      expect(authProvider.email, null); // Parsing failed, so email is null
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, null);
+    });
+
+    test('loginWithGoogle success path', () async {
+      final mockAccount = MockGoogleSignInAccount();
+      final mockAuth = MockGoogleSignInAuthentication();
+      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
+      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'google@example.com'})));
+      final token = '$header.$payload.signature';
+
+      when(mockGoogleSignIn.initialize()).thenAnswer((_) async {});
+      when(mockGoogleSignIn.authenticate(scopeHint: anyNamed('scopeHint')))
+          .thenAnswer((_) async => mockAccount);
+      when(mockAccount.authentication).thenReturn(mockAuth);
+      when(mockAuth.idToken).thenReturn('google_id_token');
+
+      when(mockAuthService.externalLogin('google', 'google_id_token'))
+          .thenAnswer((_) async => {'token': token});
+
+      await authProvider.loginWithGoogle();
+
+      expect(authProvider.isAuthenticated, true);
+      expect(authProvider.email, 'google@example.com');
+      verify(mockGoogleSignIn.initialize()).called(1);
+      verify(mockGoogleSignIn.authenticate(scopeHint: ['email'])).called(1);
+      verify(mockAuthService.externalLogin('google', 'google_id_token')).called(1);
+    });
+
+    test('loginWithGoogle handles missing idToken', () async {
+      final mockAccount = MockGoogleSignInAccount();
+      final mockAuth = MockGoogleSignInAuthentication();
+
+      when(mockGoogleSignIn.initialize()).thenAnswer((_) async {});
+      when(mockGoogleSignIn.authenticate(scopeHint: anyNamed('scopeHint')))
+          .thenAnswer((_) async => mockAccount);
+      when(mockAccount.authentication).thenReturn(mockAuth);
+      when(mockAuth.idToken).thenReturn(null);
+
+      expect(() => authProvider.loginWithGoogle(), throwsException);
+      expect(authProvider.isAuthenticated, false);
+    });
+
+    test('loginWithGoogle failure propagates exception', () async {
+      when(mockGoogleSignIn.initialize()).thenThrow(Exception('Init failed'));
+      expect(() => authProvider.loginWithGoogle(), throwsException);
     });
   });
 }

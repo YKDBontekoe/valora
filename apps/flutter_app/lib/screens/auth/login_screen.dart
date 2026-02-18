@@ -40,20 +40,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _openSocialProvider(String provider) async {
+    Future<void> _openSocialProvider(String provider) async {
+    if (provider.toLowerCase() == 'google') {
+       try {
+         await context.read<AuthProvider>().loginWithGoogle();
+       } catch (e) {
+         if (!mounted) return;
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Google Login failed: $e')),
+         );
+       }
+       return;
+    }
+
     final Uri uri = Uri.parse('https://valora.nl/auth/$provider');
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$provider login is currently unavailable.'),
-          backgroundColor: ValoraColors.error,
-        ),
+        const SnackBar(content: Text('Could not launch social login')),
       );
     }
   }
+
 
   @override
   void dispose() {

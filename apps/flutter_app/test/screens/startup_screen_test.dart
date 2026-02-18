@@ -5,6 +5,8 @@ import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/screens/startup_screen.dart';
 
 class DelayedAuthProvider extends ChangeNotifier implements AuthProvider {
+  @override
+  Future<void> loginWithGoogle() async {}
   DelayedAuthProvider({required this.delay});
 
   final Duration delay;

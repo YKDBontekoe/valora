@@ -6,6 +6,8 @@ import 'package:valora_app/screens/auth/login_screen.dart';
 
 class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
+  Future<void> loginWithGoogle() async {}
+  @override
   bool get isAuthenticated => false;
 
   @override
@@ -39,12 +41,23 @@ class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   }
 }
 
+class SpyAuthProvider extends MockAuthProvider {
+  bool googleLoginCalled = false;
+
+  @override
+  Future<void> loginWithGoogle() async {
+    googleLoginCalled = true;
+  }
+}
+
 void main() {
   testWidgets('LoginScreen has AutofillGroup and correct hints', (
     WidgetTester tester,
   ) async {
     final authProvider = MockAuthProvider();
 
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<AuthProvider>.value(
@@ -74,5 +87,25 @@ void main() {
           widget.autofillHints!.contains(AutofillHints.password),
     );
     expect(passwordFieldFinder, findsOneWidget);
+  });
+
+  testWidgets('Tapping Google button calls loginWithGoogle', (WidgetTester tester) async {
+    final authProvider = SpyAuthProvider();
+
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<AuthProvider>.value(
+          value: authProvider,
+          child: const LoginScreen(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Google'));
+    await tester.pump();
+
+    expect(authProvider.googleLoginCalled, isTrue);
   });
 }

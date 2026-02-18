@@ -8,6 +8,8 @@ import 'package:valora_app/providers/auth_provider.dart';
 // Fake AuthProvider to satisfy StartupScreen dependency
 class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
+  Future<void> loginWithGoogle() async {}
+  @override
   Future<void> checkAuth() async {
     // No-op for testing
   }

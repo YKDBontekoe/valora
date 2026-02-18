@@ -34,3 +34,8 @@ public record AuthResponseDto(
 public record RefreshTokenRequestDto(
     string RefreshToken
 );
+
+public record ExternalLoginRequestDto(
+    [Required] string Provider,
+    [Required] string IdToken
+);

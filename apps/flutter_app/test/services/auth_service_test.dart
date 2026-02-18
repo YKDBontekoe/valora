@@ -236,5 +236,51 @@ void main() {
       verify(mockStorage.delete(key: 'auth_token')).called(1);
       verify(mockStorage.delete(key: 'refresh_token')).called(1);
     });
+
+    test('externalLogin saves tokens on success', () async {
+      final mockResponse = {
+        'token': 'access_token',
+        'refreshToken': 'refresh_token',
+        'email': 'test@test.com',
+        'userId': '123',
+      };
+
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response(jsonEncode(mockResponse), 200));
+
+      when(
+        mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+      ).thenAnswer((_) async => {});
+
+      final result = await authService.externalLogin('google', 'token_123');
+
+      verify(
+        mockStorage.write(key: 'auth_token', value: 'access_token'),
+      ).called(1);
+      verify(
+        mockStorage.write(key: 'refresh_token', value: 'refresh_token'),
+      ).called(1);
+      expect(result['token'], 'access_token');
+    });
+
+    test('externalLogin throws on failure', () async {
+      when(
+        mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => http.Response('Unauthorized', 401));
+
+      expect(
+        () => authService.externalLogin('google', 'bad_token'),
+        throwsA(isA<ValidationException>()),
+      );
+    });
   });
 }

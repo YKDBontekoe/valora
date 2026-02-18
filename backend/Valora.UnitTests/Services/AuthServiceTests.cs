@@ -15,6 +15,7 @@ public class AuthServiceTests
     private readonly Mock<IIdentityService> _mockIdentityService;
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<ILogger<AuthService>> _mockLogger;
+    private readonly Mock<IExternalAuthService> _mockExternalAuthService;
     private readonly AuthService _authService;
 
     public AuthServiceTests()
@@ -22,7 +23,8 @@ public class AuthServiceTests
         _mockIdentityService = new Mock<IIdentityService>();
         _mockTokenService = new Mock<ITokenService>();
         _mockLogger = new Mock<ILogger<AuthService>>();
-        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object);
+        _mockExternalAuthService = new Mock<IExternalAuthService>();
+        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object, _mockExternalAuthService.Object);
     }
 
     [Fact]
@@ -137,5 +139,53 @@ public class AuthServiceTests
 
         _mockTokenService.Verify(x => x.RevokeRefreshTokenAsync("old"), Times.Once);
         _mockTokenService.Verify(x => x.SaveRefreshTokenAsync(newToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExternalLoginAsync_ExistingUser_ReturnsSuccess()
+    {
+        var request = new ExternalLoginRequestDto("google", "token");
+        var externalUser = new ExternalUserDto("google", "123", "test@gmail.com", "User");
+        var user = new ApplicationUser { Id = "1", Email = "test@gmail.com" };
+        var refreshToken = new RefreshToken { RawToken = "refresh", UserId = "1" };
+
+        _mockExternalAuthService.Setup(x => x.VerifyTokenAsync("google", "token"))
+            .ReturnsAsync(externalUser);
+        _mockIdentityService.Setup(x => x.GetUserByEmailAsync("test@gmail.com"))
+            .ReturnsAsync(user);
+        _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("access");
+        _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(refreshToken);
+
+        var result = await _authService.ExternalLoginAsync(request);
+
+        Assert.NotNull(result);
+        Assert.Equal("access", result.Token);
+    }
+
+    [Fact]
+    public async Task ExternalLoginAsync_NewUser_RegistersAndReturnsSuccess()
+    {
+        var request = new ExternalLoginRequestDto("google", "token");
+        var externalUser = new ExternalUserDto("google", "123", "new@gmail.com", "User");
+        var user = new ApplicationUser { Id = "1", Email = "new@gmail.com" };
+        var refreshToken = new RefreshToken { RawToken = "refresh", UserId = "1" };
+
+        _mockExternalAuthService.Setup(x => x.VerifyTokenAsync("google", "token"))
+            .ReturnsAsync(externalUser);
+        _mockIdentityService.SetupSequence(x => x.GetUserByEmailAsync("new@gmail.com"))
+            .ReturnsAsync((ApplicationUser?)null) // First call returns null (user doesn't exist)
+            .ReturnsAsync(user); // Second call returns created user
+
+        _mockIdentityService.Setup(x => x.CreateUserAsync("new@gmail.com", It.IsAny<string>()))
+            .ReturnsAsync((Result.Success(), "1"));
+
+        _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("access");
+        _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(refreshToken);
+
+        var result = await _authService.ExternalLoginAsync(request);
+
+        Assert.NotNull(result);
+        Assert.Equal("access", result.Token);
+        _mockIdentityService.Verify(x => x.CreateUserAsync("new@gmail.com", It.IsAny<string>()), Times.Once);
     }
 }

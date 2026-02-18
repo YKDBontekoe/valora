@@ -56,5 +56,20 @@ public static class AuthEndpoints
             return Results.Ok(response);
         })
         .AddEndpointFilter<ValidationFilter<RefreshTokenRequestDto>>();
+
+        group.MapPost("/external-login", async (
+            [FromBody] ExternalLoginRequestDto request,
+            IAuthService authService) =>
+        {
+            var response = await authService.ExternalLoginAsync(request);
+
+            if (response == null)
+            {
+                return Results.Unauthorized();
+            }
+
+            return Results.Ok(response);
+        })
+        .AddEndpointFilter<ValidationFilter<ExternalLoginRequestDto>>();
     }
 }
