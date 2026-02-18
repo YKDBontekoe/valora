@@ -83,7 +83,7 @@ public class AdminServiceTests
             .ReturnsAsync(new Dictionary<string, IList<string>>());
 
         // Act
-        var result = await service.GetUsersAsync(1, 10);
+        var result = await service.GetUsersAsync(1, 10, null, null, "admin-user");
 
         // Assert
         Assert.Equal(2, result.TotalCount);
@@ -109,7 +109,7 @@ public class AdminServiceTests
             .ReturnsAsync(new Dictionary<string, IList<string>>());
 
         // Act
-        await service.GetUsersAsync(1, 10, "test", "email_asc");
+        await service.GetUsersAsync(1, 10, "test", "email_asc", "admin-id");
 
         // Assert
         _identityServiceMock.Verify(x => x.GetUsersAsync(1, 10, "test", "email_asc"), Times.Once);

@@ -20,27 +20,53 @@ export const useUsers = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Reset page when filter/sort changes
+  // Combined effect to handle fetching and avoid race conditions
   useEffect(() => {
-    setPage(1);
+    let ignore = false;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await adminService.getUsers(page, 10, debouncedSearch, sortBy);
+        if (!ignore) {
+          setUsers(data.items);
+          setTotalPages(Math.max(1, data.totalPages));
+        }
+      } catch (error) {
+        if (!ignore) console.error('Failed to fetch users', error);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [page, debouncedSearch, sortBy]);
+
+  // When debounced search or sort changes, we MUST reset to page 1.
+  // However, `setPage(1)` triggers the main effect again if page changed.
+  // The standard way to avoid double fetch is to make the fetch dependent on page change,
+  // OR handle the reset logic inside the fetch effect (complex),
+  // OR just accept that React 18+ strict mode double-invokes anyway and we have `ignore` flag.
+  // BUT:
+  // 1. User types "test" -> debouncedSearch changes -> effect runs with OLD page (say 5) -> 404/Empty? -> ignore=false -> updates state.
+  // 2. Separate effect sets page=1 -> effect runs with NEW page (1) -> fetch -> ignore=false -> updates state.
+  // Result: User sees empty state flash then correct results.
+  // To fix: We need to coordinate.
+
+  // Ref-based coordination to detect if we should fetch.
+  // If search/sort changed, we set page=1 and DO NOT fetch yet (return early?).
+  // But we can't skip the fetch easily in the effect.
+
+  // Better: Only reset page if it's NOT 1.
+  useEffect(() => {
+     if (page !== 1) {
+         setPage(1);
+     }
   }, [debouncedSearch, sortBy]);
-
-  const fetchUsers = useCallback(async (pageNumber: number, search: string, sort?: string) => {
-    setLoading(true);
-    try {
-      const data = await adminService.getUsers(pageNumber, 10, search, sort);
-      setUsers(data.items);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      console.error('Failed to fetch users', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers(page, debouncedSearch, sortBy);
-  }, [page, debouncedSearch, sortBy, fetchUsers]);
 
   const deleteUser = async (user: User) => {
     if (user.id === currentUserId) {
@@ -56,7 +82,7 @@ export const useUsers = () => {
     }
   };
 
-  const nextPage = () => setPage(p => Math.min(totalPages, p + 1));
+  const nextPage = () => setPage(p => Math.min(Math.max(totalPages, 1), p + 1));
   const prevPage = () => setPage(p => Math.max(1, p - 1));
 
   const toggleSort = (field: string) => {
@@ -66,6 +92,19 @@ export const useUsers = () => {
       return `${field}_asc`;
     });
   };
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+        const data = await adminService.getUsers(page, 10, debouncedSearch, sortBy);
+        setUsers(data.items);
+        setTotalPages(Math.max(1, data.totalPages));
+    } catch (error) {
+        console.error('Failed to refresh users', error);
+    } finally {
+        setLoading(false);
+    }
+  }, [page, debouncedSearch, sortBy]);
 
   return {
     users,
@@ -81,6 +120,6 @@ export const useUsers = () => {
     setSearchQuery,
     sortBy,
     toggleSort,
-    refresh: () => fetchUsers(page, debouncedSearch, sortBy)
+    refresh
   };
 };

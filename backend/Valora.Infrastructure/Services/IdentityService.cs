@@ -84,7 +84,16 @@ public class IdentityService : IIdentityService
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
-            query = query.Where(u => u.Email!.Contains(searchQuery));
+            if (_context.Database.ProviderName?.Contains("PostgreSQL") == true)
+            {
+                // Postgres ILIKE for case-insensitive search
+                query = query.Where(u => EF.Functions.ILike(u.Email!, $"%{searchQuery}%"));
+            }
+            else
+            {
+                // Fallback for InMemory/SQLite
+                query = query.Where(u => u.Email != null && u.Email.Contains(searchQuery));
+            }
         }
 
         query = sortBy?.ToLower() switch
