@@ -1,4 +1,5 @@
 using Moq;
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Services;
@@ -18,6 +19,32 @@ public class ListingServiceTests
             _repositoryMock.Object,
             _pdokServiceMock.Object,
             _contextReportServiceMock.Object);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task GetPdokListingAsync_ThrowsValidationException_WhenIdIsNullOrWhiteSpace(string invalidId)
+    {
+        // Arrange
+        var service = CreateService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => service.GetPdokListingAsync(invalidId));
+    }
+
+    [Theory]
+    [InlineData("too-long-id-that-exceeds-the-maximum-length-of-fifty-characters-12345")]
+    [InlineData("invalid_char!")]
+    [InlineData("invalid@char")]
+    public async Task GetPdokListingAsync_ThrowsValidationException_WhenIdIsInvalidFormat(string invalidId)
+    {
+        // Arrange
+        var service = CreateService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => service.GetPdokListingAsync(invalidId));
     }
 
     [Fact]

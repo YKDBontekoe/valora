@@ -163,4 +163,5 @@ public static class ListingMapper
         listing.ContextSafetyScore = dto.ContextSafetyScore;
         listing.ContextReport = dto.ContextReport;
     }
+
 }
