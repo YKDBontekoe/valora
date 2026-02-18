@@ -8,6 +8,9 @@ import '../services/auth_service.dart';
 class AuthProvider extends ChangeNotifier {
   static final _log = Logger('AuthProvider');
   final AuthService _authService;
+  // Make GoogleSignIn injectable for testing
+  final GoogleSignIn _googleSignIn;
+
   bool _isAuthenticated = false;
   bool _isLoading = false;
   bool _isGoogleSignInInitialized = false;
@@ -21,8 +24,9 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _token;
   String? get email => _email;
 
-  AuthProvider({AuthService? authService})
-    : _authService = authService ?? AuthService();
+  AuthProvider({AuthService? authService, GoogleSignIn? googleSignIn})
+    : _authService = authService ?? AuthService(),
+      _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   Future<void> checkAuth() async {
     _isLoading = true;
@@ -163,11 +167,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       if (!_isGoogleSignInInitialized) {
-        await GoogleSignIn.instance.initialize();
+        await _googleSignIn.initialize();
         _isGoogleSignInInitialized = true;
       }
 
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate(
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
         scopeHint: <String>['email'],
       );
 

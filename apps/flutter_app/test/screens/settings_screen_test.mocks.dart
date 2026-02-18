@@ -152,6 +152,15 @@ class MockAuthProvider extends _i1.Mock implements _i5.AuthProvider {
           as _i4.Future<String?>);
 
   @override
+  _i4.Future<void> loginWithGoogle() =>
+      (super.noSuchMethod(
+            Invocation.method(#loginWithGoogle, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
