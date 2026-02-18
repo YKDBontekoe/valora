@@ -63,7 +63,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ValoraColors.backgroundLight,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Selector<InsightsProvider, (bool, bool, String?)>(
         selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error),
         builder: (context, state, child) {
@@ -109,9 +109,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withValues(alpha: 0.72),
-                                Colors.white.withValues(alpha: 0.02),
-                                Colors.white.withValues(alpha: 0.14),
+                                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.72),
+                                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.02),
+                                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.14),
                               ],
                               stops: const [0, 0.42, 1],
                             ),
@@ -153,7 +153,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget _buildMapError(String error) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.82),
+        color: ValoraColors.neutral800.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(

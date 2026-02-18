@@ -42,6 +42,7 @@ class InsightsMap extends StatelessWidget {
             p.selectedOverlayMetric,
           ),
       builder: (context, data, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         final showOverlays = data.$1;
         final showAmenities = data.$2;
         final overlays = data.$3;
@@ -67,7 +68,7 @@ class InsightsMap extends StatelessWidget {
           children: [
             TileLayer(
               urlTemplate:
-                  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                  isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
               userAgentPackageName: 'com.valora.app',
               subdomains: const ['a', 'b', 'c', 'd'],
               retinaMode: RetinaMode.isHighDensity(context),
@@ -126,12 +127,12 @@ class InsightsMap extends StatelessWidget {
           builder: (context) => buildAmenityDetailsSheet(context, amenity),
         ),
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: Theme.of(context).shadowColor.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: Offset(0, 2),
               ),
@@ -180,10 +181,10 @@ class InsightsMap extends StatelessWidget {
               ],
             ),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2.2),
-            boxShadow: const [
+            border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2.2),
+            boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: Theme.of(context).shadowColor.withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: Offset(0, 4),
               ),
@@ -229,8 +230,8 @@ class InsightsMap extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             amenity.type.toUpperCase(),
-            style: const TextStyle(
-              color: Colors.grey,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodySmall?.color,
               letterSpacing: 1.2,
               fontSize: 12,
             ),
@@ -254,8 +255,8 @@ class InsightsMap extends StatelessWidget {
   static Widget buildCityDetailsSheet(BuildContext context, MapCityInsight city) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -264,20 +265,20 @@ class InsightsMap extends StatelessWidget {
         children: [
           Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 16),
-          buildDetailRow('Listings', city.count.toString()),
-          buildDetailRow(
+          buildDetailRow(context, 'Listings', city.count.toString()),
+          buildDetailRow(context,
             'Composite Score',
             city.compositeScore?.toStringAsFixed(1),
           ),
-          buildDetailRow(
+          buildDetailRow(context,
             'Safety Score',
             city.safetyScore?.toStringAsFixed(1),
           ),
-          buildDetailRow(
+          buildDetailRow(context,
             'Social Score',
             city.socialScore?.toStringAsFixed(1),
           ),
-          buildDetailRow(
+          buildDetailRow(context,
             'Amenities Score',
             city.amenitiesScore?.toStringAsFixed(1),
           ),
@@ -287,13 +288,13 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Widget buildDetailRow(String label, String? value) {
+  static Widget buildDetailRow(BuildContext context, String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
           Text(
             value ?? '-',
             style: const TextStyle(fontWeight: FontWeight.bold),
