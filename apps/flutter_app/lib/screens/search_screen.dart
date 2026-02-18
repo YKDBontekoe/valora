@@ -11,7 +11,6 @@ import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../providers/search_listings_provider.dart';
 import '../services/api_service.dart';
-import '../services/property_photo_service.dart';
 import '../widgets/home_components.dart';
 import '../widgets/search/active_filters_list.dart';
 import '../widgets/search/search_input.dart';
@@ -25,9 +24,8 @@ import '../services/notification_service.dart';
 
 class SearchScreen extends StatefulWidget {
   final PdokService? pdokService;
-  final PropertyPhotoService? propertyPhotoService;
 
-  const SearchScreen({super.key, this.pdokService, this.propertyPhotoService});
+  const SearchScreen({super.key, this.pdokService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

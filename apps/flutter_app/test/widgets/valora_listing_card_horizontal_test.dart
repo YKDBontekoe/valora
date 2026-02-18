@@ -59,11 +59,17 @@ class _MockHttpClientResponse extends Mock implements HttpClientResponse {
 
 void main() {
   late MockFavoritesProvider mockFavoritesProvider;
+  HttpOverrides? originalHttpOverrides;
 
   setUp(() {
+    originalHttpOverrides = HttpOverrides.global;
     mockFavoritesProvider = MockFavoritesProvider();
     when(mockFavoritesProvider.isFavorite(any)).thenReturn(false);
     HttpOverrides.global = MockHttpOverrides();
+  });
+
+  tearDown(() {
+    HttpOverrides.global = originalHttpOverrides;
   });
 
   Widget createWidgetUnderTest(Listing listing) {

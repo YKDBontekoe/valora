@@ -36,12 +36,21 @@ class ListingDetailScreen extends StatefulWidget {
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   late Listing _listing;
   bool _isLoading = false;
+  bool _fetchInitiated = false;
 
   @override
   void initState() {
     super.initState();
     _listing = widget.listing;
-    _fetchFullDetailsIfNeeded();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_fetchInitiated) {
+      _fetchInitiated = true;
+      _fetchFullDetailsIfNeeded();
+    }
   }
 
   Future<void> _fetchFullDetailsIfNeeded() async {
@@ -60,6 +69,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     if (!isSummary && !needsPhotos) {
       return;
     }
+
+    if (!mounted) return;
 
     setState(() {
       _isLoading = true;

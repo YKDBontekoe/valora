@@ -312,7 +312,10 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump(); // Start fetch
-    await tester.pump(const Duration(milliseconds: 100)); // Wait for fetch
+    // Use pumpAndSettle to ensure everything including animations are settled
+    // If infinite animation exists, this might timeout, but trying it now as we assume error state stops loading.
+    // Wait, the error block sets _isLoading = false, so spinner should stop.
+    await tester.pumpAndSettle();
 
     // Should stay on screen and show whatever details we have
     expect(find.text('Test Address'), findsOneWidget);
@@ -340,7 +343,8 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump(); // Start fetch
-    await tester.pump(const Duration(milliseconds: 100)); // Wait for fetch
+    // Similar strategy: if _isLoading is false, animations should stop.
+    await tester.pumpAndSettle();
 
     // Should stay on screen
     expect(find.text('Test Address'), findsOneWidget);
@@ -362,8 +366,10 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
+    // Initial pump to build
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    // Settle any entrance animations (flutter_animate usually runs once)
+    await tester.pumpAndSettle();
 
     // Verify no API calls made
     verifyNever(mockApiService.getListing(any));
