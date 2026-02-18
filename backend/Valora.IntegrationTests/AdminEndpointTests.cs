@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
@@ -27,7 +27,7 @@ public class AdminEndpointTests
     public async Task GetUsers_ReturnsUnauthorized_WhenNotAuthenticated()
     {
         var response = await _client.GetAsync("/api/admin/users");
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     // Helper to authenticate
@@ -76,7 +76,7 @@ public class AdminEndpointTests
         var response = await _client.GetAsync("/api/admin/users");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -89,10 +89,10 @@ public class AdminEndpointTests
         var response = await _client.GetAsync("/api/admin/users");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var content = await response.Content.ReadFromJsonAsync<UsersResponse>();
-        content.Should().NotBeNull();
-        content!.Items.Should().NotBeEmpty();
+        content.ShouldNotBeNull();
+        content!.Items.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -119,10 +119,10 @@ public class AdminEndpointTests
         var response = await _client.GetAsync("/api/admin/users?q=test.com&sort=email_desc");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var content = await response.Content.ReadFromJsonAsync<UsersResponse>();
-        content.Should().NotBeNull();
-        content!.Items.Should().Contain(u => u.Email.Contains("test.com"));
+        content.ShouldNotBeNull();
+        content!.Items.ShouldContain(u => u.Email.Contains("test.com"));
 
         // Check sorting: Z before A
         // Note: The response list might contain other users, so we filter in memory to verify relative order of our test users
@@ -133,7 +133,7 @@ public class AdminEndpointTests
         // If both exist, verify order
         if (zetaIndex >= 0 && alphaIndex >= 0)
         {
-            zetaIndex.Should().BeLessThan(alphaIndex);
+            zetaIndex.ShouldBeLessThan(alphaIndex);
         }
     }
 
