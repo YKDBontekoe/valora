@@ -47,7 +47,10 @@ public class BatchJobIntegrationTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        await _factory.DisposeAsync();
+        if (_factory != null)
+        {
+            await _factory.DisposeAsync();
+        }
     }
 
     private class BatchJobTestWebAppFactory : IntegrationTestWebAppFactory
