@@ -24,15 +24,21 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.24.5'
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Run Tests
+        run: flutter test
+
       - name: Determine Base Href
         id: base_href
+        env:
+          REPO: ${{ github.repository }}
         run: |
-          REPO_NAME=$(echo "${{ github.repository }}" | awk -F / '{print $2}')
+          REPO_NAME=$(echo "$REPO" | awk -F / '{print $2}')
           if [[ "$REPO_NAME" == *".github.io"* ]]; then
             echo "BASE_HREF=/" >> $GITHUB_ENV
           else
@@ -43,7 +49,7 @@ jobs:
         run: flutter build web --release --base-href "${{ env.BASE_HREF }}"
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@e9c66a37f080288a11235e32cbe2dc5fb3a679cc # v4.0.0 (Node 18 compatible)
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
