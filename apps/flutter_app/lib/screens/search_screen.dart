@@ -37,7 +37,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final PdokService _pdokService;
-  late final PropertyPhotoService _propertyPhotoService;
   Timer? _debounce;
 
   SearchListingsProvider? _searchProvider;
@@ -47,8 +46,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _pdokService = widget.pdokService ?? PdokService();
-    _propertyPhotoService =
-        widget.propertyPhotoService ?? PropertyPhotoService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -122,62 +119,11 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Future<Listing> _enrichListingWithRealPhotos(Listing listing) async {
-    final hasPhotos =
-        listing.imageUrls.isNotEmpty ||
-        (listing.imageUrl?.trim().isNotEmpty ?? false);
-    if (hasPhotos || listing.latitude == null || listing.longitude == null) {
-      return listing;
-    }
-
-    final photoUrls = _propertyPhotoService.getPropertyPhotos(
-      latitude: listing.latitude!,
-      longitude: listing.longitude!,
-    );
-
-    if (photoUrls.isEmpty) {
-      return listing;
-    }
-
-    final serialized = listing.toJson();
-    serialized['imageUrl'] = photoUrls.first;
-    serialized['imageUrls'] = photoUrls;
-    return Listing.fromJson(serialized);
-  }
-
-  Future<void> _openListingDetail(Listing listing) async {
-    Listing listingToDisplay = listing;
-    try {
-      // If the listing is a summary (missing description or features), fetch full details
-      // Only do this if we have a URL, which indicates a DB-backed listing (PDOK lookups lack URLs)
-      if (listing.description == null &&
-          listing.features.isEmpty &&
-          listing.url != null) {
-        final fullListing = await context.read<ApiService>().getListing(
-          listing.id,
-        );
-        listingToDisplay = fullListing;
-      }
-
-      listingToDisplay = await _enrichListingWithRealPhotos(listingToDisplay);
-    } catch (e, stack) {
-      developer.log(
-        'Listing enrichment failed for listing ${listing.id}',
-        name: 'SearchScreen',
-        error: e,
-        stackTrace: stack,
-      );
-      // Fallback to what we have
-    }
-
-    if (!mounted) {
-      return;
-    }
-
+  void _openListingDetail(Listing listing) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ListingDetailScreen(listing: listingToDisplay),
+        builder: (context) => ListingDetailScreen(listing: listing),
       ),
     );
   }
@@ -264,7 +210,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Navigator.pop(context); // Remove loading indicator
 
         if (listing != null) {
-          await _openListingDetail(listing);
+          _openListingDetail(listing);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Could not load property details')),

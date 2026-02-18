@@ -80,6 +80,28 @@ public class ListingServiceTests
     }
 
     [Fact]
+    public async Task GetListingByIdAsync_CallsGetByIdAsNoTrackingAsync()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var listing = new Listing { Id = id, Address = "Test Address", FundaId = "12345" };
+        var service = CreateService();
+
+        _repositoryMock
+            .Setup(x => x.GetByIdAsNoTrackingAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(listing);
+
+        // Act
+        var result = await service.GetListingByIdAsync(id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(listing.Address, result.Address);
+        _repositoryMock.Verify(x => x.GetByIdAsNoTrackingAsync(id, It.IsAny<CancellationToken>()), Times.Once);
+        _repositoryMock.Verify(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task GetPdokListingAsync_UpdatesListing_WhenAlreadyStored()
     {
         // Arrange

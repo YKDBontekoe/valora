@@ -9,6 +9,13 @@ public interface IListingRepository
     Task<PaginatedList<ListingDto>> GetAllAsync(ListingFilterDto filter, CancellationToken cancellationToken = default);
     Task<PaginatedList<ListingSummaryDto>> GetSummariesAsync(ListingFilterDto filter, CancellationToken cancellationToken = default);
     Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a listing by ID without tracking changes.
+    /// Use this for read-only operations to improve performance.
+    /// </summary>
+    Task<Listing?> GetByIdAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default);
     Task<List<Listing>> GetByFundaIdsAsync(IEnumerable<string> fundaIds, CancellationToken cancellationToken = default);
     Task<Listing> AddAsync(Listing listing, CancellationToken cancellationToken = default);

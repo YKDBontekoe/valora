@@ -125,6 +125,13 @@ public class ListingRepository : IListingRepository
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
+    public async Task<Listing?> GetByIdAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Listings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+    }
+
     public async Task<Listing?> GetByFundaIdAsync(string fundaId, CancellationToken cancellationToken = default)
     {
         return await _context.Listings
