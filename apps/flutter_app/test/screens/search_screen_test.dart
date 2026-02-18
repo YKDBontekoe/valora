@@ -16,6 +16,7 @@ import 'package:valora_app/widgets/valora_widgets.dart';
 
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/notification_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 
 @GenerateMocks([ApiService, FavoritesProvider, PdokService])
 @GenerateNiceMocks([
@@ -147,17 +148,30 @@ class FakeNotificationService extends NotificationService {
   int get unreadCount => 0;
 }
 
+class FakePropertyPhotoService extends PropertyPhotoService {
+  @override
+  List<String> getPropertyPhotos({
+    required double latitude,
+    required double longitude,
+    int limit = 3,
+  }) {
+    return <String>[];
+  }
+}
+
 void main() {
   late MockApiService mockApiService;
   late MockFavoritesProvider mockFavoritesProvider;
   late MockPdokService mockPdokService;
   late FakeNotificationService fakeNotificationService;
+  late FakePropertyPhotoService fakePropertyPhotoService;
 
   setUp(() {
     mockApiService = MockApiService();
     mockFavoritesProvider = MockFavoritesProvider();
     mockPdokService = MockPdokService();
     fakeNotificationService = FakeNotificationService();
+    fakePropertyPhotoService = FakePropertyPhotoService();
 
     // Default favorites provider behavior
     when(mockFavoritesProvider.favorites).thenReturn([]);
@@ -174,6 +188,7 @@ void main() {
     return MultiProvider(
       providers: [
         Provider<ApiService>.value(value: mockApiService),
+        Provider<PropertyPhotoService>.value(value: fakePropertyPhotoService),
         ChangeNotifierProvider<FavoritesProvider>.value(
           value: mockFavoritesProvider,
         ),
@@ -443,7 +458,10 @@ void main() {
       );
     });
 
-    final searchProvider = SearchListingsProvider(apiService: mockApiService);
+    final searchProvider = SearchListingsProvider(
+      apiService: mockApiService,
+      propertyPhotoService: fakePropertyPhotoService,
+    );
 
     await tester.pumpWidget(
       createWidgetUnderTest(searchProvider: searchProvider),

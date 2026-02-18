@@ -7,8 +7,20 @@ import 'package:http/testing.dart';
 import 'package:retry/retry.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/services/property_photo_service.dart';
 
 import '../helpers/test_runners.dart';
+
+class FakePropertyPhotoService extends PropertyPhotoService {
+  @override
+  List<String> getPropertyPhotos({
+    required double latitude,
+    required double longitude,
+    int limit = 3,
+  }) {
+    return <String>[];
+  }
+}
 
 Map<String, dynamic> _listing({required String id, required String address}) {
   return <String, dynamic>{
@@ -70,6 +82,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      propertyPhotoService: FakePropertyPhotoService(),
     );
 
     provider.setQuery('old');
@@ -107,6 +120,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      propertyPhotoService: FakePropertyPhotoService(),
     );
     provider.setQuery('amsterdam');
 
@@ -132,6 +146,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      propertyPhotoService: FakePropertyPhotoService(),
     );
 
     // Initial state with filters
@@ -211,6 +226,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      propertyPhotoService: FakePropertyPhotoService(),
     );
 
     // Initial load
@@ -254,6 +270,7 @@ void main() {
 
     final SearchListingsProvider provider = SearchListingsProvider(
       apiService: apiService,
+      propertyPhotoService: FakePropertyPhotoService(),
     );
 
     // Initial load

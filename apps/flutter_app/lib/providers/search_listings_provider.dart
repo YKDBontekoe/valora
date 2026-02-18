@@ -7,14 +7,19 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../services/api_service.dart';
+import '../services/property_photo_service.dart';
 
 class SearchListingsProvider extends ChangeNotifier {
-  SearchListingsProvider({required ApiService apiService})
-    : _apiService = apiService;
+  SearchListingsProvider({
+    required ApiService apiService,
+    required PropertyPhotoService propertyPhotoService,
+  }) : _apiService = apiService,
+       _propertyPhotoService = propertyPhotoService;
 
   static const int pageSize = 20;
 
   final ApiService _apiService;
+  final PropertyPhotoService _propertyPhotoService;
 
   final List<Listing> _listings = <Listing>[];
   List<Listing>? _cachedListings;
@@ -275,6 +280,52 @@ class SearchListingsProvider extends ChangeNotifier {
       sortBy: _sortBy,
       sortOrder: _sortOrder,
     );
+  }
+
+  Future<Listing> fetchFullListingDetails(Listing listing) async {
+    // If the listing is a summary (missing description or features), fetch full details
+    // Only do this if we have a URL, which indicates a DB-backed listing (PDOK lookups lack URLs)
+    if (listing.description == null &&
+        listing.features.isEmpty &&
+        listing.url != null) {
+      try {
+        final fullListing = await _apiService.getListing(listing.id);
+        return fullListing;
+      } catch (e) {
+        // Log error but return original listing to degrade gracefully
+        _logProviderFailure(operation: 'fetchFullListingDetails', error: e);
+        return listing;
+      }
+    }
+    return listing;
+  }
+
+  Future<Listing> enrichListingWithPhotos(Listing listing) async {
+    final hasPhotos =
+        listing.imageUrls.isNotEmpty ||
+        (listing.imageUrl?.trim().isNotEmpty ?? false);
+    if (hasPhotos || listing.latitude == null || listing.longitude == null) {
+      return listing;
+    }
+
+    try {
+      final photoUrls = _propertyPhotoService.getPropertyPhotos(
+        latitude: listing.latitude!,
+        longitude: listing.longitude!,
+      );
+
+      if (photoUrls.isEmpty) {
+        return listing;
+      }
+
+      final serialized = listing.toJson();
+      serialized['imageUrl'] = photoUrls.first;
+      serialized['imageUrls'] = photoUrls;
+      return Listing.fromJson(serialized);
+    } catch (e) {
+      _logProviderFailure(operation: 'enrichListingWithPhotos', error: e);
+      return listing;
+    }
   }
 
   void _logProviderFailure({required String operation, required Object error}) {

@@ -203,9 +203,9 @@ public class ListingRepositoryTests
         // Arrange
         using var context = new ValoraDbContext(_options);
         context.Listings.AddRange(
-            new Listing { FundaId = "1", Address = "A", City = "Amsterdam", Price = 300000, LastFundaFetchUtc = DateTime.UtcNow.AddHours(-1), CreatedAt = DateTime.UtcNow },
-            new Listing { FundaId = "2", Address = "B", City = "Amsterdam", Price = 200000, LastFundaFetchUtc = DateTime.UtcNow, CreatedAt = DateTime.UtcNow }, // Fresher
-            new Listing { FundaId = "3", Address = "C", City = "Rotterdam", Price = 250000, CreatedAt = DateTime.UtcNow }
+            new Listing { FundaId = "1", Address = "A", City = "Amsterdam", Price = 300000, LastFundaFetchUtc = DateTime.UtcNow.AddHours(-1), ListedDate = DateTime.UtcNow.AddHours(-1), CreatedAt = DateTime.UtcNow },
+            new Listing { FundaId = "2", Address = "B", City = "Amsterdam", Price = 200000, LastFundaFetchUtc = DateTime.UtcNow, ListedDate = DateTime.UtcNow, CreatedAt = DateTime.UtcNow }, // Fresher
+            new Listing { FundaId = "3", Address = "C", City = "Rotterdam", Price = 250000, ListedDate = DateTime.UtcNow, CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 

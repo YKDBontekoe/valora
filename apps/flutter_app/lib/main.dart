@@ -16,6 +16,7 @@ import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/logging_service.dart';
 import 'services/notification_service.dart';
+import 'services/property_photo_service.dart';
 import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
@@ -84,6 +85,7 @@ Future<void> main() async {
           ChangeNotifierProvider<FavoritesProvider>(
             create: (_) => FavoritesProvider(),
           ),
+          Provider<PropertyPhotoService>(create: (_) => PropertyPhotoService()),
           Provider<AuthService>(create: (_) => AuthService()),
           ChangeNotifierProxyProvider<AuthService, AuthProvider>(
             create: (context) =>

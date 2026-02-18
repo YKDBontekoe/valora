@@ -192,33 +192,23 @@ public class ListingRepository : IListingRepository
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
+
+        var filter = new ListingFilterDto
+        {
+            City = city,
+            MinPrice = minPrice,
+            MaxPrice = maxPrice,
+            MinBedrooms = minBedrooms,
+            Page = page,
+            PageSize = pageSize,
+            SortBy = "date",
+            SortOrder = "desc"
+        };
+
+        var query = _context.Listings.AsNoTracking().AsQueryable();
         var isPostgres = _context.Database.ProviderName?.Contains("PostgreSQL") == true;
-        var query = _context.Listings.AsNoTracking().AsQueryable()
-            .WhereActive();
 
-        // Filter by city (case-insensitive)
-        query = query.ApplyCityFilter(city, isPostgres);
-
-        // Apply filters
-        if (minPrice.HasValue)
-        {
-            query = query.Where(l => l.Price >= minPrice.Value);
-        }
-
-        if (maxPrice.HasValue)
-        {
-            query = query.Where(l => l.Price <= maxPrice.Value);
-        }
-
-        if (minBedrooms.HasValue)
-        {
-            query = query.Where(l => l.Bedrooms >= minBedrooms.Value);
-        }
-
-        // Order by last fetch time (freshest first), then by price
-        query = query
-            .OrderByDescending(l => l.LastFundaFetchUtc)
-            .ThenByDescending(l => l.Price);
+        query = ApplyFilters(query, filter, isPostgres);
 
         // Paginate and Project
         return await query

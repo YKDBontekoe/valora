@@ -2,32 +2,25 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
-import '../core/theme/valora_typography.dart';
 import '../models/listing.dart';
 import '../providers/search_listings_provider.dart';
 import '../services/api_service.dart';
+import '../services/pdok_service.dart';
 import '../services/property_photo_service.dart';
-import '../widgets/home_components.dart';
-import '../widgets/search/active_filters_list.dart';
-import '../widgets/search/search_input.dart';
+import '../widgets/search/search_app_bar.dart';
+import '../widgets/search/search_results_list.dart';
+import '../widgets/search/search_status_slivers.dart';
 import '../widgets/search/sort_options_sheet.dart';
 import '../widgets/search/valora_filter_dialog.dart';
 import '../widgets/valora_widgets.dart';
-import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
-import 'notifications_screen.dart';
-import '../services/notification_service.dart';
 
 class SearchScreen extends StatefulWidget {
   final PdokService? pdokService;
-  final PropertyPhotoService? propertyPhotoService;
 
-  const SearchScreen({super.key, this.pdokService, this.propertyPhotoService});
+  const SearchScreen({super.key, this.pdokService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -37,7 +30,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final PdokService _pdokService;
-  late final PropertyPhotoService _propertyPhotoService;
   Timer? _debounce;
 
   SearchListingsProvider? _searchProvider;
@@ -47,8 +39,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _pdokService = widget.pdokService ?? PdokService();
-    _propertyPhotoService =
-        widget.propertyPhotoService ?? PropertyPhotoService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -61,6 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (_) {
       final created = SearchListingsProvider(
         apiService: context.read<ApiService>(),
+        propertyPhotoService: context.read<PropertyPhotoService>(),
       );
       _searchProvider ??= created;
       _ownsProvider = true;
@@ -122,44 +113,13 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Future<Listing> _enrichListingWithRealPhotos(Listing listing) async {
-    final hasPhotos =
-        listing.imageUrls.isNotEmpty ||
-        (listing.imageUrl?.trim().isNotEmpty ?? false);
-    if (hasPhotos || listing.latitude == null || listing.longitude == null) {
-      return listing;
-    }
-
-    final photoUrls = _propertyPhotoService.getPropertyPhotos(
-      latitude: listing.latitude!,
-      longitude: listing.longitude!,
-    );
-
-    if (photoUrls.isEmpty) {
-      return listing;
-    }
-
-    final serialized = listing.toJson();
-    serialized['imageUrl'] = photoUrls.first;
-    serialized['imageUrls'] = photoUrls;
-    return Listing.fromJson(serialized);
-  }
-
   Future<void> _openListingDetail(Listing listing) async {
     Listing listingToDisplay = listing;
     try {
-      // If the listing is a summary (missing description or features), fetch full details
-      // Only do this if we have a URL, which indicates a DB-backed listing (PDOK lookups lack URLs)
-      if (listing.description == null &&
-          listing.features.isEmpty &&
-          listing.url != null) {
-        final fullListing = await context.read<ApiService>().getListing(
-          listing.id,
-        );
-        listingToDisplay = fullListing;
-      }
-
-      listingToDisplay = await _enrichListingWithRealPhotos(listingToDisplay);
+      listingToDisplay =
+          await _searchProvider!.fetchFullListingDetails(listingToDisplay);
+      listingToDisplay =
+          await _searchProvider!.enrichListingWithPhotos(listingToDisplay);
     } catch (e, stack) {
       developer.log(
         'Listing enrichment failed for listing ${listing.id}',
@@ -304,8 +264,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
     return ChangeNotifierProvider<SearchListingsProvider>.value(
       value: _searchProvider!,
       child: Scaffold(
@@ -315,247 +273,21 @@ class _SearchScreenState extends State<SearchScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             controller: _scrollController,
             slivers: [
-              Selector<SearchListingsProvider, bool>(
-                selector: (_, p) => p.hasActiveFiltersOrSort,
-                builder: (context, hasActiveFiltersOrSort, _) {
-                  return SliverAppBar(
-                    pinned: true,
-                    backgroundColor: isDark
-                        ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
-                        : ValoraColors.backgroundLight.withValues(alpha: 0.95),
-                    surfaceTintColor: Colors.transparent,
-                    title: Text(
-                      'Search',
-                      style: ValoraTypography.headlineMedium.copyWith(
-                        color: isDark
-                            ? ValoraColors.neutral50
-                            : ValoraColors.neutral900,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    centerTitle: false,
-                    actions: [
-                      Consumer<NotificationService>(
-                        builder: (context, notificationProvider, _) {
-                          return Stack(
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const NotificationsScreen(),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.notifications_outlined),
-                                tooltip: 'Notifications',
-                              ),
-                              if (notificationProvider.unreadCount > 0)
-                                Positioned(
-                                  top: ValoraSpacing.radiusLg,
-                                  right: ValoraSpacing.radiusLg,
-                                  child: Container(
-                                    width: ValoraSpacing.sm,
-                                    height: ValoraSpacing.sm,
-                                    decoration: const BoxDecoration(
-                                      color: ValoraColors.error,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ).animate().scale(curve: Curves.elasticOut),
-                            ],
-                          );
-                        },
-                      ),
-                      IconButton(
-                        onPressed: _showSortOptions,
-                        icon: const Icon(Icons.sort_rounded),
-                        tooltip: 'Sort',
-                      ),
-                      Stack(
-                        children: [
-                          IconButton(
-                            onPressed: _openFilterDialog,
-                            icon: const Icon(Icons.tune_rounded),
-                            tooltip: 'Filters',
-                          ),
-                          Selector<SearchListingsProvider, bool>(
-                            selector: (_, p) => p.hasActiveFilters,
-                            builder: (context, hasActiveFilters, _) {
-                              if (hasActiveFilters) {
-                                return Positioned(
-                                  top: ValoraSpacing.sm,
-                                  right: ValoraSpacing.sm,
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      color: ValoraColors.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: ValoraSpacing.sm),
-                    ],
-                    bottom: PreferredSize(
-                      preferredSize: Size.fromHeight(
-                        hasActiveFiltersOrSort ? 130 : 80,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SearchInput(
-                            controller: _searchController,
-                            pdokService: _pdokService,
-                            onSuggestionSelected: _onSuggestionSelected,
-                            onSubmitted: () {
-                              _debounce?.cancel();
-                              _searchProvider!.refresh();
-                            },
-                          ),
-                          Consumer<SearchListingsProvider>(
-                            builder: (context, provider, _) => ActiveFiltersList(
-                              provider: provider,
-                              onFilterTap: _openFilterDialog,
-                              onSortTap: _showSortOptions,
-                            ),
-                          ),
-                          if (hasActiveFiltersOrSort)
-                            const SizedBox(height: ValoraSpacing.radiusLg),
-                        ],
-                      ),
-                    ),
-                  );
+              SearchAppBar(
+                searchController: _searchController,
+                pdokService: _pdokService,
+                onSuggestionSelected: _onSuggestionSelected,
+                onSubmitted: () {
+                  _debounce?.cancel();
+                  _searchProvider!.refresh();
                 },
+                onSortTap: _showSortOptions,
+                onFilterTap: _openFilterDialog,
               ),
-              Selector<SearchListingsProvider, bool>(
-                selector: (_, p) => p.isLoading,
-                builder: (context, isLoading, _) {
-                  if (isLoading) {
-                    return const SliverFillRemaining(
-                      child: ValoraLoadingIndicator(message: 'Searching...'),
-                    );
-                  }
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                },
-              ),
-              Selector<SearchListingsProvider, String?>(
-                selector: (_, p) => p.error,
-                builder: (context, error, _) {
-                  if (error != null && _searchProvider!.listings.isEmpty) {
-                    return SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: ValoraEmptyState(
-                          icon: Icons.error_outline_rounded,
-                          title: 'Search Failed',
-                          subtitle: error,
-                          actionLabel: 'Retry',
-                          onAction: _searchProvider!.refresh,
-                        ),
-                      ),
-                    );
-                  }
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                },
-              ),
-              Selector<
-                SearchListingsProvider,
-                (bool isEmpty, String query, bool hasFilters)
-              >(
-                selector:
-                    (_, p) => (
-                      p.listings.isEmpty && !p.isLoading && p.error == null,
-                      p.query,
-                      p.hasActiveFilters,
-                    ),
-                builder: (context, state, _) {
-                  final isEmpty = state.$1;
-                  final query = state.$2;
-                  final hasFilters = state.$3;
-
-                  if (!isEmpty) {
-                    return const SliverToBoxAdapter(child: SizedBox.shrink());
-                  }
-
-                  if (query.isNotEmpty || hasFilters) {
-                    return const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: ValoraEmptyState(
-                          icon: Icons.search_off_rounded,
-                          title: 'No results found',
-                          subtitle:
-                              'Try adjusting your filters or search terms.',
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: ValoraEmptyState(
-                          icon: Icons.search_rounded,
-                          title: 'Find your home',
-                          subtitle:
-                              'Enter a location or use filters to start searching.',
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-              Selector<SearchListingsProvider, List<Listing>>(
-                selector: (_, p) => p.listings,
-                shouldRebuild: (prev, next) => prev != next,
-                builder: (context, listings, _) {
-                  if (listings.isEmpty) {
-                    return const SliverToBoxAdapter(child: SizedBox.shrink());
-                  }
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: ValoraSpacing.lg,
-                      vertical: ValoraSpacing.md,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index == listings.length) {
-                          return Selector<SearchListingsProvider, bool>(
-                            selector: (_, p) => p.isLoadingMore,
-                            builder: (context, isLoadingMore, _) {
-                              if (isLoadingMore) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: ValoraSpacing.lg,
-                                  ),
-                                  child: ValoraLoadingIndicator(),
-                                );
-                              }
-                              return const SizedBox(height: 80);
-                            },
-                          );
-                        }
-
-                        final listing = listings[index];
-                        return RepaintBoundary(
-                          child: ValoraListingCardHorizontal(
-                            listing: listing,
-                            onTap: () => _openListingDetail(listing),
-                          ),
-                        );
-                      }, childCount: listings.length + 1),
-                    ),
-                  );
-                },
-              ),
+              const SearchLoadingSliver(),
+              const SearchErrorSliver(),
+              const SearchEmptySliver(),
+              SearchResultsList(onListingTap: _openListingDetail),
             ],
           ),
         ),
