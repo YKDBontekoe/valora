@@ -140,6 +140,11 @@ void main() {
       );
 
       await tester.pumpWidget(createWidgetUnderTest(listing));
+      // Pump frames to allow animations to start and finish
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      // Unmount to clean up any pending timers
+      await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
 
       expect(find.text('Contact Broker'), findsOneWidget);
@@ -158,9 +163,15 @@ void main() {
       );
 
       await tester.pumpWidget(createWidgetUnderTest(listing));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
+      // We expect it NOT to be there, but we must unmount before checking "findsNothing"?
+      // No, check first, then unmount.
       expect(find.text('Contact Broker'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
     },
   );
 
@@ -176,10 +187,14 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Broker'), findsOneWidget);
     expect(find.text('Test Agent'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Tapping "View on Funda" launches URL success', (tester) async {
@@ -201,6 +216,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Tapping "View on Funda" handles launch failure', (tester) async {
@@ -212,20 +230,22 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.scrollUntilVisible(find.text('View on Funda'), 500);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('View on Funda'));
-    // Pump to start snackbar animation, but don't settle (which might wait for it to close)
+    // Pump to start snackbar animation
     await tester.pump();
-    await tester.pump(
-      const Duration(milliseconds: 500),
-    ); // Wait a bit for entrance
+    await tester.pump(const Duration(milliseconds: 500)); // Wait for entrance
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Could not open'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Tapping "View on Funda" handles launch error', (tester) async {
@@ -237,18 +257,22 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.scrollUntilVisible(find.text('View on Funda'), 500);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('View on Funda'));
-    // Pump to start snackbar animation, but don't settle
+    // Pump to start snackbar animation
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Could not open'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Tapping "Contact Broker" launches dialer', (tester) async {
@@ -260,7 +284,8 @@ void main() {
     );
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.scrollUntilVisible(find.text('Contact Broker'), 500);
     await tester.pumpAndSettle();
@@ -269,5 +294,83 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Lazy loading handles fetch failure gracefully', (tester) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Test Address',
+      url: 'https://example.com', // Indicates full details fetch needed
+      description: null,
+    );
+
+    when(mockApiService.getListing('1')).thenThrow(Exception('Fetch error'));
+
+    await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pump(); // Start fetch
+    await tester.pump(const Duration(milliseconds: 100)); // Wait for fetch
+
+    // Should stay on screen and show whatever details we have
+    expect(find.text('Test Address'), findsOneWidget);
+    // Loading indicator should disappear (after error caught)
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+
+    // Unmount to stop any shimmer/animations
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Lazy loading handles photo enrichment failure gracefully', (tester) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Test Address',
+      latitude: 52.0,
+      longitude: 4.0,
+      imageUrls: [],
+      imageUrl: null,
+    );
+
+    when(mockPropertyPhotoService.getPropertyPhotos(latitude: 52.0, longitude: 4.0))
+        .thenThrow(Exception('Photo error'));
+
+    await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pump(); // Start fetch
+    await tester.pump(const Duration(milliseconds: 100)); // Wait for fetch
+
+    // Should stay on screen
+    expect(find.text('Test Address'), findsOneWidget);
+    // Loading indicator should disappear
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+
+    // Unmount to stop any shimmer/animations
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Lazy loading does nothing if details already present', (tester) async {
+    final listing = Listing(
+      id: '1',
+      fundaId: '123',
+      address: 'Test Address',
+      description: 'Already has description',
+      imageUrls: ['http://example.com/img.jpg'],
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest(listing));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Verify no API calls made
+    verifyNever(mockApiService.getListing(any));
+    verifyNever(mockPropertyPhotoService.getPropertyPhotos(latitude: anyNamed('latitude'), longitude: anyNamed('longitude')));
+
+    // Unmount to stop any shimmer/animations
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 }
