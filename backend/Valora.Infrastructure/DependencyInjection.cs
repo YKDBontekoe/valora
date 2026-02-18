@@ -63,14 +63,6 @@ public static class DependencyInjection
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
 
-        services.AddHttpClient<IPdokListingService, PdokListingService>()
-        .AddStandardResilienceHandler(options => {
-            options.Retry.MaxRetryAttempts = 3;
-            options.Retry.Delay = TimeSpan.FromSeconds(2);
-            options.Retry.BackoffType = DelayBackoffType.Exponential;
-            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
-        });
-
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>()
         .AddStandardResilienceHandler(options => {
             options.Retry.MaxRetryAttempts = 3;
