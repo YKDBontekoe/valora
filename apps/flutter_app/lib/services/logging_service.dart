@@ -5,6 +5,8 @@ import 'crash_reporting_service.dart';
 
 class LoggingService {
   static bool _initialized = false;
+  @visibleForTesting
+  static void reset() => _initialized = false;
 
   static void initialize() {
     if (_initialized) return;
