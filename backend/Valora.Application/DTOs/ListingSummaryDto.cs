@@ -19,5 +19,7 @@ public record ListingSummaryDto(
     DateTime CreatedAt,
     string? EnergyLabel,
     bool IsSoldOrRented,
-    IReadOnlyList<string> Labels
+    IReadOnlyList<string> Labels,
+    double? ContextCompositeScore,
+    int? WozValue
 );

@@ -137,4 +137,22 @@ public sealed record ContextReportDto(
     double CompositeScore,
     [property: MaxCollectionSize(20)] IReadOnlyDictionary<string, double> CategoryScores,
     [property: MaxCollectionSize(20)] IReadOnlyList<SourceAttributionDto> Sources,
-    [property: MaxCollectionSize(50)] IReadOnlyList<string> Warnings);
+    [property: MaxCollectionSize(50)] IReadOnlyList<string> Warnings)
+{
+    public (int? Value, DateTime? ReferenceDate, string? Source) EstimateWozValue(TimeProvider timeProvider)
+    {
+        var avgWozMetric = SocialMetrics.FirstOrDefault(m => m.Key == "average_woz");
+        if (avgWozMetric?.Value.HasValue == true)
+        {
+            // Value is in k€ (e.g. 450), convert to absolute value
+            var value = (int)(avgWozMetric.Value.Value * 1000);
+            var source = "CBS Neighborhood Average";
+            // CBS data is typically from the previous year
+            var now = timeProvider.GetUtcNow();
+            var referenceDate = new DateTime(now.Year - 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            return (value, referenceDate, source);
+        }
+
+        return (null, null, null);
+    }
+}

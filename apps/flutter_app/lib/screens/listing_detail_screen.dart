@@ -11,6 +11,7 @@ import '../models/context_report.dart';
 import '../widgets/report/context_report_view.dart';
 import '../widgets/listing_detail/listing_sliver_app_bar.dart';
 import '../widgets/listing_detail/listing_header.dart';
+import '../widgets/listing_detail/market_intelligence_card.dart';
 import '../widgets/listing_detail/listing_address.dart';
 import '../widgets/listing_detail/listing_specs.dart';
 import '../widgets/listing_detail/listing_highlights.dart';
@@ -30,7 +31,7 @@ class ListingDetailScreen extends StatelessWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => ValoraDialog(
-          title: 'Call Broker?',
+          title: 'Contact Broker',
           actions: [
             ValoraButton(
               label: 'Cancel',
@@ -44,7 +45,7 @@ class ListingDetailScreen extends StatelessWidget {
             ),
           ],
           child: Text(
-            'Do you want to call ${listing.agentName ?? 'the broker'} at $phone?',
+            'Do you want to call ${listing.agentName ?? "the broker"} at $phone?',
           ),
         ),
       );
@@ -93,9 +94,10 @@ class ListingDetailScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    [
+                children: <Widget>[
                           ListingHeader(listing: listing),
+                          const SizedBox(height: ValoraSpacing.md),
+                          MarketIntelligenceCard(listing: listing),
                           const SizedBox(height: ValoraSpacing.lg),
                           ListingAddress(listing: listing),
                           const SizedBox(height: ValoraSpacing.lg),
@@ -107,7 +109,7 @@ class ListingDetailScreen extends StatelessWidget {
                           // Description
                           if (listing.description != null) ...[
                             Text(
-                              'About this home',
+                              'Property Intelligence Analysis',
                               style: ValoraTypography.titleLarge.copyWith(
                                 color: colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,

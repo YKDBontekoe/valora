@@ -34,6 +34,12 @@ public class ListingServiceTests
         _repositoryMock
             .Setup(x => x.GetByFundaIdAsync(pdokId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Listing?)null);
+        _repositoryMock
+            .Setup(x => x.AddAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Listing l, CancellationToken ct) => l);
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, CancellationToken ct) => new Listing { Id = id, FundaId = pdokId, Address = "Damrak 1, Amsterdam" });
 
         // Act
         var result = await service.GetPdokListingAsync(pdokId);
@@ -49,7 +55,6 @@ public class ListingServiceTests
                 l.ContextSafetyScore == 81.2),
             It.IsAny<CancellationToken>()),
             Times.Once);
-        _repositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Listing>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

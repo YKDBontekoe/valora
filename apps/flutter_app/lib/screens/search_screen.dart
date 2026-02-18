@@ -51,6 +51,11 @@ class _SearchScreenState extends State<SearchScreen> {
         widget.propertyPhotoService ?? PropertyPhotoService();
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
+
+    // Load initial listings (Recent Intelligence)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchProvider?.refresh();
+    });
   }
 
   @override
@@ -84,8 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
             _scrollController.position.maxScrollExtent - 200 &&
         !provider.isLoadingMore &&
         provider.hasNextPage &&
-        provider.error == null &&
-        (provider.listings.isNotEmpty || provider.query.isNotEmpty)) {
+        provider.error == null) {
       _loadMoreListings();
     }
   }
@@ -101,239 +105,132 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_debounce?.isActive ?? false) {
       _debounce!.cancel();
     }
-    _debounce = Timer(const Duration(milliseconds: 750), () {
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       _searchProvider!.refresh();
     });
   }
 
   Future<void> _loadMoreListings() async {
-    final SearchListingsProvider provider = _searchProvider!;
-    final String? previousError = provider.error;
-    await provider.loadMore();
-
-    if (!mounted) {
-      return;
-    }
-
-    if (provider.error != null && provider.error != previousError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load more items')),
-      );
-    }
+    await _searchProvider!.loadMore();
   }
 
-  Future<Listing> _enrichListingWithRealPhotos(Listing listing) async {
-    final hasPhotos =
-        listing.imageUrls.isNotEmpty ||
-        (listing.imageUrl?.trim().isNotEmpty ?? false);
-    if (hasPhotos || listing.latitude == null || listing.longitude == null) {
-      return listing;
-    }
-
-    final photoUrls = _propertyPhotoService.getPropertyPhotos(
-      latitude: listing.latitude!,
-      longitude: listing.longitude!,
+  void _openFilterDialog() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ValoraFilterDialog(
+        initialMinPrice: _searchProvider!.minPrice,
+        initialMaxPrice: _searchProvider!.maxPrice,
+        initialCity: _searchProvider!.city,
+        initialMinBedrooms: _searchProvider!.minBedrooms,
+        initialMinLivingArea: _searchProvider!.minLivingArea,
+        initialMaxLivingArea: _searchProvider!.maxLivingArea,
+        initialMinCompositeScore: _searchProvider!.minCompositeScore,
+        initialMinSafetyScore: _searchProvider!.minSafetyScore,
+        initialSortBy: _searchProvider!.sortBy,
+        initialSortOrder: _searchProvider!.sortOrder,
+      ),
     );
 
-    if (photoUrls.isEmpty) {
-      return listing;
+    if (result != null && mounted) {
+      await _searchProvider!.applyFilters(
+        minPrice: result['minPrice'],
+        maxPrice: result['maxPrice'],
+        city: result['city'],
+        minBedrooms: result['minBedrooms'],
+        minLivingArea: result['minLivingArea'],
+        maxLivingArea: result['maxLivingArea'],
+        minCompositeScore: result['minCompositeScore'],
+        minSafetyScore: result['minSafetyScore'],
+        sortBy: result['sortBy'],
+        sortOrder: result['sortOrder'],
+      );
     }
-
-    final serialized = listing.toJson();
-    serialized['imageUrl'] = photoUrls.first;
-    serialized['imageUrls'] = photoUrls;
-    return Listing.fromJson(serialized);
   }
 
-  Future<void> _openListingDetail(Listing listing) async {
-    Listing listingToDisplay = listing;
-    try {
-      // If the listing is a summary (missing description or features), fetch full details
-      // Only do this if we have a URL, which indicates a DB-backed listing (PDOK lookups lack URLs)
-      if (listing.description == null &&
-          listing.features.isEmpty &&
-          listing.url != null) {
-        final fullListing = await context.read<ApiService>().getListing(
-          listing.id,
-        );
-        listingToDisplay = fullListing;
-      }
-
-      listingToDisplay = await _enrichListingWithRealPhotos(listingToDisplay);
-    } catch (e, stack) {
-      developer.log(
-        'Listing enrichment failed for listing ${listing.id}',
-        name: 'SearchScreen',
-        error: e,
-        stackTrace: stack,
-      );
-      // Fallback to what we have
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ListingDetailScreen(listing: listingToDisplay),
+  void _showSortOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SortOptionsSheet(
+        provider: _searchProvider!,
+        onClose: () => Navigator.pop(context),
       ),
     );
   }
 
-  void _showSortOptions() {
-    final SearchListingsProvider provider = _searchProvider!;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => SortOptionsSheet(
-            provider: provider,
-            onClose: () => Navigator.pop(context),
-          ),
-    );
-  }
-
-  Future<void> _openFilterDialog() async {
-    final SearchListingsProvider provider = _searchProvider!;
-
-    final Map<String, dynamic>? result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder:
-          (context) => ValoraFilterDialog(
-            initialMinPrice: provider.minPrice,
-            initialMaxPrice: provider.maxPrice,
-            initialCity: provider.city,
-            initialMinBedrooms: provider.minBedrooms,
-            initialMinLivingArea: provider.minLivingArea,
-            initialMaxLivingArea: provider.maxLivingArea,
-            initialMinSafetyScore: provider.minSafetyScore,
-            initialMinCompositeScore: provider.minCompositeScore,
-            initialSortBy: provider.sortBy,
-            initialSortOrder: provider.sortOrder,
-          ),
-    );
-
-    if (result == null) {
-      return;
-    }
-
-    await provider.applyFilters(
-      minPrice: result['minPrice'] as double?,
-      maxPrice: result['maxPrice'] as double?,
-      city: result['city'] as String?,
-      minBedrooms: result['minBedrooms'] as int?,
-      minLivingArea: result['minLivingArea'] as int?,
-      maxLivingArea: result['maxLivingArea'] as int?,
-      minSafetyScore: result['minSafetyScore'] as double?,
-      minCompositeScore: result['minCompositeScore'] as double?,
-      sortBy: result['sortBy'] as String?,
-      sortOrder: result['sortOrder'] as String?,
-    );
-  }
-
-  Future<void> _onSuggestionSelected(PdokSuggestion suggestion) async {
-    _debounce?.cancel();
-
-    // Temporarily remove listener to avoid triggering _onSearchChanged
-    _searchController.removeListener(_onSearchChanged);
+  void _onSuggestionSelected(PdokSuggestion suggestion) {
     _searchController.text = suggestion.displayName;
-    _searchController.addListener(_onSearchChanged);
+    _searchProvider!.setQuery(suggestion.displayName);
 
-    // If it is a specific address (bucket 'adres'), lookup directly
-    if (suggestion.type == 'adres') {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder:
-            (context) => const Center(
-              child: ValoraLoadingIndicator(
-                message: 'Loading property details...',
-              ),
-            ),
-      );
+    // Navigate to lookup
+    _openListingLookup(suggestion.id);
+  }
 
-      try {
-        final listing = await context
-            .read<ApiService>()
-            .getListingFromPdok(suggestion.id);
+  Future<void> _openListingLookup(String pdokId) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: ValoraLoadingIndicator(message: 'Analyzing property...')),
+    );
 
-        if (!mounted) return;
-        Navigator.pop(context); // Remove loading indicator
-
-        if (listing != null) {
-          await _openListingDetail(listing);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not load property details')),
-          );
-        }
-      } catch (e, stack) {
-        if (!mounted) return;
-        Navigator.pop(context); // Remove loading indicator
-
-        developer.log(
-          'Error loading PDOK listing',
-          name: 'SearchScreen',
-          error: e,
-          stackTrace: stack,
-        );
-
+    try {
+      final listing = await context.read<ApiService>().lookupListing(pdokId);
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        _openListingDetail(listing);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Something went wrong. Please try again.'),
-          ),
+          SnackBar(content: Text('Failed to analyze property: $e')),
         );
       }
     }
-    // Otherwise (city, street, etc), just fall back to existing search behavior
-    else {
-      if (suggestion.type == 'woonplaats') {
-        _searchProvider!.setCity(suggestion.displayName);
-        _searchController.removeListener(_onSearchChanged);
-        _searchController.clear();
-        _searchController.addListener(_onSearchChanged);
-      } else {
-        _searchProvider!.setQuery(suggestion.displayName);
-      }
-      _searchProvider!.refresh();
-    }
+  }
+
+  void _openListingDetail(Listing listing) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ListingDetailScreen(listing: listing),
+      ),
+    ).then((_) {
+      // Refresh to show newly analyzed property in "Recent" list
+      _searchProvider?.refresh();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return ChangeNotifierProvider<SearchListingsProvider>.value(
-      value: _searchProvider!,
-      child: Scaffold(
-        body: RefreshIndicator(
-          onRefresh: () => _searchProvider!.refresh(clearData: false),
+    return Scaffold(
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => _searchProvider!.refresh(),
           child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
             controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              Selector<SearchListingsProvider, bool>(
-                selector: (_, p) => p.hasActiveFiltersOrSort,
-                builder: (context, hasActiveFiltersOrSort, _) {
+              Consumer<SearchListingsProvider>(
+                builder: (context, provider, _) {
+                  final hasActiveFiltersOrSort = provider.hasActiveFiltersOrSort;
                   return SliverAppBar(
-                    pinned: true,
-                    backgroundColor: isDark
-                        ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
-                        : ValoraColors.backgroundLight.withValues(alpha: 0.95),
-                    surfaceTintColor: Colors.transparent,
+                    floating: true,
+                    pinned: false,
+                    snap: true,
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                     title: Text(
-                      'Search',
+                      'Market Intelligence',
                       style: ValoraTypography.headlineMedium.copyWith(
-                        color: isDark
-                            ? ValoraColors.neutral50
-                            : ValoraColors.neutral900,
-                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                    centerTitle: false,
                     actions: [
                       Consumer<NotificationService>(
                         builder: (context, notificationProvider, _) {
@@ -503,10 +400,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       hasScrollBody: false,
                       child: Center(
                         child: ValoraEmptyState(
-                          icon: Icons.search_rounded,
-                          title: 'Find your home',
+                          icon: Icons.analytics_outlined,
+                          title: 'Property Analysis',
                           subtitle:
-                              'Enter a location or use filters to start searching.',
+                              'Enter any address in the Netherlands to get a full Market Intelligence report.',
                         ),
                       ),
                     );
@@ -520,6 +417,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (listings.isEmpty) {
                     return const SliverToBoxAdapter(child: SizedBox.shrink());
                   }
+
+                  final isHubMode = _searchController.text.isEmpty && !_searchProvider!.hasActiveFilters;
+
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: ValoraSpacing.lg,
@@ -527,7 +427,19 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index == listings.length) {
+                        if (index == 0 && isHubMode) {
+                           return Padding(
+                             padding: const EdgeInsets.only(bottom: ValoraSpacing.md),
+                             child: Text(
+                               'Recent Intelligence',
+                               style: ValoraTypography.titleLarge,
+                             ),
+                           );
+                        }
+
+                        final itemIndex = isHubMode ? index - 1 : index;
+
+                        if (itemIndex == listings.length) {
                           return Selector<SearchListingsProvider, bool>(
                             selector: (_, p) => p.isLoadingMore,
                             builder: (context, isLoadingMore, _) {
@@ -544,14 +456,14 @@ class _SearchScreenState extends State<SearchScreen> {
                           );
                         }
 
-                        final listing = listings[index];
+                        final listing = listings[itemIndex];
                         return RepaintBoundary(
                           child: ValoraListingCardHorizontal(
                             listing: listing,
                             onTap: () => _openListingDetail(listing),
                           ),
                         );
-                      }, childCount: listings.length + 1),
+                      }, childCount: listings.length + (isHubMode ? 2 : 1)),
                     ),
                   );
                 },

@@ -41,8 +41,8 @@ public static class ListingProjections
         l.FiberAvailable,
         // Status
         l.PublicationDate, l.IsSoldOrRented, l.Labels,
-        // Phase 6: WOZ
-        null, null, null,
+        // Phase 6: Market Data
+        l.WozValue, l.WozReferenceDate, l.WozValueSource,
         // Context
         l.ContextCompositeScore, l.ContextSafetyScore, l.ContextReport
     );
@@ -66,6 +66,8 @@ public static class ListingProjections
         l.CreatedAt,
         l.EnergyLabel,
         l.IsSoldOrRented,
-        l.Labels
+        l.Labels,
+        l.ContextCompositeScore,
+        l.WozValue
     );
 }

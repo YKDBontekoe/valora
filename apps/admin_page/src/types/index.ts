@@ -25,6 +25,8 @@ export interface Listing {
   city: string;
   price: number | null;
   status: string | null;
+  contextCompositeScore: number | null;
+  wozValue: number | null;
 }
 
 export interface PaginatedResponse<T> {

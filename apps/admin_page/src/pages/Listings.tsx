@@ -24,8 +24,8 @@ const Listings = () => {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-brand-900">Listing Management</h1>
-        <p className="text-brand-500 mt-1">Browse and monitor platform listings.</p>
+        <h1 className="text-3xl font-bold text-brand-900">Listing Intelligence</h1>
+        <p className="text-brand-500 mt-1">Browse and monitor platform market data.</p>
       </div>
 
       <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 flex flex-col min-h-[600px]">
@@ -33,9 +33,10 @@ const Listings = () => {
           <table className="min-w-full divide-y divide-brand-100">
             <thead className="bg-brand-50">
               <tr>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Address</th>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Price</th>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">City</th>
+                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Address & City</th>
+                <th className="px-8 py-4 text-center text-xs font-bold text-brand-500 uppercase tracking-widest whitespace-nowrap">Valora Score</th>
+                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Market Value</th>
+                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Status</th>
               </tr>
             </thead>
             <motion.tbody
@@ -52,7 +53,7 @@ const Listings = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <td colSpan={3} className="px-8 py-12 text-center">
+                    <td colSpan={4} className="px-8 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
                         <span className="text-brand-500 font-medium">Loading listings...</span>
@@ -66,7 +67,7 @@ const Listings = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <td colSpan={3} className="px-8 py-12 text-center text-brand-500 font-medium">
+                    <td colSpan={4} className="px-8 py-12 text-center text-brand-500 font-medium">
                       No listings found.
                     </td>
                   </motion.tr>

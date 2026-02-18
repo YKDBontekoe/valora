@@ -58,20 +58,6 @@ public class ListingService : IListingService
         return listing == null ? null : ListingMapper.ToDto(listing);
     }
 
-    /// <summary>
-    /// Retrieves a listing from the external PDOK service and persists it to the database.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This method acts as a "Read-Through" cache. If the listing is found in PDOK,
-    /// it is immediately upserted (created or updated) in the local database.
-    /// </para>
-    /// <para>
-    /// This ensures that:
-    /// 1. We always have the latest data (price, status) when a user views a listing.
-    /// 2. We build up our own database of listings organically without a massive scraper.
-    /// </para>
-    /// </remarks>
     public async Task<ListingDto?> GetPdokListingAsync(string externalId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(externalId))
@@ -90,24 +76,29 @@ public class ListingService : IListingService
             return null;
         }
 
-        await CreateOrUpdateListingAsync(listingDto, cancellationToken);
+        var listing = await CreateOrUpdateListingAsync(listingDto, cancellationToken);
 
-        return listingDto;
+        // Auto-enrich if context report is missing to ensure the "Market Analysis" focus is immediate
+        if (listing.ContextReport == null)
+        {
+            try
+            {
+                await EnrichListingAsync(listing.Id, cancellationToken);
+                // Refresh listing info after enrichment to get the scores
+                var updated = await _repository.GetByIdAsync(listing.Id, cancellationToken);
+                if (updated != null) return ListingMapper.ToDto(updated);
+            }
+            catch (Exception)
+            {
+                // Fallback to basic details if enrichment fails
+                return ListingMapper.ToDto(listing);
+            }
+        }
+
+        return ListingMapper.ToDto(listing);
     }
 
-    /// <summary>
-    /// Performs an upsert operation for the listing entity.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// We use the FundaId (or external ID) as the unique key for deduplication.
-    /// Even if the listing exists, we update it to capture price changes or status updates.
-    /// </para>
-    /// <para>
-    /// <c>LastFundaFetchUtc</c> is updated to track data freshness.
-    /// </para>
-    /// </remarks>
-    private async Task CreateOrUpdateListingAsync(ListingDto listingDto, CancellationToken cancellationToken)
+    private async Task<Listing> CreateOrUpdateListingAsync(ListingDto listingDto, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByFundaIdAsync(listingDto.FundaId, cancellationToken);
         var utcNow = DateTime.UtcNow;
@@ -116,31 +107,17 @@ public class ListingService : IListingService
         {
             var newListing = ListingMapper.ToEntity(listingDto);
             newListing.LastFundaFetchUtc = utcNow;
-            await _repository.AddAsync(newListing, cancellationToken);
+            return await _repository.AddAsync(newListing, cancellationToken);
         }
         else
         {
             ListingMapper.UpdateEntity(existing, listingDto);
             existing.LastFundaFetchUtc = utcNow;
             await _repository.UpdateAsync(existing, cancellationToken);
+            return existing;
         }
     }
 
-    /// <summary>
-    /// Generates a full context report for an existing listing and persists the results.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This process involves:
-    /// 1. Fetching the listing address.
-    /// 2. Generating a heavy-weight <see cref="ContextReportDto"/> via the <see cref="IContextReportService"/>.
-    /// 3. Mapping the report to a JSON-serializable domain model.
-    /// 4. Extracting key scores (Composite, Safety, etc.) into indexed columns for performant filtering.
-    /// </para>
-    /// <para>
-    /// This dual-storage strategy (JSON for details, Columns for queries) balances flexibility and performance.
-    /// </para>
-    /// </remarks>
     public async Task<double> EnrichListingAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var listing = await _repository.GetByIdAsync(id, cancellationToken);
@@ -161,6 +138,15 @@ public class ListingService : IListingService
         // 2. Update Entity
         listing.ContextReport = contextReportModel;
         listing.ContextCompositeScore = reportDto.CompositeScore;
+
+        // Update WOZ if found in context report and not already set
+        var (woz, wozDate, wozSource) = reportDto.EstimateWozValue(TimeProvider.System);
+        if (woz.HasValue && !listing.WozValue.HasValue)
+        {
+            listing.WozValue = woz;
+            listing.WozReferenceDate = wozDate;
+            listing.WozValueSource = wozSource;
+        }
 
         UpdateContextScores(listing, reportDto);
 

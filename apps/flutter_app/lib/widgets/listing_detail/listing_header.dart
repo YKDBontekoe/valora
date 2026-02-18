@@ -24,15 +24,25 @@ class ListingHeader extends StatelessWidget {
         Expanded(
           child: listing.price != null
               ? ValoraPrice(price: listing.price!, size: ValoraPriceSize.large)
-              : Text(
-                  'Check Report',
-                  style: ValoraTypography.headlineMedium.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Property Report',
+                      style: ValoraTypography.headlineMedium.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    Text(
+                      'Analyzed via Valora AI',
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
         ),
-        if (listing.status != null) ...[
+        if (listing.status != null && listing.status != 'Unknown') ...[
           const SizedBox(width: ValoraSpacing.md),
           ValoraBadge(
             label: listing.status!.toUpperCase(),

@@ -171,7 +171,7 @@ class _StartupScreenState extends State<StartupScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Find your dream home',
+                      'Market Intelligence for Everyone',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         letterSpacing: 0.5,

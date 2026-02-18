@@ -216,20 +216,6 @@ class SearchListingsProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    if (_query.isEmpty && !hasActiveFiltersOrSort) {
-      if (requestId != _requestSequence) return;
-
-      _isLoading = false;
-      _isLoadingMore = false;
-      _error = null;
-      _listings.clear();
-      _cachedListings = null;
-      _currentPage = 1;
-      _hasNextPage = false;
-      notifyListeners();
-      return;
-    }
-
     try {
       final response = await _apiService.getListings(
         _buildFilter(page: _currentPage),

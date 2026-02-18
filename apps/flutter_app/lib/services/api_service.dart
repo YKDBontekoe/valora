@@ -1,85 +1,75 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
 
 import '../core/config/app_config.dart';
 import '../core/exceptions/app_exceptions.dart';
-import '../models/context_report.dart';
 import '../models/listing.dart';
 import '../models/listing_filter.dart';
 import '../models/listing_response.dart';
+import '../models/notification.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
 import '../models/map_overlay.dart';
-import '../models/notification.dart';
+import '../models/context_report.dart';
 import 'crash_reporting_service.dart';
 
-typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
-
 class ApiService {
-  String? _authToken;
-  final Future<String?> Function()? _refreshTokenCallback;
+  final String baseUrl;
+  final String? authToken;
+  final Future<String?> Function()? refreshTokenCallback;
   final http.Client _client;
-  final ApiRunner _runner;
   final RetryOptions _retryOptions;
-
-  static String get baseUrl => AppConfig.apiUrl;
-  static const timeoutDuration = Duration(seconds: 15);
+  final Duration timeoutDuration;
 
   ApiService({
-    String? authToken,
-    Future<String?> Function()? refreshTokenCallback,
+    String? baseUrl,
+    this.authToken,
+    this.refreshTokenCallback,
     http.Client? client,
-    ApiRunner? runner,
     RetryOptions? retryOptions,
-  })  : _authToken = authToken,
-        _refreshTokenCallback = refreshTokenCallback,
-        _client = client ?? http.Client(),
-        _runner = runner ?? _defaultRunner,
-        _retryOptions = retryOptions ?? const RetryOptions(maxAttempts: 3);
+    this.timeoutDuration = const Duration(seconds: 30),
+  }) : baseUrl = baseUrl ?? AppConfig.apiUrl,
+       _client = client ?? http.Client(),
+       _retryOptions = retryOptions ?? const RetryOptions(
+         maxAttempts: 3,
+         delayFactor: Duration(seconds: 2),
+       );
 
-  static Future<R> _defaultRunner<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel}) async {
-    return await callback(message);
+  Future<Map<String, String>> _getHeaders() async {
+    return {
+      'Content-Type': 'application/json',
+      if (authToken != null) 'Authorization': 'Bearer $authToken',
+    };
   }
 
   Future<http.Response> _authenticatedRequest(
-    Future<http.Response> Function(Map<String, String> headers) request,
+    Future<http.Response> Function(Map<String, String> headers) requestFn,
   ) async {
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (_authToken != null) 'Authorization': 'Bearer $_authToken',
-    };
+    var headers = await _getHeaders();
+    var response = await requestFn(headers);
 
-    var response = await request(headers);
-
-    if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback();
+    if (response.statusCode == 401 && refreshTokenCallback != null) {
+      final newToken = await refreshTokenCallback!();
       if (newToken != null) {
-        _authToken = newToken;
         headers['Authorization'] = 'Bearer $newToken';
-        response = await request(headers);
+        response = await requestFn(headers);
       }
     }
 
     return response;
   }
 
-  Listing _parseListing(String body) {
-    return Listing.fromJson(json.decode(body));
+  Future<T> _runner<T>(T Function(String) parser, String body) async {
+    return parser(body);
   }
 
   ListingResponse _parseListings(String body) {
     return ListingResponse.fromJson(json.decode(body));
-  }
-
-  ContextReport _parseContextReport(String body) {
-    return ContextReport.fromJson(json.decode(body));
   }
 
   List<ValoraNotification> _parseNotifications(String body) {
@@ -87,24 +77,15 @@ class ApiService {
     return jsonList.map((e) => ValoraNotification.fromJson(e)).toList();
   }
 
-  Future<ListingResponse> getListings(
-    ListingFilter filter, {
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    Uri? uri;
+  Future<ListingResponse> getListings(ListingFilter filter) async {
+    final uri = Uri.parse('$baseUrl/listings').replace(
+      queryParameters: filter.toQueryParameters(),
+    );
+
     try {
-      final queryParams = {
-        'page': page.toString(),
-        'pageSize': pageSize.toString(),
-        ...filter.toQueryParameters(),
-      };
-
-      uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
-
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );
@@ -118,75 +99,68 @@ class ApiService {
     }
   }
 
-  Future<Listing> getListing(String id) async {
-    Uri? listingUri;
-    try {
-      final sanitizedId = _sanitizeListingId(id);
-      listingUri = Uri.parse('$baseUrl/listings/$sanitizedId');
+  Future<Listing> getListingById(String id) async {
+    final sanitizedId = _sanitizeListingId(id);
+    final uri = Uri.parse('$baseUrl/listings/$sanitizedId');
 
+    try {
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) =>
-              _client.get(listingUri!, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
         response,
-        (body) => _runner(_parseListing, body),
+        (body) => Listing.fromJson(json.decode(body)),
       );
-    } catch (e, stack) {
-      throw _handleException(e, stack, listingUri);
-    }
-  }
-
-  Future<Listing?> getListingFromPdok(String id) async {
-    Uri? uri;
-    try {
-      uri = Uri.parse('$baseUrl/listings/lookup').replace(queryParameters: {'id': id});
-      
-      final response = await _retryOptions.retry(
-        () => _authenticatedRequest(
-          (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
-        ),
-        retryIf: (e) => e is SocketException || e is TimeoutException,
-      );
-
-      return await _handleResponse(
-        response,
-        (body) => _runner(_parseListing, body),
-      );
-    } on NotFoundException {
-      return null;
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
   }
 
-  Future<ContextReport> getContextReport(
-    String input, {
-    int radiusMeters = 1000,
-  }) async {
-    final uri = Uri.parse('$baseUrl/context/report');
+  Future<Listing> lookupListing(String pdokId) async {
+    final String sanitizedId = Uri.encodeComponent(pdokId);
+    final uri = Uri.parse('$baseUrl/listings/lookup?id=$sanitizedId');
     try {
-      final payload = json.encode(<String, dynamic>{
-        'input': input,
-        'radiusMeters': radiusMeters,
-      });
-
-      // POST requests are generally not idempotent, so we don't retry by default
-      // unless we are sure. Here generating a report might be expensive but safe to retry if failed early.
-      // But let's stick to GET retries for now as per plan.
-      final response = await _authenticatedRequest(
-        (headers) => _client
-            .post(uri, headers: headers, body: payload)
-            .timeout(timeoutDuration),
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
         response,
-        (body) => _runner(_parseContextReport, body),
+        (body) => Listing.fromJson(json.decode(body)),
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
+    final uri = Uri.parse('$baseUrl/context/report');
+    try {
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) => _client.post(
+            uri,
+            headers: headers,
+            body: json.encode({
+              'input': input,
+              'radiusMeters': radiusMeters,
+            }),
+          ).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+      );
+
+      return await _handleResponse(
+        response,
+        (body) => ContextReport.fromJson(json.decode(body)),
       );
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
@@ -196,21 +170,22 @@ class ApiService {
   Future<String> getAiAnalysis(ContextReport report) async {
     final uri = Uri.parse('$baseUrl/ai/analyze-report');
     try {
-      final payload = json.encode({
-        'report': report.toJson(),
-      });
-
-      final response = await _authenticatedRequest(
-        (headers) => _client
-            .post(uri, headers: headers, body: payload)
-            .timeout(const Duration(seconds: 60)), // AI takes longer
+      final response = await _retryOptions.retry(
+        () => _authenticatedRequest(
+          (headers) => _client.post(
+            uri,
+            headers: headers,
+            body: json.encode({'report': report.toJson()}),
+          ).timeout(timeoutDuration),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
       );
 
       return await _handleResponse(
         response,
         (body) {
           final jsonBody = json.decode(body);
-          return jsonBody['summary'] as String;
+          return jsonBody['analysis'] as String;
         },
       );
     } catch (e, stack) {
@@ -218,25 +193,16 @@ class ApiService {
     }
   }
 
-  Future<List<ValoraNotification>> getNotifications({
-    bool unreadOnly = false,
-    int limit = 50,
-    int offset = 0,
-  }) async {
-    Uri? uri;
-    try {
-      uri = Uri.parse('$baseUrl/notifications').replace(
-        queryParameters: {
-          'unreadOnly': unreadOnly.toString(),
-          'limit': limit.toString(),
-          'offset': offset.toString(),
-        },
-      );
+  Future<List<ValoraNotification>> getNotifications({int limit = 20, int offset = 0}) async {
+    final uri = Uri.parse('$baseUrl/notifications').replace(queryParameters: {
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    });
 
+    try {
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri!, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );
@@ -255,8 +221,7 @@ class ApiService {
     try {
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );
@@ -277,8 +242,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/notifications/$id/read');
     try {
       final response = await _authenticatedRequest(
-        (headers) =>
-            _client.post(uri, headers: headers).timeout(timeoutDuration),
+        (headers) => _client.post(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
     } catch (e, stack) {
@@ -290,8 +254,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/notifications/read-all');
     try {
       final response = await _authenticatedRequest(
-        (headers) =>
-            _client.post(uri, headers: headers).timeout(timeoutDuration),
+        (headers) => _client.post(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
     } catch (e, stack) {
@@ -303,8 +266,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/notifications/$id');
     try {
       final response = await _authenticatedRequest(
-        (headers) =>
-            _client.delete(uri, headers: headers).timeout(timeoutDuration),
+        (headers) => _client.delete(uri, headers: headers).timeout(timeoutDuration),
       );
       await _handleResponse(response, (_) => null);
     } catch (e, stack) {
@@ -336,36 +298,26 @@ class ApiService {
       case 404:
         throw NotFoundException(message ?? 'Resource not found');
       case 429:
-        throw ServerException(
-          'Too many requests. Please try again later.$traceSuffix',
-        );
+        throw ServerException('Too many requests. Please try again later.$traceSuffix');
       case 503:
-        throw ServerException(
-          'Service is temporarily unavailable. Please try again later.$traceSuffix',
-        );
+        throw ServerException('Service is temporarily unavailable. Please try again later.$traceSuffix');
       case 500:
       case 502:
       case 504:
-        throw ServerException(
-          'We are experiencing technical difficulties. Please try again later.$traceSuffix',
-        );
+        throw ServerException('We are experiencing technical difficulties. Please try again later.$traceSuffix');
       default:
-        throw ServerException(
-          'Request failed with status: ${response.statusCode}$traceSuffix',
-        );
+        throw ServerException('Request failed with status: ${response.statusCode}$traceSuffix');
     }
   }
 
   Exception _handleException(dynamic error, StackTrace? stack, [Uri? uri]) {
     if (error is AppException) return error;
 
-    // Redact query parameters to prevent PII leakage
     final redactedUri = uri?.replace(queryParameters: {}) ?? Uri();
     final urlString = redactedUri.toString().isEmpty ? 'unknown URL' : redactedUri.toString();
 
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
-    // Report non-business exceptions to Sentry
     CrashReportingService.captureException(
       error,
       stackTrace: stack ?? (error is Error ? error.stackTrace : null),
@@ -392,19 +344,15 @@ class ApiService {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Look in extensions (RFC 7807)
         if (jsonBody['extensions'] is Map<String, dynamic>) {
           final extensions = jsonBody['extensions'] as Map<String, dynamic>;
           if (extensions['traceId'] is String) return extensions['traceId'] as String;
           if (extensions['requestId'] is String) return extensions['requestId'] as String;
         }
-        // Look in root
         if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
         if (jsonBody['requestId'] is String) return jsonBody['requestId'] as String;
       }
-    } catch (_) {
-      // Ignore parsing errors
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -412,7 +360,6 @@ class ApiService {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Handle FluentValidation 'errors' dictionary
         if (jsonBody['errors'] is Map<String, dynamic>) {
           final errors = jsonBody['errors'] as Map<String, dynamic>;
           final messages = errors.entries.map((e) {
@@ -422,13 +369,9 @@ class ApiService {
           });
           return messages.join('\n');
         }
-
-        // Handle RFC 7807 problem details
         return jsonBody['detail'] as String? ?? jsonBody['title'] as String?;
       }
-    } catch (_) {
-      // Ignore parsing errors
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -455,8 +398,7 @@ class ApiService {
     try {
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );
@@ -469,7 +411,6 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      final uri = Uri.parse('$baseUrl/map/cities');
       throw _handleException(e, stack, uri);
     }
   }
@@ -491,8 +432,7 @@ class ApiService {
     try {
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );
@@ -526,8 +466,7 @@ class ApiService {
     try {
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri, headers: headers).timeout(timeoutDuration),
+          (headers) => _client.get(uri, headers: headers).timeout(timeoutDuration),
         ),
         retryIf: (e) => e is SocketException || e is TimeoutException,
       );

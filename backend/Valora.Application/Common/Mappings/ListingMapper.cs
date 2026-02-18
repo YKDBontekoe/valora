@@ -31,7 +31,7 @@ public static class ListingMapper
             // Status
             listing.PublicationDate, listing.IsSoldOrRented, listing.Labels,
             // Phase 6: WOZ
-            null, null, null,
+            listing.WozValue, listing.WozReferenceDate, listing.WozValueSource,
             // Phase 5: Context
             listing.ContextCompositeScore, listing.ContextSafetyScore, listing.ContextReport
         );
@@ -153,8 +153,7 @@ public static class ListingMapper
         listing.CVBoilerBrand = dto.CVBoilerBrand.Truncate(ValidationConstants.Listing.CVBoilerBrandMaxLength);
         listing.CVBoilerYear = dto.CVBoilerYear;
         listing.BrokerPhone = dto.BrokerPhone.Truncate(ValidationConstants.Listing.BrokerPhoneMaxLength);
-        listing.BrokerLogoUrl = dto.BrokerLogoUrl; // No explicit max length in config, assumingly handled or large enough
-        // BrokerAssociationCode not present in DTO
+        listing.BrokerLogoUrl = dto.BrokerLogoUrl;
         listing.FiberAvailable = dto.FiberAvailable;
         listing.PublicationDate = dto.PublicationDate;
         listing.IsSoldOrRented = dto.IsSoldOrRented;
@@ -162,5 +161,8 @@ public static class ListingMapper
         listing.ContextCompositeScore = dto.ContextCompositeScore;
         listing.ContextSafetyScore = dto.ContextSafetyScore;
         listing.ContextReport = dto.ContextReport;
+        listing.WozValue = dto.WozValue;
+        listing.WozReferenceDate = dto.WozReferenceDate;
+        listing.WozValueSource = dto.WozValueSource;
     }
 }

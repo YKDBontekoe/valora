@@ -103,6 +103,11 @@ public class Listing : BaseEntity
     public double? ContextAmenitiesScore { get; set; }
     public double? ContextEnvironmentScore { get; set; }
 
+    // Phase 6: Market Data
+    public int? WozValue { get; set; }
+    public DateTime? WozReferenceDate { get; set; }
+    public string? WozValueSource { get; set; }
+
     // Full report stored as JSONB for detailed display without joins
     public Valora.Domain.Models.ContextReportModel? ContextReport { get; set; }
 }

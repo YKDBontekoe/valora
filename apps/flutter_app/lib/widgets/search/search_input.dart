@@ -54,7 +54,7 @@ class SearchInput extends StatelessWidget {
             controller: controller,
             focusNode: focusNode,
             label: null, // Removed empty label string
-            hint: 'City, address, or zip code...',
+            hint: 'Enter any address to analyze...',
             prefixIcon: Icon(
               Icons.search_rounded,
               color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
