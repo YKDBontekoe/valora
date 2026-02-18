@@ -334,13 +334,21 @@ class ApiService {
 
     switch (response.statusCode) {
       case 400:
-        throw ValidationException(message ?? 'Invalid request');
+        throw ValidationException(
+          (message ?? 'Invalid request') + traceSuffix,
+        );
       case 401:
-        throw UnauthorizedException(message ?? 'Unauthorized access');
+        throw UnauthorizedException(
+          (message ?? 'Unauthorized access') + traceSuffix,
+        );
       case 403:
-        throw ForbiddenException(message ?? 'Access denied');
+        throw ForbiddenException(
+          (message ?? 'Access denied') + traceSuffix,
+        );
       case 404:
-        throw NotFoundException(message ?? 'Resource not found');
+        throw NotFoundException(
+          (message ?? 'Resource not found') + traceSuffix,
+        );
       case 429:
         throw ServerException(
           'Too many requests. Please try again later.$traceSuffix',
