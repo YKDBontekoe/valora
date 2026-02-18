@@ -1,3 +1,4 @@
+using Valora.Application.Common.Exceptions;
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
@@ -13,12 +14,14 @@ public class AuthService : IAuthService
     private readonly IIdentityService _identityService;
     private readonly ITokenService _tokenService;
     private readonly ILogger<AuthService> _logger;
+    private readonly IExternalAuthService _externalAuthService;
 
-    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger)
+    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger, IExternalAuthService externalAuthService)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _logger = logger;
+        _externalAuthService = externalAuthService;
     }
 
     public async Task<Result> RegisterAsync(RegisterDto registerDto)
@@ -106,5 +109,47 @@ public class AuthService : IAuthService
             existingToken.User.Id,
             roles
         );
+    }
+
+    public async Task<AuthResponseDto?> ExternalLoginAsync(ExternalLoginRequestDto request)
+    {
+        var externalUser = await _externalAuthService.VerifyTokenAsync(request.Provider, request.IdToken);
+
+        var user = await _identityService.GetUserByEmailAsync(externalUser.Email);
+
+        if (user == null)
+        {
+            var password = GenerateRandomPassword();
+            var (result, userId) = await _identityService.CreateUserAsync(externalUser.Email, password);
+            if (!result.Succeeded)
+            {
+                 _logger.LogWarning("Auto-registration failed for external user {EmailHash}: {Errors}", PrivacyUtils.HashEmail(externalUser.Email), string.Join(", ", result.Errors));
+                 throw new ValidationException(result.Errors);
+            }
+            user = await _identityService.GetUserByEmailAsync(externalUser.Email);
+        }
+
+        _logger.LogInformation("User logged in via external provider {Provider}: {UserId}", request.Provider, user!.Id);
+
+        var token = await _tokenService.CreateJwtTokenAsync(user);
+        var roles = await _identityService.GetUserRolesAsync(user);
+
+        var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
+        await _tokenService.SaveRefreshTokenAsync(refreshToken);
+
+        return new AuthResponseDto(
+            token,
+            refreshToken.RawToken,
+            user.Email!,
+            user.Id,
+            roles
+        );
+    }
+
+    private static string GenerateRandomPassword()
+    {
+        // Generates a password satisfying the requirement:
+        // 8+ chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
+        return Guid.NewGuid().ToString("N") + "A1!";
     }
 }

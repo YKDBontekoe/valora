@@ -6,6 +6,8 @@ import 'package:valora_app/screens/auth/login_screen.dart';
 
 class MockAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
+  Future<void> loginWithGoogle() async {}
+  @override
   bool get isAuthenticated => false;
 
   @override

@@ -15,6 +15,7 @@ public class AuthServiceTests
     private readonly Mock<IIdentityService> _mockIdentityService;
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<ILogger<AuthService>> _mockLogger;
+    private readonly Mock<IExternalAuthService> _mockExternalAuthService;
     private readonly AuthService _authService;
 
     public AuthServiceTests()
@@ -22,7 +23,8 @@ public class AuthServiceTests
         _mockIdentityService = new Mock<IIdentityService>();
         _mockTokenService = new Mock<ITokenService>();
         _mockLogger = new Mock<ILogger<AuthService>>();
-        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object);
+        _mockExternalAuthService = new Mock<IExternalAuthService>();
+        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object, _mockExternalAuthService.Object);
     }
 
     [Fact]

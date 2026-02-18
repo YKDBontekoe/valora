@@ -1,3 +1,4 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:convert';
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   bool _isAuthenticated = false;
   bool _isLoading = false;
+  bool _isGoogleSignInInitialized = false;
   String? _token;
   String? _email;
 
@@ -154,5 +156,41 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Illegal base64url string!"');
     }
     return utf8.decode(base64.decode(output));
+  }
+
+  Future<void> loginWithGoogle() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      if (!_isGoogleSignInInitialized) {
+        await GoogleSignIn.instance.initialize();
+        _isGoogleSignInInitialized = true;
+      }
+
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate(
+        scopeHint: <String>['email'],
+      );
+
+      // googleUser.authentication is now synchronous in v7.0.0+
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken != null) {
+        final data = await _authService.externalLogin('google', idToken);
+        _token = data['token'];
+        if (_token != null) {
+           _parseJwt(_token!);
+           _isAuthenticated = true;
+        }
+      } else {
+        throw Exception("Failed to retrieve Google ID Token");
+      }
+    } catch (e) {
+      _log.warning('Google login failed', e);
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

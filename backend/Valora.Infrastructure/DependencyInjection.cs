@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
+        services.AddScoped<IExternalAuthService, ExternalAuthService>();
         
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));

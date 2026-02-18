@@ -183,6 +183,55 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> externalLogin(String provider, String idToken) async {
+    try {
+      final response = await _retryOptions.retry(
+        () async {
+          final res = await _client
+              .post(
+                Uri.parse('$baseUrl/auth/external-login'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'provider': provider, 'idToken': idToken}),
+              )
+              .timeout(ApiService.timeoutDuration);
+
+          if (res.statusCode >= 500) {
+            throw ServerException('Server error (${res.statusCode})');
+          }
+          return res;
+        },
+        retryIf: (e) =>
+            e is SocketException ||
+            e is TimeoutException ||
+            e is http.ClientException ||
+            e is ServerException,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['token'] != null) {
+          await saveToken(data['token']);
+        }
+        if (data['refreshToken'] != null) {
+          try {
+            await _storage.write(
+              key: _refreshTokenKey,
+              value: data['refreshToken'],
+            );
+          } catch (e) {
+             _log.warning('SecureStorage write refresh failed', e);
+          }
+        }
+        return data;
+      } else {
+        throw _handleError(response);
+      }
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw NetworkException('External login failed: $e');
+    }
+  }
+
   Future<void> register(
     String email,
     String password,
