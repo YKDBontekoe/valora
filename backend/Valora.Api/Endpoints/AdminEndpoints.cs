@@ -17,9 +17,11 @@ public static class AdminEndpoints
         group.MapGet("/users", async (
             IAdminService adminService,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10) =>
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? q = null,
+            [FromQuery] string? sort = null) =>
         {
-            var paginatedUsers = await adminService.GetUsersAsync(page, pageSize);
+            var paginatedUsers = await adminService.GetUsersAsync(page, pageSize, q, sort);
 
             return Results.Ok(new {
                 paginatedUsers.Items,

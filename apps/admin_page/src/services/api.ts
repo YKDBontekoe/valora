@@ -66,8 +66,11 @@ export const adminService = {
     const response = await api.get<Stats>('/admin/stats');
     return response.data;
   },
-  getUsers: async (page = 1, pageSize = 10): Promise<PaginatedResponse<User>> => {
-    const response = await api.get<PaginatedResponse<User>>(`/admin/users?page=${page}&pageSize=${pageSize}`);
+  getUsers: async (page = 1, pageSize = 10, search?: string, sort?: string): Promise<PaginatedResponse<User>> => {
+    let url = `/admin/users?page=${page}&pageSize=${pageSize}`;
+    if (search) url += `&q=${encodeURIComponent(search)}`;
+    if (sort) url += `&sort=${encodeURIComponent(sort)}`;
+    const response = await api.get<PaginatedResponse<User>>(url);
     return response.data;
   },
   deleteUser: async (id: string): Promise<void> => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { User } from '../types';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUsers } from '../hooks/useUsers';
 import ConfirmationDialog from '../components/ConfirmationDialog';
@@ -23,7 +23,11 @@ const Users = () => {
     currentUserId,
     deleteUser,
     nextPage,
-    prevPage
+    prevPage,
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    toggleSort
   } = useUsers();
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; user: User | null }>({
@@ -31,19 +35,26 @@ const Users = () => {
     user: null,
   });
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleDeleteClick = (user: User) => {
     if (user.id === currentUserId) return;
     setDeleteConfirmation({ isOpen: true, user });
+    setError(null);
   };
 
   const confirmDelete = async () => {
     if (!deleteConfirmation.user) return;
     try {
       await deleteUser(deleteConfirmation.user);
+      setDeleteConfirmation({ isOpen: false, user: null });
     } catch {
-      alert('Failed to delete user. It might be protected or you might have lost permissions.');
+      setError('Failed to delete user. It might be protected or you might have lost permissions.');
+      // Keep dialog open or close it? Close it and show error banner or keep open with error inside?
+      // Let's keep dialog open and show error inside confirmation dialog? No, ConfirmDialog is generic.
+      // Let's close dialog and show page error.
+      setDeleteConfirmation({ isOpen: false, user: null });
     }
-    setDeleteConfirmation({ isOpen: false, user: null });
   };
 
   return (
@@ -60,12 +71,40 @@ const Users = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 font-bold">✕</button>
+        </div>
+      )}
+
+      <div className="mb-6 relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-brand-400" />
+        <input
+            type="text"
+            placeholder="Search users by email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-sm"
+        />
+      </div>
+
       <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 relative">
         <div className={`overflow-x-auto transition-opacity duration-200 ${loading && users.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
           <table className="min-w-full divide-y divide-brand-100">
             <thead className="bg-brand-50">
               <tr>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Email</th>
+                <th
+                    className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    onClick={() => toggleSort('email')}
+                >
+                    <div className="flex items-center gap-2">
+                        Email
+                        {sortBy === 'email_asc' && <ArrowUp className="w-3 h-3 text-brand-700" />}
+                        {sortBy === 'email_desc' && <ArrowDown className="w-3 h-3 text-brand-700" />}
+                        {!sortBy?.includes('email') && <ArrowUp className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" />}
+                    </div>
+                </th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Roles</th>
                 <th className="px-8 py-4 text-right text-xs font-bold text-brand-500 uppercase tracking-widest">Actions</th>
               </tr>
@@ -91,6 +130,17 @@ const Users = () => {
                       </div>
                     </td>
                   </motion.tr>
+                ) : users.length === 0 ? (
+                    <motion.tr
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <td colSpan={3} className="px-8 py-16 text-center text-brand-400">
+                            {searchQuery ? 'No users found matching your search.' : 'No users found.'}
+                        </td>
+                    </motion.tr>
                 ) : (
                   users.map((user) => (
                     <UserRow

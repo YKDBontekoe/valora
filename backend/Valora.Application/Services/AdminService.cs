@@ -25,11 +25,11 @@ public class AdminService : IAdminService
         _logger = logger;
     }
 
-    public async Task<PaginatedList<AdminUserDto>> GetUsersAsync(int pageNumber, int pageSize)
+    public async Task<PaginatedList<AdminUserDto>> GetUsersAsync(int pageNumber, int pageSize, string? searchQuery = null, string? sortBy = null)
     {
-        _logger.LogInformation("Admin user listing requested. Page: {Page}, PageSize: {PageSize}", pageNumber, pageSize);
+        _logger.LogInformation("Admin user listing requested. Page: {Page}, PageSize: {PageSize}, Search: {Search}, Sort: {Sort}", pageNumber, pageSize, searchQuery, sortBy);
 
-        var paginatedUsers = await _identityService.GetUsersAsync(pageNumber, pageSize);
+        var paginatedUsers = await _identityService.GetUsersAsync(pageNumber, pageSize, searchQuery, sortBy);
         var rolesMap = await _identityService.GetRolesForUsersAsync(paginatedUsers.Items);
 
         var userDtos = paginatedUsers.Items

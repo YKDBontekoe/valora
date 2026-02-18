@@ -78,10 +78,24 @@ public class IdentityService : IIdentityService
         return Result.Success();
     }
 
-    public async Task<PaginatedList<ApplicationUser>> GetUsersAsync(int pageNumber, int pageSize)
+    public async Task<PaginatedList<ApplicationUser>> GetUsersAsync(int pageNumber, int pageSize, string? searchQuery = null, string? sortBy = null)
     {
-        var count = await _userManager.Users.CountAsync();
-        var items = await _userManager.Users
+        var query = _userManager.Users.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            query = query.Where(u => u.Email!.Contains(searchQuery));
+        }
+
+        query = sortBy?.ToLower() switch
+        {
+            "email_desc" => query.OrderByDescending(u => u.Email),
+            "email_asc" => query.OrderBy(u => u.Email),
+            _ => query.OrderBy(u => u.Email) // Default sort
+        };
+
+        var count = await query.CountAsync();
+        var items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
