@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:mockito/mockito.dart';
+import 'package:valora_app/widgets/report/score_gauge.dart';
+import 'package:valora_app/widgets/report/metric_category_card.dart';
 
 class MockApiService extends Mock implements ApiService {}
 
@@ -43,13 +45,13 @@ void main() {
     return MaterialApp(
       home: ChangeNotifierProvider(
         create: (_) => ContextReportProvider(apiService: MockApiService()),
-        child: Scaffold(body: SingleChildScrollView(child: child)),
+        child: Scaffold(body: child), // Removed SingleChildScrollView as ContextReportView has its own ListView
       ),
     );
   }
 
   testWidgets('ContextReportView renders correctly', (tester) async {
-    tester.view.physicalSize = const Size(1200, 3000); // Increased height to avoid overflow/truncation
+    tester.view.physicalSize = const Size(1200, 3000); // Large height to show all items
     tester.view.devicePixelRatio = 1.0;
 
     await tester.pumpWidget(createWidgetUnderTest(
@@ -99,6 +101,7 @@ void main() {
   });
 
   testWidgets('ContextReportView respects showHeader parameter', (tester) async {
+    // Height must be sufficient to show ScoreGauge which is top item when header hidden
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1.0;
 
