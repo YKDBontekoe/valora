@@ -67,6 +67,13 @@ if (!string.IsNullOrEmpty(sentryDsn))
             options.AddProfilingIntegration();
         }
     });
+
+    builder.Logging.AddSentry(o =>
+    {
+        o.InitializeSdk = false; // IMPORTANT: already initialized via UseSentry
+        o.MinimumBreadcrumbLevel = LogLevel.Information;
+        o.MinimumEventLevel = LogLevel.Error; // send Error+ logs as Sentry events
+    });
 }
 builder.Services.AddSwaggerGen(option =>
 {
