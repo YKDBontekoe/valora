@@ -200,7 +200,7 @@ await DbInitializer.InitializeAsync(app.Services, app.Configuration, app.Environ
 var isOnRender = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RENDER"));
 if (!isOnRender && (app.Environment.IsProduction() || app.Configuration.GetValue<bool>("ENABLE_HTTPS_REDIRECTION")))
 {
-    if (app.Environment.IsProduction())
+    if (!app.Environment.IsDevelopment())
     {
         app.UseHsts();
     }

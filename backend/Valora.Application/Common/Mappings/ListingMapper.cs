@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Valora.Application.DTOs;
 using Valora.Domain.Common;
 using Valora.Domain.Entities;
@@ -123,7 +124,7 @@ public static class ListingMapper
         listing.PropertyType = dto.PropertyType.Truncate(ValidationConstants.Listing.PropertyTypeMaxLength);
         listing.Status = dto.Status.Truncate(ValidationConstants.Listing.StatusMaxLength);
         listing.ListedDate = dto.ListedDate;
-        listing.Description = dto.Description; // No max length on Description? Usually unbounded or large.
+        listing.Description = SanitizeHtml(dto.Description);
         listing.EnergyLabel = dto.EnergyLabel.Truncate(ValidationConstants.Listing.EnergyLabelMaxLength);
         listing.YearBuilt = dto.YearBuilt;
         listing.ImageUrls = dto.ImageUrls;
@@ -140,7 +141,7 @@ public static class ListingMapper
         listing.BalconyM2 = dto.BalconyM2;
         listing.GardenM2 = dto.GardenM2;
         listing.ExternalStorageM2 = dto.ExternalStorageM2;
-        listing.Features = dto.Features;
+        listing.Features = dto.Features.ToDictionary(k => k.Key, k => SanitizeHtml(k.Value) ?? string.Empty);
         listing.Latitude = dto.Latitude;
         listing.Longitude = dto.Longitude;
         listing.VideoUrl = dto.VideoUrl;
@@ -164,4 +165,17 @@ public static class ListingMapper
         listing.ContextReport = dto.ContextReport;
     }
 
+    private static string? SanitizeHtml(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        // Remove script and style blocks with content (lazy match)
+        // This prevents Stored XSS by removing HTML tags from user-controlled or external content.
+        input = Regex.Replace(input, @"<script[^>]*?>[\s\S]*?</script>", string.Empty, RegexOptions.IgnoreCase);
+        input = Regex.Replace(input, @"<style[^>]*?>[\s\S]*?</style>", string.Empty, RegexOptions.IgnoreCase);
+
+        // Replace other tags with a space to prevent concatenation (e.g. <br> -> " ")
+        // This preserves mathematical comparisons like < 20 because the match must start with a letter (tag name).
+        return Regex.Replace(input, @"<\/?[a-zA-Z][^>]*?>", " ");
+    }
 }

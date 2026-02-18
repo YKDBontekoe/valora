@@ -70,4 +70,55 @@ public class ListingMapperTests
         entity.City.Should().NotBeNull();
         entity.City!.Length.Should().Be(ValidationConstants.Listing.CityMaxLength);
     }
+
+    [Fact]
+    public void ToEntity_ShouldSanitizeDescription()
+    {
+        var description = "<p>This is a <b>bold</b> move.</p><script>alert('xss')</script>";
+        var dto = _validDto with { Description = description };
+
+        var entity = ListingMapper.ToEntity(dto);
+
+        // Tags are replaced with space to prevent concatenation
+        entity.Description.Should().Be(" This is a  bold  move. ");
+    }
+
+    [Fact]
+    public void ToEntity_ShouldSanitizeFeatures()
+    {
+        var features = new Dictionary<string, string>
+        {
+            { "Feature1", "<b>Value1</b>" },
+            { "Feature2", "<iframe src='malicious'></iframe>Safe" }
+        };
+        var dto = _validDto with { Features = features };
+
+        var entity = ListingMapper.ToEntity(dto);
+
+        entity.Features["Feature1"].Should().Be(" Value1 ");
+        // iframe matches <\/?[a-zA-Z]... because iframe starts with i
+        entity.Features["Feature2"].Should().Be("  Safe");
+    }
+
+    [Fact]
+    public void ToEntity_ShouldPreserveMathematicalComparisons()
+    {
+        var description = "Living room < 20m2 and Kitchen > 10m2";
+        var dto = _validDto with { Description = description };
+
+        var entity = ListingMapper.ToEntity(dto);
+
+        entity.Description.Should().Be("Living room < 20m2 and Kitchen > 10m2");
+    }
+
+    [Fact]
+    public void ToEntity_ShouldReplaceTagsWithSpace()
+    {
+        var description = "Line1<br>Line2";
+        var dto = _validDto with { Description = description };
+
+        var entity = ListingMapper.ToEntity(dto);
+
+        entity.Description.Should().Be("Line1 Line2");
+    }
 }
