@@ -5,6 +5,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Application.Enrichment.Builders;
+using Valora.Domain.Services;
 
 namespace Valora.Application.Services;
 
@@ -127,7 +128,7 @@ public sealed class ContextReportService : IContextReportService
                 d.Key, d.Label, d.Value, d.Unit, d.Score, d.Source, d.Note)).ToList();
         }
 
-        var metricsInput = new Valora.Domain.Services.CategoryMetricsInput(
+        var metricsInput = new CategoryMetricsInput(
             ToDomain(socialMetrics),
             ToDomain(crimeMetrics),
             ToDomain(demographicsMetrics),
@@ -136,8 +137,8 @@ public sealed class ContextReportService : IContextReportService
             ToDomain(amenityMetrics),
             ToDomain(environmentMetrics));
 
-        var categoryScores = Valora.Domain.Services.ContextScoreCalculator.ComputeCategoryScores(metricsInput);
-        var compositeScore = Valora.Domain.Services.ContextScoreCalculator.ComputeCompositeScore(categoryScores);
+        var categoryScores = ContextScoreCalculator.ComputeCategoryScores(metricsInput);
+        var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
 
         var report = new ContextReportDto(
             Location: location,
