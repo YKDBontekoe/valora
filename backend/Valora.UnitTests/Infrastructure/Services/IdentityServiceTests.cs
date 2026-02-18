@@ -38,7 +38,7 @@ public class IdentityServiceTests : IDisposable
         // Setup Mock UserManager
         var store = new Mock<IUserStore<ApplicationUser>>();
         _mockUserManager = new Mock<UserManager<ApplicationUser>>(
-            store.Object, null, null, null, null, null, null, null, null);
+            store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
         // Make FindByIdAsync return the user
         _mockUserManager.Setup(x => x.FindByIdAsync(_testUser.Id))
@@ -47,7 +47,7 @@ public class IdentityServiceTests : IDisposable
         // Setup SUT with mocked managers but real context
         var roleStore = new Mock<IRoleStore<IdentityRole>>();
         var roleManager = new Mock<RoleManager<IdentityRole>>(
-            roleStore.Object, null, null, null, null);
+            roleStore.Object, null!, null!, null!, null!);
 
         _identityService = new IdentityService(
             _mockUserManager.Object,

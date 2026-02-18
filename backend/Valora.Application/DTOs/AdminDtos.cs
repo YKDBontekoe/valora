@@ -8,7 +8,6 @@ public record AdminUserDto(
 
 public record AdminStatsDto(
     int TotalUsers,
-    int TotalListings,
     int TotalNotifications
 );
 
