@@ -243,9 +243,6 @@ app.MapAdminEndpoints();
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 
 
-
-
-
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
 /// </summary>
@@ -257,7 +254,8 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
     }
 
     return Results.Problem("Service unavailable", statusCode: 503);
-});
+})
+.DisableRateLimiting();
 
 api.MapPost("/context/report", async (
     ContextReportRequestDto request,
