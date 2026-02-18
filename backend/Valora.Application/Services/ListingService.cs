@@ -4,9 +4,9 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Mappings;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
-using Valora.Application.Enrichment;
 using Valora.Domain.Common;
 using Valora.Domain.Entities;
+using Valora.Domain.Services;
 using ValidationException = Valora.Application.Common.Exceptions.ValidationException;
 
 namespace Valora.Application.Services;

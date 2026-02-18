@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
+        services.AddScoped<IContextAnalysisService, ContextAnalysisService>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
         

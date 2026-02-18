@@ -6,6 +6,7 @@ using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Services;
+using Valora.Infrastructure.Services;
 using Xunit;
 
 namespace Valora.IntegrationTests;

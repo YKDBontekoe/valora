@@ -12,7 +12,6 @@ public static class DependencyInjection
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IContextReportService, ContextReportService>();
-        services.AddScoped<IContextAnalysisService, ContextAnalysisService>();
         services.AddScoped<IContextDataProvider, ContextDataProvider>();
         services.AddScoped<IListingService, ListingService>();
         services.AddScoped<IMapService, MapService>();

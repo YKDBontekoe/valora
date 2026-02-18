@@ -1,9 +1,9 @@
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services;
 
-namespace Valora.UnitTests.Services;
+namespace Valora.UnitTests.Infrastructure.Services;
 
 public class ContextAnalysisServiceTests
 {

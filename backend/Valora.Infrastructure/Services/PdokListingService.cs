@@ -7,6 +7,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Mappings;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
+using Valora.Domain.Services;
 
 namespace Valora.Infrastructure.Services;
 
