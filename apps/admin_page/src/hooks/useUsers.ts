@@ -10,6 +10,7 @@ export const useUsers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for manual refresh
   const currentUserId = localStorage.getItem('admin_userId');
 
   // Debounce search query
@@ -44,28 +45,12 @@ export const useUsers = () => {
     return () => {
       ignore = true;
     };
-  }, [page, debouncedSearch, sortBy]);
+  }, [page, debouncedSearch, sortBy, refreshTrigger]);
 
-  // When debounced search or sort changes, we MUST reset to page 1.
-  // However, `setPage(1)` triggers the main effect again if page changed.
-  // The standard way to avoid double fetch is to make the fetch dependent on page change,
-  // OR handle the reset logic inside the fetch effect (complex),
-  // OR just accept that React 18+ strict mode double-invokes anyway and we have `ignore` flag.
-  // BUT:
-  // 1. User types "test" -> debouncedSearch changes -> effect runs with OLD page (say 5) -> 404/Empty? -> ignore=false -> updates state.
-  // 2. Separate effect sets page=1 -> effect runs with NEW page (1) -> fetch -> ignore=false -> updates state.
-  // Result: User sees empty state flash then correct results.
-  // To fix: We need to coordinate.
-
-  // Ref-based coordination to detect if we should fetch.
-  // If search/sort changed, we set page=1 and DO NOT fetch yet (return early?).
-  // But we can't skip the fetch easily in the effect.
-
-  // Better: Only reset page if it's NOT 1.
+  // When debounced search or sort changes, we reset to page 1.
+  // We rely on React's behavior to bail out if state is already 1, avoiding unnecessary updates.
   useEffect(() => {
-     if (page !== 1) {
-         setPage(1);
-     }
+     setPage(1);
   }, [debouncedSearch, sortBy]);
 
   const deleteUser = async (user: User) => {
@@ -93,18 +78,9 @@ export const useUsers = () => {
     });
   };
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-        const data = await adminService.getUsers(page, 10, debouncedSearch, sortBy);
-        setUsers(data.items);
-        setTotalPages(Math.max(1, data.totalPages));
-    } catch (error) {
-        console.error('Failed to refresh users', error);
-    } finally {
-        setLoading(false);
-    }
-  }, [page, debouncedSearch, sortBy]);
+  const refresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   return {
     users,

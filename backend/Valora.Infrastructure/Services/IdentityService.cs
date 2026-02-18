@@ -86,8 +86,9 @@ public class IdentityService : IIdentityService
         {
             if (_context.Database.ProviderName?.Contains("PostgreSQL") == true)
             {
-                // Postgres ILIKE for case-insensitive search
-                query = query.Where(u => EF.Functions.ILike(u.Email!, $"%{searchQuery}%"));
+                // Postgres ILIKE for case-insensitive search with proper escaping
+                var escapedQuery = EscapeLikePattern(searchQuery);
+                query = query.Where(u => EF.Functions.ILike(u.Email!, $"%{escapedQuery}%", "\\"));
             }
             else
             {
@@ -110,6 +111,14 @@ public class IdentityService : IIdentityService
             .ToListAsync();
 
         return new PaginatedList<ApplicationUser>(items, count, pageNumber, pageSize);
+    }
+
+    private static string EscapeLikePattern(string pattern)
+    {
+        return pattern
+            .Replace("\\", "\\\\")
+            .Replace("%", "\\%")
+            .Replace("_", "\\_");
     }
 
     public async Task<Result> DeleteUserAsync(string userId)
