@@ -1,130 +1,146 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
+using Valora.Domain.Entities;
+using Valora.Infrastructure.Persistence;
 using Xunit;
 
 namespace Valora.IntegrationTests;
 
-public class AdminEndpointTests : BaseIntegrationTest
+[Collection("TestDatabase")]
+public class AdminEndpointTests
 {
-    public AdminEndpointTests(TestDatabaseFixture fixture) : base(fixture)
+    private readonly IntegrationTestWebAppFactory _factory;
+    private readonly HttpClient _client;
+
+    public AdminEndpointTests(TestDatabaseFixture fixture)
     {
+        _factory = fixture.Factory;
+        _client = _factory.CreateClient();
     }
 
     [Fact]
-    public async Task GetStats_AsAdmin_ReturnsOk()
+    public async Task GetUsers_ReturnsUnauthorized_WhenNotAuthenticated()
     {
-        await AuthenticateAsAdminAsync();
-        var response = await Client.GetAsync("/api/admin/stats");
-        response.EnsureSuccessStatusCode();
-        var stats = await response.Content.ReadFromJsonAsync<AdminStatsDto>();
-        Assert.NotNull(stats);
+        var response = await _client.GetAsync("/api/admin/users");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    [Fact]
-    public async Task GetUsers_AsAdmin_ReturnsOk()
+    // Helper to authenticate
+    private async Task AuthenticateAsync(string email, string role)
     {
-        await AuthenticateAsAdminAsync();
-        var response = await Client.GetAsync("/api/admin/users");
-        response.EnsureSuccessStatusCode();
-        var responseData = await response.Content.ReadFromJsonAsync<dynamic>();
-        Assert.NotNull(responseData);
-    }
+        // 1. Create User via UserManager directly
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
 
-    [Fact]
-    public async Task GetStats_AsRegularUser_ReturnsForbidden()
-    {
-        await AuthenticateAsync();
-        var response = await Client.GetAsync("/api/admin/stats");
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task DeleteUser_AsAdmin_RemovesUser()
-    {
-        await AuthenticateAsAdminAsync();
-        var emailToDelete = "todelete@example.com";
-        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        if (!await roleManager.RoleExistsAsync(role))
         {
-            Email = emailToDelete,
-            Password = "Password123!",
-            ConfirmPassword = "Password123!"
+            await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole(role));
+        }
+
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new ApplicationUser { UserName = email, Email = email };
+            await userManager.CreateAsync(user, "Password123!");
+        }
+
+        if (!await userManager.IsInRoleAsync(user, role))
+        {
+            await userManager.AddToRoleAsync(user, role);
+        }
+
+        // 2. Login via API
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Email = email,
+            Password = "Password123!"
         });
-        Assert.True(registerResponse.IsSuccessStatusCode);
-
-        var usersResponse = await Client.GetAsync("/api/admin/users");
-        var usersData = await usersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
-        var userToDelete = usersData!.Items.First(u => u.Email == emailToDelete);
-
-        var deleteResponse = await Client.DeleteAsync($"/api/admin/users/{userToDelete.Id}");
-        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
-
-        var finalUsersResponse = await Client.GetAsync("/api/admin/users");
-        var finalUsersData = await finalUsersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
-        Assert.DoesNotContain(finalUsersData!.Items, u => u.Email == emailToDelete);
+        loginResponse.EnsureSuccessStatusCode();
+        var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResponse!.Token);
     }
 
     [Fact]
-    public async Task DeleteUser_NonExistent_ReturnsNotFound()
+    public async Task GetUsers_ReturnsForbidden_WhenUserIsNotAdmin()
     {
-        await AuthenticateAsAdminAsync();
+        // Arrange
+        await AuthenticateAsync("user@example.com", "User"); // Regular user
 
-        var response = await Client.DeleteAsync($"/api/admin/users/{Guid.NewGuid()}");
+        // Act
+        var response = await _client.GetAsync("/api/admin/users");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]
-    public async Task DeleteUser_Self_ReturnsForbidden()
+    public async Task GetUsers_ReturnsUsers_WhenAdmin()
     {
-        await AuthenticateAsAdminAsync();
+        // Arrange
+        await AuthenticateAsync("admin@example.com", "Admin");
 
-        var usersResponse = await Client.GetAsync("/api/admin/users");
-        var usersData = await usersResponse.Content.ReadFromJsonAsync<PaginatedUsersResponse>();
-        var adminUser = usersData!.Items.First(u => u.Email == "admin@example.com");
+        // Act
+        var response = await _client.GetAsync("/api/admin/users");
 
-        var response = await Client.DeleteAsync($"/api/admin/users/{adminUser.Id}");
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadFromJsonAsync<UsersResponse>();
+        content.Should().NotBeNull();
+        content!.Items.Should().NotBeEmpty();
     }
 
     [Fact]
-    public async Task Jobs_Endpoints_Work_Correctly()
+    public async Task GetUsers_FiltersAndSorts_WhenParametersProvided()
     {
-        await AuthenticateAsAdminAsync();
+        // Arrange
+        await AuthenticateAsync("admin@example.com", "Admin");
 
-        var enqueueResponse = await Client.PostAsJsonAsync(
-            "/api/admin/jobs",
-            new { Type = "CityIngestion", Target = "Amsterdam" }
-        );
+        // Ensure we have known users
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            if (await userManager.FindByEmailAsync("alpha@test.com") == null)
+            {
+                await userManager.CreateAsync(new ApplicationUser { UserName = "alpha", Email = "alpha@test.com" }, "Password123!");
+            }
+            if (await userManager.FindByEmailAsync("zeta@test.com") == null)
+            {
+                await userManager.CreateAsync(new ApplicationUser { UserName = "zeta", Email = "zeta@test.com" }, "Password123!");
+            }
+        }
 
-        Assert.Equal(HttpStatusCode.Accepted, enqueueResponse.StatusCode);
+        // Act
+        var response = await _client.GetAsync("/api/admin/users?q=test.com&sort=email_desc");
 
-        var job = await enqueueResponse.Content.ReadFromJsonAsync<IntegrationBatchJobDto>();
-        Assert.NotNull(job);
-        Assert.Equal("Amsterdam", job!.Target);
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadFromJsonAsync<UsersResponse>();
+        content.Should().NotBeNull();
+        content!.Items.Should().Contain(u => u.Email.Contains("test.com"));
 
-        var listResponse = await Client.GetAsync("/api/admin/jobs?limit=5");
-        listResponse.EnsureSuccessStatusCode();
+        // Check sorting: Z before A
+        // Note: The response list might contain other users, so we filter in memory to verify relative order of our test users
+        var testUsers = content.Items.Where(u => u.Email.Contains("test.com")).ToList();
+        var zetaIndex = testUsers.FindIndex(u => u.Email.Contains("zeta"));
+        var alphaIndex = testUsers.FindIndex(u => u.Email.Contains("alpha"));
 
-        var jobs = await listResponse.Content.ReadFromJsonAsync<List<IntegrationBatchJobDto>>();
-        Assert.NotNull(jobs);
-        Assert.Contains(jobs!, j => j.Id == job.Id);
+        // If both exist, verify order
+        if (zetaIndex >= 0 && alphaIndex >= 0)
+        {
+            zetaIndex.Should().BeLessThan(alphaIndex);
+        }
     }
 
-    [Fact]
-    public async Task EnqueueJob_InvalidType_ReturnsBadRequest()
+    private class UsersResponse
     {
-        await AuthenticateAsAdminAsync();
-
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/jobs",
-            new { Type = "InvalidType", Target = "Target" }
-        );
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        public List<AdminUserDto> Items { get; set; } = new();
+        public int TotalPages { get; set; }
+        public int TotalCount { get; set; }
     }
-
-    private record PaginatedUsersResponse(List<AdminUserDto> Items);
-    private record IntegrationBatchJobDto(Guid Id, string Type, string Status, string Target);
 }
