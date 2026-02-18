@@ -17,6 +17,10 @@ void main() {
     notificationService = NotificationService(mockApiService);
   });
 
+  tearDown(() {
+    notificationService.stopPolling();
+  });
+
   group('NotificationService Coverage', () {
     test('_fetchUnreadCount failure is handled silently', () async {
       when(mockApiService.getUnreadNotificationCount()).thenThrow(Exception('Poll failed'));

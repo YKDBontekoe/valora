@@ -6,7 +6,6 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
-import 'package:logging/logging.dart';
 import '../widgets/valora_widgets.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -17,7 +16,6 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  static final _log = Logger('NotificationsScreen');
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -182,7 +180,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: Builder(
                         builder: (context) {
                           // Log the actual error for debugging
-                          _log.warning('Notification Error: ${provider.error}');
                           return ValoraEmptyState(
                             icon: Icons.error_outline_rounded,
                             title: 'Something went wrong',
