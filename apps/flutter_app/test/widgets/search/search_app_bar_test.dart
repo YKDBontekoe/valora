@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/property_photo_service.dart';
+import 'package:valora_app/models/listing_response.dart';
 import 'package:valora_app/widgets/search/search_app_bar.dart';
 import 'package:valora_app/widgets/search/search_input.dart';
 
-@GenerateMocks([ApiService, PropertyPhotoService])
+@GenerateMocks([ApiService, PropertyPhotoService, PdokService])
 import 'search_app_bar_test.mocks.dart';
 
 // Create a Fake instead of Mock for NotificationService to avoid complex setup
@@ -27,7 +29,7 @@ void main() {
   late FakeNotificationService fakeNotificationService;
   late SearchListingsProvider searchProvider;
   late TextEditingController searchController;
-  late PdokService pdokService;
+  late MockPdokService mockPdokService;
 
   setUp(() {
     mockApiService = MockApiService();
@@ -41,7 +43,11 @@ void main() {
     );
 
     searchController = TextEditingController();
-    pdokService = PdokService();
+    mockPdokService = MockPdokService();
+  });
+
+  tearDown(() {
+    searchController.dispose();
   });
 
   Widget createWidget({
@@ -63,7 +69,7 @@ void main() {
             slivers: [
               SearchAppBar(
                 searchController: searchController,
-                pdokService: pdokService,
+                pdokService: mockPdokService,
                 onSuggestionSelected: (_) {},
                 onSubmitted: () {},
                 onSortTap: onSortTap,
@@ -112,6 +118,15 @@ void main() {
   });
 
   testWidgets('SearchAppBar shows active filter indicator', (WidgetTester tester) async {
+    when(mockApiService.getListings(any)).thenAnswer((_) async => ListingResponse(
+      items: [],
+      pageIndex: 1,
+      totalPages: 1,
+      totalCount: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    ));
+
     // Apply a filter to the provider
     await searchProvider.applyFilters(
       minPrice: 100000,
@@ -136,16 +151,18 @@ void main() {
       matching: find.byType(Stack),
     );
 
-    // Find the indicator: A positioned container with box decoration color primary
-    // This is a bit implementation detail specific, but valid for unit testing the widget's visual state logic
+    // Find the indicator: A positioned container with size 10x10 and box decoration color primary
     expect(
       find.descendant(
         of: filterButtonStack,
-        matching: find.byWidgetPredicate((widget) =>
-          widget is Container &&
-          widget.decoration is BoxDecoration &&
-          (widget.decoration as BoxDecoration).color != null
-        ),
+        matching: find.byWidgetPredicate((widget) {
+          if (widget is! Container) return false;
+          final decoration = widget.decoration;
+          return widget.constraints?.minWidth == 10.0 &&
+                 widget.constraints?.minHeight == 10.0 &&
+                 decoration is BoxDecoration &&
+                 decoration.color != null;
+        }),
       ),
       findsOneWidget,
     );

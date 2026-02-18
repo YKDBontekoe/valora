@@ -16,6 +16,7 @@ import 'package:valora_app/models/map_city_insight.dart' as _i10;
 import 'package:valora_app/models/map_overlay.dart' as _i12;
 import 'package:valora_app/models/notification.dart' as _i9;
 import 'package:valora_app/services/api_service.dart' as _i5;
+import 'package:valora_app/services/pdok_service.dart' as _i14;
 import 'package:valora_app/services/property_photo_service.dart' as _i13;
 
 // ignore_for_file: type=lint
@@ -277,4 +278,31 @@ class MockPropertyPhotoService extends _i1.Mock
             returnValue: <String>[],
           )
           as List<String>);
+}
+
+/// A class which mocks [PdokService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockPdokService extends _i1.Mock implements _i14.PdokService {
+  MockPdokService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i6.Future<List<_i14.PdokSuggestion>> search(String? query) =>
+      (super.noSuchMethod(
+            Invocation.method(#search, [query]),
+            returnValue: _i6.Future<List<_i14.PdokSuggestion>>.value(
+              <_i14.PdokSuggestion>[],
+            ),
+          )
+          as _i6.Future<List<_i14.PdokSuggestion>>);
+
+  @override
+  _i6.Future<String?> reverseLookup(double? lat, double? lon) =>
+      (super.noSuchMethod(
+            Invocation.method(#reverseLookup, [lat, lon]),
+            returnValue: _i6.Future<String?>.value(),
+          )
+          as _i6.Future<String?>);
 }

@@ -14,6 +14,17 @@ import 'package:valora_app/services/auth_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/services/property_photo_service.dart';
 
+class FakePropertyPhotoService extends PropertyPhotoService {
+  @override
+  List<String> getPropertyPhotos({
+    required double latitude,
+    required double longitude,
+    int limit = 3,
+  }) {
+    return <String>[];
+  }
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -27,7 +38,7 @@ void main() {
         ChangeNotifierProvider<FavoritesProvider>(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider(authService: AuthService())),
         Provider<ApiService>(create: (_) => ApiService()),
-        Provider<PropertyPhotoService>(create: (_) => PropertyPhotoService()),
+        Provider<PropertyPhotoService>(create: (_) => FakePropertyPhotoService()),
         ChangeNotifierProvider<NotificationService>(
           create: (_) => NotificationService(ApiService()),
         ),

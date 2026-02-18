@@ -30,6 +30,7 @@ void main() {
         fundaId: '1',
         address: 'Test',
         description: 'Has description',
+        url: 'http://example.com',
       );
 
       final result = await provider.fetchFullListingDetails(listing);
