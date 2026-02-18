@@ -151,12 +151,23 @@ public class ListingService : IListingService
 
         // 2. Update Entity
         listing.ContextReport = contextReportModel;
-        ListingMapper.UpdateContextScores(listing, reportDto);
+        UpdateContextScores(listing, reportDto);
 
         // 3. Save
         await _repository.UpdateAsync(listing, cancellationToken);
 
         return reportDto.CompositeScore;
+    }
+
+    private static void UpdateContextScores(Listing listing, ContextReportDto reportDto)
+    {
+        var scores = reportDto.CategoryScores;
+        listing.ContextSocialScore = scores.TryGetValue(ContextScoreCalculator.CategorySocial, out var social) ? social : null;
+        listing.ContextSafetyScore = scores.TryGetValue(ContextScoreCalculator.CategorySafety, out var safety) ? safety : null;
+        listing.ContextAmenitiesScore = scores.TryGetValue(ContextScoreCalculator.CategoryAmenities, out var amenities) ? amenities : null;
+        listing.ContextEnvironmentScore = scores.TryGetValue(ContextScoreCalculator.CategoryEnvironment, out var env) ? env : null;
+
+        listing.ContextCompositeScore = reportDto.CompositeScore;
     }
 
     private static void ValidateExternalId(string externalId)

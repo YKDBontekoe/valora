@@ -81,7 +81,6 @@ public class ContextAnalysisService : IContextAnalysisService
     private class ContextReportXmlBuilder
     {
         private readonly ContextReportDto _report;
-        private readonly StringBuilder _sb = new();
 
         public ContextReportXmlBuilder(ContextReportDto report)
         {
@@ -90,42 +89,43 @@ public class ContextAnalysisService : IContextAnalysisService
 
         public string Build()
         {
-            _sb.AppendLine("<context_report>");
-            AppendHeader();
-            AppendCategoryScores();
-            AppendMetrics();
-            _sb.AppendLine("</context_report>");
-            return _sb.ToString();
+            var sb = new StringBuilder();
+            sb.AppendLine("<context_report>");
+            AppendHeader(sb);
+            AppendCategoryScores(sb);
+            AppendMetrics(sb);
+            sb.AppendLine("</context_report>");
+            return sb.ToString();
         }
 
-        private void AppendHeader()
+        private void AppendHeader(StringBuilder sb)
         {
-            _sb.AppendLine($"  <address>{SanitizeForPrompt(_report.Location.DisplayAddress)}</address>");
-            _sb.AppendLine($"  <composite_score>{_report.CompositeScore:F0}</composite_score>");
+            sb.AppendLine($"  <address>{SanitizeForPrompt(_report.Location.DisplayAddress)}</address>");
+            sb.AppendLine($"  <composite_score>{_report.CompositeScore:F0}</composite_score>");
         }
 
-        private void AppendCategoryScores()
+        private void AppendCategoryScores(StringBuilder sb)
         {
-            _sb.AppendLine("  <category_scores>");
+            sb.AppendLine("  <category_scores>");
             foreach (var category in _report.CategoryScores)
             {
-                _sb.AppendLine($"    <score category=\"{SanitizeForPrompt(category.Key)}\">{category.Value:F0}</score>");
+                sb.AppendLine($"    <score category=\"{SanitizeForPrompt(category.Key)}\">{category.Value:F0}</score>");
             }
-            _sb.AppendLine("  </category_scores>");
+            sb.AppendLine("  </category_scores>");
         }
 
-        private void AppendMetrics()
+        private void AppendMetrics(StringBuilder sb)
         {
-            _sb.AppendLine("  <metrics>");
-            AppendCategoryMetrics(ContextScoreCalculator.CategorySocial, _report.SocialMetrics);
-            AppendCategoryMetrics(ContextScoreCalculator.CategorySafety, _report.CrimeMetrics);
-            AppendCategoryMetrics(ContextScoreCalculator.CategoryDemographics, _report.DemographicsMetrics);
-            AppendCategoryMetrics(ContextScoreCalculator.CategoryAmenities, _report.AmenityMetrics);
-            AppendCategoryMetrics(ContextScoreCalculator.CategoryEnvironment, _report.EnvironmentMetrics);
-            _sb.AppendLine("  </metrics>");
+            sb.AppendLine("  <metrics>");
+            AppendCategoryMetrics(sb, ContextScoreCalculator.CategorySocial, _report.SocialMetrics);
+            AppendCategoryMetrics(sb, ContextScoreCalculator.CategorySafety, _report.CrimeMetrics);
+            AppendCategoryMetrics(sb, ContextScoreCalculator.CategoryDemographics, _report.DemographicsMetrics);
+            AppendCategoryMetrics(sb, ContextScoreCalculator.CategoryAmenities, _report.AmenityMetrics);
+            AppendCategoryMetrics(sb, ContextScoreCalculator.CategoryEnvironment, _report.EnvironmentMetrics);
+            sb.AppendLine("  </metrics>");
         }
 
-        private void AppendCategoryMetrics(string category, IEnumerable<ContextMetricDto> metrics)
+        private void AppendCategoryMetrics(StringBuilder sb, string category, IEnumerable<ContextMetricDto> metrics)
         {
             foreach (var m in metrics)
             {
@@ -136,7 +136,7 @@ public class ContextAnalysisService : IContextAnalysisService
                     var safeLabel = SanitizeForPrompt(m.Label);
                     var safeUnit = SanitizeForPrompt(m.Unit);
 
-                    _sb.AppendLine($"    <metric category=\"{safeCategory}\" label=\"{safeLabel}\">{m.Value} {safeUnit} {scoreStr}</metric>");
+                    sb.AppendLine($"    <metric category=\"{safeCategory}\" label=\"{safeLabel}\">{m.Value} {safeUnit} {scoreStr}</metric>");
                 }
             }
         }
