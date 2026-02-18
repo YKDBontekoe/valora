@@ -78,15 +78,47 @@ public class IdentityService : IIdentityService
         return Result.Success();
     }
 
-    public async Task<PaginatedList<ApplicationUser>> GetUsersAsync(int pageNumber, int pageSize)
+    public async Task<PaginatedList<ApplicationUser>> GetUsersAsync(int pageNumber, int pageSize, string? searchQuery = null, string? sortBy = null)
     {
-        var count = await _userManager.Users.CountAsync();
-        var items = await _userManager.Users
+        var query = _userManager.Users.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            if (_context.Database.ProviderName?.Contains("PostgreSQL") == true)
+            {
+                // Postgres ILIKE for case-insensitive search with proper escaping
+                var escapedQuery = EscapeLikePattern(searchQuery);
+                query = query.Where(u => EF.Functions.ILike(u.Email!, $"%{escapedQuery}%", "\\"));
+            }
+            else
+            {
+                // Fallback for InMemory/SQLite
+                query = query.Where(u => u.Email != null && u.Email.Contains(searchQuery));
+            }
+        }
+
+        query = sortBy?.ToLower() switch
+        {
+            "email_desc" => query.OrderByDescending(u => u.Email),
+            "email_asc" => query.OrderBy(u => u.Email),
+            _ => query.OrderBy(u => u.Email) // Default sort
+        };
+
+        var count = await query.CountAsync();
+        var items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
         return new PaginatedList<ApplicationUser>(items, count, pageNumber, pageSize);
+    }
+
+    private static string EscapeLikePattern(string pattern)
+    {
+        return pattern
+            .Replace("\\", "\\\\")
+            .Replace("%", "\\%")
+            .Replace("_", "\\_");
     }
 
     public async Task<Result> DeleteUserAsync(string userId)

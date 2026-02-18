@@ -75,7 +75,7 @@ public class AdminServiceTests
         var paginatedUsers = new PaginatedList<ApplicationUser>(users, 2, 1, 10);
 
         _identityServiceMock
-            .Setup(x => x.GetUsersAsync(1, 10))
+            .Setup(x => x.GetUsersAsync(1, 10, null, null))
             .ReturnsAsync(paginatedUsers);
 
         _identityServiceMock
@@ -83,13 +83,36 @@ public class AdminServiceTests
             .ReturnsAsync(new Dictionary<string, IList<string>>());
 
         // Act
-        var result = await service.GetUsersAsync(1, 10);
+        var result = await service.GetUsersAsync(1, 10, null, null, "admin-user");
 
         // Assert
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(2, result.Items.Count);
         Assert.Equal("1", result.Items[0].Id);
         Assert.Equal("2", result.Items[1].Id);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_PassesSearchAndSortParams()
+    {
+        // Arrange
+        var service = CreateService();
+        var users = new List<ApplicationUser>();
+        var paginatedUsers = new PaginatedList<ApplicationUser>(users, 0, 1, 10);
+
+        _identityServiceMock
+            .Setup(x => x.GetUsersAsync(1, 10, "test", "email_asc"))
+            .ReturnsAsync(paginatedUsers);
+
+        _identityServiceMock
+            .Setup(x => x.GetRolesForUsersAsync(It.IsAny<IEnumerable<ApplicationUser>>()))
+            .ReturnsAsync(new Dictionary<string, IList<string>>());
+
+        // Act
+        await service.GetUsersAsync(1, 10, "test", "email_asc", "admin-id");
+
+        // Assert
+        _identityServiceMock.Verify(x => x.GetUsersAsync(1, 10, "test", "email_asc"), Times.Once);
     }
 
     [Fact]

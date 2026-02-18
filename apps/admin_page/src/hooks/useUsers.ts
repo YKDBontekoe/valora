@@ -7,24 +7,51 @@ export const useUsers = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for manual refresh
   const currentUserId = localStorage.getItem('admin_userId');
 
-  const fetchUsers = useCallback(async (pageNumber: number) => {
-    setLoading(true);
-    try {
-      const data = await adminService.getUsers(pageNumber);
-      setUsers(data.items);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      console.error('Failed to fetch users', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Debounce search query
   useEffect(() => {
-    fetchUsers(page);
-  }, [page, fetchUsers]);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Combined effect to handle fetching and avoid race conditions
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await adminService.getUsers(page, 10, debouncedSearch, sortBy);
+        if (!ignore) {
+          setUsers(data.items);
+          setTotalPages(Math.max(1, data.totalPages));
+        }
+      } catch (error) {
+        if (!ignore) console.error('Failed to fetch users', error);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [page, debouncedSearch, sortBy, refreshTrigger]);
+
+  // When debounced search or sort changes, we reset to page 1.
+  // We rely on React's behavior to bail out if state is already 1, avoiding unnecessary updates.
+  useEffect(() => {
+     setPage(1);
+  }, [debouncedSearch, sortBy]);
 
   const deleteUser = async (user: User) => {
     if (user.id === currentUserId) {
@@ -40,8 +67,20 @@ export const useUsers = () => {
     }
   };
 
-  const nextPage = () => setPage(p => Math.min(totalPages, p + 1));
+  const nextPage = () => setPage(p => Math.min(Math.max(totalPages, 1), p + 1));
   const prevPage = () => setPage(p => Math.max(1, p - 1));
+
+  const toggleSort = (field: string) => {
+    setSortBy(current => {
+      if (current === `${field}_asc`) return `${field}_desc`;
+      if (current === `${field}_desc`) return undefined;
+      return `${field}_asc`;
+    });
+  };
+
+  const refresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   return {
     users,
@@ -53,6 +92,10 @@ export const useUsers = () => {
     setPage,
     nextPage,
     prevPage,
-    refresh: () => fetchUsers(page)
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    toggleSort,
+    refresh
   };
 };
