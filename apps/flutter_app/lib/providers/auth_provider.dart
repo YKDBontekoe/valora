@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
+import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
+  static final _log = Logger('AuthProvider');
   final AuthService _authService;
   bool _isAuthenticated = false;
   bool _isLoading = false;
@@ -104,29 +105,14 @@ class AuthProvider extends ChangeNotifier {
         return newToken;
       }
     } on RefreshTokenInvalidException catch (e, stackTrace) {
-      developer.log(
-        'Refresh token invalid. Clearing auth state.',
-        name: 'AuthProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _log.warning('Refresh token invalid. Clearing auth state.', e, stackTrace);
       await logout();
       return null;
     } on AppException catch (e, stackTrace) {
-      developer.log(
-        'Refresh token failed (transient). Keeping auth state.',
-        name: 'AuthProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _log.warning('Refresh token failed (transient). Keeping auth state.', e, stackTrace);
       return null;
     } catch (e, stackTrace) {
-      developer.log(
-        'Refresh token failed (unexpected). Keeping auth state.',
-        name: 'AuthProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _log.severe('Refresh token failed (unexpected). Keeping auth state.', e, stackTrace);
       return null;
     }
 
@@ -149,7 +135,7 @@ class AuthProvider extends ChangeNotifier {
             payloadMap['sub'];
       }
     } catch (e) {
-      debugPrint('Error parsing JWT: $e');
+      _log.warning('Error parsing JWT', e);
     }
   }
 

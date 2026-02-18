@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/listing.dart';
 
 class FavoritesProvider extends ChangeNotifier {
+  static final _log = Logger('FavoritesProvider');
   static const String _legacyStorageKey = 'favorite_listings';
   static const String _storageKey = 'favorite_listings_v2';
 
@@ -33,7 +35,7 @@ class FavoritesProvider extends ChangeNotifier {
         _loadLegacyRecords(prefs.getStringList(_legacyStorageKey) ?? []);
       }
     } catch (e) {
-      debugPrint('Error loading favorites: $e');
+      _log.warning('Error loading favorites', e);
       _favorites = [];
       _savedAtByListingId.clear();
     } finally {
@@ -70,7 +72,7 @@ class FavoritesProvider extends ChangeNotifier {
       await prefs.setStringList(_storageKey, favoritesJson);
       await prefs.remove(_legacyStorageKey);
     } catch (e) {
-      debugPrint('Error saving favorites: $e');
+      _log.warning('Error saving favorites', e);
     }
   }
 

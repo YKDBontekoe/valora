@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import '../models/notification.dart';
 import 'api_service.dart';
 
 class NotificationService extends ChangeNotifier {
+  static final _log = Logger('NotificationService');
   ApiService _apiService;
   List<ValoraNotification> _notifications = [];
   int _unreadCount = 0;
@@ -62,9 +64,7 @@ class NotificationService extends ChangeNotifier {
       }
     } catch (e) {
       // Silently fail on polling errors
-      if (kDebugMode) {
-        print('Error polling notifications: $e');
-      }
+      _log.warning('Error polling notifications', e);
     }
   }
 
@@ -104,9 +104,7 @@ class NotificationService extends ChangeNotifier {
       try {
         await _apiService.deleteNotification(id);
       } catch (e) {
-        if (kDebugMode) {
-          print('Error deleting notification: $e');
-        }
+        _log.severe('Error deleting notification', e);
 
         // Restore on failure
         if (pendingRestore != null) {
@@ -190,9 +188,7 @@ class NotificationService extends ChangeNotifier {
         _offset += fetched.length;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Error loading more notifications: $e');
-      }
+      _log.warning('Error loading more notifications', e);
     } finally {
       _isLoadingMore = false;
       notifyListeners();
@@ -220,9 +216,7 @@ class NotificationService extends ChangeNotifier {
         await _apiService.markNotificationAsRead(id);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Error marking notification as read: $e');
-      }
+      _log.warning('Error marking notification as read', e);
       // Revert if needed, but for read status it's usually fine
     }
   }
@@ -244,9 +238,7 @@ class NotificationService extends ChangeNotifier {
 
       await _apiService.markAllNotificationsAsRead();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error marking all notifications as read: $e');
-      }
+      _log.warning('Error marking all notifications as read', e);
     }
   }
 

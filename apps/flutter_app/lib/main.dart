@@ -14,6 +14,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
+import 'services/logging_service.dart';
 import 'services/notification_service.dart';
 import 'widgets/global_error_widget.dart';
 
@@ -74,6 +75,7 @@ Future<void> main() async {
     };
 
     await CrashReportingService.initialize();
+    LoggingService.initialize();
 
     runApp(
       MultiProvider(
