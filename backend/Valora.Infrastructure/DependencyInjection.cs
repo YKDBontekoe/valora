@@ -41,7 +41,6 @@ public static class DependencyInjection
         });
 
         // Repositories
-        services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IBatchJobRepository, BatchJobRepository>();

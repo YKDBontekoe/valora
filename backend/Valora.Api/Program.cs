@@ -242,77 +242,9 @@ app.MapAdminEndpoints();
 // API Endpoints
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 
-/// <summary>
-/// Health check endpoint. Used by Docker Compose and load balancers.
-/// </summary>
-api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
-{
-    if (await db.Database.CanConnectAsync(ct))
-    {
-        return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
-    }
 
-    return Results.Problem("Service unavailable", statusCode: 503);
-});
 
-/// <summary>
-/// Retrieves a paginated list of listings based on filter criteria.
-/// Requires Authentication.
-/// </summary>
-api.MapGet("/listings", async ([AsParameters] ListingFilterDto filter, IListingService service, CancellationToken ct) =>
-{
-    try
-    {
-        var paginatedList = await service.GetListingsAsync(filter, ct);
 
-        return Results.Ok(new
-        {
-            paginatedList.Items,
-            paginatedList.PageIndex,
-            paginatedList.TotalPages,
-            paginatedList.TotalCount,
-            paginatedList.HasNextPage,
-            paginatedList.HasPreviousPage
-        });
-    }
-    catch (Valora.Application.Common.Exceptions.ValidationException ex)
-    {
-        // Maintain legacy error format for backward compatibility
-        // Format: [{ "property": "PropertyName", "error": "ErrorMessage" }]
-        var legacyErrors = ex.Errors.SelectMany(kvp =>
-            kvp.Value.Select(error => new { Property = kvp.Key, Error = error }));
-
-        return Results.BadRequest(legacyErrors);
-    }
-})
-.RequireAuthorization();
-
-/// <summary>
-/// Looks up property details from PDOK by ID and enriches with neighborhood analytics.
-/// Requires Authentication.
-/// </summary>
-api.MapGet("/listings/lookup", async (string id, IListingService service, CancellationToken ct) =>
-{
-    var listing = await service.GetPdokListingAsync(id, ct);
-    if (listing is null) return Results.NotFound();
-
-    return Results.Ok(listing);
-})
-.RequireAuthorization()
-.RequireRateLimiting("strict");
-
-/// <summary>
-/// Retrieves detailed information for a specific listing by ID.
-/// Requires Authentication.
-/// </summary>
-api.MapGet("/listings/{id:guid}", async (Guid id, IListingService service, CancellationToken ct) =>
-{
-    var listing = await service.GetListingByIdAsync(id, ct);
-    if (listing is null) return Results.NotFound();
-    
-    return Results.Ok(listing);
-})
-.RequireAuthorization();
 
 api.MapPost("/context/report", async (
     ContextReportRequestDto request,
@@ -326,16 +258,7 @@ api.MapPost("/context/report", async (
 .RequireRateLimiting("strict")
 .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<ContextReportRequestDto>>();
 
-api.MapPost("/listings/{id:guid}/enrich", async (
-    Guid id,
-    IListingService service,
-    CancellationToken ct) =>
-{
-    var compositeScore = await service.EnrichListingAsync(id, ct);
-    return Results.Ok(new { message = "Listing enriched successfully", compositeScore });
-})
-.RequireAuthorization("Admin")
-.RequireRateLimiting("strict");
+
 
 app.Run();
 
