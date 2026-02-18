@@ -17,6 +17,7 @@ import '../widgets/search/search_input.dart';
 import '../widgets/search/sort_options_sheet.dart';
 import '../widgets/search/valora_filter_dialog.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_error_state.dart';
 import '../services/pdok_service.dart';
 import 'listing_detail_screen.dart';
 import 'notifications_screen.dart';
@@ -391,19 +392,16 @@ class _SearchScreenState extends State<SearchScreen> {
                   return const SliverToBoxAdapter(child: SizedBox.shrink());
                 },
               ),
-              Selector<SearchListingsProvider, String?>(
-                selector: (_, p) => p.error,
+              Selector<SearchListingsProvider, Object?>(
+                selector: (_, p) => p.errorObject,
                 builder: (context, error, _) {
                   if (error != null && _searchProvider!.listings.isEmpty) {
                     return SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
-                        child: ValoraEmptyState(
-                          icon: Icons.error_outline_rounded,
-                          title: 'Search Failed',
-                          subtitle: error,
-                          actionLabel: 'Retry',
-                          onAction: _searchProvider!.refresh,
+                        child: ValoraErrorState(
+                          error: error,
+                          onRetry: _searchProvider!.refresh,
                         ),
                       ),
                     );

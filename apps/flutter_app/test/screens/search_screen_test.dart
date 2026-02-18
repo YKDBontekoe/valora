@@ -367,8 +367,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500)); // Animations
 
     // Verify error UI
-    expect(find.text('Failed to search listings'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('An unexpected error occurred. Please try again.'), findsOneWidget);
+    expect(find.text('Try Again'), findsOneWidget);
   });
 
   testWidgets('SearchScreen handles pagination error', (

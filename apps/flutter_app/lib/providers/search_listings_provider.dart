@@ -22,6 +22,7 @@ class SearchListingsProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isLoadingMore = false;
   String? _error;
+  Object? _errorObject;
   String _query = '';
   int _currentPage = 1;
   bool _hasNextPage = false;
@@ -42,6 +43,7 @@ class SearchListingsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   String? get error => _error;
+  Object? get errorObject => _errorObject;
   bool get hasNextPage => _hasNextPage;
   String get query => _query;
   double? get minPrice => _minPrice;
@@ -110,11 +112,13 @@ class SearchListingsProvider extends ChangeNotifier {
       _cachedListings = null;
       _hasNextPage = response.hasNextPage;
       _error = null;
+      _errorObject = null;
     } catch (e) {
       if (requestId != _requestSequence) {
         return;
       }
       _error = e is AppException ? e.message : 'Failed to load more items';
+      _errorObject = e;
       _logProviderFailure(operation: 'pagination', error: e);
     } finally {
       if (requestId == _requestSequence) {
@@ -207,6 +211,7 @@ class SearchListingsProvider extends ChangeNotifier {
     if (refresh) {
       _isLoading = true;
       _error = null;
+      _errorObject = null;
       _currentPage = 1;
       _hasNextPage = false;
       if (clearData) {
@@ -222,6 +227,7 @@ class SearchListingsProvider extends ChangeNotifier {
       _isLoading = false;
       _isLoadingMore = false;
       _error = null;
+      _errorObject = null;
       _listings.clear();
       _cachedListings = null;
       _currentPage = 1;
@@ -244,11 +250,13 @@ class SearchListingsProvider extends ChangeNotifier {
       _cachedListings = null;
       _hasNextPage = response.hasNextPage;
       _error = null;
+      _errorObject = null;
     } catch (e) {
       if (requestId != _requestSequence) {
         return;
       }
       _error = e is AppException ? e.message : 'Failed to search listings';
+      _errorObject = e;
       _logProviderFailure(operation: 'search', error: e);
     } finally {
       if (requestId == _requestSequence) {

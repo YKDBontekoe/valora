@@ -127,6 +127,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
         setState(() {
           _isLoading = false;
         });
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('Could not load full listing details'),
+          ),
+        );
       }
     }
   }

@@ -50,7 +50,7 @@ class GlobalErrorWidget extends StatelessWidget {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
+                      Navigator.maybeOf(context)?.pushAndRemoveUntil(
                         MaterialPageRoute(
                           builder: (context) => const StartupScreen(),
                         ),
@@ -69,7 +69,7 @@ class GlobalErrorWidget extends StatelessWidget {
                             ClipboardData(text: details.exception.toString()),
                           );
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                               const SnackBar(
                                 content: Text('Error copied to clipboard'),
                               ),
@@ -77,7 +77,7 @@ class GlobalErrorWidget extends StatelessWidget {
                           }
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                               const SnackBar(
                                 content: Text('Failed to copy error'),
                               ),
