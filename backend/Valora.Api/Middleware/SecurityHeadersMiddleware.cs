@@ -18,7 +18,7 @@ public class SecurityHeadersMiddleware
 
         // Content-Security-Policy
         // 'self' for default. 'unsafe-inline' for styles allowed for UI compatibility. Scripts are strictly 'self'.
-        context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self';");
+        context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';");
 
         await _next(context);
     }
