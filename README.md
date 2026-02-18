@@ -14,8 +14,9 @@ Follow these steps to get the entire system running locally.
 
 ### Prerequisites
 - **Docker Desktop** (for database)
-- **.NET 8.0 SDK** (for backend)
+- **.NET 10.0 SDK** (for backend)
 - **Flutter SDK** (for mobile app)
+- **Node.js 18+** (for admin dashboard)
 
 ### 1. Start Infrastructure
 Run the database container.
@@ -37,12 +38,26 @@ dotnet run --project Valora.Api
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
 
+> ⚠️ **CRITICAL**: The default `.env` points to the PRODUCTION API.
+> Change `API_URL` in `.env` to your local backend:
+> - Android Emulator: `http://10.0.2.2:5001/api`
+> - iOS Simulator / Desktop: `http://localhost:5001/api`
+
 ```bash
 cd ../apps/flutter_app
 cp .env.example .env
-# critical: check API_URL in .env (use 10.0.2.2 for Android Emulator)
 flutter pub get
 flutter run
+```
+
+### 4. Configure & Run Admin Dashboard
+The web dashboard for managing users and system settings.
+
+```bash
+cd ../apps/admin_page
+cp .env.example .env
+npm install
+npm run dev
 ```
 
 ---
@@ -125,6 +140,7 @@ Properties (Listings) are only persisted when a user explicitly "saves" or "trac
 - **[Developer Guide](docs/developer-guide.md)**: Coding standards & patterns.
 - **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
 - **[Data Flow: Reports](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
+- **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
 
 ---
 
