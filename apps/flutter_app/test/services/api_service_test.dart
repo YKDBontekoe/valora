@@ -128,6 +128,78 @@ void main() {
       }
     });
 
+    test('getListings includes traceId in ValidationException (400)', () async {
+      final client = MockClient((request) async {
+        return http.Response(
+          json.encode({'title': 'Bad Request', 'traceId': 'val-400'}),
+          400,
+        );
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+
+      try {
+        await apiService.getListings(const ListingFilter());
+        fail('Should have thrown');
+      } on ValidationException catch (e) {
+        expect(e.message, contains('Ref: val-400'));
+      }
+    });
+
+    test('getListings includes traceId in UnauthorizedException (401)', () async {
+      final client = MockClient((request) async {
+        return http.Response(
+          json.encode({'title': 'Unauthorized', 'traceId': 'auth-401'}),
+          401,
+        );
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+
+      try {
+        await apiService.getListings(const ListingFilter());
+        fail('Should have thrown');
+      } on UnauthorizedException catch (e) {
+        expect(e.message, contains('Ref: auth-401'));
+      }
+    });
+
+    test('getListings includes traceId in ForbiddenException (403)', () async {
+      final client = MockClient((request) async {
+        return http.Response(
+          json.encode({'title': 'Forbidden', 'traceId': 'forbid-403'}),
+          403,
+        );
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+
+      try {
+        await apiService.getListings(const ListingFilter());
+        fail('Should have thrown');
+      } on ForbiddenException catch (e) {
+        expect(e.message, contains('Ref: forbid-403'));
+      }
+    });
+
+    test('getListings includes traceId in NotFoundException (404)', () async {
+      final client = MockClient((request) async {
+        return http.Response(
+          json.encode({'title': 'Not Found', 'traceId': 'nf-404'}),
+          404,
+        );
+      });
+
+      final apiService = ApiService(runner: syncRunner, client: client);
+
+      try {
+        await apiService.getListings(const ListingFilter());
+        fail('Should have thrown');
+      } on NotFoundException catch (e) {
+        expect(e.message, contains('Ref: nf-404'));
+      }
+    });
+
     test('getListings throws NetworkException on SocketException', () async {
       final client = MockClient((request) async {
         throw const SocketException('No internet');

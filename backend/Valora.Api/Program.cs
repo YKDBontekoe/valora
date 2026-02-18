@@ -25,6 +25,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 // Configure Sentry
+// Design Decision: We use Sentry for error tracking but limit the volume of data sent.
+// - Information logs are kept as 'breadcrumbs' to provide context leading up to an error.
+// - Only Error logs trigger actual Sentry events to reduce noise and quota usage.
+// - Request bodies are explicitly excluded to prevent PII leakage (GDPR compliance).
 var sentryDsn = builder.Configuration["SENTRY_DSN"];
 if (!string.IsNullOrEmpty(sentryDsn))
 {
@@ -103,6 +107,8 @@ builder.Services
 builder.Services.AddHostedService<BatchJobWorker>();
 
 // Add Identity
+// We use AddIdentityCore instead of AddIdentity to avoid adding unnecessary UI pages (Razor Pages)
+// and cookie authentication services, as this is a pure API backend using JWTs.
 builder.Services.AddIdentityCore<ApplicationUser>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ValoraDbContext>();
@@ -162,7 +168,9 @@ builder.Services.AddRateLimiter(options =>
     var permitLimitStrict = isTesting ? 1000 : 10;
     var permitLimitFixed = isTesting ? 1000 : 100;
 
-    // Strict policy for sensitive/expensive endpoints (Auth, AI, Reports)
+    // Policy: "strict"
+    // Used for expensive or sensitive endpoints like Login (brute-force prevention)
+    // and AI Report Generation (cost control).
     options.AddFixedWindowLimiter("strict", limiterOptions =>
     {
         limiterOptions.PermitLimit = permitLimitStrict;
@@ -171,7 +179,8 @@ builder.Services.AddRateLimiter(options =>
         limiterOptions.QueueLimit = 0;
     });
 
-    // General policy for standard API usage
+    // Policy: "fixed"
+    // General purpose rate limiting for standard CRUD operations to prevent abuse.
     options.AddFixedWindowLimiter("fixed", limiterOptions =>
     {
         limiterOptions.PermitLimit = permitLimitFixed;
@@ -208,10 +217,14 @@ if (!isOnRender && (!app.Environment.IsDevelopment() || app.Configuration.GetVal
     app.UseHttpsRedirection();
 }
 
+// Middleware Pipeline Order is Critical:
+// 1. Security Headers (Always first to protect subsequent responses)
 app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
 
+// 2. Rate Limiting (Before Auth to save resources on DDoS attacks)
 app.UseRateLimiter();
 
+// 3. Authentication (Identify the user)
 app.UseAuthentication();
 
 // Sentry User Enrichment Middleware
