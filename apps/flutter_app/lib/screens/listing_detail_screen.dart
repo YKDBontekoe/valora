@@ -122,7 +122,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stack) {
+      developer.log(
+        'Failed to fetch full listing details',
+        error: e,
+        stackTrace: stack,
+      );
       if (mounted) {
         setState(() {
           _isLoading = false;

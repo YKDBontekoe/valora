@@ -50,12 +50,17 @@ class GlobalErrorWidget extends StatelessWidget {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.maybeOf(context)?.pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (context) => const StartupScreen(),
-                        ),
-                        (route) => false,
-                      );
+                      final navigator = Navigator.maybeOf(context);
+                      if (navigator != null) {
+                        navigator.pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (context) => const StartupScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      } else {
+                        SystemNavigator.pop();
+                      }
                     },
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('Restart'),
