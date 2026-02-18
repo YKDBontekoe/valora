@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 import 'package:retry/retry.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'api_service.dart';
 
 class AuthService {
+  static final _log = Logger('AuthService');
   final FlutterSecureStorage _storage;
   final http.Client _client;
   static const String _tokenKey = 'auth_token';
@@ -37,9 +38,7 @@ class AuthService {
     try {
       return await _storage.read(key: _tokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('SecureStorage read failed: $e');
-      }
+      _log.warning('SecureStorage read failed', e);
       throw StorageException('Failed to read auth token: $e');
     }
   }
@@ -48,9 +47,7 @@ class AuthService {
     try {
       await _storage.write(key: _tokenKey, value: token);
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('SecureStorage write failed: $e');
-      }
+      _log.warning('SecureStorage write failed', e);
       throw StorageException('Failed to save auth token: $e');
     }
   }
@@ -60,9 +57,7 @@ class AuthService {
       await _storage.delete(key: _tokenKey);
       await _storage.delete(key: _refreshTokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('SecureStorage delete failed: $e');
-      }
+      _log.warning('SecureStorage delete failed', e);
       throw StorageException('Failed to clear auth data: $e');
     }
   }
@@ -72,9 +67,7 @@ class AuthService {
     try {
       refreshToken = await _storage.read(key: _refreshTokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('SecureStorage read (refresh) failed: $e');
-      }
+      _log.warning('SecureStorage read (refresh) failed', e);
       throw RefreshTokenInvalidException('No refresh token available');
     }
 
@@ -115,7 +108,7 @@ class AuthService {
              try {
                await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
              } catch (e) {
-               if (kDebugMode) debugPrint('Failed to update refresh token: $e');
+               _log.warning('Failed to update refresh token', e);
              }
           }
           return newToken;
@@ -177,7 +170,7 @@ class AuthService {
               value: data['refreshToken'],
             );
           } catch (e) {
-             if (kDebugMode) debugPrint('SecureStorage write refresh failed: $e');
+             _log.warning('SecureStorage write refresh failed', e);
           }
         }
         return data;

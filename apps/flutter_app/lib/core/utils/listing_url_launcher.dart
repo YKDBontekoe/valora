@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/valora_colors.dart';
 
 class ListingUrlLauncher {
+  static final _log = Logger('ListingUrlLauncher');
   static Future<void> openExternalLink(BuildContext context, String? url) async {
     if (url != null) {
       await _openUrl(context, url);
@@ -53,7 +55,7 @@ class ListingUrlLauncher {
           }
         }
       } catch (e) {
-        debugPrint('Error launching dialer: $e');
+        _log.warning('Error launching dialer', e);
         if (context.mounted) {
           _showErrorSnackBar(context, 'Could not launch dialer');
         }
@@ -69,7 +71,7 @@ class ListingUrlLauncher {
         _showErrorSnackBar(context, 'Could not open link');
       }
     } catch (e) {
-      debugPrint('Error launching URL: $e');
+      _log.warning('Error launching URL', e);
       if (context.mounted) {
         _showErrorSnackBar(context, 'Could not open link');
       }

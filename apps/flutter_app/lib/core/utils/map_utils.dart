@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logging/logging.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../models/map_overlay.dart';
 
 class MapUtils {
+  static final _log = Logger('MapUtils');
   static List<LatLng> parsePolygonGeometry(Map<String, dynamic>? geometry) {
     if (geometry == null) return [];
 
@@ -29,7 +31,7 @@ class MapUtils {
         }
       }
     } catch (e) {
-      debugPrint('Failed to parse polygon: $e');
+      _log.warning('Failed to parse polygon', e);
     }
     return points;
   }

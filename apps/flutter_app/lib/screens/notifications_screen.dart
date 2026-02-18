@@ -180,7 +180,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: Builder(
                         builder: (context) {
                           // Log the actual error for debugging
-                          debugPrint('Notification Error: ${provider.error}');
                           return ValoraEmptyState(
                             icon: Icons.error_outline_rounded,
                             title: 'Something went wrong',
