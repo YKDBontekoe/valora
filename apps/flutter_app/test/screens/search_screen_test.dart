@@ -19,6 +19,8 @@ import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/services/property_photo_service.dart';
 
+import '../helpers/fakes/fake_property_photo_service.dart';
+
 @GenerateMocks([ApiService, FavoritesProvider, PdokService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
@@ -147,17 +149,6 @@ class FakeNotificationService extends NotificationService {
 
   @override
   int get unreadCount => 0;
-}
-
-class FakePropertyPhotoService extends PropertyPhotoService {
-  @override
-  List<String> getPropertyPhotos({
-    required double latitude,
-    required double longitude,
-    int limit = 3,
-  }) {
-    return <String>[];
-  }
 }
 
 void main() {

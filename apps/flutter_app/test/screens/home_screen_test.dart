@@ -14,16 +14,7 @@ import 'package:valora_app/services/auth_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/services/property_photo_service.dart';
 
-class FakePropertyPhotoService extends PropertyPhotoService {
-  @override
-  List<String> getPropertyPhotos({
-    required double latitude,
-    required double longitude,
-    int limit = 3,
-  }) {
-    return <String>[];
-  }
-}
+import '../helpers/fakes/fake_property_photo_service.dart';
 
 void main() {
   setUp(() {

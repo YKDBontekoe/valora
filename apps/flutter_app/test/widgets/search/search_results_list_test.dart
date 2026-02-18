@@ -36,6 +36,10 @@ void main() {
     );
   });
 
+  tearDown(() {
+    searchProvider.dispose();
+  });
+
   Widget createWidget({required Function(Listing) onListingTap}) {
     return MultiProvider(
       providers: [

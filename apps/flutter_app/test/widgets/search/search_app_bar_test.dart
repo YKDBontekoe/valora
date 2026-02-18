@@ -144,27 +144,14 @@ void main() {
     await tester.pumpWidget(createWidget(onSortTap: () {}, onFilterTap: () {}));
     await tester.pumpAndSettle();
 
-    // The indicator is a Container with primary color.
-    // We can verify its existence by checking for the Container within the Stack of the filter button.
-    final filterButtonStack = find.ancestor(
-      of: find.byIcon(Icons.tune_rounded),
-      matching: find.byType(Stack),
-    );
+    // Find the indicator by Key
+    final indicatorFinder = find.byKey(const Key('search_filter_indicator'));
+    expect(indicatorFinder, findsOneWidget);
 
-    // Find the indicator: A positioned container with size 10x10 and box decoration color primary
-    expect(
-      find.descendant(
-        of: filterButtonStack,
-        matching: find.byWidgetPredicate((widget) {
-          if (widget is! Container) return false;
-          final decoration = widget.decoration;
-          return widget.constraints?.minWidth == 10.0 &&
-                 widget.constraints?.minHeight == 10.0 &&
-                 decoration is BoxDecoration &&
-                 decoration.color != null;
-        }),
-      ),
-      findsOneWidget,
-    );
+    // Verify it has the correct decoration
+    final container = tester.widget<Container>(indicatorFinder);
+    final decoration = container.decoration as BoxDecoration;
+    expect(decoration.color, isNotNull);
+    expect(decoration.shape, BoxShape.circle);
   });
 }

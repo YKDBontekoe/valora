@@ -7,20 +7,9 @@ import 'package:http/testing.dart';
 import 'package:retry/retry.dart';
 import 'package:valora_app/providers/search_listings_provider.dart';
 import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/services/property_photo_service.dart';
 
 import '../helpers/test_runners.dart';
-
-class FakePropertyPhotoService extends PropertyPhotoService {
-  @override
-  List<String> getPropertyPhotos({
-    required double latitude,
-    required double longitude,
-    int limit = 3,
-  }) {
-    return <String>[];
-  }
-}
+import '../helpers/fakes/fake_property_photo_service.dart';
 
 Map<String, dynamic> _listing({required String id, required String address}) {
   return <String, dynamic>{

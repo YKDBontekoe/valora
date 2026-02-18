@@ -105,6 +105,7 @@ class SearchAppBar extends StatelessWidget {
                         top: ValoraSpacing.sm,
                         right: ValoraSpacing.sm,
                         child: Container(
+                            key: const Key('search_filter_indicator'),
                           width: 10,
                           height: 10,
                           decoration: const BoxDecoration(
