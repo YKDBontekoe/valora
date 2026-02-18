@@ -134,7 +134,6 @@ class ContextReportView extends StatelessWidget {
   }
 
   Widget _buildNeighborhoodProfile(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -67,18 +67,10 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                 child: isLoading
                     ? const ContextReportSkeleton(key: ValueKey('loading'))
                     : report != null
-                        ? ListView.builder(
+                        ? SingleChildScrollView(
                             key: const ValueKey('report-list'),
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            itemCount: ContextReportView.childCount(report),
-                            itemBuilder: (context, index) => Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: ContextReportView.buildChild(
-                                context,
-                                index,
-                                report,
-                              ),
-                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: ContextReportView(report: report),
                           )
                         : _InputForm(
                             controller: _inputController,

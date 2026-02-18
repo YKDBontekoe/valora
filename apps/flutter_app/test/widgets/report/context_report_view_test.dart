@@ -7,8 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:mockito/mockito.dart';
-import 'package:valora_app/widgets/report/score_gauge.dart';
-import 'package:valora_app/widgets/report/metric_category_card.dart';
 
 class MockApiService extends Mock implements ApiService {}
 
