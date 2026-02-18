@@ -312,7 +312,7 @@ void main() {
 
     testWidgets('buildDetailRow displays label and value', (WidgetTester tester) async {
       await tester.pumpWidget(MaterialApp(
-        home: InsightsMap.buildDetailRow('Label', 'Value'),
+        home: Builder(builder: (context) => InsightsMap.buildDetailRow(context, 'Label', 'Value')),
       ));
 
       expect(find.text('Label'), findsOneWidget);

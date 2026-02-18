@@ -12,6 +12,7 @@ class InsightsLegend extends StatelessWidget {
     return Selector<InsightsProvider, InsightMetric>(
       selector: (_, p) => p.selectedMetric,
       builder: (context, metric, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Positioned(
           left: 16,
           bottom: 24,
@@ -20,10 +21,10 @@ class InsightsLegend extends StatelessWidget {
             width: 168,
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.94),
+              color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: ValoraColors.neutral200),
-              boxShadow: ValoraShadows.md,
+              border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+              boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,15 +32,14 @@ class InsightsLegend extends StatelessWidget {
                 Text(
                   '${_getMetricLabel(metric)} score',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: ValoraColors.neutral900,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildLegendRow('80+', ValoraColors.success),
-                _buildLegendRow('60-79', ValoraColors.warning),
-                _buildLegendRow('40-59', Colors.orange),
-                _buildLegendRow('<40', ValoraColors.error),
+                _buildLegendRow(context, '80+', ValoraColors.success),
+                _buildLegendRow(context, '60-79', ValoraColors.warning),
+                _buildLegendRow(context, '40-59', Colors.orange),
+                _buildLegendRow(context, '<40', ValoraColors.error),
               ],
             ),
           ),
@@ -48,7 +48,7 @@ class InsightsLegend extends StatelessWidget {
     );
   }
 
-  Widget _buildLegendRow(String label, Color color) {
+  Widget _buildLegendRow(BuildContext context, String label, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
       child: Row(
@@ -61,9 +61,9 @@ class InsightsLegend extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: ValoraColors.neutral700,
+              color: Theme.of(context).textTheme.bodySmall?.color,
               fontWeight: FontWeight.w500,
             ),
           ),

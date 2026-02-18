@@ -17,6 +17,7 @@ class InsightsMetricSelector extends StatelessWidget {
         child: Selector<InsightsProvider, InsightMetric>(
           selector: (_, p) => p.selectedMetric,
           builder: (context, selectedMetric, _) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Row(
               children: InsightMetric.values.map((metric) {
                 final isSelected = selectedMetric == metric;
@@ -33,13 +34,11 @@ class InsightsMetricSelector extends StatelessWidget {
                       color:
                           isSelected
                               ? ValoraColors.primary
-                              : ValoraColors.neutral300,
+                              : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral300),
                     ),
-                    backgroundColor: Colors.white.withValues(alpha: 0.88),
-                    selectedColor: ValoraColors.primaryLight.withValues(
-                      alpha: 0.25,
-                    ),
-                    shadowColor: Colors.black.withValues(alpha: 0.08),
+                    backgroundColor: (isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong).withValues(alpha: 0.88),
+                    selectedColor: ValoraColors.primary.withValues(alpha: 0.2),
+                    shadowColor: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.08),
                     elevation: 2,
                   ),
                 );

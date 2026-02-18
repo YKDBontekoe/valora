@@ -9,16 +9,17 @@ class InsightsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned(
       top: 12,
       left: 12,
       right: 12,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.93),
+          color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: ValoraColors.neutral200),
-          boxShadow: ValoraShadows.md,
+          border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+          boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -46,7 +47,6 @@ class InsightsHeader extends StatelessWidget {
                       'Area Insights',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: ValoraColors.neutral900,
                       ),
                     ),
                     Selector<InsightsProvider, int>(
@@ -54,9 +54,7 @@ class InsightsHeader extends StatelessWidget {
                       builder: (context, count, _) {
                         return Text(
                           '$count cities',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: ValoraColors.neutral600,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
                         );
                       },
                     ),
