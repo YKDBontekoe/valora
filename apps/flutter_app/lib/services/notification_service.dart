@@ -104,7 +104,7 @@ class NotificationService extends ChangeNotifier {
       try {
         await _apiService.deleteNotification(id);
       } catch (e) {
-        _log.severe('Error deleting notification', e);
+        _log.warning('Error deleting notification', e);
 
         // Restore on failure
         if (pendingRestore != null) {

@@ -105,14 +105,14 @@ class AuthProvider extends ChangeNotifier {
         return newToken;
       }
     } on RefreshTokenInvalidException catch (e, stackTrace) {
-      _log.warning('Refresh token invalid. Clearing auth state.', e, stackTrace);
+      _log.warning('Refresh token invalid for user: ${_email ?? "unknown"}. Clearing auth state.', e, stackTrace);
       await logout();
       return null;
     } on AppException catch (e, stackTrace) {
-      _log.warning('Refresh token failed (transient). Keeping auth state.', e, stackTrace);
+      _log.warning('Refresh token failed (transient) for user: ${_email ?? "unknown"}. Keeping auth state.', e, stackTrace);
       return null;
     } catch (e, stackTrace) {
-      _log.severe('Refresh token failed (unexpected). Keeping auth state.', e, stackTrace);
+      _log.severe('Refresh token failed (unexpected) for user: ${_email ?? "unknown"}. Keeping auth state.', e, stackTrace);
       return null;
     }
 
@@ -135,7 +135,7 @@ class AuthProvider extends ChangeNotifier {
             payloadMap['sub'];
       }
     } catch (e) {
-      _log.warning('Error parsing JWT', e);
+      _log.warning('Error parsing JWT for user: ${_email ?? "unknown"}', e);
     }
   }
 
