@@ -9,18 +9,15 @@ namespace Valora.Application.Services;
 public class AdminService : IAdminService
 {
     private readonly IIdentityService _identityService;
-    private readonly IListingRepository _listingRepository;
     private readonly INotificationRepository _notificationRepository;
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
         IIdentityService identityService,
-        IListingRepository listingRepository,
         INotificationRepository notificationRepository,
         ILogger<AdminService> logger)
     {
         _identityService = identityService;
-        _listingRepository = listingRepository;
         _notificationRepository = notificationRepository;
         _logger = logger;
     }
@@ -88,13 +85,8 @@ public class AdminService : IAdminService
         _logger.LogInformation("Admin stats requested.");
 
         var usersCount = await _identityService.CountAsync();
-        var listingsCount = await _listingRepository.CountAsync();
         var notificationsCount = await _notificationRepository.CountAsync();
 
-        return new AdminStatsDto(
-            usersCount,
-            listingsCount,
-            notificationsCount
-        );
+        return new AdminStatsDto(usersCount, notificationsCount);
     }
 }

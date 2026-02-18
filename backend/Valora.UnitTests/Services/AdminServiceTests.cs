@@ -11,7 +11,6 @@ namespace Valora.UnitTests.Services;
 public class AdminServiceTests
 {
     private readonly Mock<IIdentityService> _identityServiceMock = new();
-    private readonly Mock<IListingRepository> _listingRepositoryMock = new();
     private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
     private readonly Mock<ILogger<AdminService>> _loggerMock = new();
 
@@ -19,7 +18,6 @@ public class AdminServiceTests
     {
         return new AdminService(
             _identityServiceMock.Object,
-            _listingRepositoryMock.Object,
             _notificationRepositoryMock.Object,
             _loggerMock.Object);
     }
@@ -122,7 +120,6 @@ public class AdminServiceTests
         var service = CreateService();
 
         _identityServiceMock.Setup(x => x.CountAsync()).ReturnsAsync(10);
-        _listingRepositoryMock.Setup(x => x.CountAsync()).ReturnsAsync(20);
         _notificationRepositoryMock.Setup(x => x.CountAsync()).ReturnsAsync(5);
 
         // Act
@@ -130,7 +127,6 @@ public class AdminServiceTests
 
         // Assert
         Assert.Equal(10, result.TotalUsers);
-        Assert.Equal(20, result.TotalListings);
         Assert.Equal(5, result.TotalNotifications);
     }
 }
