@@ -102,6 +102,9 @@ class ApiService {
 
       uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
 
+      // Resilience Strategy:
+      // We automatically retry idempotent GET requests on network failures (SocketException)
+      // or timeouts. This improves user experience in spotty network conditions (e.g., trains).
       final response = await _retryOptions.retry(
         () => _authenticatedRequest(
           (headers) => _client.get(uri!, headers: headers).timeout(timeoutDuration),
@@ -312,6 +315,9 @@ class ApiService {
     }
   }
 
+  /// Centralized response handler.
+  /// Maps HTTP status codes to typed Application Exceptions for consistent UI error handling.
+  /// Also logs non-success responses for debugging.
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);
@@ -388,6 +394,9 @@ class ApiService {
     return UnknownException('An unexpected error occurred. Please try again.');
   }
 
+  /// Extracts the Correlation ID (TraceId) from standard Problem Details (RFC 7807) responses.
+  /// This allows us to display a "Reference ID" to the user, which support can use to find
+  /// the exact error log in the backend (Sentry/Kibana).
   String? _parseTraceId(String body) {
     try {
       final jsonBody = json.decode(body);
