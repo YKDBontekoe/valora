@@ -142,13 +142,14 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest(listing));
       // Pump frames to allow animations to start and finish
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-      // Unmount to clean up any pending timers
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
 
       expect(find.text('Contact Broker'), findsOneWidget);
       expect(find.byIcon(Icons.phone_rounded), findsOneWidget);
+
+      // Unmount to clean up any pending timers
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 500));
     },
   );
 
@@ -164,14 +165,12 @@ void main() {
 
       await tester.pumpWidget(createWidgetUnderTest(listing));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 800));
 
-      // We expect it NOT to be there, but we must unmount before checking "findsNothing"?
-      // No, check first, then unmount.
       expect(find.text('Contact Broker'), findsNothing);
 
       await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
     },
   );
 
@@ -188,13 +187,13 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 800));
 
     expect(find.text('Broker'), findsOneWidget);
     expect(find.text('Test Agent'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Tapping "View on Funda" launches URL success', (tester) async {
@@ -207,18 +206,18 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 800));
 
     await tester.scrollUntilVisible(find.text('View on Funda'), 500);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300)); // Allow scroll settle
 
     await tester.tap(find.text('View on Funda'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300)); // Allow tap settle
 
     expect(find.byType(SnackBar), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Tapping "View on Funda" handles launch failure', (tester) async {
@@ -231,10 +230,10 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 800));
 
     await tester.scrollUntilVisible(find.text('View on Funda'), 500);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('View on Funda'));
     // Pump to start snackbar animation
@@ -245,7 +244,7 @@ void main() {
     expect(find.textContaining('Could not open'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Tapping "View on Funda" handles launch error', (tester) async {
@@ -258,10 +257,10 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 800));
 
     await tester.scrollUntilVisible(find.text('View on Funda'), 500);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('View on Funda'));
     // Pump to start snackbar animation
@@ -272,7 +271,7 @@ void main() {
     expect(find.textContaining('Could not open'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Tapping "Contact Broker" launches dialer', (tester) async {
@@ -285,18 +284,18 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 800));
 
     await tester.scrollUntilVisible(find.text('Contact Broker'), 500);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('Contact Broker'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(SnackBar), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Lazy loading handles fetch failure gracefully', (tester) async {
@@ -312,10 +311,9 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump(); // Start fetch
-    // Use pumpAndSettle to ensure everything including animations are settled
-    // If infinite animation exists, this might timeout, but trying it now as we assume error state stops loading.
-    // Wait, the error block sets _isLoading = false, so spinner should stop.
-    await tester.pumpAndSettle();
+    // Explicitly wait for animations + async work.
+    // ValoraAnimations.slow is likely slow, plus intervals. 1000ms should cover it.
+    await tester.pump(const Duration(milliseconds: 1000));
 
     // Should stay on screen and show whatever details we have
     expect(find.text('Test Address'), findsOneWidget);
@@ -324,7 +322,7 @@ void main() {
 
     // Unmount to stop any shimmer/animations
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Lazy loading handles photo enrichment failure gracefully', (tester) async {
@@ -343,8 +341,7 @@ void main() {
 
     await tester.pumpWidget(createWidgetUnderTest(listing));
     await tester.pump(); // Start fetch
-    // Similar strategy: if _isLoading is false, animations should stop.
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1000));
 
     // Should stay on screen
     expect(find.text('Test Address'), findsOneWidget);
@@ -353,7 +350,7 @@ void main() {
 
     // Unmount to stop any shimmer/animations
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Lazy loading does nothing if details already present', (tester) async {
@@ -369,7 +366,8 @@ void main() {
     // Initial pump to build
     await tester.pump();
     // Settle any entrance animations (flutter_animate usually runs once)
-    await tester.pumpAndSettle();
+    // Avoid pumpAndSettle if it times out, use finite duration instead
+    await tester.pump(const Duration(milliseconds: 1000));
 
     // Verify no API calls made
     verifyNever(mockApiService.getListing(any));
@@ -377,6 +375,6 @@ void main() {
 
     // Unmount to stop any shimmer/animations
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 }

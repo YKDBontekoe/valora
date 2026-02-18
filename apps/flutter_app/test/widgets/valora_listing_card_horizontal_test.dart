@@ -62,7 +62,7 @@ void main() {
   HttpOverrides? originalHttpOverrides;
 
   setUp(() {
-    originalHttpOverrides = HttpOverrides.global;
+    originalHttpOverrides = HttpOverrides.current;
     mockFavoritesProvider = MockFavoritesProvider();
     when(mockFavoritesProvider.isFavorite(any)).thenReturn(false);
     HttpOverrides.global = MockHttpOverrides();
