@@ -257,5 +257,12 @@ void main() {
       expect(authProvider.isAuthenticated, true); // Token exists, so authenticated
       expect(authProvider.email, null); // Parsing failed, so email is null
     });
+
+    test('loginWithGoogle failure propagates exception', () async {
+      // Using explicit any<String>() to satisfy non-nullable String parameters
+      when(
+        mockAuthService.externalLogin('google', 'token'),
+      ).thenThrow(Exception('Google Login failed'));
+    });
   });
 }

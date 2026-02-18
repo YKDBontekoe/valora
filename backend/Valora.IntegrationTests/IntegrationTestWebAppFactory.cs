@@ -10,6 +10,7 @@ using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Valora.Application.Common.Interfaces;
 using Moq;
+using Valora.Application.Common.Interfaces.External;
 
 namespace Valora.IntegrationTests;
 
@@ -18,6 +19,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
     private readonly string _connectionString;
     public Mock<IAmenityClient> AmenityClientMock { get; } = new();
     public Mock<ICbsGeoClient> CbsGeoClientMock { get; } = new();
+    public Mock<IGoogleTokenValidator> GoogleTokenValidatorMock { get; } = new();
 
     public IntegrationTestWebAppFactory(string connectionString)
     {
@@ -97,6 +99,10 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<ICbsGeoClient>();
             services.AddSingleton<ICbsGeoClient>(CbsGeoClientMock.Object);
+
+            // Mock Google Validator
+            services.RemoveAll<IGoogleTokenValidator>();
+            services.AddSingleton<IGoogleTokenValidator>(GoogleTokenValidatorMock.Object);
         });
     }
 }
