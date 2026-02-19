@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/context_report.dart';
+import '../../core/theme/valora_typography.dart';
+import '../common/valora_card.dart';
+import '../common/valora_badge.dart';
 import 'charts/context_bar_chart.dart';
 import 'charts/context_pie_chart.dart';
 import 'charts/proximity_chart.dart';
@@ -74,7 +77,10 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Age Distribution', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              'Age Distribution',
+              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             ContextBarChart(metrics: ageMetrics, height: 120),
             const SizedBox(height: 24),
@@ -90,7 +96,10 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Housing Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              'Housing Profile',
+              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             ContextPieChart(metrics: housingTypeMetrics, size: 140),
             const SizedBox(height: 24),
@@ -106,7 +115,10 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Proximity to Amenities', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              'Proximity to Amenities',
+              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             ProximityChart(metrics: distMetrics),
             const SizedBox(height: 24),
@@ -123,98 +135,85 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     final theme = Theme.of(context);
     final accentColor = widget.accentColor ?? theme.colorScheme.primary;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: theme.colorScheme.surface,
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          InkWell(
-            onTap: () => widget.onToggle?.call(!widget.isExpanded),
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(14),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ValoraCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            InkWell(
+              onTap: () => widget.onToggle?.call(!widget.isExpanded),
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(widget.icon, color: accentColor, size: 24),
                     ),
-                    child: Icon(widget.icon, color: accentColor, size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: ValoraTypography.titleMedium,
                           ),
-                        ),
-                        if (widget.score != null) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              _MiniScoreBar(score: widget.score!, color: accentColor),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${widget.score!.round()}% Score',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
+                          if (widget.score != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                _MiniScoreBar(score: widget.score!, color: accentColor),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${widget.score!.round()}% Score',
+                                  style: ValoraTypography.bodySmall.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    widget.isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                    Icon(
+                      widget.isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          // Expandable content
-          SizeTransition(
-            sizeFactor: _expandAnimation,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Divider(height: 1),
-                  const SizedBox(height: 20),
-                  _buildChart() ?? const SizedBox.shrink(),
-                  ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
-                ],
+            // Expandable content
+            SizeTransition(
+              sizeFactor: _expandAnimation,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Divider(height: 1),
+                    const SizedBox(height: 20),
+                    _buildChart() ?? const SizedBox.shrink(),
+                    ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -357,7 +356,7 @@ class _MetricRow extends StatelessWidget {
           Expanded(
             child: Text(
               metric.label,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: ValoraTypography.bodyMedium.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
@@ -369,50 +368,28 @@ class _MetricRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.end,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: ValoraTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
           if (metric.score != null) ...[
             const SizedBox(width: 12),
-            _ScoreBadge(score: metric.score!),
+            ValoraBadge(
+              label: metric.score!.round().toString(),
+              color: _getColor(metric.score!),
+              size: ValoraBadgeSize.small,
+            ),
           ],
         ],
       ),
     );
   }
-}
 
-class _ScoreBadge extends StatelessWidget {
-  const _ScoreBadge({required this.score});
-
-  final double score;
-
-  Color _getColor() {
+  Color _getColor(double score) {
     if (score >= 80) return const Color(0xFF10B981);
     if (score >= 60) return const Color(0xFF3B82F6);
     if (score >= 40) return const Color(0xFFF59E0B);
     return const Color(0xFFEF4444);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getColor();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        score.round().toString(),
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 }

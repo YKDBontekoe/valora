@@ -5,6 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/context_report.dart';
 import '../../providers/context_report_provider.dart';
 import '../valora_glass_container.dart';
+import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_colors.dart';
 import 'ai_insight_card.dart';
 import 'category_radar.dart';
 import 'metric_category_card.dart';
@@ -104,12 +106,12 @@ class ContextReportView extends StatelessWidget {
                   children: [
                     Text(
                       report.location.displayAddress,
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      style: ValoraTypography.titleLarge,
                     ),
                     if (subtitleParts.isNotEmpty)
                       Text(
                         subtitleParts.join(', '),
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        style: ValoraTypography.bodyMedium.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                   ],
                 ),
@@ -153,7 +155,7 @@ class ContextReportView extends StatelessWidget {
         children: [
           Text(
             'Neighborhood Profile',
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: ValoraTypography.titleMedium,
           ),
           const SizedBox(height: 16),
           SmartInsightsGrid(report: report),
@@ -288,15 +290,15 @@ class ContextReportView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, size: 18),
-                  SizedBox(width: 8),
-                  Text('Data Notes', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Icon(Icons.info_outline_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Data Notes', style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 8),
-              ...report.warnings.map((w) => Text('• $w', style: theme.textTheme.bodySmall)),
+              ...report.warnings.map((w) => Text('• $w', style: ValoraTypography.bodySmall)),
             ],
           ),
         );
@@ -306,11 +308,11 @@ class ContextReportView extends StatelessWidget {
     if (index == currentIndex++) return const SizedBox(height: 24);
     if (index == currentIndex++) {
       return ExpansionTile(
-        title: const Text('Data Sources', style: TextStyle(fontSize: 14)),
+        title: Text('Data Sources', style: ValoraTypography.labelMedium),
         tilePadding: EdgeInsets.zero,
         children: report.sources.map((s) => ListTile(
-          title: Text(s.source, style: const TextStyle(fontSize: 12)),
-          subtitle: Text(s.license, style: const TextStyle(fontSize: 10)),
+          title: Text(s.source, style: ValoraTypography.labelSmall),
+          subtitle: Text(s.license, style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500)),
           dense: true,
         )).toList(),
       );
