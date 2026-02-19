@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
-import { Play, RotateCcw, CheckCircle2, XCircle, Loader2, Activity, Database, Sparkles, Info } from 'lucide-react';
+import { Play, Activity, Database, Sparkles, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
@@ -42,15 +42,6 @@ const BatchJobs = () => {
       console.error('Failed to start job');
     } finally {
       setIsStarting(false);
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Completed': return <CheckCircle2 className="h-5 w-5 text-success-500" />;
-      case 'Failed': return <XCircle className="h-5 w-5 text-error-500" />;
-      case 'Processing': return <Loader2 className="h-5 w-5 text-primary-500 animate-spin" />;
-      default: return <RotateCcw className="h-5 w-5 text-brand-400" />;
     }
   };
 
@@ -199,7 +190,7 @@ const BatchJobs = () => {
                       <td className="px-8 py-5 whitespace-nowrap">
                           <div className="flex items-center gap-2 text-brand-600 text-sm font-medium max-w-[200px] truncate">
                               {(job.error || job.resultSummary) && <Info size={14} className="text-brand-300 flex-shrink-0" />}
-                              {job.error || job.resultSummary || '-'}
+                              {job.error ? 'Pipeline Error (see logs)' : (job.resultSummary || '-')}
                           </div>
                       </td>
                       <td className="px-8 py-5 whitespace-nowrap text-[11px] font-bold text-brand-500">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import { motion } from 'framer-motion';
-import { Lock, Mail, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 import Button from '../components/Button';
 
 const containerVariants = {
@@ -27,7 +27,7 @@ const itemVariants = {
       ease: [0.22, 1, 0.36, 1]
     }
   }
-};
+} as const;
 
 const Login = () => {
   const [email, setEmail] = useState('');
