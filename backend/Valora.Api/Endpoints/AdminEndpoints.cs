@@ -27,7 +27,7 @@ public static class AdminEndpoints
             if (pageSize < 1 || pageSize > 100) return Results.BadRequest(new { error = "PageSize must be between 1 and 100." });
             if (q != null && q.Length > 100) return Results.BadRequest(new { error = "Search query is too long (max 100 chars)." });
 
-            var allowedSorts = new[] { "email_asc", "email_desc", "created_asc", "created_desc" };
+            var allowedSorts = new[] { "email_asc", "email_desc" };
             if (sort != null && !allowedSorts.Contains(sort.ToLower()))
             {
                 return Results.BadRequest(new { error = "Invalid sort parameter." });

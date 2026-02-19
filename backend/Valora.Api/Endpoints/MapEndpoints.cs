@@ -46,9 +46,14 @@ public static class MapEndpoints
                 .Select(t => t.Trim())
                 .ToList();
 
-            if (typeList != null && typeList.Any(t => t.Length > 50 || !t.All(c => char.IsLetterOrDigit(c) || c == '_' || c == '-')))
+            var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                return Results.BadRequest(new { error = "Invalid amenity type format." });
+                "school", "supermarket", "park", "healthcare", "transit", "charging_station"
+            };
+
+            if (typeList != null && typeList.Any(t => !allowedTypes.Contains(t)))
+            {
+                return Results.BadRequest(new { error = "Invalid amenity type parameter." });
             }
 
             var amenities = await mapService.GetMapAmenitiesAsync(minLat, minLon, maxLat, maxLon, typeList, ct);

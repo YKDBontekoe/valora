@@ -78,16 +78,50 @@ public class SecurityTests
     }
 
     [Fact]
-    public async Task DeleteUser_EmptyId_ReturnsBadRequest() // Note: Routing might catch this as 404 if route is /users/{id} and id is missing, but if empty string passed somehow or route matches /users//
+    public async Task GetUsers_InvalidSort_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
-        // Sending a DELETE to /users/ with empty ID usually results in Method Not Allowed (405) or Not Found (404) depending on routing.
-        // But if we simulate passing an empty ID via a different mechanism or if the route allows empty...
-        // Actually, mapped route is "/users/{id}". If id is missing, it won't match.
-        // But let's try calling with whitespace if we could encoded it, or just verify standard route behavior.
-        // Instead, let's test the endpoint logic by sending a request that matches but fails validation if possible.
-        // Since {id} is in path, it's hard to send "empty" id.
-        // Let's skip this one as routing handles it mostly.
+        var response = await _client.GetAsync("/api/admin/users?sort=invalid_column");
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteUser_EmptyId_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        // Pass a whitespace string encoded to simulate an empty/invalid ID that might bypass basic routing if not careful,
+        // or specifically target the IsNullOrWhiteSpace check.
+        // %20 is space.
+        var response = await _client.DeleteAsync("/api/admin/users/%20");
+
+        // Depending on routing, this might be 400 (if hits endpoint) or 404 (if no route matches).
+        // Since we check IsNullOrWhiteSpace inside the endpoint, we expect 400 if it routes correctly.
+        // However, ASP.NET Core routing might treat %20 as a valid ID string " ".
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+             // Success - our validation caught it
+             var body = await response.Content.ReadAsStringAsync();
+             body.ShouldContain("User ID is required");
+        }
+        else
+        {
+            // If it returns 404/405, that's also acceptable security-wise (resource not found), but we prefer explicit validation check if reachable.
+            // Let's assert it is NOT 2xx/5xx.
+            response.IsSuccessStatusCode.ShouldBeFalse();
+        }
+    }
+
+    [Fact]
+    public async Task GetJobs_InvalidLimit_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        // Test lower bound
+        var responseLower = await _client.GetAsync("/api/admin/jobs?limit=0");
+        responseLower.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+        // Test upper bound
+        var responseUpper = await _client.GetAsync("/api/admin/jobs?limit=101");
+        responseUpper.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -117,6 +151,29 @@ public class SecurityTests
     {
         await AuthenticateAsAdminAsync();
         var response = await _client.GetAsync("/api/map/amenities?minLat=100&minLon=0&maxLat=10&maxLon=0"); // minLat > 90
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetAmenities_InvalidTypes_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        // Test with a disallowed type "foo"
+        var response = await _client.GetAsync("/api/map/amenities?minLat=52.0&minLon=4.0&maxLat=52.1&maxLon=4.1&types=foo");
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData(52.0, 4.0, 51.0, 4.1)] // minLat > maxLat
+    [InlineData(52.0, 4.0, 52.1, 3.0)] // minLon > maxLon
+    [InlineData(91.0, 4.0, 92.1, 4.1)] // Lat > 90
+    [InlineData(52.0, 4.0, 53.1, 5.1)] // Span > 0.5
+    public async Task GetOverlays_InvalidCoordinates_ReturnsBadRequest(double minLat, double minLon, double maxLat, double maxLon)
+    {
+        await AuthenticateAsAdminAsync();
+        var metric = "PopulationDensity";
+        var url = $"/api/map/overlays?minLat={minLat}&minLon={minLon}&maxLat={maxLat}&maxLon={maxLon}&metric={metric}";
+        var response = await _client.GetAsync(url);
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 }
