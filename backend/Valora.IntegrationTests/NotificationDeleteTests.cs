@@ -29,8 +29,10 @@ public class NotificationDeleteTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Cleanup existing notifications and users to ensure test isolation
+        // Cleanup existing data to ensure test isolation
         _dbContext.Notifications.RemoveRange(_dbContext.Notifications);
+        _dbContext.RefreshTokens.RemoveRange(_dbContext.RefreshTokens);
+
         if (_dbContext.Users.Any())
         {
             _dbContext.Users.RemoveRange(_dbContext.Users);
