@@ -42,11 +42,11 @@ void main() {
     await tester.pumpWidget(createWidget());
     await tester.pump(); // Start animation
     await tester.pump(const Duration(milliseconds: 500)); // Finish animation
+    await tester.pumpAndSettle(); // Ensure everything is settled
 
     expect(find.text('Test Badge'), findsOneWidget);
 
-    // Check for BackdropFilter - requires dart:ui but checking by type uses standard widgets
-    // BackdropFilter is in widgets library
+    // Check for BackdropFilter
     expect(find.byType(BackdropFilter), findsOneWidget);
 
     // Check for Animate widget effects
@@ -58,7 +58,8 @@ void main() {
   testWidgets('ValoraBadge skips blur when enableBlur is false', (tester) async {
     await tester.pumpWidget(createWidget(enableBlur: false));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500)); // Ensure animations complete
+    await tester.pump(const Duration(milliseconds: 500)); // Finish animation
+    await tester.pumpAndSettle(); // Ensure everything is settled
 
     expect(find.text('Test Badge'), findsOneWidget);
 
@@ -68,16 +69,12 @@ void main() {
 
   testWidgets('ValoraBadge skips animation when enableAnimation is false', (tester) async {
     await tester.pumpWidget(createWidget(enableAnimation: false));
-    await tester.pump();
-    // No animation to wait for, but pumping settles any tree changes
+    await tester.pumpAndSettle();
 
     // Verify it renders
     expect(find.text('Test Badge'), findsOneWidget);
 
-    // Check for absence of Animate widget logic by inferring widget tree structure
-    // Since Animate isn't directly exposed, we assume if animation is disabled,
-    // the widget tree is simpler.
-    // However, finding the widget confirms it exists and didn't crash.
-    // The visual/tree verification is implicit in that we don't have Animate wrapping it.
+    // Check for absence of Animate widget logic
+    // If animation is disabled, we shouldn't have any pending timers, and widget structure is simpler
   });
 }
