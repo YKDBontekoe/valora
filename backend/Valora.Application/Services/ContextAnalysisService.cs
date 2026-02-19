@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Application.Enrichment;
+using Valora.Domain.Services;
 
 namespace Valora.Application.Services;
 

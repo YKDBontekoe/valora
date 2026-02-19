@@ -1,6 +1,6 @@
-using Valora.Application.DTOs;
+using Valora.Domain.Models;
 
-namespace Valora.Application.Enrichment;
+namespace Valora.Domain.Services;
 
 public static class ContextScoreCalculator
 {
@@ -39,7 +39,7 @@ public static class ContextScoreCalculator
     /// Aggregates individual metrics into category scores (0-100).
     /// </summary>
     /// <returns>A dictionary mapping category names to their average scores.</returns>
-    public static Dictionary<string, double> ComputeCategoryScores(CategoryMetricsInput input)
+    public static Dictionary<string, double> ComputeCategoryScores(CategoryMetricsModel input)
     {
         var scores = new Dictionary<string, double>();
 
@@ -79,7 +79,7 @@ public static class ContextScoreCalculator
         return totalWeight > 0 ? weightedSum / totalWeight : 0;
     }
 
-    private static void AddScore(Dictionary<string, double> scores, string category, IReadOnlyList<ContextMetricDto> metrics)
+    private static void AddScore(Dictionary<string, double> scores, string category, IReadOnlyList<ContextMetricModel> metrics)
     {
         var average = AverageScore(metrics);
         if (average.HasValue)
@@ -88,7 +88,7 @@ public static class ContextScoreCalculator
         }
     }
 
-    private static double? AverageScore(IReadOnlyList<ContextMetricDto> metrics)
+    private static double? AverageScore(IReadOnlyList<ContextMetricModel> metrics)
     {
         var values = metrics.Where(m => m.Score.HasValue).Select(m => m.Score!.Value).ToList();
         if (values.Count == 0)
