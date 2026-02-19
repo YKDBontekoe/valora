@@ -5,6 +5,8 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Application.Enrichment.Builders;
+using Valora.Domain.Models;
+using Valora.Domain.Services;
 
 namespace Valora.Application.Services;
 
@@ -120,14 +122,15 @@ public sealed class ContextReportService : IContextReportService
         // 5. Compute scores
         // The ContextScoreCalculator applies weights to these metrics to produce category scores
         // and a final weighted composite score.
-        var metricsInput = new CategoryMetricsInput(
-            socialMetrics,
-            crimeMetrics,
-            demographicsMetrics,
-            housingMetrics,
-            mobilityMetrics,
-            amenityMetrics,
-            environmentMetrics);
+        // We map DTOs to Domain Models for the calculation to ensure the Domain does not depend on Application DTOs.
+        var metricsInput = new CategoryMetricsModel(
+            MapToDomain(socialMetrics),
+            MapToDomain(crimeMetrics),
+            MapToDomain(demographicsMetrics),
+            MapToDomain(housingMetrics),
+            MapToDomain(mobilityMetrics),
+            MapToDomain(amenityMetrics),
+            MapToDomain(environmentMetrics));
 
         var categoryScores = ContextScoreCalculator.ComputeCategoryScores(metricsInput);
         var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
@@ -149,5 +152,18 @@ public sealed class ContextReportService : IContextReportService
         // Cache the result for the configured duration (default: 24h)
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
         return report;
+    }
+
+    private static IReadOnlyList<ContextMetricModel> MapToDomain(IEnumerable<ContextMetricDto> dtos)
+    {
+        return dtos.Select(d => new ContextMetricModel(
+            d.Key,
+            d.Label,
+            d.Value,
+            d.Unit,
+            d.Score,
+            d.Source,
+            d.Note
+        )).ToList();
     }
 }
