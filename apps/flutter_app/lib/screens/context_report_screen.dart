@@ -187,6 +187,20 @@ class _InputForm extends StatelessWidget {
     }
   }
 
+  void _handleSubmit(BuildContext context, String value) {
+    final trimmedValue = value.trim();
+    if (trimmedValue.length >= 3) {
+      provider.generate(trimmedValue);
+    } else if (trimmedValue.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter at least 3 characters.'),
+          backgroundColor: ValoraColors.warning,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -231,7 +245,7 @@ class _InputForm extends StatelessWidget {
                 ],
               ),
               textInputAction: TextInputAction.search,
-              onSubmitted: (val) => val.isNotEmpty ? provider.generate(val) : null,
+              onSubmitted: (val) => _handleSubmit(context, val),
             );
           },
           suggestionsCallback: (pattern) async {
@@ -304,7 +318,7 @@ class _InputForm extends StatelessWidget {
             isLoading: provider.isLoading,
             onPressed: provider.isLoading || controller.text.isEmpty
                 ? null
-                : () => provider.generate(controller.text),
+                : () => _handleSubmit(context, controller.text),
             variant: ValoraButtonVariant.primary,
             isFullWidth: true,
             size: ValoraButtonSize.large,

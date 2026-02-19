@@ -53,22 +53,55 @@ class ValoraTextField extends StatefulWidget {
 class _ValoraTextFieldState extends State<ValoraTextField> {
   late FocusNode _focusNode;
   bool _isFocused = false;
+  late bool _ownsFocusNode;
 
   @override
   void initState() {
     super.initState();
+    _ownsFocusNode = widget.focusNode == null;
     _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_onFocusChange);
   }
 
   void _onFocusChange() {
-    setState(() => _isFocused = _focusNode.hasFocus);
+    if (mounted) {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    }
+  }
+
+  @override
+  void didUpdateWidget(ValoraTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      // Remove listener from the old node
+      _focusNode.removeListener(_onFocusChange);
+
+      // If we owned the old node, dispose of it
+      if (_ownsFocusNode) {
+        _focusNode.dispose();
+      }
+
+      // Update ownership flag
+      _ownsFocusNode = widget.focusNode == null;
+
+      // Assign the new node (or create a new one if null)
+      _focusNode = widget.focusNode ?? FocusNode();
+
+      // Attach listener to the new node
+      _focusNode.addListener(_onFocusChange);
+
+      // Update state
+      _isFocused = _focusNode.hasFocus;
+    }
   }
 
   @override
   void dispose() {
-    if (widget.focusNode == null) {
-      _focusNode.removeListener(_onFocusChange);
+    // Always remove listener
+    _focusNode.removeListener(_onFocusChange);
+
+    // Only dispose if we created it
+    if (_ownsFocusNode) {
       _focusNode.dispose();
     }
     super.dispose();
