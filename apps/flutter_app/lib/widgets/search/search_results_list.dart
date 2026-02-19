@@ -9,7 +9,7 @@ import '../home_components.dart';
 
 class SearchResultsList extends StatelessWidget {
   final VoidCallback onRefresh;
-  final Function(Listing) onListingTap;
+  final ValueChanged<Listing> onListingTap;
 
   const SearchResultsList({
     super.key,
@@ -22,9 +22,9 @@ class SearchResultsList extends StatelessWidget {
     return SliverMainAxisGroup(
       slivers: [
         Selector<SearchListingsProvider, bool>(
-          selector: (_, p) => p.isLoading,
-          builder: (context, isLoading, _) {
-            if (isLoading) {
+          selector: (_, p) => p.isLoading && p.listings.isEmpty,
+          builder: (context, isInitialLoading, _) {
+            if (isInitialLoading) {
               return const SliverFillRemaining(
                 child: ValoraLoadingIndicator(message: 'Searching...'),
               );
@@ -32,11 +32,12 @@ class SearchResultsList extends StatelessWidget {
             return const SliverToBoxAdapter(child: SizedBox.shrink());
           },
         ),
-        Selector<SearchListingsProvider, String?>(
-          selector: (_, p) => p.error,
-          builder: (context, error, _) {
-            final provider = context.read<SearchListingsProvider>();
-            if (error != null && provider.listings.isEmpty) {
+        Selector<SearchListingsProvider, (String?, bool)>(
+          selector: (_, p) => (p.error, p.listings.isEmpty),
+          builder: (context, state, _) {
+            final error = state.$1;
+            final isEmpty = state.$2;
+            if (error != null && isEmpty) {
               return SliverFillRemaining(
                 hasScrollBody: false,
                 child: Center(

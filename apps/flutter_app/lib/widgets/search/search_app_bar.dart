@@ -17,7 +17,7 @@ class SearchAppBar extends StatelessWidget {
   final VoidCallback onNotificationTap;
   final VoidCallback onSortTap;
   final VoidCallback onFilterTap;
-  final Function(PdokSuggestion) onSuggestionSelected;
+  final ValueChanged<PdokSuggestion> onSuggestionSelected;
   final VoidCallback onSearchSubmitted;
 
   const SearchAppBar({
@@ -99,8 +99,8 @@ class SearchAppBar extends StatelessWidget {
                         top: ValoraSpacing.sm,
                         right: ValoraSpacing.sm,
                         child: Container(
-                          width: 10,
-                          height: 10,
+                          width: ValoraSpacing.sm,
+                          height: ValoraSpacing.sm,
                           decoration: const BoxDecoration(
                             color: ValoraColors.primary,
                             shape: BoxShape.circle,
