@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Api.Filters;
 
 namespace Valora.Api.Endpoints;
 
@@ -22,6 +23,16 @@ public static class AdminEndpoints
             [FromQuery] string? q = null,
             [FromQuery] string? sort = null) =>
         {
+            if (page < 1) return Results.BadRequest(new { error = "Page must be greater than 0." });
+            if (pageSize < 1 || pageSize > 100) return Results.BadRequest(new { error = "PageSize must be between 1 and 100." });
+            if (q != null && q.Length > 100) return Results.BadRequest(new { error = "Search query is too long (max 100 chars)." });
+
+            var allowedSorts = new[] { "email_asc", "email_desc", "created_asc", "created_desc" };
+            if (sort != null && !allowedSorts.Contains(sort.ToLower()))
+            {
+                return Results.BadRequest(new { error = "Invalid sort parameter." });
+            }
+
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var paginatedUsers = await adminService.GetUsersAsync(page, pageSize, q, sort, currentUserId);
 
@@ -40,6 +51,11 @@ public static class AdminEndpoints
             ClaimsPrincipal user,
             IAdminService adminService) =>
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return Results.BadRequest(new { error = "User ID is required." });
+            }
+
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(currentUserId))
@@ -70,7 +86,7 @@ public static class AdminEndpoints
         });
 
         group.MapPost("/jobs", async (
-            BatchJobRequest request,
+            [FromBody] BatchJobRequest request,
             IBatchJobService jobService,
             CancellationToken ct) =>
         {
@@ -81,13 +97,16 @@ public static class AdminEndpoints
 
             var job = await jobService.EnqueueJobAsync(jobType, request.Target, ct);
             return Results.Accepted($"/api/admin/jobs/{job.Id}", job);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<BatchJobRequest>>();
 
         group.MapGet("/jobs", async (
             IBatchJobService jobService,
             CancellationToken ct,
             [FromQuery] int limit = 10) =>
         {
+            if (limit < 1 || limit > 100) return Results.BadRequest(new { error = "Limit must be between 1 and 100." });
+
             var jobs = await jobService.GetRecentJobsAsync(limit, ct);
             return Results.Ok(jobs);
         });

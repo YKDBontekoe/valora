@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using Valora.Domain.Entities;
+
 namespace Valora.Application.DTOs;
 
 public record AdminUserDto(
@@ -12,6 +15,6 @@ public record AdminStatsDto(
 );
 
 public record BatchJobRequest(
-    string Type,
-    string Target
+    [property: Required] [property: EnumDataType(typeof(BatchJobType))] string Type,
+    [property: Required] [property: StringLength(100, MinimumLength = 3)] string Target
 );

@@ -31,6 +31,11 @@ const BatchJobs = () => {
     e.preventDefault();
     if (!targetCity) return;
 
+    if (targetCity.length < 3 || targetCity.length > 100) {
+      alert('City name must be between 3 and 100 characters.');
+      return;
+    }
+
     setIsStarting(true);
     try {
       await adminService.startJob('CityIngestion', targetCity);
