@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { AuthResponse, Stats, User, Listing, PaginatedResponse, BatchJob } from '../types';
+import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -22,12 +23,18 @@ const clearAdminStorage = () => {
   localStorage.removeItem('admin_userId');
 };
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    if (!originalRequest) return Promise.reject(error);
+
+    // Auth Retry (401)
+    if (error.response?.status === 401 && !originalRequest._isAuthRetry) {
+      originalRequest._isAuthRetry = true;
       const refreshToken = localStorage.getItem('admin_refresh_token');
       if (refreshToken) {
         try {
@@ -42,12 +49,41 @@ api.interceptors.response.use(
         } catch {
           clearAdminStorage();
           window.location.href = '/login';
+          return Promise.reject(error);
         }
       } else {
         clearAdminStorage();
         window.location.href = '/login';
+        return Promise.reject(error);
       }
     }
+
+    // Resilience Logic
+    const isNetworkError = !error.response;
+    const isServerError = error.response?.status >= 500 || error.response?.status === 429;
+    const isIdempotent = ['get', 'put', 'delete', 'head', 'options'].includes(originalRequest.method?.toLowerCase());
+
+    if ((isNetworkError || (isServerError && isIdempotent))) {
+        originalRequest._retryCount = originalRequest._retryCount || 0;
+
+        if (originalRequest._retryCount < MAX_RETRIES) {
+             originalRequest._retryCount++;
+             const delay = RETRY_DELAY * Math.pow(2, originalRequest._retryCount - 1);
+             await new Promise(resolve => setTimeout(resolve, delay));
+             return api(originalRequest);
+        }
+    }
+
+    // Global Error Feedback
+    const message = error.response?.data?.detail
+      || error.response?.data?.title
+      || error.message
+      || 'An unexpected error occurred';
+
+    if (error.response?.status !== 401) {
+       showToast(message, 'error');
+    }
+
     // Avoid logging full error object to prevent token leakage
     console.error('API Error:', error.message);
     return Promise.reject(error);

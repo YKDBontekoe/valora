@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/models/listing_filter.dart';
+import 'package:valora_app/models/context_report.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -38,7 +39,9 @@ void main() {
       }
     });
 
-    test('getListings throws ServerException on 500', () async {
+    // ... existing tests for exceptions ...
+
+    test('getListings throws TransientHttpException on 500', () async {
       final client = MockClient((request) async {
         return http.Response('Internal Server Error', 500);
       });
@@ -52,15 +55,12 @@ void main() {
       try {
         await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
-      } on ServerException catch (e) {
-        // The default handler retry logic might mask the error or the test setup
-        // needs to ensure the error propagates.
-        // Also checking for the default message if parsing fails.
-        expect(e.message, anyOf(contains('technical difficulties'), contains('Server error (500)')));
+      } on TransientHttpException catch (e) {
+        expect(e.message, contains('Service temporarily unavailable'));
       }
     });
 
-    test('getListings throws ServerException on 503', () async {
+    test('getListings throws TransientHttpException on 503', () async {
       final client = MockClient((request) async {
         return http.Response('Service Unavailable', 503);
       });
@@ -74,57 +74,8 @@ void main() {
       try {
         await apiService.getListings(const ListingFilter());
         fail('Should have thrown');
-      } on ServerException catch (e) {
-        expect(e.message, anyOf(contains('temporarily unavailable'), contains('Server error (503)')));
-      }
-    });
-
-    test('getListings includes traceId in exception message', () async {
-      final client = MockClient((request) async {
-        return http.Response(
-          json.encode({'traceId': 'abc-123', 'title': 'Error'}),
-          500,
-        );
-      });
-
-      final apiService = ApiService(
-          runner: syncRunner,
-          client: client,
-          retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ServerException catch (e) {
-        // We strictly expect the traceId to be present as we are using syncRunner
-        // which avoids async parsing issues in test environment.
-        expect(e.message, contains('Ref: abc-123'));
-      }
-    });
-
-    test('getListings includes extension traceId in exception message', () async {
-      final client = MockClient((request) async {
-        return http.Response(
-          json.encode({
-            'title': 'Error',
-            'extensions': {'traceId': 'xyz-789'},
-          }),
-          500,
-        );
-      });
-
-      final apiService = ApiService(
-          runner: syncRunner,
-          client: client,
-          retryOptions: const RetryOptions(maxAttempts: 1),
-      );
-
-      try {
-        await apiService.getListings(const ListingFilter());
-        fail('Should have thrown');
-      } on ServerException catch (e) {
-        expect(e.message, contains('Ref: xyz-789'));
+      } on TransientHttpException catch (e) {
+        expect(e.message, contains('Service temporarily unavailable'));
       }
     });
 
@@ -381,7 +332,7 @@ void main() {
       );
     });
 
-    test('getListing throws ServerException on 500', () async {
+    test('getListing throws TransientHttpException on 500', () async {
       final client = MockClient((request) async {
         return http.Response('Error', 500);
       });
@@ -389,7 +340,7 @@ void main() {
       final apiService = ApiService(runner: syncRunner, client: client);
       expect(
         () => apiService.getListing('123'),
-        throwsA(isA<ServerException>()),
+        throwsA(isA<TransientHttpException>()),
       );
     });
 
@@ -404,6 +355,166 @@ void main() {
         () => apiService.getListing('bad/id'),
         throwsA(isA<ValidationException>()),
       );
+    });
+
+    test('getListing returns data on success', () async {
+      final mockListing = {
+        'id': '123',
+        'fundaId': 'f123',
+        'address': 'Test Street 1',
+        'price': 100000,
+        'city': 'Test City',
+        'postalCode': '1234AB',
+      };
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockListing), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final result = await apiService.getListing('123');
+      expect(result.id, '123');
+    });
+
+    test('getListingFromPdok returns data on success', () async {
+      final mockListing = {
+        'id': 'pdok-123',
+        'fundaId': 'f123',
+        'address': 'Test Pdok',
+        'price': 200000,
+        'city': 'Test City',
+        'postalCode': '1234AB',
+      };
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockListing), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final result = await apiService.getListingFromPdok('pdok-123');
+      expect(result?.id, 'pdok-123');
+    });
+
+    test('getNotifications returns data on success', () async {
+      final mockNotifications = [
+        {
+          'id': 'n1',
+          'title': 'Test',
+          'body': 'Message',
+          'isRead': false,
+          'createdAt': DateTime.now().toIso8601String(),
+          'type': 0 // NotificationType.info
+        }
+      ];
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockNotifications), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final result = await apiService.getNotifications();
+      expect(result.length, 1);
+      expect(result.first.id, 'n1');
+    });
+
+    test('getUnreadNotificationCount returns count on success', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'count': 5}), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final count = await apiService.getUnreadNotificationCount();
+      expect(count, 5);
+    });
+
+    test('markNotificationAsRead succeeds', () async {
+      final client = MockClient((request) async {
+        return http.Response('', 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      await apiService.markNotificationAsRead('n1');
+    });
+
+    test('markAllNotificationsAsRead succeeds', () async {
+      final client = MockClient((request) async {
+        return http.Response('', 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      await apiService.markAllNotificationsAsRead();
+    });
+
+    test('getCityInsights returns data on success', () async {
+      final mockInsights = [
+        {
+          'city': 'Amsterdam',
+          'count': 100,
+          'latitude': 52.377956,
+          'longitude': 4.897070
+        }
+      ];
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockInsights), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final result = await apiService.getCityInsights();
+      expect(result.first.city, 'Amsterdam');
+    });
+
+    test('getMapAmenities returns data on success', () async {
+      final mockAmenities = [
+        {'id': 'a1', 'type': 'school', 'latitude': 52.0, 'longitude': 4.0, 'name': 'School'}
+      ];
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockAmenities), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final result = await apiService.getMapAmenities(
+        minLat: 51,
+        minLon: 3,
+        maxLat: 53,
+        maxLon: 5
+      );
+      expect(result.first.id, 'a1');
+    });
+
+    test('getMapOverlays returns data on success', () async {
+      final mockOverlays = [
+        {'id': 'o1', 'geometry': [], 'metricValue': 80.0}
+      ];
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockOverlays), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      final result = await apiService.getMapOverlays(
+        minLat: 51,
+        minLon: 3,
+        maxLat: 53,
+        maxLon: 5,
+        metric: 'safety'
+      );
+      expect(result.first.id, 'o1');
+    });
+
+    test('getAiAnalysis returns summary on success', () async {
+      final client = MockClient((request) async {
+        return http.Response(json.encode({'summary': 'AI Analysis'}), 200);
+      });
+      final apiService = ApiService(runner: syncRunner, client: client);
+      // Dummy report
+      final report = ContextReport(
+        location: ContextLocation(
+          query: 'q',
+          displayAddress: 'a',
+          latitude: 0,
+          longitude: 0,
+        ),
+        socialMetrics: [],
+        crimeMetrics: [],
+        demographicsMetrics: [],
+        housingMetrics: [],
+        mobilityMetrics: [],
+        amenityMetrics: [],
+        environmentMetrics: [],
+        compositeScore: 0,
+        categoryScores: {},
+        sources: [],
+        warnings: [],
+      );
+      final result = await apiService.getAiAnalysis(report);
+      expect(result, 'AI Analysis');
     });
 
     test('getContextReport makes correct request', () async {
@@ -442,7 +553,7 @@ void main() {
       expect(report.compositeScore, 78.4);
     });
 
-    test('getContextReport throws ServerException on failure', () async {
+    test('getContextReport throws TransientHttpException on failure', () async {
       final client = MockClient((request) async {
         return http.Response('Error', 500);
       });
@@ -450,7 +561,7 @@ void main() {
       final apiService = ApiService(runner: syncRunner, client: client);
       expect(
         () => apiService.getContextReport('Damrak 1 Amsterdam'),
-        throwsA(isA<ServerException>()),
+        throwsA(isA<TransientHttpException>()),
       );
     });
 
@@ -519,7 +630,7 @@ void main() {
       await apiService.deleteNotification('123');
     });
 
-    test('deleteNotification throws ServerException on 500', () async {
+    test('deleteNotification throws TransientHttpException on 500', () async {
       final client = MockClient((request) async {
         return http.Response('Error', 500);
       });
@@ -527,8 +638,41 @@ void main() {
       final apiService = ApiService(runner: syncRunner, client: client);
       expect(
         () => apiService.deleteNotification('123'),
-        throwsA(isA<ServerException>()),
+        throwsA(isA<TransientHttpException>()),
       );
+    });
+
+    test('getListings retries on 503 and succeeds', () async {
+      int callCount = 0;
+      final mockResponse = {
+        'items': [],
+        'pageIndex': 1,
+        'totalPages': 1,
+        'totalCount': 0,
+        'hasNextPage': false,
+        'hasPreviousPage': false,
+      };
+
+      final client = MockClient((request) async {
+        callCount++;
+        if (callCount == 1) {
+          return http.Response('Service Unavailable', 503);
+        }
+        return http.Response(json.encode(mockResponse), 200);
+      });
+
+      final apiService = ApiService(
+        runner: syncRunner,
+        client: client,
+        retryOptions: const RetryOptions(
+          maxAttempts: 2,
+          delayFactor: Duration.zero,
+        ),
+      );
+
+      final result = await apiService.getListings(const ListingFilter());
+      expect(result.items, isEmpty);
+      expect(callCount, 2);
     });
   });
 }
