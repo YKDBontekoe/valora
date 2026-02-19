@@ -533,8 +533,6 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("City", "ContextSafetyScore");
 
-                    b.HasIndex("City", "LastFundaFetchUtc");
-
                     b.HasIndex("City", "LivingAreaM2");
 
                     b.HasIndex("City", "Price");

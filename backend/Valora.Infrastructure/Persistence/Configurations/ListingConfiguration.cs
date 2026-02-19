@@ -36,7 +36,6 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.HasIndex(e => new { e.City, e.LivingAreaM2 });
         builder.HasIndex(e => new { e.City, e.ContextCompositeScore });
         builder.HasIndex(e => new { e.City, e.ContextSafetyScore });
-        builder.HasIndex(e => new { e.City, e.LastFundaFetchUtc });
         builder.HasIndex(e => new { e.City, e.LastFundaFetchUtc, e.Price });
         builder.HasIndex(e => e.Address);
         builder.HasIndex(e => e.PropertyType);

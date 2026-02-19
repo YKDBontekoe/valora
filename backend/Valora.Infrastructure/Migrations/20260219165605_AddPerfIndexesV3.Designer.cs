@@ -12,7 +12,7 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    [Migration("20260219164525_AddPerfIndexesV3")]
+    [Migration("20260219165605_AddPerfIndexesV3")]
     partial class AddPerfIndexesV3
     {
         /// <inheritdoc />
@@ -535,8 +535,6 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("City", "ContextCompositeScore");
 
                     b.HasIndex("City", "ContextSafetyScore");
-
-                    b.HasIndex("City", "LastFundaFetchUtc");
 
                     b.HasIndex("City", "LivingAreaM2");
 
