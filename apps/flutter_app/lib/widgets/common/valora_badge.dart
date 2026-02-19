@@ -15,6 +15,8 @@ class ValoraBadge extends StatelessWidget {
     this.color,
     this.textColor,
     this.size = ValoraBadgeSize.medium,
+    this.enableBlur = true,
+    this.enableAnimation = true,
   });
 
   final String label;
@@ -22,6 +24,8 @@ class ValoraBadge extends StatelessWidget {
   final Color? color;
   final Color? textColor;
   final ValoraBadgeSize size;
+  final bool enableBlur;
+  final bool enableAnimation;
 
   @override
   Widget build(BuildContext context) {
@@ -35,48 +39,58 @@ class ValoraBadge extends StatelessWidget {
     final hPad = isSmall ? ValoraSpacing.xs + 2 : ValoraSpacing.sm;
     final vPad = isSmall ? 2.0 : 4.0;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
-          decoration: BoxDecoration(
-            color: effectiveColor.withValues(alpha: isDark ? 0.15 : 0.1),
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-            border: Border.all(
-              color: effectiveColor.withValues(alpha: 0.2),
-              width: 0.5,
+    Widget badge = Container(
+      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+      decoration: BoxDecoration(
+        color: effectiveColor.withValues(alpha: isDark ? 0.15 : 0.1),
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+        border: Border.all(
+          color: effectiveColor.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: iconSize, color: effectiveTextColor),
+            SizedBox(width: isSmall ? 3 : ValoraSpacing.xs),
+          ],
+          Text(
+            label,
+            style: ValoraTypography.labelSmall.copyWith(
+              color: effectiveTextColor,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: iconSize, color: effectiveTextColor),
-                SizedBox(width: isSmall ? 3 : ValoraSpacing.xs),
-              ],
-              Text(
-                label,
-                style: ValoraTypography.labelSmall.copyWith(
-                  color: effectiveTextColor,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        )
-            .animate()
-            .fadeIn(duration: ValoraAnimations.normal)
-            .scale(
-              begin: const Offset(0.92, 0.92),
-              end: const Offset(1, 1),
-              duration: ValoraAnimations.normal,
-              curve: ValoraAnimations.deceleration,
-            ),
+        ],
       ),
     );
+
+    if (enableBlur) {
+      badge = ClipRRect(
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: badge,
+        ),
+      );
+    }
+
+    if (enableAnimation) {
+      badge = badge
+          .animate()
+          .fadeIn(duration: ValoraAnimations.normal)
+          .scale(
+            begin: const Offset(0.92, 0.92),
+            end: const Offset(1, 1),
+            duration: ValoraAnimations.normal,
+            curve: ValoraAnimations.deceleration,
+          );
+    }
+
+    return badge;
   }
 }
 

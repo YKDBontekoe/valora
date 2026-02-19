@@ -14,6 +14,8 @@ import '../widgets/report/location_picker.dart';
 import '../widgets/valora_widgets.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_animations.dart';
+import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_spacing.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key, this.pdokService});
@@ -94,6 +96,56 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   }
 }
 
+class _HeroSection extends StatelessWidget {
+  const _HeroSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValoraCard(
+      padding: const EdgeInsets.all(28),
+      gradient: ValoraColors.heroGradient,
+      elevation: ValoraSpacing.elevationLg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.analytics_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Property Analytics',
+            style: ValoraTypography.headlineMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Get deep neighborhood insights and environmental data for any Dutch address.',
+            style: ValoraTypography.bodyLarge.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1);
+  }
+}
+
 class _InputForm extends StatelessWidget {
   const _InputForm({
     required this.controller,
@@ -135,6 +187,20 @@ class _InputForm extends StatelessWidget {
     }
   }
 
+  void _handleSubmit(BuildContext context, String value) {
+    final trimmedValue = value.trim();
+    if (trimmedValue.length >= 3) {
+      provider.generate(trimmedValue);
+    } else if (trimmedValue.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter at least 3 characters.'),
+          backgroundColor: ValoraColors.warning,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -144,77 +210,24 @@ class _InputForm extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       children: [
         // Hero section
-        Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primaryContainer,
-                theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  Icons.analytics_rounded,
-                  size: 32,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Property Analytics',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Get deep neighborhood insights and environmental data for any Dutch address.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+        const _HeroSection(),
 
         const SizedBox(height: 32),
 
         Text(
           'Search Property',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: ValoraTypography.titleMedium,
         ),
         const SizedBox(height: 12),
 
         // Search field with TypeAhead
         TypeAheadField<PdokSuggestion>(
           controller: controller,
-          builder: (context, controller, focusNode) => TextField(
-            controller: controller,
-            focusNode: focusNode,
-            decoration: InputDecoration(
-              hintText: 'Address or location...',
+          builder: (context, controller, focusNode) {
+            return ValoraTextField(
+              controller: controller,
+              focusNode: focusNode,
+              hint: 'Address or location...',
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -231,17 +244,10 @@ class _InputForm extends StatelessWidget {
                   ),
                 ],
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerLow,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-            ),
-            textInputAction: TextInputAction.search,
-            onSubmitted: (val) => val.isNotEmpty ? provider.generate(val) : null,
-          ),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (val) => _handleSubmit(context, val),
+            );
+          },
           suggestionsCallback: (pattern) async {
             if (pattern.length < 3) return [];
             return await pdokService.search(pattern);
@@ -249,8 +255,8 @@ class _InputForm extends StatelessWidget {
           itemBuilder: (context, suggestion) {
             return ListTile(
               leading: const Icon(Icons.location_on_outlined, size: 20),
-              title: Text(suggestion.displayName),
-              subtitle: Text(suggestion.type, style: const TextStyle(fontSize: 12)),
+              title: Text(suggestion.displayName, style: ValoraTypography.bodyMedium),
+              subtitle: Text(suggestion.type, style: ValoraTypography.labelSmall),
             );
           },
           onSelected: (suggestion) {
@@ -272,29 +278,20 @@ class _InputForm extends StatelessWidget {
                 children: [
                   Text(
                     'Search Radius',
-                    style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${provider.radiusMeters}m',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
+                  ValoraBadge(
+                    label: '${provider.radiusMeters}m',
+                    color: theme.colorScheme.primary,
+                    size: ValoraBadgeSize.small,
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight: 8,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  trackHeight: 6,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
                   activeTrackColor: theme.colorScheme.primary,
                   inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.1),
@@ -321,8 +318,10 @@ class _InputForm extends StatelessWidget {
             isLoading: provider.isLoading,
             onPressed: provider.isLoading || controller.text.isEmpty
                 ? null
-                : () => provider.generate(controller.text),
+                : () => _handleSubmit(context, controller.text),
             variant: ValoraButtonVariant.primary,
+            isFullWidth: true,
+            size: ValoraButtonSize.large,
           ),
         ),
 
@@ -345,11 +344,11 @@ class _InputForm extends StatelessWidget {
             children: [
               Text(
                 'Recent Searches',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: ValoraTypography.titleMedium,
               ),
               TextButton(
                 onPressed: () => _confirmClearHistory(context, provider),
-                child: const Text('Clear All'),
+                child: Text('Clear All', style: ValoraTypography.labelMedium.copyWith(color: theme.colorScheme.primary)),
               ),
             ],
           ),
@@ -362,26 +361,14 @@ class _InputForm extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final item = provider.history[index];
-                return GestureDetector(
-                  onTap: provider.isLoading ? null : () {
-                    controller.text = item.query;
-                    provider.generate(item.query);
-                  },
-                  child: Container(
-                    width: 200,
+                return SizedBox(
+                  width: 200,
+                  child: ValoraCard(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: theme.colorScheme.outlineVariant),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
+                    onTap: provider.isLoading ? null : () {
+                      controller.text = item.query;
+                      provider.generate(item.query);
+                    },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -391,12 +378,12 @@ class _InputForm extends StatelessWidget {
                           item.query,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          style: ValoraTypography.labelMedium.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _formatDate(item.timestamp),
-                          style: theme.textTheme.bodySmall?.copyWith(color: ValoraColors.neutral500),
+                          style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500),
                         ),
                       ],
                     ),
