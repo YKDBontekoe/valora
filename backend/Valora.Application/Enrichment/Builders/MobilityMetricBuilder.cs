@@ -1,3 +1,4 @@
+using Valora.Application.Common.Constants;
 using Valora.Application.DTOs;
 
 namespace Valora.Application.Enrichment.Builders;
@@ -13,10 +14,10 @@ public static class MobilityMetricBuilder
 
         return
         [
-            new("mobility_cars_household", "Cars per Household", cbs.CarsPerHousehold, "cars/hh", carDependencyScore, "CBS StatLine 85618NED"),
-            new("mobility_car_density", "Car Density", cbs.CarDensity, "cars/km²", null, "CBS StatLine 85618NED"),
-            new("mobility_total_cars", "Total Cars", cbs.TotalCars, "cars", null, "CBS StatLine 85618NED"),
-            new("mobility_transit_access", "Local Access Score", transitAccessScore, "score", transitAccessScore, "Valora Composite")
+            new("mobility_cars_household", "Cars per Household", cbs.CarsPerHousehold, "cars/hh", carDependencyScore, DataSources.CbsStatLine),
+            new("mobility_car_density", "Car Density", cbs.CarDensity, "cars/km²", null, DataSources.CbsStatLine),
+            new("mobility_total_cars", "Total Cars", cbs.TotalCars, "cars", null, DataSources.CbsStatLine),
+            new("mobility_transit_access", "Local Access Score", transitAccessScore, "score", transitAccessScore, DataSources.ValoraComposite)
         ];
     }
 

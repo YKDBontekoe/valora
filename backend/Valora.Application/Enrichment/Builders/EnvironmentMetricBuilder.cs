@@ -1,3 +1,4 @@
+using Valora.Application.Common.Constants;
 using Valora.Application.DTOs;
 
 namespace Valora.Application.Enrichment.Builders;
@@ -19,12 +20,12 @@ public static class EnvironmentMetricBuilder
 
         return
         [
-            new("pm25", "PM2.5", air.Pm25, "µg/m³", pm25Score, "Luchtmeetnet Open API"),
-            new("pm10", "PM10", air.Pm10, "µg/m³", pm10Score, "Luchtmeetnet Open API"),
-            new("no2", "NO2", air.No2, "µg/m³", no2Score, "Luchtmeetnet Open API"),
-            new("o3", "O3", air.O3, "µg/m³", o3Score, "Luchtmeetnet Open API"),
-            new("air_station", "Nearest Station", null, null, null, "Luchtmeetnet Open API", air.StationName),
-            new("air_station_distance", "Distance to Station", air.StationDistanceMeters, "m", null, "Luchtmeetnet Open API")
+            new("pm25", "PM2.5", air.Pm25, "µg/m³", pm25Score, DataSources.Luchtmeetnet),
+            new("pm10", "PM10", air.Pm10, "µg/m³", pm10Score, DataSources.Luchtmeetnet),
+            new("no2", "NO2", air.No2, "µg/m³", no2Score, DataSources.Luchtmeetnet),
+            new("o3", "O3", air.O3, "µg/m³", o3Score, DataSources.Luchtmeetnet),
+            new("air_station", "Nearest Station", null, null, null, DataSources.Luchtmeetnet, air.StationName),
+            new("air_station_distance", "Distance to Station", air.StationDistanceMeters, "m", null, DataSources.Luchtmeetnet)
         ];
     }
 

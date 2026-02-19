@@ -13,6 +13,9 @@ namespace Valora.Application.Services;
 /// </summary>
 public sealed class ContextReportService : IContextReportService
 {
+    private const int MinRadiusMeters = 200;
+    private const int MaxRadiusMeters = 5000;
+
     private readonly ILocationResolver _locationResolver;
     private readonly IContextDataProvider _contextDataProvider;
     private readonly ICacheService _cache;
@@ -65,7 +68,7 @@ public sealed class ContextReportService : IContextReportService
         // Radius is clamped to prevent excessive load on Overpass/external APIs.
         // Queries > 5km can cause timeouts or massive memory usage in the Overpass client.
         // Minimum 200m ensures we have a meaningful neighborhood scope.
-        var normalizedRadius = Math.Clamp(request.RadiusMeters, 200, 5000);
+        var clampedRadius = Math.Clamp(request.RadiusMeters, MinRadiusMeters, MaxRadiusMeters);
 
         // 1. Resolve Location First
         // The location resolver has its own cache. We need the resolved coordinates/IDs
@@ -77,13 +80,7 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 2. Check Report Cache using stable location key
-        // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
-        // Using 5 decimal places (F5) gives precision to ~1 meter.
-        // This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
-        // if they resolve to the same coordinate, preventing duplicate expensive API calls.
-        var latKey = location.Latitude.ToString("F5");
-        var lonKey = location.Longitude.ToString("F5");
-        var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
+        var cacheKey = GetCacheKey(location, clampedRadius);
 
         if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
         {
@@ -93,7 +90,7 @@ public sealed class ContextReportService : IContextReportService
         // 3. Fetch Data from Provider (Fan-Out)
         // The IContextDataProvider implementation handles the parallel execution of
         // CBS, PDOK, Overpass, and Luchtmeetnet clients.
-        var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
+        var sourceData = await _contextDataProvider.GetSourceDataAsync(location, clampedRadius, cancellationToken);
 
         var cbs = sourceData.NeighborhoodStats;
         var crime = sourceData.CrimeStats;
@@ -102,9 +99,9 @@ public sealed class ContextReportService : IContextReportService
 
         var warnings = new List<string>(sourceData.Warnings);
 
-        if (normalizedRadius != request.RadiusMeters)
+        if (clampedRadius != request.RadiusMeters)
         {
-            warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
+            warnings.Add($"Radius clamped from {request.RadiusMeters}m to {clampedRadius}m to respect system limits.");
         }
 
         // 4. Build normalized metrics for each category (Fan-In)
@@ -149,5 +146,19 @@ public sealed class ContextReportService : IContextReportService
         // Cache the result for the configured duration (default: 24h)
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
         return report;
+    }
+
+    /// <summary>
+    /// Generates a stable cache key for the report.
+    /// Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
+    /// Using 5 decimal places (F5) gives precision to ~1 meter.
+    /// This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
+    /// if they resolve to the same coordinate, preventing duplicate expensive API calls.
+    /// </summary>
+    private static string GetCacheKey(ResolvedLocationDto location, int radius)
+    {
+        var latKey = location.Latitude.ToString("F5");
+        var lonKey = location.Longitude.ToString("F5");
+        return $"context-report:v3:{latKey}_{lonKey}:{radius}";
     }
 }

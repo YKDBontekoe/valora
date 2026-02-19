@@ -1,3 +1,4 @@
+using Valora.Application.Common.Constants;
 using Valora.Application.DTOs;
 
 namespace Valora.Application.Enrichment.Builders;
@@ -18,10 +19,10 @@ public static class SocialMetricBuilder
 
         return
         [
-            new("residents", "Residents", cbs.Residents, "people", null, "CBS StatLine 85618NED"),
-            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, "CBS StatLine 85618NED"),
-            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, "CBS StatLine 85618NED"),
-            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, "CBS StatLine 85618NED")
+            new("residents", "Residents", cbs.Residents, "people", null, DataSources.CbsStatLine),
+            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, DataSources.CbsStatLine),
+            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, DataSources.CbsStatLine),
+            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, DataSources.CbsStatLine)
         ];
     }
 

@@ -1,3 +1,4 @@
+using Valora.Application.Common.Constants;
 using Valora.Application.DTOs;
 
 namespace Valora.Application.Enrichment.Builders;
@@ -18,11 +19,11 @@ public static class CrimeMetricBuilder
 
         return
         [
-            new("total_crimes", "Total Crimes", crime.TotalCrimesPer1000, "per 1000", totalScore, "CBS StatLine 47018NED"),
-            new("burglary", "Burglary Rate", crime.BurglaryPer1000, "per 1000", burglaryScore, "CBS StatLine 47018NED"),
-            new("violent_crime", "Violent Crime", crime.ViolentCrimePer1000, "per 1000", violentScore, "CBS StatLine 47018NED"),
-            new("theft", "Theft Rate", crime.TheftPer1000, "per 1000", null, "CBS StatLine 47018NED"),
-            new("vandalism", "Vandalism Rate", crime.VandalismPer1000, "per 1000", null, "CBS StatLine 47018NED")
+            new("total_crimes", "Total Crimes", crime.TotalCrimesPer1000, "per 1000", totalScore, DataSources.CbsStatLineCrime),
+            new("burglary", "Burglary Rate", crime.BurglaryPer1000, "per 1000", burglaryScore, DataSources.CbsStatLineCrime),
+            new("violent_crime", "Violent Crime", crime.ViolentCrimePer1000, "per 1000", violentScore, DataSources.CbsStatLineCrime),
+            new("theft", "Theft Rate", crime.TheftPer1000, "per 1000", null, DataSources.CbsStatLineCrime),
+            new("vandalism", "Vandalism Rate", crime.VandalismPer1000, "per 1000", null, DataSources.CbsStatLineCrime)
         ];
     }
 

@@ -1,3 +1,4 @@
+using Valora.Application.Common.Constants;
 using Valora.Application.DTOs;
 
 namespace Valora.Application.Enrichment.Builders;
@@ -15,15 +16,15 @@ public static class AmenityMetricBuilder
 
             metrics.AddRange(
             [
-                new("schools", "Schools in Radius", amenities.SchoolCount, "count", null, "OpenStreetMap / Overpass"),
-                new("supermarkets", "Supermarkets in Radius", amenities.SupermarketCount, "count", null, "OpenStreetMap / Overpass"),
-                new("parks", "Parks in Radius", amenities.ParkCount, "count", null, "OpenStreetMap / Overpass"),
-                new("healthcare", "Healthcare in Radius", amenities.HealthcareCount, "count", null, "OpenStreetMap / Overpass"),
-                new("transit_stops", "Transit Stops in Radius", amenities.TransitStopCount, "count", null, "OpenStreetMap / Overpass"),
-                new("charging_stations", "Charging Stations in Radius", amenities.ChargingStationCount, "count", null, "OpenStreetMap / Overpass"),
-                new("amenity_diversity", "Amenity Diversity", amenities.DiversityScore, "score", amenities.DiversityScore, "OpenStreetMap / Overpass"),
-                new("amenity_proximity", "Nearest Amenity Distance", amenities.NearestAmenityDistanceMeters, "m", proximityScore, "OpenStreetMap / Overpass"),
-                new("amenity_count_score", "Amenity Volume Score", countScore, "score", countScore, "OpenStreetMap / Overpass")
+                new("schools", "Schools in Radius", amenities.SchoolCount, "count", null, DataSources.OpenStreetMap),
+                new("supermarkets", "Supermarkets in Radius", amenities.SupermarketCount, "count", null, DataSources.OpenStreetMap),
+                new("parks", "Parks in Radius", amenities.ParkCount, "count", null, DataSources.OpenStreetMap),
+                new("healthcare", "Healthcare in Radius", amenities.HealthcareCount, "count", null, DataSources.OpenStreetMap),
+                new("transit_stops", "Transit Stops in Radius", amenities.TransitStopCount, "count", null, DataSources.OpenStreetMap),
+                new("charging_stations", "Charging Stations in Radius", amenities.ChargingStationCount, "count", null, DataSources.OpenStreetMap),
+                new("amenity_diversity", "Amenity Diversity", amenities.DiversityScore, "score", amenities.DiversityScore, DataSources.OpenStreetMap),
+                new("amenity_proximity", "Nearest Amenity Distance", amenities.NearestAmenityDistanceMeters, "m", proximityScore, DataSources.OpenStreetMap),
+                new("amenity_count_score", "Amenity Volume Score", countScore, "score", countScore, DataSources.OpenStreetMap)
             ]);
         }
         else
@@ -34,11 +35,11 @@ public static class AmenityMetricBuilder
         if (cbs != null)
         {
             // Phase 2: CBS Proximity - Walkability
-            metrics.Add(new("dist_supermarket", "Dist. to Supermarket", cbs.DistanceToSupermarket, "km", ScoreProximity(cbs.DistanceToSupermarket, 1.0, 2.5), "CBS StatLine 85618NED"));
-            metrics.Add(new("dist_gp", "Dist. to GP", cbs.DistanceToGp, "km", ScoreProximity(cbs.DistanceToGp, 1.5, 3.0), "CBS StatLine 85618NED"));
-            metrics.Add(new("dist_school", "Dist. to School", cbs.DistanceToSchool, "km", ScoreProximity(cbs.DistanceToSchool, 1.0, 3.0), "CBS StatLine 85618NED"));
-            metrics.Add(new("dist_daycare", "Dist. to Daycare", cbs.DistanceToDaycare, "km", null, "CBS StatLine 85618NED"));
-            metrics.Add(new("schools_3km", "Schools within 3km", cbs.SchoolsWithin3km, "count", null, "CBS StatLine 85618NED"));
+            metrics.Add(new("dist_supermarket", "Dist. to Supermarket", cbs.DistanceToSupermarket, "km", ScoreProximity(cbs.DistanceToSupermarket, 1.0, 2.5), DataSources.CbsStatLine));
+            metrics.Add(new("dist_gp", "Dist. to GP", cbs.DistanceToGp, "km", ScoreProximity(cbs.DistanceToGp, 1.5, 3.0), DataSources.CbsStatLine));
+            metrics.Add(new("dist_school", "Dist. to School", cbs.DistanceToSchool, "km", ScoreProximity(cbs.DistanceToSchool, 1.0, 3.0), DataSources.CbsStatLine));
+            metrics.Add(new("dist_daycare", "Dist. to Daycare", cbs.DistanceToDaycare, "km", null, DataSources.CbsStatLine));
+            metrics.Add(new("schools_3km", "Schools within 3km", cbs.SchoolsWithin3km, "count", null, DataSources.CbsStatLine));
         }
 
         return metrics;

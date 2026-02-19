@@ -116,7 +116,7 @@ public class BatchJobService : IBatchJobService
             }
 
             // Fetch stats
-            var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
+            var loc = CreateResolvedLocation(geo.Code);
 
             var stats = await _statsClient.GetStatsAsync(loc, cancellationToken);
             var crime = await _crimeClient.GetStatsAsync(loc, cancellationToken);
@@ -137,6 +137,25 @@ public class BatchJobService : IBatchJobService
         }
 
         job.ResultSummary = $"Processed {total} neighborhoods.";
+    }
+
+    private static ResolvedLocationDto CreateResolvedLocation(string code)
+    {
+        // We only need the neighborhood code for stats fetching
+        return new ResolvedLocationDto(
+            string.Empty,
+            string.Empty,
+            0,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            code,
+            null,
+            null);
     }
 
     private static BatchJobDto MapToDto(BatchJob job) => new(

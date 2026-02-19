@@ -1,6 +1,6 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 
@@ -33,31 +33,6 @@ public class ContextAnalysisService : IContextAnalysisService
     {
         var prompt = BuildAnalysisPrompt(report);
         return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, null, cancellationToken);
-    }
-
-    private static string SanitizeForPrompt(string? input, int maxLength = 200)
-    {
-        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
-
-        // Truncate first to prevent massive strings from being processed by Regex
-        if (input.Length > maxLength)
-        {
-            input = input.Substring(0, maxLength);
-        }
-
-        // Strip characters that are not letters, digits, standard punctuation, whitespace, symbols (\p{S}), numbers (\p{N}), or basic math symbols like < and >.
-        // This whitelist allows currency symbols (€, $), units (m²), superscripts (²), and other common text while removing control characters.
-        // We explicitly allow < and > so we can escape them properly in the next step.
-        var sanitized = Regex.Replace(input, @"[^\w\s\p{P}\p{S}\p{N}<>]", "");
-
-        // Escape XML-like characters to prevent tag injection if we use XML-style wrapping
-        // Note: Replace & first to avoid double-escaping entity references
-        sanitized = sanitized.Replace("&", "&amp;")
-                             .Replace("\"", "&quot;")
-                             .Replace("<", "&lt;")
-                             .Replace(">", "&gt;");
-
-        return sanitized.Trim();
     }
 
     private static string BuildAnalysisPrompt(ContextReportDto report)
@@ -100,7 +75,7 @@ public class ContextAnalysisService : IContextAnalysisService
 
         private void AppendHeader(StringBuilder sb)
         {
-            sb.AppendLine($"  <address>{SanitizeForPrompt(_report.Location.DisplayAddress)}</address>");
+            sb.AppendLine($"  <address>{TextSanitizer.Sanitize(_report.Location.DisplayAddress)}</address>");
             sb.AppendLine($"  <composite_score>{_report.CompositeScore:F0}</composite_score>");
         }
 
@@ -109,7 +84,7 @@ public class ContextAnalysisService : IContextAnalysisService
             sb.AppendLine("  <category_scores>");
             foreach (var category in _report.CategoryScores)
             {
-                sb.AppendLine($"    <score category=\"{SanitizeForPrompt(category.Key)}\">{category.Value:F0}</score>");
+                sb.AppendLine($"    <score category=\"{TextSanitizer.Sanitize(category.Key)}\">{category.Value:F0}</score>");
             }
             sb.AppendLine("  </category_scores>");
         }
@@ -132,9 +107,9 @@ public class ContextAnalysisService : IContextAnalysisService
                 if (m.Value.HasValue)
                 {
                     var scoreStr = m.Score.HasValue ? $"(Score: {m.Score:F0})" : "";
-                    var safeCategory = SanitizeForPrompt(category);
-                    var safeLabel = SanitizeForPrompt(m.Label);
-                    var safeUnit = SanitizeForPrompt(m.Unit);
+                    var safeCategory = TextSanitizer.Sanitize(category);
+                    var safeLabel = TextSanitizer.Sanitize(m.Label);
+                    var safeUnit = TextSanitizer.Sanitize(m.Unit);
 
                     sb.AppendLine($"    <metric category=\"{safeCategory}\" label=\"{safeLabel}\">{m.Value} {safeUnit} {scoreStr}</metric>");
                 }
