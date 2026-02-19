@@ -9,6 +9,12 @@ namespace Valora.Api.Endpoints;
 
 public static class AdminEndpoints
 {
+    private static readonly HashSet<string> AllowedSorts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "email_asc",
+        "email_desc"
+    };
+
     public static void MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/admin")
@@ -27,8 +33,7 @@ public static class AdminEndpoints
             if (pageSize < 1 || pageSize > 100) return Results.BadRequest(new { error = "PageSize must be between 1 and 100." });
             if (q != null && q.Length > 100) return Results.BadRequest(new { error = "Search query is too long (max 100 chars)." });
 
-            var allowedSorts = new[] { "email_asc", "email_desc" };
-            if (sort != null && !allowedSorts.Contains(sort.ToLower()))
+            if (sort != null && !AllowedSorts.Contains(sort))
             {
                 return Results.BadRequest(new { error = "Invalid sort parameter." });
             }
