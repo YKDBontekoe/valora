@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { toastManager, ToastMessage } from '../services/toast';
+import { toastManager, type ToastMessage } from '../services/toast';
 
 const Toast = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
