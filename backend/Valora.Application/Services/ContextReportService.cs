@@ -11,6 +11,30 @@ namespace Valora.Application.Services;
 /// <summary>
 /// Orchestrates the generation of context reports by aggregating data from multiple external sources.
 /// </summary>
+/// <remarks>
+/// <strong>Architecture: The Fan-Out Pattern</strong>
+/// <para>
+/// Unlike traditional CRUD apps, this service does not read from a local database.
+/// It queries multiple external APIs in parallel ("fans out") and aggregates the results ("fans in").
+/// </para>
+/// <code>
+/// Request -> [ Service ]
+///            |-> (Async) CBS StatLine
+///            |-> (Async) PDOK Locatieserver
+///            |-> (Async) OpenStreetMap (Overpass)
+///            |-> (Async) Luchtmeetnet
+///            v
+///          [ Aggregation &amp; Scoring ] -> Result
+/// </code>
+/// <para>
+/// <strong>Why?</strong>
+/// <list type="bullet">
+/// <item><strong>Freshness:</strong> Real-time data avoids stale cache issues.</item>
+/// <item><strong>Legal:</strong> We don't scrape or mass-store third-party data.</item>
+/// <item><strong>Performance:</strong> Parallel execution reduces latency to the slowest dependency.</item>
+/// </list>
+/// </para>
+/// </remarks>
 public sealed class ContextReportService : IContextReportService
 {
     private readonly ILocationResolver _locationResolver;

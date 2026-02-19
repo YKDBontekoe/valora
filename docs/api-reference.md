@@ -16,20 +16,16 @@ graph LR
         API --> Admin[/api/admin]
         API --> AI[/api/ai]
     end
-
-    subgraph "Services"
-        Auth --> Identity[Identity Service]
-        Context --> Report[Context Report Service]
-        Listings --> Repo[Listing Repository]
-        Map --> MapSvc[Map Service]
-        Admin --> AdminSvc[Admin Services]
-        AI --> AISvc[AI Service]
-    end
 ```
 
 ## 🔐 Authentication
 
 Authentication is handled via JWT (JSON Web Tokens).
+
+**Flow:**
+1.  **Register/Login** to get an `accessToken`.
+2.  Send the token in the `Authorization` header for all protected requests:
+    `Authorization: Bearer <your-token>`
 
 ### Register
 `POST /api/auth/register`
@@ -67,18 +63,6 @@ Authenticate and receive access tokens.
 }
 ```
 
-### Refresh Token
-`POST /api/auth/refresh`
-
-Obtain a new access token using a valid refresh token.
-
-**Request:**
-```json
-{
-  "refreshToken": "8f9d2..."
-}
-```
-
 ---
 
 ## 🌍 Context & Listings
@@ -96,24 +80,48 @@ Generate a comprehensive context report for a location.
 }
 ```
 
-**Response:**
-Returns a `ContextReportDto` containing scores for Safety, Social, Amenities, and more.
-
-### Enrich Listing
-`POST /api/listings/{id}/enrich`
-
-Update an existing listing with context data.
+**Response (Example):**
+```json
+{
+  "location": {
+    "displayAddress": "Damrak 1, Amsterdam",
+    "latitude": 52.375,
+    "longitude": 4.896,
+    "municipalityName": "Amsterdam"
+  },
+  "compositeScore": 8.5,
+  "categoryScores": {
+    "Safety": 8.0,
+    "Social": 7.5,
+    "Amenities": 9.2
+  },
+  "socialMetrics": [
+    {
+      "key": "population_density",
+      "label": "Population Density",
+      "value": 5000,
+      "unit": "p/km2",
+      "score": 7.0,
+      "source": "CBS"
+    }
+  ],
+  "amenityMetrics": [
+    {
+      "key": "supermarket_count",
+      "label": "Supermarkets",
+      "value": 5,
+      "source": "OSM"
+    }
+  ],
+  "warnings": []
+}
+```
 
 ---
 
 ## 🗺️ Map Data
 
 Endpoints for map visualization layers.
-
-### City Insights
-`GET /api/map/cities`
-
-Get aggregated scores for major cities.
 
 ### Map Amenities
 `GET /api/map/amenities`
@@ -124,6 +132,30 @@ Get amenities within a bounding box.
 - `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates.
 - `types`: Comma-separated list of amenity types (e.g., "school,park").
 
+**Response (Example):**
+```json
+[
+  {
+    "id": "node/12345",
+    "type": "school",
+    "name": "De Basisschool",
+    "latitude": 52.370,
+    "longitude": 4.890,
+    "metadata": {
+      "operator": "Public"
+    }
+  },
+  {
+    "id": "node/67890",
+    "type": "park",
+    "name": "Vondelpark",
+    "latitude": 52.358,
+    "longitude": 4.868,
+    "metadata": null
+  }
+]
+```
+
 ### Map Overlays
 `GET /api/map/overlays`
 
@@ -131,35 +163,6 @@ Get heat map data (e.g., price per m2) for a bounding box.
 
 **Query Parameters:**
 - `metric`: The metric to visualize (e.g., `PricePerM2`).
-
----
-
-## 🤖 AI Features
-
-### Chat with Valora
-`POST /api/ai/chat`
-
-Chat with the AI assistant about real estate.
-
-**Request:**
-```json
-{
-  "prompt": "Is Amsterdam Safe?",
-  "model": "openai/gpt-4o"
-}
-```
-
-### Analyze Report
-`POST /api/ai/analyze-report`
-
-Generate a textual summary of a context report.
-
-**Request:**
-```json
-{
-  "report": { ...ContextReportDto... }
-}
-```
 
 ---
 

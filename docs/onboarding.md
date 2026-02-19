@@ -68,9 +68,18 @@ curl http://localhost:5001/api/health
     ```bash
     cp .env.example .env
     ```
-3.  **Critical:** Check `API_URL` in `.env`.
-    -   For Android Emulator: `http://10.0.2.2:5001/api`
-    -   For iOS Simulator: `http://localhost:5001/api`
+3.  **Critical: Local vs Production**
+    The default `.env` points to the PRODUCTION API. You must change it for local development.
+
+    **For Android Emulator:**
+    ```ini
+    API_URL=http://10.0.2.2:5001/api
+    ```
+
+    **For iOS Simulator / Desktop:**
+    ```ini
+    API_URL=http://localhost:5001/api
+    ```
 
 4.  Run the app:
     ```bash
@@ -88,6 +97,25 @@ curl http://localhost:5001/api/health
 ## 3. Understanding the Architecture
 
 To understand how your request was processed, read the **[Data Flow Deep Dive](onboarding-data-flow.md)**.
+
+### System Data Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as Flutter App
+    participant API as Valora API
+    participant Ext as External Services (PDOK/CBS)
+
+    User->>App: Enters "Damrak 1"
+    App->>API: POST /api/context/report
+    API->>Ext: Resolve Coordinates (PDOK)
+    API->>Ext: Fetch Stats (CBS, OSM)
+    Ext-->>API: Raw Data
+    API->>API: Calculate Scores
+    API-->>App: JSON Report
+    App-->>User: Displays Context Score
+```
 
 ### Product Mental Model
 - **Valora is not a scraper.** It does not copy listing photos or descriptions.

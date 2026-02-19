@@ -41,10 +41,15 @@ public sealed class PdokLocationResolver : ILocationResolver
     /// into a structured location entity with coordinates and administrative hierarchy codes.
     /// </para>
     /// <para>
+    /// <strong>Why the "free" endpoint?</strong>
+    /// We use <c>/free</c> instead of <c>/suggest</c> or <c>/lookup</c> because it handles "fuzzy" inputs best.
+    /// It can interpret "Damrak Amsterdam" just as well as "Damrak 1, 1012LG Amsterdam".
+    /// </para>
+    /// <para>
     /// Process:
     /// 1. Normalize input (extract address from URL if applicable).
     /// 2. Check local memory cache.
-    /// 3. Query PDOK "free" endpoint (fuzzy search) filtered by <c>type:adres</c>.
+    /// 3. Query PDOK "free" endpoint filtered by <c>type:adres</c>.
     /// 4. Parse response to extract WGS84 (GPS) and RD New (Rijksdriehoek) coordinates.
     /// </para>
     /// </remarks>
@@ -68,6 +73,7 @@ public sealed class PdokLocationResolver : ILocationResolver
 
         // Query the "free" endpoint which allows for flexible/fuzzy input
         // fq=type:adres restricts results to specific addresses, filtering out general place names
+        // This is crucial because "Amsterdam" (city) has different coordinates than "Amsterdam" (station) or specific streets.
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
@@ -138,11 +144,13 @@ public sealed class PdokLocationResolver : ILocationResolver
     /// Handles extraction of address parts from supported listing URLs.
     /// </summary>
     /// <remarks>
-    /// Logic:
-    /// 1. Checks if input is a valid absolute URI.
-    /// 2. If host matches known listing sites (e.g., funda.nl).
-    /// 3. Extracts the slug from the path (usually the last segment).
-    /// 4. Decodes and replaces hyphens with spaces to form a search query (e.g., "huis-address-city" -> "huis address city").
+    /// <para>
+    /// <strong>Funda URL Heuristic:</strong>
+    /// Funda URLs typically follow the pattern: <c>/koop/city/id-street-number/</c>.
+    /// We extract the last path segment (the "slug") and replace hyphens with spaces to create a search query.
+    /// Example: <c>.../huis-424242-straatnaam-1</c> -> <c>huis 424242 straatnaam 1</c>.
+    /// PDOK's fuzzy search is smart enough to ignore the "huis" and ID and match the street/number.
+    /// </para>
     /// </remarks>
     private static string NormalizeInput(string input)
     {

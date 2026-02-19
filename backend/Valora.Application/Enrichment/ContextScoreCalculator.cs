@@ -16,12 +16,14 @@ public static class ContextScoreCalculator
     /// Weights used for calculating the composite score.
     /// </summary>
     /// <remarks>
-    /// Based on user research:
+    /// <strong>Logic: User Research &amp; Priorities</strong>
+    /// The weighting strategy reflects the "hierarchy of needs" for a typical home buyer:
     /// <list type="bullet">
-    /// <item><strong>Amenities (25%):</strong> Primary driver for daily convenience.</item>
-    /// <item><strong>Safety (20%) &amp; Social (20%):</strong> Critical "hygiene factors".</item>
-    /// <item><strong>Environment/Demographics/Housing (10%):</strong> Contextual factors.</item>
-    /// <item><strong>Mobility (5%):</strong> User-specific preference.</item>
+    /// <item><strong>Amenities (25%):</strong> "Can I walk to a supermarket or school?" is the most frequent query.</item>
+    /// <item><strong>Safety (20%) &amp; Social (20%):</strong> Critical "hygiene factors". If these are low, the house is often rejected regardless of other factors.</item>
+    /// <item><strong>Environment (10%):</strong> Air quality and noise are growing concerns but often secondary to price/location.</item>
+    /// <item><strong>Demographics/Housing (10%):</strong> Contextual factors that define the "vibe".</item>
+    /// <item><strong>Mobility (5%):</strong> Highly user-specific (car vs bike vs train), so it carries lower universal weight.</item>
     /// </list>
     /// </remarks>
     private static readonly Dictionary<string, double> Weights = new()
@@ -76,6 +78,8 @@ public static class ContextScoreCalculator
             }
         }
 
+        // If totalWeight is 0 (shouldn't happen with default weights), avoid division by zero.
+        // We normalize by totalWeight to handle cases where some categories might be missing/skipped in the future.
         return totalWeight > 0 ? weightedSum / totalWeight : 0;
     }
 
@@ -88,9 +92,15 @@ public static class ContextScoreCalculator
         }
     }
 
+    /// <summary>
+    /// Computes the average of all metrics that have a non-null Score.
+    /// </summary>
+    /// <returns>The average score, or null if no metrics have a score.</returns>
     private static double? AverageScore(IReadOnlyList<ContextMetricDto> metrics)
     {
+        // Filter out metrics that failed to compute a score (e.g. missing data)
         var values = metrics.Where(m => m.Score.HasValue).Select(m => m.Score!.Value).ToList();
+
         if (values.Count == 0)
         {
             return null;

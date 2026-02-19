@@ -12,6 +12,14 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 Follow these steps to get the entire system running locally.
 
+### Setup Flow
+```mermaid
+graph LR
+    Step1[1. Docker] -->|Database| Step2[2. Backend]
+    Step2 -->|API| Step3[3. Flutter App]
+    Step2 -->|API| Step4[4. Admin Dashboard]
+```
+
 ### Prerequisites
 - **Docker Desktop** (for database)
 - **.NET 10.0 SDK** (for backend)
@@ -23,6 +31,7 @@ Run the database container.
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
+*Verify: Run `docker ps` and ensure `valora-db` is active.*
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
@@ -30,22 +39,31 @@ The backend aggregates data and serves the API.
 ```bash
 cd backend
 cp .env.example .env
-# default .env values work out-of-the-box for local dev
+```
+
+**Config Checklist (`backend/.env`):**
+- [x] `DATABASE_URL`: Ensure port matches Docker (default: `5432`).
+- [x] `JWT_SECRET`: Set a random string (min 32 chars).
+
+```bash
 dotnet run --project Valora.Api
 ```
-*Verify: Open `http://localhost:5001/api/health` in your browser.*
+*Verify: Open `http://localhost:5001/api/health` -> `{"status":"healthy"}`*
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
 
-> ⚠️ **CRITICAL**: The default `.env` points to the PRODUCTION API.
-> Change `API_URL` in `.env` to your local backend:
-> - Android Emulator: `http://10.0.2.2:5001/api`
-> - iOS Simulator / Desktop: `http://localhost:5001/api`
-
 ```bash
 cd ../apps/flutter_app
 cp .env.example .env
+```
+
+**Config Checklist (`apps/flutter_app/.env`):**
+> ⚠️ **CRITICAL**: The default `.env` points to PRODUCTION. Update `API_URL`:
+- [ ] **Android Emulator:** `http://10.0.2.2:5001/api`
+- [ ] **iOS Simulator / Desktop:** `http://localhost:5001/api`
+
+```bash
 flutter pub get
 flutter run
 ```
@@ -72,7 +90,7 @@ graph TD
     Admin((Admin)) -->|Manage Users| AdminApp[Admin Dashboard]
 
     subgraph "Valora Ecosystem"
-        App -->|API Request| API[Valora API (.NET)]
+        App -->|API Request| API[Valora API]
         AdminApp -->|API Request| API
 
         API -->|Orchestrates| Core[Application Layer]
@@ -89,27 +107,25 @@ graph TD
     end
 ```
 
-### Key Components
+### Layers & Responsibilities
 
 | Layer | Responsibility | Key Tech |
 |---|---|---|
-| **Valora.Domain** | Core business rules and entities. Zero dependencies. | C# |
+| **Valora.Domain** | Core business rules (e.g., scoring logic). Zero dependencies. | C# |
 | **Valora.Application** | Use cases (e.g., `GetContextReport`). Orchestrates data flow. | MediatR |
 | **Valora.Infrastructure** | External integrations (Database, APIs). | EF Core, HttpClient |
 | **Valora.Api** | Entry point. Configuration, Auth, and HTTP handling. | ASP.NET Core Minimal APIs |
 | **Flutter App** | Cross-platform mobile client. | Flutter, Provider |
 
----
+### Key Concepts
 
-## 💡 Key Concepts
-
-### 1. The "Fan-Out" Context Report
+#### 1. The "Fan-Out" Context Report
 When a user requests a report for an address, Valora does **not** look up a pre-existing record. It generates the report in real-time by querying multiple external sources in parallel.
 
 - **Why?** Data freshness and coverage. We don't need to scrape or store millions of records.
 - **How?** See `ContextReportService.cs`. It uses `Task.WhenAll` to fetch data from CBS, PDOK, and OSM simultaneously.
 
-### 2. Listing Lifecycle
+#### 2. Listing Lifecycle
 Properties (Listings) are only persisted when a user explicitly "saves" or "tracks" them.
 
 1.  **Discovery:** User searches for an address.
