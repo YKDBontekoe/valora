@@ -79,7 +79,13 @@ public class ExceptionHandlingMiddleware
                 detail = "The resource has been modified by another user.";
                 break;
             case DbUpdateException dbEx:
-                if (dbEx.InnerException is NpgsqlException innerNpgsqlEx && innerNpgsqlEx.IsTransient)
+                if (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+                {
+                    statusCode = (int)HttpStatusCode.Conflict;
+                    title = "Already Exists";
+                    detail = "A record with the same unique identifier already exists.";
+                }
+                else if (dbEx.InnerException is NpgsqlException innerNpgsqlEx && innerNpgsqlEx.IsTransient)
                 {
                     statusCode = (int)HttpStatusCode.ServiceUnavailable;
                     title = "Service Unavailable";

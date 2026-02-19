@@ -59,3 +59,8 @@ class StorageException extends AppException {
   StorageException([String? message])
     : super(message ?? 'Secure storage access failed', 'Storage Error: ');
 }
+
+class TransientHttpException extends AppException {
+  TransientHttpException([String? message])
+    : super(message ?? 'Service is temporarily unavailable', 'System Error: ');
+}
