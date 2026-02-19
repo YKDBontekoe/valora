@@ -72,8 +72,8 @@ public sealed class PdokLocationResolver : ILocationResolver
         }
 
         // Query the "free" endpoint which allows for flexible/fuzzy input
-        // fq=type:adres restricts results to specific addresses, filtering out general place names
-        // This is crucial because "Amsterdam" (city) has different coordinates than "Amsterdam" (station) or specific streets.
+        // fq=type:adres restricts results to specific addresses (house numbers), filtering out general place names like cities or streets.
+        // Example: It ensures we get "Damrak 1" (a building) rather than just "Damrak" (the street) or "Amsterdam" (the city).
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
