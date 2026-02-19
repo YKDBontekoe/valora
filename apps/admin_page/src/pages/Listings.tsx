@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import ListingRow from '../components/ListingRow';
+import Skeleton from '../components/Skeleton';
+import Button from '../components/Button';
 
 const tbodyVariants = {
   visible: {
@@ -22,20 +24,20 @@ const Listings = () => {
   } = useListings();
 
   return (
-    <div>
+    <div className="space-y-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-brand-900">Listing Management</h1>
-        <p className="text-brand-500 mt-1">Browse and monitor platform listings.</p>
+        <h1 className="text-4xl font-black text-brand-900 tracking-tight">Listing Management</h1>
+        <p className="text-brand-500 mt-2 font-medium">Browse and monitor property listings across the platform.</p>
       </div>
 
-      <div className="bg-white shadow-premium rounded-2xl overflow-hidden border border-brand-100 flex flex-col min-h-[600px]">
+      <div className="bg-white shadow-premium rounded-3xl overflow-hidden border border-brand-100 flex flex-col min-h-[600px]">
         <div className="overflow-x-auto flex-grow">
           <table className="min-w-full divide-y divide-brand-100">
-            <thead className="bg-brand-50">
+            <thead className="bg-brand-50/50">
               <tr>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Address</th>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">Price</th>
-                <th className="px-8 py-4 text-left text-xs font-bold text-brand-500 uppercase tracking-widest">City</th>
+                <th className="px-8 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.1em]">Property Address</th>
+                <th className="px-8 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.1em]">Listing Price</th>
+                <th className="px-8 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.1em]">Region / City</th>
               </tr>
             </thead>
             <motion.tbody
@@ -46,19 +48,18 @@ const Listings = () => {
             >
               <AnimatePresence mode="popLayout">
                 {loading ? (
-                  <motion.tr
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <td colSpan={3} className="px-8 py-12 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
-                        <span className="text-brand-500 font-medium">Loading listings...</span>
-                      </div>
-                    </td>
-                  </motion.tr>
+                   [...Array(8)].map((_, i) => (
+                    <tr key={`skeleton-${i}`}>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                            <Skeleton variant="rectangular" width={40} height={40} className="rounded-xl" />
+                            <Skeleton variant="text" width="50%" height={16} />
+                        </div>
+                      </td>
+                      <td className="px-8 py-6"><Skeleton variant="text" width="30%" height={16} /></td>
+                      <td className="px-8 py-6"><Skeleton variant="rectangular" width={100} height={28} className="rounded-lg" /></td>
+                    </tr>
+                  ))
                 ) : listings.length === 0 ? (
                   <motion.tr
                     key="empty"
@@ -66,8 +67,13 @@ const Listings = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <td colSpan={3} className="px-8 py-12 text-center text-brand-500 font-medium">
-                      No listings found.
+                    <td colSpan={3} className="px-8 py-20 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 bg-brand-50 rounded-full">
+                                <List className="h-8 w-8 text-brand-200" />
+                            </div>
+                            <span className="text-brand-500 font-bold">No listings found.</span>
+                        </div>
                     </td>
                   </motion.tr>
                 ) : (
@@ -81,27 +87,29 @@ const Listings = () => {
         </div>
 
         {/* Pagination Controls */}
-        <div className="bg-brand-50 px-8 py-6 border-t border-brand-100 flex items-center justify-between">
-            <span className="text-sm font-bold text-brand-400 uppercase tracking-widest">
-                Page <span className="text-brand-900">{page}</span> <span className="mx-1 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+        <div className="bg-brand-50/50 px-8 py-6 border-t border-brand-100 flex items-center justify-between">
+            <span className="text-[10px] font-black text-brand-400 uppercase tracking-[0.1em]">
+                Page <span className="text-brand-900">{page}</span> <span className="mx-2 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
             </span>
-            <div className="flex space-x-3">
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
+            <div className="flex gap-3">
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={prevPage}
                     disabled={page === 1 || loading}
-                    className="p-2.5 rounded-xl bg-white border border-brand-200 shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all text-brand-600 cursor-pointer"
+                    leftIcon={<ChevronLeft size={14} />}
                 >
-                    <ChevronLeft className="h-5 w-5" />
-                </motion.button>
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
+                    Previous
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={nextPage}
                     disabled={page === totalPages || loading}
-                    className="p-2.5 rounded-xl bg-white border border-brand-200 shadow-sm hover:bg-brand-50 hover:border-brand-300 disabled:opacity-40 disabled:hover:bg-white disabled:shadow-none transition-all text-brand-600 cursor-pointer"
+                    rightIcon={<ChevronRight size={14} />}
                 >
-                    <ChevronRight className="h-5 w-5" />
-                </motion.button>
+                    Next
+                </Button>
             </div>
         </div>
       </div>
