@@ -38,9 +38,6 @@ void main() {
 
   // Prevent GoogleFonts from throwing errors during testing by intercepting them
   setUpAll(() {
-    // This is a known workaround for testing widgets that use google_fonts
-    // when network is disabled or fonts are missing in assets.
-    // We basically swallow the exception to let the test pass.
     final originalOnError = FlutterError.onError;
     FlutterError.onError = (FlutterErrorDetails details) {
       if (details.exception.toString().contains('GoogleFonts') ||
@@ -56,6 +53,8 @@ void main() {
       await tester.pumpWidget(createWidget());
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
+      // Added settle to ensure no pending animations trigger errors later
+      await tester.pumpAndSettle();
 
       expect(find.text('Property Analytics'), findsAtLeastNWidgets(1));
       expect(find.text('Search Property'), findsOneWidget);
@@ -73,6 +72,7 @@ void main() {
       await tester.enterText(inputFinder, 'ab');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pump();
+      await tester.pumpAndSettle(); // Ensure SnackBars and animations settle
 
       // Verify no API call was made
       verifyNever(mockApiService.getContextReport(any, radiusMeters: anyNamed('radiusMeters')));
@@ -116,6 +116,7 @@ void main() {
       await tester.enterText(inputFinder, 'abc');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pump();
+      await tester.pumpAndSettle(); // Ensure API call and subsequent UI updates settle
 
       // Verify API call was made
       verify(mockApiService.getContextReport('abc', radiusMeters: anyNamed('radiusMeters'))).called(1);
