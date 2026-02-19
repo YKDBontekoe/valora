@@ -1,6 +1,4 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/widgets/common/valora_badge.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -47,7 +45,8 @@ void main() {
 
     expect(find.text('Test Badge'), findsOneWidget);
 
-    // Check for BackdropFilter
+    // Check for BackdropFilter - requires dart:ui but checking by type uses standard widgets
+    // BackdropFilter is in widgets library
     expect(find.byType(BackdropFilter), findsOneWidget);
 
     // Check for Animate widget effects

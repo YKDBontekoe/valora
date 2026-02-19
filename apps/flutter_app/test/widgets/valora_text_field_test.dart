@@ -45,7 +45,7 @@ void main() {
     expect(textField, findsOneWidget);
 
     // Initial state: not focused
-    final state = tester.state(find.byType(ValoraTextField));
+    // Removed unused variable 'state'
     // We can't access private state easily, but we can check if the label color changes or shadow appears
     // Just verifying it renders without error first
     expect(find.text('Test Input'), findsOneWidget);
