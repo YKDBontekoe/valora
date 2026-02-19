@@ -41,7 +41,7 @@ void main() {
   setUpAll(() {
     FlutterError.onError = (FlutterErrorDetails details) {
       if (details.exception.toString().contains('GoogleFonts') || details.exception.toString().contains('Failed to load font') || details.exception.toString().contains('NetworkImage') ||
-          details.exception.toString().contains('MissingPluginException')) {
+          details.exception.toString().contains('MissingPluginException') && (details.exception.toString().contains('font') || details.exception.toString().contains('google_fonts'))) {
         return;
       }
       originalOnError?.call(details);
