@@ -26,7 +26,10 @@ class SearchResultsList extends StatelessWidget {
           builder: (context, isInitialLoading, _) {
             if (isInitialLoading) {
               return const SliverFillRemaining(
-                child: ValoraLoadingIndicator(message: 'Searching...'),
+                hasScrollBody: false,
+                child: Center(
+                  child: ValoraLoadingIndicator(message: 'Searching...'),
+                ),
               );
             }
             return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -101,7 +104,6 @@ class SearchResultsList extends StatelessWidget {
         ),
         Selector<SearchListingsProvider, List<Listing>>(
           selector: (_, p) => p.listings,
-          shouldRebuild: (prev, next) => prev != next,
           builder: (context, listings, _) {
             if (listings.isEmpty) {
               return const SliverToBoxAdapter(child: SizedBox.shrink());
