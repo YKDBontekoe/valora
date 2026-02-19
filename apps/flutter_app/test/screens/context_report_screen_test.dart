@@ -19,7 +19,7 @@ void main() {
   setUp(() {
     mockApiService = MockApiService();
     mockPdokService = MockPdokService();
-    // Allow fetching so tests dont fail on missing assets. Network errors are suppressed below.
+    // Disable runtime fetching to avoid network calls during tests and suppress missing asset errors.
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
@@ -37,8 +37,8 @@ void main() {
   }
 
   // Prevent GoogleFonts from throwing errors during testing by intercepting them
+  final originalOnError = FlutterError.onError;
   setUpAll(() {
-    final originalOnError = FlutterError.onError;
     FlutterError.onError = (FlutterErrorDetails details) {
       if (details.exception.toString().contains('GoogleFonts') || details.exception.toString().contains('Failed to load font') || details.exception.toString().contains('NetworkImage') ||
           details.exception.toString().contains('MissingPluginException')) {
@@ -48,6 +48,11 @@ void main() {
     };
   });
 
+  tearDownAll(() {
+    FlutterError.onError = originalOnError;
+  });
+
+  // TODO(issue/#): re-enable once font loading is handled in tests
   testWidgets('ContextReportScreen renders search form components', (tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(createWidget());
@@ -61,6 +66,7 @@ void main() {
     });
   }, skip: true);
 
+  // TODO(issue/#): re-enable once font loading is handled in tests
   testWidgets('Input validation prevents search with less than 3 characters', (tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(createWidget());
@@ -82,6 +88,7 @@ void main() {
     });
   }, skip: true);
 
+  // TODO(issue/#): re-enable once font loading is handled in tests
   testWidgets('Input validation allows search with 3 or more characters', (tester) async {
     await tester.runAsync(() async {
       // Setup successful API response to avoid errors
