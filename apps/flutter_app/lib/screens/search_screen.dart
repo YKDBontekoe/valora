@@ -380,10 +380,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 },
               ),
-              Selector<SearchListingsProvider, bool>(
-                selector: (_, p) => p.isLoading,
-                builder: (context, isLoading, _) {
-                  if (isLoading) {
+              Selector<SearchListingsProvider, (bool, bool)>(
+                selector: (_, p) => (p.isLoading, p.listings.isEmpty),
+                builder: (context, state, _) {
+                  final isLoading = state.$1;
+                  final isEmpty = state.$2;
+
+                  if (isLoading && isEmpty) {
                     return const SliverFillRemaining(
                       child: ValoraLoadingIndicator(message: 'Searching...'),
                     );

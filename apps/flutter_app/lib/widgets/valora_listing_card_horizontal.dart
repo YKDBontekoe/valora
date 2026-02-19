@@ -31,7 +31,13 @@ class ValoraListingCardHorizontal extends StatefulWidget {
 
 class _ValoraListingCardHorizontalState
     extends State<ValoraListingCardHorizontal> {
-  bool _isHovered = false;
+  final ValueNotifier<bool> _isHovered = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _isHovered.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +48,8 @@ class _ValoraListingCardHorizontalState
     final hasValidImage = validImageUrl != null && validImageUrl.isNotEmpty;
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) => _isHovered.value = true,
+      onExit: (_) => _isHovered.value = false,
       child: ValoraCard(
         margin: const EdgeInsets.only(bottom: ValoraSpacing.md),
         onTap: widget.onTap,
@@ -58,10 +64,16 @@ class _ValoraListingCardHorizontalState
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
-                  child: AnimatedScale(
-                    scale: _isHovered ? 1.05 : 1.0,
-                    duration: ValoraAnimations.slow,
-                    curve: ValoraAnimations.deceleration,
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _isHovered,
+                    builder: (context, isHovered, child) {
+                      return AnimatedScale(
+                        scale: isHovered ? 1.05 : 1.0,
+                        duration: ValoraAnimations.slow,
+                        curve: ValoraAnimations.deceleration,
+                        child: child!,
+                      );
+                    },
                     child: Container(
                       width: ValoraSpacing.thumbnailSizeLg,
                       height: ValoraSpacing.thumbnailSizeLg,
