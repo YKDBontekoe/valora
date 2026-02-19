@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Valora.Domain.Models;
 
 public sealed record ResolvedLocationModel
 {
-    public string Query { get; init; } = null!;
-    public string DisplayAddress { get; init; } = null!;
+    public required string Query { get; init; }
+    public required string DisplayAddress { get; init; }
     public double Latitude { get; init; }
     public double Longitude { get; init; }
     public double? RdX { get; init; }
@@ -18,6 +20,7 @@ public sealed record ResolvedLocationModel
 
     public ResolvedLocationModel() { }
 
+    [SetsRequiredMembers]
     public ResolvedLocationModel(
         string query,
         string displayAddress,

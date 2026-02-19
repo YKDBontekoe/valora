@@ -45,7 +45,7 @@ public class DomainModelTests
         Assert.Equal("1234AB", location.PostalCode);
 
         // Default constructor
-        var defaultLocation = new ResolvedLocationModel();
+        var defaultLocation = new ResolvedLocationModel { Query = "test", DisplayAddress = "test" };
         Assert.NotNull(defaultLocation);
     }
 
@@ -69,7 +69,7 @@ public class DomainModelTests
     [Fact]
     public void ContextReportModel_Constructor_InitializesCorrectly()
     {
-        var location = new ResolvedLocationModel();
+        var location = new ResolvedLocationModel { Query = "test", DisplayAddress = "test" };
         var metric = new ContextMetricModel();
         var source = new SourceAttributionModel();
 
@@ -92,6 +92,11 @@ public class DomainModelTests
         Assert.Same(location, report.Location);
         Assert.Single(report.SocialMetrics);
         Assert.Empty(report.CrimeMetrics);
+        Assert.Empty(report.DemographicsMetrics);
+        Assert.Empty(report.HousingMetrics);
+        Assert.Empty(report.MobilityMetrics);
+        Assert.Empty(report.AmenityMetrics);
+        Assert.Empty(report.EnvironmentMetrics);
         Assert.Equal(85.0, report.CompositeScore);
         Assert.Single(report.CategoryScores);
         Assert.Single(report.Sources);
