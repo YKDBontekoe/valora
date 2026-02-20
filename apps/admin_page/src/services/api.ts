@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Stats, User, Listing, PaginatedResponse, BatchJob } from '../types';
+import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob } from '../types';
 import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -120,13 +120,6 @@ export const adminService = {
     const response = await api.post<BatchJob>("/admin/jobs", { type, target });
     return response.data;
   },
-};
-
-export const listingService = {
-  getListings: async (page = 1, pageSize = 10): Promise<PaginatedResponse<Listing>> => {
-    const response = await api.get<PaginatedResponse<Listing>>(`/listings?page=${page}&pageSize=${pageSize}`);
-    return response.data;
-  }
 };
 
 export default api;

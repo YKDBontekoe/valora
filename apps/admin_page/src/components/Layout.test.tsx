@@ -29,9 +29,11 @@ describe('Layout Component', () => {
     expect(screen.getByText('Valora Admin')).toBeInTheDocument();
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Users')).toBeInTheDocument();
-    expect(screen.getByText('Listings')).toBeInTheDocument();
     expect(screen.getByText('Batch Jobs')).toBeInTheDocument();
     expect(screen.getByText('Logout')).toBeInTheDocument();
+
+    // Ensure Listings link is NOT present
+    expect(screen.queryByText('Listings')).not.toBeInTheDocument();
   });
 
   it('handles logout correctly', () => {

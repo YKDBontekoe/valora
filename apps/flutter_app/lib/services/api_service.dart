@@ -10,9 +10,6 @@ import 'package:retry/retry.dart';
 import '../core/config/app_config.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
-import '../models/listing.dart';
-import '../models/listing_filter.dart';
-import '../models/listing_response.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
 import '../models/map_overlay.dart';
@@ -90,14 +87,6 @@ class ApiService {
     return response;
   }
 
-  Listing _parseListing(String body) {
-    return Listing.fromJson(json.decode(body));
-  }
-
-  ListingResponse _parseListings(String body) {
-    return ListingResponse.fromJson(json.decode(body));
-  }
-
   ContextReport _parseContextReport(String body) {
     return ContextReport.fromJson(json.decode(body));
   }
@@ -105,85 +94,6 @@ class ApiService {
   List<ValoraNotification> _parseNotifications(String body) {
     final List<dynamic> jsonList = json.decode(body);
     return jsonList.map((e) => ValoraNotification.fromJson(e)).toList();
-  }
-
-  Future<ListingResponse> getListings(
-    ListingFilter filter, {
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    Uri? uri;
-    try {
-      final queryParams = {
-        'page': page.toString(),
-        'pageSize': pageSize.toString(),
-        ...filter.toQueryParameters(),
-      };
-
-      uri = Uri.parse('$baseUrl/listings').replace(queryParameters: queryParams);
-
-      // Resilience Strategy:
-      // We automatically retry idempotent requests on network failures (SocketException)
-      // or server errors (5xx). This improves user experience in spotty network conditions.
-      final response = await _requestWithRetry(
-        () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri!, headers: headers).timeout(timeoutDuration),
-        ),
-      );
-
-      return await _handleResponse(
-        response,
-        (body) => _runner(_parseListings, body),
-      );
-    } catch (e, stack) {
-      throw _handleException(e, stack, uri);
-    }
-  }
-
-  Future<Listing> getListing(String id) async {
-    Uri? listingUri;
-    try {
-      final sanitizedId = _sanitizeListingId(id);
-      listingUri = Uri.parse('$baseUrl/listings/$sanitizedId');
-
-      final response = await _requestWithRetry(
-        () => _authenticatedRequest(
-          (headers) =>
-              _client.get(listingUri!, headers: headers).timeout(timeoutDuration),
-        ),
-      );
-
-      return await _handleResponse(
-        response,
-        (body) => _runner(_parseListing, body),
-      );
-    } catch (e, stack) {
-      throw _handleException(e, stack, listingUri);
-    }
-  }
-
-  Future<Listing?> getListingFromPdok(String id) async {
-    Uri? uri;
-    try {
-      uri = Uri.parse('$baseUrl/listings/lookup').replace(queryParameters: {'id': id});
-
-      final response = await _requestWithRetry(
-        () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri!, headers: headers).timeout(timeoutDuration),
-        ),
-      );
-
-      return await _handleResponse(
-        response,
-        (body) => _runner(_parseListing, body),
-      );
-    } on NotFoundException {
-      return null;
-    } catch (e, stack) {
-      throw _handleException(e, stack, uri);
-    }
   }
 
   Future<ContextReport> getContextReport(
@@ -473,14 +383,6 @@ class ApiService {
       // Ignore parsing errors
     }
     return null;
-  }
-
-  String _sanitizeListingId(String id) {
-    final String sanitized = id.trim();
-    if (sanitized.isEmpty || sanitized.contains(RegExp(r'[/?#]'))) {
-      throw ValidationException('Invalid listing identifier');
-    }
-    return sanitized;
   }
 
   Future<bool> healthCheck() async {

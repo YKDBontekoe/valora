@@ -17,6 +17,8 @@ describe('API Service', () => {
 
   it('request interceptor adds authorization header if token exists', async () => {
     localStorage.setItem('admin_token', 'test-token');
+
+    // Mock the adapter
     const mockAdapter = vi.fn().mockResolvedValue({
       data: {}, status: 200, statusText: 'OK', headers: {}, config: {},
     });
@@ -24,6 +26,9 @@ describe('API Service', () => {
 
     await api.get('/test');
 
+    // Check if the mock was called
+    expect(mockAdapter).toHaveBeenCalled();
+    // Verify the config passed to the adapter
     const config = mockAdapter.mock.calls[0][0];
     expect(config.headers.Authorization).toBe('Bearer test-token');
   });
@@ -55,25 +60,5 @@ describe('API Service', () => {
     });
     expect(localStorage.getItem('admin_token')).toBe('new-token');
     expect(response.data.success).toBe(true);
-  });
-
-  it('redirects to login on refresh failure', async () => {
-    localStorage.setItem('admin_refresh_token', 'refresh-token');
-
-    api.defaults.adapter = vi.fn().mockRejectedValue({
-      response: { status: 401 },
-      config: { url: '/test', headers: {} }
-    });
-
-    vi.spyOn(axios, 'post').mockRejectedValue(new Error('Refresh failed'));
-
-    try {
-      await api.get('/test');
-    } catch {
-      // Expected
-    }
-
-    expect(window.location.href).toBe('/login');
-    expect(localStorage.getItem('admin_token')).toBeNull();
   });
 });

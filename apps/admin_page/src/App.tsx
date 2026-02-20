@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
-import Listings from './pages/Listings';
 import BatchJobs from './pages/BatchJobs';
 import Layout from './components/Layout';
 
@@ -27,8 +26,13 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />
-          <Route path="listings" element={<Listings />} />
           <Route path="jobs" element={<BatchJobs />} />
+
+          {/* Legacy route fallback */}
+          <Route path="listings" element={<Navigate to="/" replace />} />
+
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Router>

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
-import '../home_components.dart';
+import 'home_header.dart';
 
 class HomeSliverAppBar extends StatelessWidget {
   final TextEditingController searchController;

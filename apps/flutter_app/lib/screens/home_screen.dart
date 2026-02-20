@@ -5,8 +5,6 @@ import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
 import '../widgets/home/home_bottom_nav_bar.dart';
 import 'context_report_screen.dart';
-import 'saved_listings_screen.dart';
-import 'search_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -54,10 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return IndexedStack(
       index: _currentNavIndex,
       children: const [
-        SearchScreen(),
-        InsightsScreen(),
         ContextReportScreen(),
-        SavedListingsScreen(),
+        InsightsScreen(),
         SettingsScreen(),
       ],
     );

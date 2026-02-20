@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'core/config/app_config.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
-import 'providers/favorites_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -81,9 +80,6 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-          ChangeNotifierProvider<FavoritesProvider>(
-            create: (_) => FavoritesProvider(),
-          ),
           Provider<AuthService>(create: (_) => AuthService()),
           ChangeNotifierProxyProvider<AuthService, AuthProvider>(
             create: (context) =>

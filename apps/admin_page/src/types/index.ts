@@ -6,7 +6,6 @@ export interface User {
 
 export interface Stats {
   totalUsers: number;
-  totalListings: number;
   totalNotifications: number;
 }
 
@@ -16,15 +15,6 @@ export interface AuthResponse {
   email: string;
   userId: string;
   roles: string[];
-}
-
-export interface Listing {
-  id: string;
-  fundaId: string;
-  address: string;
-  city: string;
-  price: number | null;
-  status: string | null;
 }
 
 export interface PaginatedResponse<T> {
