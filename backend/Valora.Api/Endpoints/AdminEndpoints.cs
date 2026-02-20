@@ -22,6 +22,11 @@ public static class AdminEndpoints
             [FromQuery] string? q = null,
             [FromQuery] string? sort = null) =>
         {
+            if (page < 1 || pageSize < 1 || pageSize > 100)
+            {
+                return Results.BadRequest(new { error = "Invalid pagination parameters." });
+            }
+
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var paginatedUsers = await adminService.GetUsersAsync(page, pageSize, q, sort, currentUserId);
 
@@ -81,13 +86,19 @@ public static class AdminEndpoints
 
             var job = await jobService.EnqueueJobAsync(jobType, request.Target, ct);
             return Results.Accepted($"/api/admin/jobs/{job.Id}", job);
-        });
+        })
+        .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<BatchJobRequest>>();
 
         group.MapGet("/jobs", async (
             IBatchJobService jobService,
             CancellationToken ct,
             [FromQuery] int limit = 10) =>
         {
+            if (limit < 1 || limit > 100)
+            {
+                return Results.BadRequest(new { error = "Limit must be between 1 and 100." });
+            }
+
             var jobs = await jobService.GetRecentJobsAsync(limit, ct);
             return Results.Ok(jobs);
         });
