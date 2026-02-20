@@ -1,3 +1,5 @@
+using Valora.Domain.Common;
+
 namespace Valora.Domain.Models;
 
 public sealed record ContextReportModel
@@ -52,7 +54,7 @@ public sealed record ContextReportModel
         {
             // Value is in k€ (e.g. 450), convert to absolute value
             var value = (int)(avgWozMetric.Value.Value * 1000);
-            var source = "CBS Neighborhood Average";
+            var source = DataSources.CbsStatLine;
             // CBS data is typically from the previous year
             var now = timeProvider.GetUtcNow();
             var referenceDate = new DateTime(now.Year - 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);

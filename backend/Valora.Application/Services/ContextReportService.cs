@@ -1,5 +1,7 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Valora.Application.Common.Constants;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
@@ -67,11 +69,9 @@ public sealed class ContextReportService : IContextReportService
         // Radius is clamped to prevent excessive load on Overpass/external APIs.
         // Queries > 5km can cause timeouts or massive memory usage in the Overpass client.
         // Minimum 200m ensures we have a meaningful neighborhood scope.
-        var normalizedRadius = Math.Clamp(request.RadiusMeters, 200, 5000);
+        var normalizedRadius = Math.Clamp(request.RadiusMeters, ReportConstants.MinRadiusMeters, ReportConstants.MaxRadiusMeters);
 
         // 1. Resolve Location First
-        // The location resolver has its own cache. We need the resolved coordinates/IDs
-        // to build a stable cache key for the expensive report generation.
         var location = await _locationResolver.ResolveAsync(request.Input, cancellationToken);
         if (location is null)
         {
@@ -79,13 +79,7 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 2. Check Report Cache using stable location key
-        // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
-        // Using 5 decimal places (F5) gives precision to ~1 meter.
-        // This ensures that variations like "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache
-        // if they resolve to the same coordinate, preventing duplicate expensive API calls.
-        var latKey = location.Latitude.ToString("F5");
-        var lonKey = location.Longitude.ToString("F5");
-        var cacheKey = $"context-report:v3:{latKey}_{lonKey}:{normalizedRadius}";
+        var cacheKey = GetCacheKey(location, normalizedRadius);
 
         if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
         {
@@ -93,15 +87,7 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 3. Fetch Data from Provider (Fan-Out)
-        // The IContextDataProvider implementation handles the parallel execution of
-        // CBS, PDOK, Overpass, and Luchtmeetnet clients.
         var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
-
-        var cbs = sourceData.NeighborhoodStats;
-        var crime = sourceData.CrimeStats;
-        var amenities = sourceData.AmenityStats;
-        var air = sourceData.AirQualitySnapshot;
-
         var warnings = new List<string>(sourceData.Warnings);
 
         if (normalizedRadius != request.RadiusMeters)
@@ -109,7 +95,33 @@ public sealed class ContextReportService : IContextReportService
             warnings.Add($"Radius clamped from {request.RadiusMeters}m to {normalizedRadius}m to respect system limits.");
         }
 
-        // 4. Build normalized metrics for each category (Fan-In)
+        // 4. Build normalized metrics and compute scores (Fan-In)
+        var report = BuildReport(location, sourceData, warnings);
+
+        // Cache the result for the configured duration (default: 24h)
+        _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
+        return report;
+    }
+
+    private static string GetCacheKey(ResolvedLocationDto location, int radius)
+    {
+        // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
+        // Using 5 decimal places (F5) gives precision to ~1 meter.
+        var latKey = location.Latitude.ToString("F5", CultureInfo.InvariantCulture);
+        var lonKey = location.Longitude.ToString("F5", CultureInfo.InvariantCulture);
+        return $"{ReportConstants.CacheKeyPrefix}:{latKey}_{lonKey}:{radius}";
+    }
+
+    private static ContextReportDto BuildReport(
+        ResolvedLocationDto location,
+        ContextSourceData sourceData,
+        List<string> warnings)
+    {
+        var cbs = sourceData.NeighborhoodStats;
+        var crime = sourceData.CrimeStats;
+        var amenities = sourceData.AmenityStats;
+        var air = sourceData.AirQualitySnapshot;
+
         // Raw data is converted to uniform ContextMetricDto objects.
         var socialMetrics = SocialMetricBuilder.Build(cbs, warnings);
         var crimeMetrics = CrimeMetricBuilder.Build(crime, warnings);
@@ -119,10 +131,7 @@ public sealed class ContextReportService : IContextReportService
         var amenityMetrics = AmenityMetricBuilder.Build(amenities, cbs, warnings); // Phase 2: CBS Proximity
         var environmentMetrics = EnvironmentMetricBuilder.Build(air, warnings);
 
-        // 5. Compute scores
-        // The ContextScoreCalculator applies weights to these metrics to produce category scores
-        // and a final weighted composite score.
-        // We map DTOs to Domain Models for the calculation to ensure the Domain does not depend on Application DTOs.
+        // Compute scores
         var metricsInput = new CategoryMetricsModel(
             MapToDomain(socialMetrics),
             MapToDomain(crimeMetrics),
@@ -135,23 +144,19 @@ public sealed class ContextReportService : IContextReportService
         var categoryScores = ContextScoreCalculator.ComputeCategoryScores(metricsInput);
         var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
 
-        var report = new ContextReportDto(
+        return new ContextReportDto(
             Location: location,
             SocialMetrics: socialMetrics,
             CrimeMetrics: crimeMetrics,
             DemographicsMetrics: demographicsMetrics,
-            HousingMetrics: housingMetrics, // Phase 2
-            MobilityMetrics: mobilityMetrics, // Phase 2
+            HousingMetrics: housingMetrics,
+            MobilityMetrics: mobilityMetrics,
             AmenityMetrics: amenityMetrics,
             EnvironmentMetrics: environmentMetrics,
             CompositeScore: Math.Round(compositeScore, 1),
             CategoryScores: categoryScores,
             Sources: sourceData.Sources,
             Warnings: warnings);
-
-        // Cache the result for the configured duration (default: 24h)
-        _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
-        return report;
     }
 
     private static IReadOnlyList<ContextMetricModel> MapToDomain(IEnumerable<ContextMetricDto> dtos)

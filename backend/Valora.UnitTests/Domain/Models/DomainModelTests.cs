@@ -1,3 +1,4 @@
+using Valora.Domain.Common;
 using Valora.Domain.Models;
 using Xunit;
 
@@ -120,7 +121,7 @@ public class DomainModelTests
         var (value, referenceDate, source) = report.EstimateWozValue(timeProvider);
 
         Assert.Equal(450000, value);
-        Assert.Equal("CBS Neighborhood Average", source);
+        Assert.Equal(DataSources.CbsStatLine, source);
         Assert.NotNull(referenceDate);
         Assert.Equal(timeProvider.GetUtcNow().Year - 1, referenceDate.Value.Year);
     }
