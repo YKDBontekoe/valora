@@ -5,6 +5,7 @@ import type { User } from '../types';
 export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,14 +28,18 @@ export const useUsers = () => {
 
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const data = await adminService.getUsers(page, 10, debouncedSearch, sortBy);
         if (!ignore) {
           setUsers(data.items);
           setTotalPages(Math.max(1, data.totalPages));
         }
-      } catch (error) {
-        if (!ignore) console.error('Failed to fetch users', error);
+      } catch (err: any) {
+        if (!ignore) {
+            console.error('Failed to fetch users', err);
+            setError('Failed to load users. Please try again.');
+        }
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -85,6 +90,7 @@ export const useUsers = () => {
   return {
     users,
     loading,
+    error,
     page,
     totalPages,
     currentUserId,

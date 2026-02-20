@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
-import { Play, Activity, Database, Sparkles, Info } from 'lucide-react';
+import { Play, Activity, Database, Sparkles, Info, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
@@ -9,6 +9,7 @@ import Skeleton from '../components/Skeleton';
 const BatchJobs = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [targetCity, setTargetCity] = useState('');
   const [isStarting, setIsStarting] = useState(false);
 
@@ -16,8 +17,9 @@ const BatchJobs = () => {
     try {
       const data = await adminService.getJobs();
       setJobs(data);
+      setError(null);
     } catch {
-      console.error('Failed to fetch jobs');
+      setError('Unable to load job history.');
     } finally {
       setLoading(false);
     }
@@ -144,6 +146,16 @@ const BatchJobs = () => {
                         <td className="px-8 py-6"><Skeleton variant="text" width="80%" /></td>
                     </tr>
                 ))
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-16 text-center">
+                    <div className="flex flex-col items-center gap-4 text-error-500">
+                        <AlertCircle size={32} className="opacity-50" />
+                        <span className="font-bold">{error}</span>
+                        <Button onClick={fetchJobs} variant="outline" size="sm" className="mt-2 border-error-200 text-error-700">Retry</Button>
+                    </div>
+                  </td>
+                </tr>
               ) : jobs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-16 text-center">

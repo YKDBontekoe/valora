@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob } from '../types';
 import { showToast } from './toast';
 
@@ -7,6 +8,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const api = axios.create({
   baseURL: API_URL,
 });
+
+interface RetryConfig extends AxiosRequestConfig {
+  _retryCount?: number;
+  _isAuthRetry?: boolean;
+}
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
@@ -29,7 +35,7 @@ const RETRY_DELAY = 1000;
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as RetryConfig;
     if (!originalRequest) return Promise.reject(error);
 
     // Auth Retry (401)
@@ -44,6 +50,7 @@ api.interceptors.response.use(
           const { token, refreshToken: newRefreshToken } = response.data;
           localStorage.setItem('admin_token', token);
           localStorage.setItem('admin_refresh_token', newRefreshToken);
+          originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         } catch {
@@ -61,7 +68,7 @@ api.interceptors.response.use(
     // Resilience Logic
     const isNetworkError = !error.response;
     const isServerError = error.response?.status >= 500 || error.response?.status === 429;
-    const isIdempotent = ['get', 'put', 'delete', 'head', 'options'].includes(originalRequest.method?.toLowerCase());
+    const isIdempotent = ['get', 'put', 'delete', 'head', 'options'].includes(originalRequest.method?.toLowerCase() || '');
 
     if ((isNetworkError || (isServerError && isIdempotent))) {
         originalRequest._retryCount = originalRequest._retryCount || 0;
