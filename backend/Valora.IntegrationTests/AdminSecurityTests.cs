@@ -14,13 +14,6 @@ public class AdminSecurityTests : BaseIntegrationTest
     {
     }
 
-    public override async Task DisposeAsync()
-    {
-        DbContext.Users.RemoveRange(DbContext.Users);
-        await DbContext.SaveChangesAsync();
-        await base.DisposeAsync();
-    }
-
     [Fact]
     public async Task CreateJob_WithInvalidType_ReturnsBadRequest()
     {
