@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { Stats } from '../types';
-import { Users, List, Bell, TrendingUp } from 'lucide-react';
+import { Users, Bell, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Skeleton from '../components/Skeleton';
 
@@ -40,7 +40,6 @@ const Dashboard = () => {
 
   const cards = [
     { title: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-info-600', bg: 'bg-info-50', gradient: 'from-info-50/50 to-white' },
-    { title: 'Total Listings', value: stats?.totalListings || 0, icon: List, color: 'text-success-600', bg: 'bg-success-50', gradient: 'from-success-50/50 to-white' },
     { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-primary-600', bg: 'bg-primary-50', gradient: 'from-primary-50/50 to-white' },
   ];
 
@@ -61,7 +60,7 @@ const Dashboard = () => {
         className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
       >
         {loading ? (
-          [1, 2, 3].map((i) => (
+          [1, 2].map((i) => (
             <div key={i} className="bg-white p-8 rounded-2xl border border-brand-100 shadow-premium">
               <div className="flex items-center">
                 <Skeleton variant="rectangular" width={64} height={64} className="rounded-2xl" />
