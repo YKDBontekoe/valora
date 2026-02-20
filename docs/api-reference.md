@@ -151,7 +151,7 @@ Get heat map data (e.g., price per m2) for a bounding box.
 
 **Query Parameters:**
 - `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
-- `metric`: The metric to visualize (e.g., `PricePerM2`, `CrimeIndex`).
+- `metric`: The metric to visualize. Allowed values: `PricePerSquareMeter`, `CrimeRate`, `PopulationDensity`, `AverageWoz`.
 
 ---
 

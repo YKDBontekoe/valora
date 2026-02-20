@@ -34,7 +34,7 @@ cp .env.example .env
 # default .env values work out-of-the-box for local dev
 dotnet run --project Valora.Api
 ```
-*Verify: Open `http://localhost:5001/api/health` in your browser. You should see `{"status":"healthy"}`.*
+*Verify: Open `http://localhost:5253/api/health` in your browser (or port `5001` if running via Docker). You should see `{"status":"healthy", "timestamp": "..."}`.*
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
@@ -91,7 +91,7 @@ graph TD
     Service -->|4. Return Report| API
     API -->|5. Response| User
 
-    API -.->|Async Cache| Redis[(Cache)]
+    API -.->|Async Cache| RAM[(In-Memory Cache)]
     API -.->|Persist (Optional)| DB[(PostgreSQL)]
 ```
 
