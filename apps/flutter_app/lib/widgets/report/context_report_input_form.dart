@@ -200,7 +200,7 @@ class ContextReportInputForm extends StatelessWidget {
             title: 'Analysis Failed',
             subtitle: provider.error,
             actionLabel: 'Try Again',
-            onAction: () => provider.generate(controller.text),
+            onAction: () => _handleSubmit(context, controller.text),
           ),
         ],
 

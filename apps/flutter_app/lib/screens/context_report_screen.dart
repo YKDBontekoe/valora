@@ -22,7 +22,6 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   late final PdokService _pdokService;
 
   @override
-  @override
   void initState() {
     super.initState();
     _pdokService = widget.pdokService ?? PdokService();
