@@ -52,6 +52,27 @@ public class OverpassResponseParserTests
         Assert.Equal(1, result.HealthcareCount);
         Assert.Equal(2, result.TransitStopCount);
         Assert.Equal(1, result.ChargingStationCount);
+        Assert.Equal(100, result.DiversityScore);
+    }
+
+    [Theory]
+    [InlineData("clinic")]
+    [InlineData("doctors")]
+    [InlineData("pharmacy")]
+    public void ParseAmenityStats_RecognizesAllHealthcareTypes(string amenityType)
+    {
+        // Arrange
+        var location = new ResolvedLocationDto("q", "addr", 52.0, 4.0, 0, 0, null, null, null, null, null, null, null);
+        var elements = new[]
+        {
+            CreateElement(1, 52.001, 4.001, new { amenity = amenityType })
+        };
+
+        // Act
+        var result = OverpassResponseParser.ParseAmenityStats(elements, location);
+
+        // Assert
+        Assert.Equal(1, result.HealthcareCount);
     }
 
     [Fact]
