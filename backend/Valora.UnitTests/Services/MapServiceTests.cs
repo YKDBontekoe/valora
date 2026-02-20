@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Moq;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
@@ -67,15 +68,27 @@ public class MapServiceTests
         // Arrange
         var listingData = new List<ListingPriceData>
         {
-            new ListingPriceData(500000, 100), // 5000/m2
-            new ListingPriceData(300000, 100)  // 3000/m2
+            new ListingPriceData(500000, 100, 52.0005, 5.0005), // 5000/m2
+            new ListingPriceData(300000, 100, 52.0005, 5.0005)  // 3000/m2
         };
 
         _repositoryMock.Setup(x => x.GetListingsPriceDataAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(listingData);
 
+        // Create a polygon covering the listings (52.0000-52.0010, 5.0000-5.0010)
+        var geoJson = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0000, 52.0000 },
+                new[] { 5.0010, 52.0000 },
+                new[] { 5.0010, 52.0010 },
+                new[] { 5.0000, 52.0010 },
+                new[] { 5.0000, 52.0000 }
+            }}
+        });
+
         var dummyOverlays = new List<MapOverlayDto> {
-            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", default)
+            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", geoJson)
         };
         _cbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(dummyOverlays);
