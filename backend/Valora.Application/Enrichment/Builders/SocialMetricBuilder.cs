@@ -4,6 +4,18 @@ namespace Valora.Application.Enrichment.Builders;
 
 public static class SocialMetricBuilder
 {
+    private const string CbsSource = "CBS StatLine 85618NED";
+
+    private const int DensityRural = 500;
+    private const int DensitySuburban = 1500;
+    private const int DensityOptimal = 3500;
+    private const int DensityDense = 7000;
+
+    private const double LowIncomePenaltyMultiplier = 8.0;
+
+    private const double WozBaseline = 150.0;
+    private const double WozDivider = 3.0;
+
     public static List<ContextMetricDto> Build(NeighborhoodStatsDto? cbs, List<string> warnings)
     {
         if (cbs is null)
@@ -18,10 +30,10 @@ public static class SocialMetricBuilder
 
         return
         [
-            new("residents", "Residents", cbs.Residents, "people", null, "CBS StatLine 85618NED"),
-            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, "CBS StatLine 85618NED"),
-            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, "CBS StatLine 85618NED"),
-            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, "CBS StatLine 85618NED")
+            new("residents", "Residents", cbs.Residents, "people", null, CbsSource),
+            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, CbsSource),
+            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, CbsSource),
+            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, CbsSource)
         ];
     }
 
@@ -35,11 +47,11 @@ public static class SocialMetricBuilder
 
         return density.Value switch
         {
-            <= 500 => 65,    // Rural / Isolated - good for tranquility but bad for access
-            <= 1500 => 85,   // Suburban spacious - balanced
-            <= 3500 => 100,  // Urban optimal - highly walkable
-            <= 7000 => 70,   // Urban dense - can be noisy
-            _ => 50          // Overcrowded
+            <= DensityRural => 65,     // Rural / Isolated - good for tranquility but bad for access
+            <= DensitySuburban => 85,  // Suburban spacious - balanced
+            <= DensityOptimal => 100,  // Urban optimal - highly walkable
+            <= DensityDense => 70,     // Urban dense - can be noisy
+            _ => 50                    // Overcrowded
         };
     }
 
@@ -56,7 +68,7 @@ public static class SocialMetricBuilder
         if (!lowIncomePercent.HasValue) return null;
         // Inverse linear relationship: 0% low income -> 100 score, 12.5% -> 0 score
         // The multiplier 8 is aggressive to highlight socio-economic challenges.
-        return Math.Clamp(100 - (lowIncomePercent.Value * 8), 0, 100);
+        return Math.Clamp(100 - (lowIncomePercent.Value * LowIncomePenaltyMultiplier), 0, 100);
     }
 
     /// <summary>
@@ -70,6 +82,6 @@ public static class SocialMetricBuilder
     {
         if (!wozKeur.HasValue) return null;
         // Example: 450k -> (450-150)/3 = 100 score. 150k -> 0 score.
-        return Math.Clamp((wozKeur.Value - 150) / 3, 0, 100);
+        return Math.Clamp((wozKeur.Value - WozBaseline) / WozDivider, 0, 100);
     }
 }
