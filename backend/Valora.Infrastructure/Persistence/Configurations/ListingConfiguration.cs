@@ -28,9 +28,14 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         // Geospatial Indexes
         builder.HasIndex(e => e.Latitude);
         builder.HasIndex(e => e.Longitude);
+        // Optimize bounding box queries
+        builder.HasIndex(e => new { e.Latitude, e.Longitude });
 
         // Composite indexes for common filters
         builder.HasIndex(e => new { e.City, e.Price });
+        // Optimize "newest first" within city, then price sort
+        builder.HasIndex(e => new { e.City, e.LastFundaFetchUtc, e.Price });
+
         builder.HasIndex(e => new { e.City, e.Bedrooms });
         builder.HasIndex(e => new { e.City, e.LivingAreaM2 });
         builder.HasIndex(e => new { e.City, e.ContextCompositeScore });

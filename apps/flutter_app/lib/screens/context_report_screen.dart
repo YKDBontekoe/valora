@@ -46,16 +46,20 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ContextReportProvider>(
       create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
-      child: Consumer<ContextReportProvider>(
-        builder: (context, provider, _) {
-          final report = provider.report;
-          final isLoading = provider.isLoading;
+      child: Selector<ContextReportProvider, (bool, bool)>(
+        selector: (_, p) => (p.report != null, p.isLoading),
+        builder: (context, state, child) {
+          final hasReport = state.$1;
+          final isLoading = state.$2;
+
+          // We need access to the provider for actions, but we don't want to listen to it here
+          final provider = context.read<ContextReportProvider>();
 
           return Scaffold(
             appBar: AppBar(
               title: const Text('Property Analytics'),
               actions: [
-                if (report != null)
+                if (hasReport)
                   IconButton(
                     tooltip: 'New Report',
                     onPressed: provider.clear,
@@ -68,17 +72,20 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                 duration: ValoraAnimations.normal,
                 child: isLoading
                     ? const ContextReportSkeleton(key: ValueKey('loading'))
-                    : report != null
-                        ? ListView.builder(
-                            key: const ValueKey('report-list'),
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            itemCount: ContextReportView.childCount(report),
-                            itemBuilder: (context, index) => Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: ContextReportView.buildChild(
-                                context,
-                                index,
-                                report,
+                    : hasReport
+                        ? Selector<ContextReportProvider, dynamic>(
+                            selector: (_, p) => p.report,
+                            builder: (context, report, _) => ListView.builder(
+                              key: const ValueKey('report-list'),
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                              itemCount: ContextReportView.childCount(report),
+                              itemBuilder: (context, index) => Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: ContextReportView.buildChild(
+                                  context,
+                                  index,
+                                  report,
+                                ),
                               ),
                             ),
                           )
@@ -268,44 +275,49 @@ class _InputForm extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Radius Selector
-        ValoraCard(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Selector<ContextReportProvider, int>(
+          selector: (_, p) => p.radiusMeters,
+          builder: (context, radiusMeters, _) {
+            return ValoraCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Search Radius',
-                    style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Search Radius',
+                        style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      ValoraBadge(
+                        label: '${radiusMeters}m',
+                        color: theme.colorScheme.primary,
+                        size: ValoraBadgeSize.small,
+                      ),
+                    ],
                   ),
-                  ValoraBadge(
-                    label: '${provider.radiusMeters}m',
-                    color: theme.colorScheme.primary,
-                    size: ValoraBadgeSize.small,
+                  const SizedBox(height: 12),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 6,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                      activeTrackColor: theme.colorScheme.primary,
+                      inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    ),
+                    child: Slider(
+                      min: 200,
+                      max: 5000,
+                      divisions: 24,
+                      value: radiusMeters.toDouble(),
+                      onChanged: (value) => provider.setRadiusMeters(value.round()),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 6,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
-                  activeTrackColor: theme.colorScheme.primary,
-                  inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                ),
-                child: Slider(
-                  min: 200,
-                  max: 5000,
-                  divisions: 24,
-                  value: provider.radiusMeters.toDouble(),
-                  onChanged: (value) => provider.setRadiusMeters(value.round()),
-                ),
-              ),
-            ],
-          ),
+            );
+          }
         ),
 
         const SizedBox(height: 32),
