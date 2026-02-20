@@ -39,29 +39,27 @@ public class NeighborhoodRepository : INeighborhoodRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task AddRangeAsync(IEnumerable<Neighborhood> neighborhoods, CancellationToken cancellationToken = default)
+    public void AddRange(IEnumerable<Neighborhood> neighborhoods)
     {
-        await _context.Neighborhoods.AddRangeAsync(neighborhoods, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        _context.Neighborhoods.AddRange(neighborhoods);
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Neighborhood> neighborhoods, CancellationToken cancellationToken = default)
+    public void UpdateRange(IEnumerable<Neighborhood> neighborhoods)
     {
-        // For tracked entities, just saving changes is enough.
-        // But we ensure the state is Modified for all provided entities if they are attached.
         var now = DateTime.UtcNow;
         foreach (var neighborhood in neighborhoods)
         {
             neighborhood.UpdatedAt = now;
-            // If the entity is not tracked (e.g. from memory), attach it.
-            // But usually UpdateRange is used with entities fetched from the same context.
-            // We'll rely on EF Core tracking if they are already tracked.
             if (_context.Entry(neighborhood).State == EntityState.Detached)
             {
                  _context.Neighborhoods.Attach(neighborhood);
                  _context.Entry(neighborhood).State = EntityState.Modified;
             }
         }
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

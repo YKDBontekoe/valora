@@ -10,6 +10,7 @@ public interface INeighborhoodRepository
     Task UpdateAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default);
 
     // Batch operations
-    Task AddRangeAsync(IEnumerable<Neighborhood> neighborhoods, CancellationToken cancellationToken = default);
-    Task UpdateRangeAsync(IEnumerable<Neighborhood> neighborhoods, CancellationToken cancellationToken = default);
+    void AddRange(IEnumerable<Neighborhood> neighborhoods);
+    void UpdateRange(IEnumerable<Neighborhood> neighborhoods);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

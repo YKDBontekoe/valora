@@ -157,7 +157,7 @@ public class BatchJobService : IBatchJobService
             {
                 if (toAdd.Count > 0)
                 {
-                    await _neighborhoodRepository.AddRangeAsync(toAdd, cancellationToken);
+                    _neighborhoodRepository.AddRange(toAdd);
                     // Add to dictionary so we don't try to add again if duplicates in list (unlikely)
                     foreach (var n in toAdd) existingDict[n.Code] = n;
                     // Create new list to avoid reference mutation issues with Moq in tests
@@ -166,10 +166,13 @@ public class BatchJobService : IBatchJobService
 
                 if (toUpdate.Count > 0)
                 {
-                    await _neighborhoodRepository.UpdateRangeAsync(toUpdate, cancellationToken);
+                    _neighborhoodRepository.UpdateRange(toUpdate);
                     // Create new list to avoid reference mutation issues with Moq in tests
                     toUpdate = new List<Neighborhood>();
                 }
+
+                // Persist all changes
+                await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
 
                 job.Progress = (int)((double)count / total * 100);
                 await _jobRepository.UpdateAsync(job, cancellationToken);

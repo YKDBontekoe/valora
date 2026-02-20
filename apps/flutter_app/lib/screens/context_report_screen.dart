@@ -30,7 +30,6 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   late final PdokService _pdokService;
 
   @override
-  @override
   void initState() {
     super.initState();
     _pdokService = widget.pdokService ?? PdokService();
@@ -75,19 +74,22 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                     : hasReport
                         ? Selector<ContextReportProvider, dynamic>(
                             selector: (_, p) => p.report,
-                            builder: (context, report, _) => ListView.builder(
-                              key: const ValueKey('report-list'),
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                              itemCount: ContextReportView.childCount(report),
-                              itemBuilder: (context, index) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: ContextReportView.buildChild(
-                                  context,
-                                  index,
-                                  report,
+                            builder: (context, report, _) {
+                              if (report == null) return const SizedBox.shrink();
+                              return ListView.builder(
+                                key: const ValueKey('report-list'),
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                itemCount: ContextReportView.childCount(report),
+                                itemBuilder: (context, index) => Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: ContextReportView.buildChild(
+                                    context,
+                                    index,
+                                    report,
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           )
                         : _InputForm(
                             controller: _inputController,
@@ -349,62 +351,71 @@ class _InputForm extends StatelessWidget {
         ],
 
         // Recent Searches - Cards
-        if (provider.history.isNotEmpty) ...[
-          const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recent Searches',
-                style: ValoraTypography.titleMedium,
-              ),
-              TextButton(
-                onPressed: () => _confirmClearHistory(context, provider),
-                child: Text('Clear All', style: ValoraTypography.labelMedium.copyWith(color: theme.colorScheme.primary)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: provider.history.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final item = provider.history[index];
-                return SizedBox(
-                  width: 200,
-                  child: ValoraCard(
-                    padding: const EdgeInsets.all(16),
-                    onTap: provider.isLoading ? null : () {
-                      controller.text = item.query;
-                      provider.generate(item.query);
-                    },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.history_rounded, size: 20, color: ValoraColors.neutral400),
-                        const Spacer(),
-                        Text(
-                          item.query,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: ValoraTypography.labelMedium.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatDate(item.timestamp),
-                          style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500),
-                        ),
-                      ],
+        Selector<ContextReportProvider, List<dynamic>>(
+          selector: (_, p) => p.history,
+          builder: (context, history, _) {
+            if (history.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Searches',
+                      style: ValoraTypography.titleMedium,
                     ),
+                    TextButton(
+                      onPressed: () => _confirmClearHistory(context, provider),
+                      child: Text('Clear All', style: ValoraTypography.labelMedium.copyWith(color: theme.colorScheme.primary)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 120,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: history.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final item = history[index];
+                      return SizedBox(
+                        width: 200,
+                        child: ValoraCard(
+                          padding: const EdgeInsets.all(16),
+                          onTap: provider.isLoading ? null : () {
+                            controller.text = item.query;
+                            provider.generate(item.query);
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.history_rounded, size: 20, color: ValoraColors.neutral400),
+                              const Spacer(),
+                              Text(
+                                item.query,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: ValoraTypography.labelMedium.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatDate(item.timestamp),
+                                style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ],
+            );
+          }
+        ),
       ],
     );
   }

@@ -103,7 +103,8 @@ public class BatchJobServiceTests
         _jobRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<BatchJob>(), It.IsAny<CancellationToken>()), Times.AtLeast(3));
 
         // Verify batch add was called (6 items total, batch size 10, so called once)
-        _neighborhoodRepositoryMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Neighborhood>>(l => l.Count() == 6), It.IsAny<CancellationToken>()), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.AddRange(It.Is<IEnumerable<Neighborhood>>(l => l.Count() == 6)), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -134,7 +135,8 @@ public class BatchJobServiceTests
         await service.ProcessNextJobAsync();
 
         Assert.Equal(BatchJobStatus.Completed, job.Status);
-        _neighborhoodRepositoryMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<Neighborhood>>(l => l.Any(n => n.PopulationDensity == null && n.AverageWozValue == null && n.CrimeRate == null)), It.IsAny<CancellationToken>()), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.AddRange(It.Is<IEnumerable<Neighborhood>>(l => l.Any(n => n.PopulationDensity == null && n.AverageWozValue == null && n.CrimeRate == null))), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
