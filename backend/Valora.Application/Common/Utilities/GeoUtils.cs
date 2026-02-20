@@ -91,7 +91,7 @@ public static class GeoUtils
 
         foreach (var point in ring.EnumerateArray())
         {
-            if (point.GetArrayLength() < 2) continue;
+            if (point.ValueKind != JsonValueKind.Array || point.GetArrayLength() < 2) continue;
             double pLon = point[0].GetDouble();
             double pLat = point[1].GetDouble();
 
@@ -107,7 +107,11 @@ public static class GeoUtils
     private static bool IsPointInLinearRing(double lat, double lon, JsonElement ring)
     {
         bool inside = false;
-        var points = ring.EnumerateArray().ToList();
+        // Filter out invalid points
+        var points = ring.EnumerateArray()
+            .Where(p => p.ValueKind == JsonValueKind.Array && p.GetArrayLength() >= 2)
+            .ToList();
+
         int count = points.Count;
 
         for (int i = 0, j = count - 1; i < count; j = i++)
