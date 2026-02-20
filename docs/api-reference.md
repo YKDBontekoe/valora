@@ -1,6 +1,6 @@
 # Valora API Reference
 
-The Valora API is a RESTful service built with ASP.NET Core Minimal APIs. It provides endpoints for authentication, context report generation, map data, and administrative functions.
+The Valora API is a RESTful service built with ASP.NET Core Minimal APIs. It provides endpoints for authentication, context report generation, map data, AI assistance, and administrative functions.
 
 ## 🚀 High-Level Structure
 
@@ -11,19 +11,10 @@ graph LR
     subgraph "API Endpoints"
         API --> Auth[/api/auth]
         API --> Context[/api/context]
-        API --> Listings[/api/listings]
         API --> Map[/api/map]
         API --> Admin[/api/admin]
         API --> AI[/api/ai]
-    end
-
-    subgraph "Services"
-        Auth --> Identity[Identity Service]
-        Context --> Report[Context Report Service]
-        Listings --> Repo[Listing Repository]
-        Map --> MapSvc[Map Service]
-        Admin --> AdminSvc[Admin Services]
-        AI --> AISvc[AI Service]
+        API --> Notify[/api/notifications]
     end
 ```
 
@@ -36,7 +27,7 @@ Authentication is handled via JWT (JSON Web Tokens).
 
 Create a new user account.
 
-**Request:**
+**Request Body:**
 ```json
 {
   "email": "user@example.com",
@@ -50,7 +41,7 @@ Create a new user account.
 
 Authenticate and receive access tokens.
 
-**Request:**
+**Request Body:**
 ```json
 {
   "email": "user@example.com",
@@ -72,23 +63,38 @@ Authenticate and receive access tokens.
 
 Obtain a new access token using a valid refresh token.
 
-**Request:**
+**Request Body:**
 ```json
 {
   "refreshToken": "8f9d2..."
 }
 ```
 
+### External Login
+`POST /api/auth/external-login`
+
+Login with an external provider (Google, Apple).
+
+**Request Body:**
+```json
+{
+  "provider": "Google",
+  "idToken": "eyJhbGciOiJIUz..."
+}
+```
+
 ---
 
-## 🌍 Context & Listings
+## 🌍 Context Reports
+
+The core feature of Valora.
 
 ### Generate Context Report
 `POST /api/context/report`
 
-Generate a comprehensive context report for a location.
+Generate a comprehensive context report for a location. This endpoint uses the "Fan-Out" pattern to query multiple sources in parallel.
 
-**Request:**
+**Request Body:**
 ```json
 {
   "input": "Damrak 1, Amsterdam",
@@ -97,12 +103,26 @@ Generate a comprehensive context report for a location.
 ```
 
 **Response:**
-Returns a `ContextReportDto` containing scores for Safety, Social, Amenities, and more.
-
-### Enrich Listing
-`POST /api/listings/{id}/enrich`
-
-Update an existing listing with context data.
+```json
+{
+  "location": {
+    "latitude": 52.375,
+    "longitude": 4.895,
+    "address": "Damrak 1, Amsterdam",
+    "neighborhoodCode": "BU03630101"
+  },
+  "socialMetrics": [...],
+  "crimeMetrics": [...],
+  "amenityMetrics": [...],
+  "compositeScore": 8.5,
+  "categoryScores": {
+    "social": 8.0,
+    "safety": 9.0,
+    "amenities": 8.5
+  },
+  "warnings": ["Luchtmeetnet API timed out - using historical average."]
+}
+```
 
 ---
 
@@ -113,7 +133,7 @@ Endpoints for map visualization layers.
 ### City Insights
 `GET /api/map/cities`
 
-Get aggregated scores for major cities.
+Get aggregated scores for major cities to display as markers or polygons.
 
 ### Map Amenities
 `GET /api/map/amenities`
@@ -121,7 +141,7 @@ Get aggregated scores for major cities.
 Get amenities within a bounding box.
 
 **Query Parameters:**
-- `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates.
+- `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
 - `types`: Comma-separated list of amenity types (e.g., "school,park").
 
 ### Map Overlays
@@ -130,7 +150,42 @@ Get amenities within a bounding box.
 Get heat map data (e.g., price per m2) for a bounding box.
 
 **Query Parameters:**
-- `metric`: The metric to visualize (e.g., `PricePerM2`).
+- `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
+- `metric`: The metric to visualize (e.g., `PricePerM2`, `CrimeIndex`).
+
+---
+
+## 🔔 Notifications
+
+Manage user notifications.
+
+### List Notifications
+`GET /api/notifications`
+
+**Query Parameters:**
+- `unreadOnly`: Filter by unread status (default: false).
+- `limit`: Max items (default: 50, max: 100).
+- `offset`: Pagination offset (default: 0).
+
+### Unread Count
+`GET /api/notifications/unread-count`
+
+Get the number of unread notifications.
+
+### Mark as Read
+`POST /api/notifications/{id}/read`
+
+Mark a specific notification as read.
+
+### Mark All as Read
+`POST /api/notifications/read-all`
+
+Mark all notifications for the user as read.
+
+### Delete Notification
+`DELETE /api/notifications/{id}`
+
+Permanently remove a notification.
 
 ---
 
@@ -141,7 +196,7 @@ Get heat map data (e.g., price per m2) for a bounding box.
 
 Chat with the AI assistant about real estate.
 
-**Request:**
+**Request Body:**
 ```json
 {
   "prompt": "Is Amsterdam Safe?",
@@ -154,7 +209,7 @@ Chat with the AI assistant about real estate.
 
 Generate a textual summary of a context report.
 
-**Request:**
+**Request Body:**
 ```json
 {
   "report": { ...ContextReportDto... }
@@ -180,3 +235,29 @@ Get a paginated list of users.
 `DELETE /api/admin/users/{id}`
 
 Delete a user account.
+
+### System Statistics
+`GET /api/admin/stats`
+
+Get system-wide statistics (user count, report count, cache hits).
+
+### Create Batch Job
+`POST /api/admin/jobs`
+
+Trigger a background job (e.g., cache warming, data ingestion).
+
+**Request Body:**
+```json
+{
+  "type": "DataIngestion",
+  "target": "Amsterdam"
+}
+```
+
+### List Batch Jobs
+`GET /api/admin/jobs`
+
+Get a list of recent background jobs.
+
+**Query Parameters:**
+- `limit`: Number of jobs to retrieve (default 10, max 100).
