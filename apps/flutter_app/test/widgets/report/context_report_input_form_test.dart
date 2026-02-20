@@ -8,7 +8,6 @@ import 'package:valora_app/widgets/valora_widgets.dart';
 import 'package:valora_app/models/search_history_item.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:latlong2/latlong.dart';
 
 import 'context_report_input_form_test.mocks.dart';
 

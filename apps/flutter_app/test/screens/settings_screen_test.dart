@@ -8,7 +8,6 @@ import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/settings_screen.dart';
 import 'package:valora_app/services/notification_service.dart';
-import 'package:valora_app/widgets/valora_widgets.dart';
 
 @GenerateMocks([AuthProvider, ThemeProvider, NotificationService])
 @GenerateNiceMocks([
