@@ -1,11 +1,10 @@
 using Valora.Application.DTOs;
+using Valora.Domain.Common;
 
 namespace Valora.Application.Enrichment.Builders;
 
 public static class SocialMetricBuilder
 {
-    private const string CbsSource = "CBS StatLine 85618NED";
-
     private const int DensityRural = 500;
     private const int DensitySuburban = 1500;
     private const int DensityOptimal = 3500;
@@ -30,10 +29,10 @@ public static class SocialMetricBuilder
 
         return
         [
-            new("residents", "Residents", cbs.Residents, "people", null, CbsSource),
-            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, CbsSource),
-            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, CbsSource),
-            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, CbsSource)
+            new("residents", "Residents", cbs.Residents, "people", null, DataSources.CbsStatLine),
+            new("population_density", "Population Density", cbs.PopulationDensity, "people/km²", densityScore, DataSources.CbsStatLine),
+            new("low_income_households", "Low Income Households", cbs.LowIncomeHouseholdsPercent, "%", lowIncomeScore, DataSources.CbsStatLine),
+            new("average_woz", "Average WOZ Value", cbs.AverageWozValueKeur, "k€", wozScore, DataSources.CbsStatLine)
         ];
     }
 

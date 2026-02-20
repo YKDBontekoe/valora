@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Valora.Application.Common.Constants;
@@ -106,8 +107,8 @@ public sealed class ContextReportService : IContextReportService
     {
         // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
         // Using 5 decimal places (F5) gives precision to ~1 meter.
-        var latKey = location.Latitude.ToString("F5");
-        var lonKey = location.Longitude.ToString("F5");
+        var latKey = location.Latitude.ToString("F5", CultureInfo.InvariantCulture);
+        var lonKey = location.Longitude.ToString("F5", CultureInfo.InvariantCulture);
         return $"{ReportConstants.CacheKeyPrefix}:{latKey}_{lonKey}:{radius}";
     }
 

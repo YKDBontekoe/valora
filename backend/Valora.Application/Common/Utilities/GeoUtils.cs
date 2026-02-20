@@ -8,6 +8,12 @@ public static class GeoUtils
 
     public static void ValidateBoundingBox(double minLat, double minLon, double maxLat, double maxLon)
     {
+        if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon) ||
+            double.IsInfinity(minLat) || double.IsInfinity(minLon) || double.IsInfinity(maxLat) || double.IsInfinity(maxLon))
+        {
+            throw new ValidationException("Coordinates must be valid finite numbers.");
+        }
+
         if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90)
         {
             throw new ValidationException("Latitudes must be between -90 and 90.");
