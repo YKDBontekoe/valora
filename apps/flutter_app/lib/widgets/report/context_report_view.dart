@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_typography.dart';
 import '../../models/context_report.dart';
 import '../../providers/context_report_provider.dart';
+import '../../providers/saved_properties_provider.dart';
 import '../valora_glass_container.dart';
-import '../../core/theme/valora_typography.dart';
-import '../../core/theme/valora_colors.dart';
 import 'ai_insight_card.dart';
 import 'category_radar.dart';
 import 'metric_category_card.dart';
@@ -14,11 +15,7 @@ import 'score_gauge.dart';
 import 'smart_insights_grid.dart';
 
 class ContextReportView extends StatelessWidget {
-  const ContextReportView({
-    super.key,
-    required this.report,
-    this.showHeader = true,
-  });
+  const ContextReportView({super.key, required this.report, this.showHeader = true});
 
   final ContextReport report;
   final bool showHeader;
@@ -26,9 +23,9 @@ class ContextReportView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = childCount(report, showHeader: showHeader);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Bottom padding for nav bar
       children: List.generate(
         count,
         (index) => buildChild(
@@ -44,7 +41,7 @@ class ContextReportView extends StatelessWidget {
   static int childCount(ContextReport report, {bool showHeader = true}) {
     int count = 0;
     if (showHeader) {
-      count++; // Header (Location)
+      count++; // Header (Location + Save)
       count++; // Spacing
     }
     count++; // Score Overview (Gauge + Radar)
@@ -87,38 +84,66 @@ class ContextReportView extends StatelessWidget {
           report.location.municipalityName,
         ].where((s) => s != null && s.isNotEmpty).toList();
 
-        return ValoraGlassContainer(
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.location_on_rounded, color: theme.colorScheme.primary),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      report.location.displayAddress,
-                      style: ValoraTypography.titleLarge,
+        return Consumer<SavedPropertiesProvider>(
+          builder: (context, savedProvider, _) {
+            final isSaved = savedProvider.isSaved(report.location.displayAddress);
+            final isLoading = savedProvider.isLoading;
+
+            return ValoraGlassContainer(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                    if (subtitleParts.isNotEmpty)
-                      Text(
-                        subtitleParts.join(', '),
-                        style: ValoraTypography.bodyMedium.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                  ],
-                ),
+                    child: Icon(Icons.location_on_rounded, color: theme.colorScheme.primary),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          report.location.displayAddress,
+                          style: ValoraTypography.titleLarge,
+                        ),
+                        if (subtitleParts.isNotEmpty)
+                          Text(
+                            subtitleParts.join(', '),
+                            style: ValoraTypography.bodyMedium.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: isLoading ? null : () async {
+                      if (isSaved) {
+                        final id = savedProvider.getSavedId(report.location.displayAddress);
+                        if (id != null) {
+                          await savedProvider.deleteProperty(id);
+                        }
+                      } else {
+                        await savedProvider.saveProperty(
+                          report.location.displayAddress,
+                          report.location.latitude,
+                          report.location.longitude,
+                          report.compositeScore.toStringAsFixed(0),
+                        );
+                      }
+                    },
+                    icon: Icon(
+                      isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: isSaved ? Colors.red : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ).animate().fadeIn().slideY(begin: -0.1);
+            ).animate().fadeIn().slideY(begin: -0.1);
+          },
+        );
       }
       if (index == currentIndex++) return const SizedBox(height: 24);
     }

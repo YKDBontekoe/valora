@@ -1,163 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-import '../services/api_service.dart';
-import '../services/pdok_service.dart';
-import '../providers/context_report_provider.dart';
-import '../widgets/report/context_report_view.dart';
-import '../widgets/report/context_report_skeleton.dart';
-import '../widgets/report/location_picker.dart';
-import '../widgets/valora_widgets.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_animations.dart';
-import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_typography.dart';
+import '../models/search_history_item.dart';
+import '../providers/context_report_provider.dart';
+import '../services/pdok_service.dart';
+import '../services/api_service.dart';
+import '../widgets/common/valora_badge.dart';
+import '../widgets/common/valora_button.dart';
+import '../widgets/common/valora_card.dart';
+import '../widgets/common/valora_dialog.dart';
+import '../widgets/common/valora_empty_state.dart';
+import '../widgets/common/valora_loading_indicator.dart';
+import '../widgets/common/valora_text_field.dart';
+import '../widgets/report/context_report_view.dart';
+import '../widgets/report/location_picker.dart';
 
 class ContextReportScreen extends StatefulWidget {
-  const ContextReportScreen({super.key, this.pdokService});
-  final PdokService? pdokService;
+  const ContextReportScreen({super.key});
 
   @override
   State<ContextReportScreen> createState() => _ContextReportScreenState();
 }
 
 class _ContextReportScreenState extends State<ContextReportScreen> {
-  final TextEditingController _inputController = TextEditingController();
-  late final PdokService _pdokService;
-
-  @override
-  @override
-  void initState() {
-    super.initState();
-    _pdokService = widget.pdokService ?? PdokService();
-  }
+  final TextEditingController controller = TextEditingController();
+  final PdokService pdokService = PdokService(); // Or inject via provider if preferred
 
   @override
   void dispose() {
-    _inputController.dispose();
+    controller.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ContextReportProvider>(
-      create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
-      child: Consumer<ContextReportProvider>(
-        builder: (context, provider, _) {
-          final report = provider.report;
-          final isLoading = provider.isLoading;
-
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Property Analytics'),
-              actions: [
-                if (report != null)
-                  IconButton(
-                    tooltip: 'New Report',
-                    onPressed: provider.clear,
-                    icon: const Icon(Icons.refresh_rounded),
-                  ),
-              ],
-            ),
-            body: SafeArea(
-              child: AnimatedSwitcher(
-                duration: ValoraAnimations.normal,
-                child: isLoading
-                    ? const ContextReportSkeleton(key: ValueKey('loading'))
-                    : report != null
-                        ? ListView.builder(
-                            key: const ValueKey('report-list'),
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            itemCount: ContextReportView.childCount(report),
-                            itemBuilder: (context, index) => Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: ContextReportView.buildChild(
-                                context,
-                                index,
-                                report,
-                              ),
-                            ),
-                          )
-                        : _InputForm(
-                            controller: _inputController,
-                            provider: provider,
-                            pdokService: _pdokService,
-                          ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _HeroSection extends StatelessWidget {
-  const _HeroSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return ValoraCard(
-      padding: const EdgeInsets.all(28),
-      gradient: ValoraColors.heroGradient,
-      elevation: ValoraSpacing.elevationLg,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: const Icon(
-              Icons.analytics_rounded,
-              size: 32,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Property Analytics',
-            style: ValoraTypography.headlineMedium.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Get deep neighborhood insights and environmental data for any Dutch address.',
-            style: ValoraTypography.bodyLarge.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1);
-  }
-}
-
-class _InputForm extends StatelessWidget {
-  const _InputForm({
-    required this.controller,
-    required this.provider,
-    required this.pdokService,
-  });
-
-  final TextEditingController controller;
-  final ContextReportProvider provider;
-  final PdokService pdokService;
-
-  Future<void> _pickLocation(BuildContext context) async {
+  Future<void> _pickLocation(BuildContext context, ContextReportProvider provider) async {
     final LatLng? result = await Navigator.push<LatLng>(
       context,
       MaterialPageRoute(builder: (context) => const LocationPicker()),
@@ -169,17 +52,27 @@ class _InputForm extends StatelessWidget {
         const SnackBar(content: Text('Resolving address...'), duration: Duration(seconds: 1)),
       );
 
-      final String? address = await pdokService.reverseLookup(result.latitude, result.longitude);
+      try {
+        final String? address = await pdokService.reverseLookup(result.latitude, result.longitude);
 
-      if (!context.mounted) return;
+        if (!context.mounted) return;
 
-      if (address != null) {
-        controller.text = address;
-        provider.generate(address);
-      } else {
+        if (address != null) {
+          controller.text = address;
+          provider.generate(address);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not resolve an address for this location. Please try searching by text.'),
+              backgroundColor: ValoraColors.error,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not resolve an address for this location. Please try searching by text.'),
+          SnackBar(
+            content: Text('Error resolving location: ${e.toString()}'),
             backgroundColor: ValoraColors.error,
           ),
         );
@@ -187,9 +80,11 @@ class _InputForm extends StatelessWidget {
     }
   }
 
-  void _handleSubmit(BuildContext context, String value) {
+  void _handleSubmit(BuildContext context, ContextReportProvider provider, String value) {
     final trimmedValue = value.trim();
     if (trimmedValue.length >= 3) {
+      // Close keyboard
+      FocusScope.of(context).unfocus();
       provider.generate(trimmedValue);
     } else if (trimmedValue.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -203,6 +98,40 @@ class _InputForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // We access the global provider now
+    return Consumer<ContextReportProvider>(
+      builder: (context, provider, _) {
+        final report = provider.report;
+        final isLoading = provider.isLoading;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Property Analytics'),
+            actions: [
+              if (report != null)
+                IconButton(
+                  tooltip: 'New Report',
+                  onPressed: () {
+                    controller.clear();
+                    provider.clear();
+                  },
+                  icon: const Icon(Icons.search_rounded), // Changed icon to search to imply "Start Over"
+                ),
+            ],
+          ),
+          body: SafeArea(
+            child: isLoading
+                ? const Center(child: ValoraLoadingIndicator(message: 'Analyzing neighborhood context...'))
+                : report != null
+                    ? ContextReportView(report: report)
+                    : _buildInputForm(context, provider),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInputForm(BuildContext context, ContextReportProvider provider) {
     final theme = Theme.of(context);
 
     return ListView(
@@ -240,12 +169,12 @@ class _InputForm extends StatelessWidget {
                   IconButton(
                     tooltip: 'Pick on Map',
                     icon: const Icon(Icons.map_outlined),
-                    onPressed: provider.isLoading ? null : () => _pickLocation(context),
+                    onPressed: provider.isLoading ? null : () => _pickLocation(context, provider),
                   ),
                 ],
               ),
               textInputAction: TextInputAction.search,
-              onSubmitted: (val) => _handleSubmit(context, val),
+              onSubmitted: (val) => _handleSubmit(context, provider, val),
             );
           },
           suggestionsCallback: (pattern) async {
@@ -261,7 +190,7 @@ class _InputForm extends StatelessWidget {
           },
           onSelected: (suggestion) {
             controller.text = suggestion.displayName;
-            provider.generate(suggestion.displayName);
+            _handleSubmit(context, provider, suggestion.displayName);
           },
         ),
 
@@ -318,7 +247,7 @@ class _InputForm extends StatelessWidget {
             isLoading: provider.isLoading,
             onPressed: provider.isLoading || controller.text.isEmpty
                 ? null
-                : () => _handleSubmit(context, controller.text),
+                : () => _handleSubmit(context, provider, controller.text),
             variant: ValoraButtonVariant.primary,
             isFullWidth: true,
             size: ValoraButtonSize.large,
@@ -367,7 +296,8 @@ class _InputForm extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     onTap: provider.isLoading ? null : () {
                       controller.text = item.query;
-                      provider.generate(item.query);
+                      // Update UI to show selected text
+                      _handleSubmit(context, provider, item.query);
                     },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,5 +367,56 @@ class _InputForm extends StatelessWidget {
     if (midnightDate == yesterday) return 'Yesterday';
 
     return DateFormat('dd/MM/yyyy').format(date);
+  }
+}
+
+class _HeroSection extends StatelessWidget {
+  const _HeroSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValoraCard(
+      padding: const EdgeInsets.all(28),
+      gradient: ValoraColors.heroGradient,
+      elevation: ValoraSpacing.elevationLg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.analytics_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Property Intelligence',
+            style: ValoraTypography.displaySmall.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Get comprehensive data-driven insights about any neighborhood in the Netherlands.',
+            style: ValoraTypography.bodyLarge.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: 0.2, end: 0);
   }
 }

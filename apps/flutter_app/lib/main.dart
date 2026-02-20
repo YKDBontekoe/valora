@@ -8,6 +8,8 @@ import 'core/config/app_config.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/saved_properties_provider.dart';
+import 'providers/context_report_provider.dart';
 import 'screens/startup_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/api_service.dart';
@@ -102,6 +104,16 @@ Future<void> main() async {
             create: (context) => InsightsProvider(context.read<ApiService>()),
             update: (context, apiService, previous) =>
                 (previous ?? InsightsProvider(apiService))..update(apiService),
+          ),
+          ChangeNotifierProxyProvider<ApiService, SavedPropertiesProvider>(
+            create: (context) => SavedPropertiesProvider(context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? SavedPropertiesProvider(apiService))..update(apiService),
+          ),
+          ChangeNotifierProxyProvider<ApiService, ContextReportProvider>(
+            create: (context) => ContextReportProvider(apiService: context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? ContextReportProvider(apiService: apiService))..update(apiService),
           ),
         ],
         child: const ValoraApp(),
