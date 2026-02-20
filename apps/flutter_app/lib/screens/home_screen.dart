@@ -27,6 +27,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    // We don't have direct access to context in dispose to stop polling,
+    // but NotificationService handles its own timer disposal.
+    // However, if we wanted to be strict, we'd need a reference.
+    // Since NotificationService is provided above MaterialApp, it persists.
+    // But HomeScreen is the main authenticated screen.
+    // Ideally we should stop polling when HomeScreen is disposed (e.g. logout).
     super.dispose();
   }
 
