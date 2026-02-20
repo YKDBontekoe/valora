@@ -6,7 +6,6 @@ describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    // @ts-expect-error - Mocking read-only property
     delete api.defaults.adapter;
     vi.stubGlobal('location', { href: '' });
   });
