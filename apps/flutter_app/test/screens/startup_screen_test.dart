@@ -87,10 +87,10 @@ void main() {
       ),
     );
 
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('Find your dream home'), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
     expect(find.text('Welcome Back'), findsOneWidget);
   });

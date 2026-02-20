@@ -4,6 +4,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
 import '../../providers/insights_provider.dart';
 import '../../widgets/valora_widgets.dart';
 import '../../widgets/insights/insights_header.dart';
@@ -151,18 +153,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   Widget _buildMapError(String error) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: ValoraColors.neutral800.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Text(
-          error,
-          style: const TextStyle(color: Colors.white, fontSize: 12.5),
-          textAlign: TextAlign.center,
-        ),
+    return ValoraCard(
+      backgroundColor: ValoraColors.neutral800.withValues(alpha: 0.9),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      borderRadius: ValoraSpacing.radiusMd,
+      elevation: ValoraSpacing.elevationMd,
+      child: Text(
+        error,
+        style: ValoraTypography.bodySmall.copyWith(color: Colors.white),
+        textAlign: TextAlign.center,
       ),
     );
   }

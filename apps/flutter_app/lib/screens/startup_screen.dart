@@ -1,7 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../core/theme/valora_colors.dart';
+import '../core/theme/valora_shadows.dart';
+import '../core/theme/valora_typography.dart';
 import '../providers/auth_provider.dart';
 import 'auth_wrapper.dart';
 
@@ -12,92 +16,38 @@ class StartupScreen extends StatefulWidget {
   State<StartupScreen> createState() => _StartupScreenState();
 }
 
-class _StartupScreenState extends State<StartupScreen>
-    with SingleTickerProviderStateMixin {
-  static const Duration _animatedSplashDuration = Duration(milliseconds: 900);
-  static const Duration _minimumStartupDuration = Duration(milliseconds: 500);
+class _StartupScreenState extends State<StartupScreen> {
+  static const Duration _splashDuration = Duration(milliseconds: 1200);
 
-  late AnimationController _controller;
-  late Animation<double> _iconScaleAnimation;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _textSlideAnimation;
-  late Future<void> _authCheckFuture;
-  late bool _disableAnimations;
   final Completer<void> _authCheckCompleter = Completer<void>();
 
   @override
   void initState() {
     super.initState();
-
-    _disableAnimations = WidgetsBinding
-        .instance
-        .platformDispatcher
-        .accessibilityFeatures
-        .disableAnimations;
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: _disableAnimations ? Duration.zero : _animatedSplashDuration,
-    );
-
-    // Icon pops in with an elastic effect
-    _iconScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-      ),
-    );
-
-    // Text and Icon fade in together
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.2, 0.6, curve: Curves.easeIn),
-      ),
-    );
-
-    // Text slides up gently
-    _textSlideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-          ),
-        );
-
-    _authCheckFuture = _authCheckCompleter.future;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        await context.read<AuthProvider>().checkAuth();
-      } finally {
-        if (!_authCheckCompleter.isCompleted) {
-          _authCheckCompleter.complete();
-        }
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuth();
+      _startStartupSequence();
     });
-
-    _startAnimation();
   }
 
-  Future<void> _startAnimation() async {
+  Future<void> _checkAuth() async {
     try {
-      final List<Future<void>> startupFutures = <Future<void>>[
-        _authCheckFuture,
-        Future<void>.delayed(_minimumStartupDuration),
-      ];
-
-      if (_disableAnimations) {
-        _controller.value = 1;
-      } else {
-        startupFutures.add(_controller.forward().orCancel);
+      await context.read<AuthProvider>().checkAuth();
+    } finally {
+      if (!_authCheckCompleter.isCompleted) {
+        _authCheckCompleter.complete();
       }
-
-      await Future.wait<void>(startupFutures);
-      if (!mounted) return;
-      _navigateToHome();
-    } on TickerCanceled {
-      // Animation canceled because the widget was disposed.
     }
+  }
+
+  Future<void> _startStartupSequence() async {
+    await Future.wait([
+      _authCheckCompleter.future,
+      Future<void>.delayed(_splashDuration),
+    ]);
+
+    if (!mounted) return;
+    _navigateToHome();
   }
 
   void _navigateToHome() {
@@ -114,73 +64,62 @@ class _StartupScreenState extends State<StartupScreen>
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Animated Icon Container
-            ScaleTransition(
-              scale: _iconScaleAnimation,
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.home_work_rounded,
-                  size: 64,
-                  color: colorScheme.primary,
-                ),
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: ValoraColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                boxShadow: ValoraShadows.primary,
               ),
-            ),
+              child: const Icon(
+                Icons.home_work_rounded,
+                size: 64,
+                color: ValoraColors.primary,
+              ),
+            )
+            .animate()
+            .scale(
+              duration: 600.ms,
+              curve: Curves.elasticOut,
+              begin: const Offset(0, 0),
+              end: const Offset(1, 1),
+            )
+            .fadeIn(duration: 400.ms),
+
             const SizedBox(height: 32),
+
             // Animated Text
-            SlideTransition(
-              position: _textSlideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    Text(
-                      'Valora',
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Find your dream home',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
+            Column(
+              children: [
+                Text(
+                  'Valora',
+                  style: ValoraTypography.displayMedium.copyWith(
+                    color: ValoraColors.primary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-            ),
+                const SizedBox(height: 8),
+                Text(
+                  'Find your dream home',
+                  style: ValoraTypography.bodyLarge.copyWith(
+                    color: ValoraColors.neutral500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            )
+            .animate(delay: 200.ms)
+            .fadeIn(duration: 600.ms)
+            .slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic, duration: 600.ms),
           ],
         ),
       ),

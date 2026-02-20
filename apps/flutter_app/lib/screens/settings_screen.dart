@@ -139,8 +139,8 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         ValoraSettingsTile(
                           icon: Icons.notifications_active_rounded,
-                          iconColor: Colors.blue,
-                          iconBackgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.info,
+                          iconBackgroundColor: ValoraColors.info.withValues(alpha: 0.1),
                           title: 'Smart Alerts',
                           subtitle: 'Instant updates on price drops',
                           showDivider: true,
@@ -155,8 +155,8 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ValoraSettingsTile(
                           icon: Icons.tune_rounded,
-                          iconColor: Colors.purple,
-                          iconBackgroundColor: Colors.purple.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.primary,
+                          iconBackgroundColor: ValoraColors.primary.withValues(alpha: 0.1),
                           title: 'Search Preferences',
                           subtitle: 'Location, Price, Amenities',
                           showDivider: true,
@@ -167,8 +167,8 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ValoraSettingsTile(
                           icon: Icons.palette_rounded,
-                          iconColor: Colors.orange,
-                          iconBackgroundColor: Colors.orange.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.accent,
+                          iconBackgroundColor: ValoraColors.accent.withValues(alpha: 0.1),
                           title: 'Appearance',
                           subtitle: 'Theme & Display settings',
                           showDivider: false,
@@ -205,8 +205,8 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ValoraSettingsTile(
                           icon: Icons.lock_rounded,
-                          iconColor: Colors.grey,
-                          iconBackgroundColor: Colors.grey.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.neutral500,
+                          iconBackgroundColor: ValoraColors.neutral500.withValues(alpha: 0.1),
                           title: 'Privacy & Security',
                           subtitle: 'Password, FaceID',
                           showDivider: false,
