@@ -212,7 +212,31 @@ Generate a textual summary of a context report.
 **Request Body:**
 ```json
 {
-  "report": { ...ContextReportDto... }
+  "report": {
+    "location": {
+      "latitude": 52.375,
+      "longitude": 4.895,
+      "displayAddress": "Damrak 1, Amsterdam",
+      "neighborhoodCode": "BU03630101"
+    },
+    "compositeScore": 8.5,
+    "categoryScores": {
+      "social": 8.0,
+      "safety": 9.0,
+      "amenities": 8.5
+    },
+    "socialMetrics": [
+      { "key": "income", "label": "Avg Income", "value": 45000, "score": 85, "source": "CBS" }
+    ],
+    "crimeMetrics": [],
+    "amenityMetrics": [],
+    "demographicsMetrics": [],
+    "housingMetrics": [],
+    "mobilityMetrics": [],
+    "environmentMetrics": [],
+    "sources": [],
+    "warnings": []
+  }
 }
 ```
 
@@ -249,7 +273,7 @@ Trigger a background job (e.g., cache warming, data ingestion).
 **Request Body:**
 ```json
 {
-  "type": "DataIngestion",
+  "type": "CityIngestion",
   "target": "Amsterdam"
 }
 ```
