@@ -30,6 +30,9 @@ public class BaseIntegrationTest : IAsyncLifetime
 
         DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
         DbContext.Notifications.RemoveRange(DbContext.Notifications);
+        // Explicitly clear Listings to prevent state leakage between tests
+        DbContext.Listings.RemoveRange(DbContext.Listings);
+
         if (DbContext.Users.Any())
         {
             DbContext.Users.RemoveRange(DbContext.Users);

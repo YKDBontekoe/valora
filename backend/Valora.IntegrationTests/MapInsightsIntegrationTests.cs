@@ -265,16 +265,31 @@ public class MapInsightsIntegrationTests : IAsyncLifetime
         await AuthenticateAsync();
 
         // Mock Geo Client to return a dummy overlay
+        var geoJson = JsonSerializer.SerializeToElement(new
+        {
+            type = "Polygon",
+            coordinates = new[] {
+                new[] {
+                    new[] { minLon, minLat },
+                    new[] { maxLon, minLat },
+                    new[] { maxLon, maxLat },
+                    new[] { minLon, maxLat },
+                    new[] { minLon, minLat }
+                }
+            }
+        });
+
         var dummyOverlay = new MapOverlayDto(
             Id: "BU001",
             Name: "Test Neighborhood",
             MetricName: "PricePerSquareMeter",
             MetricValue: 0, // Placeholder
             DisplayValue: "",
-            GeoJson: JsonDocument.Parse("{}").RootElement); // Empty geometry for simplicity
+            GeoJson: geoJson);
 
         _fixture.Factory!.CbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(
-            minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity, It.IsAny<CancellationToken>()))
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            MapOverlayMetric.PopulationDensity, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapOverlayDto> { dummyOverlay });
 
         // Act

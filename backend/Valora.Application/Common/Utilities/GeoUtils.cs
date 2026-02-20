@@ -11,7 +11,18 @@ public static class GeoUtils
     {
         if (geoJson.ValueKind != JsonValueKind.Object) return false;
 
-        if (!geoJson.TryGetProperty("type", out var typeProp) ||
+        // Handle Feature objects by extracting geometry
+        if (geoJson.TryGetProperty("type", out var typeProp) &&
+            string.Equals(typeProp.GetString(), "Feature", StringComparison.OrdinalIgnoreCase))
+        {
+            if (geoJson.TryGetProperty("geometry", out var geometry))
+            {
+                return IsPointInPolygon(lat, lon, geometry);
+            }
+            return false;
+        }
+
+        if (!geoJson.TryGetProperty("type", out typeProp) ||
             !geoJson.TryGetProperty("coordinates", out var coordsProp))
         {
             return false;
@@ -47,6 +58,13 @@ public static class GeoUtils
         if (!rings.MoveNext()) return false; // No rings
 
         var exteriorRing = rings.Current;
+
+        // Optimization: Check Bounding Box of exterior ring first
+        if (!IsPointInBoundingBox(lat, lon, exteriorRing))
+        {
+            return false;
+        }
+
         if (!IsPointInLinearRing(lat, lon, exteriorRing))
         {
             return false;
@@ -62,6 +80,28 @@ public static class GeoUtils
         }
 
         return true;
+    }
+
+    private static bool IsPointInBoundingBox(double lat, double lon, JsonElement ring)
+    {
+        double minLat = double.MaxValue;
+        double maxLat = double.MinValue;
+        double minLon = double.MaxValue;
+        double maxLon = double.MinValue;
+
+        foreach (var point in ring.EnumerateArray())
+        {
+            if (point.GetArrayLength() < 2) continue;
+            double pLon = point[0].GetDouble();
+            double pLat = point[1].GetDouble();
+
+            if (pLat < minLat) minLat = pLat;
+            if (pLat > maxLat) maxLat = pLat;
+            if (pLon < minLon) minLon = pLon;
+            if (pLon > maxLon) maxLon = pLon;
+        }
+
+        return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
     }
 
     private static bool IsPointInLinearRing(double lat, double lon, JsonElement ring)
