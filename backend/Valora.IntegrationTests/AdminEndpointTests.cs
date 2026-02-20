@@ -87,10 +87,9 @@ public class AdminEndpointTests : BaseIntegrationTest
         var alphaIndex = testUsers.FindIndex(u => u.Email.Contains("alpha"));
 
         // If both exist, verify order
-        if (zetaIndex >= 0 && alphaIndex >= 0)
-        {
-            zetaIndex.ShouldBeLessThan(alphaIndex);
-        }
+        zetaIndex.ShouldBeGreaterThanOrEqualTo(0);
+        alphaIndex.ShouldBeGreaterThanOrEqualTo(0);
+        zetaIndex.ShouldBeLessThan(alphaIndex);
     }
 
     private class UsersResponse

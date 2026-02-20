@@ -10,6 +10,10 @@ namespace Valora.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Clean up invalid data before applying constraints
+            migrationBuilder.Sql("DELETE FROM \"BatchJobs\" WHERE \"Status\" NOT IN ('Pending', 'Processing', 'Completed', 'Failed');");
+            migrationBuilder.Sql("DELETE FROM \"BatchJobs\" WHERE \"Type\" NOT IN ('CityIngestion');");
+
             migrationBuilder.AddCheckConstraint(
                 name: "CK_BatchJob_Status",
                 table: "BatchJobs",
