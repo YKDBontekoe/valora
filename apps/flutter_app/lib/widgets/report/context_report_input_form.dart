@@ -181,15 +181,21 @@ class ContextReportInputForm extends StatelessWidget {
         // Generate button
         SizedBox(
           height: 60,
-          child: ValoraButton(
-            label: provider.isLoading ? 'Analyzing...' : 'Generate Full Report',
-            isLoading: provider.isLoading,
-            onPressed: provider.isLoading || controller.text.isEmpty
-                ? null
-                : () => _handleSubmit(context, controller.text),
-            variant: ValoraButtonVariant.primary,
-            isFullWidth: true,
-            size: ValoraButtonSize.large,
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              return ValoraButton(
+                label:
+                    provider.isLoading ? 'Analyzing...' : 'Generate Full Report',
+                isLoading: provider.isLoading,
+                onPressed: provider.isLoading || value.text.isEmpty
+                    ? null
+                    : () => _handleSubmit(context, value.text),
+                variant: ValoraButtonVariant.primary,
+                isFullWidth: true,
+                size: ValoraButtonSize.large,
+              );
+            },
           ),
         ),
 

@@ -7,8 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/settings_screen.dart';
+import 'package:valora_app/services/notification_service.dart';
+import 'package:valora_app/widgets/valora_widgets.dart';
 
-@GenerateMocks([AuthProvider, ThemeProvider])
+@GenerateMocks([AuthProvider, ThemeProvider, NotificationService])
 @GenerateNiceMocks([
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
@@ -131,25 +133,39 @@ const List<int> _transparentImage = <int>[
 void main() {
   late MockAuthProvider mockAuthProvider;
   late MockThemeProvider mockThemeProvider;
+  late MockNotificationService mockNotificationService;
 
   setUp(() {
     mockAuthProvider = MockAuthProvider();
     mockThemeProvider = MockThemeProvider();
+    mockNotificationService = MockNotificationService();
 
     when(mockAuthProvider.email).thenReturn('test@example.com');
     when(mockThemeProvider.isDarkMode).thenReturn(false);
+    when(mockNotificationService.unreadCount).thenReturn(0);
+    when(mockNotificationService.notifications).thenReturn([]);
+    when(mockNotificationService.isLoading).thenReturn(false);
+    when(mockNotificationService.error).thenReturn(null);
 
     // Use the mock HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
   });
 
   Widget createWidgetUnderTest() {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
-        ChangeNotifierProvider<ThemeProvider>.value(value: mockThemeProvider),
-      ],
-      child: const MaterialApp(home: SettingsScreen()),
+    return MaterialApp(
+      home: const SettingsScreen(),
+      builder: (context, child) {
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
+            ChangeNotifierProvider<ThemeProvider>.value(value: mockThemeProvider),
+            ChangeNotifierProvider<NotificationService>.value(
+              value: mockNotificationService,
+            ),
+          ],
+          child: child ?? const SizedBox(),
+        );
+      },
     );
   }
 
@@ -160,6 +176,87 @@ void main() {
     await tester.pumpAndSettle(); // Wait for animations
 
     expect(find.text('test@example.com'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen toggles theme on Appearance tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Appearance'));
+    await tester.pumpAndSettle();
+
+    verify(mockThemeProvider.toggleTheme()).called(1);
+  });
+
+  testWidgets('SettingsScreen toggles theme on icon button tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.dark_mode_rounded));
+    await tester.pumpAndSettle();
+
+    verify(mockThemeProvider.toggleTheme()).called(1);
+  });
+
+  testWidgets('SettingsScreen handles Profile Edit tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile editing coming soon!'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen interacts with external link tiles', (
+    WidgetTester tester,
+  ) async {
+    // Note: We cannot easily mock launchUrl from url_launcher directly in widget tests
+    // without wrapping it in a service or using platform channels.
+    // Ideally, we'd use a service wrapper.
+    // For now, we just ensure they are tappable and don't crash.
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Search Preferences'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Subscription'),
+      500.0,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.text('Subscription'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Privacy & Security'),
+      500.0,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.text('Privacy & Security'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('SettingsScreen navigates to Smart Alerts', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Smart Alerts'));
+    await tester.pumpAndSettle();
+
+    // Verify navigation occurred (assuming NotificationsScreen has a title 'Notifications')
+    // We can just check that SettingsScreen is no longer the top route or that NotificationsScreen is pushed
+    // But NotificationsScreen might have scaffold.
+    expect(find.text('Notifications'), findsOneWidget);
   });
 
   testWidgets('SettingsScreen shows logout confirmation dialog', (
@@ -200,9 +297,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap confirm in dialog
-    // The dialog title is 'Log Out?' (with question mark)
-    // The button is 'Log Out' (no question mark)
-    // Since ValoraButton might wrap ElevatedButton, look for that.
     final confirmButton = find.widgetWithText(ElevatedButton, 'Log Out');
 
     await tester.tap(confirmButton);
