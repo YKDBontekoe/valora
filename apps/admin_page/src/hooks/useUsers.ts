@@ -35,7 +35,7 @@ export const useUsers = () => {
           setUsers(data.items);
           setTotalPages(Math.max(1, data.totalPages));
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!ignore) {
             console.error('Failed to fetch users', err);
             setError('Failed to load users. Please try again.');
