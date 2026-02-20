@@ -12,7 +12,8 @@ public class OverpassResponseParserTests
         if (tags != null)
         {
             var json = JsonSerializer.Serialize(tags);
-            tagsElement = JsonDocument.Parse(json).RootElement;
+            using var doc = JsonDocument.Parse(json);
+            tagsElement = doc.RootElement.Clone();
         }
 
         OverpassCenter? center = null;
