@@ -1,79 +1,35 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Shouldly;
 using Microsoft.Extensions.DependencyInjection;
-using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Persistence;
 using Xunit;
 
 namespace Valora.IntegrationTests;
 
 [Collection("TestDatabase")]
-public class AdminEndpointTests
+public class AdminEndpointTests : BaseIntegrationTest
 {
-    private readonly IntegrationTestWebAppFactory _factory;
-    private readonly HttpClient _client;
-
-    public AdminEndpointTests(TestDatabaseFixture fixture)
+    public AdminEndpointTests(TestDatabaseFixture fixture) : base(fixture)
     {
-        _factory = fixture.Factory;
-        _client = _factory.CreateClient();
     }
 
     [Fact]
     public async Task GetUsers_ReturnsUnauthorized_WhenNotAuthenticated()
     {
-        var response = await _client.GetAsync("/api/admin/users");
+        var response = await Client.GetAsync("/api/admin/users");
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-    }
-
-    // Helper to authenticate
-    private async Task AuthenticateAsync(string email, string role)
-    {
-        // 1. Create User via UserManager directly
-        using var scope = _factory.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
-
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole(role));
-        }
-
-        var user = await userManager.FindByEmailAsync(email);
-        if (user == null)
-        {
-            user = new ApplicationUser { UserName = email, Email = email };
-            await userManager.CreateAsync(user, "Password123!");
-        }
-
-        if (!await userManager.IsInRoleAsync(user, role))
-        {
-            await userManager.AddToRoleAsync(user, role);
-        }
-
-        // 2. Login via API
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-        {
-            Email = email,
-            Password = "Password123!"
-        });
-        loginResponse.EnsureSuccessStatusCode();
-        var authResponse = await loginResponse.Content.ReadFromJsonAsync<Valora.Application.DTOs.AuthResponseDto>();
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResponse!.Token);
     }
 
     [Fact]
     public async Task GetUsers_ReturnsForbidden_WhenUserIsNotAdmin()
     {
         // Arrange
-        await AuthenticateAsync("user@example.com", "User"); // Regular user
+        await AuthenticateAsync("user@example.com", "Password123!"); // Regular user (BaseIntegrationTest helper)
 
         // Act
-        var response = await _client.GetAsync("/api/admin/users");
+        var response = await Client.GetAsync("/api/admin/users");
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -83,10 +39,10 @@ public class AdminEndpointTests
     public async Task GetUsers_ReturnsUsers_WhenAdmin()
     {
         // Arrange
-        await AuthenticateAsync("admin@example.com", "Admin");
+        await AuthenticateAsAdminAsync(); // BaseIntegrationTest helper
 
         // Act
-        var response = await _client.GetAsync("/api/admin/users");
+        var response = await Client.GetAsync("/api/admin/users");
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -99,10 +55,10 @@ public class AdminEndpointTests
     public async Task GetUsers_FiltersAndSorts_WhenParametersProvided()
     {
         // Arrange
-        await AuthenticateAsync("admin@example.com", "Admin");
+        await AuthenticateAsAdminAsync();
 
         // Ensure we have known users
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             if (await userManager.FindByEmailAsync("alpha@test.com") == null)
@@ -116,7 +72,7 @@ public class AdminEndpointTests
         }
 
         // Act
-        var response = await _client.GetAsync("/api/admin/users?q=test.com&sort=email_desc");
+        var response = await Client.GetAsync("/api/admin/users?q=test.com&sort=email_desc");
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -131,10 +87,9 @@ public class AdminEndpointTests
         var alphaIndex = testUsers.FindIndex(u => u.Email.Contains("alpha"));
 
         // If both exist, verify order
-        if (zetaIndex >= 0 && alphaIndex >= 0)
-        {
-            zetaIndex.ShouldBeLessThan(alphaIndex);
-        }
+        zetaIndex.ShouldBeGreaterThanOrEqualTo(0);
+        alphaIndex.ShouldBeGreaterThanOrEqualTo(0);
+        zetaIndex.ShouldBeLessThan(alphaIndex);
     }
 
     private class UsersResponse
