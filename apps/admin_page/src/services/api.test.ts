@@ -6,7 +6,7 @@ describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    // @ts-ignore
+    // @ts-expect-error - Mocking read-only property
     delete api.defaults.adapter;
     vi.stubGlobal('location', { href: '' });
   });
@@ -35,8 +35,31 @@ describe('API Service', () => {
   });
 
   it('handles 401 and attempts refresh', async () => {
-    // This test is complex to mock fully with axios interceptors in this environment
-    // Relying on manual inspection and simpler tests for now.
-    expect(true).toBe(true);
+    localStorage.setItem('admin_refresh_token', 'refresh-token');
+
+    // Mock first call failing with 401, second call succeeding
+    const mockAdapter = vi.fn()
+      .mockRejectedValueOnce({
+        response: { status: 401 },
+        config: { url: '/test', headers: {} }
+      })
+      .mockResolvedValueOnce({
+        data: { success: true }, status: 200, statusText: 'OK', headers: {}, config: {},
+      });
+
+    api.defaults.adapter = mockAdapter;
+
+    // Mock the axios.post for refresh
+    const axiosPostSpy = vi.spyOn(axios, 'post').mockResolvedValue({
+      data: { token: 'new-token', refreshToken: 'new-refresh-token' }
+    });
+
+    const response = await api.get('/test');
+
+    expect(axiosPostSpy).toHaveBeenCalledWith(expect.stringContaining('/auth/refresh'), {
+      refreshToken: 'refresh-token'
+    });
+    expect(localStorage.getItem('admin_token')).toBe('new-token');
+    expect(response.data.success).toBe(true);
   });
 });

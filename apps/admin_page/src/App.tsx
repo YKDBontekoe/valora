@@ -27,6 +27,12 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />
           <Route path="jobs" element={<BatchJobs />} />
+
+          {/* Legacy route fallback */}
+          <Route path="listings" element={<Navigate to="/" replace />} />
+
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Router>
