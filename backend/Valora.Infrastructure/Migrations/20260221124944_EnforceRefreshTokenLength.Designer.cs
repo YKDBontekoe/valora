@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Valora.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    partial class ValoraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260221124944_EnforceRefreshTokenLength")]
+    partial class EnforceRefreshTokenLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -230,11 +233,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-
                     b.Property<string>("Error")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExecutionLog")
                         .HasColumnType("text");
 
                     b.Property<int>("Progress")
