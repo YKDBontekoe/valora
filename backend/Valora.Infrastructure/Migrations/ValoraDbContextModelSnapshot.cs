@@ -557,8 +557,6 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("Bedrooms");
 
-                    b.HasIndex("City");
-
                     b.HasIndex("ContextCompositeScore");
 
                     b.HasIndex("ContextSafetyScore");
@@ -570,13 +568,9 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("LastFundaFetchUtc");
 
-                    b.HasIndex("Latitude");
-
                     b.HasIndex("ListedDate");
 
                     b.HasIndex("LivingAreaM2");
-
-                    b.HasIndex("Longitude");
 
                     b.HasIndex("PostalCode");
 

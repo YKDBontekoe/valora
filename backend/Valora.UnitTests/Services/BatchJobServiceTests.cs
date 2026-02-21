@@ -48,9 +48,9 @@ public class BatchJobServiceTests
     public async Task GetRecentJobsAsync_ShouldReturnDtos()
     {
         var service = CreateService();
-        var jobs = new List<BatchJob>
+        var jobs = new List<BatchJobSummaryDto>
         {
-            new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Completed }
+            new BatchJobSummaryDto(Guid.NewGuid(), BatchJobType.CityIngestion.ToString(), BatchJobStatus.Completed.ToString(), "Amsterdam", 100, null, null, DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow)
         };
         _jobRepositoryMock.Setup(x => x.GetRecentJobsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(jobs);

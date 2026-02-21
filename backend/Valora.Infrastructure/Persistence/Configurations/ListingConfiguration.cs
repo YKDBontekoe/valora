@@ -15,7 +15,6 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.HasIndex(e => e.FundaId).IsUnique();
         builder.HasIndex(e => e.Price);
         builder.HasIndex(e => e.ListedDate);
-        builder.HasIndex(e => e.City);
         builder.HasIndex(e => e.PostalCode);
         builder.HasIndex(e => e.Bedrooms);
         builder.HasIndex(e => e.LivingAreaM2);
@@ -26,8 +25,6 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.HasIndex(e => e.IsSoldOrRented);
 
         // Geospatial Indexes
-        builder.HasIndex(e => e.Latitude);
-        builder.HasIndex(e => e.Longitude);
         // Optimize bounding box queries
         builder.HasIndex(e => new { e.Latitude, e.Longitude });
 
