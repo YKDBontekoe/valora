@@ -7,6 +7,8 @@ This guide explains how data flows through the Valora backend when a write opera
 Valora enforces a strict dependency rule: **Dependencies only point inwards.**
 `API -> Application -> Domain <- Infrastructure`
 
+> **Note on Dependency Injection:** The entry point (`Valora.Api`) is the "Composition Root". It *must* reference `Valora.Infrastructure` to register services (DI), but the **runtime control flow** and **business logic** strictly follow the rule that the Application layer defines interfaces which the Infrastructure layer implements.
+
 When data needs to be saved (persisted), it travels through these layers.
 
 ```mermaid
@@ -17,7 +19,7 @@ sequenceDiagram
     participant Infra as Valora.Infrastructure (IdentityService)
     participant DB as PostgreSQL (Identity Tables)
 
-    Client->>API: POST /api/auth/register {email, password}
+    Client->>API: POST /api/auth/register {email, password, confirmPassword}
 
     API->>API: Validate Request (DataAnnotations)
 
@@ -44,7 +46,7 @@ sequenceDiagram
 ### 1. API Layer (`Valora.Api`)
 **Responsibility:** HTTP handling, Request Validation.
 
-- **File:** `Valora.Api/Endpoints/AuthEndpoints.cs`
+- **File:** `backend/Valora.Api/Endpoints/AuthEndpoints.cs`
 - **Action:** receives the `POST /api/auth/register` request.
 - **Validation:** Uses `ValidationFilter` to ensure the `RegisterDto` has valid email format and password length.
 - **Delegation:** Calls the `IAuthService` interface. It knows *what* needs to be done, but not *how*.
@@ -52,7 +54,7 @@ sequenceDiagram
 ### 2. Application Layer (`Valora.Application`)
 **Responsibility:** Orchestration, Business Logic.
 
-- **File:** `Valora.Application/Services/AuthService.cs`
+- **File:** `backend/Valora.Application/Services/AuthService.cs`
 - **Action:** `RegisterAsync` method.
 - **Logic:** Checks if `Password` matches `ConfirmPassword`.
 - **Delegation:** Calls `IIdentityService.CreateUserAsync`. This layer deals with DTOs and Interfaces, avoiding direct dependencies on EF Core or SQL.
@@ -60,7 +62,7 @@ sequenceDiagram
 ### 3. Infrastructure Layer (`Valora.Infrastructure`)
 **Responsibility:** Implementation, Database Access.
 
-- **File:** `Valora.Infrastructure/Services/IdentityService.cs`
+- **File:** `backend/Valora.Infrastructure/Services/IdentityService.cs`
 - **Action:** `CreateUserAsync` method.
 - **Mapping:** Converts the simple string arguments into a Domain Entity (`ApplicationUser`).
 - **Persistence:** Uses ASP.NET Core Identity's `UserManager` (which wraps EF Core) to save the entity.
