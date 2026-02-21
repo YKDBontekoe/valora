@@ -26,7 +26,7 @@ classDiagram
     }
     class Infrastructure {
         <<Implementation>>
-        +Repositories (ListingRepository)
+        +Repositories (MapRepository, NotificationRepository)
         +External Clients (CbsClient)
         +EF Core DbContext
     }
@@ -98,7 +98,7 @@ Our repositories explicitly separate read and write concerns for performance:
 graph TD
     API[API Layer]
 
-    subgraph "ListingRepository"
+    subgraph "Repositories"
         Read[Read Path]
         Write[Write Path]
     end
@@ -123,7 +123,7 @@ External data providers are hidden behind Application interfaces (e.g., `ICbsNei
 
 ## Context Report Flow
 
-1. Receive input (`address` or `listing link`).
+1. Receive input (`address` or `Funda URL`).
 2. Resolve location (PDOK): display address, coordinates, admin codes.
 3. Query enrichment clients in parallel (CBS, Overpass, Luchtmeetnet, etc.).
 4. Build normalized metrics and composite score.

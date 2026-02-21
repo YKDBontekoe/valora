@@ -6,7 +6,7 @@ Integration tests for the backend API.
 
 - Tests boot the API via `WebApplicationFactory`.
 - Database tests run with EF Core InMemory in this environment.
-- Focus includes auth, health, listing endpoints, and context report endpoint behavior.
+- Focus includes auth, health, map endpoints, and context report endpoint behavior.
 
 ## Run
 

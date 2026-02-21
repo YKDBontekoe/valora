@@ -265,7 +265,7 @@ class InsightsMap extends StatelessWidget {
         children: [
           Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 16),
-          buildDetailRow(context, 'Listings', city.count.toString()),
+          buildDetailRow(context, 'Data points', city.count.toString()),
           buildDetailRow(context,
             'Composite Score',
             city.compositeScore?.toStringAsFixed(1),

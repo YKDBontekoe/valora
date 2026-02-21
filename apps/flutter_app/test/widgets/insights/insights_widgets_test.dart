@@ -337,7 +337,7 @@ void main() {
       ));
 
       expect(find.text('Test City'), findsOneWidget);
-      expect(find.text('Listings'), findsOneWidget);
+      expect(find.text('Data points'), findsOneWidget);
       expect(find.text('100'), findsOneWidget);
       expect(find.text('85.5'), findsOneWidget);
       expect(find.text('90.0'), findsOneWidget);

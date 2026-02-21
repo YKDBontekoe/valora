@@ -21,7 +21,7 @@ public class NeighborhoodRepositoryTests
     public async Task AddRange_ShouldAddMultipleNeighborhoods()
     {
         // Arrange
-        using var scope = _fixture.Factory.Services.CreateScope();
+        using var scope = _fixture.Factory!.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
@@ -49,7 +49,7 @@ public class NeighborhoodRepositoryTests
     public async Task UpdateRange_ShouldUpdateMultipleNeighborhoods()
     {
         // Arrange
-        using var scope = _fixture.Factory.Services.CreateScope();
+        using var scope = _fixture.Factory!.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
