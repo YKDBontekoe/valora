@@ -65,7 +65,7 @@ public class BatchJobService : IBatchJobService
 
         if (job.Status != BatchJobStatus.Failed && job.Status != BatchJobStatus.Completed)
         {
-             throw new InvalidOperationException("Only failed or completed jobs can be retried.");
+            throw new InvalidOperationException("Only failed or completed jobs can be retried.");
         }
 
         job.Status = BatchJobStatus.Pending;
@@ -151,87 +151,91 @@ public class BatchJobService : IBatchJobService
         var existingNeighborhoods = await _neighborhoodRepository.GetByCityAsync(job.Target, cancellationToken);
         var existingDict = existingNeighborhoods.ToDictionary(n => n.Code);
 
-        int count = 0;
+        int processedCount = 0;
         int total = neighborhoods.Count;
 
-        var toAdd = new List<Neighborhood>();
-        var toUpdate = new List<Neighborhood>();
-        // Batch size for writes
+        // Batch size for writes & concurrency
         const int batchSize = 10;
+        var chunks = neighborhoods.Chunk(batchSize);
 
-        foreach (var geo in neighborhoods)
+        foreach (var chunk in chunks)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Neighborhood neighborhood;
-            bool isNew = false;
+            var chunkTasks = chunk.Select(async geo =>
+            {
+                var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
 
-            if (existingDict.TryGetValue(geo.Code, out var existing))
-            {
-                neighborhood = existing;
-            }
-            else
-            {
-                neighborhood = new Neighborhood
+                // Parallelize stats fetching for this item
+                var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
+                var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
+
+                await Task.WhenAll(statsTask, crimeTask);
+
+                return new
                 {
-                    Code = geo.Code,
-                    Name = geo.Name,
-                    City = job.Target,
-                    Type = geo.Type,
-                    Latitude = geo.Latitude,
-                    Longitude = geo.Longitude
+                    Geo = geo,
+                    Stats = await statsTask,
+                    Crime = await crimeTask
                 };
-                isNew = true;
-            }
+            }).ToList();
 
-            // Fetch stats (external calls still per item, but could be parallelized if API allows)
-            var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
+            var results = await Task.WhenAll(chunkTasks);
 
-            // Parallelize stats fetching
-            var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
-            var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
+            var toAdd = new List<Neighborhood>();
+            var toUpdate = new List<Neighborhood>();
 
-            await Task.WhenAll(statsTask, crimeTask);
-
-            var stats = await statsTask;
-            var crime = await crimeTask;
-
-            neighborhood.PopulationDensity = stats?.PopulationDensity;
-            neighborhood.AverageWozValue = stats?.AverageWozValueKeur * 1000;
-            neighborhood.CrimeRate = crime?.TotalCrimesPer1000;
-            neighborhood.LastUpdated = DateTime.UtcNow;
-
-            if (isNew) toAdd.Add(neighborhood);
-            else toUpdate.Add(neighborhood);
-
-            count++;
-
-            // Batch Flush
-            if (count % batchSize == 0 || count == total)
+            foreach (var result in results)
             {
-                if (toAdd.Count > 0)
+                Neighborhood neighborhood;
+                bool isNew = false;
+
+                if (existingDict.TryGetValue(result.Geo.Code, out var existing))
                 {
-                    _neighborhoodRepository.AddRange(toAdd);
-                    // Add to dictionary so we don't try to add again if duplicates in list (unlikely)
-                    foreach (var n in toAdd) existingDict[n.Code] = n;
-                    // Create new list to avoid reference mutation issues with Moq in tests
-                    toAdd = new List<Neighborhood>();
+                    neighborhood = existing;
+                }
+                else
+                {
+                    neighborhood = new Neighborhood
+                    {
+                        Code = result.Geo.Code,
+                        Name = result.Geo.Name,
+                        City = job.Target,
+                        Type = result.Geo.Type,
+                        Latitude = result.Geo.Latitude,
+                        Longitude = result.Geo.Longitude
+                    };
+                    isNew = true;
                 }
 
-                if (toUpdate.Count > 0)
-                {
-                    _neighborhoodRepository.UpdateRange(toUpdate);
-                    // Create new list to avoid reference mutation issues with Moq in tests
-                    toUpdate = new List<Neighborhood>();
-                }
+                neighborhood.PopulationDensity = result.Stats?.PopulationDensity;
+                neighborhood.AverageWozValue = result.Stats?.AverageWozValueKeur * 1000;
+                neighborhood.CrimeRate = result.Crime?.TotalCrimesPer1000;
+                neighborhood.LastUpdated = DateTime.UtcNow;
 
-                // Persist all changes
-                await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
+                if (isNew) toAdd.Add(neighborhood);
+                else toUpdate.Add(neighborhood);
 
-                job.Progress = (int)((double)count / total * 100);
-                AppendLog(job, $"Processed {count}/{total} neighborhoods.");
-                await _jobRepository.UpdateAsync(job, cancellationToken);
+                // Update dictionary for subsequent dup checks
+                existingDict[neighborhood.Code] = neighborhood;
             }
+
+            if (toAdd.Count > 0)
+            {
+                _neighborhoodRepository.AddRange(toAdd);
+            }
+
+            if (toUpdate.Count > 0)
+            {
+                _neighborhoodRepository.UpdateRange(toUpdate);
+            }
+
+            await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
+
+            processedCount += results.Length;
+            job.Progress = (int)((double)processedCount / total * 100);
+            AppendLog(job, $"Processed {processedCount}/{total} neighborhoods.");
+            await _jobRepository.UpdateAsync(job, cancellationToken);
         }
 
         AppendLog(job, $"Processed {total} neighborhoods.");
@@ -254,7 +258,8 @@ public class BatchJobService : IBatchJobService
         job.Target,
         job.Progress,
         job.Error,
-        job.ResultSummary, job.ExecutionLog,
+        job.ResultSummary,
+        job.ExecutionLog,
         job.CreatedAt,
         job.StartedAt,
         job.CompletedAt
