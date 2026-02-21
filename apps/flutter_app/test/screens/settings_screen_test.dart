@@ -193,6 +193,21 @@ void main() {
     expect(find.text('Custom Support Message'), findsOneWidget);
   });
 
+  testWidgets('SettingsScreen shows status link when available', (WidgetTester tester) async {
+    when(mockAppMetadataService.supportStatus).thenReturn(
+      SupportStatus(
+        isSupportActive: true,
+        supportMessage: 'Issues Detected',
+        statusPageUrl: 'https://status.test'
+      )
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Check System Status'), findsOneWidget);
+  });
+
   testWidgets('SettingsScreen shows logout confirmation dialog', (
     WidgetTester tester,
   ) async {
