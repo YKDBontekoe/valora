@@ -230,11 +230,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-
                     b.Property<string>("Error")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExecutionLog")
                         .HasColumnType("text");
 
                     b.Property<int>("Progress")
