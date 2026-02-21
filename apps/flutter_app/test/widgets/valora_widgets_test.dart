@@ -32,7 +32,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(ValoraCard));
+      await tester.tap(find.byType(ValoraCard), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
@@ -286,7 +286,7 @@ void main() {
 
       await tester.pump(); // Advance one frame
 
-      await tester.tap(find.byType(ValoraButton));
+      await tester.tap(find.byType(ValoraButton), warnIfMissed: false);
       // Pump enough time for the button press animation (scale) to complete
       // but do not settle (as spinner is infinite)
       await tester.pump(const Duration(milliseconds: 500));
