@@ -3,18 +3,6 @@ import type { AxiosRequestConfig } from 'axios';
 import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob } from '../types';
 import { showToast } from './toast';
 
-// Extend Axios config to support custom properties
-declare module 'axios' {
-  export interface InternalAxiosRequestConfig {
-    skipGlobalErrorToast?: boolean;
-    _isAuthRetry?: boolean;
-    _retryCount?: number;
-  }
-  export interface AxiosRequestConfig {
-    skipGlobalErrorToast?: boolean;
-  }
-}
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
@@ -99,7 +87,7 @@ api.interceptors.response.use(
       || error.message
       || 'An unexpected error occurred';
 
-    if (error.response?.status !== 401 && !originalRequest.skipGlobalErrorToast) {
+    if (error.response?.status !== 401) {
        showToast(message, 'error');
     }
 
@@ -127,9 +115,6 @@ export const adminService = {
     if (sort) url += `&sort=${encodeURIComponent(sort)}`;
     const response = await api.get<PaginatedResponse<User>>(url);
     return response.data;
-  },
-  createUser: async (user: { email: string; password: string; roles: string[] }): Promise<void> => {
-    await api.post('/admin/users', user, { skipGlobalErrorToast: true });
   },
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);

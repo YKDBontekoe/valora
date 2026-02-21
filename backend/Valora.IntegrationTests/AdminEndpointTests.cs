@@ -26,7 +26,7 @@ public class AdminEndpointTests : BaseIntegrationTest
     public async Task GetUsers_ReturnsForbidden_WhenUserIsNotAdmin()
     {
         // Arrange
-        await AuthenticateAsync("user@example.com", "Password123!");
+        await AuthenticateAsync("user@example.com", "Password123!"); // Regular user (BaseIntegrationTest helper)
 
         // Act
         var response = await Client.GetAsync("/api/admin/users");
@@ -39,7 +39,7 @@ public class AdminEndpointTests : BaseIntegrationTest
     public async Task GetUsers_ReturnsUsers_WhenAdmin()
     {
         // Arrange
-        await AuthenticateAsAdminAsync();
+        await AuthenticateAsAdminAsync(); // BaseIntegrationTest helper
 
         // Act
         var response = await Client.GetAsync("/api/admin/users");
@@ -63,13 +63,11 @@ public class AdminEndpointTests : BaseIntegrationTest
             var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             if (await userManager.FindByEmailAsync("alpha@test.com") == null)
             {
-                var user = new ApplicationUser { UserName = "alpha", Email = "alpha@test.com" };
-                await userManager.CreateAsync(user, "Password123!");
+                await userManager.CreateAsync(new ApplicationUser { UserName = "alpha", Email = "alpha@test.com" }, "Password123!");
             }
             if (await userManager.FindByEmailAsync("zeta@test.com") == null)
             {
-                var user = new ApplicationUser { UserName = "zeta", Email = "zeta@test.com" };
-                await userManager.CreateAsync(user, "Password123!");
+                await userManager.CreateAsync(new ApplicationUser { UserName = "zeta", Email = "zeta@test.com" }, "Password123!");
             }
         }
 
@@ -80,101 +78,18 @@ public class AdminEndpointTests : BaseIntegrationTest
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var content = await response.Content.ReadFromJsonAsync<UsersResponse>();
         content.ShouldNotBeNull();
-        var testUsers = content!.Items.Where(u => u.Email.Contains("test.com")).ToList();
+        content!.Items.ShouldContain(u => u.Email.Contains("test.com"));
 
-        testUsers.ShouldNotBeEmpty();
-
+        // Check sorting: Z before A
+        // Note: The response list might contain other users, so we filter in memory to verify relative order of our test users
+        var testUsers = content.Items.Where(u => u.Email.Contains("test.com")).ToList();
         var zetaIndex = testUsers.FindIndex(u => u.Email.Contains("zeta"));
         var alphaIndex = testUsers.FindIndex(u => u.Email.Contains("alpha"));
 
+        // If both exist, verify order
         zetaIndex.ShouldBeGreaterThanOrEqualTo(0);
         alphaIndex.ShouldBeGreaterThanOrEqualTo(0);
         zetaIndex.ShouldBeLessThan(alphaIndex);
-    }
-
-    [Fact]
-    public async Task CreateUser_ReturnsCreated_WhenValid()
-    {
-        // Arrange
-        await AuthenticateAsAdminAsync();
-        var request = new AdminCreateUserDto("newadmin@test.com", "SecurePass123!", new List<string> { "Admin" });
-
-        // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Created);
-
-        using (var scope = Factory.Services.CreateScope())
-        {
-            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
-            var user = await userManager.FindByEmailAsync(request.Email);
-            user.ShouldNotBeNull();
-            var roles = await userManager.GetRolesAsync(user);
-            roles.ShouldContain("Admin");
-        }
-    }
-
-    [Fact]
-    public async Task CreateUser_ReturnsConflict_WhenUserExists()
-    {
-        // Arrange
-        await AuthenticateAsAdminAsync();
-        var request = new AdminCreateUserDto("existing@test.com", "SecurePass123!", new List<string> { "User" });
-
-        await Client.PostAsJsonAsync("/api/admin/users", request);
-
-        // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
-        // We now check for generic error
-        var content = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        content!.Error.ShouldBe("Unable to create user.");
-    }
-
-    [Fact]
-    public async Task CreateUser_ReturnsBadRequest_WhenRoleInvalid()
-    {
-        // Arrange
-        await AuthenticateAsAdminAsync();
-        var request = new AdminCreateUserDto("badrole@test.com", "SecurePass123!", new List<string> { "Hacker" });
-
-        // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        var content = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        content!.Error.ShouldBe("Operation failed.");
-    }
-
-    [Fact]
-    public async Task CreateUser_ReturnsUnauthorized_WhenNotAuthenticated()
-    {
-        // Arrange
-        var request = new AdminCreateUserDto("unauth@test.com", "SecurePass123!", new List<string> { "User" });
-
-        // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task CreateUser_ReturnsForbidden_WhenUserIsNotAdmin()
-    {
-        // Arrange
-        await AuthenticateAsync("user@example.com", "Password123!");
-        var request = new AdminCreateUserDto("forbidden@test.com", "SecurePass123!", new List<string> { "User" });
-
-        // Act
-        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     private class UsersResponse
@@ -182,10 +97,5 @@ public class AdminEndpointTests : BaseIntegrationTest
         public List<AdminUserDto> Items { get; set; } = new();
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
-    }
-
-    private class ErrorResponse
-    {
-        public string Error { get; set; } = string.Empty;
     }
 }
