@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
+import '../models/ai_analysis.dart';
 import '../models/search_history_item.dart';
 import '../services/api_service.dart';
 import '../services/search_history_service.dart';
@@ -28,7 +29,7 @@ class ContextReportProvider extends ChangeNotifier {
 
   // Persistent state for report children
   final Map<String, bool> _expansionStates = {};
-  final Map<String, String> _aiInsights = {};
+  final Map<String, AiAnalysis> _aiInsights = {};
   final Map<String, String> _aiInsightErrors = {};
   final Set<String> _loadingAiInsights = {};
 
@@ -61,7 +62,7 @@ class ContextReportProvider extends ChangeNotifier {
   }
 
   // AI Insight state management
-  String? getAiInsight(String location) => _aiInsights[location];
+  AiAnalysis? getAiInsight(String location) => _aiInsights[location];
   String? getAiInsightError(String location) => _aiInsightErrors[location];
   bool isAiInsightLoading(String location) => _loadingAiInsights.contains(location);
 

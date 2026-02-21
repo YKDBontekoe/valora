@@ -207,7 +207,7 @@ Chat with the AI assistant about real estate.
 ### Analyze Report
 `POST /api/ai/analyze-report`
 
-Generate a textual summary of a context report.
+Generate a structured AI analysis of a context report.
 
 **Request Body:**
 ```json
@@ -237,6 +237,24 @@ Generate a textual summary of a context report.
     "sources": [],
     "warnings": []
   }
+}
+```
+
+**Response:**
+```json
+{
+  "summary": "Damrak 1 is in a bustling, high-traffic area with excellent amenities but potentially higher noise levels.",
+  "topPositives": [
+    "Excellent public transport accessibility",
+    "High density of restaurants and shops",
+    "Walkable neighborhood"
+  ],
+  "topConcerns": [
+    "Higher than average noise levels",
+    "Crowded tourist area"
+  ],
+  "confidence": 95,
+  "disclaimer": "Analysis is based on available public data."
 }
 ```
 

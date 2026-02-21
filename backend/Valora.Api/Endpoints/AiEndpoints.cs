@@ -44,8 +44,8 @@ public static class AiEndpoints
         {
             try
             {
-                var summary = await contextAnalysisService.AnalyzeReportAsync(request.Report, ct);
-                return Results.Ok(new AiAnalysisResponse(summary));
+                var result = await contextAnalysisService.AnalyzeReportAsync(request.Report, ct);
+                return Results.Ok(result);
             }
             catch (OperationCanceledException)
             {

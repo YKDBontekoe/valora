@@ -6,6 +6,6 @@ namespace Valora.Application.Common.Interfaces;
 
 public interface IContextAnalysisService
 {
-    Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken);
     Task<string> ChatAsync(string prompt, string? model, CancellationToken cancellationToken);
+    Task<AiAnalysisResponse> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken);
 }

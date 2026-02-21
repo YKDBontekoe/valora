@@ -9,6 +9,14 @@ export interface Stats {
   totalNotifications: number;
 }
 
+export interface SystemStatus {
+  dbLatencyMs: number;
+  queueDepth: number;
+  workerHealth: string;
+  dbConnectivity: string;
+  lastIngestionRun: string | null;
+}
+
 export interface AuthResponse {
   token: string;
   refreshToken: string;
@@ -34,7 +42,6 @@ export interface BatchJob {
   progress: number;
   error: string | null;
   resultSummary: string | null;
-  executionLog?: string | null;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;

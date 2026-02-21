@@ -18,11 +18,11 @@ class AiInsightCard extends StatelessWidget {
     final provider = context.watch<ContextReportProvider>();
     final location = report.location.displayAddress;
 
-    final summary = provider.getAiInsight(location);
+    final analysis = provider.getAiInsight(location);
     final isLoading = provider.isAiInsightLoading(location);
     final error = provider.getAiInsightError(location);
 
-    if (summary != null) {
+    if (analysis != null) {
       return ValoraCard(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -39,13 +39,56 @@ class AiInsightCard extends StatelessWidget {
                     color: theme.colorScheme.primary,
                   ),
                 ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${analysis.confidence}% Confidence',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             _MarkdownText(
               key: const Key('ai-summary-text'),
-              text: summary,
+              text: analysis.summary,
             ),
+            if (analysis.topPositives.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Positives',
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ...analysis.topPositives.map((p) => _Point(icon: Icons.check_circle, color: Colors.green, text: p)),
+            ],
+            if (analysis.topConcerns.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Things to Watch',
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ...analysis.topConcerns.map((c) => _Point(icon: Icons.warning, color: Colors.orange, text: c)),
+            ],
+             if (analysis.disclaimer.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                analysis.disclaimer,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ],
         ),
       ).animate().fadeIn().scale(alignment: Alignment.topCenter);
@@ -142,6 +185,32 @@ class _MarkdownText extends StatelessWidget {
             style: isBold ? const TextStyle(fontWeight: FontWeight.bold) : null,
           );
         }),
+      ),
+    );
+  }
+}
+
+class _Point extends StatelessWidget {
+  const _Point({required this.icon, required this.color, required this.text});
+
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: theme.textTheme.bodySmall),
+          ),
+        ],
       ),
     );
   }
