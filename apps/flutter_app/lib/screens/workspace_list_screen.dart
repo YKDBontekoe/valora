@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/workspace_provider.dart';
-import '../models/workspace.dart';
 import 'workspace_detail_screen.dart';
 
 class WorkspaceListScreen extends StatefulWidget {

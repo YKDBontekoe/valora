@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
 import '../widgets/workspaces/member_management_widget.dart';
-import '../models/workspace.dart';
 import 'saved_listing_detail_screen.dart';
 
 class WorkspaceDetailScreen extends StatefulWidget {
