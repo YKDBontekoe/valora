@@ -31,14 +31,27 @@ const Dashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const [statsData, statusData] = await Promise.all([
+      const results = await Promise.allSettled([
         adminService.getStats(),
         adminService.getSystemStatus()
       ]);
-      setStats(statsData);
-      setSystemStatus(statusData);
+
+      if (results[0].status === 'fulfilled') {
+        setStats(results[0].value);
+      } else {
+        console.error('Failed to fetch stats:', results[0].reason);
+        setError('Failed to fetch dashboard statistics.');
+      }
+
+      if (results[1].status === 'fulfilled') {
+        setSystemStatus(results[1].value);
+      } else {
+        console.error('Failed to fetch system status:', results[1].reason);
+        // We don't set global error here to allow stats to show even if system status fails
+      }
+
     } catch {
-      setError('Failed to fetch dashboard data. Please try again.');
+      setError('An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -186,16 +199,16 @@ const Dashboard = () => {
                 <div className="space-y-2">
                     <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest flex items-center gap-1">
                         <Activity className="w-3 h-3" />
-                        API Latency
+                        Response Time
                     </span>
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-brand-700">{systemStatus.apiLatencyMs.toFixed(1)}ms</span>
+                        <span className="font-bold text-brand-700">{systemStatus.dbLatencyMs.toFixed(1)}ms</span>
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                            systemStatus.apiLatencyMs < 100 ? 'text-success-600 bg-success-50' :
-                            systemStatus.apiLatencyMs < 300 ? 'text-warning-600 bg-warning-50' :
+                            systemStatus.dbLatencyMs < 100 ? 'text-success-600 bg-success-50' :
+                            systemStatus.dbLatencyMs < 300 ? 'text-warning-600 bg-warning-50' :
                             'text-error-600 bg-error-50'
                         }`}>
-                            {systemStatus.apiLatencyMs < 100 ? 'Optimal' : systemStatus.apiLatencyMs < 300 ? 'Fair' : 'Slow'}
+                            {systemStatus.dbLatencyMs < 100 ? 'Optimal' : systemStatus.dbLatencyMs < 300 ? 'Fair' : 'Slow'}
                         </span>
                     </div>
                 </div>
@@ -218,7 +231,10 @@ const Dashboard = () => {
                 </div>
             </div>
         ) : (
-             <div className="text-brand-400 italic">System status unavailable</div>
+             <div className="flex items-center gap-2 text-brand-400 italic bg-brand-50/50 p-4 rounded-xl border border-brand-100/50">
+                <AlertCircle size={16} />
+                <span>System status metrics currently unavailable</span>
+             </div>
         )}
       </motion.div>
     </div>

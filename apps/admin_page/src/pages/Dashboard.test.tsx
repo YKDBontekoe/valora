@@ -21,7 +21,7 @@ describe('Dashboard Page', () => {
       totalNotifications: 56,
     };
     const mockStatus = {
-        apiLatencyMs: 42,
+        dbLatencyMs: 42,
         queueDepth: 0,
         workerHealth: "Idle",
         dbConnectivity: "Connected",
@@ -44,7 +44,7 @@ describe('Dashboard Page', () => {
     });
   });
 
-  it('renders error message when API call fails', async () => {
+  it('renders error message when both API calls fail', async () => {
     (adminService.getStats as Mock).mockRejectedValue(new Error('API Error'));
     (adminService.getSystemStatus as Mock).mockRejectedValue(new Error('API Error'));
 
@@ -52,7 +52,23 @@ describe('Dashboard Page', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Dashboard')).toBeInTheDocument();
-      expect(screen.getByText('Failed to fetch dashboard data. Please try again.')).toBeInTheDocument();
+      expect(screen.getByText('Failed to fetch dashboard statistics.')).toBeInTheDocument();
+    });
+  });
+
+  it('renders stats and warning when system status fails', async () => {
+    const mockStats = {
+      totalUsers: 1234,
+      totalNotifications: 56,
+    };
+    (adminService.getStats as Mock).mockResolvedValue(mockStats);
+    (adminService.getSystemStatus as Mock).mockRejectedValue(new Error('API Error'));
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('1,234')).toBeInTheDocument();
+      expect(screen.getByText('System status metrics currently unavailable')).toBeInTheDocument();
     });
   });
 });

@@ -12,6 +12,7 @@ public class AdminServiceTests
 {
     private readonly Mock<IIdentityService> _identityServiceMock = new();
     private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
+    private readonly Mock<IBatchJobRepository> _batchJobRepositoryMock = new();
     private readonly Mock<ILogger<AdminService>> _loggerMock = new();
 
     private AdminService CreateService()
@@ -19,6 +20,7 @@ public class AdminServiceTests
         return new AdminService(
             _identityServiceMock.Object,
             _notificationRepositoryMock.Object,
+            _batchJobRepositoryMock.Object,
             _loggerMock.Object);
     }
 
@@ -128,5 +130,22 @@ public class AdminServiceTests
         // Assert
         Assert.Equal(10, result.TotalUsers);
         Assert.Equal(5, result.TotalNotifications);
+    }
+
+    [Fact]
+    public async Task GetSystemStatusAsync_ReturnsConnected_WhenCanConnect()
+    {
+        // Arrange
+        var service = CreateService();
+        _identityServiceMock.Setup(x => x.CanConnectAsync()).ReturnsAsync(true);
+        _batchJobRepositoryMock.Setup(x => x.GetQueueDepthAsync(It.IsAny<CancellationToken>())).ReturnsAsync(5);
+
+        // Act
+        var result = await service.GetSystemStatusAsync();
+
+        // Assert
+        Assert.Equal("Connected", result.DbConnectivity);
+        Assert.Equal(5, result.QueueDepth);
+        Assert.Equal("Active", result.WorkerHealth);
     }
 }

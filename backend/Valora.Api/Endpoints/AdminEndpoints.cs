@@ -75,9 +75,10 @@ public static class AdminEndpoints
         });
 
         group.MapGet("/system-status", async (
-            IAdminService adminService) =>
+            IAdminService adminService,
+            CancellationToken ct) =>
         {
-            var status = await adminService.GetSystemStatusAsync();
+            var status = await adminService.GetSystemStatusAsync(ct);
             return Results.Ok(status);
         });
 

@@ -17,15 +17,29 @@ const BatchJobs = () => {
 
   const fetchData = async () => {
     try {
-      const [jobsData, statusData] = await Promise.all([
+      // Use Promise.allSettled to allow partial success (e.g. status fails but jobs load)
+      const results = await Promise.allSettled([
         adminService.getJobs(),
         adminService.getSystemStatus()
       ]);
-      setJobs(jobsData);
-      setSystemStatus(statusData);
-      setError(null);
-    } catch {
-      setError('Unable to load job history.');
+
+      if (results[0].status === 'fulfilled') {
+        setJobs(results[0].value);
+        setError(null);
+      } else {
+        console.error('Failed to load jobs:', results[0].reason);
+        setError('Unable to load job history.');
+      }
+
+      if (results[1].status === 'fulfilled') {
+        setSystemStatus(results[1].value);
+      } else {
+        console.warn('System status unavailable:', results[1].reason);
+      }
+
+    } catch (e) {
+      console.error("Unexpected error fetching batch jobs data", e);
+      setError('An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -33,7 +47,8 @@ const BatchJobs = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    // Increased polling interval to 30s to avoid rate limits (10 req/min)
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 

@@ -93,7 +93,7 @@ public class AdminService : IAdminService
         return new AdminStatsDto(usersCount, notificationsCount);
     }
 
-    public async Task<SystemStatusDto> GetSystemStatusAsync()
+    public async Task<SystemStatusDto> GetSystemStatusAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("System status requested.");
 
@@ -101,8 +101,7 @@ public class AdminService : IAdminService
         bool dbConnected = false;
         try
         {
-             await _identityService.CountAsync();
-             dbConnected = true;
+             dbConnected = await _identityService.CanConnectAsync();
         }
         catch (Exception ex)
         {
@@ -118,8 +117,8 @@ public class AdminService : IAdminService
         {
             try
             {
-                queueDepth = await _batchJobRepository.GetQueueDepthAsync();
-                lastIngestion = await _batchJobRepository.GetLastIngestionRunAsync();
+                queueDepth = await _batchJobRepository.GetQueueDepthAsync(cancellationToken);
+                lastIngestion = await _batchJobRepository.GetLastIngestionRunAsync(cancellationToken);
             }
             catch (Exception ex)
             {

@@ -1,7 +1,7 @@
 namespace Valora.Application.DTOs;
 
 public record SystemStatusDto(
-    double ApiLatencyMs,
+    double DbLatencyMs,
     int QueueDepth,
     string WorkerHealth,
     string DbConnectivity,

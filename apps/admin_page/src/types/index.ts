@@ -10,7 +10,7 @@ export interface Stats {
 }
 
 export interface SystemStatus {
-  apiLatencyMs: number;
+  dbLatencyMs: number;
   queueDepth: number;
   workerHealth: string;
   dbConnectivity: string;
