@@ -9,4 +9,6 @@ public interface IBatchJobRepository
     Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default);
     Task<BatchJob> AddAsync(BatchJob job, CancellationToken cancellationToken = default);
     Task UpdateAsync(BatchJob job, CancellationToken cancellationToken = default);
+    Task<int> GetQueueDepthAsync(CancellationToken cancellationToken = default);
+    Task<DateTime?> GetLastIngestionRunAsync(CancellationToken cancellationToken = default);
 }
