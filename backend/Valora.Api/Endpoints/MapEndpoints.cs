@@ -41,6 +41,26 @@ public static class MapEndpoints
         .RequireAuthorization()
         .WithName("GetMapAmenities");
 
+        group.MapGet("/amenities/clusters", async (
+            [FromQuery] double minLat,
+            [FromQuery] double minLon,
+            [FromQuery] double maxLat,
+            [FromQuery] double maxLon,
+            [FromQuery] double zoom,
+            [FromQuery] string? types,
+            IMapService mapService,
+            CancellationToken ct) =>
+        {
+            var typeList = types?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(t => t.Trim())
+                .ToList();
+
+            var clusters = await mapService.GetMapAmenityClustersAsync(minLat, minLon, maxLat, maxLon, zoom, typeList, ct);
+            return Results.Ok(clusters);
+        })
+        .RequireAuthorization()
+        .WithName("GetMapAmenityClusters");
+
         group.MapGet("/overlays", async (
             [FromQuery] double minLat,
             [FromQuery] double minLon,
@@ -55,6 +75,22 @@ public static class MapEndpoints
         })
         .RequireAuthorization()
         .WithName("GetMapOverlays");
+
+        group.MapGet("/overlays/tiles", async (
+            [FromQuery] double minLat,
+            [FromQuery] double minLon,
+            [FromQuery] double maxLat,
+            [FromQuery] double maxLon,
+            [FromQuery] double zoom,
+            [FromQuery] MapOverlayMetric metric,
+            IMapService mapService,
+            CancellationToken ct) =>
+        {
+            var tiles = await mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, metric, ct);
+            return Results.Ok(tiles);
+        })
+        .RequireAuthorization()
+        .WithName("GetMapOverlayTiles");
 
         return group;
     }

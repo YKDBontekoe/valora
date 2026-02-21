@@ -123,4 +123,88 @@ public class MapServiceTests
         await Assert.ThrowsAsync<ValidationException>(() =>
             _mapService.GetMapOverlaysAsync(minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity));
     }
+
+    [Fact]
+    public async Task GetMapOverlayTilesAsync_ShouldReturnRasterizedGrid()
+    {
+        // Arrange
+        // Create a polygon covering 52.0000-52.0100, 5.0000-5.0100
+        var geoJson = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0000, 52.0000 },
+                new[] { 5.0100, 52.0000 },
+                new[] { 5.0100, 52.0100 },
+                new[] { 5.0000, 52.0100 },
+                new[] { 5.0000, 52.0000 }
+            }}
+        });
+
+        var dummyOverlays = new List<MapOverlayDto> {
+            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", geoJson)
+        };
+
+        _cbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyOverlays);
+
+        // Zoom 13 -> cellSize 0.005.
+        // Bbox: 52.0000, 5.0000 -> 52.0150, 5.0150 (3x3 grid approx)
+        double minLat = 52.0000, minLon = 5.0000;
+        double maxLat = 52.0150, maxLon = 5.0150;
+        double zoom = 13;
+
+        // Act
+        var result = await _mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, MapOverlayMetric.PopulationDensity);
+
+        // Assert
+        // We expect tiles covering the polygon to be returned.
+        // Grid points at 52.0025, 52.0075, 52.0125 etc.
+        // 52.0025, 5.0025 -> Inside
+        // 52.0075, 5.0075 -> Inside
+        // 52.0125, 5.0125 -> Outside
+        Assert.NotEmpty(result);
+        Assert.All(result, tile => Assert.True(tile.Value == 100));
+        // Check grid size
+        Assert.Equal(0.005, result[0].Size);
+    }
+
+    [Fact]
+    public async Task GetMapAmenityClustersAsync_ShouldClusterAmenities()
+    {
+        // Arrange
+        // Zoom 13 -> cellSize 0.005
+        // Two amenities close to each other, one far
+        var amenities = new List<MapAmenityDto>
+        {
+            new("1", "school", "School 1", 52.0010, 5.0010), // Cluster 1
+            new("2", "school", "School 2", 52.0020, 5.0020), // Cluster 1
+            new("3", "park", "Park 1", 52.0080, 5.0080)      // Cluster 2
+        };
+
+        _amenityClientMock.Setup(x => x.GetAmenitiesInBboxAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(amenities);
+
+        double minLat = 52.0000, minLon = 5.0000;
+        double maxLat = 52.0100, maxLon = 5.0100;
+        double zoom = 13;
+
+        // Act
+        var result = await _mapService.GetMapAmenityClustersAsync(minLat, minLon, maxLat, maxLon, zoom);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+
+        var cluster1 = result.OrderByDescending(c => c.Count).First();
+        Assert.Equal(2, cluster1.Count);
+        Assert.Contains("school", cluster1.TypeCounts.Keys);
+        Assert.Equal(2, cluster1.TypeCounts["school"]);
+
+        var cluster2 = result.OrderBy(c => c.Count).First();
+        Assert.Equal(1, cluster2.Count);
+        Assert.Contains("park", cluster2.TypeCounts.Keys);
+    }
 }
