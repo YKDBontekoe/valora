@@ -1,6 +1,6 @@
 using Google.Apis.Auth;
 
-namespace Valora.Application.Common.Interfaces.External;
+namespace Valora.Infrastructure.Services.External;
 
 public interface IGoogleTokenValidator
 {
