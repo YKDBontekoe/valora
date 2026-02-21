@@ -66,6 +66,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     // Verify AutofillGroup exists
     expect(find.byType(AutofillGroup), findsOneWidget);
@@ -104,7 +105,7 @@ void main() {
     );
 
     await tester.tap(find.text('Google'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(authProvider.googleLoginCalled, isTrue);
   });
