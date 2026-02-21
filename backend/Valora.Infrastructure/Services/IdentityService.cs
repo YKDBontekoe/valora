@@ -124,7 +124,7 @@ public class IdentityService : IIdentityService
     public async Task<Result> DeleteUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Result.Failure(new[] { "User not found." });
+        if (user == null) return Result.Failure(new[] { "User not found." }, "NotFound");
 
         // Manually clean up notifications because they don't have a navigation property/FK configured for cascade delete
 

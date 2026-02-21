@@ -129,4 +129,27 @@ public class AdminServiceTests
         Assert.Equal(10, result.TotalUsers);
         Assert.Equal(5, result.TotalNotifications);
     }
+
+    [Fact]
+    public async Task DeleteUserAsync_ReturnsNotFound_WhenUserDoesNotExist()
+    {
+        // Arrange
+        var service = CreateService();
+        var currentUserId = "admin-123";
+        var targetUserId = "non-existent-user";
+
+        // Mock IdentityService returning NotFound error code
+        var failureResult = Result.Failure(new[] { "User not found." }, "NotFound");
+        _identityServiceMock
+            .Setup(x => x.DeleteUserAsync(targetUserId))
+            .ReturnsAsync(failureResult);
+
+        // Act
+        var result = await service.DeleteUserAsync(targetUserId, currentUserId);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("NotFound", result.ErrorCode);
+        Assert.Contains("User not found.", result.Errors);
+    }
 }

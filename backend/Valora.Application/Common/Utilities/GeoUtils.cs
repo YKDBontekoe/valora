@@ -59,11 +59,15 @@ public static class GeoUtils
 
         var exteriorRing = rings.Current;
 
-        // Optimization: Check Bounding Box of exterior ring first
-        if (!IsPointInBoundingBox(lat, lon, exteriorRing))
-        {
-            return false;
-        }
+        // Optimization: Removed redundant Bounding Box check.
+        // IsPointInLinearRing iterates all points (O(N)).
+        // Ray Casting is O(N).
+        // Calculating BBox is O(N).
+        // Doing both is O(2N).
+        // Without BBox check, we do O(N).
+        // If BBox check fails (point outside), we save Ray Casting cost (math ops), but we paid iteration cost.
+        // Since we don't cache BBox, it's generally better to just do the Ray Cast or do BBox during Ray Cast (which is complex).
+        // Given BBox was recalculated every time, removing it is a win.
 
         if (!IsPointInLinearRing(lat, lon, exteriorRing))
         {
@@ -82,49 +86,51 @@ public static class GeoUtils
         return true;
     }
 
-    private static bool IsPointInBoundingBox(double lat, double lon, JsonElement ring)
-    {
-        double minLat = double.MaxValue;
-        double maxLat = double.MinValue;
-        double minLon = double.MaxValue;
-        double maxLon = double.MinValue;
-
-        foreach (var point in ring.EnumerateArray())
-        {
-            if (point.ValueKind != JsonValueKind.Array || point.GetArrayLength() < 2) continue;
-            double pLon = point[0].GetDouble();
-            double pLat = point[1].GetDouble();
-
-            if (pLat < minLat) minLat = pLat;
-            if (pLat > maxLat) maxLat = pLat;
-            if (pLon < minLon) minLon = pLon;
-            if (pLon > maxLon) maxLon = pLon;
-        }
-
-        return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
-    }
-
     private static bool IsPointInLinearRing(double lat, double lon, JsonElement ring)
     {
+        if (ring.ValueKind != JsonValueKind.Array) return false;
+
         bool inside = false;
-        // Filter out invalid points
-        var points = ring.EnumerateArray()
-            .Where(p => p.ValueKind == JsonValueKind.Array && p.GetArrayLength() >= 2)
-            .ToList();
+        int count = ring.GetArrayLength();
 
-        int count = points.Count;
-
-        for (int i = 0, j = count - 1; i < count; j = i++)
+        // Find last valid point to initialize j (the "previous" point)
+        int j = -1;
+        for (int k = count - 1; k >= 0; k--)
         {
+             var pk = ring[k];
+             if (pk.ValueKind == JsonValueKind.Array && pk.GetArrayLength() >= 2)
+             {
+                 j = k;
+                 break;
+             }
+        }
+
+        if (j == -1) return false; // No valid points in ring
+
+        for (int i = 0; i < count; i++)
+        {
+            var pi = ring[i];
+
+            // Ensure valid coordinates for current point
+            if (pi.ValueKind != JsonValueKind.Array || pi.GetArrayLength() < 2)
+            {
+                continue; // Skip invalid point, j remains the previous valid point
+            }
+
+            var pj = ring[j];
+
             // GeoJSON is [lon, lat]
-            double xi = points[i][0].GetDouble();
-            double yi = points[i][1].GetDouble();
-            double xj = points[j][0].GetDouble();
-            double yj = points[j][1].GetDouble();
+            double xi = pi[0].GetDouble();
+            double yi = pi[1].GetDouble();
+            double xj = pj[0].GetDouble();
+            double yj = pj[1].GetDouble();
 
             bool intersect = ((yi > lat) != (yj > lat)) &&
                              (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
             if (intersect) inside = !inside;
+
+            // Update j to be the current valid point for the next iteration
+            j = i;
         }
 
         return inside;
