@@ -12,6 +12,8 @@ public class AdminService : IAdminService
     private readonly INotificationRepository _notificationRepository;
     private readonly ILogger<AdminService> _logger;
 
+    private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase) { "Admin", "User" };
+
     public AdminService(
         IIdentityService identityService,
         INotificationRepository notificationRepository,
@@ -43,20 +45,30 @@ public class AdminService : IAdminService
 
     public async Task<Result> CreateUserAsync(AdminCreateUserDto request, string currentUserId)
     {
-        _logger.LogInformation("Admin user creation requested by {AdminId} for email {Email}", currentUserId, request.Email);
+        var maskedEmail = MaskEmail(request.Email);
+        _logger.LogInformation("Admin user creation requested by {AdminId} for email {MaskedEmail}", currentUserId, maskedEmail);
+
+        // Validate Roles first
+        var invalidRoles = request.Roles.Where(r => !AllowedRoles.Contains(r)).ToList();
+        if (invalidRoles.Any())
+        {
+            _logger.LogWarning("Admin {AdminId} attempted to assign invalid roles: {InvalidRoles}", currentUserId, string.Join(", ", invalidRoles));
+            return Result.Failure(new[] { "Invalid role assignment." }, "BadRequest");
+        }
 
         var existingUser = await _identityService.GetUserByEmailAsync(request.Email);
         if (existingUser != null)
         {
-            _logger.LogWarning("User creation failed. Email {Email} already exists.", request.Email);
-            return Result.Failure(new[] { "User with this email already exists." }, "Conflict");
+            _logger.LogWarning("User creation failed. Email {MaskedEmail} already exists.", maskedEmail);
+            return Result.Failure(new[] { "Conflict" }, "Conflict");
         }
 
         var (createResult, newUserId) = await _identityService.CreateUserAsync(request.Email, request.Password);
         if (!createResult.Succeeded)
         {
-            _logger.LogError("Failed to create user {Email}: {Errors}", request.Email, string.Join(", ", createResult.Errors));
-            return createResult;
+            _logger.LogError("Failed to create user {MaskedEmail}: {Errors}", maskedEmail, string.Join(", ", createResult.Errors));
+            // Return generic error to client
+            return Result.Failure(new[] { "Failed to create user." }, "BadRequest");
         }
 
         foreach (var role in request.Roles)
@@ -78,8 +90,16 @@ public class AdminService : IAdminService
             }
         }
 
-        _logger.LogInformation("Successfully created user {UserId} with email {Email}", newUserId, request.Email);
+        _logger.LogInformation("Successfully created user {UserId} with email {MaskedEmail}", newUserId, maskedEmail);
         return Result.Success();
+    }
+
+    private static string MaskEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email)) return "unknown";
+        var atIndex = email.IndexOf('@');
+        if (atIndex <= 1) return "***@***.com";
+        return string.Concat(email.AsSpan(0, 1), "***", email.AsSpan(atIndex));
     }
 
     private static AdminUserDto MapToAdminUserDto(ApplicationUser user, IDictionary<string, IList<string>> rolesMap)

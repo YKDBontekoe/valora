@@ -59,10 +59,12 @@ public static class AdminEndpoints
 
             if (result.ErrorCode == "Conflict")
             {
-                return Results.Conflict(new { error = result.Errors.FirstOrDefault() ?? "User already exists." });
+                // Generic error message to prevent enumeration
+                return Results.Conflict(new { error = "Unable to create user." });
             }
 
-            return Results.BadRequest(new { error = result.Errors.FirstOrDefault() ?? "Operation failed." });
+            // Generic error message
+            return Results.BadRequest(new { error = "Operation failed." });
         })
         .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AdminCreateUserDto>>();
 

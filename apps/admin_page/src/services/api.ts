@@ -80,7 +80,7 @@ api.interceptors.response.use(
       || error.message
       || 'An unexpected error occurred';
 
-    if (error.response?.status !== 401) {
+    if (error.response?.status !== 401 && !originalRequest.skipGlobalErrorToast) {
        showToast(message, 'error');
     }
 
@@ -110,7 +110,8 @@ export const adminService = {
     return response.data;
   },
   createUser: async (user: { email: string; password: string; roles: string[] }): Promise<void> => {
-    await api.post('/admin/users', user);
+    // @ts-expect-error - Custom config
+    await api.post('/admin/users', user, { skipGlobalErrorToast: true });
   },
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);

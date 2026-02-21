@@ -15,7 +15,7 @@ interface CreateUserModalProps {
 const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('Admin');
+  const [role, setRole] = useState('User');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,17 +29,20 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProp
       showToast('User created successfully.', 'success');
       onUserCreated();
       onClose();
-      // Reset form
-      setEmail('');
-      setPassword('');
-      setRole('Admin');
+      // State reset handled by next mount or not needed as we unmount
     } catch (err) {
-       // Error is already handled globally by interceptor for toast,
-       // but we might want to show it inline too or if the interceptor logic allows bubbling.
-       // The interceptor rejects the promise, so we catch it here.
-       const axiosError = err as AxiosError<{ error: string }>;
-       const msg = axiosError.response?.data?.error || 'Failed to create user.';
-       setError(msg);
+       const axiosError = err as AxiosError<{ error?: string; title?: string; errors?: Record<string, string[]> }>;
+       let msg = axiosError.response?.data?.error;
+
+       if (!msg && axiosError.response?.data?.errors) {
+         // Handle ValidationProblem format
+         const errors = axiosError.response.data.errors;
+         msg = Object.values(errors).flat().join(' ');
+       } else if (!msg && axiosError.response?.data?.title) {
+         msg = axiosError.response.data.title;
+       }
+
+       setError(msg || 'Failed to create user.');
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +51,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProp
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -71,12 +74,13 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProp
                 <button
                   onClick={onClose}
                   className="p-2 text-brand-400 hover:text-brand-900 transition-colors rounded-xl hover:bg-brand-50"
+                  aria-label="Close modal"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              <h3 className="text-2xl font-black text-brand-900 tracking-tight mb-2">
+              <h3 id="create-user-title" className="text-2xl font-black text-brand-900 tracking-tight mb-2">
                 Create New User
               </h3>
               <p className="text-brand-500 font-medium leading-relaxed mb-6">
@@ -92,10 +96,11 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProp
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1">
-                    <label className="text-xs font-black text-brand-400 uppercase tracking-wider ml-1">Email Address</label>
+                    <label htmlFor="email-input" className="text-xs font-black text-brand-400 uppercase tracking-wider ml-1">Email Address</label>
                     <div className="relative group">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-400 group-focus-within:text-primary-500 transition-colors" size={18} />
                         <input
+                            id="email-input"
                             type="email"
                             required
                             value={email}
@@ -107,10 +112,11 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProp
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs font-black text-brand-400 uppercase tracking-wider ml-1">Password</label>
+                    <label htmlFor="password-input" className="text-xs font-black text-brand-400 uppercase tracking-wider ml-1">Password</label>
                     <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-400 group-focus-within:text-primary-500 transition-colors" size={18} />
                         <input
+                            id="password-input"
                             type="password"
                             required
                             minLength={8}
@@ -123,10 +129,11 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }: CreateUserModalProp
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs font-black text-brand-400 uppercase tracking-wider ml-1">Role</label>
+                    <label htmlFor="role-select" className="text-xs font-black text-brand-400 uppercase tracking-wider ml-1">Role</label>
                     <div className="relative group">
                         <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-400 group-focus-within:text-primary-500 transition-colors" size={18} />
                         <select
+                            id="role-select"
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
                             className="w-full pl-11 pr-4 py-3 bg-brand-50/50 border border-brand-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-semibold text-brand-900 appearance-none cursor-pointer"
