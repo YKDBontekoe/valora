@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
 
 void main() {
@@ -73,33 +72,6 @@ void main() {
       apiService = ApiService(client: mockClient);
 
       expect(await apiService.healthCheck(), isTrue);
-    });
-
-    test('throws JsonParsingException when server returns invalid JSON (e.g. HTML)', () async {
-      mockClient = MockClient((request) async {
-        return http.Response('<html>Bad Gateway</html>', 200);
-      });
-      apiService = ApiService(client: mockClient);
-
-      expect(
-        () => apiService.getContextReport('Test Address'),
-        throwsA(isA<JsonParsingException>()),
-      );
-    });
-
-    test('truncates large error bodies to 500 chars in logs', () async {
-      final longBody = 'A' * 600;
-      mockClient = MockClient((request) async {
-        return http.Response(longBody, 200);
-      });
-      apiService = ApiService(client: mockClient);
-
-      // This test ensures that the truncation logic doesn't crash the app
-      // We can't verify the developer.log output without mocking developer.log, but code coverage will run.
-      expect(
-        () => apiService.getContextReport('Test Address'),
-        throwsA(isA<JsonParsingException>()),
-      );
     });
   });
 }

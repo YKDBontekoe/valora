@@ -286,7 +286,6 @@ class _InputForm extends StatelessWidget {
                 onSubmitted: (val) => _handleSubmit(context, val),
               );
             },
-            debounceDuration: const Duration(milliseconds: 300),
             suggestionsCallback: (pattern) async {
               if (pattern.length < 3) return [];
               return await pdokService.search(pattern);

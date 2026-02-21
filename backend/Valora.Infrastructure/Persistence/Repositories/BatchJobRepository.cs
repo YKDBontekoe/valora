@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
@@ -19,38 +18,12 @@ public class BatchJobRepository : IBatchJobRepository
         return await _context.BatchJobs.FindAsync(new object[] { id }, cancellationToken);
     }
 
-    public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
+    public async Task<List<BatchJob>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
-        var jobs = await _context.BatchJobs
+        return await _context.BatchJobs
             .OrderByDescending(x => x.CreatedAt)
             .Take(limit)
-            .Select(job => new
-            {
-                job.Id,
-                job.Type,
-                job.Status,
-                job.Target,
-                job.Progress,
-                job.Error,
-                job.ResultSummary,
-                job.CreatedAt,
-                job.StartedAt,
-                job.CompletedAt
-            })
             .ToListAsync(cancellationToken);
-
-        return jobs.Select(j => new BatchJobSummaryDto(
-            j.Id,
-            j.Type.ToString(),
-            j.Status.ToString(),
-            j.Target,
-            j.Progress,
-            j.Error,
-            j.ResultSummary,
-            j.CreatedAt,
-            j.StartedAt,
-            j.CompletedAt
-        )).ToList();
     }
 
     public async Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default)

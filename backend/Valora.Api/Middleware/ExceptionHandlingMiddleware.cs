@@ -41,6 +41,8 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        context.Response.ContentType = "application/json";
+
         var statusCode = (int)HttpStatusCode.InternalServerError;
         var title = "An internal error occurred";
         var detail = exception.Message;
@@ -144,6 +146,8 @@ public class ExceptionHandlingMiddleware
                 break;
         }
 
+        context.Response.StatusCode = statusCode;
+
         // Add breadcrumb for the handled error
         SentrySdk.AddBreadcrumb(
             message: $"Request failed with status {statusCode}: {title}",
@@ -171,15 +175,6 @@ public class ExceptionHandlingMiddleware
             _logger.LogWarning(exception, "Request failed with {StatusCode}: {ExceptionType} processing {Method} {Path}",
                 statusCode, exception.GetType().Name, context.Request.Method, context.Request.Path);
         }
-
-        if (context.Response.HasStarted)
-        {
-            _logger.LogWarning("The response has already started, the exception middleware will not be executed.");
-            return;
-        }
-
-        context.Response.StatusCode = statusCode;
-        context.Response.ContentType = "application/json";
 
         var problemDetails = new ProblemDetails
         {

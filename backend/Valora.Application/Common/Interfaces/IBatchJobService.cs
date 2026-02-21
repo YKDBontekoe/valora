@@ -3,6 +3,33 @@ using Valora.Domain.Entities;
 
 namespace Valora.Application.Common.Interfaces;
 
+public record BatchJobDto(
+    Guid Id,
+    string Type,
+    string Status,
+    string Target,
+    int Progress,
+    string? Error,
+    string? ResultSummary,
+    string? ExecutionLog,
+    DateTime CreatedAt,
+    DateTime? StartedAt,
+    DateTime? CompletedAt
+);
+
+public record BatchJobSummaryDto(
+    Guid Id,
+    string Type,
+    string Status,
+    string Target,
+    int Progress,
+    string? Error,
+    string? ResultSummary,
+    DateTime CreatedAt,
+    DateTime? StartedAt,
+    DateTime? CompletedAt
+);
+
 public interface IBatchJobService
 {
     Task<BatchJobDto> EnqueueJobAsync(BatchJobType type, string target, CancellationToken cancellationToken = default);
