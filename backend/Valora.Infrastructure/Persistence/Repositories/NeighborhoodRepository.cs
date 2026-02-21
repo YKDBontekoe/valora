@@ -38,4 +38,28 @@ public class NeighborhoodRepository : INeighborhoodRepository
         _context.Entry(neighborhood).State = EntityState.Modified;
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public void AddRange(IEnumerable<Neighborhood> neighborhoods)
+    {
+        _context.Neighborhoods.AddRange(neighborhoods);
+    }
+
+    public void UpdateRange(IEnumerable<Neighborhood> neighborhoods)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var neighborhood in neighborhoods)
+        {
+            neighborhood.UpdatedAt = now;
+            if (_context.Entry(neighborhood).State == EntityState.Detached)
+            {
+                 _context.Neighborhoods.Attach(neighborhood);
+                 _context.Entry(neighborhood).State = EntityState.Modified;
+            }
+        }
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

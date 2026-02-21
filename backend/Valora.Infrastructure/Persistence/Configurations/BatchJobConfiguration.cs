@@ -9,6 +9,12 @@ public class BatchJobConfiguration : IEntityTypeConfiguration<BatchJob>
     public void Configure(EntityTypeBuilder<BatchJob> builder)
     {
         builder.HasKey(x => x.Id);
+
+        // Optimizes polling for pending jobs
+        builder.HasIndex(e => e.Status);
+        // Optimizes sorting by creation date
+        builder.HasIndex(e => e.CreatedAt);
+
         builder.Property(x => x.Target).IsRequired().HasMaxLength(255);
         builder.Property(x => x.Type).HasConversion<string>();
         builder.Property(x => x.Status).HasConversion<string>();

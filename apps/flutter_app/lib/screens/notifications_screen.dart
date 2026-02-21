@@ -129,16 +129,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Consumer<NotificationService>(
-      builder: (context, provider, child) {
-        return Scaffold(
-          body: RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverAppBar(
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            Selector<NotificationService, int>(
+              selector: (_, p) => p.unreadCount,
+              builder: (context, unreadCount, _) {
+                return SliverAppBar(
                   pinned: true,
                   backgroundColor: isDark
                       ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
@@ -155,7 +156,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   centerTitle: false,
                   actions: [
-                    if (provider.unreadCount > 0)
+                    if (unreadCount > 0)
                       TextButton.icon(
                         onPressed: _confirmMarkAllRead,
                         icon: const Icon(Icons.done_all_rounded, size: 18),
@@ -166,20 +167,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     const SizedBox(width: 8),
                   ],
-                ),
-                if (provider.isLoading && provider.notifications.isEmpty)
-                   const SliverFillRemaining(
+                );
+              }
+            ),
+            Consumer<NotificationService>(
+              builder: (context, provider, _) {
+                if (provider.isLoading && provider.notifications.isEmpty) {
+                   return const SliverFillRemaining(
                     child: Center(
                       child: ValoraLoadingIndicator(message: 'Loading notifications...'),
                     ),
-                  )
-                else if (provider.error != null && provider.notifications.isEmpty)
-                  SliverFillRemaining(
+                  );
+                }
+
+                if (provider.error != null && provider.notifications.isEmpty) {
+                  return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
                       child: Builder(
                         builder: (context) {
-                          // Log the actual error for debugging
                           return ValoraEmptyState(
                             icon: Icons.error_outline_rounded,
                             title: 'Something went wrong',
@@ -190,9 +196,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         },
                       ),
                     ),
-                  )
-                else if (provider.notifications.isEmpty)
-                  SliverFillRemaining(
+                  );
+                }
+
+                if (provider.notifications.isEmpty) {
+                  return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
                       child: ValoraEmptyState(
@@ -201,9 +209,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         subtitle: "You're all caught up! Check back later for updates.",
                       ),
                     ),
-                  )
-                else
-                  SliverPadding(
+                  );
+                }
+
+                return SliverPadding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
@@ -232,12 +241,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         childCount: provider.notifications.length + 1,
                       ),
                     ),
-                  ),
-              ],
+                  );
+              }
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

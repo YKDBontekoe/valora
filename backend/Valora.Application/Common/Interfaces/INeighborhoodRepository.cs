@@ -8,4 +8,9 @@ public interface INeighborhoodRepository
     Task<List<Neighborhood>> GetByCityAsync(string city, CancellationToken cancellationToken = default);
     Task<Neighborhood> AddAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default);
     Task UpdateAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default);
+
+    // Batch operations
+    void AddRange(IEnumerable<Neighborhood> neighborhoods);
+    void UpdateRange(IEnumerable<Neighborhood> neighborhoods);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

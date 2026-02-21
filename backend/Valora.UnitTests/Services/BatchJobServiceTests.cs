@@ -89,8 +89,9 @@ public class BatchJobServiceTests
         _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(neighborhoods);
 
-        _neighborhoodRepositoryMock.Setup(x => x.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Neighborhood?)null);
+        // Updated mock to support the new batched flow
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Neighborhood>());
 
         _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NeighborhoodStatsDto("code", "type", 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, "urban", 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, DateTimeOffset.UtcNow));
@@ -100,7 +101,10 @@ public class BatchJobServiceTests
         Assert.Equal(BatchJobStatus.Completed, job.Status);
         Assert.Equal(100, job.Progress);
         _jobRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<BatchJob>(), It.IsAny<CancellationToken>()), Times.AtLeast(3));
-        _neighborhoodRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Neighborhood>(), It.IsAny<CancellationToken>()), Times.Exactly(6));
+
+        // Verify batch add was called (6 items total, batch size 10, so called once)
+        _neighborhoodRepositoryMock.Verify(x => x.AddRange(It.Is<IEnumerable<Neighborhood>>(l => l.Count() == 6)), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -119,8 +123,9 @@ public class BatchJobServiceTests
         _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(neighborhoods);
 
-        _neighborhoodRepositoryMock.Setup(x => x.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Neighborhood?)null);
+        // Updated mock
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Neighborhood>());
 
         _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((NeighborhoodStatsDto?)null);
@@ -130,7 +135,8 @@ public class BatchJobServiceTests
         await service.ProcessNextJobAsync();
 
         Assert.Equal(BatchJobStatus.Completed, job.Status);
-        _neighborhoodRepositoryMock.Verify(x => x.AddAsync(It.Is<Neighborhood>(n => n.PopulationDensity == null && n.AverageWozValue == null && n.CrimeRate == null), It.IsAny<CancellationToken>()), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.AddRange(It.Is<IEnumerable<Neighborhood>>(l => l.Any(n => n.PopulationDensity == null && n.AverageWozValue == null && n.CrimeRate == null))), Times.Once);
+        _neighborhoodRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -148,6 +154,10 @@ public class BatchJobServiceTests
 
         _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
             .ReturnsAsync(neighborhoods);
+
+        // Updated mock (cancellation might happen before this, but good to have)
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Neighborhood>());
 
         var cts = new CancellationTokenSource();
         cts.Cancel();
