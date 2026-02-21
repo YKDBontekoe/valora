@@ -12,7 +12,9 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
+import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
+import '../models/map_overlay_tile.dart';
 import '../models/notification.dart';
 import '../models/support_status.dart';
 import 'crash_reporting_service.dart';
@@ -108,8 +110,6 @@ class ApiService {
         'radiusMeters': radiusMeters,
       });
 
-      // Context report generation is a heavy read operation (idempotent side effects only).
-      // We retry on server errors to handle transient load spikes.
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
           (headers) => _client
@@ -252,9 +252,6 @@ class ApiService {
     }
   }
 
-  /// Centralized response handler.
-  /// Maps HTTP status codes to typed Application Exceptions for consistent UI error handling.
-  /// Also logs non-success responses for debugging.
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);
@@ -310,13 +307,11 @@ class ApiService {
   Exception _handleException(dynamic error, StackTrace? stack, [Uri? uri]) {
     if (error is AppException) return error;
 
-    // Redact query parameters to prevent PII leakage
     final redactedUri = uri?.replace(queryParameters: {}) ?? Uri();
     final urlString = redactedUri.toString().isEmpty ? 'unknown URL' : redactedUri.toString();
 
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
-    // Report non-business exceptions to Sentry
     CrashReportingService.captureException(
       error,
       stackTrace: stack ?? (error is Error ? error.stackTrace : null),
@@ -339,26 +334,19 @@ class ApiService {
     return UnknownException('An unexpected error occurred. Please try again.');
   }
 
-  /// Extracts the Correlation ID (TraceId) from standard Problem Details (RFC 7807) responses.
-  /// This allows us to display a "Reference ID" to the user, which support can use to find
-  /// the exact error log in the backend (Sentry/Kibana).
   String? _parseTraceId(String body) {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Look in extensions (RFC 7807)
         if (jsonBody['extensions'] is Map<String, dynamic>) {
           final extensions = jsonBody['extensions'] as Map<String, dynamic>;
           if (extensions['traceId'] is String) return extensions['traceId'] as String;
           if (extensions['requestId'] is String) return extensions['requestId'] as String;
         }
-        // Look in root
         if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
         if (jsonBody['requestId'] is String) return jsonBody['requestId'] as String;
       }
-    } catch (_) {
-      // Ignore parsing errors
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -366,7 +354,6 @@ class ApiService {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Handle FluentValidation 'errors' dictionary
         if (jsonBody['errors'] is Map<String, dynamic>) {
           final errors = jsonBody['errors'] as Map<String, dynamic>;
           final messages = errors.entries.map((e) {
@@ -376,13 +363,9 @@ class ApiService {
           });
           return messages.join('\n');
         }
-
-        // Handle RFC 7807 problem details
         return jsonBody['detail'] as String? ?? jsonBody['title'] as String?;
       }
-    } catch (_) {
-      // Ignore parsing errors
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -414,8 +397,7 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      final uri = Uri.parse('$baseUrl/map/cities');
-      throw _handleException(e, stack, uri);
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/cities'));
     }
   }
 
@@ -453,6 +435,42 @@ class ApiService {
     }
   }
 
+  Future<List<MapAmenityCluster>> getMapAmenityClusters({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    required double zoom,
+    List<String>? types,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/amenities/clusters').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+      'zoom': zoom.toString(),
+      if (types != null) 'types': types.join(','),
+    });
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapAmenityCluster.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities/clusters'));
+    }
+  }
+
   Future<List<MapOverlay>> getMapOverlays({
     required double minLat,
     required double minLon,
@@ -487,6 +505,42 @@ class ApiService {
     }
   }
 
+  Future<List<MapOverlayTile>> getMapOverlayTiles({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    required double zoom,
+    required String metric,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/overlays/tiles').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+      'zoom': zoom.toString(),
+      'metric': metric,
+    });
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapOverlayTile.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
+    }
+  }
+
   Future<SupportStatus> getSupportStatus() async {
     final uri = Uri.parse('$baseUrl/support/status');
     try {
@@ -494,12 +548,11 @@ class ApiService {
         () => _client.get(uri).timeout(timeoutDuration),
       );
 
-      return _handleResponse(
+      return await _handleResponse(
         response,
         (body) => SupportStatus.fromJson(json.decode(body)),
       );
     } catch (e, stack) {
-      // Don't throw for support status, return fallback
       developer.log('Failed to fetch support status', error: e, stackTrace: stack);
       return SupportStatus.fallback();
     }

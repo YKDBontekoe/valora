@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
-import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, SystemStatus } from '../types';
+import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob } from '../types';
 import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -109,10 +109,6 @@ export const adminService = {
     const response = await api.get<Stats>('/admin/stats');
     return response.data;
   },
-  getSystemStatus: async (): Promise<SystemStatus> => {
-    const response = await api.get<SystemStatus>('/admin/system-status');
-    return response.data;
-  },
   getUsers: async (page = 1, pageSize = 10, search?: string, sort?: string): Promise<PaginatedResponse<User>> => {
     let url = `/admin/users?page=${page}&pageSize=${pageSize}`;
     if (search) url += `&q=${encodeURIComponent(search)}`;
@@ -125,6 +121,18 @@ export const adminService = {
   },
   getJobs: async (limit = 10): Promise<BatchJob[]> => {
     const response = await api.get<BatchJob[]>(`/admin/jobs?limit=${limit}`);
+    return response.data;
+  },
+  getJobDetails: async (id: string): Promise<BatchJob> => {
+    const response = await api.get<BatchJob>(`/admin/jobs/${id}`);
+    return response.data;
+  },
+  retryJob: async (id: string): Promise<BatchJob> => {
+    const response = await api.post<BatchJob>(`/admin/jobs/${id}/retry`);
+    return response.data;
+  },
+  cancelJob: async (id: string): Promise<BatchJob> => {
+    const response = await api.post<BatchJob>(`/admin/jobs/${id}/cancel`);
     return response.data;
   },
   startJob: async (type: string, target: string): Promise<BatchJob> => {
