@@ -11,7 +11,6 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
-using Valora.Application.Common.Interfaces.External;
 using Valora.Infrastructure.Services.External;
 using System.Net;
 using Microsoft.Extensions.Http.Resilience;

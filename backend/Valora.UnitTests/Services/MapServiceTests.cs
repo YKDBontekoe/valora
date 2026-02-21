@@ -213,6 +213,17 @@ public class MapServiceTests
     [InlineData(0, double.NaN, 50, 0)]
     [InlineData(0, 0, double.NaN, 0)]
     [InlineData(0, 0, 50, double.NaN)]
+    // Infinity Cases (New validation)
+    [InlineData(double.PositiveInfinity, 0, 50, 0)]
+    [InlineData(0, double.PositiveInfinity, 50, 0)]
+    [InlineData(0, 0, double.PositiveInfinity, 0)]
+    [InlineData(0, 0, 50, double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity, 0, 50, 0)]
+    // Out of bounds (New validation)
+    [InlineData(91, 0, 92, 0)] // Lat > 90
+    [InlineData(-92, 0, -91, 0)] // Lat < -90
+    [InlineData(0, 181, 0, 182)] // Lon > 180
+    [InlineData(0, -182, 0, -181)] // Lon < -180
     public async Task GetMapAmenityClustersAsync_ShouldThrow_WhenBboxInvalid(double minLat, double minLon, double maxLat, double maxLon)
     {
         await Assert.ThrowsAsync<ValidationException>(() =>
@@ -221,6 +232,9 @@ public class MapServiceTests
 
     [Theory]
     [InlineData(50, 0, 53, 0)]
+    // New validation cases
+    [InlineData(double.PositiveInfinity, 0, 50, 0)]
+    [InlineData(91, 0, 92, 0)]
     public async Task GetMapOverlayTilesAsync_ShouldThrow_WhenBboxInvalid(double minLat, double minLon, double maxLat, double maxLon)
     {
         await Assert.ThrowsAsync<ValidationException>(() =>

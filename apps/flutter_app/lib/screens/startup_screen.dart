@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'auth_wrapper.dart';
+import '../core/theme/valora_colors.dart';
 
 class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});
@@ -52,7 +53,7 @@ class _StartupScreenState extends State<StartupScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.2, 0.6, curve: Curves.easeIn),
+        curve: const Interval(0.2, 0.6, curve: Curves.easeInOut),
       ),
     );
 
@@ -61,7 +62,7 @@ class _StartupScreenState extends State<StartupScreen>
         Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _controller,
-            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+            curve: const Interval(0.3, 0.8, curve: Curves.easeInOutCubic),
           ),
         );
 
@@ -122,66 +123,70 @@ class _StartupScreenState extends State<StartupScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Animated Icon Container
-            ScaleTransition(
-              scale: _iconScaleAnimation,
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.home_work_rounded,
-                  size: 64,
-                  color: colorScheme.primary,
+      backgroundColor: Colors.transparent, // Allow gradient to show
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: ValoraColors.primaryGradient,
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Animated Icon Container
+              ScaleTransition(
+                scale: _iconScaleAnimation,
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.home_work_rounded,
+                    size: 64,
+                    color: ValoraColors.primary,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-            // Animated Text
-            SlideTransition(
-              position: _textSlideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    Text(
-                      'Valora',
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
+              const SizedBox(height: 32),
+              // Animated Text
+              SlideTransition(
+                position: _textSlideAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    children: [
+                      Text(
+                        'Valora',
+                        style: theme.textTheme.displayMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Find your dream home',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.5,
+                      const SizedBox(height: 8),
+                      Text(
+                        'Find your dream home',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

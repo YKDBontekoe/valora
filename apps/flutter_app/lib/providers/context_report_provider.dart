@@ -1,24 +1,27 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/search_history_item.dart';
 import '../services/api_service.dart';
+import '../services/crash_reporting_service.dart';
 import '../services/search_history_service.dart';
+import '../services/storage_service.dart';
 
 class ContextReportProvider extends ChangeNotifier {
   ContextReportProvider({
     required ApiService apiService,
     SearchHistoryService? historyService,
+    StorageService? storageService,
   }) : _apiService = apiService,
-       _historyService = historyService ?? SearchHistoryService() {
+       _historyService = historyService ?? SearchHistoryService(),
+       _storageService = storageService ?? SharedPreferencesStorageService() {
     _loadHistory();
     loadComparisonSet();
   }
 
   final ApiService _apiService;
   final SearchHistoryService _historyService;
+  final StorageService _storageService;
 
   bool _isLoading = false;
   bool _isDisposed = false;
@@ -107,8 +110,13 @@ class ContextReportProvider extends ChangeNotifier {
       if (_isDisposed) return;
       _activeReports[id] = report;
       notifyListeners();
-    } catch (e) {
-      // If fetch fails, ignore
+    } catch (e, stack) {
+      // If fetch fails, log it but don't crash UI
+      CrashReportingService.captureException(
+        e,
+        stackTrace: stack,
+        context: {'action': 'fetchReport', 'query': query, 'radius': radius},
+      );
     }
   }
 
@@ -139,17 +147,20 @@ class ContextReportProvider extends ChangeNotifier {
 
   Future<void> _saveComparisonSet() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList("comparison_ids", _comparisonIds.toList());
-    } catch (_) {
-      // Ignore persistence errors
+      await _storageService.setStringList("comparison_ids", _comparisonIds.toList());
+    } catch (e, stack) {
+      // Ignore persistence errors but log them
+      CrashReportingService.captureException(
+        e,
+        stackTrace: stack,
+        context: {'action': 'saveComparisonSet'},
+      );
     }
   }
 
   Future<void> loadComparisonSet() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final ids = prefs.getStringList("comparison_ids") ?? [];
+      final ids = await _storageService.getStringList("comparison_ids") ?? [];
       if (ids.isNotEmpty) {
         _comparisonIds.addAll(ids);
         notifyListeners();
@@ -187,9 +198,14 @@ class ContextReportProvider extends ChangeNotifier {
       final insight = await _apiService.getAiAnalysis(report);
       if (_isDisposed) return;
       _aiInsights[location] = insight;
-    } catch (e) {
+    } catch (e, stack) {
       if (_isDisposed) return;
       _aiInsightErrors[location] = e.toString();
+      CrashReportingService.captureException(
+        e,
+        stackTrace: stack,
+        context: {'action': 'generateAiInsight', 'location': location},
+      );
     } finally {
       if (!_isDisposed) {
         _loadingAiInsights.remove(location);

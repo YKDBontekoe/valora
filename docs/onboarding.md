@@ -88,6 +88,7 @@ curl http://localhost:5001/api/health
 ## 3. Understanding the Architecture
 
 To understand how your request was processed, read the **[Data Flow Deep Dive](onboarding-data-flow.md)**.
+To understand how data is saved (e.g., User Registration), read the **[Persistence Data Flow](onboarding-persistence-flow.md)**.
 
 ### Product Mental Model
 - **Valora is not a scraper.** It does not copy listing photos or descriptions.
