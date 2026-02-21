@@ -148,4 +148,53 @@ public class AdminServiceTests
         Assert.Equal(5, result.QueueDepth);
         Assert.Equal("Active", result.WorkerHealth);
     }
+
+    [Fact]
+    public async Task GetSystemStatusAsync_ReturnsUnreachable_WhenCanConnectReturnsFalse()
+    {
+        // Arrange
+        var service = CreateService();
+        _identityServiceMock.Setup(x => x.CanConnectAsync()).ReturnsAsync(false);
+
+        // Act
+        var result = await service.GetSystemStatusAsync();
+
+        // Assert
+        Assert.Equal("Disconnected", result.DbConnectivity);
+        Assert.Equal("Unreachable", result.WorkerHealth);
+        Assert.Equal(0, result.QueueDepth);
+    }
+
+    [Fact]
+    public async Task GetSystemStatusAsync_ReturnsUnreachable_WhenCanConnectThrows()
+    {
+        // Arrange
+        var service = CreateService();
+        _identityServiceMock.Setup(x => x.CanConnectAsync()).ThrowsAsync(new Exception("DB Error"));
+
+        // Act
+        var result = await service.GetSystemStatusAsync();
+
+        // Assert
+        Assert.Equal("Disconnected", result.DbConnectivity);
+        Assert.Equal("Unreachable", result.WorkerHealth);
+    }
+
+    [Fact]
+    public async Task GetSystemStatusAsync_HandlesRepositoryFailure_WhenDbConnected()
+    {
+        // Arrange
+        var service = CreateService();
+        _identityServiceMock.Setup(x => x.CanConnectAsync()).ReturnsAsync(true);
+        _batchJobRepositoryMock.Setup(x => x.GetQueueDepthAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Repo Error"));
+
+        // Act
+        var result = await service.GetSystemStatusAsync();
+
+        // Assert
+        Assert.Equal("Connected", result.DbConnectivity);
+        // Should default to 0/Idle on repo failure, but still show connected
+        Assert.Equal(0, result.QueueDepth);
+        Assert.Equal("Idle", result.WorkerHealth);
+    }
 }
