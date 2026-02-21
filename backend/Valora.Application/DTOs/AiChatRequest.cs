@@ -10,7 +10,9 @@ public class AiChatRequest
     [RegularExpression(@".*\S.*", ErrorMessage = "Prompt must contain at least one non-whitespace character.")]
     public string Prompt { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Intent is required.")]
     [StringLength(50)]
-    [RegularExpression(@"^(openai\/gpt-4o-mini|openai\/gpt-4o)$", ErrorMessage = "Invalid model selected.")]
-    public string? Model { get; set; }
+    // Allow alphanumeric and underscores for flexible intents managed via Admin UI
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Intent must only contain letters, numbers, and underscores.")]
+    public string Intent { get; set; } = "chat";
 }

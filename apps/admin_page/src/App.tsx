@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import BatchJobs from './pages/BatchJobs';
+import AiModels from './pages/AiModels';
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -27,6 +28,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />
           <Route path="jobs" element={<BatchJobs />} />
+          <Route path="ai-models" element={<AiModels />} />
 
           {/* Legacy route fallback */}
           <Route path="listings" element={<Navigate to="/" replace />} />

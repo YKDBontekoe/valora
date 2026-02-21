@@ -24,15 +24,16 @@ public partial class ContextAnalysisService : IContextAnalysisService
         _aiService = aiService;
     }
 
-    public async Task<string> ChatAsync(string prompt, string? model, CancellationToken cancellationToken)
+    public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken)
     {
-        return await _aiService.ChatAsync(prompt, ChatSystemPrompt, model, cancellationToken);
+        return await _aiService.ChatAsync(prompt, ChatSystemPrompt, intent ?? "chat", cancellationToken);
     }
 
     public async Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken)
     {
         var prompt = BuildAnalysisPrompt(report);
-        return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, null, cancellationToken);
+        // "detailed_analysis" intent for report analysis
+        return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, "detailed_analysis", cancellationToken);
     }
 
     [GeneratedRegex(@"[^\w\s\p{P}\p{S}\p{N}<>]")]

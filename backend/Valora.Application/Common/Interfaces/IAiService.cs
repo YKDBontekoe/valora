@@ -5,6 +5,6 @@ namespace Valora.Application.Common.Interfaces;
 
 public interface IAiService
 {
-    // Rearrange signature for better ergonomics: (prompt, systemPrompt, model, cancellationToken)
-    Task<string> ChatAsync(string prompt, string? systemPrompt = null, string? model = null, CancellationToken cancellationToken = default);
+    // Updated signature to use intent instead of direct model ID
+    Task<string> ChatAsync(string prompt, string? systemPrompt = null, string intent = "chat", CancellationToken cancellationToken = default);
 }
