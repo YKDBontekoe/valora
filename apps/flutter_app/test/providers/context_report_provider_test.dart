@@ -119,7 +119,7 @@ void main() {
 
     await provider.generate('   ');
 
-    expect(provider.error, 'Enter an address or listing link.');
+    expect(provider.error, 'Enter an address or Funda URL.');
     expect(provider.report, isNull);
   });
 

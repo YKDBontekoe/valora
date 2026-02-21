@@ -135,22 +135,24 @@ public sealed class PdokLocationResolver : ILocationResolver
 
     /// <summary>
     /// Normalizes raw user input into a searchable address string.
-    /// Handles extraction of address parts from supported listing URLs.
+    /// Handles extraction of address parts from Funda URLs and generic URL hints.
     /// </summary>
     /// <remarks>
     /// Logic:
     /// 1. Checks if input is a valid absolute URI.
-    /// 2. If host matches known listing sites (e.g., funda.nl).
-    /// 3. Extracts the slug from the path (usually the last segment).
-    /// 4. Decodes and replaces hyphens with spaces to form a search query (e.g., "huis-address-city" -> "huis address city").
+    /// 2. If URL contains common query params (query/address/location), use that value.
+    /// 3. Else extracts the slug from the path (usually the last segment).
+    /// 4. Decodes and replaces separators with spaces to form a search query.
     /// </remarks>
     private static string NormalizeInput(string input)
     {
-        // Heuristic: If input looks like a Funda URL, extract the last path segment
-        // which typically contains the address (e.g., .../huis-424242-straatnaam-1)
-        if (Uri.TryCreate(input, UriKind.Absolute, out var uri) &&
-            uri.Host.Contains("funda.nl", StringComparison.OrdinalIgnoreCase))
+        if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
         {
+            if (TryExtractAddressFromQuery(uri, out var queryHint))
+            {
+                return queryHint;
+            }
+
             var segment = uri.Segments
                 .Select(s => s.Trim('/'))
                 .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -158,12 +160,65 @@ public sealed class PdokLocationResolver : ILocationResolver
 
             if (!string.IsNullOrWhiteSpace(segment))
             {
-                // Funda slugs are usually kebab-case; replace hyphens with spaces for better searchability
-                return Uri.UnescapeDataString(segment).Replace('-', ' ');
+                var normalizedSegment = Uri.UnescapeDataString(segment)
+                    .Replace('-', ' ')
+                    .Replace('_', ' ')
+                    .Trim();
+
+                // Funda slugs usually contain address text and are high-signal inputs.
+                if (uri.Host.Contains("funda.nl", StringComparison.OrdinalIgnoreCase))
+                {
+                    return normalizedSegment;
+                }
+
+                // For non-Funda URLs, prefer a textual slug over passing the raw URL to PDOK.
+                if (normalizedSegment.Any(char.IsLetter))
+                {
+                    return normalizedSegment;
+                }
             }
         }
 
         return input.Trim();
+    }
+
+    private static bool TryExtractAddressFromQuery(Uri uri, out string value)
+    {
+        value = string.Empty;
+        var query = uri.Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        var candidateKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "q", "query", "address", "location", "loc"
+        };
+
+        foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var kv = pair.Split('=', 2);
+            if (kv.Length != 2)
+            {
+                continue;
+            }
+
+            var key = Uri.UnescapeDataString(kv[0]);
+            if (!candidateKeys.Contains(key))
+            {
+                continue;
+            }
+
+            var decoded = Uri.UnescapeDataString(kv[1]).Replace('+', ' ').Trim();
+            if (decoded.Any(char.IsLetterOrDigit))
+            {
+                value = decoded;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string? GetString(JsonElement element, string propertyName)

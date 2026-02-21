@@ -178,10 +178,5 @@ public static class DependencyInjection
         {
             options.ReportCacheMinutes = reportMinutes;
         }
-
-        if (int.TryParse(configuration["CONTEXT_PDOK_LISTING_CACHE_MINUTES"], out var pdokListingMinutes))
-        {
-            options.PdokListingCacheMinutes = pdokListingMinutes;
-        }
     }
 }
