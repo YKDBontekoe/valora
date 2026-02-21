@@ -13,6 +13,8 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i9;
 import 'package:valora_app/providers/auth_provider.dart' as _i5;
 import 'package:valora_app/providers/theme_provider.dart' as _i7;
+import 'package:valora_app/services/app_metadata_service.dart' as _i10;
+import 'package:valora_app/models/support_status.dart' as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -2211,6 +2213,75 @@ class MockHttpHeaders extends _i1.Mock implements _i2.HttpHeaders {
         Invocation.method(
           #clear,
           [],
+        ),
+        returnValueForMissingStub: null,
+      );
+}
+
+/// A class which mocks [AppMetadataService].
+class MockAppMetadataService extends _i1.Mock implements _i10.AppMetadataService {
+  MockAppMetadataService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  String get version => (super.noSuchMethod(
+        Invocation.getter(#version),
+        returnValue: '1.0.0',
+      ) as String);
+
+  @override
+  String get buildNumber => (super.noSuchMethod(
+        Invocation.getter(#buildNumber),
+        returnValue: '1',
+      ) as String);
+
+  @override
+  bool get isLoadingSupport => (super.noSuchMethod(
+        Invocation.getter(#isLoadingSupport),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i10.SupportStatus? get supportStatus => (super.noSuchMethod(
+        Invocation.getter(#supportStatus),
+        returnValue: null,
+      ) as _i10.SupportStatus?);
+
+  @override
+  _i4.Future<void> init() => (super.noSuchMethod(
+        Invocation.method(
+          #init,
+          [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> fetchSupportStatus() => (super.noSuchMethod(
+        Invocation.method(
+          #fetchSupportStatus,
+          [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
+        Invocation.method(
+          #addListener,
+          [listener],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void removeListener(_i6.VoidCallback? listener) => super.noSuchMethod(
+        Invocation.method(
+          #removeListener,
+          [listener],
         ),
         returnValueForMissingStub: null,
       );

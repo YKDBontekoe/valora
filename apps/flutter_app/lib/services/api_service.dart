@@ -12,10 +12,9 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
-import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
-import '../models/map_overlay_tile.dart';
 import '../models/notification.dart';
+import '../models/support_status.dart';
 import 'crash_reporting_service.dart';
 
 typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
@@ -454,42 +453,6 @@ class ApiService {
     }
   }
 
-  Future<List<MapAmenityCluster>> getMapAmenityClusters({
-    required double minLat,
-    required double minLon,
-    required double maxLat,
-    required double maxLon,
-    required double zoom,
-    List<String>? types,
-  }) async {
-    final uri = Uri.parse('$baseUrl/map/amenities/clusters').replace(queryParameters: {
-      'minLat': minLat.toString(),
-      'minLon': minLon.toString(),
-      'maxLat': maxLat.toString(),
-      'maxLon': maxLon.toString(),
-      'zoom': zoom.toString(),
-      if (types != null) 'types': types.join(','),
-    });
-    try {
-      final response = await _requestWithRetry(
-        () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri, headers: headers).timeout(timeoutDuration),
-        ),
-      );
-
-      return _handleResponse(
-        response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapAmenityCluster.fromJson(e)).toList();
-        },
-      );
-    } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities/clusters'));
-    }
-  }
-
   Future<List<MapOverlay>> getMapOverlays({
     required double minLat,
     required double minLon,
@@ -524,39 +487,21 @@ class ApiService {
     }
   }
 
-  Future<List<MapOverlayTile>> getMapOverlayTiles({
-    required double minLat,
-    required double minLon,
-    required double maxLat,
-    required double maxLon,
-    required double zoom,
-    required String metric,
-  }) async {
-    final uri = Uri.parse('$baseUrl/map/overlays/tiles').replace(queryParameters: {
-      'minLat': minLat.toString(),
-      'minLon': minLon.toString(),
-      'maxLat': maxLat.toString(),
-      'maxLon': maxLon.toString(),
-      'zoom': zoom.toString(),
-      'metric': metric,
-    });
+  Future<SupportStatus> getSupportStatus() async {
+    final uri = Uri.parse('$baseUrl/support/status');
     try {
       final response = await _requestWithRetry(
-        () => _authenticatedRequest(
-          (headers) =>
-              _client.get(uri, headers: headers).timeout(timeoutDuration),
-        ),
+        () => _client.get(uri).timeout(timeoutDuration),
       );
 
       return _handleResponse(
         response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapOverlayTile.fromJson(e)).toList();
-        },
+        (body) => SupportStatus.fromJson(json.decode(body)),
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
+      // Don't throw for support status, return fallback
+      developer.log('Failed to fetch support status', error: e, stackTrace: stack);
+      return SupportStatus.fallback();
     }
   }
 }
