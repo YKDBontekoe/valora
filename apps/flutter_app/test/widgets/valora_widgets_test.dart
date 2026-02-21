@@ -19,6 +19,26 @@ void main() {
       expect(find.text('Test Child'), findsOneWidget);
     });
 
+    testWidgets('calls onTap when tapped', (WidgetTester tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () => tapped = true,
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ValoraCard));
+      await tester.pumpAndSettle();
+
+      expect(tapped, isTrue);
+    });
+
     testWidgets('handles elevationNone (no shadows)', (
       WidgetTester tester,
     ) async {
@@ -145,6 +165,28 @@ void main() {
       // Should revert to base (Sm)
       expect(decoration.boxShadow, ValoraShadows.sm);
     });
+
+    testWidgets('uses dark mode shadows', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      // Default dark shadow
+      expect(decoration.boxShadow, ValoraShadows.smDark);
+    });
   });
 
   group('ValoraButton Tests', () {
@@ -190,6 +232,37 @@ void main() {
       expect(find.text('Click Me'), findsNothing);
 
       // Force disposal to stop infinite animation and pump to clear
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+
+    testWidgets('does not call onPressed when isLoading is true', (
+      WidgetTester tester,
+    ) async {
+      bool pressed = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraButton(
+              label: 'Click Me',
+              onPressed: () => pressed = true,
+              isLoading: true,
+            ),
+          ),
+        ),
+      );
+
+      // Pump enough time for the button press animation (scale) to complete
+      // but do not settle (as spinner is infinite)
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Try to tap
+      await tester.tap(find.byType(ValoraButton));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(pressed, isFalse);
+
+      // Force disposal and pump to clear
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
