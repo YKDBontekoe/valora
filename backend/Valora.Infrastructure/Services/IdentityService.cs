@@ -124,7 +124,9 @@ public class IdentityService : IIdentityService
     public async Task<Result> DeleteUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Result.Failure(new[] { "User not found." }, "NotFound");
+        // Idempotency: If user is not found, treat it as success (they are already deleted)
+        // This also prevents user enumeration by not returning distinct errors.
+        if (user == null) return Result.Success();
 
         // Manually clean up notifications because they don't have a navigation property/FK configured for cascade delete
 

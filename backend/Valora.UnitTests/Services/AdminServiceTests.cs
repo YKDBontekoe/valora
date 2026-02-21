@@ -131,25 +131,23 @@ public class AdminServiceTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsNotFound_WhenUserDoesNotExist()
+    public async Task DeleteUserAsync_ReturnsSuccess_WhenUserDoesNotExist()
     {
         // Arrange
         var service = CreateService();
         var currentUserId = "admin-123";
         var targetUserId = "non-existent-user";
 
-        // Mock IdentityService returning NotFound error code
-        var failureResult = Result.Failure(new[] { "User not found." }, "NotFound");
+        // Mock IdentityService returning Success (Idempotent delete)
         _identityServiceMock
             .Setup(x => x.DeleteUserAsync(targetUserId))
-            .ReturnsAsync(failureResult);
+            .ReturnsAsync(Result.Success());
 
         // Act
         var result = await service.DeleteUserAsync(targetUserId, currentUserId);
 
         // Assert
-        Assert.False(result.Succeeded);
-        Assert.Equal("NotFound", result.ErrorCode);
-        Assert.Contains("User not found.", result.Errors);
+        Assert.True(result.Succeeded);
+        _identityServiceMock.Verify(x => x.DeleteUserAsync(targetUserId), Times.Once);
     }
 }
