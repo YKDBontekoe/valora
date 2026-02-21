@@ -67,32 +67,41 @@ npm run dev
 
 Valora follows **Clean Architecture** principles to ensure modularity and testability.
 
+### High-Level System Design
+
+```mermaid
+graph TD
+    Client[Flutter App / Admin Panel] -->|HTTPS| API[Valora.Api]
+
+    subgraph "Backend (Clean Architecture)"
+        API -->|Requests| Application[Valora.Application]
+        Application -->|Defines Interfaces| Domain[Valora.Domain]
+        Infrastructure[Valora.Infrastructure] -->|Implements Interfaces| Application
+        Infrastructure -->|Persists| DB[(PostgreSQL)]
+        Infrastructure -->|Caches| RAM[(Memory Cache)]
+    end
+
+    subgraph "External Data Sources (Fan-Out)"
+        Infrastructure -->|Geocoding| PDOK[PDOK Locatieserver]
+        Infrastructure -->|Demographics| CBS[CBS Open Data]
+        Infrastructure -->|Amenities| OSM[OpenStreetMap]
+        Infrastructure -->|Air Quality| Air[Luchtmeetnet]
+    end
+```
+
 ### The "Fan-Out" Aggregation Pattern
 When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results ("Fan-In") into a unified score.
 
 ```mermaid
-graph TD
-    User((User)) -->|1. Request Report| API[Valora API]
-    API -->|2. Orchestrate| Service[ContextReportService]
-
-    subgraph "Fan-Out (Parallel Execution)"
-        Service -->|Geocode| PDOK[PDOK Locatieserver]
-        Service -->|Stats| CBS[CBS Open Data]
-        Service -->|Amenities| OSM[OpenStreetMap / Overpass]
-        Service -->|Air Quality| Air[Luchtmeetnet]
-    end
-
-    PDOK -->|Coords| Service
-    CBS -->|Demographics| Service
-    OSM -->|Shops/Parks| Service
-    Air -->|PM2.5| Service
-
-    Service -->|3. Normalize & Score| Service
-    Service -->|4. Return Report| API
-    API -->|5. Response| User
-
-    API -.->|Async Cache| RAM[(In-Memory Cache)]
-    API -.->|Persist (Optional)| DB[(PostgreSQL)]
+graph LR
+    Req(Request) --> Orch(Orchestrator)
+    Orch -->|Parallel| PDOK
+    Orch -->|Parallel| CBS
+    Orch -->|Parallel| OSM
+    PDOK -->|Result| Agg(Aggregator)
+    CBS -->|Result| Agg
+    OSM -->|Result| Agg
+    Agg --> Resp(Response)
 ```
 
 ### Key Components
@@ -135,9 +144,10 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 ## 📚 Documentation Index
 
 - **[Onboarding Guide](docs/onboarding.md)**: Detailed setup & troubleshooting.
+- **[Data Flow: Reports](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
+- **[Data Flow: Persistence](docs/onboarding-persistence-flow.md)**: How data is saved to the database (User Registration).
 - **[Developer Guide](docs/developer-guide.md)**: Coding standards & patterns.
 - **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
-- **[Data Flow: Reports](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
 - **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
 
 ---
