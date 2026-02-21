@@ -111,8 +111,8 @@ void main() {
           mobilityMetrics: [],
           amenityMetrics: [],
           environmentMetrics: [],
-          warnings: [],
           sources: [],
+          warnings: [],
         )
       );
 
@@ -122,11 +122,39 @@ void main() {
       final inputFinder = find.byType(TextField);
       await tester.enterText(inputFinder, 'abc');
       await tester.testTextInput.receiveAction(TextInputAction.search);
-      await tester.pump();
       await tester.pumpAndSettle(); // Ensure API call and subsequent UI updates settle
 
       // Verify API call was made
       verify(mockApiService.getContextReport('abc', radiusMeters: anyNamed('radiusMeters'))).called(1);
     });
   }, skip: true);
+
+  // Test specifically for the new slider optimization
+  testWidgets('ContextReportScreen slider updates radius', (tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(createWidget());
+      await tester.pumpAndSettle();
+
+      // Find the slider
+      final sliderFinder = find.byType(Slider);
+      expect(sliderFinder, findsOneWidget);
+
+      // Verify initial value in the Badge
+      expect(find.text('1000m'), findsOneWidget); // Default is usually 1000
+
+      // Drag the slider
+      // Get the slider widget
+
+      // Tap/Drag on the slider
+      await tester.tap(sliderFinder);
+      await tester.pumpAndSettle();
+
+      await tester.drag(sliderFinder, const Offset(100, 0));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Verify that the badge text has changed from the default '1000m'
+      expect(find.text('1000m'), findsNothing);
+    });
+  });
 }

@@ -44,7 +44,8 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ContextReportProvider>(
-      create: (_) => ContextReportProvider(apiService: context.read<ApiService>()),
+      create: (_) =>
+          ContextReportProvider(apiService: context.read<ApiService>()),
       child: Selector<ContextReportProvider, (bool, bool)>(
         selector: (_, p) => (p.report != null, p.isLoading),
         builder: (context, state, child) {
@@ -75,13 +76,14 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                         ? Selector<ContextReportProvider, dynamic>(
                             selector: (_, p) => p.report,
                             builder: (context, report, _) {
-                              if (report == null) return const SizedBox.shrink();
                               return ListView.builder(
                                 key: const ValueKey('report-list'),
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 4),
                                 itemCount: ContextReportView.childCount(report),
                                 itemBuilder: (context, index) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
                                   child: ContextReportView.buildChild(
                                     context,
                                     index,
@@ -175,10 +177,13 @@ class _InputForm extends StatelessWidget {
     if (!context.mounted) return;
     if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Resolving address...'), duration: Duration(seconds: 1)),
+        const SnackBar(
+            content: Text('Resolving address...'),
+            duration: Duration(seconds: 1)),
       );
 
-      final String? address = await pdokService.reverseLookup(result.latitude, result.longitude);
+      final String? address =
+          await pdokService.reverseLookup(result.latitude, result.longitude);
 
       if (!context.mounted) return;
 
@@ -188,7 +193,8 @@ class _InputForm extends StatelessWidget {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not resolve an address for this location. Please try searching by text.'),
+            content: Text(
+                'Could not resolve an address for this location. Please try searching by text.'),
             backgroundColor: ValoraColors.error,
           ),
         );
@@ -249,7 +255,9 @@ class _InputForm extends StatelessWidget {
                   IconButton(
                     tooltip: 'Pick on Map',
                     icon: const Icon(Icons.map_outlined),
-                    onPressed: provider.isLoading ? null : () => _pickLocation(context),
+                    onPressed: provider.isLoading
+                        ? null
+                        : () => _pickLocation(context),
                   ),
                 ],
               ),
@@ -264,8 +272,10 @@ class _InputForm extends StatelessWidget {
           itemBuilder: (context, suggestion) {
             return ListTile(
               leading: const Icon(Icons.location_on_outlined, size: 20),
-              title: Text(suggestion.displayName, style: ValoraTypography.bodyMedium),
-              subtitle: Text(suggestion.type, style: ValoraTypography.labelSmall),
+              title: Text(suggestion.displayName,
+                  style: ValoraTypography.bodyMedium),
+              subtitle:
+                  Text(suggestion.type, style: ValoraTypography.labelSmall),
             );
           },
           onSelected: (suggestion) {
@@ -277,49 +287,60 @@ class _InputForm extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Radius Selector
-        Selector<ContextReportProvider, int>(
-          selector: (_, p) => p.radiusMeters,
-          builder: (context, radiusMeters, _) {
-            return ValoraCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        // Radius Selector
+        ValoraCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Search Radius',
-                        style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      ValoraBadge(
+                  Text(
+                    'Search Radius',
+                    style: ValoraTypography.labelLarge
+                        .copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Selector<ContextReportProvider, int>(
+                    selector: (_, p) => p.radiusMeters,
+                    builder: (context, radiusMeters, _) {
+                      return ValoraBadge(
                         label: '${radiusMeters}m',
                         color: theme.colorScheme.primary,
                         size: ValoraBadgeSize.small,
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  SliderTheme(
+                ],
+              ),
+              const SizedBox(height: 12),
+              Selector<ContextReportProvider, int>(
+                selector: (_, p) => p.radiusMeters,
+                builder: (context, radiusMeters, _) {
+                  return SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 6,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                      thumbShape:
+                          const RoundSliderThumbShape(enabledThumbRadius: 10),
+                      overlayShape:
+                          const RoundSliderOverlayShape(overlayRadius: 20),
                       activeTrackColor: theme.colorScheme.primary,
-                      inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      inactiveTrackColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.1),
                     ),
                     child: Slider(
                       min: 200,
                       max: 5000,
                       divisions: 24,
                       value: radiusMeters.toDouble(),
-                      onChanged: (value) => provider.setRadiusMeters(value.round()),
+                      onChanged: (value) =>
+                          provider.setRadiusMeters(value.round()),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-            );
-          }
+            ],
+          ),
         ),
 
         const SizedBox(height: 32),
@@ -352,75 +373,84 @@ class _InputForm extends StatelessWidget {
 
         // Recent Searches - Cards
         Selector<ContextReportProvider, List<dynamic>>(
-          selector: (_, p) => p.history,
-          builder: (context, history, _) {
-            if (history.isEmpty) return const SizedBox.shrink();
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Recent Searches',
-                      style: ValoraTypography.titleMedium,
-                    ),
-                    TextButton(
-                      onPressed: () => _confirmClearHistory(context, provider),
-                      child: Text('Clear All', style: ValoraTypography.labelMedium.copyWith(color: theme.colorScheme.primary)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 120,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: history.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final item = history[index];
-                      return SizedBox(
-                        width: 200,
-                        child: ValoraCard(
-                          padding: const EdgeInsets.all(16),
-                          onTap: provider.isLoading ? null : () {
-                            controller.text = item.query;
-                            provider.generate(item.query);
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.history_rounded, size: 20, color: ValoraColors.neutral400),
-                              const Spacer(),
-                              Text(
-                                item.query,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: ValoraTypography.labelMedium.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatDate(item.timestamp),
-                                style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+            selector: (_, p) => p.history,
+            builder: (context, history, _) {
+              if (history.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recent Searches',
+                        style: ValoraTypography.titleMedium,
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            _confirmClearHistory(context, provider),
+                        child: Text('Clear All',
+                            style: ValoraTypography.labelMedium
+                                .copyWith(color: theme.colorScheme.primary)),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            );
-          }
-        ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 120,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: history.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final item = history[index];
+                        return SizedBox(
+                          width: 200,
+                          child: ValoraCard(
+                            padding: const EdgeInsets.all(16),
+                            onTap: provider.isLoading
+                                ? null
+                                : () {
+                                    controller.text = item.query;
+                                    provider.generate(item.query);
+                                  },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.history_rounded,
+                                    size: 20, color: ValoraColors.neutral400),
+                                const Spacer(),
+                                Text(
+                                  item.query,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: ValoraTypography.labelMedium
+                                      .copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatDate(item.timestamp),
+                                  style: ValoraTypography.labelSmall
+                                      .copyWith(color: ValoraColors.neutral500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            }),
       ],
     );
   }
 
-  Future<void> _confirmClearHistory(BuildContext context, ContextReportProvider provider) async {
+  Future<void> _confirmClearHistory(
+      BuildContext context, ContextReportProvider provider) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => ValoraDialog(
@@ -437,7 +467,8 @@ class _InputForm extends StatelessWidget {
             onPressed: () => Navigator.pop(context, true),
           ),
         ],
-        child: const Text('Are you sure you want to clear your search history?'),
+        child:
+            const Text('Are you sure you want to clear your search history?'),
       ),
     );
 
