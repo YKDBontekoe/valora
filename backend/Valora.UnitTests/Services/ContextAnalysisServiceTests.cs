@@ -169,6 +169,29 @@ public class ContextAnalysisServiceTests
     }
 
     [Fact]
+    public async Task AnalyzeReportAsync_SanitizesAndTruncatesInputs_WithNullInput()
+    {
+         // Arrange
+        var service = CreateService();
+        var report = CreateFullReportDto();
+
+        // Inject malicious/special chars into a metric
+        var maliciousMetric = new ContextMetricDto("test_key", null!, 5, "Unit", 10, "Source", null);
+        report = report with { SocialMetrics = new List<ContextMetricDto> { maliciousMetric } };
+
+        string capturedPrompt = "";
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+            .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
+            .ReturnsAsync("{}");
+
+        // Act
+        await service.AnalyzeReportAsync(report, CancellationToken.None);
+
+        // Assert
+        Assert.Contains("label=\"\"", capturedPrompt);
+    }
+
+    [Fact]
     public async Task AnalyzeReportAsync_HandlesPartialJson_WithNullLists()
     {
         // Arrange
