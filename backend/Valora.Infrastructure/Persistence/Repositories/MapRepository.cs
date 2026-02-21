@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
+using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
 
@@ -40,6 +41,31 @@ public class MapRepository : IMapRepository
                         l.Longitude >= minLon && l.Longitude <= maxLon &&
                         l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2 > 0)
             .Select(l => new ListingPriceData(l.Price, l.LivingAreaM2, l.Latitude, l.Longitude))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Listing?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Listings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+    }
+
+    public async Task<List<MapPropertyDto>> GetMapPropertiesAsync(
+        double minLat, double minLon, double maxLat, double maxLon, CancellationToken cancellationToken = default)
+    {
+        return await _context.Listings
+            .AsNoTracking()
+            .Where(l => l.Latitude >= minLat && l.Latitude <= maxLat &&
+                        l.Longitude >= minLon && l.Longitude <= maxLon &&
+                        l.Latitude.HasValue && l.Longitude.HasValue)
+            .Select(l => new MapPropertyDto(
+                l.Id,
+                l.Price,
+                l.Latitude!.Value,
+                l.Longitude!.Value,
+                l.Status
+            ))
             .ToListAsync(cancellationToken);
     }
 }

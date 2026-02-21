@@ -10,6 +10,9 @@ import '../../models/map_overlay_tile.dart';
 import '../../models/map_amenity.dart';
 import '../../models/map_amenity_cluster.dart';
 import '../../models/map_city_insight.dart';
+import '../../models/map_property.dart';
+import '../../screens/property_detail_screen.dart';
+import '../../core/formatters/currency_formatter.dart';
 
 class InsightsMap extends StatelessWidget {
   final MapController mapController;
@@ -23,41 +26,18 @@ class InsightsMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<
-      InsightsProvider,
-      (
-        bool,
-        bool,
-        List<MapOverlay>,
-        List<MapOverlayTile>,
-        List<MapAmenity>,
-        List<MapAmenityCluster>,
-        List<MapCityInsight>,
-        MapOverlayMetric
-      )
-    >(
-      selector:
-          (_, p) => (
-            p.showOverlays,
-            p.showAmenities,
-            p.overlays,
-            p.overlayTiles,
-            p.amenities,
-            p.amenityClusters,
-            p.cities,
-            p.selectedOverlayMetric,
-          ),
-      builder: (context, data, _) {
+    return Consumer<InsightsProvider>(
+      builder: (context, provider, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final showOverlays = data.$1;
-        final showAmenities = data.$2;
-        final overlays = data.$3;
-        final overlayTiles = data.$4;
-        final amenities = data.$5;
-        final amenityClusters = data.$6;
-        final cities = data.$7;
-        // Access provider for methods used in builder
-        final provider = context.read<InsightsProvider>();
+        final showOverlays = provider.showOverlays;
+        final showAmenities = provider.showAmenities;
+        final showProperties = provider.showProperties;
+        final overlays = provider.overlays;
+        final overlayTiles = provider.overlayTiles;
+        final amenities = provider.amenities;
+        final amenityClusters = provider.amenityClusters;
+        final cities = provider.cities;
+        final properties = provider.properties;
 
         return FlutterMap(
           mapController: mapController,
@@ -76,9 +56,9 @@ class InsightsMap extends StatelessWidget {
           children: [
             TileLayer(
               urlTemplate:
-                  isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-              userAgentPackageName: 'com.valora.app',
-              subdomains: const ['a', 'b', 'c', 'd'],
+                  isDark ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+              userAgentPackageName: "com.valora.app",
+              subdomains: const ["a", "b", "c", "d"],
               retinaMode: RetinaMode.isHighDensity(context),
             ),
             if (showOverlays) ...[
@@ -113,6 +93,12 @@ class InsightsMap extends StatelessWidget {
                       }).toList(),
                 ),
             ],
+            if (showProperties && properties.isNotEmpty)
+              MarkerLayer(
+                markers: properties.map((property) {
+                  return buildPropertyMarker(context, property);
+                }).toList(),
+              ),
             MarkerLayer(
               markers:
                   cities.map((city) {
@@ -124,7 +110,6 @@ class InsightsMap extends StatelessWidget {
       },
     );
   }
-
   static Polygon buildPolygon(MapOverlay overlay, MapOverlayMetric metric) {
     final points = MapUtils.parsePolygonGeometry(overlay.geoJson['geometry']);
 
@@ -381,6 +366,48 @@ class InsightsMap extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ],
+      ),
+    );
+  }
+
+  static Marker buildPropertyMarker(BuildContext context, MapProperty property) {
+    return Marker(
+      point: property.location,
+      width: 50,
+      height: 30,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PropertyDetailScreen(propertyId: property.id),
+            ),
+          );
+        },
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: ValoraColors.priceTag,
+            borderRadius: BorderRadius.circular(8),
+             boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+               property.price != null ?
+                 CurrencyFormatter.formatCompact(property.price!) : '?',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
