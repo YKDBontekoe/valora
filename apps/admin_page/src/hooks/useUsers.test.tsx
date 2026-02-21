@@ -12,15 +12,19 @@ vi.mock('../services/api', () => ({
 }));
 
 describe('useUsers hook', () => {
-  const mockUsers: User[] = [{ id: '1', email: 'test@example.com', role: 'user', created_at: '2023-01-01' }];
+  const mockUsers: User[] = [{ id: '1', email: 'test@example.com', roles: ['user'] }];
+  const mockPaginatedResponse: PaginatedResponse<User> = {
+    items: mockUsers,
+    totalPages: 5,
+    totalCount: 50,
+    pageIndex: 1,
+    hasNextPage: true,
+    hasPreviousPage: false,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (adminService.getUsers as Mock).mockResolvedValue({
-      items: mockUsers,
-      totalPages: 5,
-      totalCount: 50,
-    });
+    (adminService.getUsers as Mock).mockResolvedValue(mockPaginatedResponse);
     Object.defineProperty(window, 'localStorage', {
       value: {
         getItem: vi.fn(() => null),
@@ -140,7 +144,7 @@ describe('useUsers hook', () => {
     unmount();
 
     await act(async () => {
-        if (resolveUsers) resolveUsers({ items: mockUsers, totalPages: 5, totalCount: 50 });
+        if (resolveUsers) resolveUsers(mockPaginatedResponse);
     });
   });
 });
