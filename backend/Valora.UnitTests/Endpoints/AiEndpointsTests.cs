@@ -113,6 +113,11 @@ public class AiEndpointsTests
             if (config != null)
             {
                 config.PrimaryModel = d.PrimaryModel;
+                config.FallbackModels = d.FallbackModels;
+                config.Description = d.Description;
+                config.IsEnabled = d.IsEnabled;
+                config.SafetySettings = d.SafetySettings;
+
                 await service.UpdateConfigAsync(config, ct);
                 return Results.Ok(config);
             }
