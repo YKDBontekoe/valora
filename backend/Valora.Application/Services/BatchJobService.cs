@@ -51,6 +51,55 @@ public class BatchJobService : IBatchJobService
         return jobs.Select(MapToDto).ToList();
     }
 
+    public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
+        if (job == null) throw new KeyNotFoundException($"Job with ID {id} not found.");
+        return MapToDto(job);
+    }
+
+    public async Task<BatchJobDto> RetryJobAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
+        if (job == null) throw new KeyNotFoundException($"Job with ID {id} not found.");
+
+        if (job.Status != BatchJobStatus.Failed && job.Status != BatchJobStatus.Completed)
+        {
+             throw new InvalidOperationException("Only failed or completed jobs can be retried.");
+        }
+
+        job.Status = BatchJobStatus.Pending;
+        job.Progress = 0;
+        job.Error = null;
+        job.ResultSummary = null;
+        job.ExecutionLog = null;
+        job.StartedAt = null;
+        job.CompletedAt = null;
+
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+
+        return MapToDto(job);
+    }
+
+    public async Task<BatchJobDto> CancelJobAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
+        if (job == null) throw new KeyNotFoundException($"Job with ID {id} not found.");
+
+        if (job.Status == BatchJobStatus.Completed || job.Status == BatchJobStatus.Failed)
+        {
+            throw new InvalidOperationException("Cannot cancel a completed or failed job.");
+        }
+
+        job.Status = BatchJobStatus.Failed;
+        job.Error = "Cancelled by user";
+        job.CompletedAt = DateTime.UtcNow;
+
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+
+        return MapToDto(job);
+    }
+
     public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
@@ -58,6 +107,7 @@ public class BatchJobService : IBatchJobService
 
         job.Status = BatchJobStatus.Processing;
         job.StartedAt = DateTime.UtcNow;
+        AppendLog(job, "Job started.");
         await _jobRepository.UpdateAsync(job, cancellationToken);
 
         try
@@ -67,6 +117,7 @@ public class BatchJobService : IBatchJobService
                 await ProcessCityIngestionAsync(job, cancellationToken);
             }
 
+            AppendLog(job, "Job completed successfully.");
             job.Status = BatchJobStatus.Completed;
             job.CompletedAt = DateTime.UtcNow;
             job.Progress = 100;
@@ -74,6 +125,7 @@ public class BatchJobService : IBatchJobService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
+            AppendLog(job, $"Job failed: {ex.Message}");
             job.Status = BatchJobStatus.Failed;
             job.Error = ex.Message;
             job.CompletedAt = DateTime.UtcNow;
@@ -85,10 +137,12 @@ public class BatchJobService : IBatchJobService
     private async Task ProcessCityIngestionAsync(BatchJob job, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing city ingestion for {City}", job.Target);
+        AppendLog(job, $"Processing city ingestion for {job.Target}");
 
         var neighborhoods = await _geoClient.GetNeighborhoodsByMunicipalityAsync(job.Target, cancellationToken);
         if (!neighborhoods.Any())
         {
+            AppendLog(job, "No neighborhoods found for city.");
             job.ResultSummary = "No neighborhoods found for city.";
             return;
         }
@@ -175,11 +229,22 @@ public class BatchJobService : IBatchJobService
                 await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
 
                 job.Progress = (int)((double)count / total * 100);
+                AppendLog(job, $"Processed {count}/{total} neighborhoods.");
                 await _jobRepository.UpdateAsync(job, cancellationToken);
             }
         }
 
+        AppendLog(job, $"Processed {total} neighborhoods.");
         job.ResultSummary = $"Processed {total} neighborhoods.";
+    }
+
+    private void AppendLog(BatchJob job, string message)
+    {
+        var entry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
+        if (string.IsNullOrEmpty(job.ExecutionLog))
+            job.ExecutionLog = entry;
+        else
+            job.ExecutionLog += Environment.NewLine + entry;
     }
 
     private static BatchJobDto MapToDto(BatchJob job) => new(
@@ -189,7 +254,7 @@ public class BatchJobService : IBatchJobService
         job.Target,
         job.Progress,
         job.Error,
-        job.ResultSummary,
+        job.ResultSummary, job.ExecutionLog,
         job.CreatedAt,
         job.StartedAt,
         job.CompletedAt

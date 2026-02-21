@@ -123,6 +123,18 @@ export const adminService = {
     const response = await api.get<BatchJob[]>(`/admin/jobs?limit=${limit}`);
     return response.data;
   },
+  getJobDetails: async (id: string): Promise<BatchJob> => {
+    const response = await api.get<BatchJob>(`/admin/jobs/${id}`);
+    return response.data;
+  },
+  retryJob: async (id: string): Promise<BatchJob> => {
+    const response = await api.post<BatchJob>(`/admin/jobs/${id}/retry`);
+    return response.data;
+  },
+  cancelJob: async (id: string): Promise<BatchJob> => {
+    const response = await api.post<BatchJob>(`/admin/jobs/${id}/cancel`);
+    return response.data;
+  },
   startJob: async (type: string, target: string): Promise<BatchJob> => {
     const response = await api.post<BatchJob>("/admin/jobs", { type, target });
     return response.data;

@@ -34,6 +34,7 @@ export interface BatchJob {
   progress: number;
   error: string | null;
   resultSummary: string | null;
+  executionLog: string | null;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
