@@ -20,6 +20,7 @@ public class AdminEndpointIntegrationTests : IAsyncLifetime
     private HttpClient _client = null!;
     private ValoraDbContext _dbContext = null!;
     private IServiceScope _scope = null!;
+    private const string AdminPassword = "AdminPassword123!";
 
     public AdminEndpointIntegrationTests(TestcontainersDatabaseFixture fixture)
     {
@@ -28,7 +29,8 @@ public class AdminEndpointIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _factory = new IntegrationTestWebAppFactory(_fixture.ConnectionString);
+        // Use the shared factory from the fixture
+        _factory = _fixture.Factory ?? throw new InvalidOperationException("Fixture factory not initialized");
         _client = _factory.CreateClient();
         _scope = _factory.Services.CreateScope();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
@@ -43,13 +45,11 @@ public class AdminEndpointIntegrationTests : IAsyncLifetime
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         _scope?.Dispose();
-        if (_factory != null)
-        {
-            await _factory.DisposeAsync();
-        }
+        // Do not dispose _factory as it is managed by the fixture
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -131,39 +131,40 @@ public class AdminEndpointIntegrationTests : IAsyncLifetime
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var stats = await response.Content.ReadFromJsonAsync<AdminStatsDto>();
         stats.ShouldNotBeNull();
-        stats.TotalUsers.ShouldBeGreaterThan(0);
-        stats.TotalNotifications.ShouldBeGreaterThan(0);
+        stats.TotalUsers.ShouldBe(1); // Only the admin user created in AuthenticateAsAdminAsync
+        stats.TotalNotifications.ShouldBe(1); // Only the one we just added
     }
 
     private async Task AuthenticateAsAdminAsync(string email = "admin@example.com")
     {
-        var password = "AdminPassword123!";
-
         using var scope = _factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         if (!await roleManager.RoleExistsAsync("Admin"))
         {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
+            var result = await roleManager.CreateAsync(new IdentityRole("Admin"));
+            if (!result.Succeeded) throw new Exception($"Failed to create Admin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)
         {
             user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true };
-            await userManager.CreateAsync(user, password);
+            var result = await userManager.CreateAsync(user, AdminPassword);
+            if (!result.Succeeded) throw new Exception($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         if (!await userManager.IsInRoleAsync(user, "Admin"))
         {
-            await userManager.AddToRoleAsync(user, "Admin");
+            var result = await userManager.AddToRoleAsync(user, "Admin");
+            if (!result.Succeeded) throw new Exception($"Failed to add user to Admin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
         {
             Email = email,
-            Password = password
+            Password = AdminPassword
         });
         loginResponse.EnsureSuccessStatusCode();
 
