@@ -110,12 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(ValoraSpacing.screenPadding),
-            child: ValoraCard(
-              padding: const EdgeInsets.all(32),
-              margin: EdgeInsets.zero,
-              elevation: ValoraSpacing.elevationLg,
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 450),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 450),
+              child: ValoraCard(
+                padding: const EdgeInsets.all(32),
+                margin: EdgeInsets.zero,
+                elevation: ValoraSpacing.elevationLg,
                 child: Form(
                   key: _formKey,
                   child: AutofillGroup(
@@ -177,7 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email';
                             }
-                            if (!value.contains('@')) {
+                            final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                            if (!emailRegex.hasMatch(value)) {
                               return 'Please enter a valid email';
                             }
                             return null;
@@ -235,6 +236,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your password';
+                            }
+                            if (value.length < 8) {
+                              return 'Password must be at least 8 characters';
                             }
                             return null;
                           },

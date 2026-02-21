@@ -166,117 +166,138 @@ class ContextReportView extends StatelessWidget {
 
     // AI Insight
     if (index == currentIndex++) {
-      return AiInsightCard(report: report)
-          .animate()
-          .fadeIn(delay: 500.ms)
-          .slideX(begin: 0.1, curve: Curves.easeOut);
+      return _AnimateOnce(
+        delay: 500.ms,
+        child: AiInsightCard(report: report),
+      );
     }
     if (index == currentIndex++) return const SizedBox(height: 32);
 
     // Categories
     if (report.socialMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Social',
-            icon: Icons.people_rounded,
-            metrics: report.socialMetrics,
-            score: report.categoryScores['Social'],
-            accentColor: const Color(0xFF3B82F6),
-            isExpanded: provider.isExpanded('Social', defaultValue: true),
-            onToggle: (v) => provider.setExpanded('Social', v),
+        return _AnimateOnce(
+          delay: 200.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Social',
+              icon: Icons.people_rounded,
+              metrics: report.socialMetrics,
+              score: report.categoryScores['Social'],
+              accentColor: const Color(0xFF3B82F6),
+              isExpanded: provider.isExpanded('Social', defaultValue: true),
+              onToggle: (v) => provider.setExpanded('Social', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
     if (report.crimeMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Safety',
-            icon: Icons.shield_rounded,
-            metrics: report.crimeMetrics,
-            score: report.categoryScores['Safety'],
-            accentColor: const Color(0xFF10B981),
-            isExpanded: provider.isExpanded('Safety'),
-            onToggle: (v) => provider.setExpanded('Safety', v),
+        return _AnimateOnce(
+          delay: 250.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Safety',
+              icon: Icons.shield_rounded,
+              metrics: report.crimeMetrics,
+              score: report.categoryScores['Safety'],
+              accentColor: const Color(0xFF10B981),
+              isExpanded: provider.isExpanded('Safety'),
+              onToggle: (v) => provider.setExpanded('Safety', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
     if (report.demographicsMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Demographics',
-            icon: Icons.family_restroom_rounded,
-            metrics: report.demographicsMetrics,
-            score: report.categoryScores['Demographics'],
-            accentColor: const Color(0xFF8B5CF6),
-            isExpanded: provider.isExpanded('Demographics'),
-            onToggle: (v) => provider.setExpanded('Demographics', v),
+        return _AnimateOnce(
+          delay: 300.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Demographics',
+              icon: Icons.family_restroom_rounded,
+              metrics: report.demographicsMetrics,
+              score: report.categoryScores['Demographics'],
+              accentColor: const Color(0xFF8B5CF6),
+              isExpanded: provider.isExpanded('Demographics'),
+              onToggle: (v) => provider.setExpanded('Demographics', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
     if (report.housingMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Housing',
-            icon: Icons.home_work_rounded,
-            metrics: report.housingMetrics,
-            score: report.categoryScores['Housing'],
-            accentColor: const Color(0xFFEC4899),
-            isExpanded: provider.isExpanded('Housing'),
-            onToggle: (v) => provider.setExpanded('Housing', v),
+        return _AnimateOnce(
+          delay: 350.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Housing',
+              icon: Icons.home_work_rounded,
+              metrics: report.housingMetrics,
+              score: report.categoryScores['Housing'],
+              accentColor: const Color(0xFFEC4899),
+              isExpanded: provider.isExpanded('Housing'),
+              onToggle: (v) => provider.setExpanded('Housing', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 350.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
     if (report.mobilityMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Mobility',
-            icon: Icons.directions_car_rounded,
-            metrics: report.mobilityMetrics,
-            score: report.categoryScores['Mobility'],
-            accentColor: const Color(0xFF0EA5E9),
-            isExpanded: provider.isExpanded('Mobility'),
-            onToggle: (v) => provider.setExpanded('Mobility', v),
+        return _AnimateOnce(
+          delay: 400.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Mobility',
+              icon: Icons.directions_car_rounded,
+              metrics: report.mobilityMetrics,
+              score: report.categoryScores['Mobility'],
+              accentColor: const Color(0xFF0EA5E9),
+              isExpanded: provider.isExpanded('Mobility'),
+              onToggle: (v) => provider.setExpanded('Mobility', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
     if (report.amenityMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Amenities',
-            icon: Icons.store_rounded,
-            metrics: report.amenityMetrics,
-            score: report.categoryScores['Amenities'],
-            accentColor: const Color(0xFFF59E0B),
-            isExpanded: provider.isExpanded('Amenities'),
-            onToggle: (v) => provider.setExpanded('Amenities', v),
+        return _AnimateOnce(
+          delay: 450.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Amenities',
+              icon: Icons.store_rounded,
+              metrics: report.amenityMetrics,
+              score: report.categoryScores['Amenities'],
+              accentColor: const Color(0xFFF59E0B),
+              isExpanded: provider.isExpanded('Amenities'),
+              onToggle: (v) => provider.setExpanded('Amenities', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 450.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
     if (report.environmentMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
-            title: 'Environment',
-            icon: Icons.eco_rounded,
-            metrics: report.environmentMetrics,
-            score: report.categoryScores['Environment'],
-            accentColor: const Color(0xFF22C55E),
-            isExpanded: provider.isExpanded('Environment'),
-            onToggle: (v) => provider.setExpanded('Environment', v),
+        return _AnimateOnce(
+          delay: 500.ms,
+          child: Consumer<ContextReportProvider>(
+            builder: (context, provider, _) => MetricCategoryCard(
+              title: 'Environment',
+              icon: Icons.eco_rounded,
+              metrics: report.environmentMetrics,
+              score: report.categoryScores['Environment'],
+              accentColor: const Color(0xFF22C55E),
+              isExpanded: provider.isExpanded('Environment'),
+              onToggle: (v) => provider.setExpanded('Environment', v),
+            ),
           ),
-        ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        );
       }
     }
 
@@ -323,5 +344,40 @@ class ContextReportView extends StatelessWidget {
     if (index == currentIndex++) return const SizedBox(height: 40);
 
     return const SizedBox.shrink();
+  }
+}
+
+class _AnimateOnce extends StatefulWidget {
+  const _AnimateOnce({
+    required this.child,
+    required this.delay,
+  });
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  State<_AnimateOnce> createState() => _AnimateOnceState();
+}
+
+class _AnimateOnceState extends State<_AnimateOnce> {
+  bool _played = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_played) {
+      return widget.child;
+    }
+
+    return widget.child
+        .animate(
+          onComplete: (_) {
+            if (mounted) {
+              setState(() => _played = true);
+            }
+          },
+        )
+        .fadeIn(delay: widget.delay)
+        .slideX(begin: 0.1, curve: Curves.easeOut);
   }
 }
