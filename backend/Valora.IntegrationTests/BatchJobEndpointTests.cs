@@ -144,6 +144,6 @@ public class BatchJobEndpointTests : BaseIntegrationTest
         var dto = await response.Content.ReadFromJsonAsync<BatchJobDto>();
         dto.ShouldNotBeNull();
         dto!.Status.ShouldBe(BatchJobStatus.Failed.ToString());
-        dto.Error.ShouldBe("Cancelled by user");
+        dto.Error.ShouldBe("Job cancelled by user.");
     }
 }
