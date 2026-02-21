@@ -115,14 +115,6 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 - **Why?** Data freshness and coverage. We don't need to scrape or store millions of records.
 - **How?** See `ContextReportService.cs`. It uses `Task.WhenAll` to fetch data from CBS, PDOK, and OSM simultaneously.
 
-### 2. Listing Lifecycle
-Properties (Listings) are only persisted when a user explicitly "saves" or "tracks" them.
-
-1.  **Discovery:** User searches for an address.
-2.  **Resolution:** Valora resolves coordinates via PDOK.
-3.  **Context:** Valora generates a context report (transient).
-4.  **Persistence:** User clicks "Save". Valora stores a `Listing` entity with the context score.
-
 ---
 
 ## 📂 Project Structure

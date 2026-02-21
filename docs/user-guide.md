@@ -7,7 +7,7 @@ Valora helps you evaluate a location by generating a context report from public 
 You can paste:
 
 - an address, or
-- a listing link
+- a Funda URL
 
 Valora resolves the location and returns metrics for neighborhood context.
 
@@ -15,7 +15,7 @@ Valora resolves the location and returns metrics for neighborhood context.
 
 1. Sign in.
 2. Open `Report` tab.
-3. Enter an address or listing URL.
+3. Enter an address or Funda URL.
 4. Select radius.
 5. Tap `Generate Report`.
 
