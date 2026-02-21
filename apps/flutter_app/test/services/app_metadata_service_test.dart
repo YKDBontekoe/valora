@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -24,7 +25,6 @@ void main() {
   });
 
   test('init loads package info', () async {
-    // When init is called, it fetches support status too
     when(mockApiService.getSupportStatus()).thenAnswer((_) async => SupportStatus.fallback());
 
     await appMetadataService.init();
@@ -55,7 +55,6 @@ void main() {
     await appMetadataService.fetchSupportStatus();
 
     expect(appMetadataService.supportStatus, isNotNull);
-    // Fallback logic in AppMetadataService creates a fallback status
     expect(appMetadataService.supportStatus?.isSupportActive, true);
     expect(appMetadataService.supportStatus?.contactEmail, 'support@valora.nl');
   });
@@ -65,5 +64,29 @@ void main() {
     expect(appMetadataService.version, 'Unknown');
     expect(appMetadataService.buildNumber, 'Unknown');
     expect(appMetadataService.packageName, 'Unknown');
+  });
+
+  test('update updates the api service', () {
+    final newApiService = MockApiService();
+    appMetadataService.update(newApiService);
+  });
+
+  test('fetchSupportStatus does nothing if already loading', () async {
+    var completer = Completer<SupportStatus>();
+    when(mockApiService.getSupportStatus()).thenAnswer((_) => completer.future);
+
+    // Start first fetch
+    final future1 = appMetadataService.fetchSupportStatus();
+
+    // Start second fetch (should return early)
+    final future2 = appMetadataService.fetchSupportStatus();
+
+    // Complete the first one
+    completer.complete(SupportStatus.fallback());
+    await future1;
+    await future2;
+
+    // Verify API called only once
+    verify(mockApiService.getSupportStatus()).called(1);
   });
 }

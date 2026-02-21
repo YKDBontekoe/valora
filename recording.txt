@@ -3,3 +3,4 @@
 3.  **Backend Integration Testing**:  with  provides a reliable way to test new API endpoints () without mocking the entire ASP.NET Core stack.
 4.  **Covering Default Values**: To achieve high code coverage on models with default values (e.g.,  with ), tests must explicitly simulate partial or empty responses to trigger those fallback paths.
 5.  **Service Initialization Tests**: Services that load data asynchronously on  (like ) should have tests verifying their state *before* initialization to ensure default getters (using ) are covered.
+6.  **Concurrency Testing**: Testing loading flags (re-entrancy guards) requires mocking Futures with  to control execution timing manually.
