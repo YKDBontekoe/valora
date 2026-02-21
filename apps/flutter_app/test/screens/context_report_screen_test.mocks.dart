@@ -3,16 +3,16 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
+import 'dart:async' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
+import 'package:valora_app/models/ai_analysis.dart' as _i3;
 import 'package:valora_app/models/context_report.dart' as _i2;
 import 'package:valora_app/models/map_amenity.dart' as _i8;
 import 'package:valora_app/models/map_city_insight.dart' as _i7;
 import 'package:valora_app/models/map_overlay.dart' as _i9;
 import 'package:valora_app/models/notification.dart' as _i6;
-import 'package:valora_app/services/api_service.dart' as _i3;
+import 'package:valora_app/services/api_service.dart' as _i4;
 import 'package:valora_app/services/pdok_service.dart' as _i10;
 
 // ignore_for_file: type=lint
@@ -40,16 +40,26 @@ class _FakeContextReport_0 extends _i1.SmartFake implements _i2.ContextReport {
         );
 }
 
+class _FakeAiAnalysis_1 extends _i1.SmartFake implements _i3.AiAnalysis {
+  _FakeAiAnalysis_1(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [ApiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockApiService extends _i1.Mock implements _i3.ApiService {
+class MockApiService extends _i1.Mock implements _i4.ApiService {
   MockApiService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<_i2.ContextReport> getContextReport(
+  _i5.Future<_i2.ContextReport> getContextReport(
     String? input, {
     int? radiusMeters = 1000,
   }) =>
@@ -59,7 +69,7 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
           [input],
           {#radiusMeters: radiusMeters},
         ),
-        returnValue: _i4.Future<_i2.ContextReport>.value(_FakeContextReport_0(
+        returnValue: _i5.Future<_i2.ContextReport>.value(_FakeContextReport_0(
           this,
           Invocation.method(
             #getContextReport,
@@ -67,26 +77,26 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             {#radiusMeters: radiusMeters},
           ),
         )),
-      ) as _i4.Future<_i2.ContextReport>);
+      ) as _i5.Future<_i2.ContextReport>);
 
   @override
-  _i4.Future<String> getAiAnalysis(_i2.ContextReport? report) =>
+  _i5.Future<_i3.AiAnalysis> getAiAnalysis(_i2.ContextReport? report) =>
       (super.noSuchMethod(
         Invocation.method(
           #getAiAnalysis,
           [report],
         ),
-        returnValue: _i4.Future<String>.value(_i5.dummyValue<String>(
+        returnValue: _i5.Future<_i3.AiAnalysis>.value(_FakeAiAnalysis_1(
           this,
           Invocation.method(
             #getAiAnalysis,
             [report],
           ),
         )),
-      ) as _i4.Future<String>);
+      ) as _i5.Future<_i3.AiAnalysis>);
 
   @override
-  _i4.Future<List<_i6.ValoraNotification>> getNotifications({
+  _i5.Future<List<_i6.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
     int? offset = 0,
@@ -101,70 +111,70 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             #offset: offset,
           },
         ),
-        returnValue: _i4.Future<List<_i6.ValoraNotification>>.value(
+        returnValue: _i5.Future<List<_i6.ValoraNotification>>.value(
             <_i6.ValoraNotification>[]),
-      ) as _i4.Future<List<_i6.ValoraNotification>>);
+      ) as _i5.Future<List<_i6.ValoraNotification>>);
 
   @override
-  _i4.Future<int> getUnreadNotificationCount() => (super.noSuchMethod(
+  _i5.Future<int> getUnreadNotificationCount() => (super.noSuchMethod(
         Invocation.method(
           #getUnreadNotificationCount,
           [],
         ),
-        returnValue: _i4.Future<int>.value(0),
-      ) as _i4.Future<int>);
+        returnValue: _i5.Future<int>.value(0),
+      ) as _i5.Future<int>);
 
   @override
-  _i4.Future<void> markNotificationAsRead(String? id) => (super.noSuchMethod(
+  _i5.Future<void> markNotificationAsRead(String? id) => (super.noSuchMethod(
         Invocation.method(
           #markNotificationAsRead,
           [id],
         ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 
   @override
-  _i4.Future<void> markAllNotificationsAsRead() => (super.noSuchMethod(
+  _i5.Future<void> markAllNotificationsAsRead() => (super.noSuchMethod(
         Invocation.method(
           #markAllNotificationsAsRead,
           [],
         ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 
   @override
-  _i4.Future<void> deleteNotification(String? id) => (super.noSuchMethod(
+  _i5.Future<void> deleteNotification(String? id) => (super.noSuchMethod(
         Invocation.method(
           #deleteNotification,
           [id],
         ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 
   @override
-  _i4.Future<bool> healthCheck() => (super.noSuchMethod(
+  _i5.Future<bool> healthCheck() => (super.noSuchMethod(
         Invocation.method(
           #healthCheck,
           [],
         ),
-        returnValue: _i4.Future<bool>.value(false),
-      ) as _i4.Future<bool>);
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
 
   @override
-  _i4.Future<List<_i7.MapCityInsight>> getCityInsights() => (super.noSuchMethod(
+  _i5.Future<List<_i7.MapCityInsight>> getCityInsights() => (super.noSuchMethod(
         Invocation.method(
           #getCityInsights,
           [],
         ),
         returnValue:
-            _i4.Future<List<_i7.MapCityInsight>>.value(<_i7.MapCityInsight>[]),
-      ) as _i4.Future<List<_i7.MapCityInsight>>);
+            _i5.Future<List<_i7.MapCityInsight>>.value(<_i7.MapCityInsight>[]),
+      ) as _i5.Future<List<_i7.MapCityInsight>>);
 
   @override
-  _i4.Future<List<_i8.MapAmenity>> getMapAmenities({
+  _i5.Future<List<_i8.MapAmenity>> getMapAmenities({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -183,11 +193,11 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             #types: types,
           },
         ),
-        returnValue: _i4.Future<List<_i8.MapAmenity>>.value(<_i8.MapAmenity>[]),
-      ) as _i4.Future<List<_i8.MapAmenity>>);
+        returnValue: _i5.Future<List<_i8.MapAmenity>>.value(<_i8.MapAmenity>[]),
+      ) as _i5.Future<List<_i8.MapAmenity>>);
 
   @override
-  _i4.Future<List<_i9.MapOverlay>> getMapOverlays({
+  _i5.Future<List<_i9.MapOverlay>> getMapOverlays({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -206,8 +216,8 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             #metric: metric,
           },
         ),
-        returnValue: _i4.Future<List<_i9.MapOverlay>>.value(<_i9.MapOverlay>[]),
-      ) as _i4.Future<List<_i9.MapOverlay>>);
+        returnValue: _i5.Future<List<_i9.MapOverlay>>.value(<_i9.MapOverlay>[]),
+      ) as _i5.Future<List<_i9.MapOverlay>>);
 }
 
 /// A class which mocks [PdokService].
@@ -219,18 +229,18 @@ class MockPdokService extends _i1.Mock implements _i10.PdokService {
   }
 
   @override
-  _i4.Future<List<_i10.PdokSuggestion>> search(String? query) =>
+  _i5.Future<List<_i10.PdokSuggestion>> search(String? query) =>
       (super.noSuchMethod(
         Invocation.method(
           #search,
           [query],
         ),
-        returnValue: _i4.Future<List<_i10.PdokSuggestion>>.value(
+        returnValue: _i5.Future<List<_i10.PdokSuggestion>>.value(
             <_i10.PdokSuggestion>[]),
-      ) as _i4.Future<List<_i10.PdokSuggestion>>);
+      ) as _i5.Future<List<_i10.PdokSuggestion>>);
 
   @override
-  _i4.Future<String?> reverseLookup(
+  _i5.Future<String?> reverseLookup(
     double? lat,
     double? lon,
   ) =>
@@ -242,6 +252,6 @@ class MockPdokService extends _i1.Mock implements _i10.PdokService {
             lon,
           ],
         ),
-        returnValue: _i4.Future<String?>.value(),
-      ) as _i4.Future<String?>);
+        returnValue: _i5.Future<String?>.value(),
+      ) as _i5.Future<String?>);
 }

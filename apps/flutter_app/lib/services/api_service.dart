@@ -11,6 +11,7 @@ import '../core/config/app_config.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/map_city_insight.dart';
+import '../models/ai_analysis.dart';
 import '../models/map_amenity.dart';
 import '../models/map_overlay.dart';
 import '../models/notification.dart';
@@ -126,7 +127,7 @@ class ApiService {
     }
   }
 
-  Future<String> getAiAnalysis(ContextReport report) async {
+  Future<AiAnalysis> getAiAnalysis(ContextReport report) async {
     final uri = Uri.parse('$baseUrl/ai/analyze-report');
     try {
       final payload = json.encode({
@@ -145,7 +146,7 @@ class ApiService {
         response,
         (body) {
           final jsonBody = json.decode(body);
-          return jsonBody['summary'] as String;
+          return AiAnalysis.fromJson(jsonBody);
         },
       );
     } catch (e, stack) {

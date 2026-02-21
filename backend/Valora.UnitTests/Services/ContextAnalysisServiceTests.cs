@@ -24,7 +24,7 @@ public class ContextAnalysisServiceTests
         string capturedPrompt = "";
         _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
             .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
-            .ReturnsAsync("Analysis Result");
+            .ReturnsAsync("{}"); // Return empty JSON to satisfy parsing or fallback
 
         // Act
         await service.AnalyzeReportAsync(report, CancellationToken.None);
@@ -41,43 +41,91 @@ public class ContextAnalysisServiceTests
         // Check Metrics
         Assert.Contains("<metric category=\"Social\" label=\"Restaurants\">15 count (Score: 85)</metric>", capturedPrompt);
         Assert.Contains("<metric category=\"Safety\" label=\"Crime Rate\">100 risk (Score: 90)</metric>", capturedPrompt);
+
+        // Check JSON Request
+        Assert.Contains("provide a structured analysis in JSON format", capturedPrompt);
     }
 
     [Fact]
-    public async Task AnalyzeReportAsync_GeneratesCorrectPrompt_WithMinimalData()
+    public async Task AnalyzeReportAsync_ParsesStructuredJson()
     {
         // Arrange
         var service = CreateService();
-        var report = new ContextReportDto(
-            Location: new ResolvedLocationDto("q", "Address", 52.0, 4.0, null, null, "Muni", "MuniName", "Dist", "DistName", "Neigh", "NeighName", "1234AB"),
-            SocialMetrics: new List<ContextMetricDto>(),
-            CrimeMetrics: new List<ContextMetricDto>(),
-            DemographicsMetrics: new List<ContextMetricDto>(),
-            HousingMetrics: new List<ContextMetricDto>(),
-            MobilityMetrics: new List<ContextMetricDto>(),
-            AmenityMetrics: new List<ContextMetricDto>(),
-            EnvironmentMetrics: new List<ContextMetricDto>(),
-            CompositeScore: 50,
-            CategoryScores: new Dictionary<string, double>(),
-            Sources: new List<SourceAttributionDto>(),
-            Warnings: new List<string>()
-        );
+        var report = CreateFullReportDto();
+        var jsonResponse = """
+            ```json
+            {
+                "summary": "Great place.",
+                "topPositives": ["Walkable", "Green"],
+                "topConcerns": ["Noisy"],
+                "confidence": 90,
+                "disclaimer": "No guarantees."
+            }
+            ```
+            """;
 
-        string capturedPrompt = "";
         _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
-            .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
-            .ReturnsAsync("Analysis Result");
+            .ReturnsAsync(jsonResponse);
 
         // Act
-        await service.AnalyzeReportAsync(report, CancellationToken.None);
+        var result = await service.AnalyzeReportAsync(report, CancellationToken.None);
 
         // Assert
-        Assert.Contains("<context_report>", capturedPrompt);
-        Assert.Contains("<address>Address</address>", capturedPrompt);
-        // Should handle empty categories gracefully
-        Assert.Contains("<category_scores>", capturedPrompt);
-        Assert.Contains("</category_scores>", capturedPrompt);
-        Assert.DoesNotContain("<score category=", capturedPrompt);
+        Assert.Equal("Great place.", result.Summary);
+        Assert.Equal(2, result.TopPositives.Count);
+        Assert.Contains("Walkable", result.TopPositives);
+        Assert.Single(result.TopConcerns);
+        Assert.Equal("Noisy", result.TopConcerns[0]);
+        Assert.Equal(90, result.Confidence);
+        Assert.Equal("No guarantees.", result.Disclaimer);
+    }
+
+    [Fact]
+    public async Task AnalyzeReportAsync_HandlesMalformedJson_FallbackToSummary()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = CreateFullReportDto();
+        var rawText = "This is not JSON. It is just a summary.";
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(rawText);
+
+        // Act
+        var result = await service.AnalyzeReportAsync(report, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(rawText, result.Summary);
+        Assert.Empty(result.TopPositives);
+        Assert.Empty(result.TopConcerns);
+        Assert.Equal(0, result.Confidence);
+        Assert.Contains("Could not parse", result.Disclaimer);
+    }
+
+    [Fact]
+    public async Task AnalyzeReportAsync_ClampsConfidence()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = CreateFullReportDto();
+        var jsonResponse = """
+            {
+                "summary": "Test",
+                "confidence": 150,
+                "topPositives": [],
+                "topConcerns": [],
+                "disclaimer": ""
+            }
+            """;
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        // Act
+        var result = await service.AnalyzeReportAsync(report, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(100, result.Confidence);
     }
 
     [Fact]
@@ -94,7 +142,7 @@ public class ContextAnalysisServiceTests
         string capturedPrompt = "";
         _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
             .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
-            .ReturnsAsync("Analysis Result");
+            .ReturnsAsync("{}");
 
         // Act
         await service.AnalyzeReportAsync(report, CancellationToken.None);
