@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:valora_app/models/map_amenity.dart';
 import 'package:valora_app/models/map_amenity_cluster.dart';
 import 'package:valora_app/models/map_city_insight.dart';
 import 'package:valora_app/models/map_overlay_tile.dart';
