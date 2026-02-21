@@ -69,10 +69,27 @@ public partial class ContextAnalysisService : IContextAnalysisService
             var result = JsonSerializer.Deserialize<AiAnalysisResponse>(json, options);
             if (result != null)
             {
-                // Validate Confidence
-                var confidence = Math.Clamp(result.Confidence, 0, 100);
+                // Ensure non-null values for strings and lists
+                if (string.IsNullOrEmpty(result.Summary))
+                {
+                     // If summary is missing, fallback to treating the raw response as summary (if it wasn't empty JSON)
+                     // or return a default message.
+                     return new AiAnalysisResponse(
+                        Summary: string.IsNullOrWhiteSpace(json) || json == "{}" ? "Analysis not available." : response,
+                        TopPositives: new List<string>(),
+                        TopConcerns: new List<string>(),
+                        Confidence: 0,
+                        Disclaimer: "Could not parse structured analysis."
+                    );
+                }
 
-                return result with { Confidence = confidence };
+                return result with
+                {
+                    Confidence = Math.Clamp(result.Confidence, 0, 100),
+                    TopPositives = result.TopPositives ?? new List<string>(),
+                    TopConcerns = result.TopConcerns ?? new List<string>(),
+                    Disclaimer = result.Disclaimer ?? string.Empty
+                };
             }
         }
         catch (JsonException)

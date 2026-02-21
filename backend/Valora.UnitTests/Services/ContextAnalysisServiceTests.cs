@@ -15,7 +15,7 @@ public class ContextAnalysisServiceTests
     }
 
     [Fact]
-    public async Task AnalyzeReportAsync_GeneratesCorrectPrompt_WithFullData()
+    public async Task AnalyzeReportAsync_GeneratesCorrectPrompt_AndHandlesEmptyJson_WithFullData()
     {
         // Arrange
         var service = CreateService();
@@ -24,25 +24,33 @@ public class ContextAnalysisServiceTests
         string capturedPrompt = "";
         _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
             .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
-            .ReturnsAsync("{}"); // Return empty JSON to satisfy parsing or fallback
+            .ReturnsAsync("{}"); // Return empty JSON
 
         // Act
-        await service.AnalyzeReportAsync(report, CancellationToken.None);
+        var result = await service.AnalyzeReportAsync(report, CancellationToken.None);
 
         // Assert
+        // Verify prompt content
         Assert.Contains("<context_report>", capturedPrompt);
         Assert.Contains("<address>Damrak 1, Amsterdam</address>", capturedPrompt);
         Assert.Contains("<composite_score>78</composite_score>", capturedPrompt);
 
-        // Check Categories
+        // Verify fallback logic for empty JSON
+        Assert.Equal("Analysis not available.", result.Summary);
+        Assert.Empty(result.TopPositives);
+        Assert.Empty(result.TopConcerns);
+        Assert.Equal(0, result.Confidence);
+        Assert.Contains("Could not parse", result.Disclaimer);
+
+        // Check Categories in prompt
         Assert.Contains("<score category=\"Social\">80</score>", capturedPrompt);
         Assert.Contains("<score category=\"Safety\">75</score>", capturedPrompt);
 
-        // Check Metrics
+        // Check Metrics in prompt
         Assert.Contains("<metric category=\"Social\" label=\"Restaurants\">15 count (Score: 85)</metric>", capturedPrompt);
         Assert.Contains("<metric category=\"Safety\" label=\"Crime Rate\">100 risk (Score: 90)</metric>", capturedPrompt);
 
-        // Check JSON Request
+        // Check JSON Request instructions
         Assert.Contains("provide a structured analysis in JSON format", capturedPrompt);
     }
 
