@@ -15,4 +15,5 @@ public interface IIdentityService
     Task<IList<string>> GetUserRolesAsync(ApplicationUser user);
     Task<int> CountAsync();
     Task<IDictionary<string, IList<string>>> GetRolesForUsersAsync(IEnumerable<ApplicationUser> users);
+    Task<bool> CanConnectAsync();
 }

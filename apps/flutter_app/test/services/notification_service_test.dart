@@ -209,4 +209,73 @@ void main() {
       expect(service.error, isNotNull);
     });
   });
+
+  test('handleNotificationCreated adds new notification', () {
+    fakeAsync((async) {
+      final mockApiService = MockApiService();
+      final service = NotificationService(mockApiService);
+
+      // Setup initial state
+      mockApiService.notifications = [];
+      service.fetchNotifications();
+      async.flushMicrotasks();
+
+      expect(service.notifications.length, 0);
+
+      // Emit event
+      final eventData = {
+        'id': 'new-1',
+        'title': 'New Event',
+        'body': 'Body',
+        'isRead': false,
+        'createdAt': DateTime.now().toIso8601String(),
+        'type': 0
+      };
+      service.handleNotificationCreated([eventData]);
+
+      expect(service.notifications.length, 1);
+      expect(service.notifications.first.id, 'new-1');
+      expect(service.unreadCount, 1);
+    });
+  });
+
+  test('handleNotificationRead marks as read', () {
+    fakeAsync((async) {
+      final mockApiService = MockApiService();
+      final service = NotificationService(mockApiService);
+
+      final n1 = ValoraNotification(id: '1', title: 'Test', body: 'Body', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
+      mockApiService.notifications = [n1];
+      mockApiService.unreadCount = 1;
+
+      service.fetchNotifications();
+      async.flushMicrotasks();
+
+      expect(service.unreadCount, 1);
+
+      service.handleNotificationRead(['1']);
+
+      expect(service.notifications.first.isRead, true);
+      expect(service.unreadCount, 0);
+    });
+  });
+
+  test('handleNotificationDeleted removes notification', () {
+    fakeAsync((async) {
+      final mockApiService = MockApiService();
+      final service = NotificationService(mockApiService);
+
+      final n1 = ValoraNotification(id: '1', title: 'Test', body: 'Body', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
+      mockApiService.notifications = [n1];
+      mockApiService.unreadCount = 1;
+
+      service.fetchNotifications();
+      async.flushMicrotasks();
+
+      service.handleNotificationDeleted(['1']);
+
+      expect(service.notifications.isEmpty, true);
+      expect(service.unreadCount, 0);
+    });
+  });
 }

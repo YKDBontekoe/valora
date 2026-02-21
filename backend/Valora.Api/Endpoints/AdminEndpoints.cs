@@ -74,6 +74,14 @@ public static class AdminEndpoints
             return Results.Ok(stats);
         });
 
+        group.MapGet("/system-status", async (
+            IAdminService adminService,
+            CancellationToken ct) =>
+        {
+            var status = await adminService.GetSystemStatusAsync(ct);
+            return Results.Ok(status);
+        });
+
         group.MapPost("/jobs", async (
             BatchJobRequest request,
             IBatchJobService jobService,
@@ -101,63 +109,6 @@ public static class AdminEndpoints
 
             var jobs = await jobService.GetRecentJobsAsync(limit, ct);
             return Results.Ok(jobs);
-        });
-
-        group.MapGet("/jobs/{id}", async (
-            Guid id,
-            IBatchJobService jobService,
-            CancellationToken ct) =>
-        {
-            try
-            {
-                var job = await jobService.GetJobDetailsAsync(id, ct);
-                return Results.Ok(job);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound(new { error = "Job not found." });
-            }
-        });
-
-        group.MapPost("/jobs/{id}/retry", async (
-            Guid id,
-            IBatchJobService jobService,
-            CancellationToken ct) =>
-        {
-            try
-            {
-                var job = await jobService.RetryJobAsync(id, ct);
-                return Results.Ok(job);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound(new { error = "Job not found." });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-        });
-
-        group.MapPost("/jobs/{id}/cancel", async (
-            Guid id,
-            IBatchJobService jobService,
-            CancellationToken ct) =>
-        {
-            try
-            {
-                var job = await jobService.CancelJobAsync(id, ct);
-                return Results.Ok(job);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound(new { error = "Job not found." });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-
         });
     }
 }

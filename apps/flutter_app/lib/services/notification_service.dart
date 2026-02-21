@@ -27,10 +27,6 @@ class NotificationService extends ChangeNotifier {
 
   void update(ApiService apiService) {
     _apiService = apiService;
-    // Re-init SignalR if token changed?
-    // Usually token refresh is handled internally by signalr client via factory,
-    // but if user logs out/in, we might need to reconnect.
-    // For now assume single session.
     if (_hubConnection == null && _apiService.authToken != null) {
       _initSignalR();
     }
@@ -48,7 +44,6 @@ class NotificationService extends ChangeNotifier {
     _fetchUnreadCount(); // Initial fetch
     _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _fetchUnreadCount();
-      // Ensure SignalR is connected
       if (_hubConnection?.state == HubConnectionState.Disconnected) {
           _initSignalR();
       }
@@ -68,16 +63,6 @@ class NotificationService extends ChangeNotifier {
 
     final token = _apiService.authToken;
     if (token == null) return;
-
-    // Adjust hub URL based on ApiService.baseUrl which might have /api suffix or not
-    // Assuming baseUrl is like https://api.valora.com/api
-    // Hub is mapped at /hubs/notifications relative to root, or relative to API?
-    // In Program.cs: app.MapHub<NotificationHub>("/hubs/notifications");
-    // If baseUrl is .../api, we need to go up one level or if the app hosts API at root.
-    // Usually AppConfig.apiUrl is the full API base.
-    // Let's assume standard structure: BaseUrl/../hubs/notifications or similar.
-    // If API is at /api, hub is at /hubs.
-    // I'll parse baseUrl to find root.
 
     final uri = Uri.parse(ApiService.baseUrl);
     final hubUrl = uri.replace(path: '/hubs/notifications').toString();
@@ -101,16 +86,17 @@ class NotificationService extends ChangeNotifier {
 
     _hubConnection!.onclose(({error}) {
         _log.warning('SignalR Connection Closed: $error');
-        // Simple retry logic via polling timer will pick it up
     });
   }
+
+  @visibleForTesting
+  void handleNotificationCreated(List<Object?>? args) => _handleNotificationCreated(args);
 
   void _handleNotificationCreated(List<Object?>? args) {
     if (args != null && args.isNotEmpty) {
         try {
             final map = args[0] as Map<String, dynamic>;
             final notification = ValoraNotification.fromJson(map);
-            // Deduplicate
             if (!_notifications.any((n) => n.id == notification.id)) {
                 _notifications.insert(0, notification);
                 _unreadCount++;
@@ -121,6 +107,9 @@ class NotificationService extends ChangeNotifier {
         }
     }
   }
+
+  @visibleForTesting
+  void handleNotificationRead(List<Object?>? args) => _handleNotificationRead(args);
 
   void _handleNotificationRead(List<Object?>? args) {
     if (args != null && args.isNotEmpty) {
@@ -142,6 +131,9 @@ class NotificationService extends ChangeNotifier {
         }
     }
   }
+
+  @visibleForTesting
+  void handleNotificationDeleted(List<Object?>? args) => _handleNotificationDeleted(args);
 
   void _handleNotificationDeleted(List<Object?>? args) {
      if (args != null && args.isNotEmpty) {

@@ -74,4 +74,32 @@ public class NotificationCursorPaginationTests : BaseIntegrationTest
         Assert.Empty(page3.Items);
         Assert.False(page3.HasMore);
     }
+
+    [Fact]
+    public async Task GetNotifications_WithInvalidCursor_ReturnsFirstPageOrEmpty()
+    {
+        // Arrange
+        var email = "invalid_cursor@example.com";
+        await AuthenticateAsync(email);
+        var user = await DbContext.Users.FirstAsync(u => u.Email == email);
+
+        DbContext.Notifications.Add(new Notification
+        {
+            UserId = user.Id,
+            Title = "Notif",
+            Body = "Body",
+            Type = NotificationType.Info
+        });
+        await DbContext.SaveChangesAsync();
+
+        // Act - Invalid format
+        var response = await Client.GetAsync("/api/notifications?cursor=invalid_format");
+
+        // Assert - Should handle gracefully (e.g., ignore cursor and return first page, or return empty if logic dictates)
+        // Current implementation: TryParse fails -> no filter applied -> returns first page
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<CursorPagedResult<NotificationDto>>();
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+    }
 }
