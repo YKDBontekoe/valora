@@ -47,18 +47,4 @@ public class BatchJobRepository : IBatchJobRepository
         _context.Entry(job).State = EntityState.Modified;
         await _context.SaveChangesAsync(cancellationToken);
     }
-
-    public async Task<int> GetQueueDepthAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.BatchJobs.CountAsync(x => x.Status == BatchJobStatus.Pending, cancellationToken);
-    }
-
-    public async Task<DateTime?> GetLastIngestionRunAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.BatchJobs
-            .Where(x => x.Type == BatchJobType.CityIngestion && x.Status == BatchJobStatus.Completed)
-            .OrderByDescending(x => x.CompletedAt)
-            .Select(x => x.CompletedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
 }

@@ -6,7 +6,6 @@ import { adminService } from '../services/api';
 vi.mock('../services/api', () => ({
   adminService: {
     getJobs: vi.fn(),
-    getSystemStatus: vi.fn(),
   },
 }));
 
@@ -26,16 +25,7 @@ describe('BatchJobs Page', () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    const mockStatus = {
-        dbLatencyMs: 42,
-        queueDepth: 0,
-        workerHealth: "Idle",
-        dbConnectivity: "Connected",
-        lastIngestionRun: "2024-01-01T12:00:00Z"
-    };
-
     (adminService.getJobs as Mock).mockResolvedValue(mockJobs);
-    (adminService.getSystemStatus as Mock).mockResolvedValue(mockStatus);
 
     render(<BatchJobs />);
 
@@ -49,7 +39,6 @@ describe('BatchJobs Page', () => {
 
   it('renders error message when API call fails', async () => {
     (adminService.getJobs as Mock).mockRejectedValue(new Error('API Error'));
-    (adminService.getSystemStatus as Mock).mockRejectedValue(new Error('API Error'));
 
     render(<BatchJobs />);
 

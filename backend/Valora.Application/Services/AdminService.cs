@@ -10,18 +10,15 @@ public class AdminService : IAdminService
 {
     private readonly IIdentityService _identityService;
     private readonly INotificationRepository _notificationRepository;
-    private readonly IBatchJobRepository _batchJobRepository;
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
         IIdentityService identityService,
         INotificationRepository notificationRepository,
-        IBatchJobRepository batchJobRepository,
         ILogger<AdminService> logger)
     {
         _identityService = identityService;
         _notificationRepository = notificationRepository;
-        _batchJobRepository = batchJobRepository;
         _logger = logger;
     }
 
@@ -85,62 +82,5 @@ public class AdminService : IAdminService
         var notificationsCount = await _notificationRepository.CountAsync();
 
         return new AdminStatsDto(usersCount, notificationsCount);
-    }
-
-    public async Task<SystemStatusDto> GetSystemStatusAsync(CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("System status requested.");
-
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        bool dbConnected = false;
-        try
-        {
-             dbConnected = await _identityService.CanConnectAsync();
-        }
-        catch (Exception ex)
-        {
-             _logger.LogError(ex, "Database connectivity check failed.");
-        }
-        sw.Stop();
-        double latency = sw.Elapsed.TotalMilliseconds;
-
-        int queueDepth = 0;
-        DateTime? lastIngestion = null;
-
-        if (dbConnected)
-        {
-            try
-            {
-                queueDepth = await _batchJobRepository.GetQueueDepthAsync(cancellationToken);
-                lastIngestion = await _batchJobRepository.GetLastIngestionRunAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to retrieve batch job metrics despite DB being connected.");
-                // We proceed with defaults (0, null)
-            }
-        }
-
-        string workerHealth;
-        if (!dbConnected)
-        {
-             workerHealth = "Unreachable";
-        }
-        else if (queueDepth > 0)
-        {
-             workerHealth = "Active";
-        }
-        else
-        {
-             workerHealth = "Idle";
-        }
-
-        return new SystemStatusDto(
-            latency,
-            queueDepth,
-            workerHealth,
-            dbConnected ? "Connected" : "Disconnected",
-            lastIngestion
-        );
     }
 }
