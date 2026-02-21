@@ -23,6 +23,7 @@ Run the database container.
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
+*Troubleshooting:* If `docker-compose` fails, ensure Docker Desktop is running. Check port 5432 availability.
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
@@ -33,7 +34,7 @@ cp .env.example .env
 # default .env values work out-of-the-box for local dev
 dotnet run --project Valora.Api
 ```
-*Verify: Open `http://localhost:5001/api/health` in your browser.*
+*Verify: Open `http://localhost:5253/api/health` in your browser (or port `5001` if running via Docker). You should see `{"status":"healthy", "timestamp": "..."}`.*
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
@@ -66,27 +67,32 @@ npm run dev
 
 Valora follows **Clean Architecture** principles to ensure modularity and testability.
 
+### The "Fan-Out" Aggregation Pattern
+When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results ("Fan-In") into a unified score.
+
 ```mermaid
 graph TD
-    User((User)) -->|Input Address| App[Flutter App]
-    Admin((Admin)) -->|Manage Users| AdminApp[Admin Dashboard]
+    User((User)) -->|1. Request Report| API[Valora API]
+    API -->|2. Orchestrate| Service[ContextReportService]
 
-    subgraph "Valora Ecosystem"
-        App -->|API Request| API[Valora API (.NET)]
-        AdminApp -->|API Request| API
-
-        API -->|Orchestrates| Core[Application Layer]
-        Core -->|Defines| Domain[Domain Entities]
-
-        API -->|Persists| DB[(PostgreSQL)]
+    subgraph "Fan-Out (Parallel Execution)"
+        Service -->|Geocode| PDOK[PDOK Locatieserver]
+        Service -->|Stats| CBS[CBS Open Data]
+        Service -->|Amenities| OSM[OpenStreetMap / Overpass]
+        Service -->|Air Quality| Air[Luchtmeetnet]
     end
 
-    subgraph "External Data Sources (Fan-Out)"
-        Core -->|Geocoding| PDOK[PDOK Locatieserver]
-        Core -->|Demographics| CBS[CBS StatLine]
-        Core -->|Amenities| OSM[OpenStreetMap]
-        Core -->|Air Quality| Air[Luchtmeetnet]
-    end
+    PDOK -->|Coords| Service
+    CBS -->|Demographics| Service
+    OSM -->|Shops/Parks| Service
+    Air -->|PM2.5| Service
+
+    Service -->|3. Normalize & Score| Service
+    Service -->|4. Return Report| API
+    API -->|5. Response| User
+
+    API -.->|Async Cache| RAM[(In-Memory Cache)]
+    API -.->|Persist (Optional)| DB[(PostgreSQL)]
 ```
 
 ### Key Components

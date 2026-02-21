@@ -218,13 +218,19 @@ if (!isOnRender && (!app.Environment.IsDevelopment() || app.Configuration.GetVal
 }
 
 // Middleware Pipeline Order is Critical:
-// 1. Security Headers (Always first to protect subsequent responses)
+// -------------------------------------
+// 1. Security Headers (Always first)
+//    We must attach security headers (HSTS, CSP, X-Frame-Options) to *every* response,
+//    even error responses or 404s.
 app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
 
-// 2. Rate Limiting (Before Auth to save resources on DDoS attacks)
+// 2. Rate Limiting (Before Auth)
+//    We rate limit *before* authentication to protect the expensive authentication logic
+//    (DB lookups, crypto) from DDoS attacks. Anonymous IPs can be throttled here.
 app.UseRateLimiter();
 
 // 3. Authentication (Identify the user)
+//    Parses the JWT and sets the ClaimsPrincipal.
 app.UseAuthentication();
 
 // Sentry User Enrichment Middleware

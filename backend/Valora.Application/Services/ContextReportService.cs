@@ -42,7 +42,15 @@ public sealed class ContextReportService : IContextReportService
     /// </summary>
     /// <remarks>
     /// <para>
-    /// This method employs a "fan-out" pattern to query all external APIs in parallel via <see cref="IContextDataProvider"/>.
+    /// <strong>Architecture Pattern: Fan-Out / Fan-In</strong><br/>
+    /// This method acts as the orchestrator for the "Fan-Out" pattern. It does NOT query databases sequentially.
+    /// Instead, it delegates the parallel fetching of data to <see cref="IContextDataProvider"/> (Fan-Out),
+    /// waits for all tasks to complete, and then aggregates the results (Fan-In) into a single report.
+    /// </para>
+    /// <para>
+    /// <strong>Why Real-Time?</strong><br/>
+    /// We do not store pre-computed reports for every address in the Netherlands (too much data, stale too quickly).
+    /// Instead, we generate them on-demand and cache them aggressively.
     /// </para>
     /// <para>
     /// Key Decisions:
@@ -112,6 +120,22 @@ public sealed class ContextReportService : IContextReportService
         return $"{ReportConstants.CacheKeyPrefix}:{latKey}_{lonKey}:{radius}";
     }
 
+    /// <summary>
+    /// Aggregates raw data into a scored report (The "Fan-In" phase).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Normalization Strategy:</strong><br/>
+    /// Raw values (e.g., "45 crimes per 1000 residents") are meaningless to end-users.
+    /// We use specific "Builders" (e.g., <see cref="SocialMetricBuilder"/>) to convert these raw numbers
+    /// into a normalized 0-100 score based on national averages and heuristics.
+    /// </para>
+    /// <para>
+    /// <strong>Separation of Concerns:</strong><br/>
+    /// This method delegates the specific scoring logic to domain services (<see cref="ContextScoreCalculator"/>)
+    /// to keep the Application layer focused on orchestration, not business rules.
+    /// </para>
+    /// </remarks>
     private static ContextReportDto BuildReport(
         ResolvedLocationDto location,
         ContextSourceData sourceData,
@@ -123,6 +147,7 @@ public sealed class ContextReportService : IContextReportService
         var air = sourceData.AirQualitySnapshot;
 
         // Raw data is converted to uniform ContextMetricDto objects.
+        // Each Builder encapsulates the logic for a specific domain (Social, Crime, etc.)
         var socialMetrics = SocialMetricBuilder.Build(cbs, warnings);
         var crimeMetrics = CrimeMetricBuilder.Build(crime, warnings);
         var demographicsMetrics = DemographicsMetricBuilder.Build(cbs, warnings);
@@ -132,6 +157,8 @@ public sealed class ContextReportService : IContextReportService
         var environmentMetrics = EnvironmentMetricBuilder.Build(air, warnings);
 
         // Compute scores
+        // We map DTOs to Domain Models here to enforce Clean Architecture boundaries.
+        // The Domain layer calculates the final scores.
         var metricsInput = new CategoryMetricsModel(
             MapToDomain(socialMetrics),
             MapToDomain(crimeMetrics),
