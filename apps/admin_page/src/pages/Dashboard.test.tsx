@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import Dashboard from './Dashboard';
 import { adminService } from '../services/api';
 import { MemoryRouter } from 'react-router-dom';
