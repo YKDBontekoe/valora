@@ -150,6 +150,33 @@ public class AdminEndpointTests : BaseIntegrationTest
         content!.Error.ShouldBe("Operation failed.");
     }
 
+    [Fact]
+    public async Task CreateUser_ReturnsUnauthorized_WhenNotAuthenticated()
+    {
+        // Arrange
+        var request = new AdminCreateUserDto("unauth@test.com", "SecurePass123!", new List<string> { "User" });
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task CreateUser_ReturnsForbidden_WhenUserIsNotAdmin()
+    {
+        // Arrange
+        await AuthenticateAsync("user@example.com", "Password123!");
+        var request = new AdminCreateUserDto("forbidden@test.com", "SecurePass123!", new List<string> { "User" });
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/admin/users", request);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
     private class UsersResponse
     {
         public List<AdminUserDto> Items { get; set; } = new();
