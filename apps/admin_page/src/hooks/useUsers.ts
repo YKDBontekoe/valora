@@ -18,6 +18,7 @@ export const useUsers = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
+      setPage(1);
     }, 500);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -52,12 +53,6 @@ export const useUsers = () => {
     };
   }, [page, debouncedSearch, sortBy, refreshTrigger]);
 
-  // When debounced search or sort changes, we reset to page 1.
-  // We rely on React's behavior to bail out if state is already 1, avoiding unnecessary updates.
-  useEffect(() => {
-     setPage(1);
-  }, [debouncedSearch, sortBy]);
-
   const deleteUser = async (user: User) => {
     if (user.id === currentUserId) {
       throw new Error('You cannot delete your own account.');
@@ -81,6 +76,7 @@ export const useUsers = () => {
       if (current === `${field}_desc`) return undefined;
       return `${field}_asc`;
     });
+    setPage(1);
   };
 
   const refresh = useCallback(() => {
