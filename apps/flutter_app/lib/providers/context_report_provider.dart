@@ -103,7 +103,7 @@ class ContextReportProvider extends ChangeNotifier {
 
     final String trimmed = input.trim();
     if (trimmed.isEmpty) {
-      _error = 'Enter an address or location link.';
+      _error = 'Enter an address or Funda URL.';
       notifyListeners();
       return;
     }

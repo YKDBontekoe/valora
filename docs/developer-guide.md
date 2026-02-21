@@ -123,7 +123,7 @@ External data providers are hidden behind Application interfaces (e.g., `ICbsNei
 
 ## Context Report Flow
 
-1. Receive input (`address` or `location link`).
+1. Receive input (`address` or `Funda URL`).
 2. Resolve location (PDOK): display address, coordinates, admin codes.
 3. Query enrichment clients in parallel (CBS, Overpass, Luchtmeetnet, etc.).
 4. Build normalized metrics and composite score.

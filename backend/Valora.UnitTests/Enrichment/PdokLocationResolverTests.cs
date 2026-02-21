@@ -34,12 +34,61 @@ public class PdokLocationResolverTests
             Times.AtLeastOnce);
     }
 
+    [Fact]
+    public async Task ResolveAsync_NonFundaUrl_UsesUrlHintInsteadOfRawUrlInPdokQuery()
+    {
+        var logger = new Mock<ILogger<PdokLocationResolver>>();
+        var handler = new CapturingResponseHandler(new HttpResponseMessage(HttpStatusCode.BadRequest));
+        var resolver = new PdokLocationResolver(
+            new HttpClient(handler) { BaseAddress = new Uri("https://pdok.local") },
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { PdokBaseUrl = "https://pdok.local" }),
+            logger.Object);
+
+        _ = await resolver.ResolveAsync("https://example.com/properties/damrak-1-amsterdam");
+
+        Assert.NotNull(handler.LastRequestUri);
+        var decodedQuery = Uri.UnescapeDataString(handler.LastRequestUri!.Query).Replace('+', ' ');
+        Assert.Contains("q=damrak 1 amsterdam", decodedQuery, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("https://example.com", decodedQuery, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_UrlWithQueryHint_UsesQueryValueInPdokQuery()
+    {
+        var logger = new Mock<ILogger<PdokLocationResolver>>();
+        var handler = new CapturingResponseHandler(new HttpResponseMessage(HttpStatusCode.BadRequest));
+        var resolver = new PdokLocationResolver(
+            new HttpClient(handler) { BaseAddress = new Uri("https://pdok.local") },
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { PdokBaseUrl = "https://pdok.local" }),
+            logger.Object);
+
+        _ = await resolver.ResolveAsync("https://maps.example.com/search?query=Damrak%201%20Amsterdam");
+
+        Assert.NotNull(handler.LastRequestUri);
+        var decodedQuery = Uri.UnescapeDataString(handler.LastRequestUri!.Query).Replace('+', ' ');
+        Assert.Contains("q=Damrak 1 Amsterdam", decodedQuery, StringComparison.Ordinal);
+    }
+
     private sealed class StaticResponseHandler(HttpResponseMessage response) : HttpMessageHandler
     {
         private readonly HttpResponseMessage _response = response;
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            return Task.FromResult(_response);
+        }
+    }
+
+    private sealed class CapturingResponseHandler(HttpResponseMessage response) : HttpMessageHandler
+    {
+        private readonly HttpResponseMessage _response = response;
+        public Uri? LastRequestUri { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            LastRequestUri = request.RequestUri;
             return Task.FromResult(_response);
         }
     }
