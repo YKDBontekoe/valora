@@ -15,7 +15,6 @@ void main() {
 
   setUp(() {
     mockClient = MockClient();
-    // Use maxAttempts: 1 to avoid retries and delays in tests
     apiService = ApiService(
       client: mockClient,
       retryOptions: const RetryOptions(maxAttempts: 1),
@@ -77,6 +76,16 @@ void main() {
       final status = await apiService.getSupportStatus();
 
       expect(status.isSupportActive, true);
+    });
+
+    test('returns fallback on invalid JSON response', () async {
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('{ invalid json', 200),
+      );
+
+      final status = await apiService.getSupportStatus();
+
+      expect(status.isSupportActive, true); // Fallback
     });
   });
 }

@@ -6,3 +6,4 @@
 6.  **Concurrency Testing**: Testing loading flags (re-entrancy guards) requires mocking Futures with  to control execution timing manually.
 7.  **Conditional UI Rendering**: To cover conditional UI blocks (e.g., ), widget tests must simulate state where the condition is true, not just rely on defaults where it might be false.
 8.  **Retry Logic in Tests**: When testing services that use  (like ), it is critical to inject  in unit tests to prevent timeouts and ensure failures propagate immediately for assertion.
+9.  **JSON Parsing Errors**: To cover exception handling within API response parsers (e.g., ), tests must simulate malformed or invalid JSON responses from the server.
