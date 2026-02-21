@@ -9,12 +9,10 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i6;
 import 'package:valora_app/models/context_report.dart' as _i2;
 import 'package:valora_app/models/cursor_paged_result.dart' as _i3;
-import 'package:valora_app/models/map_amenity.dart' as _i8;
-import 'package:valora_app/models/map_amenity_cluster.dart' as _i10;
-import 'package:valora_app/models/map_city_insight.dart' as _i7;
-import 'package:valora_app/models/map_overlay.dart' as _i9;
-import 'package:valora_app/models/map_overlay_tile.dart' as _i11;
-import 'package:valora_app/models/notification.dart' as _i12;
+import 'package:valora_app/models/map_amenity.dart' as _i9;
+import 'package:valora_app/models/map_city_insight.dart' as _i8;
+import 'package:valora_app/models/map_overlay.dart' as _i10;
+import 'package:valora_app/models/notification.dart' as _i7;
 import 'package:valora_app/services/api_service.dart' as _i4;
 
 // ignore_for_file: type=lint
@@ -99,7 +97,7 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
       ) as _i5.Future<String>);
 
   @override
-  _i5.Future<_i3.CursorPagedResult<_i12.ValoraNotification>> getNotifications({
+  _i5.Future<_i3.CursorPagedResult<_i7.ValoraNotification>> getNotifications({
     bool? unreadOnly = false,
     int? limit = 50,
     String? cursor,
@@ -115,8 +113,8 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
           },
         ),
         returnValue:
-            _i5.Future<_i3.CursorPagedResult<_i12.ValoraNotification>>.value(
-                _FakeCursorPagedResult_1<_i12.ValoraNotification>(
+            _i5.Future<_i3.CursorPagedResult<_i7.ValoraNotification>>.value(
+                _FakeCursorPagedResult_1<_i7.ValoraNotification>(
           this,
           Invocation.method(
             #getNotifications,
@@ -128,7 +126,7 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
             },
           ),
         )),
-      ) as _i5.Future<_i3.CursorPagedResult<_i12.ValoraNotification>>);
+      ) as _i5.Future<_i3.CursorPagedResult<_i7.ValoraNotification>>);
 
   @override
   _i5.Future<int> getUnreadNotificationCount() => (super.noSuchMethod(
@@ -179,17 +177,17 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
       ) as _i5.Future<bool>);
 
   @override
-  _i5.Future<List<_i7.MapCityInsight>> getCityInsights() => (super.noSuchMethod(
+  _i5.Future<List<_i8.MapCityInsight>> getCityInsights() => (super.noSuchMethod(
         Invocation.method(
           #getCityInsights,
           [],
         ),
         returnValue:
-            _i5.Future<List<_i7.MapCityInsight>>.value(<_i7.MapCityInsight>[]),
-      ) as _i5.Future<List<_i7.MapCityInsight>>);
+            _i5.Future<List<_i8.MapCityInsight>>.value(<_i8.MapCityInsight>[]),
+      ) as _i5.Future<List<_i8.MapCityInsight>>);
 
   @override
-  _i5.Future<List<_i8.MapAmenity>> getMapAmenities({
+  _i5.Future<List<_i9.MapAmenity>> getMapAmenities({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -208,37 +206,11 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
             #types: types,
           },
         ),
-        returnValue: _i5.Future<List<_i8.MapAmenity>>.value(<_i8.MapAmenity>[]),
-      ) as _i5.Future<List<_i8.MapAmenity>>);
+        returnValue: _i5.Future<List<_i9.MapAmenity>>.value(<_i9.MapAmenity>[]),
+      ) as _i5.Future<List<_i9.MapAmenity>>);
 
   @override
-  _i5.Future<List<_i10.MapAmenityCluster>> getMapAmenityClusters({
-    required double? minLat,
-    required double? minLon,
-    required double? maxLat,
-    required double? maxLon,
-    required double? zoom,
-    List<String>? types,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMapAmenityClusters,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-            #types: types,
-          },
-        ),
-        returnValue: _i5.Future<List<_i10.MapAmenityCluster>>.value(
-            <_i10.MapAmenityCluster>[]),
-      ) as _i5.Future<List<_i10.MapAmenityCluster>>);
-
-  @override
-  _i5.Future<List<_i9.MapOverlay>> getMapOverlays({
+  _i5.Future<List<_i10.MapOverlay>> getMapOverlays({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -257,32 +229,7 @@ class MockApiService extends _i1.Mock implements _i4.ApiService {
             #metric: metric,
           },
         ),
-        returnValue: _i5.Future<List<_i9.MapOverlay>>.value(<_i9.MapOverlay>[]),
-      ) as _i5.Future<List<_i9.MapOverlay>>);
-
-  @override
-  _i5.Future<List<_i11.MapOverlayTile>> getMapOverlayTiles({
-    required double? minLat,
-    required double? minLon,
-    required double? maxLat,
-    required double? maxLon,
-    required double? zoom,
-    required String? metric,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMapOverlayTiles,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-            #metric: metric,
-          },
-        ),
-        returnValue: _i5.Future<List<_i11.MapOverlayTile>>.value(
-            <_i11.MapOverlayTile>[]),
-      ) as _i5.Future<List<_i11.MapOverlayTile>>);
+        returnValue:
+            _i5.Future<List<_i10.MapOverlay>>.value(<_i10.MapOverlay>[]),
+      ) as _i5.Future<List<_i10.MapOverlay>>);
 }

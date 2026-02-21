@@ -88,7 +88,61 @@ class MockNotificationService extends ChangeNotifier implements NotificationServ
 
   @override
   void undoDelete(String id) {
-    // Basic mock implementation for now - could be enhanced if tests require it
     notifyListeners();
+  }
+
+  @override
+  void handleNotificationCreated(List<Object?>? args) {
+    if (args != null && args.isNotEmpty) {
+      try {
+        final map = args[0] as Map<String, dynamic>;
+        final notification = ValoraNotification.fromJson(map);
+        if (!_notifications.any((n) => n.id == notification.id)) {
+          _notifications.insert(0, notification);
+          _unreadCount++;
+          notifyListeners();
+        }
+      } catch (_) {
+        // Ignore
+      }
+    }
+  }
+
+  @override
+  void handleNotificationRead(List<Object?>? args) {
+    if (args != null && args.isNotEmpty) {
+      final id = args[0] as String;
+      final index = _notifications.indexWhere((n) => n.id == id);
+      if (index != -1 && !_notifications[index].isRead) {
+        final old = _notifications[index];
+        _notifications[index] = ValoraNotification(
+          id: old.id,
+          title: old.title,
+          body: old.body,
+          isRead: true,
+          createdAt: old.createdAt,
+          type: old.type,
+          actionUrl: old.actionUrl,
+        );
+        _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
+        notifyListeners();
+      }
+    }
+  }
+
+  @override
+  void handleNotificationDeleted(List<Object?>? args) {
+    if (args != null && args.isNotEmpty) {
+      final id = args[0] as String;
+      final index = _notifications.indexWhere((n) => n.id == id);
+      if (index != -1) {
+        final removed = _notifications[index];
+        _notifications.removeAt(index);
+        if (!removed.isRead) {
+          _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
+        }
+        notifyListeners();
+      }
+    }
   }
 }
