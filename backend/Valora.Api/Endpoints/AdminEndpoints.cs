@@ -74,6 +74,14 @@ public static class AdminEndpoints
             return Results.Ok(stats);
         });
 
+        group.MapGet("/system-status", async (
+            IAdminService adminService,
+            CancellationToken ct) =>
+        {
+            var status = await adminService.GetSystemStatusAsync(ct);
+            return Results.Ok(status);
+        });
+
         group.MapPost("/jobs", async (
             BatchJobRequest request,
             IBatchJobService jobService,

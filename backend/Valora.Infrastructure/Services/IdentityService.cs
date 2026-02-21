@@ -88,6 +88,7 @@ public class IdentityService : IIdentityService
             {
                 // Postgres ILIKE for case-insensitive search with proper escaping
                 var escapedQuery = EscapeLikePattern(searchQuery);
+                // Correctly escaped backslashes for string literal and EF.Functions.ILike
                 query = query.Where(u => EF.Functions.ILike(u.Email!, $"%{escapedQuery}%", "\\"));
             }
             else
@@ -198,6 +199,11 @@ public class IdentityService : IIdentityService
             .ToDictionary(
                 g => g.Key,
                 g => (IList<string>)g.Select(ur => ur.RoleName!).ToList());
+    }
+
+    public async Task<bool> CanConnectAsync()
+    {
+        return await _context.Database.CanConnectAsync();
     }
 
     private static Result ToApplicationResult(IdentityResult result)
