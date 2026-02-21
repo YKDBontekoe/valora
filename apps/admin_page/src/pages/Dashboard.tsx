@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
-import type { Stats } from '../types';
-import { Users, Bell, TrendingUp, AlertCircle } from 'lucide-react';
+import type { Stats, SystemStatus } from '../types';
+import { Users, Bell, TrendingUp, AlertCircle, Activity, Database, Server } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Skeleton from '../components/Skeleton';
 import Button from '../components/Button';
@@ -23,29 +23,61 @@ const item = {
 
 const Dashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminService.getStats();
-      setStats(data);
+      const results = await Promise.allSettled([
+        adminService.getStats(),
+        adminService.getSystemStatus()
+      ]);
+
+      if (results[0].status === 'fulfilled') {
+        setStats(results[0].value);
+      } else {
+        console.error('Failed to fetch stats:', results[0].reason);
+        setError('Failed to fetch dashboard statistics.');
+      }
+
+      if (results[1].status === 'fulfilled') {
+        setSystemStatus(results[1].value);
+      } else {
+        console.error('Failed to fetch system status:', results[1].reason);
+        // We don't set global error here to allow stats to show even if system status fails
+      }
+
     } catch {
-      setError('Failed to fetch dashboard statistics. Please try again.');
+      setError('An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchData();
   }, []);
 
   const cards = [
-    { title: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-info-600', bg: 'bg-info-50', gradient: 'from-info-50/50 to-white' },
-    { title: 'Notifications', value: stats?.totalNotifications || 0, icon: Bell, color: 'text-primary-600', bg: 'bg-primary-50', gradient: 'from-primary-50/50 to-white' },
+    {
+      title: 'Total Users',
+      value: stats?.totalUsers || 0,
+      icon: Users,
+      color: 'text-info-600',
+      bg: 'bg-info-50',
+      gradient: 'from-info-50/50 to-white'
+    },
+    {
+      title: 'Notifications',
+      value: stats?.totalNotifications || 0,
+      icon: Bell,
+      color: 'text-primary-600',
+      bg: 'bg-primary-50',
+      gradient: 'from-primary-50/50 to-white'
+    },
   ];
 
   return (
@@ -81,7 +113,7 @@ const Dashboard = () => {
                  <AlertCircle className="w-12 h-12 text-error-400 mb-4" />
                  <h3 className="text-lg text-brand-900 font-black mb-2">Unable to Load Dashboard</h3>
                  <p className="text-brand-500 font-medium mb-6">{error}</p>
-                 <Button onClick={fetchStats} variant="outline" className="border-error-200 text-error-700 hover:bg-error-100">
+                 <Button onClick={fetchData} variant="outline" className="border-error-200 text-error-700 hover:bg-error-100">
                     Retry Connection
                  </Button>
             </div>
@@ -122,7 +154,7 @@ const Dashboard = () => {
         )}
       </motion.div>
 
-      {/* Quick Actions / System Status Placeholder */}
+      {/* System Status Section */}
       <motion.div
         variants={item}
         initial="hidden"
@@ -131,32 +163,79 @@ const Dashboard = () => {
         className="mt-12 p-8 bg-white rounded-3xl border border-brand-100 shadow-premium relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 p-8 opacity-5">
-            <TrendingUp size={160} />
+            <Activity size={160} />
         </div>
-        <h2 className="text-xl font-black text-brand-900 mb-6">System Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-2">
-                <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Database Status</span>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
-                    <span className="font-bold text-brand-700">Healthy & Connected</span>
+        <h2 className="text-xl font-black text-brand-900 mb-6 flex items-center gap-2">
+          <Server className="w-5 h-5 text-brand-400" />
+          System Overview
+        </h2>
+
+        {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2">
+                        <Skeleton variant="text" width="40%" height={10} />
+                        <div className="flex items-center gap-2">
+                            <Skeleton variant="circular" width={8} height={8} />
+                            <Skeleton variant="text" width="60%" height={20} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        ) : systemStatus ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                <div className="space-y-2">
+                    <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest flex items-center gap-1">
+                        <Database className="w-3 h-3" />
+                        Database Status
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${systemStatus.dbConnectivity === 'Connected' ? 'bg-success-500' : 'bg-error-500'}`} />
+                        <span className={`font-bold ${systemStatus.dbConnectivity === 'Connected' ? 'text-brand-700' : 'text-error-700'}`}>
+                            {systemStatus.dbConnectivity}
+                        </span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest flex items-center gap-1">
+                        <Activity className="w-3 h-3" />
+                        Response Time
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-bold text-brand-700">{systemStatus.dbLatencyMs.toFixed(1)}ms</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                            systemStatus.dbLatencyMs < 100 ? 'text-success-600 bg-success-50' :
+                            systemStatus.dbLatencyMs < 300 ? 'text-warning-600 bg-warning-50' :
+                            'text-error-600 bg-error-50'
+                        }`}>
+                            {systemStatus.dbLatencyMs < 100 ? 'Optimal' : systemStatus.dbLatencyMs < 300 ? 'Fair' : 'Slow'}
+                        </span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest flex items-center gap-1">
+                        <Server className="w-3 h-3" />
+                        Worker Health
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-bold text-brand-700">{systemStatus.workerHealth}</span>
+                        <span className="text-xs text-brand-400 font-bold italic">
+                            {systemStatus.queueDepth > 0 ? `${systemStatus.queueDepth} jobs pending` : 'Idle'}
+                        </span>
+                    </div>
+                    {systemStatus.lastIngestionRun && (
+                         <p className="text-xs text-brand-300 font-medium">
+                            Last ingestion: {new Date(systemStatus.lastIngestionRun).toLocaleString()}
+                         </p>
+                    )}
                 </div>
             </div>
-            <div className="space-y-2">
-                <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">API Latency</span>
-                <div className="flex items-center gap-2">
-                    <span className="font-bold text-brand-700">42ms</span>
-                    <span className="text-xs text-success-600 font-bold bg-success-50 px-2 py-0.5 rounded-md">Optimal</span>
-                </div>
-            </div>
-            <div className="space-y-2">
-                <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Active Jobs</span>
-                <div className="flex items-center gap-2">
-                    <span className="font-bold text-brand-700">0</span>
-                    <span className="text-xs text-brand-400 font-bold italic">No background tasks</span>
-                </div>
-            </div>
-        </div>
+        ) : (
+             <div className="flex items-center gap-2 text-brand-400 italic bg-brand-50/50 p-4 rounded-xl border border-brand-100/50">
+                <AlertCircle size={16} />
+                <span>System status metrics currently unavailable</span>
+             </div>
+        )}
       </motion.div>
     </div>
   );

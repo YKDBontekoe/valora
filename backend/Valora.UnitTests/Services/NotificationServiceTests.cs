@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Valora.Application.Services;
+using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure.Persistence.Repositories;
 using Xunit;
 
@@ -17,6 +18,7 @@ public class NotificationServiceTests
     private readonly ValoraDbContext _context;
     private readonly NotificationService _service;
     private readonly Mock<ILogger<NotificationService>> _mockLogger;
+    private readonly Mock<INotificationPublisher> _mockPublisher;
     private readonly FakeTimeProvider _timeProvider;
 
     public NotificationServiceTests()
@@ -27,6 +29,7 @@ public class NotificationServiceTests
 
         _context = new ValoraDbContext(options);
         _mockLogger = new Mock<ILogger<NotificationService>>();
+        _mockPublisher = new Mock<INotificationPublisher>();
 
         // Setup FakeTimeProvider with a fixed time
         _timeProvider = new FakeTimeProvider();
@@ -34,7 +37,7 @@ public class NotificationServiceTests
 
         // Note: NotificationRepository also needs TimeProvider now
         var repository = new NotificationRepository(_context, _timeProvider);
-        _service = new NotificationService(repository, _mockLogger.Object, _timeProvider);
+        _service = new NotificationService(repository, _mockLogger.Object, _timeProvider, _mockPublisher.Object);
     }
 
     [Fact]

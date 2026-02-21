@@ -17,14 +17,13 @@ public static class NotificationEndpoints
             ClaimsPrincipal user,
             [FromQuery] bool unreadOnly = false,
             [FromQuery] int limit = 50,
-            [FromQuery] int offset = 0) =>
+            [FromQuery] string? cursor = null) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
             if (limit <= 0 || limit > 100) return Results.BadRequest("Limit must be between 1 and 100.");
-            if (offset < 0) return Results.BadRequest("Offset must be non-negative.");
 
-            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit, offset);
+            var result = await service.GetUserNotificationsAsync(userId, unreadOnly, limit, cursor);
             return Results.Ok(result);
         });
 

@@ -119,4 +119,14 @@ public class IdentityServiceTests : IDisposable
         var notificationInDb = await _context.Notifications.FindAsync(notification.Id);
         Assert.NotNull(notificationInDb);
     }
+
+    [Fact]
+    public async Task CanConnectAsync_ReturnsTrue_WhenDatabaseIsAvailable()
+    {
+        // Act
+        var result = await _identityService.CanConnectAsync();
+
+        // Assert
+        Assert.True(result);
+    }
 }

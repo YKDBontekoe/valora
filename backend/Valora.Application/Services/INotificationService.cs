@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
@@ -8,7 +9,7 @@ namespace Valora.Application.Services;
 
 public interface INotificationService
 {
-    Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, int offset = 0);
+    Task<CursorPagedResult<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, string? cursor = null);
     Task<int> GetUnreadCountAsync(string userId);
     Task MarkAsReadAsync(Guid notificationId, string userId);
     Task MarkAllAsReadAsync(string userId);

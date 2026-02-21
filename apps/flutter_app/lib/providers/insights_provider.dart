@@ -4,25 +4,19 @@ import 'package:flutter/material.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
-import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
-import '../models/map_overlay_tile.dart';
 import '../services/api_service.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
 
 class InsightsProvider extends ChangeNotifier {
   static const double _prefetchPaddingFactor = 0.2;
-  static const double _amenityDetailZoomThreshold = 13.0;
-  static const double _overlayDetailZoomThreshold = 11.0;
 
   ApiService _apiService;
 
   List<MapCityInsight> _cities = [];
   List<MapAmenity> _amenities = [];
-  List<MapAmenityCluster> _amenityClusters = [];
   List<MapOverlay> _overlays = [];
-  List<MapOverlayTile> _overlayTiles = [];
 
   bool _isLoading = false;
   String? _error;
@@ -36,33 +30,20 @@ class InsightsProvider extends ChangeNotifier {
       MapOverlayMetric.pricePerSquareMeter;
 
   int _requestSequence = 0;
-
   _MapBounds? _amenitiesCoverage;
   int? _amenitiesCoverageZoomBucket;
-
-  _MapBounds? _amenityClustersCoverage;
-  int? _amenityClustersCoverageZoomBucket;
-
   _MapBounds? _overlaysCoverage;
   int? _overlaysCoverageZoomBucket;
   String? _overlaysCoverageMetric;
 
-  _MapBounds? _overlayTilesCoverage;
-  int? _overlayTilesCoverageZoomBucket;
-  String? _overlayTilesCoverageMetric;
-
   final Map<String, List<MapAmenity>> _amenitiesCache = {};
-  final Map<String, List<MapAmenityCluster>> _amenityClustersCache = {};
   final Map<String, List<MapOverlay>> _overlaysCache = {};
-  final Map<String, List<MapOverlayTile>> _overlayTilesCache = {};
 
   InsightsProvider(this._apiService);
 
   List<MapCityInsight> get cities => _cities;
   List<MapAmenity> get amenities => _amenities;
-  List<MapAmenityCluster> get amenityClusters => _amenityClusters;
   List<MapOverlay> get overlays => _overlays;
-  List<MapOverlayTile> get overlayTiles => _overlayTiles;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -114,102 +95,43 @@ class InsightsProvider extends ChangeNotifier {
 
     final List<Future<_LayerFetchResult>> fetches = [];
 
-    // Amenities Logic
-    if (_showAmenities) {
-      if (zoom >= _amenityDetailZoomThreshold) {
-        // Detailed Amenities
-        if (_amenityClusters.isNotEmpty) {
-          _amenityClusters = [];
-          hasAnyChange = true;
-        }
+    if (_showAmenities && zoom >= 13) {
+      final bool isAmenitiesCovered =
+          _amenitiesCoverage != null &&
+          _amenitiesCoverageZoomBucket == zoomBucket &&
+          _amenitiesCoverage!.contains(viewport);
 
-        final bool isCovered =
-            _amenitiesCoverage != null &&
-            _amenitiesCoverageZoomBucket == zoomBucket &&
-            _amenitiesCoverage!.contains(viewport);
-
-        if (!isCovered) {
-          fetches.add(_fetchAmenitiesForViewport(viewport, zoomBucket));
-        }
-      } else {
-        // Clustered Amenities
-        if (_amenities.isNotEmpty) {
-          _amenities = [];
-          hasAnyChange = true;
-        }
-
-        final bool isCovered =
-            _amenityClustersCoverage != null &&
-            _amenityClustersCoverageZoomBucket == zoomBucket &&
-            _amenityClustersCoverage!.contains(viewport);
-
-        if (!isCovered) {
-          fetches.add(_fetchAmenityClustersForViewport(viewport, zoomBucket, zoom));
-        }
+      if (!isAmenitiesCovered) {
+        fetches.add(_fetchAmenitiesForViewport(viewport, zoomBucket));
       }
-    } else {
-      if (_amenities.isNotEmpty || _amenityClusters.isNotEmpty) {
-        _amenities = [];
-        _amenityClusters = [];
-        _amenitiesCoverage = null;
-        _amenityClustersCoverage = null;
-        hasAnyChange = true;
-      }
+    } else if (_amenities.isNotEmpty) {
+      _amenities = [];
+      _amenitiesCoverage = null;
+      _amenitiesCoverageZoomBucket = null;
+      hasAnyChange = true;
     }
 
-    // Overlays Logic
     final String overlayMetric = _getOverlayMetricString(
       _selectedOverlayMetric,
     );
+    if (_showOverlays && zoom >= 11) {
+      final bool isOverlayCovered =
+          _overlaysCoverage != null &&
+          _overlaysCoverageZoomBucket == zoomBucket &&
+          _overlaysCoverageMetric == overlayMetric &&
+          _overlaysCoverage!.contains(viewport);
 
-    if (_showOverlays) {
-      if (zoom >= _overlayDetailZoomThreshold) {
-        // Detailed Overlays
-        if (_overlayTiles.isNotEmpty) {
-          _overlayTiles = [];
-          hasAnyChange = true;
-        }
-
-        final bool isCovered =
-            _overlaysCoverage != null &&
-            _overlaysCoverageZoomBucket == zoomBucket &&
-            _overlaysCoverageMetric == overlayMetric &&
-            _overlaysCoverage!.contains(viewport);
-
-        if (!isCovered) {
-          fetches.add(
-            _fetchOverlaysForViewport(viewport, zoomBucket, overlayMetric),
-          );
-        }
-      } else {
-        // Tiled Overlays
-        if (_overlays.isNotEmpty) {
-          _overlays = [];
-          hasAnyChange = true;
-        }
-
-        final bool isCovered =
-            _overlayTilesCoverage != null &&
-            _overlayTilesCoverageZoomBucket == zoomBucket &&
-            _overlayTilesCoverageMetric == overlayMetric &&
-            _overlayTilesCoverage!.contains(viewport);
-
-        if (!isCovered) {
-          fetches.add(
-            _fetchOverlayTilesForViewport(viewport, zoomBucket, zoom, overlayMetric),
-          );
-        }
+      if (!isOverlayCovered) {
+        fetches.add(
+          _fetchOverlaysForViewport(viewport, zoomBucket, overlayMetric),
+        );
       }
-    } else {
-      if (_overlays.isNotEmpty || _overlayTiles.isNotEmpty) {
-        _overlays = [];
-        _overlayTiles = [];
-        _overlaysCoverage = null;
-        _overlayTilesCoverage = null;
-        _overlaysCoverageMetric = null;
-        _overlayTilesCoverageMetric = null;
-        hasAnyChange = true;
-      }
+    } else if (_overlays.isNotEmpty) {
+      _overlays = [];
+      _overlaysCoverage = null;
+      _overlaysCoverageZoomBucket = null;
+      _overlaysCoverageMetric = null;
+      hasAnyChange = true;
     }
 
     if (fetches.isNotEmpty) {
@@ -230,41 +152,19 @@ class InsightsProvider extends ChangeNotifier {
           continue;
         }
 
-        switch (result.layer) {
-          case _MapLayer.amenities:
-            if (result.amenities != null) {
-              _amenities = result.amenities!;
-              _amenitiesCoverage = result.bounds;
-              _amenitiesCoverageZoomBucket = result.zoomBucket;
-              hasAnyChange = true;
-            }
-            break;
-          case _MapLayer.amenityClusters:
-            if (result.amenityClusters != null) {
-              _amenityClusters = result.amenityClusters!;
-              _amenityClustersCoverage = result.bounds;
-              _amenityClustersCoverageZoomBucket = result.zoomBucket;
-              hasAnyChange = true;
-            }
-            break;
-          case _MapLayer.overlays:
-            if (result.overlays != null) {
-              _overlays = result.overlays!;
-              _overlaysCoverage = result.bounds;
-              _overlaysCoverageZoomBucket = result.zoomBucket;
-              _overlaysCoverageMetric = result.metric;
-              hasAnyChange = true;
-            }
-            break;
-          case _MapLayer.overlayTiles:
-            if (result.overlayTiles != null) {
-              _overlayTiles = result.overlayTiles!;
-              _overlayTilesCoverage = result.bounds;
-              _overlayTilesCoverageZoomBucket = result.zoomBucket;
-              _overlayTilesCoverageMetric = result.metric;
-              hasAnyChange = true;
-            }
-            break;
+        if (result.layer == _MapLayer.amenities && result.amenities != null) {
+          _amenities = result.amenities!;
+          _amenitiesCoverage = result.bounds;
+          _amenitiesCoverageZoomBucket = result.zoomBucket;
+          hasAnyChange = true;
+        }
+
+        if (result.layer == _MapLayer.overlays && result.overlays != null) {
+          _overlays = result.overlays!;
+          _overlaysCoverage = result.bounds;
+          _overlaysCoverageZoomBucket = result.zoomBucket;
+          _overlaysCoverageMetric = result.metric;
+          hasAnyChange = true;
         }
       }
     }
@@ -278,9 +178,8 @@ class InsightsProvider extends ChangeNotifier {
     _showAmenities = !_showAmenities;
     if (!_showAmenities) {
       _amenities = [];
-      _amenityClusters = [];
       _amenitiesCoverage = null;
-      _amenityClustersCoverage = null;
+      _amenitiesCoverageZoomBucket = null;
     }
     notifyListeners();
   }
@@ -289,9 +188,9 @@ class InsightsProvider extends ChangeNotifier {
     _showOverlays = !_showOverlays;
     if (!_showOverlays) {
       _overlays = [];
-      _overlayTiles = [];
       _overlaysCoverage = null;
-      _overlayTilesCoverage = null;
+      _overlaysCoverageZoomBucket = null;
+      _overlaysCoverageMetric = null;
     }
     notifyListeners();
   }
@@ -300,7 +199,8 @@ class InsightsProvider extends ChangeNotifier {
     if (_selectedOverlayMetric != metric) {
       _selectedOverlayMetric = metric;
       _overlaysCoverage = null;
-      _overlayTilesCoverage = null;
+      _overlaysCoverageZoomBucket = null;
+      _overlaysCoverageMetric = null;
       notifyListeners();
     }
   }
@@ -371,41 +271,6 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
-  Future<_LayerFetchResult> _fetchAmenityClustersForViewport(
-    _MapBounds viewport,
-    int zoomBucket,
-    double zoom,
-  ) async {
-    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'amenity_clusters:${bounds.cacheKey(zoomBucket)}';
-    final cached = _amenityClustersCache[cacheKey];
-    if (cached != null) {
-      return _LayerFetchResult.amenityClusters(
-        amenityClusters: cached,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-      );
-    }
-
-    try {
-      final result = await _apiService.getMapAmenityClusters(
-        minLat: bounds.minLat,
-        minLon: bounds.minLon,
-        maxLat: bounds.maxLat,
-        maxLon: bounds.maxLon,
-        zoom: zoom,
-      );
-      _amenityClustersCache[cacheKey] = result;
-      return _LayerFetchResult.amenityClusters(
-        amenityClusters: result,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-      );
-    } catch (e) {
-      return _LayerFetchResult.error(_MapLayer.amenityClusters, e);
-    }
-  }
-
   Future<_LayerFetchResult> _fetchOverlaysForViewport(
     _MapBounds viewport,
     int zoomBucket,
@@ -440,45 +305,6 @@ class InsightsProvider extends ChangeNotifier {
       );
     } catch (e) {
       return _LayerFetchResult.error(_MapLayer.overlays, e);
-    }
-  }
-
-  Future<_LayerFetchResult> _fetchOverlayTilesForViewport(
-    _MapBounds viewport,
-    int zoomBucket,
-    double zoom,
-    String metric,
-  ) async {
-    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'overlay_tiles:$metric:${bounds.cacheKey(zoomBucket)}';
-    final cached = _overlayTilesCache[cacheKey];
-    if (cached != null) {
-      return _LayerFetchResult.overlayTiles(
-        overlayTiles: cached,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-        metric: metric,
-      );
-    }
-
-    try {
-      final result = await _apiService.getMapOverlayTiles(
-        minLat: bounds.minLat,
-        minLon: bounds.minLon,
-        maxLat: bounds.maxLat,
-        maxLon: bounds.maxLon,
-        zoom: zoom,
-        metric: metric,
-      );
-      _overlayTilesCache[cacheKey] = result;
-      return _LayerFetchResult.overlayTiles(
-        overlayTiles: result,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-        metric: metric,
-      );
-    } catch (e) {
-      return _LayerFetchResult.error(_MapLayer.overlayTiles, e);
     }
   }
 }
@@ -523,15 +349,13 @@ class _MapBounds {
   String _round(double value) => value.toStringAsFixed(3);
 }
 
-enum _MapLayer { amenities, overlays, amenityClusters, overlayTiles }
+enum _MapLayer { amenities, overlays }
 
 class _LayerFetchResult {
   const _LayerFetchResult._({
     required this.layer,
     this.amenities,
-    this.amenityClusters,
     this.overlays,
-    this.overlayTiles,
     this.bounds,
     this.zoomBucket,
     this.metric,
@@ -540,9 +364,7 @@ class _LayerFetchResult {
 
   final _MapLayer layer;
   final List<MapAmenity>? amenities;
-  final List<MapAmenityCluster>? amenityClusters;
   final List<MapOverlay>? overlays;
-  final List<MapOverlayTile>? overlayTiles;
   final _MapBounds? bounds;
   final int? zoomBucket;
   final String? metric;
@@ -561,19 +383,6 @@ class _LayerFetchResult {
     );
   }
 
-  factory _LayerFetchResult.amenityClusters({
-    required List<MapAmenityCluster> amenityClusters,
-    required _MapBounds bounds,
-    required int zoomBucket,
-  }) {
-    return _LayerFetchResult._(
-      layer: _MapLayer.amenityClusters,
-      amenityClusters: amenityClusters,
-      bounds: bounds,
-      zoomBucket: zoomBucket,
-    );
-  }
-
   factory _LayerFetchResult.overlays({
     required List<MapOverlay> overlays,
     required _MapBounds bounds,
@@ -583,21 +392,6 @@ class _LayerFetchResult {
     return _LayerFetchResult._(
       layer: _MapLayer.overlays,
       overlays: overlays,
-      bounds: bounds,
-      zoomBucket: zoomBucket,
-      metric: metric,
-    );
-  }
-
-  factory _LayerFetchResult.overlayTiles({
-    required List<MapOverlayTile> overlayTiles,
-    required _MapBounds bounds,
-    required int zoomBucket,
-    required String metric,
-  }) {
-    return _LayerFetchResult._(
-      layer: _MapLayer.overlayTiles,
-      overlayTiles: overlayTiles,
       bounds: bounds,
       zoomBucket: zoomBucket,
       metric: metric,

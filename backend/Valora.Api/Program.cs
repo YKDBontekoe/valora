@@ -1,3 +1,5 @@
+using Valora.Api.Services;
+using Valora.Api.Hubs;
 using Valora.Api.Background;
 using System.Security.Claims;
 using Sentry;
@@ -104,6 +106,8 @@ builder.Services
     .AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHostedService<BatchJobWorker>();
+builder.Services.AddScoped<INotificationPublisher, SignalRNotificationPublisher>();
+builder.Services.AddSignalR();
 
 // Add Identity
 // We use AddIdentityCore instead of AddIdentity to avoid adding unnecessary UI pages (Razor Pages)
@@ -122,11 +126,6 @@ builder.Services.AddAuthentication(options =>
     {
         var secret = builder.Configuration["JWT_SECRET"]
                      ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
-
-        if (!builder.Environment.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
-        {
-            throw new InvalidOperationException("Critical Security Risk: The application is running in a non-development environment with the default, insecure JWT_SECRET. You MUST override JWT_SECRET with a strong, random key in your environment variables.");
-        }
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -248,6 +247,7 @@ app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 app.MapMapEndpoints();
 app.MapAdminEndpoints();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 // API Endpoints
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");

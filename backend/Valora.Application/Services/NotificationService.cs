@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Common;
 using Valora.Domain.Entities;
@@ -11,24 +12,37 @@ public class NotificationService : INotificationService
     private readonly INotificationRepository _repository;
     private readonly ILogger<NotificationService> _logger;
     private readonly TimeProvider _timeProvider;
+    private readonly INotificationPublisher _publisher;
 
     public NotificationService(
         INotificationRepository repository,
         ILogger<NotificationService> logger,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        INotificationPublisher publisher)
     {
         _repository = repository;
         _logger = logger;
         _timeProvider = timeProvider;
+        _publisher = publisher;
     }
 
-    public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, int offset = 0)
+    public async Task<CursorPagedResult<NotificationDto>> GetUserNotificationsAsync(string userId, bool unreadOnly = false, int limit = 50, string? cursor = null)
     {
         limit = limit <= 0 ? 50 : limit;
-        offset = offset < 0 ? 0 : offset;
 
-        var notifications = await _repository.GetByUserIdAsync(userId, unreadOnly, limit, offset);
-        return notifications.Select(NotificationDto.FromEntity).ToList();
+        var notifications = await _repository.GetByUserIdAsync(userId, unreadOnly, limit, cursor);
+        var dtos = notifications.Select(NotificationDto.FromEntity).ToList();
+
+        string? nextCursor = null;
+        bool hasMore = dtos.Count == limit;
+
+        if (hasMore)
+        {
+            var last = dtos.Last();
+            nextCursor = $"{last.CreatedAt.Ticks}_{last.Id}";
+        }
+
+        return new CursorPagedResult<NotificationDto>(dtos, nextCursor, hasMore);
     }
 
     public async Task<int> GetUnreadCountAsync(string userId)
@@ -44,6 +58,7 @@ public class NotificationService : INotificationService
             notification.IsRead = true;
             await _repository.UpdateAsync(notification);
             _logger.LogInformation("[AUDIT] User {UserId} marked notification {NotificationId} as read", userId, notificationId);
+            await _publisher.PublishNotificationReadAsync(userId, notificationId);
         }
     }
 
@@ -60,6 +75,7 @@ public class NotificationService : INotificationService
 
         await _repository.DeleteAsync(notification);
         _logger.LogInformation("[AUDIT] User {UserId} deleted notification {NotificationId}", userId, notificationId);
+        await _publisher.PublishNotificationDeletedAsync(userId, notificationId);
 
         return true;
     }
@@ -96,5 +112,6 @@ public class NotificationService : INotificationService
 
         await _repository.AddAsync(notification);
         _logger.LogInformation("[AUDIT] Created notification {NotificationId} for user {UserId} (Type: {Type})", notification.Id, safeUserId, type);
+        await _publisher.PublishNotificationCreatedAsync(safeUserId, NotificationDto.FromEntity(notification));
     }
 }

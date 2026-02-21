@@ -16,11 +16,9 @@ public class NotificationRepository : INotificationRepository
         _timeProvider = timeProvider;
     }
 
-    public async Task<List<Notification>> GetByUserIdAsync(string userId, bool unreadOnly, int limit, int offset, CancellationToken cancellationToken = default)
+    public async Task<List<Notification>> GetByUserIdAsync(string userId, bool unreadOnly, int limit, string? cursor, CancellationToken cancellationToken = default)
     {
         // AsNoTracking() is used here because this is a read-only query for the UI.
-        // It avoids the overhead of change tracking in EF Core, resulting in faster performance
-        // and lower memory usage, especially when pagination is involved.
         var query = _context.Notifications
             .AsNoTracking()
             .Where(n => n.UserId == userId);
@@ -30,9 +28,20 @@ public class NotificationRepository : INotificationRepository
             query = query.Where(n => !n.IsRead);
         }
 
+        if (!string.IsNullOrEmpty(cursor))
+        {
+            var parts = cursor.Split('_');
+            if (parts.Length == 2 && long.TryParse(parts[0], out var ticks) && Guid.TryParse(parts[1], out var id))
+            {
+                var cursorDate = new DateTime(ticks, DateTimeKind.Utc);
+                // Stable pagination: CreatedAt DESC, Id DESC
+                query = query.Where(n => n.CreatedAt < cursorDate || (n.CreatedAt == cursorDate && n.Id < id));
+            }
+        }
+
         return await query
             .OrderByDescending(n => n.CreatedAt)
-            .Skip(offset)
+            .ThenByDescending(n => n.Id)
             .Take(limit)
             .ToListAsync(cancellationToken);
     }
@@ -86,9 +95,6 @@ public class NotificationRepository : INotificationRepository
 
         if (_context.Database.IsRelational())
         {
-            // ExecuteUpdateAsync performs a bulk update directly in the database (SQL UPDATE).
-            // This is significantly more efficient than fetching all entities into memory,
-            // modifying them, and calling SaveChanges(), especially for users with many notifications.
             await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .ExecuteUpdateAsync(s => s
@@ -98,7 +104,6 @@ public class NotificationRepository : INotificationRepository
         }
         else
         {
-            // Fallback for InMemory provider (for tests)
             var notifications = await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .ToListAsync(cancellationToken);

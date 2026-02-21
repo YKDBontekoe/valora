@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../services/notification_service.dart';
-import '../valora_widgets.dart';
-import 'notification_item.dart';
+import 'notification_list.dart';
 
 class NotificationSheet extends StatefulWidget {
   const NotificationSheet({super.key});
@@ -15,7 +12,6 @@ class NotificationSheet extends StatefulWidget {
 }
 
 class _NotificationSheetState extends State<NotificationSheet> {
-  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -23,20 +19,6 @@ class _NotificationSheetState extends State<NotificationSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationService>().fetchNotifications();
     });
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      context.read<NotificationService>().loadMoreNotifications();
-    }
   }
 
   @override
@@ -74,142 +56,11 @@ class _NotificationSheetState extends State<NotificationSheet> {
                 ),
               ),
               const Divider(height: 1),
-              if (service.isLoading && service.notifications.isEmpty)
-                const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (service.error != null && service.notifications.isEmpty)
-                SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline_rounded,
-                            size: 48, color: ValoraColors.error),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Something went wrong',
-                          style: ValoraTypography.bodyMedium,
-                        ),
-                        TextButton(
-                          onPressed: () => service.fetchNotifications(refresh: true),
-                          child: const Text('Try Again'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else if (service.notifications.isEmpty)
-                SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_none_rounded,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No notifications yet',
-                          style: ValoraTypography.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                Flexible(
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    shrinkWrap: true,
-                    itemCount: service.notifications.length +
-                        (service.isLoadingMore ? 1 : 0),
-                    separatorBuilder: (context, index) => const Divider(
-                      height: 1,
-                      indent: 72,
-                    ),
-                    itemBuilder: (context, index) {
-                      if (index == service.notifications.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final notification = service.notifications[index];
-                      return Dismissible(
-                        key: Key(notification.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          color: ValoraColors.error,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 24),
-                          child: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                        confirmDismiss: (direction) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (context) => ValoraDialog(
-                              title: 'Delete Notification?',
-                              actions: [
-                                ValoraButton(
-                                  label: 'Cancel',
-                                  variant: ValoraButtonVariant.ghost,
-                                  onPressed: () => Navigator.pop(context, false),
-                                ),
-                                ValoraButton(
-                                  label: 'Delete',
-                                  variant: ValoraButtonVariant.primary,
-                                  onPressed: () => Navigator.pop(context, true),
-                                ),
-                              ],
-                              child: const Text(
-                                'Are you sure you want to delete this notification?',
-                              ),
-                            ),
-                          );
-                        },
-                        onDismissed: (direction) async {
-                          try {
-                            await service.deleteNotification(notification.id);
-                          } catch (_) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Failed to delete notification'),
-                                  backgroundColor: ValoraColors.error,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        child: NotificationItem(
-                          notification: notification,
-                          onTap: () async {
-                            if (!notification.isRead) {
-                              service.markAsRead(notification.id);
-                            }
-                            if (notification.actionUrl != null) {
-                              final uri = Uri.parse(notification.actionUrl!);
-                              if (await canLaunchUrl(uri)) {
-                                await launchUrl(uri);
-                              }
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
+              Flexible(
+                child: NotificationList(
+                    // Default behavior (Box mode, with separators) matches sheet requirements
                 ),
+              ),
             ],
           );
         },
