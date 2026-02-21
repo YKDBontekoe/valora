@@ -15,6 +15,7 @@ import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/logging_service.dart';
 import 'services/notification_service.dart';
+import 'services/app_metadata_service.dart';
 import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
@@ -102,6 +103,11 @@ Future<void> main() async {
             create: (context) => InsightsProvider(context.read<ApiService>()),
             update: (context, apiService, previous) =>
                 (previous ?? InsightsProvider(apiService))..update(apiService),
+          ),
+          ChangeNotifierProxyProvider<ApiService, AppMetadataService>(
+            create: (context) => AppMetadataService(context.read<ApiService>())..init(),
+            update: (context, apiService, previous) =>
+                (previous ?? AppMetadataService(apiService))..update(apiService),
           ),
         ],
         child: const ValoraApp(),

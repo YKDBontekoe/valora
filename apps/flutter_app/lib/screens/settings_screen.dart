@@ -8,6 +8,8 @@ import '../core/theme/valora_spacing.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/valora_widgets.dart';
+import '../services/app_metadata_service.dart';
+import '../models/support_status.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -25,9 +27,12 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _openSupportEmail(BuildContext context) async {
+    final metadataService = context.read<AppMetadataService>();
+    final contactEmail = metadataService.supportStatus?.contactEmail ?? 'support@valora.nl';
+
     final Uri supportUri = Uri(
       scheme: 'mailto',
-      path: 'support@valora.nl',
+      path: contactEmail,
       queryParameters: const <String, String>{
         'subject': 'Valora Support Request',
       },
@@ -222,44 +227,77 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: ValoraSpacing.xl),
 
                   // Help Section
-                  ValoraCard(
-                    backgroundColor: ValoraColors.primary.withValues(
-                      alpha: isDark ? 0.1 : 0.05,
-                    ),
-                    borderColor: ValoraColors.primary.withValues(alpha: 0.2),
-                    padding: const EdgeInsets.all(ValoraSpacing.md),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  Consumer<AppMetadataService>(
+                    builder: (context, metadata, _) {
+                      final status = metadata.supportStatus;
+                      final message = status?.supportMessage ?? 'Our support team is available 24/7';
+                      final statusUrl = status?.statusPageUrl;
+
+                      return ValoraCard(
+                        backgroundColor: ValoraColors.primary.withValues(
+                          alpha: isDark ? 0.1 : 0.05,
+                        ),
+                        borderColor: ValoraColors.primary.withValues(alpha: 0.2),
+                        padding: const EdgeInsets.all(ValoraSpacing.md),
+                        child: Column(
                           children: [
-                            Text(
-                              'Need Help?',
-                              style: ValoraTypography.titleMedium.copyWith(
-                                color: isDark
-                                    ? ValoraColors.primaryLight
-                                    : ValoraColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Need Help?',
+                                        style: ValoraTypography.titleMedium.copyWith(
+                                          color: isDark
+                                              ? ValoraColors.primaryLight
+                                              : ValoraColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: ValoraSpacing.xs),
+                                      Text(
+                                        message,
+                                        style: ValoraTypography.bodySmall.copyWith(
+                                          color: subtextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ValoraButton(
+                                  label: 'Contact Us',
+                                  variant: ValoraButtonVariant.outline,
+                                  size: ValoraButtonSize.small,
+                                  onPressed: () => _openSupportEmail(context),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: ValoraSpacing.xs),
-                            Text(
-                              'Our support team is available 24/7',
-                              style: ValoraTypography.bodySmall.copyWith(
-                                color: subtextColor,
+                            if (statusUrl != null) ...[
+                              const SizedBox(height: ValoraSpacing.sm),
+                              InkWell(
+                                onTap: () => _openExternal(context, Uri.parse(statusUrl)),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.monitor_heart_outlined, size: 16, color: subtextColor),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Check System Status',
+                                      style: ValoraTypography.labelSmall.copyWith(
+                                        color: subtextColor,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
-                        ValoraButton(
-                          label: 'Contact Us',
-                          variant: ValoraButtonVariant.outline,
-                          size: ValoraButtonSize.small,
-                          onPressed: () => _openSupportEmail(context),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: ValoraSpacing.xl),
@@ -275,11 +313,15 @@ class SettingsScreen extends StatelessWidget {
 
                   const SizedBox(height: ValoraSpacing.md),
 
-                  Text(
-                    'Valora v2.4.0 (Build 392)',
-                    style: ValoraTypography.labelSmall.copyWith(
-                      color: subtextColor.withValues(alpha: 0.5),
-                    ),
+                  Consumer<AppMetadataService>(
+                    builder: (context, metadata, _) {
+                      return Text(
+                        'Valora v${metadata.version} (Build ${metadata.buildNumber})',
+                        style: ValoraTypography.labelSmall.copyWith(
+                          color: subtextColor.withValues(alpha: 0.5),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(

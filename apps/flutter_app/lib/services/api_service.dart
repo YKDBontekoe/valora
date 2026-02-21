@@ -14,6 +14,7 @@ import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
 import '../models/map_overlay.dart';
 import '../models/notification.dart';
+import '../models/support_status.dart';
 import 'crash_reporting_service.dart';
 
 typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
@@ -483,6 +484,24 @@ class ApiService {
       );
     } catch (e, stack) {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays'));
+    }
+  }
+
+  Future<SupportStatus> getSupportStatus() async {
+    final uri = Uri.parse('$baseUrl/support/status');
+    try {
+      final response = await _requestWithRetry(
+        () => _client.get(uri).timeout(timeoutDuration),
+      );
+
+      return _handleResponse(
+        response,
+        (body) => SupportStatus.fromJson(json.decode(body)),
+      );
+    } catch (e, stack) {
+      // Don't throw for support status, return fallback
+      developer.log('Failed to fetch support status', error: e, stackTrace: stack);
+      return SupportStatus.fallback();
     }
   }
 }

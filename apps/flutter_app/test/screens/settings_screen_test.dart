@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/settings_screen.dart';
+import 'package:valora_app/services/app_metadata_service.dart';
+import 'package:valora_app/models/support_status.dart';
 
 @GenerateMocks([AuthProvider, ThemeProvider])
 @GenerateNiceMocks([
@@ -131,13 +133,23 @@ const List<int> _transparentImage = <int>[
 void main() {
   late MockAuthProvider mockAuthProvider;
   late MockThemeProvider mockThemeProvider;
+  late MockAppMetadataService mockAppMetadataService;
 
   setUp(() {
     mockAuthProvider = MockAuthProvider();
     mockThemeProvider = MockThemeProvider();
+    mockAppMetadataService = MockAppMetadataService();
 
     when(mockAuthProvider.email).thenReturn('test@example.com');
     when(mockThemeProvider.isDarkMode).thenReturn(false);
+
+    // Default mock behavior for metadata
+    when(mockAppMetadataService.version).thenReturn('1.0.0');
+    when(mockAppMetadataService.buildNumber).thenReturn('1');
+    when(mockAppMetadataService.supportStatus).thenReturn(
+      SupportStatus(isSupportActive: true, supportMessage: 'Support Online')
+    );
+    when(mockAppMetadataService.isLoadingSupport).thenReturn(false);
 
     // Use the mock HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -148,6 +160,7 @@ void main() {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
         ChangeNotifierProvider<ThemeProvider>.value(value: mockThemeProvider),
+        ChangeNotifierProvider<AppMetadataService>.value(value: mockAppMetadataService),
       ],
       child: const MaterialApp(home: SettingsScreen()),
     );
@@ -160,6 +173,24 @@ void main() {
     await tester.pumpAndSettle(); // Wait for animations
 
     expect(find.text('test@example.com'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen displays version info', (WidgetTester tester) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Valora v1.0.0 (Build 1)'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen displays support status', (WidgetTester tester) async {
+    when(mockAppMetadataService.supportStatus).thenReturn(
+      SupportStatus(isSupportActive: true, supportMessage: 'Custom Support Message')
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Custom Support Message'), findsOneWidget);
   });
 
   testWidgets('SettingsScreen shows logout confirmation dialog', (
