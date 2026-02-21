@@ -5,14 +5,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.3.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="[1.73.0]" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="[10.0.3]" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="[10.0.3]" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="[10.0.3]" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="[10.3.0]" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="[10.0.0]" />
     <PackageReference Include="OpenAI" Version="2.8.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="[8.16.0]" />
   </ItemGroup>
 
   <PropertyGroup>
