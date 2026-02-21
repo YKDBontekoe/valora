@@ -38,6 +38,23 @@ void main() {
       expect(status.contactEmail, 'test@valora.nl');
     });
 
+    test('handles partial JSON response with defaults', () async {
+      final jsonResponse = <String, dynamic>{
+        // Empty to trigger all defaults
+      };
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(json.encode(jsonResponse), 200),
+      );
+
+      final status = await apiService.getSupportStatus();
+
+      expect(status.isSupportActive, true); // Default
+      expect(status.supportMessage, 'Our support team is available.'); // Default
+      expect(status.statusPageUrl, null);
+      expect(status.contactEmail, null);
+    });
+
     test('returns fallback on API error', () async {
       when(mockClient.get(any)).thenThrow(http.ClientException('Network error'));
 
