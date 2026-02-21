@@ -39,7 +39,7 @@ public class MapRepository : IMapRepository
             .Where(l => l.Latitude >= minLat && l.Latitude <= maxLat &&
                         l.Longitude >= minLon && l.Longitude <= maxLon &&
                         l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2 > 0)
-            .Select(l => new ListingPriceData(l.Price, l.LivingAreaM2))
+            .Select(l => new ListingPriceData(l.Price, l.LivingAreaM2, l.Latitude, l.Longitude))
             .ToListAsync(cancellationToken);
     }
 }

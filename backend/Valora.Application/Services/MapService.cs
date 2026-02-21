@@ -67,9 +67,24 @@ public class MapService : IMapService
         var overlays = await overlaysTask;
         var listingData = await listingDataTask;
 
-        var avgPrice = CalculateAveragePrice(listingData);
+        return overlays.Select(overlay =>
+        {
+            var neighborhoodListings = listingData.Where(l =>
+                l.Latitude.HasValue && l.Longitude.HasValue &&
+                GeoUtils.IsPointInPolygon(l.Latitude.Value, l.Longitude.Value, overlay.GeoJson));
 
-        return CreatePriceOverlays(overlays, avgPrice);
+            var avgPrice = CalculateAveragePrice(neighborhoodListings);
+
+            var displayValue = avgPrice.HasValue ? $"€ {avgPrice:N0} / m²" : "No listing data";
+            var metricValue = avgPrice ?? 0;
+
+            return overlay with
+            {
+                MetricName = "PricePerSquareMeter",
+                MetricValue = metricValue,
+                DisplayValue = displayValue
+            };
+        }).ToList();
     }
 
     private static double? CalculateAveragePrice(IEnumerable<ListingPriceData> listings)
@@ -84,18 +99,5 @@ public class MapService : IMapService
         }
 
         return (double?)validListings.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
-    }
-
-    private static List<MapOverlayDto> CreatePriceOverlays(IEnumerable<MapOverlayDto> overlays, double? avgPrice)
-    {
-        var displayValue = avgPrice.HasValue ? $"€ {avgPrice:N0} / m²" : "No listing data";
-        var metricValue = avgPrice ?? 0;
-
-        return overlays.Select(overlay => overlay with
-        {
-            MetricName = "PricePerSquareMeter",
-            MetricValue = metricValue,
-            DisplayValue = displayValue
-        }).ToList();
     }
 }
