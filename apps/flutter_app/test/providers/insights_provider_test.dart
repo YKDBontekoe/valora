@@ -152,7 +152,9 @@ void main() {
           ),
         ],
       );
-        maxLat: 53.0,
+      await provider.fetchMapData(
+        minLat: 51.0,
+        minLon: 3.0,
         maxLon: 5.0,
         zoom: 10, // Low zoom
       );
@@ -197,28 +199,20 @@ void main() {
         minLon: 3.9,
         maxLat: 52.1,
         maxLon: 4.1,
-        zoom: 14,
-      );
-      ).thenThrow(Exception("API Error"));
+      expect(provider.properties, isNotEmpty);
+      expect(provider.properties[0].id, "1");
+    });
 
-      await provider.fetchMapData(
-        minLat: 51.9,
-        minLon: 3.9,
-        maxLat: 52.1,
+    test("fetchMapData handles properties errors gracefully", () async {
       if (!provider.showProperties) provider.toggleProperties();
 
       when(
         mockApiService.getMapProperties(
-          minLat: anyNamed('minLat'),
-          minLon: anyNamed('minLon'),
-          maxLat: anyNamed('maxLat'),
-          maxLon: anyNamed('maxLon'),
+          minLat: anyNamed("minLat"),
+          minLon: anyNamed("minLon"),
+          maxLat: anyNamed("maxLat"),
+          maxLon: anyNamed("maxLon"),
         ),
-
-      await provider.fetchMapData(
-        minLat: 51.9,
-      ).thenThrow(Exception("API Error"));
-        maxLon: 4.1,
         zoom: 14,
       );
 
