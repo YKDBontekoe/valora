@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
+using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
@@ -11,6 +12,8 @@ public class AdminService : IAdminService
     private readonly IIdentityService _identityService;
     private readonly INotificationRepository _notificationRepository;
     private readonly ILogger<AdminService> _logger;
+
+    private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase) { "Admin", "User" };
 
     public AdminService(
         IIdentityService identityService,
@@ -39,6 +42,57 @@ public class AdminService : IAdminService
             .ToList();
 
         return new PaginatedList<AdminUserDto>(userDtos, paginatedUsers.TotalCount, paginatedUsers.PageIndex, pageSize);
+    }
+
+    public async Task<Result> CreateUserAsync(AdminCreateUserDto request, string currentUserId)
+    {
+        var emailHash = PrivacyUtils.HashEmail(request.Email);
+        _logger.LogInformation("Admin user creation requested by {AdminId} for email hash {EmailHash}", currentUserId, emailHash);
+
+        // Validate Roles first
+        var invalidRoles = request.Roles.Where(r => !AllowedRoles.Contains(r)).ToList();
+        if (invalidRoles.Any())
+        {
+            _logger.LogWarning("Admin {AdminId} attempted to assign invalid roles: {InvalidRoles}", currentUserId, string.Join(", ", invalidRoles));
+            return Result.Failure(new[] { "Invalid role assignment." }, "BadRequest");
+        }
+
+        var existingUser = await _identityService.GetUserByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            _logger.LogWarning("User creation failed. Email hash {EmailHash} already exists.", emailHash);
+            return Result.Failure(new[] { "Conflict" }, "Conflict");
+        }
+
+        var (createResult, newUserId) = await _identityService.CreateUserAsync(request.Email, request.Password);
+        if (!createResult.Succeeded)
+        {
+            _logger.LogError("Failed to create user with email hash {EmailHash}: {Errors}", emailHash, string.Join(", ", createResult.Errors));
+            // Return generic error to client
+            return Result.Failure(new[] { "Failed to create user." }, "BadRequest");
+        }
+
+        foreach (var role in request.Roles)
+        {
+            if (string.IsNullOrWhiteSpace(role)) continue;
+
+            try
+            {
+                await _identityService.EnsureRoleAsync(role);
+                var roleResult = await _identityService.AddToRoleAsync(newUserId, role);
+                if (!roleResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed to add user {UserId} to role {Role}: {Errors}", newUserId, role, string.Join(", ", roleResult.Errors));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception while ensuring/adding role {Role} for user {UserId}", role, newUserId);
+            }
+        }
+
+        _logger.LogInformation("Successfully created user {UserId} with email hash {EmailHash}", newUserId, emailHash);
+        return Result.Success();
     }
 
     private static AdminUserDto MapToAdminUserDto(ApplicationUser user, IDictionary<string, IList<string>> rolesMap)
