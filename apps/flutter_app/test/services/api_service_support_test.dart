@@ -4,7 +4,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:http/http.dart' as http;
 import 'package:valora_app/services/api_service.dart';
-import 'package:valora_app/core/config/app_config.dart';
 
 @GenerateMocks([http.Client])
 import 'api_service_support_test.mocks.dart';
