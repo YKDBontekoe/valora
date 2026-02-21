@@ -87,5 +87,15 @@ void main() {
 
       expect(status.isSupportActive, true); // Fallback
     });
+
+    test('returns fallback on 404', () async {
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('Not Found', 404),
+      );
+
+      final status = await apiService.getSupportStatus();
+
+      expect(status.isSupportActive, true); // Fallback
+    });
   });
 }
