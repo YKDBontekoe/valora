@@ -152,16 +152,10 @@ void main() {
           ),
         ],
       );
-      await provider.fetchMapData(
         minLat: 51.0,
         minLon: 3.0,
         maxLat: 53.0,
         maxLon: 5.0,
-        zoom: 10, // Low zoom
-      );
-        maxLat: 53.0,
-        maxLon: 5.0,
-        zoom: 10, // Low zoom
       );
         minLat: 51.0,
         minLon: 3.0,
@@ -186,21 +180,18 @@ void main() {
       // Ensure properties are enabled
       if (!provider.showProperties) provider.toggleProperties();
 
-          MapProperty(
-            id: "1",
-            price: 500000,
-            location: const LatLng(52, 4),
-            status: "ForSale",
-          ),
           maxLon: anyNamed('maxLon'),
+        mockApiService.getMapProperties(
+          minLat: anyNamed("minLat"),
+          minLon: anyNamed("minLon"),
+          maxLat: anyNamed("maxLat"),
+          maxLon: anyNamed("maxLon"),
         ),
       ).thenAnswer(
         (_) async => [
-            id: "1",
-            price: 500000,
-            location: const LatLng(52, 4),
-            status: "ForSale",
-          ),
+        ),
+      ).thenAnswer(
+        (_) async => [
         ],
       );
 
@@ -208,12 +199,16 @@ void main() {
         minLat: 51.9,
         minLon: 3.9,
         maxLat: 52.1,
-        maxLon: 4.1,
-        zoom: 14,
-      );
+    test("fetchMapData handles properties errors gracefully", () async {
+      if (!provider.showProperties) provider.toggleProperties();
 
-      expect(provider.properties, isNotEmpty);
-      expect(provider.properties[0].id, "1");
+      when(
+        mockApiService.getMapProperties(
+          minLat: anyNamed("minLat"),
+          minLon: anyNamed("minLon"),
+          maxLat: anyNamed("maxLat"),
+          maxLon: anyNamed("maxLon"),
+        ),
       ).thenThrow(Exception("API Error"));
 
       await provider.fetchMapData(
@@ -223,13 +218,9 @@ void main() {
         maxLon: 4.1,
         zoom: 14,
       );
-        mockApiService.getMapProperties(
-          minLat: anyNamed("minLat"),
-          minLon: anyNamed("minLon"),
-          maxLat: anyNamed("maxLat"),
-          maxLon: anyNamed("maxLon"),
-        ),
-      expect(provider.properties[0].id, "1");
+
+      expect(provider.properties, isEmpty);
+    });
       // We don't necessarily expose a specific property error state yet,
       // but ensure it doesn't crash and list remains empty.
   });
