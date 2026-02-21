@@ -9,7 +9,6 @@ import 'package:valora_app/models/map_overlay_tile.dart';
 import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/widgets/insights/insights_map.dart';
 import 'package:valora_app/models/map_overlay.dart';
-import 'package:latlong2/latlong.dart';
 
 // Create a mock provider that extends ChangeNotifier to support listeners
 class MockInsightsProvider extends ChangeNotifier implements InsightsProvider {
@@ -68,7 +67,6 @@ void main() {
 
     // Verify that PolygonLayer is present
     expect(find.byType(PolygonLayer), findsOneWidget);
-    // In a real test we might inspect the layer, but existence is a good start
   });
 
   testWidgets('InsightsMap renders clusters when amenityClusters are present', (WidgetTester tester) async {
