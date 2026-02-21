@@ -199,13 +199,34 @@ public class MapService : IMapService
 
     private static void ValidateAggregatedBoundingBox(double minLat, double minLon, double maxLat, double maxLon)
     {
-        if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon))
-            throw new ValidationException("Coordinates must be valid numbers.");
+        if (!double.IsFinite(minLat) || !double.IsFinite(minLon) || !double.IsFinite(maxLat) || !double.IsFinite(maxLon))
+        {
+            throw new ValidationException("Coordinates must be valid finite numbers.");
+        }
 
-        if (minLat >= maxLat || minLon >= maxLon)
-            throw new ValidationException("Invalid bounding box dimensions.");
+        if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90)
+        {
+            throw new ValidationException("Latitudes must be between -90 and 90.");
+        }
+
+        if (minLon < -180 || minLon > 180 || maxLon < -180 || maxLon > 180)
+        {
+            throw new ValidationException("Longitudes must be between -180 and 180.");
+        }
+
+        if (minLat >= maxLat)
+        {
+            throw new ValidationException("minLat must be less than maxLat.");
+        }
+
+        if (minLon >= maxLon)
+        {
+            throw new ValidationException("minLon must be less than maxLon.");
+        }
 
         if (maxLat - minLat > MaxAggregatedSpan || maxLon - minLon > MaxAggregatedSpan)
-            throw new ValidationException($"Bounding box span too large for aggregated view. Max is {MaxAggregatedSpan}.");
+        {
+            throw new ValidationException($"Bounding box span too large for aggregated view. Max is {MaxAggregatedSpan} degrees.");
+        }
     }
 }
