@@ -230,11 +230,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-
                     b.Property<string>("Error")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExecutionLog")
                         .HasColumnType("text");
 
                     b.Property<int>("Progress")
@@ -734,8 +730,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

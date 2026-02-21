@@ -8,6 +8,7 @@ public interface IBatchJobRepository
     Task<List<BatchJob>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default);
     Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default);
     Task<BatchJob> AddAsync(BatchJob job, CancellationToken cancellationToken = default);
-    Task<BatchJobStatus?> GetStatusAsync(Guid id, CancellationToken cancellationToken = default);
     Task UpdateAsync(BatchJob job, CancellationToken cancellationToken = default);
+    Task<int> GetQueueDepthAsync(CancellationToken cancellationToken = default);
+    Task<DateTime?> GetLastIngestionRunAsync(CancellationToken cancellationToken = default);
 }
