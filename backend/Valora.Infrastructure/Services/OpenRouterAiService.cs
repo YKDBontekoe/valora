@@ -67,6 +67,13 @@ public class OpenRouterAiService : IAiService
         }
 
         _logger.LogError(lastException, "All models failed for intent {Intent}.", intent);
+
+        // Wrap client exceptions in HttpRequestException for consistent handling upstream (e.g. middleware)
+        if (lastException is ClientResultException clientEx)
+        {
+             throw new HttpRequestException($"AI service failed: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
+        }
+
         throw lastException ?? new Exception("All models failed.");
     }
 
