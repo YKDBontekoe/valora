@@ -156,14 +156,6 @@ void main() {
       await provider.fetchMapData(
         minLat: 51.0,
         minLon: 3.0,
-        maxLat: 53.0,
-    test('toggleProperties updates state and clears data when disabled', () {
-      expect(provider.showProperties, isTrue); // Defaults to true
-
-      provider.toggleProperties();
-      expect(provider.showProperties, isFalse);
-      expect(provider.properties, isEmpty);
-
       provider.toggleProperties();
       expect(provider.showProperties, isTrue);
     });
@@ -215,8 +207,7 @@ void main() {
 
       await provider.fetchMapData(
         minLat: 51.9,
-        minLon: 3.9,
-        maxLat: 52.1,
+      ).thenThrow(Exception("API Error"));
         maxLon: 4.1,
         zoom: 14,
       );
