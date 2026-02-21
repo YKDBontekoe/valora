@@ -88,6 +88,15 @@ public class AiModelServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetModelsForIntent_ReturnsFallback_ForUnknownIntent()
+    {
+        var (primary, fallbacks) = await _service.GetModelsForIntentAsync("unknown_intent");
+
+        Assert.Equal("openai/gpt-4o-mini", primary); // Hardcoded fallback in service
+        Assert.Empty(fallbacks);
+    }
+
+    [Fact]
     public async Task CreateConfigAsync_AddsNewConfig()
     {
         var config = new AiModelConfig

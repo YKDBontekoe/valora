@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -79,7 +80,7 @@ public class AiServiceTests : IDisposable
             .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
             .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
 
-        // Primary fails with 500. Matcher: Body contains "primary-model"
+        // Primary fails with 500
         _server
             .Given(Request.Create()
                 .WithPath("/chat/completions")
@@ -88,7 +89,7 @@ public class AiServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(500));
 
-        // Fallback succeeds. Matcher: Body contains "fallback-model"
+        // Fallback succeeds
         _server
             .Given(Request.Create()
                 .WithPath("/chat/completions")
@@ -113,6 +114,74 @@ public class AiServiceTests : IDisposable
         // Verify both models were tried by checking the log entries
         Assert.Contains(_server.LogEntries, e => e.RequestMessage.BodyData!.BodyAsString!.Contains("primary-model"));
         Assert.Contains(_server.LogEntries, e => e.RequestMessage.BodyData!.BodyAsString!.Contains("fallback-model"));
+    }
+
+    [Fact]
+    public async Task ChatAsync_ThrowsOperationCanceledException_WhenCancelled()
+    {
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => sut.ChatAsync("Hello", null, "chat", cts.Token));
+    }
+
+    [Fact]
+    public async Task ChatAsync_MapsBadRequest_ToHttpRequestException_WithBadRequestStatus()
+    {
+        // Arrange
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(400)
+                .WithBody("Bad Request"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChatAsync_TriggersFallback_OnEmptyResponse()
+    {
+        // Arrange
+        _mockAiModelService
+            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
+
+        // Primary returns empty content
+        _server
+            .Given(Request.Create()
+                .WithPath("/chat/completions")
+                .UsingPost()
+                .WithBody(new WireMock.Matchers.WildcardMatcher("*primary-model*")))
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{ ""choices"": [] }")); // SDK might treat this as empty string
+
+        // Fallback succeeds
+        _server
+            .Given(Request.Create()
+                .WithPath("/chat/completions")
+                .UsingPost()
+                .WithBody(new WireMock.Matchers.WildcardMatcher("*fallback-model*")))
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""choices"": [{
+                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from fallback"" }
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+
+        // Act
+        var result = await sut.ChatAsync("Hello", null, "chat");
+
+        // Assert
+        Assert.Equal("Response from fallback", result);
     }
 
     [Fact]

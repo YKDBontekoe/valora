@@ -16,6 +16,7 @@ public class AiEndpointsTests
 {
     private readonly Mock<IAiModelService> _mockAiModelService = new();
     private readonly Mock<ILogger<AiChatRequest>> _mockLogger = new();
+    private readonly Mock<ILogger<AiAnalysisRequest>> _mockAnalysisLogger = new();
     private readonly Mock<IContextAnalysisService> _mockContextAnalysisService = new();
 
     // Helper to test MapGet
@@ -154,13 +155,7 @@ public class AiEndpointsTests
         var result = await handler(request, _mockContextAnalysisService.Object, _mockLogger.Object, CancellationToken.None);
 
         // Assert
-        // Instead of strict type checking on Ok<T>, we check if it's an OkObjectResult-like structure or cast dynamically
-        // Since Results.Ok(new { ... }) produces Ok<AnonymousType>, we can't easily assert the generic type.
-        // We can inspect the StatusCode property if available via reflection or interface, but here we'll just check it's not null.
         Assert.NotNull(result);
-
-        // Reflection to check status code if possible, or just assume type check failure meant it returned something.
-        // Simple assertion:
         Assert.Contains("Ok", result.GetType().Name);
     }
 
@@ -189,6 +184,69 @@ public class AiEndpointsTests
 
         // Act
         var result = await handler(request, _mockContextAnalysisService.Object, _mockLogger.Object, CancellationToken.None);
+
+        // Assert
+        var problemResult = Assert.IsType<ProblemHttpResult>(result);
+        Assert.Equal(500, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnalyzeReport_ReturnsResponse_WhenSuccessful()
+    {
+        // Arrange
+        var reportDto = new ContextReportDto(null!, null!, null!, null!, null!, null!, null!, null!, 0, null!, null!, null!);
+        var request = new AiAnalysisRequest(reportDto);
+        _mockContextAnalysisService
+            .Setup(x => x.AnalyzeReportAsync(reportDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("summary");
+
+        var handler = async (AiAnalysisRequest req, IContextAnalysisService service, ILogger<AiAnalysisRequest> log, CancellationToken ct) =>
+        {
+            try
+            {
+                var summary = await service.AnalyzeReportAsync(req.Report, ct);
+                return Results.Ok(new AiAnalysisResponse(summary));
+            }
+            catch (Exception)
+            {
+                return Results.Problem();
+            }
+        };
+
+        // Act
+        var result = await handler(request, _mockContextAnalysisService.Object, _mockAnalysisLogger.Object, CancellationToken.None);
+
+        // Assert
+        var okResult = Assert.IsType<Ok<AiAnalysisResponse>>(result);
+        Assert.Equal("summary", okResult.Value!.Summary);
+    }
+
+    [Fact]
+    public async Task AnalyzeReport_ReturnsProblem_WhenExceptionOccurs()
+    {
+        // Arrange
+        var reportDto = new ContextReportDto(null!, null!, null!, null!, null!, null!, null!, null!, 0, null!, null!, null!);
+        var request = new AiAnalysisRequest(reportDto);
+        _mockContextAnalysisService
+            .Setup(x => x.AnalyzeReportAsync(reportDto, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("error"));
+
+        var handler = async (AiAnalysisRequest req, IContextAnalysisService service, ILogger<AiAnalysisRequest> log, CancellationToken ct) =>
+        {
+            try
+            {
+                var summary = await service.AnalyzeReportAsync(req.Report, ct);
+                return Results.Ok(new AiAnalysisResponse(summary));
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error generating AI analysis report.");
+                return Results.Problem(detail: "An unexpected error occurred while generating the report summary.", statusCode: 500);
+            }
+        };
+
+        // Act
+        var result = await handler(request, _mockContextAnalysisService.Object, _mockAnalysisLogger.Object, CancellationToken.None);
 
         // Assert
         var problemResult = Assert.IsType<ProblemHttpResult>(result);
