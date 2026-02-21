@@ -30,7 +30,7 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
 
         // Cleanup
         // Must delete dependent entities first
-        _dbContext.Listings.RemoveRange(_dbContext.Listings);
+        _dbContext.SavedProperties.RemoveRange(_dbContext.SavedProperties); // Clean saved properties instead of listings
         _dbContext.Notifications.RemoveRange(_dbContext.Notifications);
         _dbContext.RefreshTokens.RemoveRange(_dbContext.RefreshTokens);
 

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:retry/retry.dart';
 import '../core/exceptions/app_exceptions.dart';
+import '../core/config/app_config.dart';
 import 'api_service.dart';
 
 class AuthService {
@@ -20,7 +21,9 @@ class AuthService {
     delayFactor: Duration(seconds: 1),
   );
 
-  String get baseUrl => ApiService.baseUrl;
+  // Fix: Use AppConfig directly or instantiate ApiService properly if needed.
+  // Ideally, baseUrl should be injected or from config.
+  String get baseUrl => AppConfig.apiUrl;
 
   AuthService({FlutterSecureStorage? storage, http.Client? client})
     : _storage =
@@ -29,7 +32,6 @@ class AuthService {
             iOptions: IOSOptions(
               accessibility: KeychainAccessibility.first_unlock,
             ),
-            // encryptedSharedPreferences is deprecated and ignored in newer versions
             aOptions: AndroidOptions(),
           ),
       _client = client ?? http.Client();

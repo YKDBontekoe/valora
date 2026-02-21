@@ -12,7 +12,7 @@ import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
 import '../models/map_overlay.dart';
 import '../models/notification.dart';
-import '../models/saved_property.dart'; // Ensure this is imported
+import '../models/saved_property.dart';
 import 'crash_reporting_service.dart';
 
 class ApiService {
@@ -104,8 +104,11 @@ class ApiService {
     }
   }
 
-  Future<List<ValoraNotification>> getNotifications() async {
-    final uri = Uri.parse('$baseUrl/notifications');
+  Future<List<ValoraNotification>> getNotifications({int? limit, int? offset}) async {
+    final uri = Uri.parse('$baseUrl/notifications').replace(queryParameters: {
+      if (limit != null) 'limit': limit.toString(),
+      if (offset != null) 'offset': offset.toString(),
+    });
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -155,9 +158,8 @@ class ApiService {
         ),
       );
 
-      // Using a valid parser function that matches signature
-      // ignore: void_checks
-      await _handleResponse(
+      // Fix: Don't await void
+      _handleResponse(
         response,
         (body) => _runner(_parseNotifications, body),
       );
