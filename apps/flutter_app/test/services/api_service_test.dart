@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_service.dart';
 
 void main() {
@@ -72,6 +73,18 @@ void main() {
       apiService = ApiService(client: mockClient);
 
       expect(await apiService.healthCheck(), isTrue);
+    });
+
+    test('throws JsonParsingException when server returns invalid JSON (e.g. HTML)', () async {
+      mockClient = MockClient((request) async {
+        return http.Response('<html>Bad Gateway</html>', 200);
+      });
+      apiService = ApiService(client: mockClient);
+
+      expect(
+        () => apiService.getContextReport('Test Address'),
+        throwsA(isA<JsonParsingException>()),
+      );
     });
   });
 }

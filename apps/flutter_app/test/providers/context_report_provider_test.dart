@@ -156,4 +156,18 @@ void main() {
 
     expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
   });
+
+  test('addToComparison handles API errors gracefully', () async {
+    final provider = ContextReportProvider(
+      apiService: _FakeApiService(error: ServerException('API Failed')),
+      historyService: SearchHistoryService(),
+    );
+
+    // This should not throw, despite the API error
+    await provider.addToComparison('Failing Query', 1000);
+
+    expect(provider.isComparing('Failing Query', 1000), isTrue);
+    // The report won't be in activeReports because fetch failed, but ID is tracked
+    expect(provider.getReportById('Failing Query|1000'), isNull);
+  });
 }

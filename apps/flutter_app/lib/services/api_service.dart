@@ -256,17 +256,36 @@ class ApiService {
   /// Centralized response handler.
   /// Maps HTTP status codes to typed Application Exceptions for consistent UI error handling.
   /// Also logs non-success responses for debugging.
-  T _handleResponse<T>(http.Response response, T Function(String body) parser) {
+  Future<T> _handleResponse<T>(
+    http.Response response,
+    FutureOr<T> Function(String body) parser,
+  ) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
-        return parser(response.body);
-      } catch (e) {
+        return await parser(response.body);
+      } catch (e, stack) {
+        // Truncate body to avoid leaking huge payloads or PII
+        final bodySnippet = response.body.length > 500
+            ? '${response.body.substring(0, 500)}...'
+            : response.body;
+
         developer.log(
-          'JSON Parsing Error: $e\nBody: ${response.body}',
+          'JSON Parsing Error: $e\nBody: $bodySnippet',
           name: 'ApiService',
           error: e,
+          stackTrace: stack,
         );
-        throw JsonParsingException('Failed to process server response.');
+
+        await CrashReportingService.captureException(
+          e,
+          stackTrace: stack,
+          context: {'body_snippet': bodySnippet},
+        );
+
+        Error.throwWithStackTrace(
+          JsonParsingException('Failed to process server response.'),
+          stack,
+        );
       }
     }
 
@@ -416,7 +435,7 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
+      return await _handleResponse(
         response,
         (body) {
           final List<dynamic> jsonList = json.decode(body);
@@ -451,7 +470,7 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
+      return await _handleResponse(
         response,
         (body) {
           final List<dynamic> jsonList = json.decode(body);
@@ -487,7 +506,7 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
+      return await _handleResponse(
         response,
         (body) {
           final List<dynamic> jsonList = json.decode(body);
@@ -521,7 +540,7 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
+      return await _handleResponse(
         response,
         (body) {
           final List<dynamic> jsonList = json.decode(body);
@@ -557,7 +576,7 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
+      return await _handleResponse(
         response,
         (body) {
           final List<dynamic> jsonList = json.decode(body);
