@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Activity, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout = () => {
@@ -18,6 +18,7 @@ const Layout = () => {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Users', path: '/users', icon: Users },
     { name: 'Batch Jobs', path: '/jobs', icon: Activity },
+    { name: 'AI Models', path: '/ai-models', icon: Settings },
   ];
 
   return (
