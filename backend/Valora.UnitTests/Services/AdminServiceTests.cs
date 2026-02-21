@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
+using Valora.Application.DTOs;
 using Valora.Application.Services;
 using Valora.Domain.Entities;
 using Xunit;
@@ -20,6 +21,104 @@ public class AdminServiceTests
             _identityServiceMock.Object,
             _notificationRepositoryMock.Object,
             _loggerMock.Object);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ReturnsConflict_WhenUserAlreadyExists()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new AdminCreateUserDto("test@example.com", "Password123!", new List<string> { "Admin" });
+        var currentUserId = "admin-123";
+
+        _identityServiceMock
+            .Setup(x => x.GetUserByEmailAsync(request.Email))
+            .ReturnsAsync(new ApplicationUser { Email = request.Email });
+
+        // Act
+        var result = await service.CreateUserAsync(request, currentUserId);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("Conflict", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ReturnsFailure_WhenCreationFails()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new AdminCreateUserDto("test@example.com", "Password123!", new List<string> { "Admin" });
+        var currentUserId = "admin-123";
+
+        _identityServiceMock
+            .Setup(x => x.GetUserByEmailAsync(request.Email))
+            .ReturnsAsync((ApplicationUser?)null);
+
+        _identityServiceMock
+            .Setup(x => x.CreateUserAsync(request.Email, request.Password))
+            .ReturnsAsync((Result.Failure(new[] { "Creation Failed" }), string.Empty));
+
+        // Act
+        var result = await service.CreateUserAsync(request, currentUserId);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        // We now return a generic error
+        Assert.Contains("Failed to create user.", result.Errors);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ReturnsSuccess_WhenUserCreatedAndRoleAssigned()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new AdminCreateUserDto("test@example.com", "Password123!", new List<string> { "Admin" });
+        var currentUserId = "admin-123";
+        var newUserId = "new-user-123";
+
+        _identityServiceMock
+            .Setup(x => x.GetUserByEmailAsync(request.Email))
+            .ReturnsAsync((ApplicationUser?)null);
+
+        _identityServiceMock
+            .Setup(x => x.CreateUserAsync(request.Email, request.Password))
+            .ReturnsAsync((Result.Success(), newUserId));
+
+        _identityServiceMock
+            .Setup(x => x.EnsureRoleAsync("Admin"))
+            .Returns(Task.CompletedTask);
+
+        _identityServiceMock
+            .Setup(x => x.AddToRoleAsync(newUserId, "Admin"))
+            .ReturnsAsync(Result.Success());
+
+        // Act
+        var result = await service.CreateUserAsync(request, currentUserId);
+
+        // Assert
+        Assert.True(result.Succeeded);
+        _identityServiceMock.Verify(x => x.CreateUserAsync(request.Email, request.Password), Times.Once);
+        _identityServiceMock.Verify(x => x.EnsureRoleAsync("Admin"), Times.Once);
+        _identityServiceMock.Verify(x => x.AddToRoleAsync(newUserId, "Admin"), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ReturnsFailure_WhenRoleIsInvalid()
+    {
+         // Arrange
+        var service = CreateService();
+        var request = new AdminCreateUserDto("test@example.com", "Password123!", new List<string> { "SuperAdmin" }); // Invalid Role
+        var currentUserId = "admin-123";
+
+        // Act
+        var result = await service.CreateUserAsync(request, currentUserId);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("BadRequest", result.ErrorCode);
+        Assert.Contains("Invalid role assignment.", result.Errors);
+        _identityServiceMock.Verify(x => x.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
