@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Mock ApiService
 class _MockApiService extends ApiService {
   final Map<String, ContextReport> reports = {};
+  bool delayFetch = false;
 
   @override
   Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
@@ -24,11 +25,20 @@ class _MockApiService extends ApiService {
   }
 }
 
+// Mock SearchHistoryService
+class _MockHistoryService extends SearchHistoryService {
+  @override
+  Future<void> addToHistory(String query) async {}
+
+  @override
+  Future<void> clearHistory() async {}
+}
+
 void main() {
   late ContextReportProvider provider;
   late _MockApiService apiService;
 
-  ContextReport createReport(String query, double score) {
+  ContextReport createReport(String query, double score, {Map<String, double>? categories}) {
     return ContextReport(
       location: ContextLocation(
         query: query,
@@ -44,7 +54,7 @@ void main() {
       amenityMetrics: [],
       environmentMetrics: [],
       compositeScore: score,
-      categoryScores: {
+      categoryScores: categories ?? {
         'Social': 80,
         'Safety': 90,
       },
@@ -61,7 +71,7 @@ void main() {
 
     provider = ContextReportProvider(
       apiService: apiService,
-      historyService: SearchHistoryService(),
+      historyService: _MockHistoryService(),
     );
   });
 
@@ -86,7 +96,7 @@ void main() {
     await tester.pumpWidget(createTestWidget());
     await tester.pumpAndSettle(); // Wait for images/animations
 
-    // Check headers - A address appears in Header, Metrics Table Header, AI Insight title
+    // Check headers - using substring match logic or exact match
     expect(find.text('A address'.split(',')[0]), findsWidgets);
 
     // Check gauges
@@ -99,7 +109,6 @@ void main() {
     expect(find.text('Metrics Comparison'), findsOneWidget);
     expect(find.text('Social'), findsOneWidget); // Category name
 
-    // Check AI cards
     // Scroll to find AI cards
     await tester.drag(find.byType(ListView), const Offset(0, -800));
     await tester.pumpAndSettle();
@@ -123,5 +132,23 @@ void main() {
 
     expect(provider.comparisonIds.length, 1);
     expect(find.byType(ScoreGauge), findsOneWidget);
+  });
+
+  testWidgets('ComparisonView handles different categories', (WidgetTester tester) async {
+    apiService.reports['C'] = createReport('C', 70, categories: {'Social': 60, 'Environment': 80});
+    await provider.addToComparison('A', 1000); // Has Social, Safety
+    await provider.addToComparison('C', 1000); // Has Social, Environment
+
+    await tester.pumpWidget(createTestWidget());
+    await tester.pumpAndSettle();
+
+    // Table should show union of categories
+    expect(find.text('Social'), findsOneWidget);
+    expect(find.text('Safety'), findsOneWidget);
+    expect(find.text('Environment'), findsOneWidget);
+
+    // Should show scores
+    expect(find.text('80.0'), findsWidgets); // A Social
+    expect(find.text('60.0'), findsWidgets); // C Social
   });
 }

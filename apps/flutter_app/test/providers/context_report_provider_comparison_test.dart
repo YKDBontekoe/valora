@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/models/context_report.dart';
+import 'package:valora_app/models/search_history_item.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/search_history_service.dart';
@@ -8,14 +9,30 @@ import 'package:valora_app/services/search_history_service.dart';
 // Mock ApiService
 class _MockApiService extends ApiService {
   final Map<String, ContextReport> reports = {};
+  bool shouldFail = false;
 
   @override
   Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
+    if (shouldFail) {
+      throw Exception('API Failed');
+    }
     if (reports.containsKey(input)) {
       return reports[input]!;
     }
     throw Exception('Report not found for $input');
   }
+}
+
+// Mock SearchHistoryService (not strictly needed but good to have a simple one)
+class _MockHistoryService extends SearchHistoryService {
+  @override
+  Future<List<SearchHistoryItem>> getHistory() async => [];
+
+  @override
+  Future<void> addToHistory(String query) async {}
+
+  @override
+  Future<void> clearHistory() async {}
 }
 
 void main() {
@@ -53,7 +70,7 @@ void main() {
 
     provider = ContextReportProvider(
       apiService: apiService,
-      historyService: SearchHistoryService(),
+      historyService: _MockHistoryService(),
     );
   });
 
@@ -63,6 +80,13 @@ void main() {
 
       expect(provider.comparisonIds.length, 1);
       expect(provider.isComparing('A', 1000), isTrue);
+    });
+
+    test('addToComparison does not add duplicate ID', () async {
+      await provider.addToComparison('A', 1000);
+      await provider.addToComparison('A', 1000);
+
+      expect(provider.comparisonIds.length, 1);
     });
 
     test('addToComparison fetches report if missing', () async {
@@ -76,12 +100,26 @@ void main() {
       expect(provider.getReportById('A|1000')!.compositeScore, 80);
     });
 
+    test('addToComparison handles fetch failure gracefully', () async {
+      apiService.shouldFail = true;
+
+      await provider.addToComparison('A', 1000);
+
+      expect(provider.isComparing('A', 1000), isTrue); // ID added
+      expect(provider.getReportById('A|1000'), isNull); // Report not fetched
+    });
+
     test('removeFromComparison removes ID', () async {
       await provider.addToComparison('A', 1000);
       expect(provider.isComparing('A', 1000), isTrue);
 
       provider.removeFromComparison('A', 1000);
       expect(provider.isComparing('A', 1000), isFalse);
+    });
+
+    test('removeFromComparison does nothing if ID not present', () async {
+      provider.removeFromComparison('A', 1000);
+      expect(provider.comparisonIds, isEmpty);
     });
 
     test('toggleComparison toggles state', () async {
@@ -97,6 +135,11 @@ void main() {
       await provider.addToComparison('B', 1000);
       expect(provider.comparisonIds.length, 2);
 
+      provider.clearComparison();
+      expect(provider.comparisonIds, isEmpty);
+    });
+
+    test('clearComparison does nothing if empty', () async {
       provider.clearComparison();
       expect(provider.comparisonIds, isEmpty);
     });
@@ -121,13 +164,26 @@ void main() {
       // Create new provider to test load
       final newProvider = ContextReportProvider(
         apiService: apiService,
-        historyService: SearchHistoryService(),
+        historyService: _MockHistoryService(),
       );
 
       // Wait for loadComparisonSet
       await Future.delayed(const Duration(milliseconds: 50));
 
       expect(newProvider.comparisonIds, contains('A|1000'));
+    });
+
+    test('loadComparisonSet handles null or empty prefs gracefully', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Ensure empty
+
+      final newProvider = ContextReportProvider(
+        apiService: apiService,
+        historyService: _MockHistoryService(),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(newProvider.comparisonIds, isEmpty);
     });
   });
 }
