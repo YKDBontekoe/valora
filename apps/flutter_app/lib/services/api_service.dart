@@ -559,4 +559,52 @@ class ApiService {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
     }
   }
+  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: queryParameters);
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+      return _handleResponse(response, (body) => json.decode(body));
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<dynamic> post(String path, dynamic data) async {
+    final uri = Uri.parse('$baseUrl$path');
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) => _client.post(
+            uri,
+            headers: headers..['Content-Type'] = 'application/json',
+            body: json.encode(data),
+          ).timeout(timeoutDuration),
+        ),
+      );
+      if (response.statusCode == 204) return null;
+      return _handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<dynamic> delete(String path) async {
+    final uri = Uri.parse('$baseUrl$path');
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) => _client.delete(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+      if (response.statusCode == 204) return null;
+      return _handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
 }
