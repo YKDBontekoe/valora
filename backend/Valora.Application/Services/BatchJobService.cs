@@ -87,7 +87,7 @@ public class BatchJobService : IBatchJobService
         }
 
         job.Status = BatchJobStatus.Failed;
-        job.Error = "Cancelled by user";
+        job.Error = "Job cancelled by user.";
         job.CompletedAt = DateTime.UtcNow;
 
         _logger.LogInformation("Job {JobId} cancelled by admin", id);
@@ -108,18 +108,30 @@ public class BatchJobService : IBatchJobService
 
         try
         {
-            var processor = _processors.FirstOrDefault(p => p.JobType == job.Type);
+            var processor = _processors.SingleOrDefault(p => p.JobType == job.Type);
             if (processor == null)
             {
-                throw new InvalidOperationException($"No processor found for job type {job.Type}");
+                _logger.LogError("No processor found for job type {JobType}", job.Type);
+                throw new InvalidOperationException("System configuration error: processor missing for job type.");
             }
 
             await processor.ProcessAsync(job, cancellationToken);
 
-            AppendLog(job, "Job completed successfully.");
-            job.Status = BatchJobStatus.Completed;
+            if (job.Status == BatchJobStatus.Processing)
+            {
+                AppendLog(job, "Job completed successfully.");
+                job.Status = BatchJobStatus.Completed;
+                job.CompletedAt = DateTime.UtcNow;
+                job.Progress = 100;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Batch job {JobId} cancelled", job.Id);
+            AppendLog(job, "Job cancelled by user.");
+            job.Status = BatchJobStatus.Failed;
+            job.Error = "Job cancelled by user.";
             job.CompletedAt = DateTime.UtcNow;
-            job.Progress = 100;
         }
         catch (Exception ex)
         {

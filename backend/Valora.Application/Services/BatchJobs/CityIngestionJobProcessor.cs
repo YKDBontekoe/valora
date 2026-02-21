@@ -37,7 +37,16 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         _logger.LogInformation("Processing city ingestion for {City}", job.Target);
         AppendLog(job, $"Processing city ingestion for {job.Target}");
 
-        var neighborhoods = await _geoClient.GetNeighborhoodsByMunicipalityAsync(job.Target, cancellationToken);
+        List<NeighborhoodGeometryDto> neighborhoods;
+        try
+        {
+            neighborhoods = await _geoClient.GetNeighborhoodsByMunicipalityAsync(job.Target, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException($"Failed to fetch neighborhoods for city '{job.Target}': {ex.Message}", ex);
+        }
+
         if (!neighborhoods.Any())
         {
             AppendLog(job, "No neighborhoods found for city.");
@@ -99,7 +108,17 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
             var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
             var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
 
-            await Task.WhenAll(statsTask, crimeTask);
+            try
+            {
+                await Task.WhenAll(statsTask, crimeTask);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch stats for neighborhood {NeighborhoodCode}", geo.Code);
+                // We choose to continue processing other items, or we can rethrow with context
+                // Given this is a batch job, failing one item might be acceptable, but let's rethrow with context as requested
+                throw new ApplicationException($"Failed to fetch stats for neighborhood '{geo.Code}' in city '{job.Target}': {ex.Message}", ex);
+            }
 
             var stats = await statsTask;
             var crime = await crimeTask;

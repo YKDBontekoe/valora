@@ -119,7 +119,7 @@ public class BatchJobServiceTests
         await service.ProcessNextJobAsync();
 
         Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Contains("No processor found", job.Error);
+        Assert.Contains("System configuration error: processor missing", job.Error);
         _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 }

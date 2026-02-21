@@ -122,7 +122,8 @@ public class CityIngestionJobProcessorTests
         _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("API Error"));
 
-        await Assert.ThrowsAsync<Exception>(() => processor.ProcessAsync(job, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<ApplicationException>(() => processor.ProcessAsync(job, CancellationToken.None));
+        Assert.Contains("Failed to fetch neighborhoods", ex.Message);
     }
 
     [Fact]
