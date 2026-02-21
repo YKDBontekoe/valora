@@ -32,10 +32,10 @@ public record AuthResponseDto(
 );
 
 public record RefreshTokenRequestDto(
-    [Required] [StringLength(500)] string RefreshToken
+    [property: Required] [property: StringLength(500)] string RefreshToken
 );
 
 public record ExternalLoginRequestDto(
-    [Required] [StringLength(50)] string Provider,
-    [Required] [StringLength(5000)] string IdToken
+    [property: Required] [property: StringLength(50)] string Provider,
+    [property: Required] [property: StringLength(5000)] string IdToken
 );
