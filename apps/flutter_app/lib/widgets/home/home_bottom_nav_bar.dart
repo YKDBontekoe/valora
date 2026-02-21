@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
@@ -20,9 +21,10 @@ class HomeBottomNavBar extends StatelessWidget {
   static const List<_NavItem> _navItems = [
     _NavItem(icon: Icons.search_rounded, label: 'Search', index: 0),
     _NavItem(icon: Icons.map_rounded, label: 'Insights', index: 1),
-    _NavItem(icon: Icons.settings_rounded, label: 'Settings', index: 2),
+    _NavItem(icon: Icons.analytics_rounded, label: 'Report', index: 2),
+    _NavItem(icon: Icons.favorite_rounded, label: 'Saved', index: 3),
+    _NavItem(icon: Icons.settings_rounded, label: 'Settings', index: 4),
   ];
-  static const double _barHeight = 76;
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +34,9 @@ class HomeBottomNavBar extends StatelessWidget {
         mediaQuery.size.width < 390 || mediaQuery.textScaler.scale(1) > 1.1;
 
     // Using semantic glass tokens from design system
-    final glassColor =
-        isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong;
+    final glassColor = isDark
+        ? ValoraColors.glassBlackStrong
+        : ValoraColors.glassWhiteStrong;
 
     final borderColor = isDark
         ? ValoraColors.glassBorderDark
@@ -44,7 +47,9 @@ class HomeBottomNavBar extends StatelessWidget {
       left: false,
       right: false,
       child: Container(
-        height: _barHeight,
+        constraints: const BoxConstraints(
+          minHeight: ValoraSpacing.navBarHeight,
+        ),
         margin: const EdgeInsets.fromLTRB(
           ValoraSpacing.md,
           0,
@@ -70,6 +75,7 @@ class HomeBottomNavBar extends StatelessWidget {
             children: _navItems.map((item) {
               final isSelected = currentIndex == item.index;
               return Expanded(
+                flex: isSelected && !isCompactNav ? 2 : 1,
                 child: _GlassNavItem(
                   icon: item.icon,
                   label: item.label,
@@ -116,8 +122,9 @@ class _GlassNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final unselectedColor =
-        isDark ? ValoraColors.neutral400 : ValoraColors.neutral500;
+    final unselectedColor = isDark
+        ? ValoraColors.neutral400
+        : ValoraColors.neutral500;
 
     return Semantics(
       button: true,
@@ -133,73 +140,109 @@ class _GlassNavItem extends StatelessWidget {
               onTap();
             },
             borderRadius: BorderRadius.circular(ValoraSpacing.lg),
-            child: AnimatedScale(
-              scale: isSelected ? 1.02 : 1.0,
-              duration: ValoraAnimations.fast,
-              curve: Curves.easeOut,
-              child: AnimatedContainer(
-                duration: ValoraAnimations.normal,
-                curve: Curves.easeOut,
-                constraints: const BoxConstraints(
-                  minHeight: ValoraSpacing.touchTargetMin,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ValoraSpacing.sm,
-                  vertical: ValoraSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? ValoraColors.primary
-                          .withValues(alpha: isDark ? 0.18 : 0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(ValoraSpacing.lg),
-                  border: Border.all(
-                    color: isSelected
-                        ? ValoraColors.primary.withValues(alpha: 0.24)
-                        : Colors.transparent,
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      icon,
-                      size: ValoraSpacing.iconSizeMd,
-                      semanticLabel: null,
-                      color:
-                          isSelected ? ValoraColors.primary : unselectedColor,
-                    ),
-                    if (showSelectedLabel) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ValoraTypography.labelSmall.copyWith(
-                          color: isSelected
-                              ? ValoraColors.primary
-                              : unselectedColor,
-                          fontWeight:
-                              isSelected ? FontWeight.w700 : FontWeight.w500,
+            child: AnimatedContainer(
+              duration: ValoraAnimations.medium,
+              curve: ValoraAnimations.emphatic,
+              padding: EdgeInsets.symmetric(
+                horizontal: isSelected ? ValoraSpacing.sm : ValoraSpacing.xs,
+                vertical: ValoraSpacing.radiusMd,
+              ),
+              decoration: BoxDecoration(
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: [
+                          ValoraColors.primary.withValues(alpha: 0.1),
+                          ValoraColors.primary.withValues(alpha: 0.2),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: isSelected ? null : Colors.transparent,
+                borderRadius: BorderRadius.circular(ValoraSpacing.lg),
+                border: isSelected
+                    ? Border.all(
+                        color: ValoraColors.primary.withValues(alpha: 0.2),
+                        width: 1,
+                      )
+                    : null,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                            icon,
+                            size: ValoraSpacing.iconSizeMd,
+                            semanticLabel: null,
+                            color: isSelected
+                                ? ValoraColors.primary
+                                : unselectedColor,
+                          )
+                          .animate(target: isSelected ? 1 : 0)
+                          .scale(
+                            begin: const Offset(1, 1),
+                            end: const Offset(1.15, 1.15),
+                            duration: ValoraAnimations.fast,
+                            curve: ValoraAnimations.emphatic,
+                          )
+                          .tint(color: ValoraColors.primary, end: 1),
+                      if (showSelectedLabel) ...[
+                        Flexible(
+                          child: AnimatedSize(
+                            duration: ValoraAnimations.medium,
+                            curve: ValoraAnimations.emphatic,
+                            child: isSelected
+                                ? ExcludeSemantics(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: ValoraSpacing.xs,
+                                      ),
+                                      child: Text(
+                                        label,
+                                        style: ValoraTypography.labelMedium
+                                            .copyWith(
+                                              color: ValoraColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.2,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                    const SizedBox(height: 2),
-                    AnimatedContainer(
-                      duration: ValoraAnimations.normal,
-                      curve: Curves.easeOut,
-                      width: isSelected ? 16 : 0,
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: ValoraColors.primary.withValues(alpha: 0.85),
-                        borderRadius:
-                            BorderRadius.circular(ValoraSpacing.radiusSm),
+                  ),
+                  const SizedBox(height: ValoraSpacing.xs),
+                  AnimatedOpacity(
+                    opacity: isSelected ? 1 : 0,
+                    duration: ValoraAnimations.normal,
+                    curve: Curves.easeOut,
+                    child: Container(
+                      width: 4,
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        color: ValoraColors.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: ValoraColors.primary,
+                            blurRadius: 4,
+                            spreadRadius: 0,
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -6,7 +6,7 @@ using Valora.Domain.Services;
 
 namespace Valora.Application.Services;
 
-public partial class ContextAnalysisService : IContextAnalysisService
+public class ContextAnalysisService : IContextAnalysisService
 {
     private readonly IAiService _aiService;
 
@@ -35,9 +35,6 @@ public partial class ContextAnalysisService : IContextAnalysisService
         return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, null, cancellationToken);
     }
 
-    [GeneratedRegex(@"[^\w\s\p{P}\p{S}\p{N}<>]")]
-    private static partial Regex SanitizeRegex();
-
     private static string SanitizeForPrompt(string? input, int maxLength = 200)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
@@ -51,7 +48,7 @@ public partial class ContextAnalysisService : IContextAnalysisService
         // Strip characters that are not letters, digits, standard punctuation, whitespace, symbols (\p{S}), numbers (\p{N}), or basic math symbols like < and >.
         // This whitelist allows currency symbols (€, $), units (m²), superscripts (²), and other common text while removing control characters.
         // We explicitly allow < and > so we can escape them properly in the next step.
-        var sanitized = SanitizeRegex().Replace(input, "");
+        var sanitized = Regex.Replace(input, @"[^\w\s\p{P}\p{S}\p{N}<>]", "");
 
         // Escape XML-like characters to prevent tag injection if we use XML-style wrapping
         // Note: Replace & first to avoid double-escaping entity references
