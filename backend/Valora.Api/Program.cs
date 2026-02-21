@@ -1,3 +1,5 @@
+using Valora.Api.Services;
+using Valora.Api.Hubs;
 using Valora.Api.Background;
 using System.Security.Claims;
 using Sentry;
@@ -104,6 +106,8 @@ builder.Services
     .AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHostedService<BatchJobWorker>();
+builder.Services.AddScoped<INotificationPublisher, SignalRNotificationPublisher>();
+builder.Services.AddSignalR();
 
 // Add Identity
 // We use AddIdentityCore instead of AddIdentity to avoid adding unnecessary UI pages (Razor Pages)
@@ -243,6 +247,7 @@ app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 app.MapMapEndpoints();
 app.MapAdminEndpoints();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 // API Endpoints
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/models/notification.dart';
+import 'package:valora_app/models/cursor_paged_result.dart';
 
 // Manual Mock
 class MockApiService extends Fake implements ApiService {
@@ -16,11 +17,18 @@ class MockApiService extends Fake implements ApiService {
   set notifications(List<ValoraNotification> value) => _notifications = value;
 
   @override
+  String? get authToken => 'mock-token';
+
+  @override
   Future<int> getUnreadNotificationCount() async => _unreadCount;
 
   @override
-  Future<List<ValoraNotification>> getNotifications({bool unreadOnly = false, int limit = 50, int offset = 0}) async {
-    return _notifications;
+  Future<CursorPagedResult<ValoraNotification>> getNotifications({
+    bool unreadOnly = false,
+    int limit = 50,
+    String? cursor,
+  }) async {
+    return CursorPagedResult(items: _notifications, hasMore: false);
   }
 
   @override

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
+import 'package:signalr_netcore/signalr_client.dart';
 import '../models/notification.dart';
+import '../models/cursor_paged_result.dart';
 import 'api_service.dart';
 
 class NotificationService extends ChangeNotifier {
@@ -12,19 +14,26 @@ class NotificationService extends ChangeNotifier {
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  int _offset = 0;
+  String? _nextCursor;
   static const int _pageSize = 20;
   String? _error;
   Timer? _pollingTimer;
+  HubConnection? _hubConnection;
 
   final Map<String, Timer> _pendingDeletions = {};
   final Map<String, (int index, ValoraNotification notification)> _pendingDeletedNotifications = {};
 
   NotificationService(this._apiService);
 
-
   void update(ApiService apiService) {
     _apiService = apiService;
+    // Re-init SignalR if token changed?
+    // Usually token refresh is handled internally by signalr client via factory,
+    // but if user logs out/in, we might need to reconnect.
+    // For now assume single session.
+    if (_hubConnection == null && _apiService.authToken != null) {
+      _initSignalR();
+    }
   }
 
   List<ValoraNotification> get notifications => _notifications;
@@ -39,19 +48,120 @@ class NotificationService extends ChangeNotifier {
     _fetchUnreadCount(); // Initial fetch
     _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _fetchUnreadCount();
+      // Ensure SignalR is connected
+      if (_hubConnection?.state == HubConnectionState.Disconnected) {
+          _initSignalR();
+      }
     });
+    _initSignalR();
   }
 
   void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
+    _hubConnection?.stop();
+    _hubConnection = null;
+  }
+
+  Future<void> _initSignalR() async {
+    if (_hubConnection?.state == HubConnectionState.Connected) return;
+
+    final token = _apiService.authToken;
+    if (token == null) return;
+
+    // Adjust hub URL based on ApiService.baseUrl which might have /api suffix or not
+    // Assuming baseUrl is like https://api.valora.com/api
+    // Hub is mapped at /hubs/notifications relative to root, or relative to API?
+    // In Program.cs: app.MapHub<NotificationHub>("/hubs/notifications");
+    // If baseUrl is .../api, we need to go up one level or if the app hosts API at root.
+    // Usually AppConfig.apiUrl is the full API base.
+    // Let's assume standard structure: BaseUrl/../hubs/notifications or similar.
+    // If API is at /api, hub is at /hubs.
+    // I'll parse baseUrl to find root.
+
+    final uri = Uri.parse(ApiService.baseUrl);
+    final hubUrl = uri.replace(path: '/hubs/notifications').toString();
+
+    _hubConnection = HubConnectionBuilder()
+        .withUrl(hubUrl, options: HttpConnectionOptions(
+            accessTokenFactory: () async => token,
+        ))
+        .build();
+
+    _hubConnection!.on('NotificationCreated', _handleNotificationCreated);
+    _hubConnection!.on('NotificationRead', _handleNotificationRead);
+    _hubConnection!.on('NotificationDeleted', _handleNotificationDeleted);
+
+    try {
+        await _hubConnection!.start();
+        _log.info('SignalR Connected');
+    } catch (e) {
+        _log.warning('SignalR Connection Error: $e');
+    }
+
+    _hubConnection!.onclose(({error}) {
+        _log.warning('SignalR Connection Closed: $error');
+        // Simple retry logic via polling timer will pick it up
+    });
+  }
+
+  void _handleNotificationCreated(List<Object?>? args) {
+    if (args != null && args.isNotEmpty) {
+        try {
+            final map = args[0] as Map<String, dynamic>;
+            final notification = ValoraNotification.fromJson(map);
+            // Deduplicate
+            if (!_notifications.any((n) => n.id == notification.id)) {
+                _notifications.insert(0, notification);
+                _unreadCount++;
+                notifyListeners();
+            }
+        } catch (e) {
+            _log.warning('Error parsing notification event', e);
+        }
+    }
+  }
+
+  void _handleNotificationRead(List<Object?>? args) {
+    if (args != null && args.isNotEmpty) {
+        final id = args[0] as String;
+        final index = _notifications.indexWhere((n) => n.id == id);
+        if (index != -1 && !_notifications[index].isRead) {
+            final old = _notifications[index];
+            _notifications[index] = ValoraNotification(
+                id: old.id,
+                title: old.title,
+                body: old.body,
+                isRead: true,
+                createdAt: old.createdAt,
+                type: old.type,
+                actionUrl: old.actionUrl,
+            );
+            _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
+            notifyListeners();
+        }
+    }
+  }
+
+  void _handleNotificationDeleted(List<Object?>? args) {
+     if (args != null && args.isNotEmpty) {
+        final id = args[0] as String;
+        final index = _notifications.indexWhere((n) => n.id == id);
+        if (index != -1) {
+            final removed = _notifications[index];
+            _notifications.removeAt(index);
+            if (!removed.isRead) {
+                _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
+            }
+            notifyListeners();
+        }
+    }
   }
 
   Future<void> _fetchUnreadCount() async {
     try {
       int count = await _apiService.getUnreadNotificationCount();
 
-      // Adjust count to account for locally pending deletes
       for (final pending in _pendingDeletedNotifications.values) {
         if (!pending.$2.isRead) {
           count = count > 0 ? count - 1 : 0;
@@ -63,16 +173,11 @@ class NotificationService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // Silently fail on polling errors
       _log.warning('Error polling notifications', e);
     }
   }
 
   Future<void> deleteNotification(String id) async {
-    // If it's already pending deletion, ignore or just let it continue.
-    // However, if the user triggered delete again, we shouldn't cancel the old one
-    // unless we want to reset the timer. But if it's not in _notifications,
-    // we can't remove it again.
     if (_pendingDeletions.containsKey(id)) {
         return;
     }
@@ -82,23 +187,16 @@ class NotificationService extends ChangeNotifier {
 
     final removed = _notifications[index];
 
-    // Store for potential restoration
     _pendingDeletedNotifications[id] = (index, removed);
 
-    // Optimistic update: Remove from list immediately
     _notifications.removeAt(index);
     if (!removed.isRead) {
       _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
     }
     notifyListeners();
 
-    // Schedule API call
     _pendingDeletions[id] = Timer(const Duration(seconds: 4), () async {
       _pendingDeletions.remove(id);
-      // We keep it in _pendingDeletedNotifications until success or failure is handled
-      // But actually, once the timer fires, the undo window is closed.
-      // So we remove it from there too. But we need a reference for restoration on failure.
-
       final pendingRestore = _pendingDeletedNotifications.remove(id);
 
       try {
@@ -106,17 +204,13 @@ class NotificationService extends ChangeNotifier {
       } catch (e) {
         _log.warning('Error deleting notification', e);
 
-        // Restore on failure
         if (pendingRestore != null) {
           final (idx, notification) = pendingRestore;
-          // We need to re-insert carefully. The list might have changed (other deletions/additions).
-          // Using the old index is a best-effort.
           if (idx >= 0 && idx <= _notifications.length) {
             _notifications.insert(idx, notification);
           } else {
             _notifications.add(notification);
           }
-          // Restore unread count
           if (!notification.isRead) {
             _unreadCount++;
           }
@@ -136,19 +230,18 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Fetch unread count in parallel with notifications
       final results = await Future.wait([
-        _apiService.getNotifications(limit: _pageSize, offset: 0),
+        _apiService.getNotifications(limit: _pageSize, cursor: null),
         _apiService.getUnreadNotificationCount(),
       ]);
 
-      var fetched = results[0] as List<ValoraNotification>;
+      var result = results[0] as CursorPagedResult<ValoraNotification>;
       var count = results[1] as int;
 
-      // Filter out items that are currently pending deletion
+      var fetched = result.items;
+
       fetched = fetched.where((n) => !_pendingDeletions.containsKey(n.id)).toList();
 
-      // Adjust unread count
       for (final pending in _pendingDeletedNotifications.values) {
         if (!pending.$2.isRead) {
           count = count > 0 ? count - 1 : 0;
@@ -157,8 +250,8 @@ class NotificationService extends ChangeNotifier {
 
       _notifications = fetched;
       _unreadCount = count;
-      _hasMore = fetched.length >= _pageSize;
-      _offset = fetched.length;
+      _hasMore = result.hasMore;
+      _nextCursor = result.nextCursor;
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -171,21 +264,20 @@ class NotificationService extends ChangeNotifier {
     if (_isLoading || _isLoadingMore || !_hasMore) return;
 
     _isLoadingMore = true;
-    // Clear any previous error when attempting to load more
     if (_error != null) {
       _error = null;
     }
     notifyListeners();
 
     try {
-      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
+      final result = await _apiService.getNotifications(limit: _pageSize, cursor: _nextCursor);
 
-      if (fetched.isEmpty) {
+      if (result.items.isEmpty) {
         _hasMore = false;
       } else {
-        _notifications.addAll(fetched);
-        _hasMore = fetched.length >= _pageSize;
-        _offset += fetched.length;
+        _notifications.addAll(result.items);
+        _hasMore = result.hasMore;
+        _nextCursor = result.nextCursor;
       }
     } catch (e) {
       _log.warning('Error loading more notifications', e);
@@ -197,7 +289,6 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> markAsRead(String id) async {
     try {
-      // Optimistic update
       final index = _notifications.indexWhere((n) => n.id == id);
       if (index != -1 && !_notifications[index].isRead) {
         final old = _notifications[index];
@@ -217,13 +308,11 @@ class NotificationService extends ChangeNotifier {
       }
     } catch (e) {
       _log.warning('Error marking notification as read', e);
-      // Revert if needed, but for read status it's usually fine
     }
   }
 
   Future<void> markAllAsRead() async {
     try {
-      // Optimistic update
       _notifications = _notifications.map((n) => ValoraNotification(
         id: n.id,
         title: n.title,
@@ -245,11 +334,9 @@ class NotificationService extends ChangeNotifier {
   void undoDelete(String id) {
     if (!_pendingDeletions.containsKey(id)) return;
 
-    // Cancel deletion
     _pendingDeletions[id]?.cancel();
     _pendingDeletions.remove(id);
 
-    // Restore notification
     if (_pendingDeletedNotifications.containsKey(id)) {
       final (index, notification) = _pendingDeletedNotifications[id]!;
       _pendingDeletedNotifications.remove(id);
@@ -270,6 +357,7 @@ class NotificationService extends ChangeNotifier {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _hubConnection?.stop();
     for (final timer in _pendingDeletions.values) {
       timer.cancel();
     }

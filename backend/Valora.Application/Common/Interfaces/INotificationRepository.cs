@@ -4,7 +4,7 @@ namespace Valora.Application.Common.Interfaces;
 
 public interface INotificationRepository
 {
-    Task<List<Notification>> GetByUserIdAsync(string userId, bool unreadOnly, int limit, int offset, CancellationToken cancellationToken = default);
+    Task<List<Notification>> GetByUserIdAsync(string userId, bool unreadOnly, int limit, string? cursor, CancellationToken cancellationToken = default);
     Task<int> GetUnreadCountAsync(string userId, CancellationToken cancellationToken = default);
     Task<Notification?> GetByIdAsync(Guid id, string userId, CancellationToken cancellationToken = default);
     Task<List<Notification>> GetUnreadByUserIdAsync(string userId, CancellationToken cancellationToken = default);

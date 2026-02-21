@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Xunit;
@@ -24,9 +25,9 @@ public class NotificationEndpointTests : BaseIntegrationTest
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationDto>>();
-        Assert.NotNull(notifications);
-        Assert.Empty(notifications);
+        var result = await response.Content.ReadFromJsonAsync<CursorPagedResult<NotificationDto>>();
+        Assert.NotNull(result);
+        Assert.Empty(result.Items);
     }
 
     [Fact]
@@ -36,30 +37,27 @@ public class NotificationEndpointTests : BaseIntegrationTest
         var user1Email = "user1@example.com";
         var user2Email = "user2@example.com";
 
-        // Register and login as User 1
         await AuthenticateAsync(user1Email);
         var user1 = await DbContext.Users.FirstAsync(u => u.Email == user1Email);
 
-        // Register and login as User 2 (this switches current auth token to User 2)
         await AuthenticateAsync(user2Email);
         var user2 = await DbContext.Users.FirstAsync(u => u.Email == user2Email);
 
-        // Add notifications for both users
         DbContext.Notifications.AddRange(
             new Notification { UserId = user1.Id, Title = "User 1 Notif", Body = "Body", Type = NotificationType.Info },
             new Notification { UserId = user2.Id, Title = "User 2 Notif", Body = "Body", Type = NotificationType.Info }
         );
         await DbContext.SaveChangesAsync();
 
-        // Act - Request as User 2 (currently authenticated)
+        // Act
         var response = await Client.GetAsync("/api/notifications");
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationDto>>();
-        Assert.NotNull(notifications);
-        Assert.Single(notifications);
-        Assert.Equal("User 2 Notif", notifications[0].Title);
+        var result = await response.Content.ReadFromJsonAsync<CursorPagedResult<NotificationDto>>();
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal("User 2 Notif", result.Items[0].Title);
     }
 
     [Fact]
@@ -77,7 +75,7 @@ public class NotificationEndpointTests : BaseIntegrationTest
                 Title = $"Notif {i}",
                 Body = "Body",
                 Type = NotificationType.Info,
-                CreatedAt = DateTime.UtcNow.AddMinutes(i) // Ensure order
+                CreatedAt = DateTime.UtcNow.AddMinutes(i)
             })
             .ToList();
 
@@ -90,9 +88,9 @@ public class NotificationEndpointTests : BaseIntegrationTest
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<List<NotificationDto>>();
+        var result = await response.Content.ReadFromJsonAsync<CursorPagedResult<NotificationDto>>();
         Assert.NotNull(result);
-        Assert.Equal(limit, result.Count);
+        Assert.Equal(limit, result.Items.Count);
     }
 
     [Fact]
@@ -126,11 +124,11 @@ public class NotificationEndpointTests : BaseIntegrationTest
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationDto>>();
-        Assert.NotNull(notifications);
-        Assert.Single(notifications);
-        Assert.Equal("Unread", notifications[0].Title);
-        Assert.False(notifications[0].IsRead);
+        var result = await response.Content.ReadFromJsonAsync<CursorPagedResult<NotificationDto>>();
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal("Unread", result.Items[0].Title);
+        Assert.False(result.Items[0].IsRead);
     }
 
     [Fact]
@@ -200,7 +198,7 @@ public class NotificationEndpointTests : BaseIntegrationTest
         var response = await Client.PostAsync($"/api/notifications/{Guid.NewGuid()}/read", null);
 
         // Assert
-        response.EnsureSuccessStatusCode(); // API returns OK even if not found, to be idempotent/safe
+        response.EnsureSuccessStatusCode();
     }
 
     [Fact]
