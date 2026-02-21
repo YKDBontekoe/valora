@@ -8,7 +8,6 @@ import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
 import '../models/map_property.dart';
-import '../models/map_property.dart';
 import '../services/api_service.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
