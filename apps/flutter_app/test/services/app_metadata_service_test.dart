@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/app_metadata_service.dart';
 import 'package:valora_app/models/support_status.dart';
 import 'app_metadata_service_test.mocks.dart';
@@ -58,5 +59,12 @@ void main() {
     // Fallback logic in AppMetadataService creates a fallback status
     expect(appMetadataService.supportStatus?.isSupportActive, true);
     expect(appMetadataService.supportStatus?.contactEmail, 'support@valora.nl');
+  });
+
+  test('getters return default values before init', () {
+    expect(appMetadataService.appName, 'Valora');
+    expect(appMetadataService.version, 'Unknown');
+    expect(appMetadataService.buildNumber, 'Unknown');
+    expect(appMetadataService.packageName, 'Unknown');
   });
 }
