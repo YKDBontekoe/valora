@@ -48,6 +48,22 @@ public class MapEndpointsTests
     }
 
     [Fact]
+    public async Task GetMapAmenitiesHandler_HandlesNullTypes()
+    {
+        List<string> capturedTypes = null;
+        _mapServiceMock.Setup(x => x.GetMapAmenitiesAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .Callback<double, double, double, double, List<string>, CancellationToken>((_, _, _, _, types, _) => capturedTypes = types)
+            .ReturnsAsync(new List<MapAmenityDto>());
+
+        var result = await MapEndpoints.GetMapAmenitiesHandler(52, 4, 53, 5, null, _mapServiceMock.Object, CancellationToken.None);
+
+        Assert.IsType<Ok<List<MapAmenityDto>>>(result);
+        Assert.Null(capturedTypes);
+    }
+
+    [Fact]
     public async Task GetMapAmenityClustersHandler_ReturnsOk()
     {
         _mapServiceMock.Setup(x => x.GetMapAmenityClustersAsync(
@@ -58,6 +74,23 @@ public class MapEndpointsTests
         var result = await MapEndpoints.GetMapAmenityClustersHandler(52, 4, 53, 5, 10, null, _mapServiceMock.Object, CancellationToken.None);
 
         Assert.IsType<Ok<List<MapAmenityClusterDto>>>(result);
+    }
+
+    [Fact]
+    public async Task GetMapAmenityClustersHandler_ParsesTypes()
+    {
+        List<string> capturedTypes = null;
+        _mapServiceMock.Setup(x => x.GetMapAmenityClustersAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .Callback<double, double, double, double, double, List<string>, CancellationToken>((_, _, _, _, _, types, _) => capturedTypes = types)
+            .ReturnsAsync(new List<MapAmenityClusterDto>());
+
+        var result = await MapEndpoints.GetMapAmenityClustersHandler(52, 4, 53, 5, 10, "foo", _mapServiceMock.Object, CancellationToken.None);
+
+        Assert.IsType<Ok<List<MapAmenityClusterDto>>>(result);
+        Assert.Single(capturedTypes);
+        Assert.Equal("foo", capturedTypes[0]);
     }
 
     [Fact]

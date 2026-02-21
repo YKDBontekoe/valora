@@ -140,6 +140,7 @@ public class MapServiceTests
     [InlineData(9, 0.02)]
     [InlineData(7, 0.05)]
     [InlineData(6, 0.1)]
+    [InlineData(2, 0.1)] // Default case
     public async Task GetMapOverlayTilesAsync_ShouldUseCorrectCellSize_ForDifferentZooms(double zoom, double expectedSize)
     {
         var geoJson = JsonSerializer.SerializeToElement(new {
@@ -162,7 +163,6 @@ public class MapServiceTests
             It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(dummyOverlays);
 
-        // Larger bounding box to capture tiles at any zoom
         double minLat = 52.0000, minLon = 5.0000;
         double maxLat = 52.2000, maxLon = 5.2000;
 
@@ -202,9 +202,17 @@ public class MapServiceTests
     }
 
     [Theory]
-    [InlineData(50, 0, 53, 0)] // Span > 2.0
-    [InlineData(50, 0, 50.1, 3)] // Span > 2.0
-    [InlineData(double.NaN, 0, 50, 0)] // Invalid
+    // Max span > 2.0 cases
+    [InlineData(50, 0, 53, 0)]
+    [InlineData(50, 0, 50.1, 3)]
+    // Invalid Order
+    [InlineData(52, 0, 51, 0)] // minLat >= maxLat
+    [InlineData(50, 5, 51, 4)] // minLon >= maxLon
+    // NaN Cases
+    [InlineData(double.NaN, 0, 50, 0)]
+    [InlineData(0, double.NaN, 50, 0)]
+    [InlineData(0, 0, double.NaN, 0)]
+    [InlineData(0, 0, 50, double.NaN)]
     public async Task GetMapAmenityClustersAsync_ShouldThrow_WhenBboxInvalid(double minLat, double minLon, double maxLat, double maxLon)
     {
         await Assert.ThrowsAsync<ValidationException>(() =>
@@ -212,8 +220,7 @@ public class MapServiceTests
     }
 
     [Theory]
-    [InlineData(50, 0, 53, 0)] // Span > 2.0
-    [InlineData(50, 0, 50.1, 3)] // Span > 2.0
+    [InlineData(50, 0, 53, 0)]
     public async Task GetMapOverlayTilesAsync_ShouldThrow_WhenBboxInvalid(double minLat, double minLon, double maxLat, double maxLon)
     {
         await Assert.ThrowsAsync<ValidationException>(() =>
