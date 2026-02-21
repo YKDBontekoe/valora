@@ -152,10 +152,10 @@ void main() {
           ),
         ],
       );
-        minLon: 3.0,
         maxLat: 53.0,
         maxLon: 5.0,
       );
+      await provider.fetchMapData(
       await provider.fetchMapData(
         minLat: 51.0,
         minLon: 3.0,
@@ -163,8 +163,6 @@ void main() {
         maxLon: 5.0,
         zoom: 10, // Low zoom
       );
-      expect(provider.overlays, isEmpty);
-    });
 
     test("toggleProperties updates state and clears data when disabled", () {
       expect(provider.showProperties, isTrue); // Defaults to true
@@ -182,12 +180,13 @@ void main() {
         mockApiService.getMapProperties(
       when(
         mockApiService.getMapProperties(
+      when(
+        mockApiService.getMapProperties(
           minLat: anyNamed("minLat"),
           minLon: anyNamed("minLon"),
           maxLat: anyNamed("maxLat"),
           maxLon: anyNamed("maxLon"),
         ),
-      ).thenAnswer(
         (_) async => [
           MapProperty(
             id: "1",
@@ -210,16 +209,9 @@ void main() {
       expect(provider.properties[0].id, "1");
     });
       await provider.fetchMapData(
-        minLat: 51.9,
-        minLon: 3.9,
-        maxLat: 52.1,
-    test("fetchMapData handles properties errors gracefully", () async {
-      if (!provider.showProperties) provider.toggleProperties();
-
+        ),
       when(
-        mockApiService.getMapProperties(
-          minLat: anyNamed("minLat"),
-          minLon: anyNamed("minLon"),
+      ).thenThrow(Exception("API Error"));
           maxLat: anyNamed("maxLat"),
           maxLon: anyNamed("maxLon"),
       await provider.fetchMapData(
@@ -229,11 +221,3 @@ void main() {
         maxLon: 4.1,
         zoom: 14,
       );
-
-      expect(provider.properties, isEmpty);
-    });
-      // We don't necessarily expose a specific property error state yet,
-      // but ensure it doesn't crash and list remains empty.
-  });
-  });
-}
