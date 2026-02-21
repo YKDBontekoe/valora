@@ -33,6 +33,9 @@ class _StartupScreenState extends State<StartupScreen> {
   Future<void> _checkAuth() async {
     try {
       await context.read<AuthProvider>().checkAuth();
+    } catch (e) {
+      // Swallow error so app doesn't crash on startup
+      debugPrint('Startup auth check failed: $e');
     } finally {
       if (!_authCheckCompleter.isCompleted) {
         _authCheckCompleter.complete();

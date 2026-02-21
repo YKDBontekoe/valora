@@ -233,7 +233,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Subscription'),
       500.0,
-      scrollable: find.byType(Scrollable),
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(find.text('Subscription'));
     await tester.pumpAndSettle();
@@ -241,7 +241,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Privacy & Security'),
       500.0,
-      scrollable: find.byType(Scrollable),
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(find.text('Privacy & Security'));
     await tester.pumpAndSettle();
