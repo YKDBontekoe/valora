@@ -46,21 +46,32 @@ const AiModels: React.FC = () => {
     setEditingConfig({ ...config });
   };
 
+  const closeModal = () => {
+    if (!isSaving) {
+      setEditingConfig(null);
+    }
+  };
+
   const handleSave = async () => {
     if (!editingConfig || !editingConfig.intent) {
       showToast("Intent is required", "error");
       return;
     }
 
+    if (!editingConfig.primaryModel || !editingConfig.primaryModel.includes('/')) {
+        showToast("Primary model must be in 'provider/model-name' format", "error");
+        return;
+    }
+
     setIsSaving(true);
     try {
       await aiService.updateConfig(editingConfig.intent, editingConfig);
-      showToast('Configuration updated successfully', 'success');
+      showToast(`Configuration for '${editingConfig.intent}' updated successfully`, 'success');
       setEditingConfig(null);
       loadConfigs();
     } catch (error) {
        console.error(error);
-       showToast('Failed to save configuration', 'error');
+       showToast(`Failed to save configuration for '${editingConfig.intent}'`, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -192,7 +203,7 @@ const AiModels: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-brand-900/40 backdrop-blur-sm"
-              onClick={() => !isSaving && setEditingConfig(null)}
+              onClick={closeModal}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -214,8 +225,9 @@ const AiModels: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => setEditingConfig(null)}
-                    className="p-2 text-brand-400 hover:text-brand-900 transition-colors rounded-xl hover:bg-brand-50"
+                    onClick={closeModal}
+                    disabled={isSaving}
+                    className="p-2 text-brand-400 hover:text-brand-900 transition-colors rounded-xl hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X size={20} />
                   </button>
@@ -297,7 +309,7 @@ const AiModels: React.FC = () => {
                 <div className="flex gap-4 mt-10">
                   <Button
                     variant="outline"
-                    onClick={() => setEditingConfig(null)}
+                    onClick={closeModal}
                     className="flex-1"
                     disabled={isSaving}
                   >
