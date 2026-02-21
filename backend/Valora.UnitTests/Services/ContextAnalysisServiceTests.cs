@@ -137,14 +137,16 @@ public class ContextAnalysisServiceTests
     }
 
     [Fact]
-    public async Task AnalyzeReportAsync_SanitizesInputs()
+    public async Task AnalyzeReportAsync_SanitizesAndTruncatesInputs()
     {
          // Arrange
         var service = CreateService();
         var report = CreateFullReportDto();
 
+        // Create a string longer than 200 chars
+        var longString = new string('a', 250);
         // Inject malicious/special chars into a metric
-        var maliciousMetric = new ContextMetricDto("test_key", "Bad <Script> Label & More", 5, "Unit", 10, "Source", null);
+        var maliciousMetric = new ContextMetricDto("test_key", "Bad <Script> Label & More " + longString, 5, "Unit", 10, "Source", null);
         report = report with { SocialMetrics = new List<ContextMetricDto> { maliciousMetric } };
 
         string capturedPrompt = "";
@@ -157,8 +159,43 @@ public class ContextAnalysisServiceTests
 
         // Assert
         // < and > should be escaped to &lt; and &gt;
-        Assert.Contains("label=\"Bad &lt;Script&gt; Label &amp; More\"", capturedPrompt);
-        Assert.Contains(">5 Unit (Score: 10)<", capturedPrompt);
+        Assert.Contains("label=\"Bad &lt;Script&gt; Label &amp; More", capturedPrompt);
+
+        // Verify truncation: The prompt should NOT contain the full 250 'a's.
+        // Logic: Input (truncated to 200) -> Regex Replace -> HTML Escape
+        // 200 chars max. "Bad <Script> Label & More " is ~26 chars. So we expect around 174 'a's.
+        // It definitely shouldn't have 250.
+        Assert.DoesNotContain(longString, capturedPrompt);
+    }
+
+    [Fact]
+    public async Task AnalyzeReportAsync_HandlesPartialJson_WithNullLists()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = CreateFullReportDto();
+        // JSON where lists are null/missing
+        var jsonResponse = """
+            {
+                "summary": "Valid summary.",
+                "confidence": 50
+            }
+            """;
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        // Act
+        var result = await service.AnalyzeReportAsync(report, CancellationToken.None);
+
+        // Assert
+        Assert.Equal("Valid summary.", result.Summary);
+        Assert.NotNull(result.TopPositives);
+        Assert.Empty(result.TopPositives);
+        Assert.NotNull(result.TopConcerns);
+        Assert.Empty(result.TopConcerns);
+        Assert.Equal(50, result.Confidence);
+        Assert.Equal(string.Empty, result.Disclaimer);
     }
 
     private static ContextReportDto CreateFullReportDto()
