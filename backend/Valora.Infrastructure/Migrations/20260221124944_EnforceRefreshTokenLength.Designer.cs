@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Valora.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    partial class ValoraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260221124944_EnforceRefreshTokenLength")]
+    partial class EnforceRefreshTokenLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,52 +157,6 @@ namespace Valora.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.AiModelConfig", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("FallbackModels")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Intent")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("PrimaryModel")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("SafetySettings")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Intent")
-                        .IsUnique();
-
-                    b.ToTable("AiModelConfigs");
-                });
-
             modelBuilder.Entity("Valora.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -276,11 +233,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-
                     b.Property<string>("Error")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExecutionLog")
                         .HasColumnType("text");
 
                     b.Property<int>("Progress")

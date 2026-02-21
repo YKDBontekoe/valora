@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Services;
+using Valora.Application.Services.BatchJobs;
 
 namespace Valora.Application;
 
@@ -16,6 +17,10 @@ public static class DependencyInjection
         services.AddScoped<IContextDataProvider, ContextDataProvider>();
         services.AddScoped<IMapService, MapService>();
         services.AddScoped<IBatchJobService, BatchJobService>();
+
+        // Batch Job Processors
+        services.AddScoped<IBatchJobProcessor, CityIngestionJobProcessor>();
+
         return services;
     }
 }
