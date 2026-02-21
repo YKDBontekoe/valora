@@ -9,7 +9,6 @@ import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../services/app_metadata_service.dart';
-import '../models/support_status.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

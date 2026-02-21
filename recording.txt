@@ -1,4 +1,3 @@
-1.  **Dependency Injection of Metadata**: Using a dedicated  to wrap  and API calls for support status allows for easy testing and consistent access to app metadata across the Flutter app.
-2.  **Mocking Static Methods**:  is essential for testing services that rely on platform channels for version information.
-3.  **Backend Config-Driven Features**: Exposing support status via a simple API endpoint backed by  allows changing support availability and messaging without redeploying the mobile app.
-4.  **Graceful Fallbacks**: Implementing fallback logic in the frontend service ensures the app remains functional and informative even if the metadata/support API endpoint is unreachable.
+1.  **Testing for Coverage**: Adding  to  required dedicated unit tests () to ensure high code coverage, as simple integration or widget tests might not exercise all error paths (like server errors or network exceptions triggering fallbacks).
+2.  **Flutter Lints in CI**: The CI pipeline enforces strict linting where warnings (like ) cause build failures. It's crucial to clean up imports after refactoring or moving code.
+3.  **Backend Integration Testing**:  with  provides a reliable way to test new API endpoints () without mocking the entire ASP.NET Core stack.
