@@ -33,7 +33,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(ValoraCard));
+      await tester.tap(find.byType(ValoraCard), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
@@ -257,7 +257,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       // Try to tap
-      await tester.tap(find.byType(ValoraButton));
+      await tester.tap(find.byType(ValoraButton), warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(pressed, isFalse);
