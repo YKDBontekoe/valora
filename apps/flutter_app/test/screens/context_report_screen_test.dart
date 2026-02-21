@@ -144,7 +144,6 @@ void main() {
 
       // Drag the slider
       // Get the slider widget
-      final Slider slider = tester.widget(sliderFinder);
 
       // Tap/Drag on the slider
       await tester.tap(sliderFinder);
