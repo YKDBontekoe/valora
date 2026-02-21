@@ -6,7 +6,9 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/utils/map_utils.dart';
 import '../../providers/insights_provider.dart';
 import '../../models/map_overlay.dart';
+import '../../models/map_overlay_tile.dart';
 import '../../models/map_amenity.dart';
+import '../../models/map_amenity_cluster.dart';
 import '../../models/map_city_insight.dart';
 
 class InsightsMap extends StatelessWidget {
@@ -27,7 +29,9 @@ class InsightsMap extends StatelessWidget {
         bool,
         bool,
         List<MapOverlay>,
+        List<MapOverlayTile>,
         List<MapAmenity>,
+        List<MapAmenityCluster>,
         List<MapCityInsight>,
         MapOverlayMetric
       )
@@ -37,7 +41,9 @@ class InsightsMap extends StatelessWidget {
             p.showOverlays,
             p.showAmenities,
             p.overlays,
+            p.overlayTiles,
             p.amenities,
+            p.amenityClusters,
             p.cities,
             p.selectedOverlayMetric,
           ),
@@ -46,8 +52,10 @@ class InsightsMap extends StatelessWidget {
         final showOverlays = data.$1;
         final showAmenities = data.$2;
         final overlays = data.$3;
-        final amenities = data.$4;
-        final cities = data.$5;
+        final overlayTiles = data.$4;
+        final amenities = data.$5;
+        final amenityClusters = data.$6;
+        final cities = data.$7;
         // Access provider for methods used in builder
         final provider = context.read<InsightsProvider>();
 
@@ -73,20 +81,38 @@ class InsightsMap extends StatelessWidget {
               subdomains: const ['a', 'b', 'c', 'd'],
               retinaMode: RetinaMode.isHighDensity(context),
             ),
-            if (showOverlays)
-              PolygonLayer(
-                polygons:
-                    overlays.map((overlay) {
-                      return buildPolygon(overlay, provider.selectedOverlayMetric);
-                    }).toList(),
-              ),
-            if (showAmenities)
-              MarkerLayer(
-                markers:
-                    amenities.map((amenity) {
-                      return buildAmenityMarker(context, amenity);
-                    }).toList(),
-              ),
+            if (showOverlays) ...[
+              if (overlays.isNotEmpty)
+                PolygonLayer(
+                  polygons:
+                      overlays.map((overlay) {
+                        return buildPolygon(overlay, provider.selectedOverlayMetric);
+                      }).toList(),
+                ),
+              if (overlayTiles.isNotEmpty)
+                PolygonLayer(
+                  polygons:
+                      overlayTiles.map((tile) {
+                        return buildTilePolygon(tile, provider.selectedOverlayMetric);
+                      }).toList(),
+                ),
+            ],
+            if (showAmenities) ...[
+              if (amenities.isNotEmpty)
+                MarkerLayer(
+                  markers:
+                      amenities.map((amenity) {
+                        return buildAmenityMarker(context, amenity);
+                      }).toList(),
+                ),
+              if (amenityClusters.isNotEmpty)
+                MarkerLayer(
+                  markers:
+                      amenityClusters.map((cluster) {
+                        return buildClusterMarker(context, cluster);
+                      }).toList(),
+                ),
+            ],
             MarkerLayer(
               markers:
                   cities.map((city) {
@@ -116,6 +142,30 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
+  static Polygon buildTilePolygon(MapOverlayTile tile, MapOverlayMetric metric) {
+    // Create a square polygon around the center
+    final halfSize = tile.size / 2;
+    final points = [
+      LatLng(tile.latitude - halfSize, tile.longitude - halfSize),
+      LatLng(tile.latitude - halfSize, tile.longitude + halfSize),
+      LatLng(tile.latitude + halfSize, tile.longitude + halfSize),
+      LatLng(tile.latitude + halfSize, tile.longitude - halfSize),
+    ];
+
+    final color = MapUtils.getOverlayColor(
+      tile.value,
+      metric,
+    );
+
+    return Polygon(
+      points: points,
+      color: color.withValues(alpha: 0.26),
+      borderColor: color.withValues(alpha: 0.1), // Faint border for tiles
+      borderStrokeWidth: 0.5,
+      label: tile.displayValue,
+    );
+  }
+
   static Marker buildAmenityMarker(BuildContext context, MapAmenity amenity) {
     return Marker(
       point: amenity.location,
@@ -142,6 +192,37 @@ class InsightsMap extends StatelessWidget {
             MapUtils.getAmenityIcon(amenity.type),
             size: 18,
             color: ValoraColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Marker buildClusterMarker(BuildContext context, MapAmenityCluster cluster) {
+    return Marker(
+      point: LatLng(cluster.latitude, cluster.longitude),
+      width: 40,
+      height: 40,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: ValoraColors.primary,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: ValoraColors.primary.withValues(alpha: 0.4),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            cluster.count.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ),
       ),
