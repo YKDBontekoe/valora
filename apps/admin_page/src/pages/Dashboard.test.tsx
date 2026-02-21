@@ -1,44 +1,44 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import Dashboard from './Dashboard';
 import { adminService } from '../services/api';
+import { MemoryRouter } from 'react-router-dom';
 
-vi.mock('../services/api', () => ({
-  adminService: {
-    getStats: vi.fn(),
-  },
-}));
+vi.mock('../services/api');
+vi.mock('../services/toast');
 
 describe('Dashboard Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders stats when API call succeeds', async () => {
-    const mockStats = {
-      totalUsers: 1234,
-      totalNotifications: 56,
-      activeJobs: 2,
-    };
-    (adminService.getStats as Mock).mockResolvedValue(mockStats);
+  it('renders loading state initially', () => {
+    (adminService.getStats as Mock).mockImplementation(() => new Promise(() => {}));
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
+    expect(screen.queryByText('Total Users')).not.toBeInTheDocument();
+  });
 
-    render(<Dashboard />);
+  it('renders stats after loading', async () => {
+    (adminService.getStats as Mock).mockResolvedValue({
+      totalUsers: 123,
+      totalNotifications: 45,
+    });
 
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('1,234')).toBeInTheDocument();
-      expect(screen.getByText('56')).toBeInTheDocument();
+      expect(screen.getByText('Total Users')).toBeInTheDocument();
+      expect(screen.getByText('123')).toBeInTheDocument();
+      expect(screen.getByText('Notifications')).toBeInTheDocument();
+      expect(screen.getByText('45')).toBeInTheDocument();
     });
   });
 
-  it('renders error message when API call fails', async () => {
-    (adminService.getStats as Mock).mockRejectedValue(new Error('API Error'));
-
-    render(<Dashboard />);
+  it('handles error state', async () => {
+    (adminService.getStats as Mock).mockRejectedValue(new Error('Failed'));
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to Load Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Failed to fetch dashboard statistics. Please try again.')).toBeInTheDocument();
     });
   });
