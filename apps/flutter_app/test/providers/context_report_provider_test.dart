@@ -21,6 +21,14 @@ class _FakeApiService extends ApiService {
 
     return report!;
   }
+
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async {
+    if (error != null) {
+      throw error!;
+    }
+    return "AI Analysis Result";
+  }
 }
 
 class _FailingHistoryService extends SearchHistoryService {
@@ -169,5 +177,19 @@ void main() {
     expect(provider.isComparing('Failing Query', 1000), isTrue);
     // The report won't be in activeReports because fetch failed, but ID is tracked
     expect(provider.getReportById('Failing Query|1000'), isNull);
+  });
+
+  test('generateAiInsight handles API errors gracefully', () async {
+    final report = buildReport();
+    final provider = ContextReportProvider(
+      apiService: _FakeApiService(error: ServerException('AI Failed')),
+      historyService: SearchHistoryService(),
+    );
+
+    await provider.generateAiInsight(report);
+
+    expect(provider.getAiInsight(report.location.displayAddress), isNull);
+    expect(provider.getAiInsightError(report.location.displayAddress), contains('Server Error: AI Failed'));
+    expect(provider.isAiInsightLoading(report.location.displayAddress), isFalse);
   });
 }
