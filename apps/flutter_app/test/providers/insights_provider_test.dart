@@ -150,22 +150,13 @@ void main() {
             value: 100,
             displayValue: '100',
           ),
-        maxLat: 53.0,
         zoom: 10, // Low zoom
-        ],
       );
 
       await provider.fetchMapData(
         minLat: 51.0,
         minLon: 3.0,
         maxLat: 53.0,
-        maxLon: 5.0,
-        zoom: 10, // Low zoom
-      );
-
-      expect(provider.overlayTiles, isNotEmpty);
-        maxLat: 53.0,
-        maxLon: 5.0,
         zoom: 10, // Low zoom
       );
 
@@ -192,10 +183,13 @@ void main() {
           MapProperty(
             id: "1",
             price: 500000,
-            location: const LatLng(52, 4),
-            status: "ForSale",
-          ),
-        ],
+      provider.toggleProperties();
+      expect(provider.showProperties, isTrue);
+    });
+
+    test("fetchMapData calls getMapProperties when enabled", () async {
+      // Ensure properties are enabled
+      if (!provider.showProperties) provider.toggleProperties();
       );
 
       await provider.fetchMapData(
@@ -215,16 +209,7 @@ void main() {
       when(
         mockApiService.getMapProperties(
           minLat: anyNamed("minLat"),
-          minLon: anyNamed("minLon"),
           maxLat: anyNamed("maxLat"),
-          maxLon: anyNamed("maxLon"),
-        ),
-          minLon: anyNamed("minLon"),
-          maxLat: anyNamed("maxLat"),
-      ).thenThrow(Exception("API Error"));
-
-      await provider.fetchMapData(
-        minLat: 51.9,
 
       ).thenThrow(Exception("API Error"));
 
@@ -237,19 +222,5 @@ void main() {
       );
 
       expect(provider.properties, isEmpty);
-    });
-        maxLon: 4.1,
-        zoom: 14,
-      );
-        mockApiService.getMapProperties(
-          minLat: anyNamed("minLat"),
           minLon: anyNamed("minLon"),
-          maxLat: anyNamed("maxLat"),
-          maxLon: anyNamed("maxLon"),
-        ),
-      ).thenThrow(Exception("API Error"));
-      await provider.fetchMapData(
-        minLat: 51.9,
-        zoom: 14,
-      );
       );
