@@ -11,6 +11,9 @@ import '../../widgets/insights/insights_legend.dart';
 import '../../widgets/insights/insights_controls.dart';
 import '../../widgets/insights/insights_metric_selector.dart';
 import '../../widgets/insights/insights_map.dart';
+import 'package:latlong2/latlong.dart';
+import '../../models/map_query_result.dart';
+import '../../widgets/insights/map_query_input.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -26,6 +29,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   @override
   void initState() {
     super.initState();
+    context.read<InsightsProvider>().addListener(_onProviderChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InsightsProvider>().loadInsights();
     });
@@ -33,6 +37,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   @override
   void dispose() {
+    context.read<InsightsProvider>().removeListener(_onProviderChanged);
     _debounceTimer?.cancel();
     _mapController.dispose();
     super.dispose();
@@ -60,6 +65,56 @@ class _InsightsScreenState extends State<InsightsScreen> {
     _onMapChanged();
   }
 
+
+  MapQueryResult? _lastHandledResult;
+
+  void _onProviderChanged() {
+    if (!mounted) return;
+    final provider = context.read<InsightsProvider>();
+    final result = provider.lastQueryResult;
+    if (result != null && result != _lastHandledResult) {
+      _lastHandledResult = result;
+      _handleQueryResult(result);
+    }
+  }
+
+  void _handleQueryResult(MapQueryResult result) {
+    if (result.targetLocation != null) {
+      _mapController.move(
+        LatLng(result.targetLocation!.lat, result.targetLocation!.lon),
+        result.targetLocation!.zoom,
+      );
+    } else {
+       // If only layers changed, force refresh
+       _onMapChanged();
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.explanation),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: ValoraColors.neutral800,
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: ValoraColors.primaryLight,
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
+  void _performQuery(String prompt) {
+    final bounds = _mapController.camera.visibleBounds;
+    context.read<InsightsProvider>().performMapQuery(
+      prompt,
+      minLat: bounds.south,
+      minLon: bounds.west,
+      maxLat: bounds.north,
+      maxLon: bounds.east,
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,6 +175,21 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         ),
                       ),
                       const InsightsHeader(),
+
+                      Positioned(
+                        top: 80,
+                        left: 12,
+                        right: 12,
+                        child: Selector<InsightsProvider, bool>(
+                          selector: (_, p) => p.isQuerying,
+                          builder: (context, isQuerying, _) {
+                            return MapQueryInput(
+                              onQuery: _performQuery,
+                              isLoading: isQuerying,
+                            );
+                          },
+                        ),
+                      ),
                       const InsightsMetricSelector(),
                       const InsightsLegend(),
                       InsightsControls(

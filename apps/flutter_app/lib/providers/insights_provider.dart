@@ -7,6 +7,7 @@ import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
+import '../models/map_query_result.dart';
 import '../services/api_service.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
@@ -24,6 +25,8 @@ class InsightsProvider extends ChangeNotifier {
   List<MapOverlay> _overlays = [];
   List<MapOverlayTile> _overlayTiles = [];
 
+  MapQueryResult? _lastQueryResult;
+  bool _isQuerying = false;
   bool _isLoading = false;
   String? _error;
   String? _mapError;
@@ -64,6 +67,8 @@ class InsightsProvider extends ChangeNotifier {
   List<MapOverlay> get overlays => _overlays;
   List<MapOverlayTile> get overlayTiles => _overlayTiles;
 
+  MapQueryResult? get lastQueryResult => _lastQueryResult;
+  bool get isQuerying => _isQuerying;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get mapError => _mapError;
@@ -92,6 +97,53 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
+
+  Future<void> performMapQuery(
+    String prompt, {
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+  }) async {
+    _isQuerying = true;
+    _lastQueryResult = null;
+    notifyListeners();
+
+    try {
+      final result = await _apiService.performMapQuery(
+        prompt: prompt,
+        minLat: minLat,
+        minLon: minLon,
+        maxLat: maxLat,
+        maxLon: maxLon,
+      );
+
+      _lastQueryResult = result;
+
+      if (result.filter != null) {
+          if (result.filter!.metric != null) {
+              _selectedOverlayMetric = result.filter!.metric!;
+              _showOverlays = true;
+              _overlaysCoverage = null;
+              _overlayTilesCoverage = null;
+          }
+          if (result.filter!.amenityTypes != null && result.filter!.amenityTypes!.isNotEmpty) {
+              _showAmenities = true;
+          }
+      }
+
+    } catch (e) {
+      _error = e is AppException ? e.message : 'Failed to perform query';
+    } finally {
+      _isQuerying = false;
+      notifyListeners();
+    }
+  }
+
+  void clearQueryResult() {
+    _lastQueryResult = null;
+    notifyListeners();
+  }
   Future<void> fetchMapData({
     required double minLat,
     required double minLon,

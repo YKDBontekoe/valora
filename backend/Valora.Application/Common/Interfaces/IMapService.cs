@@ -39,4 +39,6 @@ public interface IMapService
         double zoom,
         MapOverlayMetric metric,
         CancellationToken cancellationToken = default);
+
+    Task<MapQueryResultDto> ProcessQueryAsync(MapQueryRequest request, CancellationToken cancellationToken = default);
 }

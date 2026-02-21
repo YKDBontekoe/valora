@@ -1,7 +1,10 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Application.DTOs.Map;
 using Valora.Domain.Services;
 
 namespace Valora.Application.Services;
@@ -19,6 +22,29 @@ public class ContextAnalysisService : IContextAnalysisService
     public static readonly string AnalysisSystemPrompt =
         "You are an expert real estate analyst helping a potential resident evaluate a neighborhood.";
 
+    public static readonly string MapQuerySystemPrompt =
+        @"You are a map query planner for Valora, a real estate app.
+Your task is to translate natural language queries into a structured plan for the map view.
+You must return a valid JSON object matching this structure:
+{
+  ""explanation"": ""A concise explanation of what is being shown."",
+  ""targetLocation"": { ""lat"": double, ""lon"": double, ""zoom"": double } (optional, if location is specific),
+  ""filter"": {
+    ""metric"": ""PricePerSquareMeter"" | ""CrimeRate"" | ""PopulationDensity"" | ""AverageWoz"" (optional),
+    ""amenityTypes"": [""school"", ""park"", ""cafe"", ...] (optional list of amenities)
+  } (optional)
+}
+
+If the query is vague, provide a clarifying explanation and default to a reasonable view.
+If the query asks for something unsafe or unsupported, explain why and return a safe default.
+Supported metrics are STRICTLY: PricePerSquareMeter, CrimeRate, PopulationDensity, AverageWoz.
+If the user asks for 'safety', map to 'CrimeRate'.
+If the user asks for 'price', map to 'PricePerSquareMeter'.
+If the user asks for 'density', map to 'PopulationDensity'.
+If the user asks for 'value' or 'worth', map to 'AverageWoz'.
+
+Do not include any markdown formatting (like ```json). Return only the raw JSON string.";
+
     public ContextAnalysisService(IAiService aiService)
     {
         _aiService = aiService;
@@ -34,6 +60,38 @@ public class ContextAnalysisService : IContextAnalysisService
         var prompt = BuildAnalysisPrompt(report);
         // "detailed_analysis" intent for report analysis
         return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, "detailed_analysis", cancellationToken);
+    }
+
+    public async Task<MapQueryResultDto> PlanMapQueryAsync(string prompt, MapBoundsDto? currentBounds, CancellationToken cancellationToken)
+    {
+        var userPrompt = $"Query: {prompt}";
+        if (currentBounds != null)
+        {
+            userPrompt += $"\nCurrent View: Min({currentBounds.MinLat}, {currentBounds.MinLon}) Max({currentBounds.MaxLat}, {currentBounds.MaxLon})";
+        }
+
+        var response = await _aiService.ChatAsync(userPrompt, MapQuerySystemPrompt, "map_query", cancellationToken);
+
+        try
+        {
+            var json = response.Trim();
+            if (json.StartsWith("```json")) json = json.Substring(7);
+            if (json.StartsWith("```")) json = json.Substring(3);
+            if (json.EndsWith("```")) json = json.Substring(0, json.Length - 3);
+            json = json.Trim();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
+            var result = JsonSerializer.Deserialize<MapQueryResultDto>(json, options);
+            return result ?? new MapQueryResultDto("I couldn't understand the query.", null, null);
+        }
+        catch (JsonException)
+        {
+            return new MapQueryResultDto(response, null, null);
+        }
     }
 
     private static string SanitizeForPrompt(string? input, int maxLength = 200)
