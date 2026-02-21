@@ -1,9 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:valora_app/models/map_amenity.dart';
+import 'package:valora_app/models/map_amenity_cluster.dart';
+import 'package:valora_app/models/map_overlay_tile.dart';
 import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:latlong2/latlong.dart';
@@ -30,6 +30,7 @@ void main() {
       provider.toggleAmenities();
       expect(provider.showAmenities, isFalse);
       expect(provider.amenities, isEmpty);
+      expect(provider.amenityClusters, isEmpty);
     });
 
     test(
@@ -92,112 +93,76 @@ void main() {
       expect(provider.mapError, isNotNull);
     });
 
-    test(
-      'fetchMapData reuses coverage and skips redundant amenity call',
-      () async {
-        provider.toggleAmenities();
-
-        when(
-          mockApiService.getMapAmenities(
-            minLat: anyNamed('minLat'),
-            minLon: anyNamed('minLon'),
-            maxLat: anyNamed('maxLat'),
-            maxLon: anyNamed('maxLon'),
-          ),
-        ).thenAnswer(
-          (_) async => [
-            MapAmenity(
-              id: '1',
-              type: 'school',
-              name: 'School',
-              location: const LatLng(52, 4),
-            ),
-          ],
-        );
-
-        await provider.fetchMapData(
-          minLat: 51.9,
-          minLon: 3.9,
-          maxLat: 52.1,
-          maxLon: 4.1,
-          zoom: 14,
-        );
-
-        await provider.fetchMapData(
-          minLat: 51.95,
-          minLon: 3.95,
-          maxLat: 52.05,
-          maxLon: 4.05,
-          zoom: 14,
-        );
-
-        verify(
-          mockApiService.getMapAmenities(
-            minLat: anyNamed('minLat'),
-            minLon: anyNamed('minLon'),
-            maxLat: anyNamed('maxLat'),
-            maxLon: anyNamed('maxLon'),
-          ),
-        ).called(1);
-      },
-    );
-
-    test('fetchMapData ignores stale responses from older requests', () async {
+    test('fetchMapData calls getMapAmenityClusters when zoom is low', () async {
       provider.toggleAmenities();
 
-      final firstResponse = Completer<List<MapAmenity>>();
-      final secondResponse = Completer<List<MapAmenity>>();
-      var call = 0;
-
       when(
-        mockApiService.getMapAmenities(
+        mockApiService.getMapAmenityClusters(
           minLat: anyNamed('minLat'),
           minLon: anyNamed('minLon'),
           maxLat: anyNamed('maxLat'),
           maxLon: anyNamed('maxLon'),
+          zoom: anyNamed('zoom'),
         ),
-      ).thenAnswer((_) {
-        call++;
-        return call == 1 ? firstResponse.future : secondResponse.future;
-      });
-
-      final firstFetch = provider.fetchMapData(
-        minLat: 51.9,
-        minLon: 3.9,
-        maxLat: 52.1,
-        maxLon: 4.1,
-        zoom: 14,
+      ).thenAnswer(
+        (_) async => [
+          MapAmenityCluster(
+            latitude: 52.0,
+            longitude: 4.0,
+            count: 10,
+            typeCounts: {'school': 5, 'park': 5},
+          ),
+        ],
       );
 
-      final secondFetch = provider.fetchMapData(
-        minLat: 53.0,
-        minLon: 5.0,
-        maxLat: 53.2,
-        maxLon: 5.2,
-        zoom: 14,
+      await provider.fetchMapData(
+        minLat: 51.0,
+        minLon: 3.0,
+        maxLat: 53.0,
+        maxLon: 5.0,
+        zoom: 10, // Low zoom
       );
 
-      secondResponse.complete([
-        MapAmenity(
-          id: '2',
-          type: 'park',
-          name: 'Fresh',
-          location: const LatLng(53.1, 5.1),
-        ),
-      ]);
-      firstResponse.complete([
-        MapAmenity(
-          id: '1',
-          type: 'school',
-          name: 'Stale',
-          location: const LatLng(52, 4),
-        ),
-      ]);
+      expect(provider.amenityClusters, isNotEmpty);
+      expect(provider.amenityClusters[0].count, 10);
+      expect(provider.amenities, isEmpty);
+    });
 
-      await Future.wait([firstFetch, secondFetch]);
+    test('fetchMapData calls getMapOverlayTiles when zoom is low', () async {
+      provider.toggleOverlays();
 
-      expect(provider.amenities, hasLength(1));
-      expect(provider.amenities.first.name, 'Fresh');
+      when(
+        mockApiService.getMapOverlayTiles(
+          minLat: anyNamed('minLat'),
+          minLon: anyNamed('minLon'),
+          maxLat: anyNamed('maxLat'),
+          maxLon: anyNamed('maxLon'),
+          zoom: anyNamed('zoom'),
+          metric: anyNamed('metric'),
+        ),
+      ).thenAnswer(
+        (_) async => [
+          MapOverlayTile(
+            latitude: 52.0,
+            longitude: 4.0,
+            size: 0.1,
+            value: 100,
+            displayValue: '100',
+          ),
+        ],
+      );
+
+      await provider.fetchMapData(
+        minLat: 51.0,
+        minLon: 3.0,
+        maxLat: 53.0,
+        maxLon: 5.0,
+        zoom: 10, // Low zoom
+      );
+
+      expect(provider.overlayTiles, isNotEmpty);
+      expect(provider.overlayTiles[0].value, 100);
+      expect(provider.overlays, isEmpty);
     });
   });
 }

@@ -12,7 +12,9 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
+import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
+import '../models/map_overlay_tile.dart';
 import '../models/notification.dart';
 import '../models/cursor_paged_result.dart';
 import 'crash_reporting_service.dart';
@@ -445,6 +447,42 @@ String? get authToken => _authToken;
     }
   }
 
+  Future<List<MapAmenityCluster>> getMapAmenityClusters({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    required double zoom,
+    List<String>? types,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/amenities/clusters').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+      'zoom': zoom.toString(),
+      if (types != null) 'types': types.join(','),
+    });
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapAmenityCluster.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities/clusters'));
+    }
+  }
+
   Future<List<MapOverlay>> getMapOverlays({
     required double minLat,
     required double minLon,
@@ -476,6 +514,42 @@ String? get authToken => _authToken;
       );
     } catch (e, stack) {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays'));
+    }
+  }
+
+  Future<List<MapOverlayTile>> getMapOverlayTiles({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+    required double zoom,
+    required String metric,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/overlays/tiles').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+      'zoom': zoom.toString(),
+      'metric': metric,
+    });
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapOverlayTile.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
     }
   }
 }
