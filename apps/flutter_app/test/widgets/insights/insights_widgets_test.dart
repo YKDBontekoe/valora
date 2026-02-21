@@ -204,7 +204,6 @@ void main() {
       )));
       expect(find.byType(FlutterMap), findsOneWidget);
       expect(find.byType(TileLayer), findsOneWidget);
-      when(mockProvider.showProperties).thenReturn(false);
     });
 
     testWidgets('renders city markers via widget tree', (WidgetTester tester) async {
