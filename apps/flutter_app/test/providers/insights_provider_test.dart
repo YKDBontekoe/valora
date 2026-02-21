@@ -157,19 +157,6 @@ void main() {
         minLat: 51.0,
         minLon: 3.0,
         maxLat: 53.0,
-        minLat: 51.9,
-        minLon: 3.9,
-        maxLat: 52.1,
-        maxLon: 4.1,
-        zoom: 14,
-      );
-
-      expect(provider.properties, isEmpty);
-      // We don't necessarily expose a specific property error state yet,
-      // but ensure it doesn't crash and list remains empty.
-  });
-}
-
     test('toggleProperties updates state and clears data when disabled', () {
       expect(provider.showProperties, isTrue); // Defaults to true
 
@@ -225,7 +212,6 @@ void main() {
           maxLat: anyNamed('maxLat'),
           maxLon: anyNamed('maxLon'),
         ),
-      ).thenThrow(Exception('API Error'));
 
       await provider.fetchMapData(
         minLat: 51.9,
@@ -239,3 +225,5 @@ void main() {
       // We don't necessarily expose a specific property error state yet,
       // but ensure it doesn't crash and list remains empty.
   });
+  });
+}
