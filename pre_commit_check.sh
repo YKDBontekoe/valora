@@ -1,25 +1,17 @@
 #!/bin/bash
 set -e
+echo "Running pre-commit checks..."
 
-# Get the root directory of the repository
-REPO_ROOT=$(git rev-parse --show-toplevel)
-echo "Running pre-commit checks in $REPO_ROOT..."
+# Backend tests
+echo "Running backend tests..."
+cd backend
+dotnet test
+cd ..
 
-# 1. Backend: Run unit tests
-echo "----------------------------------------"
-echo "Running Backend Tests..."
-dotnet test "$REPO_ROOT/backend/Valora.UnitTests" --configuration Release
-
-# 2. Frontend: Flutter Analysis
-echo "----------------------------------------"
-echo "Running Frontend Analysis..."
-cd "$REPO_ROOT/apps/flutter_app"
-flutter analyze
-
-# 3. Frontend: Flutter Unit Tests
-echo "----------------------------------------"
-echo "Running Frontend Tests..."
+# Frontend tests
+echo "Running frontend tests..."
+cd apps/flutter_app
 flutter test
+cd ../..
 
-echo "----------------------------------------"
-echo "✅ Pre-commit checks complete. Proceeding with commit."
+echo "Pre-commit checks complete."

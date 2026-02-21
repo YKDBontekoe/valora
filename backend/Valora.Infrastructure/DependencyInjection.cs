@@ -11,6 +11,7 @@ using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
+using Valora.Application.Common.Interfaces.External;
 using Valora.Infrastructure.Services.External;
 using System.Net;
 using Microsoft.Extensions.Http.Resilience;
@@ -54,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
+        services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
         

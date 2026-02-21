@@ -37,7 +37,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> with Sing
     return Scaffold(
       appBar: AppBar(
         title: Consumer<WorkspaceProvider>(
-          builder: (_, p, __) => Text(p.selectedWorkspace?.name ?? 'Workspace'),
+          builder: (_, p, child) => Text(p.selectedWorkspace?.name ?? 'Workspace'),
         ),
         bottom: TabBar(
           controller: _tabController,
