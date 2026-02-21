@@ -243,4 +243,77 @@ public class MapServiceTests
         var result = await _mapService.GetMapOverlayTilesAsync(52.0, 5.0, 52.1, 5.1, 13, MapOverlayMetric.PopulationDensity);
         Assert.Empty(result);
     }
+
+    [Fact]
+    public async Task CalculateAveragePriceOverlayAsync_ShouldHandleEmptyListings()
+    {
+        // Arrange
+        _repositoryMock.Setup(x => x.GetListingsPriceDataAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ListingPriceData>());
+
+        var geoJson = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0000, 52.0000 },
+                new[] { 5.0010, 52.0000 },
+                new[] { 5.0010, 52.0010 },
+                new[] { 5.0000, 52.0010 },
+                new[] { 5.0000, 52.0000 }
+            }}
+        });
+
+        var dummyOverlays = new List<MapOverlayDto> {
+            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", geoJson)
+        };
+        _cbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyOverlays);
+
+        // Act
+        var result = await _mapService.GetMapOverlaysAsync(52.0, 5.0, 52.1, 5.1, MapOverlayMetric.PricePerSquareMeter);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(0, result[0].MetricValue);
+        Assert.Equal("No listing data", result[0].DisplayValue);
+    }
+
+    [Fact]
+    public async Task CalculateAveragePriceOverlayAsync_ShouldFilterInvalidListings()
+    {
+        // Arrange
+        var listingData = new List<ListingPriceData>
+        {
+            new ListingPriceData(null, 100, 52.0005, 5.0005), // Null price
+            new ListingPriceData(300000, 0, 52.0005, 5.0005),  // 0 area
+            new ListingPriceData(300000, -10, 52.0005, 5.0005)  // Negative area
+        };
+
+        _repositoryMock.Setup(x => x.GetListingsPriceDataAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(listingData);
+
+        var geoJson = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0000, 52.0000 },
+                new[] { 5.0010, 52.0000 },
+                new[] { 5.0010, 52.0010 },
+                new[] { 5.0000, 52.0010 },
+                new[] { 5.0000, 52.0000 }
+            }}
+        });
+
+        var dummyOverlays = new List<MapOverlayDto> {
+            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", geoJson)
+        };
+        _cbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyOverlays);
+
+        // Act
+        var result = await _mapService.GetMapOverlaysAsync(52.0, 5.0, 52.1, 5.1, MapOverlayMetric.PricePerSquareMeter);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(0, result[0].MetricValue);
+        Assert.Equal("No listing data", result[0].DisplayValue);
+    }
 }

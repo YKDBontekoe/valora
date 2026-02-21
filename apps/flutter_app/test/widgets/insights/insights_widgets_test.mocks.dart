@@ -8,8 +8,10 @@ import 'dart:ui' as _i8;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:valora_app/models/map_amenity.dart' as _i4;
+import 'package:valora_app/models/map_amenity_cluster.dart' as _i9;
 import 'package:valora_app/models/map_city_insight.dart' as _i3;
 import 'package:valora_app/models/map_overlay.dart' as _i5;
+import 'package:valora_app/models/map_overlay_tile.dart' as _i10;
 import 'package:valora_app/providers/insights_provider.dart' as _i2;
 import 'package:valora_app/services/api_service.dart' as _i6;
 
@@ -47,11 +49,25 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as List<_i4.MapAmenity>);
 
   @override
+  List<_i9.MapAmenityCluster> get amenityClusters => (super.noSuchMethod(
+        Invocation.getter(#amenityClusters),
+        returnValue: <_i9.MapAmenityCluster>[],
+        returnValueForMissingStub: <_i9.MapAmenityCluster>[],
+      ) as List<_i9.MapAmenityCluster>);
+
+  @override
   List<_i5.MapOverlay> get overlays => (super.noSuchMethod(
         Invocation.getter(#overlays),
         returnValue: <_i5.MapOverlay>[],
         returnValueForMissingStub: <_i5.MapOverlay>[],
       ) as List<_i5.MapOverlay>);
+
+  @override
+  List<_i10.MapOverlayTile> get overlayTiles => (super.noSuchMethod(
+        Invocation.getter(#overlayTiles),
+        returnValue: <_i10.MapOverlayTile>[],
+        returnValueForMissingStub: <_i10.MapOverlayTile>[],
+      ) as List<_i10.MapOverlayTile>);
 
   @override
   bool get isLoading => (super.noSuchMethod(
