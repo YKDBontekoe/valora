@@ -157,19 +157,6 @@ void main() {
         minLat: 51.0,
         minLon: 3.0,
         maxLat: 53.0,
-        maxLon: 5.0,
-        zoom: 10, // Low zoom
-      );
-
-      expect(provider.overlayTiles, isNotEmpty);
-      expect(provider.overlayTiles[0].value, 100);
-      expect(provider.overlays, isEmpty);
-    });
-  });
-}
-      ).thenThrow(Exception('API Error'));
-
-      await provider.fetchMapData(
         minLat: 51.9,
         minLon: 3.9,
         maxLat: 52.1,
@@ -252,4 +239,3 @@ void main() {
       // We don't necessarily expose a specific property error state yet,
       // but ensure it doesn't crash and list remains empty.
   });
-}
