@@ -111,7 +111,10 @@ void main() {
       );
 
       expect(find.byType(ValoraEmptyState), findsOneWidget);
-      expect(find.text('Network Error'), findsOneWidget);
+      // We check for the generic message now
+      expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
+      // And ensure the raw error is NOT shown
+      expect(find.text('Network Error'), findsNothing);
 
       await tester.tap(find.text('Try Again'));
       // Note: The onAction logic calls _handleSubmit, which then calls provider.generate

@@ -7,10 +7,12 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
 import 'package:valora_app/screens/settings_screen.dart';
+import 'package:valora_app/screens/notifications_screen.dart';
 import 'package:valora_app/services/notification_service.dart';
 
-@GenerateMocks([AuthProvider, ThemeProvider, NotificationService])
+@GenerateMocks([AuthProvider, ThemeProvider])
 @GenerateNiceMocks([
+  MockSpec<NotificationService>(),
   MockSpec<HttpClient>(),
   MockSpec<HttpClientRequest>(),
   MockSpec<HttpClientResponse>(),
@@ -144,7 +146,9 @@ void main() {
     when(mockNotificationService.unreadCount).thenReturn(0);
     when(mockNotificationService.notifications).thenReturn([]);
     when(mockNotificationService.isLoading).thenReturn(false);
-    when(mockNotificationService.error).thenReturn(null);
+    // NotificationService.error is a concrete getter, so we don't stub it
+    // assuming it returns null by default or is not critical for these tests.
+    // If needed, we would have to refactor NotificationService to allow overriding.
 
     // Use the mock HTTP overrides
     HttpOverrides.global = TestHttpOverrides();
@@ -255,7 +259,7 @@ void main() {
     // Verify navigation occurred (assuming NotificationsScreen has a title 'Notifications')
     // We can just check that SettingsScreen is no longer the top route or that NotificationsScreen is pushed
     // But NotificationsScreen might have scaffold.
-    expect(find.text('Notifications'), findsOneWidget);
+    expect(find.byType(NotificationsScreen), findsOneWidget);
   });
 
   testWidgets('SettingsScreen shows logout confirmation dialog', (

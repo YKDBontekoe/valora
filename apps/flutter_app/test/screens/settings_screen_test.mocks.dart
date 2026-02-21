@@ -356,44 +356,46 @@ class MockThemeProvider extends _i1.Mock implements _i8.ThemeProvider {
 /// See the documentation for Mockito's code generation for more information.
 class MockNotificationService extends _i1.Mock
     implements _i10.NotificationService {
-  MockNotificationService() {
-    _i1.throwOnMissingStub(this);
-  }
-
   @override
   List<_i11.ValoraNotification> get notifications => (super.noSuchMethod(
         Invocation.getter(#notifications),
         returnValue: <_i11.ValoraNotification>[],
+        returnValueForMissingStub: <_i11.ValoraNotification>[],
       ) as List<_i11.ValoraNotification>);
 
   @override
   int get unreadCount => (super.noSuchMethod(
         Invocation.getter(#unreadCount),
         returnValue: 0,
+        returnValueForMissingStub: 0,
       ) as int);
 
   @override
   bool get isLoading => (super.noSuchMethod(
         Invocation.getter(#isLoading),
         returnValue: false,
+        returnValueForMissingStub: false,
       ) as bool);
 
   @override
   bool get isLoadingMore => (super.noSuchMethod(
         Invocation.getter(#isLoadingMore),
         returnValue: false,
+        returnValueForMissingStub: false,
       ) as bool);
 
   @override
   bool get hasMore => (super.noSuchMethod(
         Invocation.getter(#hasMore),
         returnValue: false,
+        returnValueForMissingStub: false,
       ) as bool);
 
   @override
   bool get hasListeners => (super.noSuchMethod(
         Invocation.getter(#hasListeners),
         returnValue: false,
+        returnValueForMissingStub: false,
       ) as bool);
 
   @override

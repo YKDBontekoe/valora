@@ -66,7 +66,10 @@ void main() {
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => FakeAuthProvider(),
           child: MaterialApp(
-            routes: {'/': (context) => const GlobalErrorWidgetWrapper()},
+            routes: {
+              '/': (context) => const GlobalErrorWidgetWrapper(),
+              '/home': (context) => const SizedBox(), // Stub route for StartupScreen navigation target
+            },
           ),
         ),
       );
@@ -81,8 +84,8 @@ void main() {
       // Verify we are on StartupScreen
       expect(find.byType(StartupScreen), findsOneWidget);
 
-      // Let StartupScreen minimum delay timer complete to avoid pending timers.
-      await tester.pump(const Duration(milliseconds: 2000));
+      // Let StartupScreen timer complete to avoid pending timers.
+      await tester.pump(StartupScreen.splashDuration);
     });
 
     testWidgets('shows debug info in debug mode', (tester) async {

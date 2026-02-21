@@ -33,20 +33,39 @@ class ContextReportInputForm extends StatelessWidget {
     if (!context.mounted) return;
     if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Resolving address...'), duration: Duration(seconds: 1)),
+        const SnackBar(
+          content: Text('Resolving address...'),
+          duration: Duration(seconds: 1),
+        ),
       );
 
-      final String? address = await pdokService.reverseLookup(result.latitude, result.longitude);
+      try {
+        final String? address = await pdokService.reverseLookup(
+          result.latitude,
+          result.longitude,
+        );
 
-      if (!context.mounted) return;
+        if (!context.mounted) return;
 
-      if (address != null) {
-        controller.text = address;
-        provider.generate(address);
-      } else {
+        if (address != null) {
+          controller.text = address;
+          provider.generate(address);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Could not resolve an address for this location. Please try searching by text.',
+              ),
+              backgroundColor: ValoraColors.error,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!context.mounted) return;
+        debugPrint('Error resolving address: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not resolve an address for this location. Please try searching by text.'),
+            content: Text('Failed to resolve address. Please try again.'),
             backgroundColor: ValoraColors.error,
           ),
         );
@@ -117,7 +136,12 @@ class ContextReportInputForm extends StatelessWidget {
           },
           suggestionsCallback: (pattern) async {
             if (pattern.length < 3) return [];
-            return await pdokService.search(pattern);
+            try {
+              return await pdokService.search(pattern);
+            } catch (e) {
+              debugPrint('Error searching PDOK: $e');
+              return [];
+            }
           },
           itemBuilder: (context, suggestion) {
             return ListTile(
@@ -201,12 +225,17 @@ class ContextReportInputForm extends StatelessWidget {
 
         if (provider.error != null) ...[
           const SizedBox(height: 24),
-          ValoraEmptyState(
-            icon: Icons.error_outline_rounded,
-            title: 'Analysis Failed',
-            subtitle: provider.error,
-            actionLabel: 'Try Again',
-            onAction: () => _handleSubmit(context, controller.text),
+          Builder(
+            builder: (context) {
+              debugPrint('Context Report Error: ${provider.error}');
+              return ValoraEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Analysis Failed',
+                subtitle: 'Something went wrong. Please try again.',
+                actionLabel: 'Try Again',
+                onAction: () => _handleSubmit(context, controller.text),
+              );
+            },
           ),
         ],
 
@@ -303,10 +332,6 @@ class ContextReportInputForm extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final midnightDate = DateTime(date.year, date.month, date.day);
-
-    if (midnightDate.isAfter(today)) {
-      return DateFormat('dd/MM/yyyy').format(date);
-    }
 
     if (midnightDate == today) return 'Today';
     if (midnightDate == yesterday) return 'Yesterday';

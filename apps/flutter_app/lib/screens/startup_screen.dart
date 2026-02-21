@@ -12,13 +12,13 @@ import 'auth_wrapper.dart';
 class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});
 
+  static const Duration splashDuration = Duration(milliseconds: 1200);
+
   @override
   State<StartupScreen> createState() => _StartupScreenState();
 }
 
 class _StartupScreenState extends State<StartupScreen> {
-  static const Duration _splashDuration = Duration(milliseconds: 1200);
-
   final Completer<void> _authCheckCompleter = Completer<void>();
 
   @override
@@ -43,7 +43,7 @@ class _StartupScreenState extends State<StartupScreen> {
   Future<void> _startStartupSequence() async {
     await Future.wait([
       _authCheckCompleter.future,
-      Future<void>.delayed(_splashDuration),
+      Future<void>.delayed(StartupScreen.splashDuration),
     ]);
 
     if (!mounted) return;
