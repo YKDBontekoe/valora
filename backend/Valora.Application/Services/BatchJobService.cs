@@ -39,8 +39,7 @@ public class BatchJobService : IBatchJobService
 
     public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
-        var jobs = await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
-        return jobs.Select(MapToSummaryDto).ToList();
+        return await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
     }
 
     public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -153,19 +152,6 @@ public class BatchJobService : IBatchJobService
         else
             job.ExecutionLog += Environment.NewLine + entry;
     }
-
-    private static BatchJobSummaryDto MapToSummaryDto(BatchJob job) => new(
-        job.Id,
-        job.Type.ToString(),
-        job.Status.ToString(),
-        job.Target,
-        job.Progress,
-        job.Error,
-        job.ResultSummary,
-        job.CreatedAt,
-        job.StartedAt,
-        job.CompletedAt
-    );
 
     private static BatchJobDto MapToDto(BatchJob job) => new(
         job.Id,

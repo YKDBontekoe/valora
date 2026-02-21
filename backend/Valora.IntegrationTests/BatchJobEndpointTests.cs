@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Shouldly;
