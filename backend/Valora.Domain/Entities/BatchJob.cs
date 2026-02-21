@@ -23,6 +23,7 @@ public class BatchJob : BaseEntity
     public int Progress { get; set; }
     public string? Error { get; set; }
     public string? ResultSummary { get; set; }
+    public string? ExecutionLog { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
 }
