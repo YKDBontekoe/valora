@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { AlertTriangle, RefreshCcw, Home, ChevronRight } from 'lucide-react';
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import Button from './Button';
 
 interface Props {
@@ -63,24 +64,11 @@ class GlobalErrorBoundary extends Component<Props, State> {
             </div>
 
             <div className="p-10">
-              <div className="bg-brand-50 rounded-2xl p-6 mb-8 border border-brand-100">
-                <h2 className="text-brand-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                    <ChevronRight size={14} className="text-primary-500" />
-                    Error Diagnostic Information
-                </h2>
-                <div className="font-mono text-sm text-brand-700 break-all space-y-2">
-                  <p className="font-bold text-brand-900">{this.state.error?.toString()}</p>
-                  {this.state.errorInfo && (
-                    <details className="mt-4">
-                        <summary className="cursor-pointer text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors">
-                            View stack trace
-                        </summary>
-                        <div className="mt-4 p-4 bg-brand-900 text-brand-100 rounded-xl overflow-auto max-h-48 text-[10px] leading-relaxed opacity-90">
-                            {this.state.errorInfo.componentStack}
-                        </div>
-                    </details>
-                  )}
-                </div>
+              <div className="bg-brand-50 rounded-2xl p-8 mb-8 border border-brand-100 text-center">
+                <p className="text-brand-600 font-bold">
+                  The error has been logged and our engineering team has been notified.
+                  Please try reloading the application or return to the dashboard.
+                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -103,7 +91,7 @@ class GlobalErrorBoundary extends Component<Props, State> {
               </div>
 
               <p className="text-center mt-8 text-xs font-bold text-brand-400 uppercase tracking-widest">
-                If this persists, please contact the engineering team.
+                Support ID: {Math.random().toString(36).substring(2, 10).toUpperCase()}
               </p>
             </div>
           </motion.div>

@@ -1,10 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toastManager, type ToastMessage } from '../services/toast';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 const Toast = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const timers = useRef<Record<string, number>>({});
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    if (timers.current[id]) {
+      window.clearTimeout(timers.current[id]);
+      delete timers.current[id];
+    }
+  };
 
   useEffect(() => {
     const handleToast = (event: Event) => {
@@ -12,20 +21,20 @@ const Toast = () => {
       const newToast = customEvent.detail;
       setToasts((prev) => [...prev, newToast]);
 
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
+      const timer = window.setTimeout(() => {
+        removeToast(newToast.id);
       }, 5000);
+
+      timers.current[newToast.id] = timer;
     };
 
     toastManager.addEventListener('toast', handleToast);
     return () => {
       toastManager.removeEventListener('toast', handleToast);
+      // Clear all timers on unmount
+      Object.values(timers.current).forEach(window.clearTimeout);
     };
   }, []);
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
 
   const getIcon = (type: string) => {
     switch (type) {
