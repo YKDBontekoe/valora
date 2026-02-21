@@ -5,6 +5,7 @@ import { Play, Activity, Database, Sparkles, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
+import { showToast } from '../services/toast';
 
 const BatchJobs = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);
@@ -36,6 +37,7 @@ const BatchJobs = () => {
     setIsStarting(true);
     try {
       await adminService.startJob('CityIngestion', targetCity);
+      showToast(`Successfully queued ingestion for ${targetCity}`, 'success');
       setTargetCity('');
       fetchJobs();
     } catch {
@@ -176,13 +178,21 @@ const BatchJobs = () => {
                       </td>
                       <td className="px-8 py-5 whitespace-nowrap">
                         <div className="flex flex-col gap-2">
-                            <div className="w-full bg-brand-100 rounded-full h-2 min-w-[120px] overflow-hidden">
+                            <div className="w-full bg-brand-100 rounded-full h-2 min-w-[120px] overflow-hidden relative">
                               <motion.div
-                                className={`h-2 rounded-full ${job.status === 'Failed' ? 'bg-error-500' : 'bg-primary-600'}`}
+                                className={`h-2 rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500' : 'bg-primary-600'}`}
                                 initial={{ width: 0 }}
                                 animate={{ width: `${job.progress}%` }}
                                 transition={{ duration: 1, ease: "easeOut" }}
-                              />
+                              >
+                                {job.status === 'Processing' && (
+                                  <motion.div
+                                    className="absolute inset-0 bg-white/30"
+                                    animate={{ x: ['-100%', '100%'] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                  />
+                                )}
+                              </motion.div>
                             </div>
                             <span className="text-[10px] text-brand-400 font-black tracking-wider">{job.progress}% COMPLETE</span>
                         </div>
