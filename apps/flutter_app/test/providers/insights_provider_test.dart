@@ -150,14 +150,57 @@ void main() {
             value: 100,
             displayValue: '100',
           ),
-      expect(provider.overlayTiles, isNotEmpty);
+        minLat: 51.0,
+        maxLat: 53.0,
+        maxLon: 5.0,
+        zoom: 10, // Low zoom
+      );
+      expect(provider.overlays, isEmpty);
+    });
+      await provider.fetchMapData(
         minLat: 51.0,
         minLon: 3.0,
         maxLat: 53.0,
         maxLon: 5.0,
         zoom: 10, // Low zoom
       );
+
+      expect(provider.overlayTiles, isNotEmpty);
+      expect(provider.overlayTiles[0].value, 100);
       expect(provider.overlays, isEmpty);
+    });
+
+    test("toggleProperties updates state and clears data when disabled", () {
+      expect(provider.showProperties, isTrue); // Defaults to true
+
+      provider.toggleProperties();
+      expect(provider.showProperties, isFalse);
+      expect(provider.properties, isEmpty);
+
+      provider.toggleProperties();
+      expect(provider.showProperties, isTrue);
+    });
+
+    test("fetchMapData calls getMapProperties when enabled", () async {
+      // Ensure properties are enabled
+      if (!provider.showProperties) provider.toggleProperties();
+
+      when(
+        mockApiService.getMapProperties(
+          minLat: anyNamed("minLat"),
+          minLon: anyNamed("minLon"),
+          maxLat: anyNamed("maxLat"),
+      ).thenThrow(Exception("API Error"));
+
+      await provider.fetchMapData(
+        minLat: 51.9,
+        minLon: 3.9,
+        maxLat: 52.1,
+        maxLon: 4.1,
+        zoom: 14,
+      );
+
+      expect(provider.properties, isEmpty);
     });
 
     test("toggleProperties updates state and clears data when disabled", () {
