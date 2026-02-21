@@ -16,6 +16,8 @@ import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
 import '../models/notification.dart';
+import '../models/property_detail.dart';
+import '../models/map_property.dart';
 import 'crash_reporting_service.dart';
 
 typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
@@ -557,6 +559,59 @@ class ApiService {
       );
     } catch (e, stack) {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
+    }
+  }
+
+  Future<PropertyDetail> getPropertyDetail(String id) async {
+    final uri = Uri.parse('$baseUrl/properties/$id');
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) => PropertyDetail.fromJson(json.decode(body)),
+      );
+    } catch (e, stack) {
+      final uri = Uri.parse('$baseUrl/properties/$id');
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<List<MapProperty>> getMapProperties({
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/properties').replace(queryParameters: {
+      'minLat': minLat.toString(),
+      'minLon': minLon.toString(),
+      'maxLat': maxLat.toString(),
+      'maxLon': maxLon.toString(),
+    });
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) {
+          final List<dynamic> jsonList = json.decode(body);
+          return jsonList.map((e) => MapProperty.fromJson(e)).toList();
+        },
+      );
+    } catch (e, stack) {
+      final uri = Uri.parse('$baseUrl/map/properties');
+      throw _handleException(e, stack, uri);
     }
   }
 }

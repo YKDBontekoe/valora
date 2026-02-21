@@ -247,6 +247,7 @@ app.MapAuthEndpoints();
 app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 app.MapMapEndpoints();
+app.MapPropertyEndpoints();
 app.MapAdminEndpoints();
 
 // API Endpoints

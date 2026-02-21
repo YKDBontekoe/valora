@@ -7,6 +7,8 @@ import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
+import '../models/map_property.dart';
+import '../models/map_property.dart';
 import '../services/api_service.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
@@ -50,6 +52,10 @@ class InsightsProvider extends ChangeNotifier {
   _MapBounds? _overlayTilesCoverage;
   int? _overlayTilesCoverageZoomBucket;
   String? _overlayTilesCoverageMetric;
+  List<MapProperty> _properties = [];
+  _MapBounds? _propertiesCoverage;
+  int? _propertiesCoverageZoomBucket;
+  bool _showProperties = true;
 
   final Map<String, List<MapAmenity>> _amenitiesCache = {};
   final Map<String, List<MapAmenityCluster>> _amenityClustersCache = {};
@@ -63,6 +69,8 @@ class InsightsProvider extends ChangeNotifier {
   List<MapAmenityCluster> get amenityClusters => _amenityClusters;
   List<MapOverlay> get overlays => _overlays;
   List<MapOverlayTile> get overlayTiles => _overlayTiles;
+  List<MapProperty> get properties => _properties;
+  bool get showProperties => _showProperties;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -146,6 +154,16 @@ class InsightsProvider extends ChangeNotifier {
         if (!isCovered) {
           fetches.add(_fetchAmenityClustersForViewport(viewport, zoomBucket, zoom));
         }
+    if (_showProperties) {
+      final bool isCovered =
+          _propertiesCoverage != null &&
+          _propertiesCoverageZoomBucket == zoomBucket &&
+          _propertiesCoverage!.contains(viewport);
+
+      if (!isCovered) {
+        fetches.add(_fetchPropertiesForViewport(viewport, zoomBucket));
+      }
+    }
       }
     } else {
       if (_amenities.isNotEmpty || _amenityClusters.isNotEmpty) {
@@ -247,6 +265,14 @@ class InsightsProvider extends ChangeNotifier {
               hasAnyChange = true;
             }
             break;
+          case _MapLayer.properties:
+            if (result.properties != null) {
+              _properties = result.properties!;
+              _propertiesCoverage = result.bounds;
+              _propertiesCoverageZoomBucket = result.zoomBucket;
+              hasAnyChange = true;
+            }
+            break;
           case _MapLayer.overlays:
             if (result.overlays != null) {
               _overlays = result.overlays!;
@@ -281,6 +307,15 @@ class InsightsProvider extends ChangeNotifier {
       _amenityClusters = [];
       _amenitiesCoverage = null;
       _amenityClustersCoverage = null;
+    }
+    notifyListeners();
+  }
+
+  void toggleProperties() {
+    _showProperties = !_showProperties;
+    if (!_showProperties) {
+      _properties = [];
+      _propertiesCoverage = null;
     }
     notifyListeners();
   }
@@ -406,6 +441,28 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
+  Future<_LayerFetchResult> _fetchPropertiesForViewport(
+    _MapBounds viewport,
+    int zoomBucket,
+  ) async {
+    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
+    try {
+      final result = await _apiService.getMapProperties(
+        minLat: bounds.minLat,
+        minLon: bounds.minLon,
+        maxLat: bounds.maxLat,
+        maxLon: bounds.maxLon,
+      );
+      return _LayerFetchResult.properties(
+        properties: result,
+        bounds: bounds,
+        zoomBucket: zoomBucket,
+      );
+    } catch (e) {
+      return _LayerFetchResult.error(_MapLayer.properties, e);
+    }
+  }
+
   Future<_LayerFetchResult> _fetchOverlaysForViewport(
     _MapBounds viewport,
     int zoomBucket,
@@ -523,7 +580,7 @@ class _MapBounds {
   String _round(double value) => value.toStringAsFixed(3);
 }
 
-enum _MapLayer { amenities, overlays, amenityClusters, overlayTiles }
+enum _MapLayer { amenities, overlays, amenityClusters, overlayTiles , properties }
 
 class _LayerFetchResult {
   const _LayerFetchResult._({
@@ -532,6 +589,7 @@ class _LayerFetchResult {
     this.amenityClusters,
     this.overlays,
     this.overlayTiles,
+    this.properties,
     this.bounds,
     this.zoomBucket,
     this.metric,
@@ -543,6 +601,7 @@ class _LayerFetchResult {
   final List<MapAmenityCluster>? amenityClusters;
   final List<MapOverlay>? overlays;
   final List<MapOverlayTile>? overlayTiles;
+  final List<MapProperty>? properties;
   final _MapBounds? bounds;
   final int? zoomBucket;
   final String? metric;
@@ -586,6 +645,19 @@ class _LayerFetchResult {
       bounds: bounds,
       zoomBucket: zoomBucket,
       metric: metric,
+    );
+  }
+
+  factory _LayerFetchResult.properties({
+    required List<MapProperty> properties,
+    required _MapBounds bounds,
+    required int zoomBucket,
+  }) {
+    return _LayerFetchResult._(
+      layer: _MapLayer.properties,
+      properties: properties,
+      bounds: bounds,
+      zoomBucket: zoomBucket,
     );
   }
 
