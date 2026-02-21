@@ -87,10 +87,9 @@ public class AdminEndpointTests : BaseIntegrationTest
         var zetaIndex = testUsers.FindIndex(u => u.Email.Contains("zeta"));
         var alphaIndex = testUsers.FindIndex(u => u.Email.Contains("alpha"));
 
-        if (zetaIndex >= 0 && alphaIndex >= 0)
-        {
-            zetaIndex.ShouldBeLessThan(alphaIndex);
-        }
+        zetaIndex.ShouldBeGreaterThanOrEqualTo(0);
+        alphaIndex.ShouldBeGreaterThanOrEqualTo(0);
+        zetaIndex.ShouldBeLessThan(alphaIndex);
     }
 
     [Fact]
@@ -146,21 +145,7 @@ public class AdminEndpointTests : BaseIntegrationTest
         var response = await Client.PostAsJsonAsync("/api/admin/users", request);
 
         // Assert
-        // The service returns Result.Failure with BadRequest error code, which maps to BadRequest
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        // Note: The service itself returns "Invalid role assignment" but wrapped in BadRequest.
-        // Wait, AdminEndpoints map `result.ErrorCode` (which is "BadRequest") to `Results.BadRequest(new { error = result.Errors.FirstOrDefault() })`
-        // But wait, in my updated AdminEndpoints, I mapped "Conflict" specifically, and everything else falls through to `Results.BadRequest(new { error = "Operation failed." })`.
-        // So I should expect "Operation failed."
-
-        // Wait, let's double check AdminService return:
-        // `return Result.Failure(new[] { "Invalid role assignment." }, "BadRequest");`
-
-        // And AdminEndpoints:
-        // `if (result.ErrorCode == "Conflict") ... return Results.Conflict...`
-        // `return Results.BadRequest(new { error = "Operation failed." });`
-
-        // So yes, it will be generic.
         var content = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         content!.Error.ShouldBe("Operation failed.");
     }

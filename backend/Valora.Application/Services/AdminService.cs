@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
+using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
@@ -45,8 +46,8 @@ public class AdminService : IAdminService
 
     public async Task<Result> CreateUserAsync(AdminCreateUserDto request, string currentUserId)
     {
-        var maskedEmail = MaskEmail(request.Email);
-        _logger.LogInformation("Admin user creation requested by {AdminId} for email {MaskedEmail}", currentUserId, maskedEmail);
+        var emailHash = PrivacyUtils.HashEmail(request.Email);
+        _logger.LogInformation("Admin user creation requested by {AdminId} for email hash {EmailHash}", currentUserId, emailHash);
 
         // Validate Roles first
         var invalidRoles = request.Roles.Where(r => !AllowedRoles.Contains(r)).ToList();
@@ -59,14 +60,14 @@ public class AdminService : IAdminService
         var existingUser = await _identityService.GetUserByEmailAsync(request.Email);
         if (existingUser != null)
         {
-            _logger.LogWarning("User creation failed. Email {MaskedEmail} already exists.", maskedEmail);
+            _logger.LogWarning("User creation failed. Email hash {EmailHash} already exists.", emailHash);
             return Result.Failure(new[] { "Conflict" }, "Conflict");
         }
 
         var (createResult, newUserId) = await _identityService.CreateUserAsync(request.Email, request.Password);
         if (!createResult.Succeeded)
         {
-            _logger.LogError("Failed to create user {MaskedEmail}: {Errors}", maskedEmail, string.Join(", ", createResult.Errors));
+            _logger.LogError("Failed to create user with email hash {EmailHash}: {Errors}", emailHash, string.Join(", ", createResult.Errors));
             // Return generic error to client
             return Result.Failure(new[] { "Failed to create user." }, "BadRequest");
         }
@@ -90,16 +91,8 @@ public class AdminService : IAdminService
             }
         }
 
-        _logger.LogInformation("Successfully created user {UserId} with email {MaskedEmail}", newUserId, maskedEmail);
+        _logger.LogInformation("Successfully created user {UserId} with email hash {EmailHash}", newUserId, emailHash);
         return Result.Success();
-    }
-
-    private static string MaskEmail(string email)
-    {
-        if (string.IsNullOrEmpty(email)) return "unknown";
-        var atIndex = email.IndexOf('@');
-        if (atIndex <= 1) return "***@***.com";
-        return string.Concat(email.AsSpan(0, 1), "***", email.AsSpan(atIndex));
     }
 
     private static AdminUserDto MapToAdminUserDto(ApplicationUser user, IDictionary<string, IList<string>> rolesMap)
