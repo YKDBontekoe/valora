@@ -258,7 +258,16 @@ class ApiService {
   /// Also logs non-success responses for debugging.
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return parser(response.body);
+      try {
+        return parser(response.body);
+      } catch (e) {
+        developer.log(
+          'JSON Parsing Error: $e\nBody: ${response.body}',
+          name: 'ApiService',
+          error: e,
+        );
+        throw JsonParsingException('Failed to process server response.');
+      }
     }
 
     developer.log(

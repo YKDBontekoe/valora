@@ -5,6 +5,7 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/search_history_item.dart';
 import '../services/api_service.dart';
+import '../services/crash_reporting_service.dart';
 import '../services/search_history_service.dart';
 
 class ContextReportProvider extends ChangeNotifier {
@@ -107,8 +108,13 @@ class ContextReportProvider extends ChangeNotifier {
       if (_isDisposed) return;
       _activeReports[id] = report;
       notifyListeners();
-    } catch (e) {
-      // If fetch fails, ignore
+    } catch (e, stack) {
+      // If fetch fails, log it but don't crash UI
+      CrashReportingService.captureException(
+        e,
+        stackTrace: stack,
+        context: {'action': 'fetchReport', 'query': query, 'radius': radius},
+      );
     }
   }
 
@@ -141,8 +147,13 @@ class ContextReportProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList("comparison_ids", _comparisonIds.toList());
-    } catch (_) {
-      // Ignore persistence errors
+    } catch (e, stack) {
+      // Ignore persistence errors but log them
+      CrashReportingService.captureException(
+        e,
+        stackTrace: stack,
+        context: {'action': 'saveComparisonSet'},
+      );
     }
   }
 
@@ -187,9 +198,14 @@ class ContextReportProvider extends ChangeNotifier {
       final insight = await _apiService.getAiAnalysis(report);
       if (_isDisposed) return;
       _aiInsights[location] = insight;
-    } catch (e) {
+    } catch (e, stack) {
       if (_isDisposed) return;
       _aiInsightErrors[location] = e.toString();
+      CrashReportingService.captureException(
+        e,
+        stackTrace: stack,
+        context: {'action': 'generateAiInsight', 'location': location},
+      );
     } finally {
       if (!_isDisposed) {
         _loadingAiInsights.remove(location);
