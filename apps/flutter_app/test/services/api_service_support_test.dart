@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:http/http.dart' as http;
+import 'package:retry/retry.dart';
 import 'package:valora_app/services/api_service.dart';
 
 @GenerateMocks([http.Client])
@@ -14,7 +15,11 @@ void main() {
 
   setUp(() {
     mockClient = MockClient();
-    apiService = ApiService(client: mockClient);
+    // Use maxAttempts: 1 to avoid retries and delays in tests
+    apiService = ApiService(
+      client: mockClient,
+      retryOptions: const RetryOptions(maxAttempts: 1),
+    );
   });
 
   group('getSupportStatus', () {
