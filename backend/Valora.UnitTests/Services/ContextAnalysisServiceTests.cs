@@ -22,7 +22,7 @@ public class ContextAnalysisServiceTests
         var report = CreateFullReportDto();
 
         string capturedPrompt = "";
-        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "detailed_analysis", It.IsAny<CancellationToken>()))
             .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
             .ReturnsAsync("Analysis Result");
 
@@ -64,7 +64,7 @@ public class ContextAnalysisServiceTests
         );
 
         string capturedPrompt = "";
-        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "detailed_analysis", It.IsAny<CancellationToken>()))
             .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
             .ReturnsAsync("Analysis Result");
 
@@ -92,7 +92,7 @@ public class ContextAnalysisServiceTests
         report = report with { SocialMetrics = new List<ContextMetricDto> { maliciousMetric } };
 
         string capturedPrompt = "";
-        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "detailed_analysis", It.IsAny<CancellationToken>()))
             .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
             .ReturnsAsync("Analysis Result");
 

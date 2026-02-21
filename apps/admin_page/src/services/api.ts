@@ -134,3 +134,33 @@ export const adminService = {
 };
 
 export default api;
+
+export interface AiModelConfig {
+  id: string;
+  intent: string;
+  primaryModel: string;
+  fallbackModels: string[];
+  description: string;
+  isEnabled: boolean;
+  safetySettings?: string;
+}
+
+export interface UpdateAiModelConfigDto {
+  intent: string;
+  primaryModel: string;
+  fallbackModels: string[];
+  description: string;
+  isEnabled: boolean;
+  safetySettings?: string;
+}
+
+export const aiService = {
+  getConfigs: async (): Promise<AiModelConfig[]> => {
+    const response = await api.get<AiModelConfig[]>('/ai/config');
+    return response.data;
+  },
+  updateConfig: async (intent: string, dto: UpdateAiModelConfigDto): Promise<AiModelConfig> => {
+    const response = await api.put<AiModelConfig>(`/ai/config/${intent}`, dto);
+    return response.data;
+  }
+};
