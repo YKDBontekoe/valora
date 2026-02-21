@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
@@ -13,6 +14,7 @@ class ContextReportProvider extends ChangeNotifier {
   }) : _apiService = apiService,
        _historyService = historyService ?? SearchHistoryService() {
     _loadHistory();
+    loadComparisonSet();
   }
 
   final ApiService _apiService;
@@ -21,7 +23,12 @@ class ContextReportProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isDisposed = false;
   String? _error;
-  ContextReport? _report;
+
+  // Multiple reports state
+  final Map<String, ContextReport> _activeReports = {};
+  final Set<String> _comparisonIds = {};
+  String? _currentReportId;
+
   int _radiusMeters = 1000;
   List<SearchHistoryItem> _history = [];
   int _historyLoadSeq = 0;
@@ -34,7 +41,25 @@ class ContextReportProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get error => _error;
-  ContextReport? get report => _report;
+
+  ContextReport? getReportById(String id) => _activeReports[id];
+
+  ContextReport? get report {
+    if (_currentReportId != null) {
+      return _activeReports[_currentReportId];
+    }
+    return null;
+  }
+
+  List<ContextReport> get comparisonReports {
+    return _comparisonIds
+        .map((id) => _activeReports[id])
+        .whereType<ContextReport>()
+        .toList();
+  }
+
+  Set<String> get comparisonIds => Set.unmodifiable(_comparisonIds);
+
   int get radiusMeters => _radiusMeters;
   List<SearchHistoryItem> get history => List.unmodifiable(_history);
 
@@ -44,9 +69,94 @@ class ContextReportProvider extends ChangeNotifier {
     super.dispose();
   }
 
+  String _getReportId(String query, int radius) => '$query|$radius';
+
   void setRadiusMeters(int value) {
     _radiusMeters = value.clamp(200, 5000);
     notifyListeners();
+  }
+
+  // Comparison management
+  bool isComparing(String query, int radius) {
+    final id = _getReportId(query, radius);
+    return _comparisonIds.contains(id);
+  }
+
+  Future<void> addToComparison(String query, int radius) async {
+    final id = _getReportId(query, radius);
+    if (!_comparisonIds.contains(id)) {
+      _comparisonIds.add(id);
+      notifyListeners();
+      _saveComparisonSet();
+
+      if (!_activeReports.containsKey(id)) {
+         await fetchReport(query, radius);
+      }
+    }
+  }
+
+  Future<void> fetchReport(String query, int radius) async {
+    final id = _getReportId(query, radius);
+    if (_activeReports.containsKey(id)) return;
+
+    try {
+      final report = await _apiService.getContextReport(
+        query,
+        radiusMeters: radius,
+      );
+      if (_isDisposed) return;
+      _activeReports[id] = report;
+      notifyListeners();
+    } catch (e) {
+      // If fetch fails, ignore
+    }
+  }
+
+  void removeFromComparison(String query, int radius) {
+    final id = _getReportId(query, radius);
+    if (_comparisonIds.contains(id)) {
+      _comparisonIds.remove(id);
+      notifyListeners();
+      _saveComparisonSet();
+    }
+  }
+
+  Future<void> toggleComparison(String query, int radius) async {
+    if (isComparing(query, radius)) {
+      removeFromComparison(query, radius);
+    } else {
+      await addToComparison(query, radius);
+    }
+  }
+
+  void clearComparison() {
+    if (_comparisonIds.isNotEmpty) {
+      _comparisonIds.clear();
+      notifyListeners();
+      _saveComparisonSet();
+    }
+  }
+
+  Future<void> _saveComparisonSet() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList("comparison_ids", _comparisonIds.toList());
+    } catch (_) {
+      // Ignore persistence errors
+    }
+  }
+
+  Future<void> loadComparisonSet() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList("comparison_ids") ?? [];
+      if (ids.isNotEmpty) {
+        _comparisonIds.addAll(ids);
+        notifyListeners();
+      }
+    } catch (_) {
+      // Ignore persistence errors
+    }
   }
 
   // Expansion state management
@@ -121,7 +231,9 @@ class ContextReportProvider extends ChangeNotifier {
 
       if (_isDisposed) return;
 
-      _report = report;
+      final id = _getReportId(trimmed, _radiusMeters);
+      _activeReports[id] = report;
+      _currentReportId = id;
       _error = null;
 
       // Reset expansion states for new report
@@ -136,7 +248,7 @@ class ContextReportProvider extends ChangeNotifier {
       }
     } catch (e) {
       if (_isDisposed) return;
-      _report = null;
+      _currentReportId = null;
       _error =
           e is AppException ? e.message : 'Failed to generate context report.';
     } finally {
@@ -149,7 +261,7 @@ class ContextReportProvider extends ChangeNotifier {
 
   void clear() {
     _error = null;
-    _report = null;
+    _currentReportId = null;
     _expansionStates.clear();
     notifyListeners();
   }
