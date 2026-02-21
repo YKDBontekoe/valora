@@ -221,6 +221,46 @@ public class ContextAnalysisServiceTests
         Assert.Equal(string.Empty, result.Disclaimer);
     }
 
+    [Fact]
+    public async Task ChatAsync_DelegatesToAiService()
+    {
+        // Arrange
+        var service = CreateService();
+        var prompt = "Test Prompt";
+        var model = "gpt-4";
+        var expectedResponse = "AI Response";
+
+        _aiServiceMock.Setup(x => x.ChatAsync(prompt, It.IsAny<string>(), model, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await service.ChatAsync(prompt, model, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(expectedResponse, result);
+        _aiServiceMock.Verify(x => x.ChatAsync(prompt, ContextAnalysisService.ChatSystemPrompt, model, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ParseAiResponse_HandlesJsonException()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = CreateFullReportDto();
+        // Malformed JSON that throws JsonException
+        var jsonResponse = "{ invalid-json }";
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        // Act
+        var result = await service.AnalyzeReportAsync(report, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(jsonResponse, result.Summary);
+        Assert.Contains("Could not parse", result.Disclaimer);
+    }
+
     private static ContextReportDto CreateFullReportDto()
     {
         return new ContextReportDto(
