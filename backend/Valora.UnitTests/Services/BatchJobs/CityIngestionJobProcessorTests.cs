@@ -127,6 +127,30 @@ public class CityIngestionJobProcessorTests
     }
 
     [Fact]
+    public async Task ProcessAsync_ShouldHandleStatsFetchFailure()
+    {
+        var processor = CreateProcessor();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
+
+        var neighborhoods = new List<NeighborhoodGeometryDto>
+        {
+            new NeighborhoodGeometryDto("BU001", "Buurt 1", "Buurt", 52.0, 4.0)
+        };
+
+        _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(neighborhoods);
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Neighborhood>());
+
+        _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Stats API Error"));
+
+        var ex = await Assert.ThrowsAsync<ApplicationException>(() => processor.ProcessAsync(job, CancellationToken.None));
+        Assert.Contains("Failed to fetch stats", ex.Message);
+        Assert.Contains("BU001", ex.Message);
+    }
+
+    [Fact]
     public async Task ProcessAsync_ShouldHandleNoNeighborhoodsFound()
     {
         var processor = CreateProcessor();

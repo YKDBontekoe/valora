@@ -122,4 +122,74 @@ public class BatchJobServiceTests
         Assert.Contains("System configuration error: processor missing", job.Error);
         _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
+
+    [Fact]
+    public async Task ProcessNextJobAsync_ShouldFail_WhenMultipleProcessorsFound()
+    {
+        // Setup service with duplicate processors
+        var processor1 = new Mock<IBatchJobProcessor>();
+        processor1.Setup(x => x.JobType).Returns(BatchJobType.CityIngestion);
+        var processor2 = new Mock<IBatchJobProcessor>();
+        processor2.Setup(x => x.JobType).Returns(BatchJobType.CityIngestion);
+
+        var processors = new List<IBatchJobProcessor> { processor1.Object, processor2.Object };
+        var service = new BatchJobService(_jobRepositoryMock.Object, processors, _loggerMock.Object);
+
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(job);
+
+        await service.ProcessNextJobAsync();
+
+        Assert.Equal(BatchJobStatus.Failed, job.Status);
+        // SingleOrDefault throws InvalidOperationException when > 1 match
+        // The service catches Exception and sets Error = ex.Message
+        // InvalidOperationException usually has "Sequence contains more than one matching element" or similar
+        Assert.NotNull(job.Error);
+        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ProcessNextJobAsync_ShouldHandleCancellation()
+    {
+        var service = CreateService();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(job);
+
+        _cityIngestionProcessorMock.Setup(x => x.ProcessAsync(job, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        await service.ProcessNextJobAsync();
+
+        Assert.Equal(BatchJobStatus.Failed, job.Status);
+        Assert.Equal("Job cancelled by user.", job.Error);
+        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ProcessNextJobAsync_ShouldNotOverwriteStatus_IfChangedByProcessor()
+    {
+        var service = CreateService();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(job);
+
+        _cityIngestionProcessorMock.Setup(x => x.ProcessAsync(job, It.IsAny<CancellationToken>()))
+            .Callback<BatchJob, CancellationToken>((j, ct) =>
+            {
+                // Simulate processor marking job as Failed (or some other status) internally without throwing
+                // (Though usually failure implies throwing, maybe partial success or custom status)
+                j.Status = BatchJobStatus.Failed;
+                j.Error = "Custom error";
+            })
+            .Returns(Task.CompletedTask);
+
+        await service.ProcessNextJobAsync();
+
+        // Should REMAIN Failed, not be overwritten to Completed
+        Assert.Equal(BatchJobStatus.Failed, job.Status);
+        Assert.Equal("Custom error", job.Error);
+        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
 }
