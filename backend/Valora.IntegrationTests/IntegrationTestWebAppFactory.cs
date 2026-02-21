@@ -20,6 +20,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
     public Mock<IAmenityClient> AmenityClientMock { get; } = new();
     public Mock<ICbsGeoClient> CbsGeoClientMock { get; } = new();
     public Mock<IGoogleTokenValidator> GoogleTokenValidatorMock { get; } = new();
+    public Mock<IAiService> AiServiceMock { get; } = new();
 
     public IntegrationTestWebAppFactory(string connectionString)
     {
@@ -103,6 +104,10 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             // Mock Google Validator
             services.RemoveAll<IGoogleTokenValidator>();
             services.AddSingleton<IGoogleTokenValidator>(GoogleTokenValidatorMock.Object);
+
+            // Mock AI Service
+            services.RemoveAll<IAiService>();
+            services.AddSingleton<IAiService>(AiServiceMock.Object);
         });
     }
 }

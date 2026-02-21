@@ -34,6 +34,10 @@ public static class MapEndpoints
             .RequireAuthorization()
             .WithName("GetMapOverlayTiles");
 
+        group.MapPost("/query", ProcessMapQueryHandler)
+            .RequireAuthorization()
+            .WithName("ProcessMapQuery");
+
         return group;
     }
 
@@ -97,6 +101,15 @@ public static class MapEndpoints
     {
         var tiles = await mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, metric, ct);
         return Results.Ok(tiles);
+    }
+
+    public static async Task<IResult> ProcessMapQueryHandler(
+        [FromBody] MapQueryRequest request,
+        IMapService mapService,
+        CancellationToken ct)
+    {
+        var result = await mapService.ProcessQueryAsync(request, ct);
+        return Results.Ok(result);
     }
 
     private static List<string>? ParseTypes(string? types)

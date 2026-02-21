@@ -13,6 +13,7 @@ public class MapServiceTests
     private readonly Mock<IMapRepository> _repositoryMock;
     private readonly Mock<IAmenityClient> _amenityClientMock;
     private readonly Mock<ICbsGeoClient> _cbsGeoClientMock;
+    private readonly Mock<IContextAnalysisService> _contextAnalysisServiceMock;
     private readonly IMapService _mapService;
 
     public MapServiceTests()
@@ -20,8 +21,9 @@ public class MapServiceTests
         _repositoryMock = new Mock<IMapRepository>();
         _amenityClientMock = new Mock<IAmenityClient>();
         _cbsGeoClientMock = new Mock<ICbsGeoClient>();
+        _contextAnalysisServiceMock = new Mock<IContextAnalysisService>();
 
-        _mapService = new MapService(_repositoryMock.Object, _amenityClientMock.Object, _cbsGeoClientMock.Object);
+        _mapService = new MapService(_repositoryMock.Object, _amenityClientMock.Object, _cbsGeoClientMock.Object, _contextAnalysisServiceMock.Object);
     }
 
     [Fact]

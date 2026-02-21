@@ -15,6 +15,7 @@ import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
+import '../models/map_query_result.dart';
 import '../models/notification.dart';
 import 'crash_reporting_service.dart';
 
@@ -78,7 +79,7 @@ class ApiService {
     var response = await request(headers);
 
     if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback();
+      final newToken = await _refreshTokenCallback?.call();
       if (newToken != null) {
         _authToken = newToken;
         headers['Authorization'] = 'Bearer $newToken';
@@ -585,6 +586,48 @@ class ApiService {
       );
     } catch (e, stack) {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
+    }
+  }
+
+  Future<MapQueryResult> performMapQuery({
+    required String prompt,
+    required double minLat,
+    required double minLon,
+    required double maxLat,
+    required double maxLon,
+  }) async {
+    final uri = Uri.parse('$baseUrl/map/query');
+    try {
+      final payload = json.encode({
+        'prompt': prompt,
+        'currentBounds': {
+          'minLat': minLat,
+          'minLon': minLon,
+          'maxLat': maxLat,
+          'maxLon': maxLon,
+        },
+      });
+
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) => _client
+              .post(uri, headers: headers, body: payload)
+              .timeout(const Duration(seconds: 45)),
+        ),
+      );
+
+      return await _handleResponse(
+        response,
+        (body) {
+          final jsonBody = json.decode(body);
+          return MapQueryResult.fromJson(jsonBody);
+        },
+      );
+    } catch (e, stack) {
+      // Re-throw handled exception
+      if (e is AppException) rethrow;
+      // Handle unexpected
+      throw _handleException(e, stack, uri);
     }
   }
 }

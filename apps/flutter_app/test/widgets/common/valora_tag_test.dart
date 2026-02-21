@@ -43,7 +43,7 @@ void main() {
       // Wait for initial animations
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(ValoraTag));
+      await tester.tap(find.byType(ValoraTag), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);

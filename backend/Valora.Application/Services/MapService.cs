@@ -10,16 +10,19 @@ public class MapService : IMapService
     private readonly IMapRepository _repository;
     private readonly IAmenityClient _amenityClient;
     private readonly ICbsGeoClient _cbsGeoClient;
+    private readonly IContextAnalysisService _contextAnalysisService;
     private const double MaxAggregatedSpan = 2.0; // Larger span for aggregated views
 
     public MapService(
         IMapRepository repository,
         IAmenityClient amenityClient,
-        ICbsGeoClient cbsGeoClient)
+        ICbsGeoClient cbsGeoClient,
+        IContextAnalysisService contextAnalysisService)
     {
         _repository = repository;
         _amenityClient = amenityClient;
         _cbsGeoClient = cbsGeoClient;
+        _contextAnalysisService = contextAnalysisService;
     }
 
     public async Task<List<MapCityInsightDto>> GetCityInsightsAsync(CancellationToken cancellationToken = default)
@@ -141,6 +144,11 @@ public class MapService : IMapService
         }
 
         return tiles;
+    }
+
+    public async Task<MapQueryResultDto> ProcessQueryAsync(MapQueryRequest request, CancellationToken cancellationToken = default)
+    {
+        return await _contextAnalysisService.PlanMapQueryAsync(request.Prompt, request.CurrentBounds, cancellationToken);
     }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
