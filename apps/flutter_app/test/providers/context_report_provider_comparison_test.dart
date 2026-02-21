@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
