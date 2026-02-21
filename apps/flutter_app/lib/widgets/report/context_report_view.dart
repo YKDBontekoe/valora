@@ -166,7 +166,10 @@ class ContextReportView extends StatelessWidget {
 
     // AI Insight
     if (index == currentIndex++) {
-      return AiInsightCard(report: report);
+      return AiInsightCard(report: report)
+          .animate()
+          .fadeIn(delay: 500.ms)
+          .slideX(begin: 0.1, curve: Curves.easeOut);
     }
     if (index == currentIndex++) return const SizedBox(height: 32);
 
@@ -183,7 +186,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Social', defaultValue: true),
             onToggle: (v) => provider.setExpanded('Social', v),
           ),
-        );
+        ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
     if (report.crimeMetrics.isNotEmpty) {
@@ -198,7 +201,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Safety'),
             onToggle: (v) => provider.setExpanded('Safety', v),
           ),
-        );
+        ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
     if (report.demographicsMetrics.isNotEmpty) {
@@ -213,7 +216,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Demographics'),
             onToggle: (v) => provider.setExpanded('Demographics', v),
           ),
-        );
+        ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
     if (report.housingMetrics.isNotEmpty) {
@@ -228,7 +231,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Housing'),
             onToggle: (v) => provider.setExpanded('Housing', v),
           ),
-        );
+        ).animate().fadeIn(delay: 350.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
     if (report.mobilityMetrics.isNotEmpty) {
@@ -243,7 +246,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Mobility'),
             onToggle: (v) => provider.setExpanded('Mobility', v),
           ),
-        );
+        ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
     if (report.amenityMetrics.isNotEmpty) {
@@ -258,7 +261,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Amenities'),
             onToggle: (v) => provider.setExpanded('Amenities', v),
           ),
-        );
+        ).animate().fadeIn(delay: 450.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
     if (report.environmentMetrics.isNotEmpty) {
@@ -273,7 +276,7 @@ class ContextReportView extends StatelessWidget {
             isExpanded: provider.isExpanded('Environment'),
             onToggle: (v) => provider.setExpanded('Environment', v),
           ),
-        );
+        ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.1, curve: Curves.easeOut);
       }
     }
 
@@ -301,7 +304,7 @@ class ContextReportView extends StatelessWidget {
               ...report.warnings.map((w) => Text('• $w', style: ValoraTypography.bodySmall)),
             ],
           ),
-        );
+        ).animate().fadeIn(delay: 600.ms);
       }
     }
 
@@ -315,7 +318,7 @@ class ContextReportView extends StatelessWidget {
           subtitle: Text(s.license, style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500)),
           dense: true,
         )).toList(),
-      );
+      ).animate().fadeIn(delay: 700.ms);
     }
     if (index == currentIndex++) return const SizedBox(height: 40);
 
