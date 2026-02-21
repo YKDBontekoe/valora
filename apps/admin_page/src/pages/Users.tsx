@@ -4,6 +4,7 @@ import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search, UserPlu
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUsers } from '../hooks/useUsers';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import CreateUserModal from '../components/CreateUserModal';
 import UserRow from '../components/UserRow';
 import Skeleton from '../components/Skeleton';
 import Button from '../components/Button';
@@ -29,7 +30,8 @@ const Users = () => {
     searchQuery,
     setSearchQuery,
     sortBy,
-    toggleSort
+    toggleSort,
+    refresh
   } = useUsers();
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; user: User | null }>({
@@ -37,6 +39,7 @@ const Users = () => {
     user: null,
   });
 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleDeleteClick = (user: User) => {
@@ -68,7 +71,11 @@ const Users = () => {
           </div>
           <p className="text-brand-500 mt-2 font-medium">Manage administrative access and platform roles.</p>
         </div>
-        <Button variant="secondary" leftIcon={<UserPlus size={18} />} disabled>
+        <Button
+            variant="secondary"
+            leftIcon={<UserPlus size={18} />}
+            onClick={() => setIsCreateModalOpen(true)}
+        >
             Add Admin User
         </Button>
       </div>
@@ -204,6 +211,12 @@ const Users = () => {
         message={`Are you sure you want to delete ${deleteConfirmation.user?.email}? They will immediately lose all access to the admin panel.`}
         confirmLabel="Confirm Deletion"
         isDestructive
+      />
+
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onUserCreated={refresh}
       />
     </div>
   );

@@ -109,6 +109,9 @@ export const adminService = {
     const response = await api.get<PaginatedResponse<User>>(url);
     return response.data;
   },
+  createUser: async (user: { email: string; password: string; roles: string[] }): Promise<void> => {
+    await api.post('/admin/users', user);
+  },
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);
   },

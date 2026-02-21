@@ -41,6 +41,47 @@ public class AdminService : IAdminService
         return new PaginatedList<AdminUserDto>(userDtos, paginatedUsers.TotalCount, paginatedUsers.PageIndex, pageSize);
     }
 
+    public async Task<Result> CreateUserAsync(AdminCreateUserDto request, string currentUserId)
+    {
+        _logger.LogInformation("Admin user creation requested by {AdminId} for email {Email}", currentUserId, request.Email);
+
+        var existingUser = await _identityService.GetUserByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            _logger.LogWarning("User creation failed. Email {Email} already exists.", request.Email);
+            return Result.Failure(new[] { "User with this email already exists." }, "Conflict");
+        }
+
+        var (createResult, newUserId) = await _identityService.CreateUserAsync(request.Email, request.Password);
+        if (!createResult.Succeeded)
+        {
+            _logger.LogError("Failed to create user {Email}: {Errors}", request.Email, string.Join(", ", createResult.Errors));
+            return createResult;
+        }
+
+        foreach (var role in request.Roles)
+        {
+            if (string.IsNullOrWhiteSpace(role)) continue;
+
+            try
+            {
+                await _identityService.EnsureRoleAsync(role);
+                var roleResult = await _identityService.AddToRoleAsync(newUserId, role);
+                if (!roleResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed to add user {UserId} to role {Role}: {Errors}", newUserId, role, string.Join(", ", roleResult.Errors));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception while ensuring/adding role {Role} for user {UserId}", role, newUserId);
+            }
+        }
+
+        _logger.LogInformation("Successfully created user {UserId} with email {Email}", newUserId, request.Email);
+        return Result.Success();
+    }
+
     private static AdminUserDto MapToAdminUserDto(ApplicationUser user, IDictionary<string, IList<string>> rolesMap)
     {
         var roles = rolesMap.TryGetValue(user.Id, out var userRoles) ? userRoles : new List<string>();
