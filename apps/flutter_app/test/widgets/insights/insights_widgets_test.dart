@@ -28,6 +28,8 @@ void main() {
     when(mockProvider.showOverlays).thenReturn(false);
     when(mockProvider.showAmenities).thenReturn(false);
     when(mockProvider.cities).thenReturn([]);
+    when(mockProvider.showProperties).thenReturn(false);
+    when(mockProvider.properties).thenReturn([]);
     when(mockProvider.overlays).thenReturn([]);
     when(mockProvider.amenities).thenReturn([]);
     when(mockProvider.selectedOverlayMetric)
@@ -195,13 +197,14 @@ void main() {
 
   group('InsightsMap Widget', () {
     testWidgets('renders FlutterMap with TileLayer', (WidgetTester tester) async {
+      when(mockProvider.showProperties).thenReturn(false);
       await tester.pumpWidget(createWidget(InsightsMap(
         mapController: MapController(),
         onMapChanged: () {},
       )));
-
       expect(find.byType(FlutterMap), findsOneWidget);
       expect(find.byType(TileLayer), findsOneWidget);
+      when(mockProvider.showProperties).thenReturn(false);
     });
 
     testWidgets('renders city markers via widget tree', (WidgetTester tester) async {

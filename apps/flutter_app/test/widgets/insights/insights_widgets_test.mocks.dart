@@ -12,6 +12,7 @@ import 'package:valora_app/models/map_amenity_cluster.dart' as _i9;
 import 'package:valora_app/models/map_city_insight.dart' as _i3;
 import 'package:valora_app/models/map_overlay.dart' as _i5;
 import 'package:valora_app/models/map_overlay_tile.dart' as _i10;
+import 'package:valora_app/models/map_property.dart' as _i11;
 import 'package:valora_app/providers/insights_provider.dart' as _i2;
 import 'package:valora_app/services/api_service.dart' as _i6;
 
@@ -63,6 +64,13 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as List<_i5.MapOverlay>);
 
   @override
+  List<_i11.MapProperty> get properties => (super.noSuchMethod(
+        Invocation.getter(#properties),
+        returnValue: <_i11.MapProperty>[],
+        returnValueForMissingStub: <_i11.MapProperty>[],
+      ) as List<_i11.MapProperty>);
+
+  @override
   List<_i10.MapOverlayTile> get overlayTiles => (super.noSuchMethod(
         Invocation.getter(#overlayTiles),
         returnValue: <_i10.MapOverlayTile>[],
@@ -91,6 +99,13 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as bool);
 
   @override
+  @override
+  bool get showProperties => (super.noSuchMethod(
+        Invocation.getter(#showProperties),
+        returnValue: false,
+        returnValueForMissingStub: false,
+      ) as bool);
+
   bool get showOverlays => (super.noSuchMethod(
         Invocation.getter(#showOverlays),
         returnValue: false,
@@ -158,6 +173,15 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
   void toggleAmenities() => super.noSuchMethod(
         Invocation.method(
           #toggleAmenities,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void toggleProperties() => super.noSuchMethod(
+        Invocation.method(
+          #toggleProperties,
           [],
         ),
         returnValueForMissingStub: null,
