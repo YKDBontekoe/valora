@@ -1,3 +1,4 @@
+using Valora.Domain.Entities;
 using System.Text.Json;
 using Moq;
 using Valora.Application.Common.Exceptions;
@@ -322,5 +323,77 @@ public class MapServiceTests
         Assert.Single(result);
         Assert.Equal(0, result[0].MetricValue);
         Assert.Equal("No listing data", result[0].DisplayValue);
+    }
+
+    [Fact]
+    public async Task GetPropertyDetailAsync_ShouldReturnNull_WhenListingNotFound()
+    {
+        _repositoryMock.Setup(x => x.GetListingByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Listing?)null);
+
+        var result = await _mapService.GetPropertyDetailAsync(Guid.NewGuid());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetPropertyDetailAsync_ShouldCalculatePercentile_WhenEnoughData()
+    {
+        var listingId = Guid.NewGuid();
+        var listing = new Listing
+        {
+            Id = listingId,
+            FundaId = "1",
+            Address = "Test",
+            Price = 500000,
+            LivingAreaM2 = 100, // 5000/m2
+            Latitude = 52.0,
+            Longitude = 5.0
+        };
+
+        _repositoryMock.Setup(x => x.GetListingByIdAsync(listingId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(listing);
+
+        var nearbyListings = new List<ListingPriceData>
+        {
+            new ListingPriceData(400000, 100, 52.0, 5.0), // 4000 (Cheaper)
+            new ListingPriceData(600000, 100, 52.0, 5.0), // 6000 (More expensive)
+            new ListingPriceData(500000, 100, 52.0, 5.0)  // 5000 (Same)
+        };
+
+        _repositoryMock.Setup(x => x.GetListingsPriceDataAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(nearbyListings);
+
+        _amenityClientMock.Setup(x => x.GetAmenitiesInBboxAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MapAmenityDto>());
+
+        var result = await _mapService.GetPropertyDetailAsync(listingId);
+
+        Assert.NotNull(result);
+        Assert.Equal(5000, result.PricePerM2);
+        // Valid prices: 4000, 5000, 6000.
+        // Current is 5000.
+        // Count lower = 1 (4000).
+        // Total = 3.
+        // Percentile = 1/3 * 100 = 33.33...
+        Assert.NotNull(result.PricePercentile);
+        Assert.True(result.PricePercentile > 30 && result.PricePercentile < 35);
+    }
+
+    [Fact]
+    public async Task GetMapPropertiesAsync_ShouldCallRepository()
+    {
+        var properties = new List<MapPropertyDto>
+        {
+            new MapPropertyDto(Guid.NewGuid(), 500000, 52.0, 5.0, "Sold")
+        };
+
+        _repositoryMock.Setup(x => x.GetMapPropertiesAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(properties);
+
+        var result = await _mapService.GetMapPropertiesAsync(52.0, 5.0, 52.1, 5.1);
+
+        Assert.Single(result);
+        Assert.Equal("Sold", result[0].Status);
     }
 }
