@@ -5,6 +5,7 @@ import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
+import { AxiosError } from 'axios';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
     try {
       const data = await adminService.getJobDetails(id);
       setJob(data);
-    } catch (error: any) {
+    } catch {
       showToast('Failed to load job details', 'error');
       onClose();
     } finally {
@@ -49,8 +50,9 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       showToast('Job retried successfully', 'success');
       onJobUpdated();
       fetchJobDetails(job.id); // Refresh details
-    } catch (error: any) {
-      showToast(error.response?.data?.error || "Operation failed", "error");
+    } catch (error) {
+      const axiosError = error as AxiosError<{ error: string }>;
+      showToast(axiosError.response?.data?.error || "Operation failed", "error");
       setProcessingAction(false);
     } finally {
         setProcessingAction(false);
@@ -65,12 +67,13 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
     try {
       await adminService.cancelJob(job.id);
       showToast('Job cancelled successfully', 'success');
+      onJobUpdated();
       fetchJobDetails(job.id); // Refresh details
-    } catch (error: any) {
-      showToast(error.response?.data?.error || "Operation failed", "error");
+    } catch (error) {
+      const axiosError = error as AxiosError<{ error: string }>;
+      showToast(axiosError.response?.data?.error || "Operation failed", "error");
       setProcessingAction(false);
     } finally {
-      showToast(error.response?.data?.error || "Operation failed", "error");
         setProcessingAction(false);
     }
   };

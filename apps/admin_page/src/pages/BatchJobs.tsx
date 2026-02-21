@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Play, CheckCircle2, AlertCircle, Clock, Database, Sparkles, Info, RefreshCw } from 'lucide-react';
+import { Activity, Play, AlertCircle, Database, Sparkles, Info } from 'lucide-react';
 import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
