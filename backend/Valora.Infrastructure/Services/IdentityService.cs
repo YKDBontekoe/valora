@@ -88,7 +88,6 @@ public class IdentityService : IIdentityService
             {
                 // Postgres ILIKE for case-insensitive search with proper escaping
                 var escapedQuery = EscapeLikePattern(searchQuery);
-                // Correctly escaped backslashes for string literal and EF.Functions.ILike
                 query = query.Where(u => EF.Functions.ILike(u.Email!, $"%{escapedQuery}%", "\\"));
             }
             else
@@ -125,7 +124,9 @@ public class IdentityService : IIdentityService
     public async Task<Result> DeleteUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Result.Failure(new[] { "User not found." });
+        // Idempotency: If user is not found, treat it as success (they are already deleted)
+        // This also prevents user enumeration by not returning distinct errors.
+        if (user == null) return Result.Success();
 
         // Manually clean up notifications because they don't have a navigation property/FK configured for cascade delete
 
@@ -199,11 +200,6 @@ public class IdentityService : IIdentityService
             .ToDictionary(
                 g => g.Key,
                 g => (IList<string>)g.Select(ur => ur.RoleName!).ToList());
-    }
-
-    public async Task<bool> CanConnectAsync()
-    {
-        return await _context.Database.CanConnectAsync();
     }
 
     private static Result ToApplicationResult(IdentityResult result)

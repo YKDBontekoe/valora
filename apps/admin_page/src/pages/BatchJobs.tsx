@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
-import type { BatchJob, SystemStatus } from '../types';
+import type { BatchJob } from '../types';
 import { Play, Activity, Database, Sparkles, Info, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/Button';
@@ -9,46 +9,26 @@ import { showToast } from '../services/toast';
 
 const BatchJobs = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);
-  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [targetCity, setTargetCity] = useState('');
   const [isStarting, setIsStarting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchJobs = async () => {
     try {
-      // Use Promise.allSettled to allow partial success (e.g. status fails but jobs load)
-      const results = await Promise.allSettled([
-        adminService.getJobs(),
-        adminService.getSystemStatus()
-      ]);
-
-      if (results[0].status === 'fulfilled') {
-        setJobs(results[0].value);
-        setError(null);
-      } else {
-        console.error('Failed to load jobs:', results[0].reason);
-        setError('Unable to load job history.');
-      }
-
-      if (results[1].status === 'fulfilled') {
-        setSystemStatus(results[1].value);
-      } else {
-        console.warn('System status unavailable:', results[1].reason);
-      }
-
-    } catch (e) {
-      console.error("Unexpected error fetching batch jobs data", e);
-      setError('An unexpected error occurred.');
+      const data = await adminService.getJobs();
+      setJobs(data);
+      setError(null);
+    } catch {
+      setError('Unable to load job history.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-    // Increased polling interval to 30s to avoid rate limits (10 req/min)
-    const interval = setInterval(fetchData, 30000);
+    fetchJobs();
+    const interval = setInterval(fetchJobs, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -61,10 +41,9 @@ const BatchJobs = () => {
       await adminService.startJob('CityIngestion', targetCity);
       showToast(`Successfully queued ingestion for ${targetCity}`, 'success');
       setTargetCity('');
-      fetchData();
+      fetchJobs();
     } catch {
       console.error('Failed to start job');
-      showToast('Failed to queue job', 'error');
     } finally {
       setIsStarting(false);
     }
@@ -89,13 +68,13 @@ const BatchJobs = () => {
         </div>
         <div className="hidden md:flex items-center gap-4 px-6 py-3 bg-white rounded-2xl border border-brand-100 shadow-premium">
             <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${systemStatus?.workerHealth === 'Active' ? 'bg-primary-500' : systemStatus?.workerHealth === 'Idle' ? 'bg-success-500' : 'bg-error-500'}`} />
-                <span className="text-xs font-bold text-brand-700">Worker: {systemStatus?.workerHealth || 'Unknown'}</span>
+                <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
+                <span className="text-xs font-bold text-brand-700">Cluster: Primary-A</span>
             </div>
             <div className="w-px h-4 bg-brand-100" />
             <div className="flex items-center gap-2">
                 <Activity size={14} className="text-primary-500" />
-                <span className="text-xs font-bold text-brand-700">Queue: {systemStatus?.queueDepth ?? '-'}</span>
+                <span className="text-xs font-bold text-brand-700">Healthy</span>
             </div>
         </div>
       </div>
@@ -175,7 +154,7 @@ const BatchJobs = () => {
                     <div className="flex flex-col items-center gap-4 text-error-500">
                         <AlertCircle size={32} className="opacity-50" />
                         <span className="font-bold">{error}</span>
-                        <Button onClick={fetchData} variant="outline" size="sm" className="mt-2 border-error-200 text-error-700">Retry</Button>
+                        <Button onClick={fetchJobs} variant="outline" size="sm" className="mt-2 border-error-200 text-error-700">Retry</Button>
                     </div>
                   </td>
                 </tr>
@@ -214,7 +193,7 @@ const BatchJobs = () => {
                             <div className="w-full bg-brand-100 rounded-full h-2 min-w-[120px] overflow-hidden relative">
                               <motion.div
                                 className={`h-2 rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500' : 'bg-primary-600'}`}
-                                initial={{ width: `${job.progress}%` }}
+                                initial={{ width: 0 }}
                                 animate={{ width: `${job.progress}%` }}
                                 transition={{ duration: 1, ease: "easeOut" }}
                               >

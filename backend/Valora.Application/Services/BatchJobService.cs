@@ -108,82 +108,97 @@ public class BatchJobService : IBatchJobService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var chunkTasks = chunk.Select(async geo =>
-            {
-                var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
+            await ProcessNeighborhoodChunkAsync(chunk, existingDict, job.Target, cancellationToken);
 
-                // Parallelize stats fetching for this item
-                var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
-                var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
-
-                await Task.WhenAll(statsTask, crimeTask);
-
-                return new
-                {
-                    Geo = geo,
-                    Stats = await statsTask,
-                    Crime = await crimeTask
-                };
-            }).ToList();
-
-            var results = await Task.WhenAll(chunkTasks);
-
-            var toAdd = new List<Neighborhood>();
-            var toUpdate = new List<Neighborhood>();
-
-            foreach (var result in results)
-            {
-                Neighborhood neighborhood;
-                bool isNew = false;
-
-                if (existingDict.TryGetValue(result.Geo.Code, out var existing))
-                {
-                    neighborhood = existing;
-                }
-                else
-                {
-                    neighborhood = new Neighborhood
-                    {
-                        Code = result.Geo.Code,
-                        Name = result.Geo.Name,
-                        City = job.Target,
-                        Type = result.Geo.Type,
-                        Latitude = result.Geo.Latitude,
-                        Longitude = result.Geo.Longitude
-                    };
-                    isNew = true;
-                }
-
-                neighborhood.PopulationDensity = result.Stats?.PopulationDensity;
-                neighborhood.AverageWozValue = result.Stats?.AverageWozValueKeur * 1000;
-                neighborhood.CrimeRate = result.Crime?.TotalCrimesPer1000;
-                neighborhood.LastUpdated = DateTime.UtcNow;
-
-                if (isNew) toAdd.Add(neighborhood);
-                else toUpdate.Add(neighborhood);
-
-                // Update dictionary for subsequent dup checks
-                existingDict[neighborhood.Code] = neighborhood;
-            }
-
-            if (toAdd.Count > 0)
-            {
-                _neighborhoodRepository.AddRange(toAdd);
-            }
-
-            if (toUpdate.Count > 0)
-            {
-                _neighborhoodRepository.UpdateRange(toUpdate);
-            }
-
-            await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
-
-            processedCount += results.Length;
+            processedCount += chunk.Length;
             job.Progress = (int)((double)processedCount / total * 100);
             await _jobRepository.UpdateAsync(job, cancellationToken);
         }
 
         job.ResultSummary = $"Processed {total} neighborhoods.";
+    }
+
+    private async Task ProcessNeighborhoodChunkAsync(
+        NeighborhoodGeometryDto[] chunk,
+        IDictionary<string, Neighborhood> existingDict,
+        string city,
+        CancellationToken cancellationToken)
+    {
+        var chunkTasks = chunk.Select(async geo => await FetchNeighborhoodDataAsync(geo, cancellationToken)).ToList();
+        var results = await Task.WhenAll(chunkTasks);
+
+        var toAdd = new List<Neighborhood>();
+        var toUpdate = new List<Neighborhood>();
+
+        foreach (var result in results)
+        {
+            var neighborhood = UpsertNeighborhood(result.Geo, result.Stats, result.Crime, existingDict, city, out bool isNew);
+
+            if (isNew) toAdd.Add(neighborhood);
+            else toUpdate.Add(neighborhood);
+        }
+
+        if (toAdd.Count > 0)
+        {
+            _neighborhoodRepository.AddRange(toAdd);
+        }
+
+        if (toUpdate.Count > 0)
+        {
+            _neighborhoodRepository.UpdateRange(toUpdate);
+        }
+
+        await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<(NeighborhoodGeometryDto Geo, NeighborhoodStatsDto? Stats, CrimeStatsDto? Crime)> FetchNeighborhoodDataAsync(NeighborhoodGeometryDto geo, CancellationToken cancellationToken)
+    {
+        var neighborhoodLocation = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
+
+        var statsTask = _statsClient.GetStatsAsync(neighborhoodLocation, cancellationToken);
+        var crimeTask = _crimeClient.GetStatsAsync(neighborhoodLocation, cancellationToken);
+
+        await Task.WhenAll(statsTask, crimeTask);
+
+        return (geo, await statsTask, await crimeTask);
+    }
+
+    private static Neighborhood UpsertNeighborhood(
+        NeighborhoodGeometryDto geo,
+        NeighborhoodStatsDto? stats,
+        CrimeStatsDto? crime,
+        IDictionary<string, Neighborhood> existingDict,
+        string city,
+        out bool isNew)
+    {
+        Neighborhood neighborhood;
+        isNew = false;
+
+        if (existingDict.TryGetValue(geo.Code, out var existing))
+        {
+            neighborhood = existing;
+        }
+        else
+        {
+            neighborhood = new Neighborhood
+            {
+                Code = geo.Code,
+                Name = geo.Name,
+                City = city,
+                Type = geo.Type,
+                Latitude = geo.Latitude,
+                Longitude = geo.Longitude
+            };
+            isNew = true;
+            existingDict[neighborhood.Code] = neighborhood;
+        }
+
+        neighborhood.PopulationDensity = stats?.PopulationDensity;
+        neighborhood.AverageWozValue = stats?.AverageWozValueKeur * 1000;
+        neighborhood.CrimeRate = crime?.TotalCrimesPer1000;
+        neighborhood.LastUpdated = DateTime.UtcNow;
+
+        return neighborhood;
     }
 
     private static BatchJobDto MapToDto(BatchJob job) => new(
