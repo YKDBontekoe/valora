@@ -76,9 +76,6 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                         ? Selector<ContextReportProvider, dynamic>(
                             selector: (_, p) => p.report,
                             builder: (context, report, _) {
-                              if (report == null) {
-                                return const SizedBox.shrink();
-                              }
                               return ListView.builder(
                                 key: const ValueKey('report-list'),
                                 padding: const EdgeInsets.symmetric(
