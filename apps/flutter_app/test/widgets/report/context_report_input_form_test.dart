@@ -197,5 +197,22 @@ void main() {
       await tester.tap(find.text('Cancel'));
       verifyNever(mockProvider.clearHistory());
     });
+
+
+    testWidgets('handles search exception in suggestions', (tester) async {
+      // Mock search to throw
+      when(mockPdokService.search(any)).thenThrow(Exception('Search failed'));
+
+      await tester.pumpWidget(createSubject());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(ValoraTextField), 'Error');
+      await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Debounce? TypeAhead might not debounce mock immediately
+
+      // The exception should be caught and empty list returned.
+      // If uncaught, test would fail.
+      // We can't easily verify "debugPrint" output in widget tests without overriding debugPrint.
+      // But successfully completing this test without crash proves the catch block works.
+    });
   });
 }

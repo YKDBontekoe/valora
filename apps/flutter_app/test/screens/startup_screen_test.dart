@@ -7,9 +7,10 @@ import 'package:valora_app/screens/startup_screen.dart';
 class DelayedAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
   Future<void> loginWithGoogle() async {}
-  DelayedAuthProvider({required this.delay});
+  DelayedAuthProvider({required this.delay, this.shouldThrow = false});
 
   final Duration delay;
+  final bool shouldThrow;
   bool checkAuthCalled = false;
 
   @override
@@ -28,6 +29,9 @@ class DelayedAuthProvider extends ChangeNotifier implements AuthProvider {
   Future<void> checkAuth() async {
     checkAuthCalled = true;
     await Future<void>.delayed(delay);
+    if (shouldThrow) {
+      throw Exception('Auth failed');
+    }
   }
 
   @override
@@ -92,6 +96,29 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
+    expect(find.text('Welcome Back'), findsOneWidget);
+  });
+
+  testWidgets('Startup handles auth check failure gracefully', (
+    WidgetTester tester,
+  ) async {
+    final DelayedAuthProvider provider = DelayedAuthProvider(
+      delay: Duration.zero,
+      shouldThrow: true,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AuthProvider>.value(
+        value: provider,
+        child: const MaterialApp(home: StartupScreen()),
+      ),
+    );
+
+    // Pump to trigger auth check and subsequent animation/navigation
+    // The exception is caught internally, so no crash should occur.
+    await tester.pumpAndSettle(StartupScreen.splashDuration + const Duration(seconds: 1));
+
+    // Should still navigate to home (or login, represented by Welcome Back placeholde in test app)
     expect(find.text('Welcome Back'), findsOneWidget);
   });
 }
