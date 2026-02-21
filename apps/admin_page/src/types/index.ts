@@ -9,6 +9,14 @@ export interface Stats {
   totalNotifications: number;
 }
 
+export interface SystemStatus {
+  apiLatencyMs: number;
+  queueDepth: number;
+  workerHealth: string;
+  dbConnectivity: string;
+  lastIngestionRun: string | null;
+}
+
 export interface AuthResponse {
   token: string;
   refreshToken: string;
