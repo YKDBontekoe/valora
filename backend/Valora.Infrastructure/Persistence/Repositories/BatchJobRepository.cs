@@ -41,24 +41,19 @@ public class BatchJobRepository : IBatchJobRepository
         return job;
     }
 
+    public async Task<BatchJobStatus?> GetStatusAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.BatchJobs
+            .AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => x.Status)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(BatchJob job, CancellationToken cancellationToken = default)
     {
         job.UpdatedAt = DateTime.UtcNow;
         _context.Entry(job).State = EntityState.Modified;
         await _context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<int> GetQueueDepthAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.BatchJobs.CountAsync(x => x.Status == BatchJobStatus.Pending, cancellationToken);
-    }
-
-    public async Task<DateTime?> GetLastIngestionRunAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.BatchJobs
-            .Where(x => x.Type == BatchJobType.CityIngestion && x.Status == BatchJobStatus.Completed)
-            .OrderByDescending(x => x.CompletedAt)
-            .Select(x => x.CompletedAt)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 }
