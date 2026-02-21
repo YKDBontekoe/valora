@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import type { User } from '../types';
-import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search, UserPlus } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search, UserPlus, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUsers } from '../hooks/useUsers';
 import ConfirmationDialog from '../components/ConfirmationDialog';
-import CreateUserModal from '../components/CreateUserModal';
 import UserRow from '../components/UserRow';
 import Skeleton from '../components/Skeleton';
 import Button from '../components/Button';
@@ -21,6 +20,7 @@ const Users = () => {
   const {
     users,
     loading,
+    error: fetchError,
     page,
     totalPages,
     currentUserId,
@@ -39,13 +39,12 @@ const Users = () => {
     user: null,
   });
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleDeleteClick = (user: User) => {
     if (user.id === currentUserId) return;
     setDeleteConfirmation({ isOpen: true, user });
-    setError(null);
+    setActionError(null);
   };
 
   const confirmDelete = async () => {
@@ -54,7 +53,7 @@ const Users = () => {
       await deleteUser(deleteConfirmation.user);
       setDeleteConfirmation({ isOpen: false, user: null });
     } catch {
-      setError('Failed to delete user. It might be protected or you might have lost permissions.');
+      setActionError('Failed to delete user. It might be protected or you might have lost permissions.');
       setDeleteConfirmation({ isOpen: false, user: null });
     }
   };
@@ -71,16 +70,30 @@ const Users = () => {
           </div>
           <p className="text-brand-500 mt-2 font-medium">Manage administrative access and platform roles.</p>
         </div>
-        <Button
-            variant="secondary"
-            leftIcon={<UserPlus size={18} />}
-            onClick={() => setIsCreateModalOpen(true)}
-        >
+        <Button variant="secondary" leftIcon={<UserPlus size={18} />} disabled>
             Add Admin User
         </Button>
       </div>
 
-      {error && (
+      {/* Fetch Error Alert */}
+      {fetchError && (
+        <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="p-6 bg-error-50 border border-error-100 rounded-2xl text-error-700 font-bold flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-error-500 flex-shrink-0" />
+              <span>{fetchError}</span>
+          </div>
+          <Button onClick={refresh} variant="outline" size="sm" className="border-error-200 text-error-700 hover:bg-error-100 bg-white">
+            Retry
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Action Error Alert */}
+      {actionError && (
         <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -88,9 +101,9 @@ const Users = () => {
         >
           <div className="flex items-center gap-3">
               <div className="w-1.5 h-1.5 rounded-full bg-error-500" />
-              <span>{error}</span>
+              <span>{actionError}</span>
           </div>
-          <button onClick={() => setError(null)} className="text-error-400 hover:text-error-600 transition-colors">✕</button>
+          <button onClick={() => setActionError(null)} className="text-error-400 hover:text-error-600 transition-colors">✕</button>
         </motion.div>
       )}
 
@@ -154,7 +167,7 @@ const Users = () => {
                                     <Search className="h-8 w-8 text-brand-200" />
                                 </div>
                                 <span className="text-brand-500 font-bold">
-                                    {searchQuery ? 'No users found matching your search.' : 'No users found.'}
+                                    {fetchError ? 'Unable to load users.' : (searchQuery ? 'No users found matching your search.' : 'No users found.')}
                                 </span>
                             </div>
                         </td>
@@ -211,12 +224,6 @@ const Users = () => {
         message={`Are you sure you want to delete ${deleteConfirmation.user?.email}? They will immediately lose all access to the admin panel.`}
         confirmLabel="Confirm Deletion"
         isDestructive
-      />
-
-      <CreateUserModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onUserCreated={refresh}
       />
     </div>
   );

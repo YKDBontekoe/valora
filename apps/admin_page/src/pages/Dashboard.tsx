@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../services/api';
 import type { Stats } from '../types';
-import { Users, Bell, TrendingUp } from 'lucide-react';
+import { Users, Bell, TrendingUp, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Skeleton from '../components/Skeleton';
+import Button from '../components/Button';
 
 const container = {
   hidden: { opacity: 0 },
@@ -23,18 +24,22 @@ const item = {
 const Dashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await adminService.getStats();
+      setStats(data);
+    } catch {
+      setError('Failed to fetch dashboard statistics. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await adminService.getStats();
-        setStats(data);
-      } catch {
-        console.error('Failed to fetch stats');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, []);
 
@@ -71,6 +76,15 @@ const Dashboard = () => {
               </div>
             </div>
           ))
+        ) : error ? (
+            <div className="col-span-full p-8 bg-error-50 border border-error-100 rounded-3xl text-error-700 font-bold flex flex-col items-center justify-center shadow-sm text-center">
+                 <AlertCircle className="w-12 h-12 text-error-400 mb-4" />
+                 <h3 className="text-lg text-brand-900 font-black mb-2">Unable to Load Dashboard</h3>
+                 <p className="text-brand-500 font-medium mb-6">{error}</p>
+                 <Button onClick={fetchStats} variant="outline" className="border-error-200 text-error-700 hover:bg-error-100">
+                    Retry Connection
+                 </Button>
+            </div>
         ) : (
           cards.map((card) => {
             const Icon = card.icon;

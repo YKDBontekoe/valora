@@ -18,15 +18,3 @@ public record BatchJobRequest(
     [property: Required] [property: EnumDataType(typeof(BatchJobType))] string Type,
     [property: Required] [property: StringLength(255, MinimumLength = 2)] string Target
 );
-
-public record AdminCreateUserDto(
-    [property: Required] [property: EmailAddress] string Email,
-    [property: Required] [property: MinLength(8)] [property: MaxLength(128)] string Password,
-    [property: Required] [property: MinLength(1)] IList<string> Roles
-)
-{
-    public override string ToString()
-    {
-        return $"AdminCreateUserDto {{ Email = {Email}, Roles = {string.Join(", ", Roles)}, Password = [REDACTED] }}";
-    }
-}

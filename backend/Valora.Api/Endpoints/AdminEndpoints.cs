@@ -40,34 +40,6 @@ public static class AdminEndpoints
             });
         });
 
-        group.MapPost("/users", async (
-            AdminCreateUserDto request,
-            IAdminService adminService,
-            ClaimsPrincipal user) =>
-        {
-            var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var result = await adminService.CreateUserAsync(request, currentUserId);
-            if (result.Succeeded)
-            {
-                return Results.Created($"/api/admin/users", new { message = "User created successfully." });
-            }
-
-            if (result.ErrorCode == "Conflict")
-            {
-                // Generic error message to prevent enumeration
-                return Results.Conflict(new { error = "Unable to create user." });
-            }
-
-            // Generic error message
-            return Results.BadRequest(new { error = "Operation failed." });
-        })
-        .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AdminCreateUserDto>>();
-
         group.MapDelete("/users/{id}", async (
             string id,
             ClaimsPrincipal user,
