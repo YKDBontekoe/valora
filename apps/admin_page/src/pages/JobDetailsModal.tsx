@@ -23,7 +23,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
     try {
       const data = await adminService.getJobDetails(id);
       setJob(data);
-    } catch {
+    } catch (error: any) {
       showToast('Failed to load job details', 'error');
       onClose();
     } finally {
@@ -49,7 +49,8 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       showToast('Job retried successfully', 'success');
       onJobUpdated();
       fetchJobDetails(job.id); // Refresh details
-    } catch {
+    } catch (error: any) {
+      showToast(error.response?.data?.error || "Operation failed", "error");
       setProcessingAction(false);
     } finally {
         setProcessingAction(false);
@@ -64,11 +65,12 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
     try {
       await adminService.cancelJob(job.id);
       showToast('Job cancelled successfully', 'success');
-      onJobUpdated();
       fetchJobDetails(job.id); // Refresh details
-    } catch {
+    } catch (error: any) {
+      showToast(error.response?.data?.error || "Operation failed", "error");
       setProcessingAction(false);
     } finally {
+      showToast(error.response?.data?.error || "Operation failed", "error");
         setProcessingAction(false);
     }
   };

@@ -17,6 +17,39 @@ public class BatchJobEndpointTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task GetJobs_ReturnsSummaryList() // Does not include ExecutionLog
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+        var job = new BatchJob
+        {
+            Type = BatchJobType.CityIngestion,
+            Target = "ListCity",
+            Status = BatchJobStatus.Pending,
+            Progress = 0,
+            ExecutionLog = "Big log"
+        };
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            context.BatchJobs.Add(job);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/jobs");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var list = await response.Content.ReadFromJsonAsync<List<BatchJobSummaryDto>>();
+        list.ShouldNotBeEmpty();
+        var dto = list.First(j => j.Target == "ListCity");
+        // Cannot check ExecutionLog as it is not on the DTO, which is the point.
+        dto.Target.ShouldBe("ListCity");
+    }
+
+    [Fact]
     public async Task GetJobDetails_ReturnsJob_WhenExists()
     {
         // Arrange

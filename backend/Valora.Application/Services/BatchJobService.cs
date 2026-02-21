@@ -45,10 +45,10 @@ public class BatchJobService : IBatchJobService
         return MapToDto(job);
     }
 
-    public async Task<List<BatchJobDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
+    public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
         var jobs = await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
-        return jobs.Select(MapToDto).ToList();
+        return jobs.Select(MapToSummaryDto).ToList();
     }
 
     public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -65,7 +65,7 @@ public class BatchJobService : IBatchJobService
 
         if (job.Status != BatchJobStatus.Failed && job.Status != BatchJobStatus.Completed)
         {
-            throw new InvalidOperationException("Only failed or completed jobs can be retried.");
+             throw new InvalidOperationException("Only failed or completed jobs can be retried.");
         }
 
         job.Status = BatchJobStatus.Pending;
@@ -75,7 +75,10 @@ public class BatchJobService : IBatchJobService
         job.ExecutionLog = null;
         job.StartedAt = null;
         job.CompletedAt = null;
+        // Fix: Reset CreatedAt to move to end of queue (FIFO)
+        job.CreatedAt = DateTime.UtcNow;
 
+        _logger.LogInformation("Job {JobId} retried by admin", id);
         await _jobRepository.UpdateAsync(job, cancellationToken);
 
         return MapToDto(job);
@@ -95,6 +98,7 @@ public class BatchJobService : IBatchJobService
         job.Error = "Cancelled by user";
         job.CompletedAt = DateTime.UtcNow;
 
+        _logger.LogInformation("Job {JobId} cancelled by admin", id);
         await _jobRepository.UpdateAsync(job, cancellationToken);
 
         return MapToDto(job);
@@ -112,15 +116,34 @@ public class BatchJobService : IBatchJobService
 
         try
         {
+            bool success = true;
             if (job.Type == BatchJobType.CityIngestion)
             {
-                await ProcessCityIngestionAsync(job, cancellationToken);
+                success = await ProcessCityIngestionAsync(job, cancellationToken);
             }
 
-            AppendLog(job, "Job completed successfully.");
-            job.Status = BatchJobStatus.Completed;
-            job.CompletedAt = DateTime.UtcNow;
-            job.Progress = 100;
+            if (success)
+            {
+                AppendLog(job, "Job completed successfully.");
+                job.Status = BatchJobStatus.Completed;
+                job.CompletedAt = DateTime.UtcNow;
+                job.Progress = 100;
+            }
+            // If !success (cancelled), do nothing here. The status is already Failed in DB (set by CancelJobAsync),
+            // and we should NOT overwrite it with Completed.
+            // However, we might want to ensure the 'job' entity in memory reflects that so the final UpdateAsync below doesn't overwrite it?
+            // ProcessCityIngestionAsync returned false because it DETECTED cancellation.
+            // But 'job' object here is still 'Processing'.
+            // If we call UpdateAsync(job) at the end of this method, we will revert the DB status from Failed to Processing!
+            // So we MUST reload or update the job object status.
+            else
+            {
+                 // Cancellation detected.
+                 job.Status = BatchJobStatus.Failed;
+                 job.Error = "Cancelled by user"; // Ensure consistent error message if needed
+                 job.CompletedAt = DateTime.UtcNow;
+                 // Actually, CancelJobAsync sets it. But since we are calling UpdateAsync(job) below, we need this object to match.
+            }
         }
         catch (Exception ex)
         {
@@ -134,7 +157,7 @@ public class BatchJobService : IBatchJobService
         await _jobRepository.UpdateAsync(job, cancellationToken);
     }
 
-    private async Task ProcessCityIngestionAsync(BatchJob job, CancellationToken cancellationToken)
+    private async Task<bool> ProcessCityIngestionAsync(BatchJob job, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing city ingestion for {City}", job.Target);
         AppendLog(job, $"Processing city ingestion for {job.Target}");
@@ -144,102 +167,109 @@ public class BatchJobService : IBatchJobService
         {
             AppendLog(job, "No neighborhoods found for city.");
             job.ResultSummary = "No neighborhoods found for city.";
-            return;
+            return true;
         }
 
         // Optimization: Pre-fetch all existing neighborhoods for this city to avoid N+1 reads
         var existingNeighborhoods = await _neighborhoodRepository.GetByCityAsync(job.Target, cancellationToken);
         var existingDict = existingNeighborhoods.ToDictionary(n => n.Code);
 
-        int processedCount = 0;
+        int count = 0;
         int total = neighborhoods.Count;
 
-        // Batch size for writes & concurrency
+        var toAdd = new List<Neighborhood>();
+        var toUpdate = new List<Neighborhood>();
+        // Batch size for writes
         const int batchSize = 10;
-        var chunks = neighborhoods.Chunk(batchSize);
 
-        foreach (var chunk in chunks)
+        foreach (var geo in neighborhoods)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            var chunkTasks = chunk.Select(async geo =>
+            // Check for cancellation every iteration or periodically
+            if (count % 10 == 0)
             {
-                var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
-
-                // Parallelize stats fetching for this item
-                var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
-                var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
-
-                await Task.WhenAll(statsTask, crimeTask);
-
-                return new
+                var status = await _jobRepository.GetStatusAsync(job.Id, cancellationToken);
+                if (status == BatchJobStatus.Failed)
                 {
-                    Geo = geo,
-                    Stats = await statsTask,
-                    Crime = await crimeTask
+                    _logger.LogInformation("Job {JobId} was cancelled during execution", job.Id);
+                    return false;
+                }
+            }
+
+            Neighborhood neighborhood;
+            bool isNew = false;
+
+            if (existingDict.TryGetValue(geo.Code, out var existing))
+            {
+                neighborhood = existing;
+            }
+            else
+            {
+                neighborhood = new Neighborhood
+                {
+                    Code = geo.Code,
+                    Name = geo.Name,
+                    City = job.Target,
+                    Type = geo.Type,
+                    Latitude = geo.Latitude,
+                    Longitude = geo.Longitude
                 };
-            }).ToList();
+                isNew = true;
+            }
 
-            var results = await Task.WhenAll(chunkTasks);
+            // Fetch stats (external calls still per item, but could be parallelized if API allows)
+            var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
 
-            var toAdd = new List<Neighborhood>();
-            var toUpdate = new List<Neighborhood>();
+            // Parallelize stats fetching
+            var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
+            var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
 
-            foreach (var result in results)
+            await Task.WhenAll(statsTask, crimeTask);
+
+            var stats = await statsTask;
+            var crime = await crimeTask;
+
+            neighborhood.PopulationDensity = stats?.PopulationDensity;
+            neighborhood.AverageWozValue = stats?.AverageWozValueKeur * 1000;
+            neighborhood.CrimeRate = crime?.TotalCrimesPer1000;
+            neighborhood.LastUpdated = DateTime.UtcNow;
+
+            if (isNew) toAdd.Add(neighborhood);
+            else toUpdate.Add(neighborhood);
+
+            count++;
+
+            // Batch Flush
+            if (count % batchSize == 0 || count == total)
             {
-                Neighborhood neighborhood;
-                bool isNew = false;
-
-                if (existingDict.TryGetValue(result.Geo.Code, out var existing))
+                if (toAdd.Count > 0)
                 {
-                    neighborhood = existing;
+                    _neighborhoodRepository.AddRange(toAdd);
+                    // Add to dictionary so we don't try to add again if duplicates in list (unlikely)
+                    foreach (var n in toAdd) existingDict[n.Code] = n;
+                    // Create new list to avoid reference mutation issues with Moq in tests
+                    toAdd = new List<Neighborhood>();
                 }
-                else
+
+                if (toUpdate.Count > 0)
                 {
-                    neighborhood = new Neighborhood
-                    {
-                        Code = result.Geo.Code,
-                        Name = result.Geo.Name,
-                        City = job.Target,
-                        Type = result.Geo.Type,
-                        Latitude = result.Geo.Latitude,
-                        Longitude = result.Geo.Longitude
-                    };
-                    isNew = true;
+                    _neighborhoodRepository.UpdateRange(toUpdate);
+                    // Create new list to avoid reference mutation issues with Moq in tests
+                    toUpdate = new List<Neighborhood>();
                 }
 
-                neighborhood.PopulationDensity = result.Stats?.PopulationDensity;
-                neighborhood.AverageWozValue = result.Stats?.AverageWozValueKeur * 1000;
-                neighborhood.CrimeRate = result.Crime?.TotalCrimesPer1000;
-                neighborhood.LastUpdated = DateTime.UtcNow;
+                // Persist all changes
+                await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
 
-                if (isNew) toAdd.Add(neighborhood);
-                else toUpdate.Add(neighborhood);
-
-                // Update dictionary for subsequent dup checks
-                existingDict[neighborhood.Code] = neighborhood;
+                job.Progress = (int)((double)count / total * 100);
+                AppendLog(job, $"Processed {count}/{total} neighborhoods.");
+                await _jobRepository.UpdateAsync(job, cancellationToken);
             }
-
-            if (toAdd.Count > 0)
-            {
-                _neighborhoodRepository.AddRange(toAdd);
-            }
-
-            if (toUpdate.Count > 0)
-            {
-                _neighborhoodRepository.UpdateRange(toUpdate);
-            }
-
-            await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
-
-            processedCount += results.Length;
-            job.Progress = (int)((double)processedCount / total * 100);
-            AppendLog(job, $"Processed {processedCount}/{total} neighborhoods.");
-            await _jobRepository.UpdateAsync(job, cancellationToken);
         }
 
         AppendLog(job, $"Processed {total} neighborhoods.");
         job.ResultSummary = $"Processed {total} neighborhoods.";
+        return true;
     }
 
     private void AppendLog(BatchJob job, string message)
@@ -251,7 +281,7 @@ public class BatchJobService : IBatchJobService
             job.ExecutionLog += Environment.NewLine + entry;
     }
 
-    private static BatchJobDto MapToDto(BatchJob job) => new(
+    private static BatchJobSummaryDto MapToSummaryDto(BatchJob job) => new(
         job.Id,
         job.Type.ToString(),
         job.Status.ToString(),
@@ -259,7 +289,19 @@ public class BatchJobService : IBatchJobService
         job.Progress,
         job.Error,
         job.ResultSummary,
-        job.ExecutionLog,
+        job.CreatedAt,
+        job.StartedAt,
+        job.CompletedAt
+    );
+
+    private static BatchJobDto MapToDto(BatchJob job) => new(
+        job.Id,
+        job.Type.ToString(),
+        job.Status.ToString(),
+        job.Target,
+        job.Progress,
+        job.Error,
+        job.ResultSummary, job.ExecutionLog,
         job.CreatedAt,
         job.StartedAt,
         job.CompletedAt
