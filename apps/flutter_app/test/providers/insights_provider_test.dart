@@ -167,6 +167,21 @@ void main() {
     });
   });
 }
+      ).thenThrow(Exception('API Error'));
+
+      await provider.fetchMapData(
+        minLat: 51.9,
+        minLon: 3.9,
+        maxLat: 52.1,
+        maxLon: 4.1,
+        zoom: 14,
+      );
+
+      expect(provider.properties, isEmpty);
+      // We don't necessarily expose a specific property error state yet,
+      // but ensure it doesn't crash and list remains empty.
+  });
+}
 
     test('toggleProperties updates state and clears data when disabled', () {
       expect(provider.showProperties, isTrue); // Defaults to true
