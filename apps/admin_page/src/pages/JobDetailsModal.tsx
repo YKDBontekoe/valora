@@ -97,18 +97,18 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-brand-900/20 backdrop-blur-sm"
+            className="absolute inset-0 bg-brand-900/40 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-white rounded-2xl shadow-premium-xl border border-brand-100 w-full max-w-2xl max-h-[90vh] flex flex-col pointer-events-auto z-10"
+            className="relative bg-white rounded-[2rem] shadow-premium-xl border border-brand-100 w-full max-w-2xl max-h-[90vh] flex flex-col pointer-events-auto z-10 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-6 py-4 border-b border-brand-100 flex items-center justify-between bg-brand-50/30">
+            <div className="px-8 py-6 border-b border-brand-100 flex items-center justify-between bg-brand-50/30">
               <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg border border-brand-100 shadow-sm">
                       <Activity size={20} className="text-primary-500" />
@@ -129,7 +129,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-8 space-y-8">
               {loading || !job ? (
                 <div className="flex flex-col items-center justify-center py-12 text-brand-400">
                   <RefreshCw className="animate-spin mb-2" size={32} />
@@ -213,7 +213,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-brand-100 bg-brand-50/30 flex justify-end gap-3">
+            <div className="px-8 py-6 border-t border-brand-100 bg-brand-50/30 flex justify-end gap-4">
               <Button variant="outline" onClick={onClose} disabled={processingAction}>
                 Close
               </Button>

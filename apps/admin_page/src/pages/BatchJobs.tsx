@@ -189,9 +189,11 @@ const BatchJobs: React.FC = () => {
                   {jobs.map((job) => (
                     <motion.tr
                       key={job.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="hover:bg-brand-50/50 transition-colors group cursor-pointer"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      layout
+                      className="hover:bg-brand-50/50 transition-all duration-200 group cursor-pointer hover:scale-[1.005] hover:shadow-sm"
                       onClick={() => openDetails(job.id)}
                     >
                       <td className="px-8 py-5 whitespace-nowrap">
