@@ -47,16 +47,27 @@ public class OpenRouterAiService : IAiService
 
         foreach (var model in modelsToTry)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             attempt++;
             try
             {
                 var response = await ExecuteChatWithModelAsync(prompt, systemPrompt, model, cancellationToken);
+
+                // Check for empty/invalid response which acts as a "soft failure" to trigger fallback
+                if (string.IsNullOrWhiteSpace(response))
+                {
+                    throw new Exception($"Model {model} returned empty response.");
+                }
 
                 // Log success with specific model used for cost/reliability monitoring
                 _logger.LogInformation("AI Chat Success. Intent: {Intent}, Model: {Model}, FallbackAttempt: {IsFallback}",
                     intent, model, attempt > 1);
 
                 return response;
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Don't swallow cancellation
             }
             catch (Exception ex)
             {
@@ -71,7 +82,13 @@ public class OpenRouterAiService : IAiService
         // Wrap client exceptions in HttpRequestException for consistent handling upstream (e.g. middleware)
         if (lastException is ClientResultException clientEx)
         {
-             throw new HttpRequestException($"AI service failed: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
+             // 429/5xx -> ServiceUnavailable (503) for Polly/Middleware to handle
+             if (clientEx.Status == 429 || clientEx.Status >= 500)
+             {
+                 throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
+             }
+             // Client errors (400, etc) -> BadRequest
+             throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
         }
 
         throw lastException ?? new Exception("All models failed.");
@@ -109,6 +126,7 @@ public class OpenRouterAiService : IAiService
 
         for (int i = 0; i <= maxRetries; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 ChatCompletion completion = await client.CompleteChatAsync(
@@ -122,7 +140,8 @@ public class OpenRouterAiService : IAiService
                     return completion.Content[0].Text;
                 }
 
-                return string.Empty;
+                // If content is empty, throw to trigger fallback
+                throw new Exception("Received empty content from AI provider.");
             }
             catch (ClientResultException ex) when (ex.Status == 429 || (ex.Status >= 500 && ex.Status < 600))
             {
@@ -137,11 +156,12 @@ public class OpenRouterAiService : IAiService
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                 _logger.LogWarning(ex, "ArgumentOutOfRangeException caught while accessing chat completion content. Returning empty string.");
-                 return string.Empty;
+                 // SDK internal error on empty choices? Treat as failure.
+                 _logger.LogWarning(ex, "ArgumentOutOfRangeException in AI SDK. Treating as failure.");
+                 throw new Exception("AI SDK error", ex);
             }
         }
 
-        return string.Empty;
+        return string.Empty; // Should be unreachable given throws above
     }
 }
