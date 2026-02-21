@@ -156,6 +156,9 @@ void main() {
         minLat: 51.0,
         minLon: 3.0,
         maxLat: 53.0,
+        maxLon: 5.0,
+        zoom: 10, // Low zoom
+      );
         maxLat: 53.0,
         maxLon: 5.0,
         zoom: 10, // Low zoom
@@ -183,11 +186,12 @@ void main() {
       // Ensure properties are enabled
       if (!provider.showProperties) provider.toggleProperties();
 
-      when(
-        mockApiService.getMapProperties(
-          minLat: anyNamed('minLat'),
-          minLon: anyNamed('minLon'),
-          maxLat: anyNamed('maxLat'),
+          MapProperty(
+            id: "1",
+            price: 500000,
+            location: const LatLng(52, 4),
+            status: "ForSale",
+          ),
           maxLon: anyNamed('maxLon'),
         ),
       ).thenAnswer(
@@ -210,12 +214,15 @@ void main() {
 
       expect(provider.properties, isNotEmpty);
       expect(provider.properties[0].id, "1");
-    });
+      ).thenThrow(Exception("API Error"));
 
-    test("fetchMapData handles properties errors gracefully", () async {
-      if (!provider.showProperties) provider.toggleProperties();
-
-      when(
+      await provider.fetchMapData(
+        minLat: 51.9,
+        minLon: 3.9,
+        maxLat: 52.1,
+        maxLon: 4.1,
+        zoom: 14,
+      );
         mockApiService.getMapProperties(
           minLat: anyNamed("minLat"),
           minLon: anyNamed("minLon"),
@@ -223,16 +230,6 @@ void main() {
           maxLon: anyNamed("maxLon"),
         ),
       expect(provider.properties[0].id, "1");
-    });
-
-    test("fetchMapData handles properties errors gracefully", () async {
-      if (!provider.showProperties) provider.toggleProperties();
-
-      when(
-        mockApiService.getMapProperties(
-      );
-
-      expect(provider.properties, isEmpty);
       // We don't necessarily expose a specific property error state yet,
       // but ensure it doesn't crash and list remains empty.
   });
