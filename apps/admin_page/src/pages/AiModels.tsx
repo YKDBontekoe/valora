@@ -43,7 +43,7 @@ const AiModels: React.FC = () => {
         aiService.getAvailableModels()
       ]);
       setConfigs(configsData);
-      setAvailableModels(modelsData);
+      setAvailableModels(modelsData || []);
     } catch (error) {
       console.error(error);
       showToast('Failed to load AI configurations', 'error');
@@ -53,7 +53,7 @@ const AiModels: React.FC = () => {
   };
 
   const sortedModels = useMemo(() => {
-    return [...availableModels].sort((a, b) => {
+    return [...(availableModels || [])].sort((a, b) => {
       if (modelSort === 'name') return a.name.localeCompare(b.name);
       if (modelSort === 'price_asc') {
         if (a.promptPrice !== b.promptPrice) return a.promptPrice - b.promptPrice;
@@ -288,6 +288,7 @@ const AiModels: React.FC = () => {
                       <div className="flex justify-between items-center mb-2">
                         <label className="text-[10px] font-black text-brand-400 uppercase tracking-widest ml-1">Primary Model</label>
                         <select
+                          aria-label="Sort models"
                           value={modelSort}
                           onChange={(e) => setModelSort(e.target.value as SortOption)}
                           className="bg-brand-50 border border-brand-100 rounded-lg text-[10px] font-bold text-brand-500 px-2 py-1 outline-none focus:border-primary-500"
@@ -298,6 +299,7 @@ const AiModels: React.FC = () => {
                         </select>
                       </div>
                       <select
+                        aria-label="Primary Model"
                         className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono appearance-none"
                         value={editingConfig.primaryModel}
                         onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
@@ -324,6 +326,7 @@ const AiModels: React.FC = () => {
                           placeholder="gpt-4o-mini, claude-3-haiku"
                         />
                          <select
+                            aria-label="Add Fallback Model"
                             className="w-1/3 px-3 py-4 bg-brand-50 border border-brand-100 rounded-2xl font-bold text-brand-900 text-sm outline-none"
                             onChange={(e) => {
                                 if (e.target.value) {
