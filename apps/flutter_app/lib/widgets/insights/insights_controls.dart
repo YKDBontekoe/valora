@@ -72,24 +72,6 @@ class InsightsControls extends StatelessWidget {
                 icon: Icons.remove_rounded,
                 onPressed: onZoomOut,
               ),
-              const SizedBox(height: 8),
-              _buildActionButton(context,
-                icon: Icons.place_rounded,
-                isActive: provider.showAmenities,
-                onPressed: () {
-                  provider.toggleAmenities();
-                  onMapChanged();
-                },
-              ),
-              const SizedBox(height: 8),
-              _buildActionButton(context,
-                icon: Icons.layers_rounded,
-                isActive: provider.showOverlays,
-                onPressed: () {
-                  provider.toggleOverlays();
-                  onMapChanged();
-                },
-              ),
             ],
           );
         },

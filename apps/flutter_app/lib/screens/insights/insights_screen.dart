@@ -11,6 +11,8 @@ import '../../widgets/insights/insights_legend.dart';
 import '../../widgets/insights/insights_controls.dart';
 import '../../widgets/insights/insights_metric_selector.dart';
 import '../../widgets/insights/insights_map.dart';
+import '../../widgets/insights/map_mode_selector.dart';
+import '../../widgets/insights/persistent_details_panel.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -67,9 +69,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
       body: Selector<InsightsProvider, (bool, bool, String?)>(
         selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error),
         builder: (context, state, child) {
-          final isLoading = state.$1;
-          final isEmpty = state.$2;
-          final error = state.$3;
+          final isLoading = state.;
+          final isEmpty = state.;
+          final error = state.;
 
           if (isLoading && isEmpty) {
             return const Center(child: CircularProgressIndicator());
@@ -121,6 +123,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                       ),
                       const InsightsHeader(),
                       const InsightsMetricSelector(),
+                      const Positioned(
+                        top: 140,
+                        left: 0,
+                        right: 0,
+                        child: MapModeSelector(),
+                      ),
                       const InsightsLegend(),
                       InsightsControls(
                         onZoomIn: () => _zoomMap(0.7),
@@ -139,6 +147,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                           );
                         },
                       ),
+                      const PersistentDetailsPanel(),
                     ],
                   ),
                 ),

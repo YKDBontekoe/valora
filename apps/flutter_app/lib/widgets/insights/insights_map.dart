@@ -33,7 +33,8 @@ class InsightsMap extends StatelessWidget {
         List<MapAmenity>,
         List<MapAmenityCluster>,
         List<MapCityInsight>,
-        MapOverlayMetric
+        MapOverlayMetric,
+        Object?
       )
     >(
       selector:
@@ -46,17 +47,19 @@ class InsightsMap extends StatelessWidget {
             p.amenityClusters,
             p.cities,
             p.selectedOverlayMetric,
+            p.selectedFeature,
           ),
       builder: (context, data, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final showOverlays = data.$1;
-        final showAmenities = data.$2;
-        final overlays = data.$3;
-        final overlayTiles = data.$4;
-        final amenities = data.$5;
-        final amenityClusters = data.$6;
-        final cities = data.$7;
-        // Access provider for methods used in builder
+        final showOverlays = data.;
+        final showAmenities = data.;
+        final overlays = data.;
+        final overlayTiles = data.;
+        final amenities = data.;
+        final amenityClusters = data.;
+        final cities = data.;
+        final selectedFeature = data.;
+
         final provider = context.read<InsightsProvider>();
 
         return FlutterMap(
@@ -69,6 +72,7 @@ class InsightsMap extends StatelessWidget {
             onPositionChanged: (position, hasGesture) {
               if (hasGesture) onMapChanged();
             },
+            onTap: (_, __) => provider.clearSelection(),
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),
@@ -102,7 +106,7 @@ class InsightsMap extends StatelessWidget {
                 MarkerLayer(
                   markers:
                       amenities.map((amenity) {
-                        return buildAmenityMarker(context, amenity);
+                        return buildAmenityMarker(context, amenity, amenity == selectedFeature, provider);
                       }).toList(),
                 ),
               if (amenityClusters.isNotEmpty)
@@ -116,7 +120,7 @@ class InsightsMap extends StatelessWidget {
             MarkerLayer(
               markers:
                   cities.map((city) {
-                    return buildCityMarker(context, city, provider.getScore(city));
+                    return buildCityMarker(context, city, provider.getScore(city), city == selectedFeature, provider);
                   }).toList(),
             ),
           ],
@@ -166,31 +170,32 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Marker buildAmenityMarker(BuildContext context, MapAmenity amenity) {
+  static Marker buildAmenityMarker(BuildContext context, MapAmenity amenity, bool isSelected, InsightsProvider provider) {
     return Marker(
       point: amenity.location,
-      width: 36,
-      height: 36,
+      width: isSelected ? 48 : 36,
+      height: isSelected ? 48 : 36,
       child: GestureDetector(
-        onTap: () => showModalBottomSheet(
-          context: context,
-          builder: (context) => buildAmenityDetailsSheet(context, amenity),
-        ),
-        child: DecoratedBox(
+        onTap: () => provider.selectFeature(amenity),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
+            border: isSelected ? Border.all(color: ValoraColors.primary, width: 3) : null,
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).shadowColor.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: Offset(0, 2),
+                color: isSelected
+                  ? ValoraColors.primary.withValues(alpha: 0.4)
+                  : Theme.of(context).shadowColor.withValues(alpha: 0.2),
+                blurRadius: isSelected ? 12 : 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Icon(
             MapUtils.getAmenityIcon(amenity.type),
-            size: 18,
+            size: isSelected ? 24 : 18,
             color: ValoraColors.primary,
           ),
         ),
@@ -233,25 +238,20 @@ class InsightsMap extends StatelessWidget {
     BuildContext context,
     MapCityInsight city,
     double? score,
+    bool isSelected,
+    InsightsProvider provider,
   ) {
     final color = MapUtils.getColorForScore(score);
-    final size = city.count >= 120
-        ? 58.0
-        : city.count >= 60
-        ? 52.0
-        : 46.0;
+    final size = (city.count >= 120 ? 58.0 : city.count >= 60 ? 52.0 : 46.0) * (isSelected ? 1.2 : 1.0);
 
     return Marker(
       point: city.location,
       width: size,
       height: size,
       child: GestureDetector(
-        onTap: () => showModalBottomSheet(
-          context: context,
-          backgroundColor: Colors.transparent,
-          builder: (context) => buildCityDetailsSheet(context, city),
-        ),
-        child: DecoratedBox(
+        onTap: () => provider.selectFeature(city),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -262,125 +262,31 @@ class InsightsMap extends StatelessWidget {
               ],
             ),
             shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2.2),
+            border: Border.all(
+              color: isSelected ? Colors.white : Theme.of(context).colorScheme.surface,
+              width: isSelected ? 4.0 : 2.2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).shadowColor.withValues(alpha: 0.2),
-                blurRadius: 12,
-                offset: Offset(0, 4),
+                color: isSelected
+                  ? color.withValues(alpha: 0.5)
+                  : Theme.of(context).shadowColor.withValues(alpha: 0.2),
+                blurRadius: isSelected ? 16 : 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Center(
             child: Text(
               score != null ? score.round().toString() : '-',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: isSelected ? 16 : 14,
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  static Widget buildAmenityDetailsSheet(BuildContext context, MapAmenity amenity) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                MapUtils.getAmenityIcon(amenity.type),
-                color: ValoraColors.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  amenity.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            amenity.type.toUpperCase(),
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodySmall?.color,
-              letterSpacing: 1.2,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (amenity.metadata != null)
-            ...amenity.metadata!.entries
-                .take(5)
-                .map(
-                  (e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Text('${e.key}: ${e.value}'),
-                  ),
-                ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  static Widget buildCityDetailsSheet(BuildContext context, MapCityInsight city) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 16),
-          buildDetailRow(context, 'Data points', city.count.toString()),
-          buildDetailRow(context,
-            'Composite Score',
-            city.compositeScore?.toStringAsFixed(1),
-          ),
-          buildDetailRow(context,
-            'Safety Score',
-            city.safetyScore?.toStringAsFixed(1),
-          ),
-          buildDetailRow(context,
-            'Social Score',
-            city.socialScore?.toStringAsFixed(1),
-          ),
-          buildDetailRow(context,
-            'Amenities Score',
-            city.amenitiesScore?.toStringAsFixed(1),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  static Widget buildDetailRow(BuildContext context, String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
-          Text(
-            value ?? '-',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ],
       ),
     );
   }
