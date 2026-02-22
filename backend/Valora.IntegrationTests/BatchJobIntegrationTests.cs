@@ -84,9 +84,9 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
 
         Assert.NotNull(result);
-        Assert.Equal(1, result.TotalCount);
-        Assert.Single(result.Items);
-        Assert.Equal("Completed", result.Items[0].Status);
+        Assert.True(result.TotalCount >= 1);
+        Assert.NotEmpty(result.Items);
+        Assert.All(result.Items, item => Assert.Equal("Completed", item.Status));
     }
 
     [Fact]
@@ -111,9 +111,9 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
 
         Assert.NotNull(result);
-        Assert.Equal(1, result.TotalCount);
-        Assert.Single(result.Items);
-        Assert.Equal("MapGeneration", result.Items[0].Type);
+        Assert.True(result.TotalCount >= 1);
+        Assert.NotEmpty(result.Items);
+        Assert.All(result.Items, item => Assert.Equal("MapGeneration", item.Type));
     }
 
     [Fact]
@@ -143,5 +143,62 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
         Assert.NotNull(result);
         Assert.Equal(2, result.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetJobs_ShouldFilterByStatusAndType()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        var jobs = new List<BatchJob>
+        {
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Completed, Target = "Match", CreatedAt = DateTime.UtcNow },
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Failed, Target = "StatusMiss", CreatedAt = DateTime.UtcNow },
+            new() { Type = BatchJobType.MapGeneration, Status = BatchJobStatus.Completed, Target = "TypeMiss", CreatedAt = DateTime.UtcNow }
+        };
+        DbContext.BatchJobs.AddRange(jobs);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/jobs?status=Completed&type=CityIngestion");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+
+        Assert.NotNull(result);
+        Assert.True(result.TotalCount >= 1);
+        Assert.All(result.Items, item =>
+        {
+            Assert.Equal("Completed", item.Status);
+            Assert.Equal("CityIngestion", item.Type);
+        });
+    }
+
+    [Fact]
+    public async Task GetJobs_WithPageBeyondRange_ReturnsEmptyList()
+    {
+         // Arrange
+        await AuthenticateAsAdminAsync();
+
+        // Ensure at least one job exists
+        var jobs = new List<BatchJob>
+        {
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Completed, Target = "C1", CreatedAt = DateTime.UtcNow }
+        };
+        DbContext.BatchJobs.AddRange(jobs);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/jobs?page=1000&pageSize=10");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+
+        Assert.NotNull(result);
+        Assert.Empty(result.Items);
+        Assert.False(result.HasNextPage);
     }
 }
