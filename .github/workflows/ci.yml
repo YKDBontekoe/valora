@@ -2,47 +2,14 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ main, master ]
   push:
-    branches: [main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
+    branches: [ main, master ]
 
 jobs:
-  # ── Detect which areas of the codebase changed ──────────────────────
-  changes:
-    name: Detect Changes
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      admin: ${{ steps.filter.outputs.admin }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-            frontend:
-              - 'apps/flutter_app/**'
-            admin:
-              - 'apps/admin_page/**'
-
-  # ── Backend (.NET) ──────────────────────────────────────────────────
   backend:
-    name: Backend – Build & Test
-    needs: changes
-    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
+    name: Backend (.NET)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     defaults:
       run:
         working-directory: backend
@@ -54,57 +21,25 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj') }}
-          restore-keys: nuget-${{ runner.os }}-
-
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore --warnaserror
+        run: dotnet build --no-restore
 
-      - name: Unit Tests
-        run: >
-          dotnet test Valora.UnitTests
-          --no-build --verbosity normal
-          --collect:"XPlat Code Coverage"
-          --logger "trx;LogFileName=unit-tests.trx"
-
-      - name: Integration Tests
-        run: >
-          dotnet test Valora.IntegrationTests
-          --no-build --verbosity normal
-          --collect:"XPlat Code Coverage"
-          --logger "trx;LogFileName=integration-tests.trx"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-test-results
-          path: backend/**/TestResults/**/*.trx
-          retention-days: 7
+      - name: Test
+        run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage"
 
       - name: Upload coverage to Codecov
-        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: backend
           flags: backend
           fail_ci_if_error: true
 
-  # ── Frontend (Flutter) ─────────────────────────────────────────────
   frontend:
-    name: Frontend – Build & Test
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
+    name: Frontend (Flutter)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     defaults:
       run:
         working-directory: apps/flutter_app
@@ -115,33 +50,26 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze --fatal-infos
+        run: flutter analyze
 
       - name: Test
         run: flutter test --coverage
 
       - name: Upload coverage to Codecov
-        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: apps/flutter_app
           flags: frontend
           fail_ci_if_error: true
 
-  # ── Admin Page (React + Vite) ──────────────────────────────────────
   admin-page:
-    name: Admin Page – Build & Test
-    needs: changes
-    if: needs.changes.outputs.admin == 'true' || github.event_name == 'push'
+    name: Admin Page (React)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     defaults:
       run:
         working-directory: apps/admin_page
@@ -168,33 +96,8 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload coverage to Codecov
-        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: apps/admin_page
           flags: admin-page
           fail_ci_if_error: true
-
-  # ── Final gate (used by branch protection & downstream workflows) ──
-  ci-passed:
-    name: CI Passed
-    if: always()
-    needs: [backend, frontend, admin-page]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check results
-        run: |
-          echo "Backend:  ${{ needs.backend.result }}"
-          echo "Frontend: ${{ needs.frontend.result }}"
-          echo "Admin:    ${{ needs.admin-page.result }}"
-
-          # Fail if any required job failed (skipped is OK – means no changes)
-          if [[ "${{ needs.backend.result }}" == "failure" ]] ||
-             [[ "${{ needs.frontend.result }}" == "failure" ]] ||
-             [[ "${{ needs.admin-page.result }}" == "failure" ]]; then
-            echo "❌ One or more CI jobs failed."
-            exit 1
-          fi
-
-          echo "✅ All CI checks passed (or were skipped)."

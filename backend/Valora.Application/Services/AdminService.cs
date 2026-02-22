@@ -10,18 +10,15 @@ public class AdminService : IAdminService
 {
     private readonly IIdentityService _identityService;
     private readonly INotificationRepository _notificationRepository;
-    private readonly INeighborhoodRepository _neighborhoodRepository;
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
         IIdentityService identityService,
         INotificationRepository notificationRepository,
-        INeighborhoodRepository neighborhoodRepository,
         ILogger<AdminService> logger)
     {
         _identityService = identityService;
         _notificationRepository = notificationRepository;
-        _neighborhoodRepository = neighborhoodRepository;
         _logger = logger;
     }
 
@@ -91,10 +88,5 @@ public class AdminService : IAdminService
         var notificationsCount = await _notificationRepository.CountAsync();
 
         return new AdminStatsDto(usersCount, notificationsCount);
-    }
-
-    public async Task<List<DatasetStatusDto>> GetDatasetStatusAsync(CancellationToken cancellationToken = default)
-    {
-        return await _neighborhoodRepository.GetDatasetStatusAsync(cancellationToken);
     }
 }

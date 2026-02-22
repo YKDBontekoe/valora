@@ -39,9 +39,3 @@ export interface BatchJob {
   startedAt: string | null;
   completedAt: string | null;
 }
-
-export interface DatasetStatus {
-  city: string;
-  neighborhoodCount: number;
-  lastUpdated: string | null;
-}

@@ -95,18 +95,21 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
-    final subtextColor = isDark ? ValoraColors.neutral400 : ValoraColors.neutral500;
+    final subtextColor = isDark
+        ? ValoraColors.neutral400
+        : ValoraColors.neutral500;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         slivers: [
+          // Sticky Header
           SliverAppBar(
             pinned: true,
             backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
-            automaticallyImplyLeading: false,
+            automaticallyImplyLeading: false, // No back button since it's a tab
             title: Text(
               'Settings',
               style: ValoraTypography.headlineMedium.copyWith(
@@ -121,14 +124,20 @@ class SettingsScreen extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(right: ValoraSpacing.md),
                     child: IconButton(
-                      onPressed: () => themeProvider.toggleTheme(),
+                      onPressed: () {
+                        themeProvider.toggleTheme();
+                      },
                       icon: Icon(
-                        isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                        color: subtextColor,
+                        isDarkMode
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                            color: subtextColor,
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100,
-                        shape: const CircleBorder(),
+                        backgroundColor: isDark
+                            ? ValoraColors.neutral800
+                            : ValoraColors.neutral100,
+                            shape: const CircleBorder(),
                       ),
                     ),
                   );
@@ -136,6 +145,8 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+
+          // Content
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -144,11 +155,14 @@ class SettingsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  // Profile Section
                   _buildProfileCard(context),
+
                   const SizedBox(height: ValoraSpacing.xl),
 
-                  // MAP & REPORTS SECTION
-                  const ValoraSectionHeader(title: 'MAP & REPORTS'),
+                  // Map & Reports Section (New)
+                  _buildSectionHeader('MAP & REPORTS', subtextColor),
+                  const SizedBox(height: ValoraSpacing.sm),
                   Consumer<SettingsProvider>(
                     builder: (context, settings, _) {
                       return ValoraCard(
@@ -201,10 +215,12 @@ class SettingsScreen extends StatelessWidget {
                       );
                     },
                   ),
+
                   const SizedBox(height: ValoraSpacing.xl),
 
-                  // PREFERENCES SECTION
-                  const ValoraSectionHeader(title: 'PREFERENCES'),
+                  // Preferences Section (Existing + New Notifications)
+                  _buildSectionHeader('PREFERENCES', subtextColor),
+                  const SizedBox(height: ValoraSpacing.sm),
                   Consumer<SettingsProvider>(
                     builder: (context, settings, _) {
                       return ValoraCard(
@@ -213,8 +229,8 @@ class SettingsScreen extends StatelessWidget {
                           children: [
                             ValoraSettingsTile(
                               icon: Icons.workspaces_rounded,
-                              iconColor: ValoraColors.info,
-                              iconBackgroundColor: ValoraColors.info.withValues(alpha: 0.1),
+                              iconColor: Colors.blue,
+                              iconBackgroundColor: Colors.blue.withValues(alpha: 0.1),
                               title: 'Workspaces',
                               subtitle: 'Collaborate on your property search',
                               showDivider: true,
@@ -270,50 +286,26 @@ class SettingsScreen extends StatelessWidget {
                                 ),
                               ),
                             ],
-                            const Divider(height: 1, indent: 16, endIndent: 16),
-                            ValoraSettingsTile(
-                              icon: Icons.tune_rounded,
-                              iconColor: ValoraColors.primary,
-                              iconBackgroundColor: ValoraColors.primary.withValues(alpha: 0.1),
-                              title: 'Search Preferences',
-                              subtitle: 'Location, Price, Amenities',
-                              showDivider: true,
-                              onTap: () => _openExternal(context, Uri.parse('https://valora.nl/preferences/search')),
-                            ),
-                            ValoraSettingsTile(
-                              icon: Icons.palette_rounded,
-                              iconColor: ValoraColors.accent,
-                              iconBackgroundColor: ValoraColors.accent.withValues(alpha: 0.1),
-                              title: 'Appearance',
-                              subtitle: 'Theme & Display settings',
-                              showDivider: false,
-                              onTap: () => context.read<ThemeProvider>().toggleTheme(),
-                            ),
                           ],
                         ),
                       );
                     },
                   ),
+
                   const SizedBox(height: ValoraSpacing.xl),
 
-                  // ACCOUNT & SECURITY / DATA SECTION
-                  const ValoraSectionHeader(title: 'ACCOUNT & SECURITY'),
+                  // Privacy & Data Section (New)
+                  _buildSectionHeader('PRIVACY & DATA', subtextColor),
+                  const SizedBox(height: ValoraSpacing.sm),
                   ValoraCard(
                     padding: const EdgeInsets.all(ValoraSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ValoraSettingsTile(
-                          icon: Icons.lock_rounded,
-                          iconColor: ValoraColors.neutral500,
-                          iconBackgroundColor: ValoraColors.neutral500.withValues(alpha: 0.1),
-                          title: 'Privacy & Security',
-                          subtitle: 'Password, FaceID',
-                          showDivider: true,
-                          onTap: () => _openExternal(context, Uri.parse('https://valora.nl/privacy')),
+                        Text(
+                          'Data Management',
+                          style: ValoraTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: ValoraSpacing.md),
-                        Text('Data Management', style: ValoraTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: ValoraSpacing.xs),
                         Text(
                           'We cache some data locally to improve performance. You can clear this data at any time.',
@@ -332,35 +324,39 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+
                   const SizedBox(height: ValoraSpacing.xl),
 
-                  // DIAGNOSTICS
+                  // Diagnostics (New)
                   Consumer<SettingsProvider>(
-                    builder: (context, settings, _) {
-                      return ValoraCard(
-                        padding: EdgeInsets.zero,
-                        child: SwitchListTile(
-                          title: Text('Diagnostics', style: ValoraTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
-                          subtitle: Text('Help support troubleshoot issues', style: ValoraTypography.bodySmall.copyWith(color: subtextColor)),
-                          value: settings.diagnosticsEnabled,
-                          onChanged: (value) => settings.setDiagnosticsEnabled(value),
-                          secondary: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.teal.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                     builder: (context, settings, _) {
+                       return ValoraCard(
+                         padding: EdgeInsets.zero,
+                         child: SwitchListTile(
+                            title: Text('Diagnostics', style: ValoraTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                            subtitle: Text('Help support troubleshoot issues', style: ValoraTypography.bodySmall.copyWith(color: subtextColor)),
+                            value: settings.diagnosticsEnabled,
+                            onChanged: (value) => settings.setDiagnosticsEnabled(value),
+                            secondary: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.teal.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.bug_report_rounded, color: Colors.teal),
                             ),
-                            child: const Icon(Icons.bug_report_rounded, color: Colors.teal),
-                          ),
-                        ),
-                      );
-                    },
+                         ),
+                       );
+                     },
                   ),
+
                   const SizedBox(height: ValoraSpacing.xl),
 
-                  // HELP SECTION
+                  // Help Section
                   ValoraCard(
-                    backgroundColor: ValoraColors.primary.withValues(alpha: isDark ? 0.1 : 0.05),
+                    backgroundColor: ValoraColors.primary.withValues(
+                      alpha: isDark ? 0.1 : 0.05,
+                    ),
                     borderColor: ValoraColors.primary.withValues(alpha: 0.2),
                     padding: const EdgeInsets.all(ValoraSpacing.md),
                     child: Row(
@@ -372,12 +368,19 @@ class SettingsScreen extends StatelessWidget {
                             Text(
                               'Need Help?',
                               style: ValoraTypography.titleMedium.copyWith(
-                                color: isDark ? ValoraColors.primaryLight : ValoraColors.primary,
+                                color: isDark
+                                    ? ValoraColors.primaryLight
+                                    : ValoraColors.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: ValoraSpacing.xs),
-                            Text('Our support team is available 24/7', style: ValoraTypography.bodySmall.copyWith(color: subtextColor)),
+                            Text(
+                              'Our support team is available 24/7',
+                              style: ValoraTypography.bodySmall.copyWith(
+                                color: subtextColor,
+                              ),
+                            ),
                           ],
                         ),
                         ValoraButton(
@@ -389,8 +392,10 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+
                   const SizedBox(height: ValoraSpacing.xl),
 
+                  // Logout
                   ValoraButton(
                     label: 'Log Out',
                     icon: Icons.logout_rounded,
@@ -398,17 +403,23 @@ class SettingsScreen extends StatelessWidget {
                     isFullWidth: true,
                     onPressed: () => _confirmLogout(context),
                   ),
+
                   const SizedBox(height: ValoraSpacing.md),
 
                   Consumer<SettingsProvider>(
                     builder: (context, settings, _) {
                       return Text(
                         'Valora v${settings.appVersion} (Build ${settings.buildNumber})',
-                        style: ValoraTypography.labelSmall.copyWith(color: subtextColor.withValues(alpha: 0.5)),
+                        style: ValoraTypography.labelSmall.copyWith(
+                          color: subtextColor.withValues(alpha: 0.5),
+                        ),
                       );
                     },
                   ),
-                  const SizedBox(height: 100),
+
+                  const SizedBox(
+                    height: 100,
+                  ), // Bottom padding for navigation bar
                 ],
               ),
             ),
@@ -419,24 +430,81 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildProfileCard(BuildContext context) {
+    // Get user info from AuthProvider
     final authProvider = context.watch<AuthProvider>();
     final userEmail = authProvider.email ?? 'Unknown user';
-    final initials = userEmail.trim().isNotEmpty ? userEmail.substring(0, userEmail.length >= 2 ? 2 : 1).toUpperCase() : 'U';
+    final initials = userEmail.trim().isNotEmpty
+        ? userEmail.substring(0, userEmail.length >= 2 ? 2 : 1).toUpperCase()
+        : 'U';
+
     final colorScheme = Theme.of(context).colorScheme;
+    final textColor = colorScheme.onSurface;
+    final subtextColor = colorScheme.onSurfaceVariant;
 
     return ValoraCard(
       padding: const EdgeInsets.all(ValoraSpacing.md),
       child: Row(
         children: [
-          ValoraAvatar(initials: initials, size: ValoraAvatarSize.large, showOnlineIndicator: true),
+          Stack(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ValoraColors.primary.withValues(alpha: 0.12),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: ValoraTypography.titleLarge.copyWith(
+                      color: ValoraColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: ValoraColors.success,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colorScheme.surface, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(width: ValoraSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(userEmail, style: ValoraTypography.titleMedium.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                Text(
+                  userEmail,
+                  style: ValoraTypography.titleMedium.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text('Premium Member', style: ValoraTypography.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant)),
+                Text(
+                  'Premium Member',
+                  style: ValoraTypography.bodyMedium.copyWith(
+                    color: subtextColor,
+                  ),
+                ),
               ],
             ),
           ),
@@ -445,11 +513,31 @@ class SettingsScreen extends StatelessWidget {
             isSelected: true,
             onSelected: (_) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile editing coming soon!'), behavior: SnackBarBehavior.floating),
+                const SnackBar(
+                  content: Text('Profile editing coming soon!'),
+                  behavior: SnackBarBehavior.floating,
+                ),
               );
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color color) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: ValoraSpacing.xs),
+        child: Text(
+          title,
+          style: ValoraTypography.labelSmall.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
+        ),
       ),
     );
   }
