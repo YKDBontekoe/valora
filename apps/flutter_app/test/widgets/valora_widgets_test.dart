@@ -39,16 +39,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final paddingFinder = find.descendant(
-        of: find.byType(ValoraCard),
-        matching: find.byType(Padding),
+      // ValoraCard uses Padding widget internally when padding is provided
+      final paddingFinder = find.byWidgetPredicate(
+        (widget) => widget is Padding && widget.padding == const EdgeInsets.all(20),
       );
 
-      final hasCorrectPadding = tester.widgetList<Padding>(paddingFinder).any(
-        (p) => p.padding == const EdgeInsets.all(20),
-      );
-
-      expect(hasCorrectPadding, isTrue, reason: 'Should find a Padding widget with 20px padding');
+      expect(paddingFinder, findsOneWidget);
     });
 
     testWidgets('calls onTap when tapped', (WidgetTester tester) async {
@@ -68,8 +64,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Ensure tap is within the visible bounds of the card
-      await tester.tap(find.byType(ValoraCard), warnIfMissed: false);
+      // Tap the visual part of the card (AnimatedContainer) to avoid hit test warnings
+      // caused by wrapping widgets like MouseRegion/GestureDetector on top of stateful widget
+      await tester.tap(find.byType(AnimatedContainer), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
@@ -101,7 +98,8 @@ void main() {
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();
-      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      // Move to center of AnimatedContainer
+      await gesture.moveTo(tester.getCenter(cardFinder));
       await tester.pumpAndSettle();
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
@@ -156,7 +154,7 @@ void main() {
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();
-      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await gesture.moveTo(tester.getCenter(cardFinder));
       await tester.pumpAndSettle();
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
@@ -191,7 +189,7 @@ void main() {
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();
-      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await gesture.moveTo(tester.getCenter(cardFinder));
       await tester.pumpAndSettle();
 
       final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
@@ -222,7 +220,7 @@ void main() {
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();
-      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await gesture.moveTo(tester.getCenter(cardFinder));
       await tester.pumpAndSettle();
 
       var container = tester.widget<AnimatedContainer>(cardFinder);
@@ -230,7 +228,7 @@ void main() {
       expect(decoration.boxShadow, ValoraShadows.md); // Lifted
 
       // Now press down
-      await tester.startGesture(tester.getCenter(find.byType(ValoraCard)));
+      await tester.startGesture(tester.getCenter(cardFinder));
       await tester.pumpAndSettle();
 
       container = tester.widget<AnimatedContainer>(cardFinder);
