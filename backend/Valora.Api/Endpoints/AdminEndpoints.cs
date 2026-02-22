@@ -92,15 +92,25 @@ public static class AdminEndpoints
         group.MapGet("/jobs", async (
             IBatchJobService jobService,
             CancellationToken ct,
-            [FromQuery] int limit = 10) =>
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? status = null,
+            [FromQuery] string? type = null) =>
         {
-            if (limit < 1 || limit > 100)
+            if (page < 1 || pageSize < 1 || pageSize > 100)
             {
-                return Results.BadRequest(new { error = "Limit must be between 1 and 100." });
+                return Results.BadRequest(new { error = "Invalid pagination parameters. Page must be >= 1, PageSize must be between 1 and 100." });
             }
 
-            var jobs = await jobService.GetRecentJobsAsync(limit, ct);
-            return Results.Ok(jobs);
+            var jobs = await jobService.GetJobsAsync(page, pageSize, status, type, ct);
+            return Results.Ok(new {
+                jobs.Items,
+                jobs.PageIndex,
+                jobs.TotalPages,
+                jobs.TotalCount,
+                jobs.HasNextPage,
+                jobs.HasPreviousPage
+            });
         });
 
         group.MapGet("/jobs/{id}", async (

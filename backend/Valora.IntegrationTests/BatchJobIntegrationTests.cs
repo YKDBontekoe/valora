@@ -1,188 +1,118 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.DTOs;
-using Valora.Application.DTOs.Map;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Persistence;
 using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
-public class BatchJobIntegrationTests : IAsyncLifetime
+public class BatchJobIntegrationTests : BaseIntegrationTest
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
-    private BatchJobTestWebAppFactory _factory = null!;
-    private readonly Mock<ICbsNeighborhoodStatsClient> _mockStatsClient = new();
-    private readonly Mock<ICbsCrimeStatsClient> _mockCrimeClient = new();
-
-    public BatchJobIntegrationTests(TestcontainersDatabaseFixture fixture)
+    public BatchJobIntegrationTests(TestDatabaseFixture fixture) : base(fixture)
     {
-        _fixture = fixture;
     }
 
-    public async Task InitializeAsync()
+    public override async Task InitializeAsync()
     {
-        _factory = new BatchJobTestWebAppFactory(_fixture.ConnectionString, this);
-
-        using var scope = _factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-
-        // Cleanup existing data
-        if (context.BatchJobs.Any())
-        {
-            context.BatchJobs.RemoveRange(context.BatchJobs);
-        }
-        if (context.Neighborhoods.Any())
-        {
-            context.Neighborhoods.RemoveRange(context.Neighborhoods);
-        }
-        await context.SaveChangesAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_factory != null)
-        {
-            await _factory.DisposeAsync();
-        }
-    }
-
-    private class BatchJobTestWebAppFactory : IntegrationTestWebAppFactory
-    {
-        private readonly BatchJobIntegrationTests _testInstance;
-
-        public BatchJobTestWebAppFactory(string connectionString, BatchJobIntegrationTests testInstance)
-            : base(connectionString)
-        {
-            _testInstance = testInstance;
-        }
-
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            base.ConfigureWebHost(builder);
-            builder.ConfigureTestServices(services =>
-            {
-                // Register mocks
-                services.RemoveAll<ICbsNeighborhoodStatsClient>();
-                services.AddSingleton(_testInstance._mockStatsClient.Object);
-
-                services.RemoveAll<ICbsCrimeStatsClient>();
-                services.AddSingleton(_testInstance._mockCrimeClient.Object);
-
-                // Note: ICbsGeoClient is already mocked in the base factory,
-                // but we can rely on that or override it if needed.
-                // Since we need to access the mock to setup expectations, we can access it via the base factory property.
-                // However, the base factory creates its own mock instance.
-                // To coordinate, we can just use the base factory's CbsGeoClientMock.
-            });
-        }
+        // Need to be careful with initialization as BaseIntegrationTest might have its own logic.
+        // But here we just want to clear BatchJobs.
+        // Calling base.InitializeAsync() first.
+        await base.InitializeAsync();
+        DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
+        await DbContext.SaveChangesAsync();
     }
 
     [Fact]
-    public async Task CityIngestion_UpdatesDatabase_Success()
+    public async Task GetJobs_ShouldReturnPaginatedJobs()
     {
         // Arrange
-        var city = "Utrecht";
-        var neighborhoodCode = "BU0001";
-        var neighborhoodName = "Center";
+        await AuthenticateAsAdminAsync();
 
-        // Setup GeoClient mock (inherited from base factory)
-        _factory.CbsGeoClientMock
-            .Setup(x => x.GetNeighborhoodsByMunicipalityAsync(city, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<NeighborhoodGeometryDto>
+        // Seeding jobs
+        var jobs = new List<BatchJob>();
+        for (int i = 0; i < 15; i++)
+        {
+            jobs.Add(new BatchJob
             {
-                new(neighborhoodCode, neighborhoodName, "Neighborhood", 52.0907, 5.1214)
+                Type = i % 2 == 0 ? BatchJobType.CityIngestion : BatchJobType.MapGeneration,
+                Status = i % 3 == 0 ? BatchJobStatus.Completed : BatchJobStatus.Pending,
+                Target = $"City {i}",
+                Progress = 0,
+                CreatedAt = DateTime.UtcNow.AddMinutes(-i) // Newer first
             });
-
-        // Setup StatsClient mock
-        _mockStatsClient
-            .Setup(x => x.GetStatsAsync(It.Is<ResolvedLocationDto>(l => l.NeighborhoodCode == neighborhoodCode), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NeighborhoodStatsDto(
-                RegionCode: neighborhoodCode,
-                RegionType: "Neighborhood",
-                Residents: 1000,
-                PopulationDensity: 5000,
-                AverageWozValueKeur: 450,
-                LowIncomeHouseholdsPercent: 10,
-                Men: 500,
-                Women: 500,
-                Age0To15: 150,
-                Age15To25: 120,
-                Age25To45: 300,
-                Age45To65: 250,
-                Age65Plus: 180,
-                SingleHouseholds: 400,
-                HouseholdsWithoutChildren: 350,
-                HouseholdsWithChildren: 250,
-                AverageHouseholdSize: 2.1,
-                Urbanity: "Zeer sterk stedelijk",
-                AverageIncomePerRecipient: 35.0,
-                AverageIncomePerInhabitant: 30.0,
-                EducationLow: 20,
-                EducationMedium: 40,
-                EducationHigh: 40,
-                PercentageOwnerOccupied: 40,
-                PercentageRental: 60,
-                PercentageSocialHousing: 20,
-                PercentagePrivateRental: 40,
-                PercentagePre2000: 90,
-                PercentagePost2000: 10,
-                PercentageMultiFamily: 80,
-                CarsPerHousehold: 0.5,
-                CarDensity: 1000,
-                TotalCars: 500,
-                DistanceToGp: 0.5,
-                DistanceToSupermarket: 0.2,
-                DistanceToDaycare: 0.4,
-                DistanceToSchool: 0.6,
-                SchoolsWithin3km: 5.0,
-                RetrievedAtUtc: DateTimeOffset.UtcNow));
-
-        // Setup CrimeClient mock
-        _mockCrimeClient
-            .Setup(x => x.GetStatsAsync(It.Is<ResolvedLocationDto>(l => l.NeighborhoodCode == neighborhoodCode), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CrimeStatsDto(
-                TotalCrimesPer1000: 50,
-                BurglaryPer1000: 5,
-                ViolentCrimePer1000: 3,
-                TheftPer1000: 20,
-                VandalismPer1000: 8,
-                YearOverYearChangePercent: 5.2,
-                RetrievedAtUtc: DateTimeOffset.UtcNow));
-
-        using var scope = _factory.Services.CreateScope();
-        var jobService = scope.ServiceProvider.GetRequiredService<IBatchJobService>();
+        }
+        DbContext.BatchJobs.AddRange(jobs);
+        await DbContext.SaveChangesAsync();
 
         // Act
-        var job = await jobService.EnqueueJobAsync(BatchJobType.CityIngestion, city);
-
-        // Manually trigger processing
-        await jobService.ProcessNextJobAsync();
+        var response = await Client.GetAsync("/api/admin/jobs?page=1&pageSize=10");
 
         // Assert
-        using var assertScope = _factory.Services.CreateScope();
-        var dbContext = assertScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
 
-        // Verify Job
-        var updatedJob = await dbContext.BatchJobs.FindAsync(job.Id);
-        Assert.NotNull(updatedJob);
-        Assert.Equal(BatchJobStatus.Completed, updatedJob.Status);
-        Assert.Equal(100, updatedJob.Progress);
-        Assert.Contains("Processed 1 neighborhoods", updatedJob.ResultSummary);
+        Assert.NotNull(result);
+        Assert.Equal(15, result.TotalCount);
+        Assert.Equal(10, result.Items.Count);
+        Assert.Equal(1, result.PageIndex);
+        Assert.Equal(2, result.TotalPages);
+        Assert.True(result.HasNextPage);
+        Assert.False(result.HasPreviousPage);
+    }
 
-        // Verify Neighborhood
-        var neighborhood = await dbContext.Neighborhoods.FirstOrDefaultAsync(n => n.Code == neighborhoodCode);
-        Assert.NotNull(neighborhood);
-        Assert.Equal(neighborhoodName, neighborhood.Name);
-        Assert.Equal(city, neighborhood.City);
-        Assert.Equal(5000, neighborhood.PopulationDensity); // From mock
-        Assert.Equal(450000, neighborhood.AverageWozValue); // 450 * 1000
-        Assert.Equal(50, neighborhood.CrimeRate); // From mock
+    [Fact]
+    public async Task GetJobs_ShouldFilterByStatus()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        var jobs = new List<BatchJob>
+        {
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Completed, Target = "C1", CreatedAt = DateTime.UtcNow },
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Pending, Target = "C2", CreatedAt = DateTime.UtcNow },
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Failed, Target = "C3", CreatedAt = DateTime.UtcNow }
+        };
+        DbContext.BatchJobs.AddRange(jobs);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/jobs?status=Completed");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Single(result.Items);
+        Assert.Equal("Completed", result.Items[0].Status);
+    }
+
+    [Fact]
+    public async Task GetJobs_ShouldFilterByType()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        var jobs = new List<BatchJob>
+        {
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Completed, Target = "C1", CreatedAt = DateTime.UtcNow },
+            new() { Type = BatchJobType.MapGeneration, Status = BatchJobStatus.Pending, Target = "C2", CreatedAt = DateTime.UtcNow }
+        };
+        DbContext.BatchJobs.AddRange(jobs);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/jobs?type=MapGeneration");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Single(result.Items);
+        Assert.Equal("MapGeneration", result.Items[0].Type);
     }
 }

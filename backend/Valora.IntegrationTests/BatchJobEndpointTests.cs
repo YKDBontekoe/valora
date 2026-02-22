@@ -42,9 +42,10 @@ public class BatchJobEndpointTests : BaseIntegrationTest
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var list = await response.Content.ReadFromJsonAsync<List<BatchJobSummaryDto>>();
-        list.ShouldNotBeEmpty();
-        var dto = list.First(j => j.Target == "ListCity");
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+        result.ShouldNotBeNull();
+        result!.Items.ShouldNotBeEmpty();
+        var dto = result.Items.First(j => j.Target == "ListCity");
         // Cannot check ExecutionLog as it is not on the DTO, which is the point.
         dto.Target.ShouldBe("ListCity");
     }

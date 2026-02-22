@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Play, AlertCircle, Database, Sparkles, Info } from 'lucide-react';
+import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
@@ -15,14 +15,22 @@ const BatchJobs: React.FC = () => {
   const [targetCity, setTargetCity] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination & Filtering
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const pageSize = 10;
+
   // Modal State
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchJobs = async () => {
     try {
-      const data = await adminService.getJobs();
-      setJobs(data);
+      const data = await adminService.getJobs(page, pageSize, statusFilter, typeFilter);
+      setJobs(data.items);
+      setTotalPages(data.totalPages);
       setError(null);
     } catch {
       setError('Unable to load job history.');
@@ -35,7 +43,7 @@ const BatchJobs: React.FC = () => {
     fetchJobs();
     const interval = setInterval(fetchJobs, 5000); // Live poll every 5s
     return () => clearInterval(interval);
-  }, []);
+  }, [page, statusFilter, typeFilter]);
 
   const handleStartJob = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +70,14 @@ const BatchJobs: React.FC = () => {
   const closeDetails = () => {
     setIsModalOpen(false);
     setSelectedJobId(null);
+  };
+
+  const nextPage = () => {
+    if (page < totalPages) setPage(p => p + 1);
+  };
+
+  const prevPage = () => {
+    if (page > 1) setPage(p => p - 1);
   };
 
   const getStatusBadge = (status: string) => {
@@ -132,11 +148,35 @@ const BatchJobs: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-[2rem] border border-brand-100 shadow-premium overflow-hidden">
-        <div className="px-8 py-6 border-b border-brand-100 bg-brand-50/30 flex items-center justify-between">
+        <div className="px-8 py-6 border-b border-brand-100 bg-brand-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="font-black text-brand-900 uppercase tracking-wider text-xs">Pipeline Execution History</h2>
-          <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
-              <span className="text-[10px] font-black text-primary-700 uppercase tracking-wider">Live Updates Enabled</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                  className="px-4 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-brand-700 outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer hover:border-brand-200 transition-colors"
+              >
+                  <option value="All">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Failed">Failed</option>
+              </select>
+               <select
+                  value={typeFilter}
+                  onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+                  className="px-4 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-brand-700 outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer hover:border-brand-200 transition-colors"
+              >
+                  <option value="All">All Types</option>
+                  <option value="CityIngestion">CityIngestion</option>
+                  <option value="MapGeneration">MapGeneration</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+                <span className="text-[10px] font-black text-primary-700 uppercase tracking-wider hidden sm:inline">Live</span>
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -252,6 +292,33 @@ const BatchJobs: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="px-8 py-6 border-t border-brand-100 bg-brand-50/10 flex items-center justify-between">
+          <div className="text-[10px] font-black text-brand-400 uppercase tracking-[0.1em]">
+            Page <span className="text-brand-900">{page}</span> <span className="mx-2 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={prevPage}
+              disabled={page === 1 || loading}
+              leftIcon={<ChevronLeft size={14} />}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={nextPage}
+              disabled={page === totalPages || loading}
+              rightIcon={<ChevronRight size={14} />}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
 
