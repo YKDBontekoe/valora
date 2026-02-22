@@ -142,7 +142,7 @@ class ApiClient {
     var response = await withTimeout(request(headers));
 
     if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback!();
+      final newToken = await _refreshTokenCallback();
       if (newToken != null) {
         _authToken = newToken;
         headers['Authorization'] = 'Bearer $newToken';
