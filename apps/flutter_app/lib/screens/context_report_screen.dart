@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 
-import '../services/api_service.dart';
+import '../repositories/context_report_repository.dart';
 import '../services/pdok_service.dart';
 import '../providers/context_report_provider.dart';
 import '../widgets/report/context_report_view.dart';
@@ -60,7 +60,7 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ContextReportProvider>(
       create: (_) =>
-          ContextReportProvider(apiService: context.read<ApiService>()),
+          ContextReportProvider(repository: context.read<ContextReportRepository>()),
       child: Material(
         type: MaterialType.transparency,
         child: Consumer<ContextReportProvider>(

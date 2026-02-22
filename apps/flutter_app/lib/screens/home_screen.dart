@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/workspace_provider.dart';
-import '../services/api_service.dart';
+import '../repositories/workspace_repository.dart';
 import '../services/notification_service.dart';
 import '../widgets/home/home_bottom_nav_bar.dart';
 import 'context_report_screen.dart';
@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<WorkspaceProvider>(
       create: (context) => WorkspaceProvider(
-        context.read<ApiService>(),
+        context.read<WorkspaceRepository>(),
       ),
       child: Scaffold(
         extendBody: true,
