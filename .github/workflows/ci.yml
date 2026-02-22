@@ -94,6 +94,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          directory: backend
           flags: backend
           fail_ci_if_error: true
 
@@ -133,6 +134,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          directory: apps/flutter_app
           flags: frontend
           fail_ci_if_error: true
 
@@ -173,6 +175,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          directory: apps/admin_page
           flags: admin-page
           fail_ci_if_error: true
 
