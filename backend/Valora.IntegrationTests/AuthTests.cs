@@ -33,6 +33,21 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Register_WithShortPassword_ReturnsBadRequest()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = "short@example.com",
+            Password = "ShortPwd1!",
+            ConfirmPassword = "ShortPwd1!"
+        });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
     {
         // Arrange
