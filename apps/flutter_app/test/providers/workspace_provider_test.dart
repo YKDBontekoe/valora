@@ -6,7 +6,6 @@ import 'package:valora_app/repositories/workspace_repository.dart';
 import 'package:valora_app/models/workspace.dart';
 import 'package:valora_app/models/saved_listing.dart';
 import 'package:valora_app/models/comment.dart';
-import 'package:valora_app/models/activity_log.dart';
 
 @GenerateMocks([WorkspaceRepository])
 import 'workspace_provider_test.mocks.dart';
