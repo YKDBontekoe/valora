@@ -151,8 +151,8 @@ export const adminService = {
     try {
       const response = await api.get<SystemHealth>('/health');
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 503) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 503) {
         return error.response.data;
       }
       throw error;
