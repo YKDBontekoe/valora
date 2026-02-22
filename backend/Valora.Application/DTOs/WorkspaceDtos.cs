@@ -1,8 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.DTOs;
 
-public record CreateWorkspaceDto(string Name, string? Description);
+public record CreateWorkspaceDto(
+    [property: Required] [property: StringLength(100)] string Name,
+    [property: StringLength(500)] string? Description
+);
 
 public record WorkspaceDto(
     Guid Id,
@@ -23,7 +27,15 @@ public record WorkspaceMemberDto(
     DateTime? JoinedAt
 );
 
-public record InviteMemberDto(string Email, WorkspaceRole Role);
+public record InviteMemberDto(
+    [property: Required] [property: EmailAddress] string Email,
+    [property: Required] WorkspaceRole Role
+);
+
+public record SaveListingDto(
+    [property: Required] Guid ListingId,
+    [property: StringLength(2000)] string? Notes
+);
 
 public record SavedListingDto(
     Guid Id,
@@ -55,7 +67,10 @@ public record CommentDto(
     Dictionary<string, List<string>> Reactions
 );
 
-public record AddCommentDto(string Content, Guid? ParentId);
+public record AddCommentDto(
+    [property: Required] [property: StringLength(2000)] string Content,
+    Guid? ParentId
+);
 
 public record ActivityLogDto(
     Guid Id,

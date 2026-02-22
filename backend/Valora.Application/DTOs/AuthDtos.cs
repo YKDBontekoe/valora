@@ -39,3 +39,11 @@ public record ExternalLoginRequestDto(
     [property: Required] [property: StringLength(50)] string Provider,
     [property: Required] [property: StringLength(5000)] string IdToken
 );
+
+public record GoogleTokenPayloadDto
+{
+    public string Email { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Picture { get; init; }
+    public string Subject { get; init; } = string.Empty;
+}

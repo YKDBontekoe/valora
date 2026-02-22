@@ -108,7 +108,14 @@ builder.Services.AddHostedService<BatchJobWorker>();
 // Add Identity
 // We use AddIdentityCore instead of AddIdentity to avoid adding unnecessary UI pages (Razor Pages)
 // and cookie authentication services, as this is a pure API backend using JWTs.
-builder.Services.AddIdentityCore<ApplicationUser>()
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 12;
+    })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ValoraDbContext>();
 
