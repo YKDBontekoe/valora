@@ -178,28 +178,58 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     var isTesting = builder.Environment.IsEnvironment("Testing");
-    var permitLimitStrict = isTesting ? 1000 : 10;
-    var permitLimitFixed = isTesting ? 1000 : 100;
+    var configStrict = builder.Configuration.GetValue<int?>("RateLimiting:StrictLimit");
+    var configFixed = builder.Configuration.GetValue<int?>("RateLimiting:FixedLimit");
+
+    // Validate configuration values. If invalid (<= 0), fallback to defaults.
+    var permitLimitStrict = (configStrict.HasValue && configStrict.Value > 0) ? configStrict.Value : (isTesting ? 1000 : 10);
+    var permitLimitFixed = (configFixed.HasValue && configFixed.Value > 0) ? configFixed.Value : (isTesting ? 1000 : 100);
 
     // Policy: "strict"
     // Used for expensive or sensitive endpoints like Login (brute-force prevention)
     // and AI Report Generation (cost control).
-    options.AddFixedWindowLimiter("strict", limiterOptions =>
+    options.AddPolicy("strict", context =>
     {
-        limiterOptions.PermitLimit = permitLimitStrict;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 0;
+        if (context.User.IsInRole("Admin"))
+        {
+            return RateLimitPartition.GetNoLimiter("Admin");
+        }
+
+        var partitionKey = context.User.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
+            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitLimitStrict,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
     });
 
     // Policy: "fixed"
     // General purpose rate limiting for standard CRUD operations to prevent abuse.
-    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    options.AddPolicy("fixed", context =>
     {
-        limiterOptions.PermitLimit = permitLimitFixed;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 2;
+        if (context.User.IsInRole("Admin"))
+        {
+            return RateLimitPartition.GetNoLimiter("Admin");
+        }
+
+        var partitionKey = context.User.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
+            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitLimitFixed,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 2
+            });
     });
 });
 
@@ -237,14 +267,14 @@ if (!isOnRender && (!app.Environment.IsDevelopment() || app.Configuration.GetVal
 //    even error responses or 404s.
 app.UseMiddleware<Valora.Api.Middleware.SecurityHeadersMiddleware>();
 
-// 2. Rate Limiting (Before Auth)
-//    We rate limit *before* authentication to protect the expensive authentication logic
-//    (DB lookups, crypto) from DDoS attacks. Anonymous IPs can be throttled here.
-app.UseRateLimiter();
-
-// 3. Authentication (Identify the user)
+// 2. Authentication (Identify the user)
 //    Parses the JWT and sets the ClaimsPrincipal.
 app.UseAuthentication();
+
+// 3. Rate Limiting (After Auth)
+//    We rate limit after authentication so we can exempt Admin users from limits.
+//    Unauthenticated requests will still be limited as per policy (User is anonymous).
+app.UseRateLimiter();
 
 // Sentry User Enrichment Middleware
 app.UseMiddleware<Valora.Api.Middleware.SentryUserMiddleware>();
