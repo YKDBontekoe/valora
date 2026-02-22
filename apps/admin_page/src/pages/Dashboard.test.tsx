@@ -56,11 +56,12 @@ describe('Dashboard Page', () => {
 
   it('handles retry failed jobs successfully', async () => {
     (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
-    (adminService.getJobs as Mock).mockResolvedValue([
-      { id: '1', status: 'Failed' },
-      { id: '2', status: 'Completed' },
-      { id: '3', status: 'Failed' }
-    ]);
+    (adminService.getJobs as Mock).mockResolvedValue({
+      items: [
+        { id: '1', status: 'Failed' },
+        { id: '3', status: 'Failed' }
+      ]
+    });
     (adminService.retryJob as Mock).mockResolvedValue({});
 
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
@@ -82,10 +83,12 @@ describe('Dashboard Page', () => {
 
   it('handles partial retry failure', async () => {
     (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
-    (adminService.getJobs as Mock).mockResolvedValue([
-      { id: '1', status: 'Failed' },
-      { id: '2', status: 'Failed' }
-    ]);
+    (adminService.getJobs as Mock).mockResolvedValue({
+      items: [
+        { id: '1', status: 'Failed' },
+        { id: '2', status: 'Failed' }
+      ]
+    });
 
     // Fail first, succeed second
     (adminService.retryJob as Mock)
@@ -107,9 +110,9 @@ describe('Dashboard Page', () => {
 
   it('shows no failed jobs toast', async () => {
     (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
-    (adminService.getJobs as Mock).mockResolvedValue([
-      { id: '1', status: 'Completed' }
-    ]);
+    (adminService.getJobs as Mock).mockResolvedValue({
+      items: []
+    });
 
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('System Health')).toBeInTheDocument());

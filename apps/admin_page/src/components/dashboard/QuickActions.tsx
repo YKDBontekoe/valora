@@ -16,11 +16,12 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
   const handleRetryFailedJobs = async () => {
     setRetrying(true);
     try {
-      const jobs = await adminService.getJobs(100);
-      const failedJobs = jobs.filter(j => j.status === 'Failed');
+      const response = await adminService.getJobs(1, 100, 'Failed');
+      const failedJobs = response.items;
 
       if (failedJobs.length === 0) {
         showToast('No failed jobs found.', 'info');
+        setRetrying(false);
         return;
       }
 
