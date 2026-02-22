@@ -9,6 +9,7 @@ import 'core/config/app_config.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/settings_provider.dart';
 import 'providers/insights_provider.dart';
 import 'screens/startup_screen.dart';
 import 'services/api_client.dart';
@@ -85,6 +86,7 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider<SettingsProvider>(create: (_) => SettingsProvider()),
           Provider<AuthService>(create: (_) => AuthService()),
           ChangeNotifierProxyProvider<AuthService, AuthProvider>(
             create: (context) =>

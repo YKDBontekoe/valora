@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
-import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus } from '../types';
+import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob } from '../types';
 import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -50,9 +50,8 @@ api.interceptors.response.use(
           const { token, refreshToken: newRefreshToken } = response.data;
           localStorage.setItem('admin_token', token);
           localStorage.setItem('admin_refresh_token', newRefreshToken);
-          if (originalRequest.headers) {
-             originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         } catch {
           clearAdminStorage();
@@ -68,7 +67,7 @@ api.interceptors.response.use(
 
     // Resilience Logic
     const isNetworkError = !error.response;
-    const isServerError = error.response?.status && (error.response.status >= 500 || error.response.status === 429);
+    const isServerError = error.response?.status >= 500 || error.response?.status === 429;
     const isIdempotent = ['get', 'put', 'delete', 'head', 'options'].includes(originalRequest.method?.toLowerCase() || '');
 
     if ((isNetworkError || (isServerError && isIdempotent))) {
@@ -141,10 +140,6 @@ export const adminService = {
   },
   startJob: async (type: string, target: string): Promise<BatchJob> => {
     const response = await api.post<BatchJob>("/admin/jobs", { type, target });
-    return response.data;
-  },
-  getDatasetStatus: async (): Promise<DatasetStatus[]> => {
-    const response = await api.get<DatasetStatus[]>('/admin/dataset/status');
     return response.data;
   },
 };
