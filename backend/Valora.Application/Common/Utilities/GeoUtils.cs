@@ -76,43 +76,8 @@ public static class GeoUtils
 
     public static bool IsPointInPolygon(double lat, double lon, JsonElement geoJson)
     {
-        if (geoJson.ValueKind != JsonValueKind.Object) return false;
-
-        // Handle Feature objects by extracting geometry
-        if (geoJson.TryGetProperty("type", out var typeProp) &&
-            string.Equals(typeProp.GetString(), "Feature", StringComparison.OrdinalIgnoreCase))
-        {
-            if (geoJson.TryGetProperty("geometry", out var geometry))
-            {
-                return IsPointInPolygon(lat, lon, geometry);
-            }
-            return false;
-        }
-
-        if (!geoJson.TryGetProperty("type", out typeProp) ||
-            !geoJson.TryGetProperty("coordinates", out var coordsProp))
-        {
-            return false;
-        }
-
-        var type = typeProp.GetString();
-
-        if (string.Equals(type, "Polygon", StringComparison.OrdinalIgnoreCase))
-        {
-            return IsPointInPolygonCoordinates(lat, lon, coordsProp);
-        }
-        else if (string.Equals(type, "MultiPolygon", StringComparison.OrdinalIgnoreCase))
-        {
-            foreach (var polygonCoords in coordsProp.EnumerateArray())
-            {
-                if (IsPointInPolygonCoordinates(lat, lon, polygonCoords))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        var parsed = ParseGeometry(geoJson);
+        return IsPointInPolygon(lat, lon, parsed);
     }
 
     public static ParsedGeometry ParseGeometry(JsonElement geoJson)
@@ -236,88 +201,6 @@ public static class GeoUtils
             double yi = ring[i].Lat;
             double xj = ring[j].Lon;
             double yj = ring[j].Lat;
-
-            bool intersect = ((yi > lat) != (yj > lat)) &&
-                             (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-        }
-
-        return inside;
-    }
-
-    private static bool IsPointInPolygonCoordinates(double lat, double lon, JsonElement polygonCoordinates)
-    {
-        // GeoJSON Polygon coordinates are an array of LinearRings.
-        // The first ring is the exterior boundary.
-        // Subsequent rings are interior boundaries (holes).
-
-        var rings = polygonCoordinates.EnumerateArray();
-        if (!rings.MoveNext()) return false; // No rings
-
-        var exteriorRing = rings.Current;
-
-        // Optimization: Check Bounding Box of exterior ring first
-        if (!IsPointInBoundingBox(lat, lon, exteriorRing))
-        {
-            return false;
-        }
-
-        if (!IsPointInLinearRing(lat, lon, exteriorRing))
-        {
-            return false;
-        }
-
-        // Check holes (if point is in a hole, it's NOT in the polygon)
-        while (rings.MoveNext())
-        {
-            if (IsPointInLinearRing(lat, lon, rings.Current))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static bool IsPointInBoundingBox(double lat, double lon, JsonElement ring)
-    {
-        double minLat = double.MaxValue;
-        double maxLat = double.MinValue;
-        double minLon = double.MaxValue;
-        double maxLon = double.MinValue;
-
-        foreach (var point in ring.EnumerateArray())
-        {
-            if (point.ValueKind != JsonValueKind.Array || point.GetArrayLength() < 2) continue;
-            double pLon = point[0].GetDouble();
-            double pLat = point[1].GetDouble();
-
-            if (pLat < minLat) minLat = pLat;
-            if (pLat > maxLat) maxLat = pLat;
-            if (pLon < minLon) minLon = pLon;
-            if (pLon > maxLon) maxLon = pLon;
-        }
-
-        return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
-    }
-
-    private static bool IsPointInLinearRing(double lat, double lon, JsonElement ring)
-    {
-        bool inside = false;
-        // Filter out invalid points
-        var points = ring.EnumerateArray()
-            .Where(p => p.ValueKind == JsonValueKind.Array && p.GetArrayLength() >= 2)
-            .ToList();
-
-        int count = points.Count;
-
-        for (int i = 0, j = count - 1; i < count; j = i++)
-        {
-            // GeoJSON is [lon, lat]
-            double xi = points[i][0].GetDouble();
-            double yi = points[i][1].GetDouble();
-            double xj = points[j][0].GetDouble();
-            double yj = points[j][1].GetDouble();
 
             bool intersect = ((yi > lat) != (yj > lat)) &&
                              (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
