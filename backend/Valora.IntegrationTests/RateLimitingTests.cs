@@ -78,4 +78,28 @@ public class RateLimitingTests : BaseIntegrationTest
         var blockedResponse = await client.GetAsync("/api/admin/users?page=1&pageSize=10");
         blockedResponse.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
     }
+
+    [Fact]
+    public async Task RateLimit_ShouldNotCrash_WithInvalidConfiguration()
+    {
+        // Arrange
+        using var client = Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "RateLimiting:FixedLimit", "0" }, // Invalid
+                    { "RateLimiting:StrictLimit", "-10" } // Invalid
+                });
+            });
+        }).CreateClient();
+
+        // Act & Assert
+        // Application should fallback to default limits and work
+        var response = await client.GetAsync("/api/health");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+    }
 }

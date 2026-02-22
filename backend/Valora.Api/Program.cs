@@ -178,8 +178,12 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     var isTesting = builder.Environment.IsEnvironment("Testing");
-    var permitLimitStrict = builder.Configuration.GetValue<int?>("RateLimiting:StrictLimit") ?? (isTesting ? 1000 : 10);
-    var permitLimitFixed = builder.Configuration.GetValue<int?>("RateLimiting:FixedLimit") ?? (isTesting ? 1000 : 100);
+    var configStrict = builder.Configuration.GetValue<int?>("RateLimiting:StrictLimit");
+    var configFixed = builder.Configuration.GetValue<int?>("RateLimiting:FixedLimit");
+
+    // Validate configuration values. If invalid (<= 0), fallback to defaults.
+    var permitLimitStrict = (configStrict.HasValue && configStrict.Value > 0) ? configStrict.Value : (isTesting ? 1000 : 10);
+    var permitLimitFixed = (configFixed.HasValue && configFixed.Value > 0) ? configFixed.Value : (isTesting ? 1000 : 100);
 
     // Policy: "strict"
     // Used for expensive or sensitive endpoints like Login (brute-force prevention)
@@ -191,7 +195,11 @@ builder.Services.AddRateLimiter(options =>
             return RateLimitPartition.GetNoLimiter("Admin");
         }
 
-        return RateLimitPartition.GetFixedWindowLimiter("global_strict",
+        var partitionKey = context.User.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
+            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = permitLimitStrict,
@@ -210,7 +218,11 @@ builder.Services.AddRateLimiter(options =>
             return RateLimitPartition.GetNoLimiter("Admin");
         }
 
-        return RateLimitPartition.GetFixedWindowLimiter("global_fixed",
+        var partitionKey = context.User.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
+            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = permitLimitFixed,
