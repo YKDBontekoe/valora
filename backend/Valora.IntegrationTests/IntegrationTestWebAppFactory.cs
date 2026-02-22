@@ -24,6 +24,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
     public IntegrationTestWebAppFactory(string connectionString)
     {
         _connectionString = connectionString;
+        Environment.SetEnvironmentVariable("DATABASE_URL", connectionString);
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

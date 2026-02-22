@@ -9,16 +9,16 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
+[Collection("TestDatabase")]
 public class NotificationDeleteTests : IAsyncLifetime
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
     private readonly IntegrationTestWebAppFactory _factory;
     private readonly ValoraDbContext _dbContext;
     private readonly HttpClient _client;
     private IServiceScope? _scope;
 
-    public NotificationDeleteTests(TestcontainersDatabaseFixture fixture)
+    public NotificationDeleteTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
         _factory = fixture.Factory ?? throw new InvalidOperationException("Factory not initialized");

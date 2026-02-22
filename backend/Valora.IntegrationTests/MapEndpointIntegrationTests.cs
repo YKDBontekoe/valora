@@ -31,7 +31,8 @@ public class MapEndpointIntegrationTests : BaseIntegrationTest
             It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapAmenityDto>());
 
-        var response = await Client.GetAsync($"/api/map/amenities?minLat={minLat}&minLon={minLon}&maxLat={maxLat}&maxLon={maxLon}");
+        var url = $"/api/map/amenities?minLat={minLat.ToString(System.Globalization.CultureInfo.InvariantCulture)}&minLon={minLon.ToString(System.Globalization.CultureInfo.InvariantCulture)}&maxLat={maxLat.ToString(System.Globalization.CultureInfo.InvariantCulture)}&maxLon={maxLon.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        var response = await Client.GetAsync(url);
 
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<List<MapAmenityDto>>();

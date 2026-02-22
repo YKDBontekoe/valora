@@ -31,7 +31,14 @@ public static class DependencyInjection
 
         services.AddDbContext<ValoraDbContext>(options =>
         {
+<<<<<<< refactor/repository-pattern-and-api-client-12056244307917596599
             options.UseNpgsql(
+=======
+            if (connectionString != null && connectionString.StartsWith("InMemory", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            options.UseSqlServer(
+>>>>>>> main
                 connectionString,
                 npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 5,
