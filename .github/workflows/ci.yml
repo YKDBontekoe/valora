@@ -169,20 +169,6 @@ jobs:
           SENTRY_RELEASE: ${{ github.sha }}
           VITE_SENTRY_RELEASE: ${{ github.sha }}
 
-      - name: Upload source maps to Sentry
-        # Only upload on pushes to main so PRs don’t pollute Sentry releases
-        if: github.event_name == 'push'
-        run: |
-          npx --yes @sentry/cli@latest sourcemaps upload \
-            --org "$SENTRY_ORG" \
-            --project "$SENTRY_PROJECT" \
-            --release "$SENTRY_RELEASE" \
-            dist
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_ADMIN }}
-          SENTRY_RELEASE: ${{ github.sha }}
 
       - name: Test
         run: npm run test:coverage
