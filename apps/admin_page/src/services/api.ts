@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus } from '../types';
 import { showToast } from './toast';

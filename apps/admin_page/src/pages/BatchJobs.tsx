@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers } from 'lucide-react';
 import { adminService } from '../services/api';
@@ -28,7 +28,7 @@ const BatchJobs: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDatasetModalOpen, setIsDatasetModalOpen] = useState(false);
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       const data = await adminService.getJobs(page, pageSize, statusFilter, typeFilter);
       setJobs(data.items);
@@ -39,13 +39,13 @@ const BatchJobs: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, statusFilter, typeFilter]);
 
   useEffect(() => {
     fetchJobs();
     const interval = setInterval(fetchJobs, 5000); // Live poll every 5s
     return () => clearInterval(interval);
-  }, [page, statusFilter, typeFilter]);
+  }, [fetchJobs]);
 
   const handleStartJob = async (e: React.FormEvent) => {
     e.preventDefault();
