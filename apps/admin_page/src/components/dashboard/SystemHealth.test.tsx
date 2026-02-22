@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import SystemHealth from './SystemHealth';
 import { adminService } from '../../services/api';
 
@@ -20,7 +20,7 @@ describe('SystemHealth Component', () => {
   });
 
   it('renders loading skeleton initially', async () => {
-    (adminService.getHealth as any).mockReturnValue(new Promise(() => {}));
+    (adminService.getHealth as Mock).mockReturnValue(new Promise(() => {}));
 
     render(<SystemHealth />);
 
@@ -43,7 +43,7 @@ describe('SystemHealth Component', () => {
       timestamp: '2023-01-01T12:00:00Z'
     };
 
-    (adminService.getHealth as any).mockResolvedValue(mockHealth);
+    (adminService.getHealth as Mock).mockResolvedValue(mockHealth);
 
     render(<SystemHealth />);
 
@@ -69,7 +69,7 @@ describe('SystemHealth Component', () => {
       timestamp: '2023-01-01T12:00:00Z'
     };
 
-    (adminService.getHealth as any).mockResolvedValue(mockHealth);
+    (adminService.getHealth as Mock).mockResolvedValue(mockHealth);
 
     render(<SystemHealth />);
 
@@ -94,7 +94,7 @@ describe('SystemHealth Component', () => {
     };
 
     // First call success
-    (adminService.getHealth as any)
+    (adminService.getHealth as Mock)
       .mockResolvedValueOnce(mockHealth);
 
     render(<SystemHealth />);
@@ -106,7 +106,7 @@ describe('SystemHealth Component', () => {
     });
 
     // Mock next call failure
-    (adminService.getHealth as any).mockRejectedValueOnce(new Error('Network error'));
+    (adminService.getHealth as Mock).mockRejectedValueOnce(new Error('Network error'));
 
     // Find refresh button (it has RefreshCw icon, maybe check for button role)
     const refreshButton = screen.getByRole('button');

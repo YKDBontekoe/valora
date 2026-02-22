@@ -46,7 +46,7 @@ const BatchJobs: React.FC = () => {
     try {
         const data = await adminService.getHealth();
         setHealth(data);
-    } catch (e) {
+    } catch {
         // Silent fail for header badge
     }
   }, []);
