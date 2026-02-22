@@ -45,3 +45,14 @@ export interface DatasetStatus {
   neighborhoodCount: number;
   lastUpdated: string | null;
 }
+
+export interface HealthStatus {
+  status: string;
+  databaseStatus: string;
+  apiLatencyMs: number;
+  activeJobs: number;
+  queuedJobs: number;
+  failedJobs: number;
+  lastPipelineSuccess: string | null;
+  timestamp: string;
+}

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
-import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus } from '../types';
+import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus, HealthStatus } from '../types';
 import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -106,6 +106,10 @@ export const authService = {
 };
 
 export const adminService = {
+  getSystemHealth: async (): Promise<HealthStatus> => {
+    const response = await api.get<HealthStatus>('/health');
+    return response.data;
+  },
   getStats: async (): Promise<Stats> => {
     const response = await api.get<Stats>('/admin/stats');
     return response.data;

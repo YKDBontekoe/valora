@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers } from 'lucide-react';
 import { adminService } from '../services/api';
-import type { BatchJob } from '../types';
+import type { BatchJob, HealthStatus } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
 import Skeleton from '../components/Skeleton';
@@ -15,6 +15,7 @@ const BatchJobs: React.FC = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [targetCity, setTargetCity] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
 
   // Pagination & Filtering
   const [page, setPage] = useState(1);
@@ -41,9 +42,22 @@ const BatchJobs: React.FC = () => {
     }
   }, [page, pageSize, statusFilter, typeFilter]);
 
+  const fetchHealth = async () => {
+    try {
+        const data = await adminService.getSystemHealth();
+        setHealth(data);
+    } catch {
+        // silent fail
+    }
+  };
+
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 5000); // Live poll every 5s
+    fetchHealth();
+    const interval = setInterval(() => {
+        fetchJobs();
+        fetchHealth(); // Refresh health with jobs
+    }, 5000);
     return () => clearInterval(interval);
   }, [fetchJobs]);
 
@@ -116,13 +130,17 @@ const BatchJobs: React.FC = () => {
         </div>
         <div className="hidden md:flex items-center gap-4 px-6 py-3 bg-white rounded-2xl border border-brand-100 shadow-premium">
             <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
-                <span className="text-xs font-bold text-brand-700">Cluster: Primary-A</span>
+                <div className={`w-2 h-2 rounded-full animate-pulse ${health?.databaseStatus === 'Connected' ? 'bg-success-500' : 'bg-error-500'}`} />
+                <span className="text-xs font-bold text-brand-700">
+                    {health ? (health.databaseStatus === 'Connected' ? 'DB Connected' : 'DB Disconnected') : 'Checking DB...'}
+                </span>
             </div>
             <div className="w-px h-4 bg-brand-100" />
             <div className="flex items-center gap-2">
-                <Activity size={14} className="text-primary-500" />
-                <span className="text-xs font-bold text-brand-700">Healthy</span>
+                <Activity size={14} className={health?.status === 'Healthy' ? 'text-success-500' : 'text-warning-500'} />
+                <span className="text-xs font-bold text-brand-700">
+                    {health?.status || 'Unknown Status'}
+                </span>
             </div>
         </div>
       </div>

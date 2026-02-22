@@ -270,12 +270,57 @@ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 /// </summary>
 api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 {
-    if (await db.Database.CanConnectAsync(ct))
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    bool canConnect = false;
+    try
     {
-        return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+        canConnect = await db.Database.CanConnectAsync(ct);
+    }
+    catch
+    {
+        canConnect = false;
+    }
+    stopwatch.Stop();
+
+    if (!canConnect)
+    {
+         return Results.Json(new HealthStatusDto
+         {
+             Status = "Unhealthy",
+             DatabaseStatus = "Disconnected",
+             ApiLatencyMs = stopwatch.ElapsedMilliseconds,
+             ActiveJobs = 0,
+             QueuedJobs = 0,
+             FailedJobs = 0,
+             LastPipelineSuccess = null,
+             Timestamp = DateTime.UtcNow
+         }, statusCode: 503);
     }
 
-    return Results.Problem("Service unavailable", statusCode: 503);
+    // Gather metrics
+    var activeJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct);
+    var queuedJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Pending, ct);
+    var failedJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Failed, ct);
+    var lastSuccess = await db.BatchJobs
+        .Where(j => j.Status == BatchJobStatus.Completed)
+        .OrderByDescending(j => j.CompletedAt)
+        .Select(j => j.CompletedAt)
+        .FirstOrDefaultAsync(ct);
+
+    var status = "Healthy";
+    if (failedJobs > 5) status = "Degraded";
+
+    return Results.Ok(new HealthStatusDto
+    {
+        Status = status,
+        DatabaseStatus = "Connected",
+        ApiLatencyMs = stopwatch.ElapsedMilliseconds,
+        ActiveJobs = activeJobs,
+        QueuedJobs = queuedJobs,
+        FailedJobs = failedJobs,
+        LastPipelineSuccess = lastSuccess,
+        Timestamp = DateTime.UtcNow
+    });
 })
 .DisableRateLimiting();
 
