@@ -70,7 +70,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onSelect, onClose }) => {
             <select
                 className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={sort}
-                onChange={(e) => setSort(e.target.value as any)}
+                onChange={(e) => setSort(e.target.value as 'free' | 'price_asc' | 'price_desc' | 'context')}
             >
                 <option value="free">Free First</option>
                 <option value="price_asc">Price: Low to High</option>
