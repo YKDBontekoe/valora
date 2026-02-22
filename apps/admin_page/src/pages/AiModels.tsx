@@ -146,6 +146,10 @@ const AiModels: React.FC = () => {
                     <motion.tr
                       key={config.id || config.intent}
                       variants={item}
+                      initial="hidden"
+                      animate="show"
+                      exit="hidden"
+                      layout
                       className="hover:bg-brand-50/50 transition-colors group"
                     >
                       <td className="px-8 py-5 whitespace-nowrap">
