@@ -101,71 +101,71 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Consumer<SettingsProvider>(
-        builder: (context, settings, _) {
-          return CustomScrollView(
-            slivers: [
-              // Sticky Header
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                automaticallyImplyLeading: false, // No back button since it's a tab
-                title: Text(
-                  'Settings',
-                  style: ValoraTypography.headlineMedium.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                actions: [
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, _) {
-                      final isDarkMode = themeProvider.isDarkMode;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: ValoraSpacing.md),
-                        child: IconButton(
-                          onPressed: () {
-                            themeProvider.toggleTheme();
-                          },
-                          icon: Icon(
-                            isDarkMode
-                                ? Icons.light_mode_rounded
-                                : Icons.dark_mode_rounded,
-                                color: subtextColor,
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor: isDark
-                                ? ValoraColors.neutral800
-                                : ValoraColors.neutral100,
-                            shape: const CircleBorder(),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+      body: CustomScrollView(
+        slivers: [
+          // Sticky Header
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            automaticallyImplyLeading: false, // No back button since it's a tab
+            title: Text(
+              'Settings',
+              style: ValoraTypography.headlineMedium.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+            actions: [
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  final isDarkMode = themeProvider.isDarkMode;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: ValoraSpacing.md),
+                    child: IconButton(
+                      onPressed: () {
+                        themeProvider.toggleTheme();
+                      },
+                      icon: Icon(
+                        isDarkMode
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                            color: subtextColor,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: isDark
+                            ? ValoraColors.neutral800
+                            : ValoraColors.neutral100,
+                            shape: const CircleBorder(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
 
-              // Content
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: ValoraSpacing.lg,
-                    vertical: ValoraSpacing.sm,
-                  ),
-                  child: Column(
-                    children: [
-                      // Profile Section
-                      _buildProfileCard(context),
+          // Content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ValoraSpacing.lg,
+                vertical: ValoraSpacing.sm,
+              ),
+              child: Column(
+                children: [
+                  // Profile Section
+                  _buildProfileCard(context),
 
-                      const SizedBox(height: ValoraSpacing.xl),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                      // Map & Reports Section (New)
-                      _buildSectionHeader('MAP & REPORTS', subtextColor),
-                      const SizedBox(height: ValoraSpacing.sm),
-                      ValoraCard(
+                  // Map & Reports Section (New)
+                  _buildSectionHeader('MAP & REPORTS', subtextColor),
+                  const SizedBox(height: ValoraSpacing.sm),
+                  Consumer<SettingsProvider>(
+                    builder: (context, settings, _) {
+                      return ValoraCard(
                         padding: const EdgeInsets.symmetric(vertical: ValoraSpacing.sm),
                         child: Column(
                           children: [
@@ -212,14 +212,18 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ),
+                      );
+                    },
+                  ),
 
-                      const SizedBox(height: ValoraSpacing.xl),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                      // Preferences Section (Existing + New Notifications)
-                      _buildSectionHeader('PREFERENCES', subtextColor),
-                      const SizedBox(height: ValoraSpacing.sm),
-                      ValoraCard(
+                  // Preferences Section (Existing + New Notifications)
+                  _buildSectionHeader('PREFERENCES', subtextColor),
+                  const SizedBox(height: ValoraSpacing.sm),
+                  Consumer<SettingsProvider>(
+                    builder: (context, settings, _) {
+                      return ValoraCard(
                         padding: EdgeInsets.zero,
                         child: Column(
                           children: [
@@ -284,45 +288,49 @@ class SettingsScreen extends StatelessWidget {
                             ],
                           ],
                         ),
-                      ),
+                      );
+                    },
+                  ),
 
-                      const SizedBox(height: ValoraSpacing.xl),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                      // Privacy & Data Section (New)
-                      _buildSectionHeader('PRIVACY & DATA', subtextColor),
-                      const SizedBox(height: ValoraSpacing.sm),
-                      ValoraCard(
-                        padding: const EdgeInsets.all(ValoraSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Data Management',
-                              style: ValoraTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: ValoraSpacing.xs),
-                            Text(
-                              'We cache some data locally to improve performance. You can clear this data at any time.',
-                              style: ValoraTypography.bodySmall.copyWith(color: subtextColor),
-                            ),
-                            const SizedBox(height: ValoraSpacing.md),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ValoraButton(
-                                label: 'Clear Cache & History',
-                                icon: Icons.delete_outline_rounded,
-                                variant: ValoraButtonVariant.outline,
-                                onPressed: () => _confirmClearData(context),
-                              ),
-                            ),
-                          ],
+                  // Privacy & Data Section (New)
+                  _buildSectionHeader('PRIVACY & DATA', subtextColor),
+                  const SizedBox(height: ValoraSpacing.sm),
+                  ValoraCard(
+                    padding: const EdgeInsets.all(ValoraSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Data Management',
+                          style: ValoraTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      ),
+                        const SizedBox(height: ValoraSpacing.xs),
+                        Text(
+                          'We cache some data locally to improve performance. You can clear this data at any time.',
+                          style: ValoraTypography.bodySmall.copyWith(color: subtextColor),
+                        ),
+                        const SizedBox(height: ValoraSpacing.md),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ValoraButton(
+                            label: 'Clear Cache & History',
+                            icon: Icons.delete_outline_rounded,
+                            variant: ValoraButtonVariant.outline,
+                            onPressed: () => _confirmClearData(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                      const SizedBox(height: ValoraSpacing.xl),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                      // Diagnostics (New)
-                      ValoraCard(
+                  // Diagnostics (New)
+                  Consumer<SettingsProvider>(
+                     builder: (context, settings, _) {
+                       return ValoraCard(
                          padding: EdgeInsets.zero,
                          child: SwitchListTile(
                             title: Text('Diagnostics', style: ValoraTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
@@ -338,81 +346,85 @@ class SettingsScreen extends StatelessWidget {
                               child: const Icon(Icons.bug_report_rounded, color: Colors.teal),
                             ),
                          ),
-                      ),
+                       );
+                     },
+                  ),
 
-                      const SizedBox(height: ValoraSpacing.xl),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                      // Help Section
-                      ValoraCard(
-                        backgroundColor: ValoraColors.primary.withValues(
-                          alpha: isDark ? 0.1 : 0.05,
-                        ),
-                        borderColor: ValoraColors.primary.withValues(alpha: 0.2),
-                        padding: const EdgeInsets.all(ValoraSpacing.md),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Help Section
+                  ValoraCard(
+                    backgroundColor: ValoraColors.primary.withValues(
+                      alpha: isDark ? 0.1 : 0.05,
+                    ),
+                    borderColor: ValoraColors.primary.withValues(alpha: 0.2),
+                    padding: const EdgeInsets.all(ValoraSpacing.md),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Need Help?',
-                                  style: ValoraTypography.titleMedium.copyWith(
-                                    color: isDark
-                                        ? ValoraColors.primaryLight
-                                        : ValoraColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: ValoraSpacing.xs),
-                                Text(
-                                  'Our support team is available 24/7',
-                                  style: ValoraTypography.bodySmall.copyWith(
-                                    color: subtextColor,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'Need Help?',
+                              style: ValoraTypography.titleMedium.copyWith(
+                                color: isDark
+                                    ? ValoraColors.primaryLight
+                                    : ValoraColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            ValoraButton(
-                              label: 'Contact Us',
-                              variant: ValoraButtonVariant.outline,
-                              size: ValoraButtonSize.small,
-                              onPressed: () => _openSupportEmail(context),
+                            const SizedBox(height: ValoraSpacing.xs),
+                            Text(
+                              'Our support team is available 24/7',
+                              style: ValoraTypography.bodySmall.copyWith(
+                                color: subtextColor,
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                        ValoraButton(
+                          label: 'Contact Us',
+                          variant: ValoraButtonVariant.outline,
+                          size: ValoraButtonSize.small,
+                          onPressed: () => _openSupportEmail(context),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                      const SizedBox(height: ValoraSpacing.xl),
+                  const SizedBox(height: ValoraSpacing.xl),
 
-                      // Logout
-                      ValoraButton(
-                        label: 'Log Out',
-                        icon: Icons.logout_rounded,
-                        variant: ValoraButtonVariant.ghost,
-                        isFullWidth: true,
-                        onPressed: () => _confirmLogout(context),
-                      ),
+                  // Logout
+                  ValoraButton(
+                    label: 'Log Out',
+                    icon: Icons.logout_rounded,
+                    variant: ValoraButtonVariant.ghost,
+                    isFullWidth: true,
+                    onPressed: () => _confirmLogout(context),
+                  ),
 
-                      const SizedBox(height: ValoraSpacing.md),
+                  const SizedBox(height: ValoraSpacing.md),
 
-                      Text(
+                  Consumer<SettingsProvider>(
+                    builder: (context, settings, _) {
+                      return Text(
                         'Valora v${settings.appVersion} (Build ${settings.buildNumber})',
                         style: ValoraTypography.labelSmall.copyWith(
                           color: subtextColor.withValues(alpha: 0.5),
                         ),
-                      ),
-
-                      const SizedBox(
-                        height: 100,
-                      ), // Bottom padding for navigation bar
-                    ],
+                      );
+                    },
                   ),
-                ),
+
+                  const SizedBox(
+                    height: 100,
+                  ), // Bottom padding for navigation bar
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }

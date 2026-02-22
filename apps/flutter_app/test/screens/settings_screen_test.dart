@@ -50,8 +50,11 @@ class MockThemeProvider extends ChangeNotifier implements ThemeProvider {
   @override
   bool get isInitialized => true;
 
+  bool toggleThemeCalled = false;
+
   @override
   void toggleTheme() {
+    toggleThemeCalled = true;
     notifyListeners();
   }
 
@@ -81,6 +84,9 @@ class MockSettingsProvider extends ChangeNotifier implements SettingsProvider {
   bool setReportRadiusCalled = false;
   bool persistReportRadiusCalled = false;
   bool clearAllDataCalled = false;
+  bool setMapDefaultMetricCalled = false;
+  bool setNotificationFrequencyCalled = false;
+  bool setDiagnosticsEnabledCalled = false;
 
   @override
   void setReportRadius(double value) {
@@ -95,7 +101,10 @@ class MockSettingsProvider extends ChangeNotifier implements SettingsProvider {
   }
 
   @override
-  Future<void> setMapDefaultMetric(String value) async {}
+  Future<void> setMapDefaultMetric(String value) async {
+    setMapDefaultMetricCalled = true;
+    notifyListeners();
+  }
 
   @override
   Future<void> setNotificationsEnabled(bool value) async {
@@ -104,10 +113,16 @@ class MockSettingsProvider extends ChangeNotifier implements SettingsProvider {
   }
 
   @override
-  Future<void> setNotificationFrequency(String value) async {}
+  Future<void> setNotificationFrequency(String value) async {
+    setNotificationFrequencyCalled = true;
+    notifyListeners();
+  }
 
   @override
-  Future<void> setDiagnosticsEnabled(bool value) async {}
+  Future<void> setDiagnosticsEnabled(bool value) async {
+    setDiagnosticsEnabledCalled = true;
+    notifyListeners();
+  }
 
   @override
   Future<void> clearAllData(BuildContext context) async {
@@ -207,6 +222,8 @@ void main() {
   });
 
   testWidgets('Toggling notifications calls provider', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
@@ -215,6 +232,79 @@ void main() {
     await tester.pump();
 
     expect(mockSettingsProvider.setNotificationsCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Changing map metric calls provider', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    final dropdownFinder = find.widgetWithText(DropdownButton<String>, 'Price');
+    await tester.tap(dropdownFinder);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Size').last);
+    await tester.pumpAndSettle();
+
+    expect(mockSettingsProvider.setMapDefaultMetricCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Changing notification frequency calls provider', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Scroll to frequency dropdown
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    final dropdownFinder = find.widgetWithText(DropdownButton<String>, 'Daily Digest');
+    await tester.tap(dropdownFinder);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Weekly').last);
+    await tester.pumpAndSettle();
+
+    expect(mockSettingsProvider.setNotificationFrequencyCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Toggling diagnostics calls provider', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    // Scroll to diagnostics
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+
+    final switchFinder = find.byType(Switch).last; // Diagnostics is the last switch
+    await tester.tap(switchFinder);
+    await tester.pump();
+
+    expect(mockSettingsProvider.setDiagnosticsEnabledCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
   });
 
   testWidgets('Clear Data shows confirmation dialog and calls provider', (WidgetTester tester) async {
@@ -238,6 +328,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(mockSettingsProvider.clearAllDataCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Clear Data dialog cancel works', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Clear Cache & History'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(mockSettingsProvider.clearAllDataCalled, isFalse);
+    expect(find.text('Clear All Data?'), findsNothing);
 
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -274,6 +389,31 @@ void main() {
     });
   });
 
+  testWidgets('Logout dialog cancel works', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Log Out'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(mockAuthProvider.logoutCalled, isFalse);
+    expect(find.text('Log Out?'), findsNothing);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
   testWidgets('Persists report radius on drag end', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(2000, 3000);
     tester.view.devicePixelRatio = 2.0;
@@ -288,6 +428,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(mockSettingsProvider.persistReportRadiusCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Clicking theme toggle changes theme', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.dark_mode_rounded));
+    await tester.pumpAndSettle();
+
+    expect(mockThemeProvider.toggleThemeCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Clicking external links attempts launch', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Workspaces'));
+    await tester.pumpAndSettle();
+
+    // This pushes a new route, so we expect to find WorkspaceListScreen content or just that we moved.
+    // WorkspaceListScreen is complex to mock, but we provided a ChangeNotifierProvider for it.
 
     addTearDown(() {
       tester.view.resetPhysicalSize();

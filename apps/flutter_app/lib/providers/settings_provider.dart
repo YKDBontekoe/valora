@@ -38,10 +38,27 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    _reportRadius = prefs.getDouble(_reportRadiusKey) ?? 500.0;
-    _mapDefaultMetric = prefs.getString(_mapMetricKey) ?? 'price';
+
+    // Validate and clamp radius
+    double loadedRadius = prefs.getDouble(_reportRadiusKey) ?? 500.0;
+    if (loadedRadius < 100) loadedRadius = 100;
+    if (loadedRadius > 2000) loadedRadius = 2000;
+    _reportRadius = loadedRadius;
+
+    // Validate metric
+    String loadedMetric = prefs.getString(_mapMetricKey) ?? 'price';
+    const validMetrics = ['price', 'size', 'year'];
+    if (!validMetrics.contains(loadedMetric)) loadedMetric = 'price';
+    _mapDefaultMetric = loadedMetric;
+
     _notificationsEnabled = prefs.getBool(_notificationsEnabledKey) ?? true;
-    _notificationFrequency = prefs.getString(_notificationFrequencyKey) ?? 'daily';
+
+    // Validate frequency
+    String loadedFrequency = prefs.getString(_notificationFrequencyKey) ?? 'daily';
+    const validFrequencies = ['realtime', 'daily', 'weekly'];
+    if (!validFrequencies.contains(loadedFrequency)) loadedFrequency = 'daily';
+    _notificationFrequency = loadedFrequency;
+
     _diagnosticsEnabled = prefs.getBool(_diagnosticsEnabledKey) ?? false;
     _isInitialized = true;
     notifyListeners();
@@ -63,6 +80,8 @@ class SettingsProvider extends ChangeNotifier {
 
   // Update UI immediately, but persist only when finished
   void setReportRadius(double value) {
+    if (value < 100) value = 100;
+    if (value > 2000) value = 2000;
     _reportRadius = value;
     notifyListeners();
   }
@@ -73,6 +92,9 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setMapDefaultMetric(String value) async {
+    const validMetrics = ['price', 'size', 'year'];
+    if (!validMetrics.contains(value)) return;
+
     _mapDefaultMetric = value;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
@@ -87,6 +109,9 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setNotificationFrequency(String value) async {
+    const validFrequencies = ['realtime', 'daily', 'weekly'];
+    if (!validFrequencies.contains(value)) return;
+
     _notificationFrequency = value;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
