@@ -45,7 +45,7 @@ public class OpenRouterAiService : IAiService, IAiModelProvider
         var client = _httpClientFactory.CreateClient();
 
         // Use the base URL from configuration if possible, but OpenRouter models endpoint is standard
-        var modelsUrl = "https://openrouter.ai/api/v1/models";
+        var modelsUrl = $"{_endpoint.ToString().TrimEnd('/')}/models";
 
         var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
         request.Headers.Add("Authorization", $"Bearer {_apiKey}");
