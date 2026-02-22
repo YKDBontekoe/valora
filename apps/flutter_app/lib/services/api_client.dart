@@ -43,6 +43,10 @@ class ApiClient {
     _authToken = token;
   }
 
+  void dispose() {
+    _client.close();
+  }
+
   Future<http.Response> request(
     String method,
     String path, {

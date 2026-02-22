@@ -93,10 +93,17 @@ Future<void> main() async {
                 previous ?? AuthProvider(authService: authService),
           ),
           ProxyProvider2<AuthService, AuthProvider, ApiClient>(
-            update: (context, authService, authProvider, _) => ApiClient(
-              authToken: authProvider.token,
-              refreshTokenCallback: authProvider.refreshSession,
-            ),
+            update: (context, authService, authProvider, previous) {
+              if (previous != null) {
+                previous.updateAuthToken(authProvider.token);
+                return previous;
+              }
+              return ApiClient(
+                authToken: authProvider.token,
+                refreshTokenCallback: authProvider.refreshSession,
+              );
+            },
+            dispose: (_, client) => client.dispose(),
           ),
           ProxyProvider<ApiClient, MapRepository>(
             update: (context, client, _) => MapRepository(client),

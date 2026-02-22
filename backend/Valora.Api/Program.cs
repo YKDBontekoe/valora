@@ -196,7 +196,8 @@ builder.Services.AddRateLimiter(options =>
     // General purpose rate limiting for standard CRUD operations to prevent abuse.
     options.AddFixedWindowLimiter("fixed", limiterOptions =>
     {
-        limiterOptions.PermitLimit = permitLimitFixed;
+        // Increased from 100 to 300 to accommodate legitimate heavy usage (e.g., Admin Dashboard)
+        limiterOptions.PermitLimit = isTesting ? 1000 : 300;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         limiterOptions.QueueLimit = 2;

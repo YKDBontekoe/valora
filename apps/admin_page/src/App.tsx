@@ -5,6 +5,7 @@ import Users from './pages/Users';
 import BatchJobs from './pages/BatchJobs';
 import AiModels from './pages/AiModels';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('admin_token');
@@ -21,7 +22,9 @@ function App() {
           path="/"
           element={
             <PrivateRoute>
-              <Layout />
+              <ErrorBoundary>
+                <Layout />
+              </ErrorBoundary>
             </PrivateRoute>
           }
         >
