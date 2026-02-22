@@ -91,6 +91,21 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Inject the release version so the Sentry Vite plugin can tag the
+          # build artifact.
+          SENTRY_RELEASE: ${{ github.sha }}
+          VITE_SENTRY_RELEASE: ${{ github.sha }}
+
+      - name: Upload source maps to Sentry
+        # Only upload on pushes to main so PRs don’t pollute Sentry releases
+        if: github.event_name == 'push'
+        run: npx --yes @sentry/cli@latest releases --org "$SENTRY_ORG" files "$SENTRY_RELEASE" upload-sourcemaps dist --url-prefix '~/'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_ADMIN }}
+          SENTRY_RELEASE: ${{ github.sha }}
 
       - name: Test
         run: npm run test:coverage
