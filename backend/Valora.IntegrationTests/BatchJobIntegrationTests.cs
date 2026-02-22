@@ -202,5 +202,6 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         Assert.NotNull(result);
         Assert.Empty(result.Items);
         Assert.False(result.HasNextPage);
+        Assert.True(result.HasPreviousPage);
     }
 }
