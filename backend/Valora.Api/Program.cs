@@ -23,6 +23,8 @@ using Microsoft.AspNetCore.Identity;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, Valora.Api.Services.CurrentUserService>();
 // Configure Sentry
 // Design Decision: We use Sentry for error tracking but limit the volume of data sent.
 // - Information logs are kept as 'breadcrumbs' to provide context leading up to an error.
@@ -255,6 +257,7 @@ app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 app.MapMapEndpoints();
 app.MapAdminEndpoints();
+app.MapUserProfileEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapContextReportEndpoints();
 
