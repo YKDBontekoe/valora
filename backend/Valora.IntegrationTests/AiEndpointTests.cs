@@ -65,12 +65,11 @@ public class AiEndpointTests
         // Updated to use Intent
         var request = new AiChatRequest { Prompt = "Hello", Intent = "chat" };
 
-        // Fix: Verify system prompt is passed correctly (security check)
-        // Updated signature: prompt, systemPrompt, intent, ct
+        // Fix: Verify system prompt starts with expected prompt (it might be augmented with user profile)
         _mockAiService
             .Setup(x => x.ChatAsync(
                 "Hello",
-                ContextAnalysisService.ChatSystemPrompt, // Explicitly verify system prompt
+                It.Is<string>(s => s.StartsWith(ContextAnalysisService.ChatSystemPrompt)),
                 "chat",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync("AI Response");
@@ -83,10 +82,10 @@ public class AiEndpointTests
         var result = await response.Content.ReadFromJsonAsync<AiChatResponse>();
         Assert.Equal("AI Response", result?.Response);
 
-        // Verify mock call to ensure system prompt was indeed passed
+        // Verify mock call
         _mockAiService.Verify(x => x.ChatAsync(
             "Hello",
-            ContextAnalysisService.ChatSystemPrompt,
+            It.Is<string>(s => s.StartsWith(ContextAnalysisService.ChatSystemPrompt)),
             "chat",
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -122,7 +121,7 @@ public class AiEndpointTests
         _mockAiService
             .Setup(x => x.ChatAsync(
                 It.IsAny<string>(), // Prompt
-                ContextAnalysisService.AnalysisSystemPrompt, // System Prompt
+                It.Is<string>(s => s.StartsWith(ContextAnalysisService.AnalysisSystemPrompt)), // System Prompt (starts with)
                 "detailed_analysis", // Intent
                 It.IsAny<CancellationToken>()))
             .Callback<string, string?, string?, CancellationToken>((p, sp, intent, ct) => capturedPrompt = p)
@@ -174,7 +173,11 @@ public class AiEndpointTests
 
         string capturedPrompt = string.Empty;
         _mockAiService
-            .Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "detailed_analysis", It.IsAny<CancellationToken>()))
+            .Setup(x => x.ChatAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(), // Accept any system prompt
+                "detailed_analysis",
+                It.IsAny<CancellationToken>()))
             .Callback<string, string?, string?, CancellationToken>((p, sp, intent, ct) => capturedPrompt = p)
             .ReturnsAsync("Safe Summary");
 
