@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { aiService, type AiModelConfig } from '../services/api';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
+import ModelSelector from '../components/ModelSelector';
 
 const AiModels: React.FC = () => {
   const [configs, setConfigs] = useState<AiModelConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingConfig, setEditingConfig] = useState<AiModelConfig | null>(null);
+  const [selectingModelFor, setSelectingModelFor] = useState<'primary' | 'fallback' | null>(null);
 
   useEffect(() => {
     loadConfigs();
@@ -39,6 +41,21 @@ const AiModels: React.FC = () => {
        console.error(error);
        showToast('Failed to save config', 'error');
     }
+  };
+
+  const handleModelSelect = (modelId: string) => {
+    if (editingConfig && selectingModelFor === 'primary') {
+        setEditingConfig({ ...editingConfig, primaryModel: modelId });
+    } else if (editingConfig && selectingModelFor === 'fallback') {
+        // Prevent duplicates
+        if (!editingConfig.fallbackModels.includes(modelId)) {
+            setEditingConfig({
+                ...editingConfig,
+                fallbackModels: [...editingConfig.fallbackModels, modelId]
+            });
+        }
+    }
+    setSelectingModelFor(null);
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
@@ -98,7 +115,7 @@ const AiModels: React.FC = () => {
 
       {editingConfig && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">{editingConfig.id ? 'Edit' : 'Add'} Configuration</h2>
 
             <div className="mb-4">
@@ -115,24 +132,30 @@ const AiModels: React.FC = () => {
 
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">Primary Model</label>
-              <input
-                type="text"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={editingConfig.primaryModel}
-                onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
-                placeholder="openai/gpt-4o"
-              />
+              <div className="flex gap-2">
+                <input
+                    type="text"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={editingConfig.primaryModel}
+                    onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
+                    placeholder="openai/gpt-4o"
+                />
+                <Button onClick={() => setSelectingModelFor('primary')} variant="secondary" size="sm">Browse</Button>
+              </div>
             </div>
 
             <div className="mb-4">
                <label className="block text-gray-700 text-sm font-bold mb-2">Fallback Models (comma separated)</label>
-               <input
-                type="text"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={editingConfig.fallbackModels.join(', ')}
-                onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
-                placeholder="openai/gpt-4o-mini, anthropic/claude-3-haiku"
-              />
+               <div className="flex gap-2">
+                <input
+                    type="text"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={editingConfig.fallbackModels.join(', ')}
+                    onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
+                    placeholder="openai/gpt-4o-mini, anthropic/claude-3-haiku"
+                />
+                <Button onClick={() => setSelectingModelFor('fallback')} variant="secondary" size="sm">Add</Button>
+               </div>
             </div>
 
             <div className="mb-4">
@@ -163,6 +186,13 @@ const AiModels: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {selectingModelFor && (
+        <ModelSelector
+            onSelect={handleModelSelect}
+            onClose={() => setSelectingModelFor(null)}
+        />
       )}
     </div>
   );

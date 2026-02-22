@@ -5,10 +5,14 @@ using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Chat;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Valora.Infrastructure.Services;
 
-public class OpenRouterAiService : IAiService
+public class OpenRouterAiService : IAiService, IAiModelProvider
 {
     private readonly string _apiKey;
     private readonly Uri _endpoint;
@@ -16,14 +20,17 @@ public class OpenRouterAiService : IAiService
     private readonly string _siteName;
     private readonly ILogger<OpenRouterAiService> _logger;
     private readonly IAiModelService _aiModelService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public OpenRouterAiService(
         IConfiguration configuration,
         ILogger<OpenRouterAiService> logger,
-        IAiModelService aiModelService)
+        IAiModelService aiModelService,
+        IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _aiModelService = aiModelService;
+        _httpClientFactory = httpClientFactory;
         _apiKey = configuration["OPENROUTER_API_KEY"] ?? throw new InvalidOperationException("OPENROUTER_API_KEY is not configured.");
 
         var baseUrl = configuration["OPENROUTER_BASE_URL"] ?? "https://openrouter.ai/api/v1";
@@ -31,6 +38,70 @@ public class OpenRouterAiService : IAiService
 
         _siteUrl = configuration["OPENROUTER_SITE_URL"] ?? "https://valora.app";
         _siteName = configuration["OPENROUTER_SITE_NAME"] ?? "Valora";
+    }
+
+    public async Task<List<ExternalAiModelDto>> GetAvailableModelsAsync(CancellationToken cancellationToken = default)
+    {
+        var client = _httpClientFactory.CreateClient();
+
+        // Use the base URL from configuration if possible, but OpenRouter models endpoint is standard
+        var modelsUrl = "https://openrouter.ai/api/v1/models";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
+        request.Headers.Add("Authorization", $"Bearer {_apiKey}");
+        request.Headers.Add("HTTP-Referer", _siteUrl);
+        request.Headers.Add("X-Title", _siteName);
+
+        try
+        {
+            var response = await client.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+
+            if (json.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                var models = new List<ExternalAiModelDto>();
+                foreach (var item in data.EnumerateArray())
+                {
+                    var id = item.GetProperty("id").GetString() ?? string.Empty;
+                    var name = item.TryGetProperty("name", out var n) ? n.GetString() ?? id : id;
+                    var description = item.TryGetProperty("description", out var d) ? d.GetString() ?? string.Empty : string.Empty;
+                    var contextLength = item.TryGetProperty("context_length", out var cl) ? cl.GetInt32() : 0;
+
+                    decimal promptPrice = 0;
+                    decimal completionPrice = 0;
+
+                    if (item.TryGetProperty("pricing", out var pricing))
+                    {
+                         if (pricing.TryGetProperty("prompt", out var p))
+                             decimal.TryParse(p.GetString(), out promptPrice);
+                         if (pricing.TryGetProperty("completion", out var c))
+                             decimal.TryParse(c.GetString(), out completionPrice);
+                    }
+
+                    models.Add(new ExternalAiModelDto
+                    {
+                        Id = id,
+                        Name = name,
+                        Description = description,
+                        ContextLength = contextLength,
+                        PromptPrice = promptPrice,
+                        CompletionPrice = completionPrice
+                    });
+                }
+                return models;
+            }
+
+            return new List<ExternalAiModelDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch models from OpenRouter.");
+            // Return empty list or throw? Returning empty list is safer for UI, but let's rethrow for visibility in logs/errors if critical.
+            // For now, rethrow as per requirement to extend config.
+            throw;
+        }
     }
 
     public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string intent = "chat", CancellationToken cancellationToken = default)

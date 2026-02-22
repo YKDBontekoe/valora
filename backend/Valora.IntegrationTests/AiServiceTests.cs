@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +18,7 @@ public class AiServiceTests : IDisposable
     private readonly WireMockServer _server;
     private readonly IConfiguration _validConfig;
     private readonly Mock<IAiModelService> _mockAiModelService;
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
 
     public AiServiceTests()
     {
@@ -34,6 +36,8 @@ public class AiServiceTests : IDisposable
             .Build();
 
         _mockAiModelService = new Mock<IAiModelService>();
+        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient());
 
         // Default mock setup
         _mockAiModelService
@@ -59,7 +63,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         var result = await sut.ChatAsync("Hello", null, "chat");
@@ -103,7 +107,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         var result = await sut.ChatAsync("Hello", null, "chat");
@@ -119,7 +123,7 @@ public class AiServiceTests : IDisposable
     [Fact]
     public async Task ChatAsync_ThrowsOperationCanceledException_WhenCancelled()
     {
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -136,7 +140,7 @@ public class AiServiceTests : IDisposable
                 .WithStatusCode(400)
                 .WithBody("Bad Request"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
@@ -175,7 +179,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         var result = await sut.ChatAsync("Hello", null, "chat");
@@ -208,7 +212,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(customConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(customConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         await sut.ChatAsync("Hello", null, "chat");
@@ -229,7 +233,7 @@ public class AiServiceTests : IDisposable
             .Build();
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object));
+        Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object));
     }
 
     [Fact]
@@ -246,7 +250,7 @@ public class AiServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(500));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));

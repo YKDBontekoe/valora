@@ -165,7 +165,23 @@ export interface UpdateAiModelConfigDto {
   safetySettings?: string;
 }
 
+
+export interface ExternalAiModel {
+  id: string;
+  name: string;
+  description: string;
+  contextLength: number;
+  promptPrice: number;
+  completionPrice: number;
+  isFree: boolean;
+}
+
 export const aiService = {
+  getAvailableModels: async (): Promise<ExternalAiModel[]> => {
+    const response = await api.get<ExternalAiModel[]>('/ai/config/models');
+    return response.data;
+  },
+
   getConfigs: async (): Promise<AiModelConfig[]> => {
     const response = await api.get<AiModelConfig[]>('/ai/config');
     return response.data;

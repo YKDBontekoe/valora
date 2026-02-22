@@ -55,8 +55,11 @@ services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
         services.AddMemoryCache();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+
         services.AddScoped<IAiModelService, AiModelService>();
-        services.AddScoped<IAiService, OpenRouterAiService>();
+        services.AddScoped<OpenRouterAiService>();
+        services.AddScoped<IAiService>(sp => sp.GetRequiredService<OpenRouterAiService>());
+        services.AddScoped<IAiModelProvider>(sp => sp.GetRequiredService<OpenRouterAiService>());
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IWorkspaceService, WorkspaceService>();
