@@ -15,6 +15,11 @@ public static class UrlNormalizationUtils
     /// </remarks>
     public static string NormalizeInput(string input)
     {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return string.Empty;
+        }
+
         if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
         {
             if (TryExtractAddressFromQuery(uri, out var queryHint))

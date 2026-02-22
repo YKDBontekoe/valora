@@ -8,6 +8,8 @@ public class GeoUtilsTests
 {
     [Theory]
     [InlineData("POINT(4.895 52.370)", 4.895, 52.370)]
+    [InlineData("point(4.895 52.370)", 4.895, 52.370)]
+    [InlineData("Point(4.895 52.370)", 4.895, 52.370)]
     [InlineData("POINT(0 0)", 0, 0)]
     [InlineData("POINT(-10.5 20.1)", -10.5, 20.1)]
     public void TryParseWktPoint_ReturnsCoordinates_ForValidInput(string input, double expectedX, double expectedY)

@@ -46,12 +46,18 @@ public class UrlNormalizationUtilsTests
     }
 
     [Fact]
-    public void NormalizeInput_ReturnsOriginalInput_IfUrlHasNoRelevantData()
+    public void NormalizeInput_ReturnsNormalizedSlug_WhenPathContainsLetters()
     {
         var url = "https://example.com/about-us";
-        // It might return "about us" if it treats the slug as relevant, but let's check the behavior.
-        // The implementation checks if the segment contains letters. "about-us" -> "about us".
         Assert.Equal("about us", UrlNormalizationUtils.NormalizeInput(url));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void NormalizeInput_ReturnsEmptyString_ForNullOrWhitespace(string input)
+    {
+        Assert.Equal(string.Empty, UrlNormalizationUtils.NormalizeInput(input));
     }
 
     [Fact]

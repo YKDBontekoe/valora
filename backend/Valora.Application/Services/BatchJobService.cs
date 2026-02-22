@@ -164,6 +164,7 @@ public class BatchJobService : IBatchJobService
     {
         _logger.LogInformation("Batch job {JobId} cancelled", job.Id);
         AppendLog(job, "Job cancelled by user.");
+        // The domain model has no distinct Cancelled enum value, so we map cancellations to Failed.
         job.Status = BatchJobStatus.Failed;
         job.Error = "Job cancelled by user.";
         job.CompletedAt = DateTime.UtcNow;
