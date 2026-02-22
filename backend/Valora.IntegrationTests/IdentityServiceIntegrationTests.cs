@@ -7,23 +7,23 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
+[Collection("TestDatabase")]
 public class IdentityServiceIntegrationTests : IAsyncLifetime
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
     private IntegrationTestWebAppFactory _factory = null!;
     private IServiceScope _scope = null!;
     private IIdentityService _identityService = null!;
     private ValoraDbContext _dbContext = null!;
 
-    public IdentityServiceIntegrationTests(TestcontainersDatabaseFixture fixture)
+    public IdentityServiceIntegrationTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
     }
 
     public async Task InitializeAsync()
     {
-        _factory = new IntegrationTestWebAppFactory(_fixture.ConnectionString);
+        _factory = new IntegrationTestWebAppFactory("InMemory");
         _scope = _factory.Services.CreateScope();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
         _identityService = _scope.ServiceProvider.GetRequiredService<IIdentityService>();

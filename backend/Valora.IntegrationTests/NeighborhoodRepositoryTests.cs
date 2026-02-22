@@ -7,12 +7,12 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
+[Collection("TestDatabase")]
 public class NeighborhoodRepositoryTests
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
 
-    public NeighborhoodRepositoryTests(TestcontainersDatabaseFixture fixture)
+    public NeighborhoodRepositoryTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
     }

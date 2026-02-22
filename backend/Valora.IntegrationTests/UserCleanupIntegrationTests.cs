@@ -12,23 +12,23 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
+[Collection("TestDatabase")]
 public class UserCleanupIntegrationTests : IAsyncLifetime
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
     private IntegrationTestWebAppFactory _factory = null!;
     private IServiceScope _scope = null!;
     private ValoraDbContext _dbContext = null!;
     private IIdentityService _identityService = null!;
 
-    public UserCleanupIntegrationTests(TestcontainersDatabaseFixture fixture)
+    public UserCleanupIntegrationTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
     }
 
     public async Task InitializeAsync()
     {
-        _factory = new IntegrationTestWebAppFactory(_fixture.ConnectionString);
+        _factory = new IntegrationTestWebAppFactory("InMemory");
         _scope = _factory.Services.CreateScope();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
         _identityService = _scope.ServiceProvider.GetRequiredService<IIdentityService>();

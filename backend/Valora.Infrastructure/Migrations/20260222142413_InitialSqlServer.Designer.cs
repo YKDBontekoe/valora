@@ -12,7 +12,7 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    [Migration("20260222141215_InitialSqlServer")]
+    [Migration("20260222142413_InitialSqlServer")]
     partial class InitialSqlServer
     {
         /// <inheritdoc />

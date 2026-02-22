@@ -11,15 +11,15 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
+[Collection("TestDatabase")]
 public class MapInsightsIntegrationTests : IAsyncLifetime
 {
-    private readonly TestcontainersDatabaseFixture _fixture;
+    private readonly TestDatabaseFixture _fixture;
     private HttpClient Client = null!;
     private ValoraDbContext DbContext = null!;
     private IServiceScope _scope = null!;
 
-    public MapInsightsIntegrationTests(TestcontainersDatabaseFixture fixture)
+    public MapInsightsIntegrationTests(TestDatabaseFixture fixture)
     {
         _fixture = fixture;
     }

@@ -31,6 +31,9 @@ public static class DependencyInjection
 
         services.AddDbContext<ValoraDbContext>(options =>
         {
+            if (connectionString != null && connectionString.StartsWith("InMemory", StringComparison.OrdinalIgnoreCase))
+                return;
+
             options.UseSqlServer(
                 connectionString,
                 sqlOptions => sqlOptions.EnableRetryOnFailure(
