@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Valora.Application.Common.Exceptions;
 
@@ -6,6 +7,38 @@ namespace Valora.Application.Common.Utilities;
 public static class GeoUtils
 {
     private const double MaxSpan = 0.5;
+
+    /// <summary>
+    /// Parses a WKT POINT string (e.g., "POINT(4.895 52.370)") into (X, Y) coordinates.
+    /// </summary>
+    public static (double X, double Y)? TryParseWktPoint(string? point)
+    {
+        if (string.IsNullOrWhiteSpace(point))
+        {
+            return null;
+        }
+
+        const string prefix = "POINT(";
+        if (!point.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || !point.EndsWith(')'))
+        {
+            return null;
+        }
+
+        var body = point[prefix.Length..^1];
+        var parts = body.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
+        {
+            return null;
+        }
+
+        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ||
+            !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+        {
+            return null;
+        }
+
+        return (x, y);
+    }
 
     public static bool IsPointInPolygon(double lat, double lon, JsonElement geoJson)
     {

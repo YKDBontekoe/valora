@@ -249,6 +249,7 @@ app.MapAiEndpoints();
 app.MapMapEndpoints();
 app.MapAdminEndpoints();
 app.MapWorkspaceEndpoints();
+app.MapContextReportEndpoints();
 
 // API Endpoints
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");
@@ -267,20 +268,6 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
     return Results.Problem("Service unavailable", statusCode: 503);
 })
 .DisableRateLimiting();
-
-api.MapPost("/context/report", async (
-    ContextReportRequestDto request,
-    IContextReportService contextReportService,
-    CancellationToken ct) =>
-{
-    var report = await contextReportService.BuildAsync(request, ct);
-    return Results.Ok(report);
-})
-.RequireAuthorization()
-.RequireRateLimiting("strict")
-.AddEndpointFilter<Valora.Api.Filters.ValidationFilter<ContextReportRequestDto>>();
-
-
 
 app.Run();
 
