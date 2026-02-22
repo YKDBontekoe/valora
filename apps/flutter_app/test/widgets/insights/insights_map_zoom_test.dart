@@ -28,6 +28,8 @@ class MockInsightsProvider extends ChangeNotifier implements InsightsProvider {
   List<MapCityInsight> cities = [];
   @override
   MapOverlayMetric selectedOverlayMetric = MapOverlayMetric.pricePerSquareMeter;
+  @override
+  Object? selectedFeature;
 
   @override
   double? getScore(MapCityInsight city) => city.compositeScore;
