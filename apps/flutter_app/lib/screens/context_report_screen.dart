@@ -96,20 +96,20 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
             }
 
             if (_isComparisonMode) {
-              return _ComparisonLayout(
+              return ComparisonLayout(
                 onBack: () => setState(() => _isComparisonMode = false),
                 onClear: provider.clearComparison,
               );
             }
 
             return hasReport || isLoading
-                ? _ReportLayout(
+                ? ReportLayout(
                     inputController: _inputController,
                     provider: provider,
                     pdokService: _pdokService,
                     isLoading: isLoading,
                   )
-                : _SearchLayout(
+                : SearchLayout(
                     inputController: _inputController,
                     provider: provider,
                     pdokService: _pdokService,
@@ -128,8 +128,8 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
 // SEARCH LAYOUT — The initial beautiful search screen
 // ═══════════════════════════════════════════════════════════════════
 
-class _SearchLayout extends StatelessWidget {
-  const _SearchLayout({
+class SearchLayout extends StatelessWidget {
+  const SearchLayout({
     required this.inputController,
     required this.provider,
     required this.pdokService,
@@ -204,7 +204,7 @@ class _SearchLayout extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Search field
-                _SearchField(
+                SearchField(
                   controller: inputController,
                   provider: provider,
                   pdokService: pdokService,
@@ -213,7 +213,7 @@ class _SearchLayout extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Radius selector
-                _RadiusSelector(provider: provider)
+                RadiusSelector(provider: provider)
                     .animate()
                     .fadeIn(duration: 400.ms, delay: 200.ms)
                     .slideY(begin: 0.1),
@@ -221,7 +221,7 @@ class _SearchLayout extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Generate button
-                _GenerateButton(
+                GenerateButton(
                   controller: inputController,
                   provider: provider,
                 ).animate().fadeIn(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1),
@@ -246,7 +246,7 @@ class _SearchLayout extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
-            child: _QuickActions(pdokService: pdokService, provider: provider, controller: inputController)
+            child: QuickActions(pdokService: pdokService, provider: provider, controller: inputController)
                 .animate()
                 .fadeIn(duration: 400.ms, delay: 350.ms),
           ),
@@ -254,7 +254,7 @@ class _SearchLayout extends StatelessWidget {
 
         // History section
         SliverToBoxAdapter(
-          child: _HistorySection(
+          child: HistorySection(
             controller: inputController,
             provider: provider,
           ),
@@ -273,8 +273,8 @@ class _SearchLayout extends StatelessWidget {
 // REPORT LAYOUT — Report view with persistent search at top
 // ═══════════════════════════════════════════════════════════════════
 
-class _ReportLayout extends StatelessWidget {
-  const _ReportLayout({
+class ReportLayout extends StatelessWidget {
+  const ReportLayout({
     required this.inputController,
     required this.provider,
     required this.pdokService,
@@ -304,7 +304,7 @@ class _ReportLayout extends StatelessWidget {
           title: Row(
             children: [
               Expanded(
-                child: _CompactSearchField(
+                child: CompactSearchField(
                   controller: inputController,
                   provider: provider,
                   pdokService: pdokService,
@@ -313,7 +313,7 @@ class _ReportLayout extends StatelessWidget {
               const SizedBox(width: 8),
               // Compare toggle
               if (provider.report != null)
-                _CompareButton(provider: provider),
+                CompareButton(provider: provider),
             ],
           ),
         ),
@@ -355,8 +355,8 @@ class _ReportLayout extends StatelessWidget {
 // COMPARISON LAYOUT
 // ═══════════════════════════════════════════════════════════════════
 
-class _ComparisonLayout extends StatelessWidget {
-  const _ComparisonLayout({
+class ComparisonLayout extends StatelessWidget {
+  const ComparisonLayout({
     required this.onBack,
     required this.onClear,
   });
@@ -401,8 +401,8 @@ class _ComparisonLayout extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 
 /// Full-size search field for the search layout
-class _SearchField extends StatelessWidget {
-  const _SearchField({
+class SearchField extends StatelessWidget {
+  const SearchField({
     required this.controller,
     required this.provider,
     required this.pdokService,
@@ -464,8 +464,8 @@ class _SearchField extends StatelessWidget {
 }
 
 /// Compact search field for the report layout (in app bar)
-class _CompactSearchField extends StatelessWidget {
-  const _CompactSearchField({
+class CompactSearchField extends StatelessWidget {
+  const CompactSearchField({
     required this.controller,
     required this.provider,
     required this.pdokService,
@@ -566,8 +566,8 @@ class _CompactSearchField extends StatelessWidget {
 }
 
 /// Compare button in the report app bar
-class _CompareButton extends StatelessWidget {
-  const _CompareButton({required this.provider});
+class CompareButton extends StatelessWidget {
+  const CompareButton({required this.provider});
   final ContextReportProvider provider;
 
   @override
@@ -618,8 +618,8 @@ class _CompareButton extends StatelessWidget {
 }
 
 /// Radius slider
-class _RadiusSelector extends StatelessWidget {
-  const _RadiusSelector({required this.provider});
+class RadiusSelector extends StatelessWidget {
+  const RadiusSelector({required this.provider});
   final ContextReportProvider provider;
 
   @override
@@ -697,8 +697,8 @@ class _RadiusSelector extends StatelessWidget {
 }
 
 /// Generate button
-class _GenerateButton extends StatelessWidget {
-  const _GenerateButton({
+class GenerateButton extends StatelessWidget {
+  const GenerateButton({
     required this.controller,
     required this.provider,
   });
@@ -728,8 +728,8 @@ class _GenerateButton extends StatelessWidget {
 }
 
 /// Quick action pills
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({
+class QuickActions extends StatelessWidget {
+  const QuickActions({
     required this.pdokService,
     required this.provider,
     required this.controller,
@@ -786,14 +786,14 @@ class _QuickActions extends StatelessWidget {
 
     return Row(
       children: [
-        _QuickActionChip(
+        QuickActionChip(
           icon: Icons.map_rounded,
           label: 'Pick on Map',
           onTap: () => _pickLocation(context),
           isDark: isDark,
         ),
         const SizedBox(width: 10),
-        _QuickActionChip(
+        QuickActionChip(
           icon: Icons.gps_fixed_rounded,
           label: 'My Location',
           onTap: () {
@@ -806,8 +806,8 @@ class _QuickActions extends StatelessWidget {
   }
 }
 
-class _QuickActionChip extends StatelessWidget {
-  const _QuickActionChip({
+class QuickActionChip extends StatelessWidget {
+  const QuickActionChip({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -865,8 +865,8 @@ class _QuickActionChip extends StatelessWidget {
 }
 
 /// History section
-class _HistorySection extends StatelessWidget {
-  const _HistorySection({
+class HistorySection extends StatelessWidget {
+  const HistorySection({
     required this.controller,
     required this.provider,
   });
