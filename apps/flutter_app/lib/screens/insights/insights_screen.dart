@@ -66,8 +66,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Selector<InsightsProvider, (bool, bool, String?)>(
-        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error),
+      body: Selector<InsightsProvider, (bool, bool, String?, MapMode)>(
+        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error, p.mapMode),
+        shouldRebuild: (prev, next) {
+          // If map mode changed, trigger data fetch for current viewport
+          if (prev.$4 != next.$4) {
+            // Schedule fetch after build to ensure provider state is settled
+            WidgetsBinding.instance.addPostFrameCallback((_) => _onMapChanged());
+          }
+          return prev != next;
+        },
         builder: (context, state, child) {
           final isLoading = state.$1;
           final isEmpty = state.$2;

@@ -33,7 +33,10 @@ class MapModeSelector extends StatelessWidget {
     final isSelected = value == current;
     return Expanded(
       child: GestureDetector(
-        onTap: () => context.read<InsightsProvider>().setMapMode(value),
+        onTap: () {
+          // setMapMode will trigger InsightsScreen to fetch new data via Selector listener
+          context.read<InsightsProvider>().setMapMode(value);
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),

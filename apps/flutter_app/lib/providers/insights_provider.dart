@@ -29,10 +29,6 @@ class InsightsProvider extends ChangeNotifier {
   MapMode _mapMode = MapMode.cities;
   Object? _selectedFeature;
 
-  // Deprecated internal flags, now derived from mapMode
-  // bool _showAmenities = false;
-  // bool _showOverlays = false;
-
   String? _error;
   String? _mapError;
 
@@ -324,11 +320,11 @@ class InsightsProvider extends ChangeNotifier {
       case MapOverlayMetric.pricePerSquareMeter:
         return 'PricePerSquareMeter';
       case MapOverlayMetric.crimeRate:
-        return 'CrimeRate';
+        return 'Crime Rate';
       case MapOverlayMetric.populationDensity:
-        return 'PopulationDensity';
+        return 'Pop. Density';
       case MapOverlayMetric.averageWoz:
-        return 'AverageWoz';
+        return 'Avg WOZ';
     }
   }
 

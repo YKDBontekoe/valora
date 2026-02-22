@@ -20,6 +20,12 @@ class PersistentDetailsPanel extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
+        // Verify feature type is supported to avoid silent failures
+        if (feature is! MapCityInsight && feature is! MapAmenity) {
+          debugPrint('PersistentDetailsPanel: Unsupported feature type: ${feature.runtimeType}');
+          return const SizedBox.shrink();
+        }
+
         return Positioned(
           left: 12,
           right: 12,
