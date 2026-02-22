@@ -1,58 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-import 'package:mockito/mockito.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mockito/annotations.dart';
-import 'package:valora_app/providers/insights_provider.dart';
-import 'package:valora_app/widgets/insights/insights_header.dart';
-import 'package:valora_app/widgets/insights/insights_legend.dart';
-import 'package:valora_app/widgets/insights/insights_metric_selector.dart';
-import 'package:valora_app/widgets/insights/insights_controls.dart';
-import 'package:valora_app/widgets/insights/insights_map.dart';
+import 'package:mockito/mockito.dart';
+import 'package:provider/provider.dart';
+import 'package:valora_app/models/map_amenity.dart';
 import 'package:valora_app/models/map_city_insight.dart';
 import 'package:valora_app/models/map_overlay.dart';
-import 'package:valora_app/models/map_amenity.dart';
-import 'package:latlong2/latlong.dart';
-import 'dart:io';
+import 'package:valora_app/providers/insights_provider.dart';
+import 'package:valora_app/widgets/insights/insights_controls.dart';
+import 'package:valora_app/widgets/insights/insights_header.dart';
+import 'package:valora_app/widgets/insights/insights_legend.dart';
+import 'package:valora_app/widgets/insights/insights_map.dart';
+import 'package:valora_app/widgets/insights/insights_metric_selector.dart';
 
-@GenerateNiceMocks([MockSpec<InsightsProvider>()])
 import 'insights_widgets_test.mocks.dart';
 
+@GenerateMocks([InsightsProvider])
 void main() {
   late MockInsightsProvider mockProvider;
 
+  setUpAll(() {
+    // Optional: Configure global HTTP overrides if possible,
+    // but for flutter_map's TileLayer, it's harder to inject.
+    // The previous test error suggests we can't easily block specific TileLayer requests
+    // without injecting a custom TileProvider.
+    // However, since we can't easily change the widget implementation to accept a provider just for tests,
+    // we accept that TileLayer tries to fetch.
+    // The goal is to ensure we don't fail on 400s or timeouts if they happen.
+  });
+
   setUp(() {
     mockProvider = MockInsightsProvider();
-    when(mockProvider.selectedMetric).thenReturn(InsightMetric.composite);
-    when(mockProvider.showOverlays).thenReturn(false);
-    when(mockProvider.showAmenities).thenReturn(false);
+    // Default behaviors
     when(mockProvider.cities).thenReturn([]);
-    when(mockProvider.overlays).thenReturn([]);
     when(mockProvider.amenities).thenReturn([]);
+    when(mockProvider.amenityClusters).thenReturn([]);
+    when(mockProvider.overlays).thenReturn([]);
+    when(mockProvider.overlayTiles).thenReturn([]);
+    when(mockProvider.selectedMetric).thenReturn(InsightMetric.composite);
     when(mockProvider.selectedOverlayMetric)
         .thenReturn(MapOverlayMetric.pricePerSquareMeter);
+    when(mockProvider.showAmenities).thenReturn(false);
+    when(mockProvider.showOverlays).thenReturn(false);
+    when(mockProvider.isLoading).thenReturn(false);
+    when(mockProvider.isQuerying).thenReturn(false); // Add this
+    when(mockProvider.error).thenReturn(null);
     when(mockProvider.mapError).thenReturn(null);
-
-    HttpOverrides.global = null;
   });
 
   Widget createWidget(Widget child) {
-    return ChangeNotifierProvider<InsightsProvider>.value(
-      value: mockProvider,
-      child: MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 800,
-            height: 600,
-            child: Stack(children: [child]),
-          ),
+    return MaterialApp(
+      home: Scaffold(
+        body: ChangeNotifierProvider<InsightsProvider>.value(
+          value: mockProvider,
+          child: Stack(children: [child]),
         ),
       ),
     );
   }
 
-  // ... (Existing tests) ...
   group('InsightsHeader', () {
     testWidgets('displays title and city count', (WidgetTester tester) async {
       when(mockProvider.cities).thenReturn([
