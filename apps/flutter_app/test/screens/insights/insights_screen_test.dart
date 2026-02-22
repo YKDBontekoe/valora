@@ -6,11 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/models/map_city_insight.dart';
 import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/screens/insights/insights_screen.dart';
-import 'package:valora_app/services/api_service.dart';
-import 'dart:io';
+import 'package:valora_app/repositories/map_repository.dart';
+import 'package:valora_app/services/api_client.dart';
+import 'package:mockito/mockito.dart';
 
-class _FakeApiService extends ApiService {
-  _FakeApiService(this._cities);
+class MockApiClient extends Mock implements ApiClient {}
+
+class _FakeMapRepository extends MapRepository {
+  _FakeMapRepository(this._cities) : super(MockApiClient());
 
   final List<MapCityInsight> _cities;
 
@@ -23,13 +26,12 @@ class _FakeApiService extends ApiService {
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    HttpOverrides.global = null;
   });
 
   testWidgets('InsightsScreen renders upgraded map controls and legend', (
     tester,
   ) async {
-    final api = _FakeApiService([
+    final repo = _FakeMapRepository([
       MapCityInsight(
         city: 'Amsterdam',
         count: 125,
@@ -41,7 +43,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<InsightsProvider>(
-          create: (_) => InsightsProvider(api),
+          create: (_) => InsightsProvider(repo),
           child: const InsightsScreen(),
         ),
       ),

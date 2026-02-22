@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/models/context_report.dart';
+import 'package:valora_app/models/search_history_item.dart';
 import 'package:valora_app/widgets/report/context_report_view.dart';
 import 'package:valora_app/widgets/report/report_widgets.dart';
+import 'package:valora_app/widgets/report/score_gauge.dart';
+import 'package:valora_app/widgets/report/metric_category_card.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
+import 'package:valora_app/services/search_history_service.dart';
 import 'package:mockito/mockito.dart';
 
-class MockApiService extends Mock implements ApiService {}
+class MockContextReportRepository extends Fake implements ContextReportRepository {}
+class MockAiRepository extends Fake implements AiRepository {}
+class MockHistoryService extends Fake implements SearchHistoryService {
+  @override
+  Future<void> addToHistory(String query) async {}
+  @override
+  Future<List<SearchHistoryItem>> getHistory() async => [];
+}
 
 void main() {
   final testReport = ContextReport(
@@ -42,7 +54,11 @@ void main() {
   Widget createWidgetUnderTest(Widget child) {
     return MaterialApp(
       home: ChangeNotifierProvider(
-        create: (_) => ContextReportProvider(apiService: MockApiService()),
+        create: (_) => ContextReportProvider(
+            contextReportRepository: MockContextReportRepository(),
+            aiRepository: MockAiRepository(),
+            historyService: MockHistoryService(),
+        ),
         child: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );

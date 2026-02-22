@@ -3,18 +3,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/screens/context_report_screen.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
 import 'package:valora_app/widgets/report/metric_category_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mockito/mockito.dart';
 
-class _FakeApiService extends ApiService {
-  _FakeApiService({required this.report});
+class MockContextReportRepository extends Fake implements ContextReportRepository {
+  MockContextReportRepository(this.report);
   final ContextReport report;
 
   @override
   Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
     return report;
   }
+}
+
+class MockAiRepository extends Fake implements AiRepository {
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async => "";
 }
 
 void main() {
@@ -58,12 +65,16 @@ void main() {
       warnings: [],
     );
 
-    final apiService = _FakeApiService(report: report);
+    final contextReportRepository = MockContextReportRepository(report);
+    final aiRepository = MockAiRepository();
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Provider<ApiService>.value(
-          value: apiService,
+        home: MultiProvider(
+          providers: [
+            Provider<ContextReportRepository>.value(value: contextReportRepository),
+            Provider<AiRepository>.value(value: aiRepository),
+          ],
           child: const ContextReportScreen(),
         ),
       ),

@@ -3,10 +3,10 @@ import '../models/workspace.dart';
 import '../models/saved_listing.dart';
 import '../models/comment.dart';
 import '../models/activity_log.dart';
-import '../services/api_service.dart';
+import '../services/api_client.dart';
 
 class WorkspaceProvider extends ChangeNotifier {
-  final ApiService _apiService;
+  final ApiClient _client;
 
   List<Workspace> _workspaces = [];
   List<Workspace> get workspaces => _workspaces;
@@ -26,7 +26,7 @@ class WorkspaceProvider extends ChangeNotifier {
   List<ActivityLog> _activityLogs = [];
   List<ActivityLog> get activityLogs => _activityLogs;
 
-  WorkspaceProvider(this._apiService);
+  WorkspaceProvider(this._client);
 
   Future<void> fetchWorkspaces() async {
     _isLoading = true;
@@ -34,7 +34,7 @@ class WorkspaceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final List<dynamic> data = await _apiService.get('/api/workspaces');
+      final List<dynamic> data = await _client.get('/api/workspaces');
       _workspaces = data.map((json) => Workspace.fromJson(json)).toList();
     } catch (e) {
       _error = e.toString();
@@ -46,7 +46,7 @@ class WorkspaceProvider extends ChangeNotifier {
 
   Future<void> createWorkspace(String name, String? description) async {
     try {
-      final data = await _apiService.post('/api/workspaces', {
+      final data = await _client.post('/api/workspaces', {
         'name': name,
         'description': description,
       });
@@ -63,16 +63,16 @@ class WorkspaceProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final wData = await _apiService.get('/api/workspaces/$id');
+      final wData = await _client.get('/api/workspaces/$id');
       _selectedWorkspace = Workspace.fromJson(wData);
 
-      final mData = await _apiService.get('/api/workspaces/$id/members');
+      final mData = await _client.get('/api/workspaces/$id/members');
       _members = (mData as List).map((j) => WorkspaceMember.fromJson(j)).toList();
 
-      final sData = await _apiService.get('/api/workspaces/$id/listings');
+      final sData = await _client.get('/api/workspaces/$id/listings');
       _savedListings = (sData as List).map((j) => SavedListing.fromJson(j)).toList();
 
-      final aData = await _apiService.get('/api/workspaces/$id/activity');
+      final aData = await _client.get('/api/workspaces/$id/activity');
       _activityLogs = (aData as List).map((j) => ActivityLog.fromJson(j)).toList();
     } catch (e) {
       _error = e.toString();
@@ -85,11 +85,11 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> inviteMember(String email, WorkspaceRole role) async {
     if (_selectedWorkspace == null) return;
     try {
-      await _apiService.post('/api/workspaces/${_selectedWorkspace!.id}/members', {
+      await _client.post('/api/workspaces/${_selectedWorkspace!.id}/members', {
         'email': email,
         'role': role.name,
       });
-      final mData = await _apiService.get('/api/workspaces/${_selectedWorkspace!.id}/members');
+      final mData = await _client.get('/api/workspaces/${_selectedWorkspace!.id}/members');
       _members = (mData as List).map((j) => WorkspaceMember.fromJson(j)).toList();
       notifyListeners();
     } catch (e) {
@@ -100,11 +100,11 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> saveListing(String listingId, String? notes) async {
     if (_selectedWorkspace == null) return;
     try {
-      await _apiService.post('/api/workspaces/${_selectedWorkspace!.id}/listings', {
+      await _client.post('/api/workspaces/${_selectedWorkspace!.id}/listings', {
         'listingId': listingId,
         'notes': notes,
       });
-      final sData = await _apiService.get('/api/workspaces/${_selectedWorkspace!.id}/listings');
+      final sData = await _client.get('/api/workspaces/${_selectedWorkspace!.id}/listings');
       _savedListings = (sData as List).map((j) => SavedListing.fromJson(j)).toList();
       notifyListeners();
     } catch (e) {
@@ -115,7 +115,7 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> addComment(String savedListingId, String content, String? parentId) async {
      if (_selectedWorkspace == null) return;
      try {
-       await _apiService.post('/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments', {
+       await _client.post('/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments', {
          'content': content,
          'parentId': parentId,
        });
@@ -128,7 +128,7 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<List<Comment>> fetchComments(String savedListingId) async {
     if (_selectedWorkspace == null) return [];
     try {
-      final List<dynamic> data = await _apiService.get('/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments');
+      final List<dynamic> data = await _client.get('/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments');
       return data.map((j) => Comment.fromJson(j)).toList();
     } catch (e) {
       rethrow;

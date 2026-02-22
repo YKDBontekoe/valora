@@ -8,7 +8,7 @@ import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:valora_app/models/notification.dart' as _i3;
-import 'package:valora_app/services/api_service.dart' as _i4;
+import 'package:valora_app/repositories/notification_repository.dart' as _i4;
 import 'package:valora_app/services/notification_service.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -32,168 +32,149 @@ import 'package:valora_app/services/notification_service.dart' as _i2;
 class MockNotificationService extends _i1.Mock
     implements _i2.NotificationService {
   @override
-  List<_i3.ValoraNotification> get notifications => (super.noSuchMethod(
-        Invocation.getter(#notifications),
-        returnValue: <_i3.ValoraNotification>[],
-        returnValueForMissingStub: <_i3.ValoraNotification>[],
-      ) as List<_i3.ValoraNotification>);
+  List<_i3.ValoraNotification> get notifications =>
+      (super.noSuchMethod(
+            Invocation.getter(#notifications),
+            returnValue: <_i3.ValoraNotification>[],
+            returnValueForMissingStub: <_i3.ValoraNotification>[],
+          )
+          as List<_i3.ValoraNotification>);
 
   @override
-  int get unreadCount => (super.noSuchMethod(
-        Invocation.getter(#unreadCount),
-        returnValue: 0,
-        returnValueForMissingStub: 0,
-      ) as int);
+  int get unreadCount =>
+      (super.noSuchMethod(
+            Invocation.getter(#unreadCount),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
+          )
+          as int);
 
   @override
-  bool get isLoading => (super.noSuchMethod(
-        Invocation.getter(#isLoading),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get isLoading =>
+      (super.noSuchMethod(
+            Invocation.getter(#isLoading),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  bool get isLoadingMore => (super.noSuchMethod(
-        Invocation.getter(#isLoadingMore),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get isLoadingMore =>
+      (super.noSuchMethod(
+            Invocation.getter(#isLoadingMore),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  bool get hasMore => (super.noSuchMethod(
-        Invocation.getter(#hasMore),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get hasMore =>
+      (super.noSuchMethod(
+            Invocation.getter(#hasMore),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  bool get hasListeners => (super.noSuchMethod(
-        Invocation.getter(#hasListeners),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get hasListeners =>
+      (super.noSuchMethod(
+            Invocation.getter(#hasListeners),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  void update(_i4.ApiService? apiService) => super.noSuchMethod(
-        Invocation.method(
-          #update,
-          [apiService],
-        ),
-        returnValueForMissingStub: null,
-      );
+  void update(_i4.NotificationRepository? repository) => super.noSuchMethod(
+    Invocation.method(#update, [repository]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void startPolling() => super.noSuchMethod(
-        Invocation.method(
-          #startPolling,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#startPolling, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void stopPolling() => super.noSuchMethod(
-        Invocation.method(
-          #stopPolling,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#stopPolling, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  _i5.Future<void> deleteNotification(String? id) => (super.noSuchMethod(
-        Invocation.method(
-          #deleteNotification,
-          [id],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+  _i5.Future<void> deleteNotification(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteNotification, [id]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
   _i5.Future<void> fetchNotifications({bool? refresh = false}) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #fetchNotifications,
-          [],
-          {#refresh: refresh},
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+            Invocation.method(#fetchNotifications, [], {#refresh: refresh}),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
-  _i5.Future<void> loadMoreNotifications() => (super.noSuchMethod(
-        Invocation.method(
-          #loadMoreNotifications,
-          [],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+  _i5.Future<void> loadMoreNotifications() =>
+      (super.noSuchMethod(
+            Invocation.method(#loadMoreNotifications, []),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
-  _i5.Future<void> markAsRead(String? id) => (super.noSuchMethod(
-        Invocation.method(
-          #markAsRead,
-          [id],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+  _i5.Future<void> markAsRead(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#markAsRead, [id]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
-  _i5.Future<void> markAllAsRead() => (super.noSuchMethod(
-        Invocation.method(
-          #markAllAsRead,
-          [],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+  _i5.Future<void> markAllAsRead() =>
+      (super.noSuchMethod(
+            Invocation.method(#markAllAsRead, []),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
   void undoDelete(String? id) => super.noSuchMethod(
-        Invocation.method(
-          #undoDelete,
-          [id],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#undoDelete, [id]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
-        Invocation.method(
-          #addListener,
-          [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#addListener, [listener]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void removeListener(_i6.VoidCallback? listener) => super.noSuchMethod(
-        Invocation.method(
-          #removeListener,
-          [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#removeListener, [listener]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void notifyListeners() => super.noSuchMethod(
-        Invocation.method(
-          #notifyListeners,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#notifyListeners, []),
+    returnValueForMissingStub: null,
+  );
 }

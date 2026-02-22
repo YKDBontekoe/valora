@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import '../models/notification.dart';
-import 'api_service.dart';
+import '../repositories/notification_repository.dart';
 
 class NotificationService extends ChangeNotifier {
   static final _log = Logger('NotificationService');
-  ApiService _apiService;
+  NotificationRepository _repository;
   List<ValoraNotification> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;
@@ -20,11 +20,11 @@ class NotificationService extends ChangeNotifier {
   final Map<String, Timer> _pendingDeletions = {};
   final Map<String, (int index, ValoraNotification notification)> _pendingDeletedNotifications = {};
 
-  NotificationService(this._apiService);
+  NotificationService(this._repository);
 
 
-  void update(ApiService apiService) {
-    _apiService = apiService;
+  void update(NotificationRepository repository) {
+    _repository = repository;
   }
 
   List<ValoraNotification> get notifications => _notifications;
@@ -49,7 +49,7 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> _fetchUnreadCount() async {
     try {
-      int count = await _apiService.getUnreadNotificationCount();
+      int count = await _repository.getUnreadNotificationCount();
 
       // Adjust count to account for locally pending deletes
       for (final pending in _pendingDeletedNotifications.values) {
@@ -102,7 +102,7 @@ class NotificationService extends ChangeNotifier {
       final pendingRestore = _pendingDeletedNotifications.remove(id);
 
       try {
-        await _apiService.deleteNotification(id);
+        await _repository.deleteNotification(id);
       } catch (e) {
         _log.warning('Error deleting notification', e);
 
@@ -138,8 +138,8 @@ class NotificationService extends ChangeNotifier {
     try {
       // Fetch unread count in parallel with notifications
       final results = await Future.wait([
-        _apiService.getNotifications(limit: _pageSize, offset: 0),
-        _apiService.getUnreadNotificationCount(),
+        _repository.getNotifications(limit: _pageSize, offset: 0),
+        _repository.getUnreadNotificationCount(),
       ]);
 
       var fetched = results[0] as List<ValoraNotification>;
@@ -178,7 +178,7 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
+      final fetched = await _repository.getNotifications(limit: _pageSize, offset: _offset);
 
       if (fetched.isEmpty) {
         _hasMore = false;
@@ -213,7 +213,7 @@ class NotificationService extends ChangeNotifier {
         _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
         notifyListeners();
 
-        await _apiService.markNotificationAsRead(id);
+        await _repository.markNotificationAsRead(id);
       }
     } catch (e) {
       _log.warning('Error marking notification as read', e);
@@ -236,7 +236,7 @@ class NotificationService extends ChangeNotifier {
       _unreadCount = 0;
       notifyListeners();
 
-      await _apiService.markAllNotificationsAsRead();
+      await _repository.markAllNotificationsAsRead();
     } catch (e) {
       _log.warning('Error marking all notifications as read', e);
     }

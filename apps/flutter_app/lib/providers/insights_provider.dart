@@ -7,7 +7,7 @@ import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
-import '../services/api_service.dart';
+import '../repositories/map_repository.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
 
@@ -16,7 +16,7 @@ class InsightsProvider extends ChangeNotifier {
   static const double _amenityDetailZoomThreshold = 13.0;
   static const double _overlayDetailZoomThreshold = 11.0;
 
-  ApiService _apiService;
+  MapRepository _repository;
 
   List<MapCityInsight> _cities = [];
   List<MapAmenity> _amenities = [];
@@ -56,7 +56,7 @@ class InsightsProvider extends ChangeNotifier {
   final Map<String, List<MapOverlay>> _overlaysCache = {};
   final Map<String, List<MapOverlayTile>> _overlayTilesCache = {};
 
-  InsightsProvider(this._apiService);
+  InsightsProvider(this._repository);
 
   List<MapCityInsight> get cities => _cities;
   List<MapAmenity> get amenities => _amenities;
@@ -73,8 +73,8 @@ class InsightsProvider extends ChangeNotifier {
   bool get showOverlays => _showOverlays;
   MapOverlayMetric get selectedOverlayMetric => _selectedOverlayMetric;
 
-  void update(ApiService apiService) {
-    _apiService = apiService;
+  void update(MapRepository repository) {
+    _repository = repository;
   }
 
   Future<void> loadInsights() async {
@@ -83,7 +83,7 @@ class InsightsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _cities = await _apiService.getCityInsights();
+      _cities = await _repository.getCityInsights();
     } catch (e) {
       _error = e is AppException ? e.message : 'Failed to load insights';
     } finally {
@@ -354,7 +354,7 @@ class InsightsProvider extends ChangeNotifier {
     }
 
     try {
-      final result = await _apiService.getMapAmenities(
+      final result = await _repository.getMapAmenities(
         minLat: bounds.minLat,
         minLon: bounds.minLon,
         maxLat: bounds.maxLat,
@@ -388,7 +388,7 @@ class InsightsProvider extends ChangeNotifier {
     }
 
     try {
-      final result = await _apiService.getMapAmenityClusters(
+      final result = await _repository.getMapAmenityClusters(
         minLat: bounds.minLat,
         minLon: bounds.minLon,
         maxLat: bounds.maxLat,
@@ -424,7 +424,7 @@ class InsightsProvider extends ChangeNotifier {
     }
 
     try {
-      final result = await _apiService.getMapOverlays(
+      final result = await _repository.getMapOverlays(
         minLat: bounds.minLat,
         minLon: bounds.minLon,
         maxLat: bounds.maxLat,
@@ -462,7 +462,7 @@ class InsightsProvider extends ChangeNotifier {
     }
 
     try {
-      final result = await _apiService.getMapOverlayTiles(
+      final result = await _repository.getMapOverlayTiles(
         minLat: bounds.minLat,
         minLon: bounds.minLon,
         maxLat: bounds.maxLat,

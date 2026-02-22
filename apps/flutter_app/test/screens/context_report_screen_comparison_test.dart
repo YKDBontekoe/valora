@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/screens/context_report_screen.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:valora_app/services/search_history_service.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/widgets/report/comparison_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/models/search_history_item.dart';
+import 'package:mockito/mockito.dart';
 
 // Mocks
-class MockApiService extends ApiService {
+class MockContextReportRepository extends Fake implements ContextReportRepository {
   final Map<String, ContextReport> reports = {};
 
   @override
@@ -22,6 +24,11 @@ class MockApiService extends ApiService {
     // Return a default report for any other input to allow initial load
     return _createReport(input, 80);
   }
+}
+
+class MockAiRepository extends Fake implements AiRepository {
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async => "Analysis";
 }
 
 class MockPdokService extends PdokService {}
@@ -56,23 +63,26 @@ ContextReport _createReport(String query, double score) {
 }
 
 void main() {
-  late MockApiService apiService;
+  late MockContextReportRepository contextReportRepository;
+  late MockAiRepository aiRepository;
   late MockPdokService pdokService;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    apiService = MockApiService();
+    contextReportRepository = MockContextReportRepository();
+    aiRepository = MockAiRepository();
     pdokService = MockPdokService();
 
-    apiService.reports['A'] = _createReport('A', 80);
-    apiService.reports['B'] = _createReport('B', 90);
+    contextReportRepository.reports['A'] = _createReport('A', 80);
+    contextReportRepository.reports['B'] = _createReport('B', 90);
   });
 
   Widget createWidget() {
     return MaterialApp(
       home: MultiProvider(
         providers: [
-          Provider<ApiService>.value(value: apiService),
+          Provider<ContextReportRepository>.value(value: contextReportRepository),
+          Provider<AiRepository>.value(value: aiRepository),
         ],
         child: ContextReportScreen(pdokService: pdokService),
       ),
@@ -84,6 +94,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // 1. Search and generate a report
+    // Need to find TextField properly. Since ContextReportScreen uses TypeAheadField which creates a TextField.
     final inputFinder = find.byType(TextField);
     await tester.enterText(inputFinder, 'A');
     await tester.testTextInput.receiveAction(TextInputAction.search);

@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
 import 'package:valora_app/services/search_history_service.dart';
 import 'package:valora_app/widgets/report/comparison_view.dart';
 import 'package:valora_app/widgets/report/score_gauge.dart';
@@ -11,8 +12,8 @@ import 'package:valora_app/widgets/report/category_radar.dart';
 import 'package:valora_app/widgets/report/ai_insight_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Mock ApiService
-class _MockApiService extends ApiService {
+// Mock ContextReportRepository
+class _MockContextReportRepository extends Fake implements ContextReportRepository {
   final Map<String, ContextReport> reports = {};
   bool delayFetch = false;
 
@@ -22,6 +23,14 @@ class _MockApiService extends ApiService {
       return reports[input]!;
     }
     throw Exception('Report not found');
+  }
+}
+
+// Mock AiRepository
+class _MockAiRepository extends Fake implements AiRepository {
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async {
+    return "Mock AI Analysis";
   }
 }
 
@@ -36,7 +45,7 @@ class _MockHistoryService extends SearchHistoryService {
 
 void main() {
   late ContextReportProvider provider;
-  late _MockApiService apiService;
+  late _MockContextReportRepository contextReportRepository;
 
   ContextReport createReport(String query, double score, {Map<String, double>? categories}) {
     return ContextReport(
@@ -65,12 +74,13 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    apiService = _MockApiService();
-    apiService.reports['A'] = createReport('A', 80);
-    apiService.reports['B'] = createReport('B', 90);
+    contextReportRepository = _MockContextReportRepository();
+    contextReportRepository.reports['A'] = createReport('A', 80);
+    contextReportRepository.reports['B'] = createReport('B', 90);
 
     provider = ContextReportProvider(
-      apiService: apiService,
+      contextReportRepository: contextReportRepository,
+      aiRepository: _MockAiRepository(),
       historyService: _MockHistoryService(),
     );
   });
@@ -135,7 +145,7 @@ void main() {
   });
 
   testWidgets('ComparisonView handles different categories', (WidgetTester tester) async {
-    apiService.reports['C'] = createReport('C', 70, categories: {'Social': 60, 'Environment': 80});
+    contextReportRepository.reports['C'] = createReport('C', 70, categories: {'Social': 60, 'Environment': 80});
     await provider.addToComparison('A', 1000); // Has Social, Safety
     await provider.addToComparison('C', 1000); // Has Social, Environment
 

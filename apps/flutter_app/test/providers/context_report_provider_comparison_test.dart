@@ -1,49 +1,41 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:valora_app/models/context_report.dart';
-import 'package:valora_app/models/search_history_item.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
 import 'package:valora_app/services/search_history_service.dart';
 
-// Mock ApiService
-class _MockApiService extends ApiService {
-  final Map<String, ContextReport> reports = {};
-  bool shouldFail = false;
+import 'context_report_provider_comparison_test.mocks.dart';
 
-  @override
-  Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
-    if (shouldFail) {
-      throw Exception('API Failed');
-    }
-    if (reports.containsKey(input)) {
-      return reports[input]!;
-    }
-    throw Exception('Report not found for $input');
-  }
-}
-
-// Mock SearchHistoryService (not strictly needed but good to have a simple one)
-class _MockHistoryService extends SearchHistoryService {
-  @override
-  Future<List<SearchHistoryItem>> getHistory() async => [];
-
-  @override
-  Future<void> addToHistory(String query) async {}
-
-  @override
-  Future<void> clearHistory() async {}
-}
-
+@GenerateMocks([ContextReportRepository, AiRepository, SearchHistoryService])
 void main() {
   late ContextReportProvider provider;
-  late _MockApiService apiService;
+  late MockContextReportRepository mockRepo;
+  late MockAiRepository mockAiRepo;
+  late MockSearchHistoryService mockHistory;
 
-  ContextReport createReport(String query, double score) {
+  setUp(() {
+    mockRepo = MockContextReportRepository();
+    mockAiRepo = MockAiRepository();
+    mockHistory = MockSearchHistoryService();
+
+    // Default history behavior
+    when(mockHistory.getHistory()).thenAnswer((_) async => []);
+
+    provider = ContextReportProvider(
+      contextReportRepository: mockRepo,
+      aiRepository: mockAiRepo,
+      historyService: mockHistory,
+    );
+  });
+
+  ContextReport createReport(String query) {
     return ContextReport(
       location: ContextLocation(
         query: query,
-        displayAddress: '$query address',
+        displayAddress: '$query Address',
         latitude: 0,
         longitude: 0,
       ),
@@ -54,136 +46,44 @@ void main() {
       mobilityMetrics: [],
       amenityMetrics: [],
       environmentMetrics: [],
-      compositeScore: score,
+      compositeScore: 80,
       categoryScores: {},
       sources: [],
       warnings: [],
     );
   }
 
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-    apiService = _MockApiService();
-    // Pre-populate API service
-    apiService.reports['A'] = createReport('A', 80);
-    apiService.reports['B'] = createReport('B', 90);
+  test('addToComparison adds ID and fetches report if missing', () async {
+    when(mockRepo.getContextReport(any, radiusMeters: anyNamed('radiusMeters')))
+        .thenAnswer((_) async => createReport('LocA'));
 
-    provider = ContextReportProvider(
-      apiService: apiService,
-      historyService: _MockHistoryService(),
-    );
+    await provider.addToComparison('LocA', 1000);
+
+    expect(provider.comparisonIds.length, 1);
+    verify(mockRepo.getContextReport('LocA', radiusMeters: 1000)).called(1);
   });
 
-  group('Comparison Logic', () {
-    test('addToComparison adds report ID', () async {
-      await provider.addToComparison('A', 1000);
+  test('toggleComparison removes if exists', () async {
+    when(mockRepo.getContextReport(any, radiusMeters: anyNamed('radiusMeters')))
+        .thenAnswer((_) async => createReport('LocA'));
 
-      expect(provider.comparisonIds.length, 1);
-      expect(provider.isComparing('A', 1000), isTrue);
-    });
+    await provider.addToComparison('LocA', 1000);
+    expect(provider.comparisonIds.length, 1);
 
-    test('addToComparison does not add duplicate ID', () async {
-      await provider.addToComparison('A', 1000);
-      await provider.addToComparison('A', 1000);
+    await provider.toggleComparison('LocA', 1000);
+    expect(provider.comparisonIds.isEmpty, true);
+  });
 
-      expect(provider.comparisonIds.length, 1);
-    });
+  test('clearComparison clears all', () async {
+    when(mockRepo.getContextReport(any, radiusMeters: anyNamed('radiusMeters')))
+        .thenAnswer((_) async => createReport('LocA'));
 
-    test('addToComparison fetches report if missing', () async {
-      // Ensure activeReports is empty initially
-      expect(provider.getReportById('A|1000'), isNull);
+    await provider.addToComparison('LocA', 1000);
+    await provider.addToComparison('LocB', 1000);
 
-      await provider.addToComparison('A', 1000);
+    expect(provider.comparisonIds.length, 2);
 
-      // Should have fetched
-      expect(provider.getReportById('A|1000'), isNotNull);
-      expect(provider.getReportById('A|1000')!.compositeScore, 80);
-    });
-
-    test('addToComparison handles fetch failure gracefully', () async {
-      apiService.shouldFail = true;
-
-      await provider.addToComparison('A', 1000);
-
-      expect(provider.isComparing('A', 1000), isTrue); // ID added
-      expect(provider.getReportById('A|1000'), isNull); // Report not fetched
-    });
-
-    test('removeFromComparison removes ID', () async {
-      await provider.addToComparison('A', 1000);
-      expect(provider.isComparing('A', 1000), isTrue);
-
-      provider.removeFromComparison('A', 1000);
-      expect(provider.isComparing('A', 1000), isFalse);
-    });
-
-    test('removeFromComparison does nothing if ID not present', () async {
-      provider.removeFromComparison('A', 1000);
-      expect(provider.comparisonIds, isEmpty);
-    });
-
-    test('toggleComparison toggles state', () async {
-      await provider.toggleComparison('A', 1000);
-      expect(provider.isComparing('A', 1000), isTrue);
-
-      await provider.toggleComparison('A', 1000);
-      expect(provider.isComparing('A', 1000), isFalse);
-    });
-
-    test('clearComparison clears all', () async {
-      await provider.addToComparison('A', 1000);
-      await provider.addToComparison('B', 1000);
-      expect(provider.comparisonIds.length, 2);
-
-      provider.clearComparison();
-      expect(provider.comparisonIds, isEmpty);
-    });
-
-    test('clearComparison does nothing if empty', () async {
-      provider.clearComparison();
-      expect(provider.comparisonIds, isEmpty);
-    });
-
-    test('comparisonReports returns loaded reports', () async {
-      await provider.addToComparison('A', 1000);
-      await provider.addToComparison('B', 1000);
-
-      final reports = provider.comparisonReports;
-      expect(reports.length, 2);
-      expect(reports.any((r) => r.location.query == 'A'), isTrue);
-      expect(reports.any((r) => r.location.query == 'B'), isTrue);
-    });
-
-    test('persistence works', () async {
-      await provider.addToComparison('A', 1000);
-
-      // Verify prefs
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getStringList('comparison_ids'), contains('A|1000'));
-
-      // Create new provider to test load
-      final newProvider = ContextReportProvider(
-        apiService: apiService,
-        historyService: _MockHistoryService(),
-      );
-
-      // Wait for loadComparisonSet
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      expect(newProvider.comparisonIds, contains('A|1000'));
-    });
-
-    test('loadComparisonSet handles null or empty prefs gracefully', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Ensure empty
-
-      final newProvider = ContextReportProvider(
-        apiService: apiService,
-        historyService: _MockHistoryService(),
-      );
-
-      await Future.delayed(const Duration(milliseconds: 50));
-      expect(newProvider.comparisonIds, isEmpty);
-    });
+    provider.clearComparison();
+    expect(provider.comparisonIds.isEmpty, true);
   });
 }

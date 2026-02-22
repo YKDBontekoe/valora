@@ -3,16 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
 import 'package:valora_app/services/search_history_service.dart';
 import 'package:valora_app/widgets/report/ai_insight_card.dart';
 import 'package:valora_app/widgets/common/valora_shimmer.dart';
 import 'package:valora_app/widgets/common/valora_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class MockContextReportRepository extends Fake implements ContextReportRepository {}
+class MockAiRepository extends Fake implements AiRepository {}
+
 // Mock Provider using subclass
 class MockProvider extends ContextReportProvider {
-  MockProvider() : super(apiService: ApiService(), historyService: SearchHistoryService());
+  MockProvider() : super(
+    contextReportRepository: MockContextReportRepository(),
+    aiRepository: MockAiRepository(),
+    historyService: SearchHistoryService()
+  );
 
   String? _insight;
   String? _error;

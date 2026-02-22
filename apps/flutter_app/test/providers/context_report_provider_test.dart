@@ -1,14 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:valora_app/models/search_history_item.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
+import 'package:valora_app/repositories/ai_repository.dart';
+import 'package:valora_app/services/api_client.dart';
 import 'package:valora_app/services/search_history_service.dart';
 
-class _FakeApiService extends ApiService {
-  _FakeApiService({this.report, this.error});
+class MockApiClient extends Mock implements ApiClient {}
+
+class _FakeContextReportRepository extends ContextReportRepository {
+  _FakeContextReportRepository({this.report, this.error}) : super(MockApiClient());
 
   final ContextReport? report;
   final Exception? error;
@@ -20,6 +25,15 @@ class _FakeApiService extends ApiService {
     }
 
     return report!;
+  }
+}
+
+class _FakeAiRepository extends AiRepository {
+  _FakeAiRepository() : super(MockApiClient());
+
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async {
+    return "AI Analysis Summary";
   }
 }
 
@@ -65,7 +79,8 @@ void main() {
 
   test('generate stores report and updates history on success', () async {
     final provider = ContextReportProvider(
-      apiService: _FakeApiService(report: buildReport()),
+      contextReportRepository: _FakeContextReportRepository(report: buildReport()),
+      aiRepository: _FakeAiRepository(),
       historyService: SearchHistoryService(),
     );
 
@@ -83,7 +98,8 @@ void main() {
 
   test('generate sets user-friendly error on failure and does not update history', () async {
     final provider = ContextReportProvider(
-      apiService: _FakeApiService(error: ServerException('boom')),
+      contextReportRepository: _FakeContextReportRepository(error: ServerException('boom')),
+      aiRepository: _FakeAiRepository(),
       historyService: SearchHistoryService(),
     );
 
@@ -99,7 +115,8 @@ void main() {
 
   test('generate returns report even if history service fails', () async {
     final provider = ContextReportProvider(
-      apiService: _FakeApiService(report: buildReport()),
+      contextReportRepository: _FakeContextReportRepository(report: buildReport()),
+      aiRepository: _FakeAiRepository(),
       historyService: _FailingHistoryService(),
     );
 
@@ -113,7 +130,8 @@ void main() {
 
   test('generate requires input', () async {
     final provider = ContextReportProvider(
-      apiService: _FakeApiService(report: buildReport()),
+      contextReportRepository: _FakeContextReportRepository(report: buildReport()),
+      aiRepository: _FakeAiRepository(),
       historyService: SearchHistoryService(),
     );
 
@@ -125,7 +143,8 @@ void main() {
 
   test('history operations work', () async {
     final provider = ContextReportProvider(
-      apiService: _FakeApiService(report: buildReport()),
+      contextReportRepository: _FakeContextReportRepository(report: buildReport()),
+      aiRepository: _FakeAiRepository(),
       historyService: SearchHistoryService(),
     );
 
@@ -148,7 +167,8 @@ void main() {
 
   test('history list is unmodifiable', () async {
      final provider = ContextReportProvider(
-      apiService: _FakeApiService(report: buildReport()),
+      contextReportRepository: _FakeContextReportRepository(report: buildReport()),
+      aiRepository: _FakeAiRepository(),
       historyService: SearchHistoryService(),
     );
 

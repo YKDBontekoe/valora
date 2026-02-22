@@ -5,19 +5,40 @@ import 'package:valora_app/models/map_amenity.dart';
 import 'package:valora_app/models/map_amenity_cluster.dart';
 import 'package:valora_app/models/map_overlay_tile.dart';
 import 'package:valora_app/providers/insights_provider.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/map_repository.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'insights_provider_test.mocks.dart';
+// Manual Mock
+class MockMapRepository extends Fake implements MapRepository {
+  List<MapAmenity> amenitiesResponse = [];
+  List<MapAmenityCluster> clustersResponse = [];
+  List<MapOverlayTile> tilesResponse = [];
+  Exception? error;
 
-@GenerateMocks([ApiService])
+  @override
+  Future<List<MapAmenity>> getMapAmenities({required double minLat, required double minLon, required double maxLat, required double maxLon, List<String>? types}) async {
+    if (error != null) throw error!;
+    return amenitiesResponse;
+  }
+
+  @override
+  Future<List<MapAmenityCluster>> getMapAmenityClusters({required double minLat, required double minLon, required double maxLat, required double maxLon, required double zoom, List<String>? types}) async {
+    return clustersResponse;
+  }
+
+  @override
+  Future<List<MapOverlayTile>> getMapOverlayTiles({required double minLat, required double minLon, required double maxLat, required double maxLon, required double zoom, required String metric}) async {
+    return tilesResponse;
+  }
+}
+
 void main() {
   late InsightsProvider provider;
-  late MockApiService mockApiService;
+  late MockMapRepository mockMapRepository;
 
   setUp(() {
-    mockApiService = MockApiService();
-    provider = InsightsProvider(mockApiService);
+    mockMapRepository = MockMapRepository();
+    provider = InsightsProvider(mockMapRepository);
   });
 
   group('InsightsProvider', () {
@@ -38,23 +59,14 @@ void main() {
       () async {
         provider.toggleAmenities();
 
-        when(
-          mockApiService.getMapAmenities(
-            minLat: anyNamed('minLat'),
-            minLon: anyNamed('minLon'),
-            maxLat: anyNamed('maxLat'),
-            maxLon: anyNamed('maxLon'),
-          ),
-        ).thenAnswer(
-          (_) async => [
+        mockMapRepository.amenitiesResponse = [
             MapAmenity(
               id: '1',
               type: 'school',
               name: 'School',
               location: const LatLng(52, 4),
             ),
-          ],
-        );
+        ];
 
         await provider.fetchMapData(
           minLat: 51.9,
@@ -71,15 +83,7 @@ void main() {
 
     test('fetchMapData handles errors gracefully', () async {
       provider.toggleAmenities();
-
-      when(
-        mockApiService.getMapAmenities(
-          minLat: anyNamed('minLat'),
-          minLon: anyNamed('minLon'),
-          maxLat: anyNamed('maxLat'),
-          maxLon: anyNamed('maxLon'),
-        ),
-      ).thenThrow(Exception('API Error'));
+      mockMapRepository.error = Exception('API Error');
 
       await provider.fetchMapData(
         minLat: 51.9,
@@ -96,24 +100,14 @@ void main() {
     test('fetchMapData calls getMapAmenityClusters when zoom is low', () async {
       provider.toggleAmenities();
 
-      when(
-        mockApiService.getMapAmenityClusters(
-          minLat: anyNamed('minLat'),
-          minLon: anyNamed('minLon'),
-          maxLat: anyNamed('maxLat'),
-          maxLon: anyNamed('maxLon'),
-          zoom: anyNamed('zoom'),
-        ),
-      ).thenAnswer(
-        (_) async => [
+      mockMapRepository.clustersResponse = [
           MapAmenityCluster(
             latitude: 52.0,
             longitude: 4.0,
             count: 10,
             typeCounts: {'school': 5, 'park': 5},
           ),
-        ],
-      );
+      ];
 
       await provider.fetchMapData(
         minLat: 51.0,
@@ -131,17 +125,7 @@ void main() {
     test('fetchMapData calls getMapOverlayTiles when zoom is low', () async {
       provider.toggleOverlays();
 
-      when(
-        mockApiService.getMapOverlayTiles(
-          minLat: anyNamed('minLat'),
-          minLon: anyNamed('minLon'),
-          maxLat: anyNamed('maxLat'),
-          maxLon: anyNamed('maxLon'),
-          zoom: anyNamed('zoom'),
-          metric: anyNamed('metric'),
-        ),
-      ).thenAnswer(
-        (_) async => [
+      mockMapRepository.tilesResponse = [
           MapOverlayTile(
             latitude: 52.0,
             longitude: 4.0,
@@ -149,8 +133,7 @@ void main() {
             value: 100,
             displayValue: '100',
           ),
-        ],
-      );
+      ];
 
       await provider.fetchMapData(
         minLat: 51.0,
