@@ -101,21 +101,18 @@ public class AdminSecurityTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task GetJobs_WithInvalidPagination_ReturnsBadRequest()
+    public async Task GetJobs_WithInvalidLimit_ReturnsBadRequest()
     {
         // Arrange
         await AuthenticateAsAdminAsync();
 
         // Act
-        var response = await Client.GetAsync("/api/admin/jobs?pageSize=101");
+        var response = await Client.GetAsync("/api/admin/jobs?limit=101");
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-        response = await Client.GetAsync("/api/admin/jobs?pageSize=0");
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-
-        response = await Client.GetAsync("/api/admin/jobs?page=0");
+        response = await Client.GetAsync("/api/admin/jobs?limit=0");
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 

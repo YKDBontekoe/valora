@@ -37,10 +37,11 @@ public class ContextAnalysisServiceTests
         Assert.Equal("Cheap areas.", result.Explanation);
         Assert.NotNull(result.TargetLocation);
         Assert.Equal(52.0, result.TargetLocation!.Lat);
-        Assert.NotNull(result.Filter); // Ensure Filter is not null
+        Assert.NotNull(result.Filter);
         Assert.Equal(MapOverlayMetric.PricePerSquareMeter, result.Filter!.Metric);
-        Assert.NotNull(result.Filter.AmenityTypes); // Ensure AmenityTypes is not null
-        Assert.Contains("park", result.Filter.AmenityTypes);
+        // Fix: Use generic collection assertion
+        Assert.NotNull(result.Filter.AmenityTypes);
+        Assert.Contains(result.Filter.AmenityTypes, x => x == "park");
     }
 
     [Fact]

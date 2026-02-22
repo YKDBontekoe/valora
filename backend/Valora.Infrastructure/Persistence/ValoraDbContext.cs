@@ -18,12 +18,6 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
     public DbSet<AiModelConfig> AiModelConfigs => Set<AiModelConfig>();
 
-    public DbSet<Workspace> Workspaces => Set<Workspace>();
-    public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
-    public DbSet<SavedListing> SavedListings => Set<SavedListing>();
-    public DbSet<ListingComment> ListingComments => Set<ListingComment>();
-    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -9,9 +9,9 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:valora_app/models/context_report.dart' as _i2;
 import 'package:valora_app/models/map_amenity.dart' as _i8;
-import 'package:valora_app/models/map_amenity_cluster.dart' as _i9;
+import 'package:valora_app/models/map_amenity_cluster.dart' as _i10;
 import 'package:valora_app/models/map_city_insight.dart' as _i7;
-import 'package:valora_app/models/map_overlay.dart' as _i10;
+import 'package:valora_app/models/map_overlay.dart' as _i9;
 import 'package:valora_app/models/map_overlay_tile.dart' as _i11;
 import 'package:valora_app/models/notification.dart' as _i6;
 import 'package:valora_app/services/api_service.dart' as _i3;
@@ -188,7 +188,7 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
       ) as _i4.Future<List<_i8.MapAmenity>>);
 
   @override
-  _i4.Future<List<_i9.MapAmenityCluster>> getMapAmenityClusters({
+  _i4.Future<List<_i10.MapAmenityCluster>> getMapAmenityClusters({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -209,12 +209,11 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             #types: types,
           },
         ),
-        returnValue: _i4.Future<List<_i9.MapAmenityCluster>>.value(
-            <_i9.MapAmenityCluster>[]),
-      ) as _i4.Future<List<_i9.MapAmenityCluster>>);
+        returnValue: _i4.Future<List<_i10.MapAmenityCluster>>.value(<_i10.MapAmenityCluster>[]),
+      ) as _i4.Future<List<_i10.MapAmenityCluster>>);
 
   @override
-  _i4.Future<List<_i10.MapOverlay>> getMapOverlays({
+  _i4.Future<List<_i9.MapOverlay>> getMapOverlays({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -233,9 +232,8 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             #metric: metric,
           },
         ),
-        returnValue:
-            _i4.Future<List<_i10.MapOverlay>>.value(<_i10.MapOverlay>[]),
-      ) as _i4.Future<List<_i10.MapOverlay>>);
+        returnValue: _i4.Future<List<_i9.MapOverlay>>.value(<_i9.MapOverlay>[]),
+      ) as _i4.Future<List<_i9.MapOverlay>>);
 
   @override
   _i4.Future<List<_i11.MapOverlayTile>> getMapOverlayTiles({
@@ -259,46 +257,6 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
             #metric: metric,
           },
         ),
-        returnValue: _i4.Future<List<_i11.MapOverlayTile>>.value(
-            <_i11.MapOverlayTile>[]),
+        returnValue: _i4.Future<List<_i11.MapOverlayTile>>.value(<_i11.MapOverlayTile>[]),
       ) as _i4.Future<List<_i11.MapOverlayTile>>);
-
-  @override
-  _i4.Future<dynamic> get(
-    String? path, {
-    Map<String, dynamic>? queryParameters,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #get,
-          [path],
-          {#queryParameters: queryParameters},
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
-
-  @override
-  _i4.Future<dynamic> post(
-    String? path,
-    dynamic data,
-  ) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #post,
-          [
-            path,
-            data,
-          ],
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
-
-  @override
-  _i4.Future<dynamic> delete(String? path) => (super.noSuchMethod(
-        Invocation.method(
-          #delete,
-          [path],
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
 }

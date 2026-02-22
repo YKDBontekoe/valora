@@ -19,7 +19,7 @@ describe('Layout Component', () => {
     localStorage.clear();
   });
 
-  it('renders common navigation links', () => {
+  it('renders navigation links', () => {
     render(
       <MemoryRouter>
         <Layout />
@@ -28,28 +28,12 @@ describe('Layout Component', () => {
 
     expect(screen.getByText('Valora Admin')).toBeInTheDocument();
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Users')).toBeInTheDocument();
     expect(screen.getByText('Batch Jobs')).toBeInTheDocument();
     expect(screen.getByText('Logout')).toBeInTheDocument();
-  });
 
-  it('hides Users link for non-Admin', () => {
-     render(
-      <MemoryRouter>
-        <Layout />
-      </MemoryRouter>
-    );
-    // Users requires Admin role
-    expect(screen.queryByText('Users')).not.toBeInTheDocument();
-  });
-
-  it('shows Users link for Admin', () => {
-    localStorage.setItem('admin_roles', JSON.stringify(['Admin']));
-    render(
-      <MemoryRouter>
-        <Layout />
-      </MemoryRouter>
-    );
-    expect(screen.getByText('Users')).toBeInTheDocument();
+    // Ensure Listings link is NOT present
+    expect(screen.queryByText('Listings')).not.toBeInTheDocument();
   });
 
   it('handles logout correctly', () => {
@@ -58,7 +42,6 @@ describe('Layout Component', () => {
     localStorage.setItem('admin_refresh_token', 'test-refresh-token');
     localStorage.setItem('admin_email', 'admin@example.com');
     localStorage.setItem('admin_userId', '123');
-    localStorage.setItem('admin_roles', JSON.stringify(['Admin']));
 
     render(
       <MemoryRouter>
@@ -74,7 +57,6 @@ describe('Layout Component', () => {
     expect(localStorage.getItem('admin_refresh_token')).toBeNull();
     expect(localStorage.getItem('admin_email')).toBeNull();
     expect(localStorage.getItem('admin_userId')).toBeNull();
-    expect(localStorage.getItem('admin_roles')).toBeNull();
 
     // Verify navigation to login
     expect(mockNavigate).toHaveBeenCalledWith('/login');

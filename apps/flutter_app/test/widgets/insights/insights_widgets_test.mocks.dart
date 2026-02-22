@@ -3,17 +3,17 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i9;
-import 'dart:ui' as _i10;
+import 'dart:async' as _i7;
+import 'dart:ui' as _i8;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:valora_app/models/map_amenity.dart' as _i4;
-import 'package:valora_app/models/map_amenity_cluster.dart' as _i5;
+import 'package:valora_app/models/map_amenity_cluster.dart' as _i9;
 import 'package:valora_app/models/map_city_insight.dart' as _i3;
-import 'package:valora_app/models/map_overlay.dart' as _i6;
-import 'package:valora_app/models/map_overlay_tile.dart' as _i7;
+import 'package:valora_app/models/map_overlay.dart' as _i5;
+import 'package:valora_app/models/map_overlay_tile.dart' as _i10;
 import 'package:valora_app/providers/insights_provider.dart' as _i2;
-import 'package:valora_app/services/api_service.dart' as _i8;
+import 'package:valora_app/services/api_service.dart' as _i6;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -49,25 +49,25 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as List<_i4.MapAmenity>);
 
   @override
-  List<_i5.MapAmenityCluster> get amenityClusters => (super.noSuchMethod(
+  List<_i9.MapAmenityCluster> get amenityClusters => (super.noSuchMethod(
         Invocation.getter(#amenityClusters),
-        returnValue: <_i5.MapAmenityCluster>[],
-        returnValueForMissingStub: <_i5.MapAmenityCluster>[],
-      ) as List<_i5.MapAmenityCluster>);
+        returnValue: <_i9.MapAmenityCluster>[],
+        returnValueForMissingStub: <_i9.MapAmenityCluster>[],
+      ) as List<_i9.MapAmenityCluster>);
 
   @override
-  List<_i6.MapOverlay> get overlays => (super.noSuchMethod(
+  List<_i5.MapOverlay> get overlays => (super.noSuchMethod(
         Invocation.getter(#overlays),
-        returnValue: <_i6.MapOverlay>[],
-        returnValueForMissingStub: <_i6.MapOverlay>[],
-      ) as List<_i6.MapOverlay>);
+        returnValue: <_i5.MapOverlay>[],
+        returnValueForMissingStub: <_i5.MapOverlay>[],
+      ) as List<_i5.MapOverlay>);
 
   @override
-  List<_i7.MapOverlayTile> get overlayTiles => (super.noSuchMethod(
+  List<_i10.MapOverlayTile> get overlayTiles => (super.noSuchMethod(
         Invocation.getter(#overlayTiles),
-        returnValue: <_i7.MapOverlayTile>[],
-        returnValueForMissingStub: <_i7.MapOverlayTile>[],
-      ) as List<_i7.MapOverlayTile>);
+        returnValue: <_i10.MapOverlayTile>[],
+        returnValueForMissingStub: <_i10.MapOverlayTile>[],
+      ) as List<_i10.MapOverlayTile>);
 
   @override
   bool get isLoading => (super.noSuchMethod(
@@ -98,11 +98,11 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as bool);
 
   @override
-  _i6.MapOverlayMetric get selectedOverlayMetric => (super.noSuchMethod(
+  _i5.MapOverlayMetric get selectedOverlayMetric => (super.noSuchMethod(
         Invocation.getter(#selectedOverlayMetric),
-        returnValue: _i6.MapOverlayMetric.pricePerSquareMeter,
-        returnValueForMissingStub: _i6.MapOverlayMetric.pricePerSquareMeter,
-      ) as _i6.MapOverlayMetric);
+        returnValue: _i5.MapOverlayMetric.pricePerSquareMeter,
+        returnValueForMissingStub: _i5.MapOverlayMetric.pricePerSquareMeter,
+      ) as _i5.MapOverlayMetric);
 
   @override
   bool get hasListeners => (super.noSuchMethod(
@@ -112,7 +112,7 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as bool);
 
   @override
-  void update(_i8.ApiService? apiService) => super.noSuchMethod(
+  void update(_i6.ApiService? apiService) => super.noSuchMethod(
         Invocation.method(
           #update,
           [apiService],
@@ -121,17 +121,17 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       );
 
   @override
-  _i9.Future<void> loadInsights() => (super.noSuchMethod(
+  _i7.Future<void> loadInsights() => (super.noSuchMethod(
         Invocation.method(
           #loadInsights,
           [],
         ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
 
   @override
-  _i9.Future<void> fetchMapData({
+  _i7.Future<void> fetchMapData({
     required double? minLat,
     required double? minLon,
     required double? maxLat,
@@ -150,9 +150,9 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
             #zoom: zoom,
           },
         ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
 
   @override
   void toggleAmenities() => super.noSuchMethod(
@@ -173,7 +173,7 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       );
 
   @override
-  void setOverlayMetric(_i6.MapOverlayMetric? metric) => super.noSuchMethod(
+  void setOverlayMetric(_i5.MapOverlayMetric? metric) => super.noSuchMethod(
         Invocation.method(
           #setOverlayMetric,
           [metric],
@@ -200,7 +200,7 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       ) as double?);
 
   @override
-  void addListener(_i10.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i8.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #addListener,
           [listener],
@@ -209,7 +209,7 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
       );
 
   @override
-  void removeListener(_i10.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i8.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #removeListener,
           [listener],

@@ -56,11 +56,6 @@ public static class MapEndpoints
         IMapService mapService,
         CancellationToken ct)
     {
-        if (!AreCoordinatesValid(minLat, minLon, maxLat, maxLon, out var error))
-        {
-            return Results.BadRequest(new { error });
-        }
-
         var typeList = ParseTypes(types);
         var amenities = await mapService.GetMapAmenitiesAsync(minLat, minLon, maxLat, maxLon, typeList, ct);
         return Results.Ok(amenities);
@@ -76,11 +71,6 @@ public static class MapEndpoints
         IMapService mapService,
         CancellationToken ct)
     {
-        if (!AreCoordinatesValid(minLat, minLon, maxLat, maxLon, out var error))
-        {
-            return Results.BadRequest(new { error });
-        }
-
         var typeList = ParseTypes(types);
         var clusters = await mapService.GetMapAmenityClustersAsync(minLat, minLon, maxLat, maxLon, zoom, typeList, ct);
         return Results.Ok(clusters);
@@ -95,11 +85,6 @@ public static class MapEndpoints
         IMapService mapService,
         CancellationToken ct)
     {
-        if (!AreCoordinatesValid(minLat, minLon, maxLat, maxLon, out var error))
-        {
-            return Results.BadRequest(new { error });
-        }
-
         var overlays = await mapService.GetMapOverlaysAsync(minLat, minLon, maxLat, maxLon, metric, ct);
         return Results.Ok(overlays);
     }
@@ -114,11 +99,6 @@ public static class MapEndpoints
         IMapService mapService,
         CancellationToken ct)
     {
-        if (!AreCoordinatesValid(minLat, minLon, maxLat, maxLon, out var error))
-        {
-            return Results.BadRequest(new { error });
-        }
-
         var tiles = await mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, metric, ct);
         return Results.Ok(tiles);
     }
@@ -137,36 +117,5 @@ public static class MapEndpoints
         return types?.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(t => t.Trim())
             .ToList();
-    }
-
-    private static bool AreCoordinatesValid(double minLat, double minLon, double maxLat, double maxLon, out string? error)
-    {
-        if (!double.IsFinite(minLat) || !double.IsFinite(minLon) || !double.IsFinite(maxLat) || !double.IsFinite(maxLon))
-        {
-            error = "Coordinates must be finite numbers.";
-            return false;
-        }
-        if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90)
-        {
-            error = "Latitudes must be between -90 and 90.";
-            return false;
-        }
-        if (minLon < -180 || minLon > 180 || maxLon < -180 || maxLon > 180)
-        {
-            error = "Longitudes must be between -180 and 180.";
-            return false;
-        }
-        if (minLat > maxLat)
-        {
-            error = "minLat must be less than maxLat.";
-            return false;
-        }
-        if (minLon > maxLon)
-        {
-            error = "minLon must be less than maxLon.";
-            return false;
-        }
-        error = null;
-        return true;
     }
 }

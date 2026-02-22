@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Common.Models;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Persistence.Extensions;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
 
@@ -20,31 +19,38 @@ public class BatchJobRepository : IBatchJobRepository
         return await _context.BatchJobs.FindAsync(new object[] { id }, cancellationToken);
     }
 
-    public async Task<List<BatchJob>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
+    public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
-        return await _context.BatchJobs
+        var jobs = await _context.BatchJobs
             .OrderByDescending(x => x.CreatedAt)
             .Take(limit)
+            .Select(job => new
+            {
+                job.Id,
+                job.Type,
+                job.Status,
+                job.Target,
+                job.Progress,
+                job.Error,
+                job.ResultSummary,
+                job.CreatedAt,
+                job.StartedAt,
+                job.CompletedAt
+            })
             .ToListAsync(cancellationToken);
-    }
 
-    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, CancellationToken cancellationToken = default)
-    {
-        var query = _context.BatchJobs.AsQueryable();
-
-        if (!string.IsNullOrEmpty(status) && Enum.TryParse<BatchJobStatus>(status, true, out var statusEnum))
-        {
-            query = query.Where(j => j.Status == statusEnum);
-        }
-
-        if (!string.IsNullOrEmpty(type) && Enum.TryParse<BatchJobType>(type, true, out var typeEnum))
-        {
-            query = query.Where(j => j.Type == typeEnum);
-        }
-
-        return await query
-            .OrderByDescending(x => x.CreatedAt)
-            .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
+        return jobs.Select(j => new BatchJobSummaryDto(
+            j.Id,
+            j.Type.ToString(),
+            j.Status.ToString(),
+            j.Target,
+            j.Progress,
+            j.Error,
+            j.ResultSummary,
+            j.CreatedAt,
+            j.StartedAt,
+            j.CompletedAt
+        )).ToList();
     }
 
     public async Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default)

@@ -7,7 +7,7 @@ using Valora.Application.DTOs;
 using Xunit;
 using Moq;
 using Google.Apis.Auth;
-using Valora.Application.Common.Interfaces.External;
+using Valora.Infrastructure.Services.External;
 
 namespace Valora.IntegrationTests;
 

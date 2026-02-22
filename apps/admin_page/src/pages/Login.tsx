@@ -54,7 +54,6 @@ const Login = () => {
       localStorage.setItem('admin_refresh_token', data.refreshToken);
       localStorage.setItem('admin_email', data.email);
       localStorage.setItem('admin_userId', data.userId);
-      localStorage.setItem('admin_roles', JSON.stringify(data.roles));
       navigate('/');
     } catch (err) {
       setError(((err as { response?: { data?: { error?: string } } }).response?.data?.error) || 'Login failed. Please check your credentials.');

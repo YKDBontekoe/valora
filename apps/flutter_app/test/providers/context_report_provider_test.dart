@@ -6,6 +6,27 @@ import 'package:valora_app/models/search_history_item.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/services/search_history_service.dart';
+import 'package:valora_app/services/storage_service.dart';
+
+class _FakeStorageService implements StorageService {
+  final bool shouldFail;
+  _FakeStorageService({this.shouldFail = false});
+
+  final Map<String, List<String>> _storage = {};
+
+  @override
+  Future<List<String>?> getStringList(String key) async {
+    if (shouldFail) throw Exception('Storage Failed');
+    return _storage[key];
+  }
+
+  @override
+  Future<bool> setStringList(String key, List<String> value) async {
+    if (shouldFail) throw Exception('Storage Failed');
+    _storage[key] = value;
+    return true;
+  }
+}
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.report, this.error});
@@ -20,6 +41,14 @@ class _FakeApiService extends ApiService {
     }
 
     return report!;
+  }
+
+  @override
+  Future<String> getAiAnalysis(ContextReport report) async {
+    if (error != null) {
+      throw error!;
+    }
+    return "AI Analysis Result";
   }
 }
 
@@ -155,5 +184,47 @@ void main() {
     await provider.generate('search 1');
 
     expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
+  });
+
+  test('addToComparison handles API errors gracefully', () async {
+    final provider = ContextReportProvider(
+      apiService: _FakeApiService(error: ServerException('API Failed')),
+      historyService: SearchHistoryService(),
+    );
+
+    // This should not throw, despite the API error
+    await provider.addToComparison('Failing Query', 1000);
+
+    expect(provider.isComparing('Failing Query', 1000), isTrue);
+    // The report won't be in activeReports because fetch failed, but ID is tracked
+    expect(provider.getReportById('Failing Query|1000'), isNull);
+  });
+
+  test('generateAiInsight handles API errors gracefully', () async {
+    final report = buildReport();
+    final provider = ContextReportProvider(
+      apiService: _FakeApiService(error: ServerException('AI Failed')),
+      historyService: SearchHistoryService(),
+    );
+
+    await provider.generateAiInsight(report);
+
+    expect(provider.getAiInsight(report.location.displayAddress), isNull);
+    expect(provider.getAiInsightError(report.location.displayAddress), contains('Server Error: AI Failed'));
+    expect(provider.isAiInsightLoading(report.location.displayAddress), isFalse);
+  });
+
+  test('addToComparison handles storage errors gracefully', () async {
+    final provider = ContextReportProvider(
+      apiService: _FakeApiService(report: buildReport()),
+      historyService: SearchHistoryService(),
+      storageService: _FakeStorageService(shouldFail: true),
+    );
+
+    // This should not throw, despite storage failure
+    await provider.addToComparison('Query', 1000);
+
+    // Verify it still added to in-memory set
+    expect(provider.isComparing('Query', 1000), isTrue);
   });
 }

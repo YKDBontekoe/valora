@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Google.Apis.Auth;
-using Valora.Application.Common.Interfaces.External;
 
 namespace Valora.Infrastructure.Services.External;
 

@@ -431,4 +431,47 @@ public class ExceptionHandlingMiddlewareTests
         Assert.DoesNotContain("Secret error", body);
         Assert.Contains("An unexpected error occurred. Please try again later.", body);
     }
+
+    [Fact]
+    public async Task InvokeAsync_ResponseStarted_DoesNotWriteResponse()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new Exception("Boom"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        // We use a custom FeatureCollection to mock IHttpResponseFeature.HasStarted
+        // However, DefaultHttpContext has Response.HasStarted as a readonly property based on the feature.
+        // It's easier to create a mock HttpContext or use features.
+        var context = new DefaultHttpContext();
+        // Since we can't easily mock Response.HasStarted on DefaultHttpContext without heavy reflection or features
+        // Let's create a Mock<HttpContext>
+        var contextMock = new Mock<HttpContext>();
+        var requestMock = new Mock<HttpRequest>();
+        var responseMock = new Mock<HttpResponse>();
+
+        contextMock.Setup(c => c.Request).Returns(requestMock.Object);
+        contextMock.Setup(c => c.Response).Returns(responseMock.Object);
+        contextMock.Setup(c => c.TraceIdentifier).Returns("TraceId");
+
+        responseMock.Setup(r => r.HasStarted).Returns(true);
+
+        // Act
+        await middleware.InvokeAsync(contextMock.Object);
+
+        // Assert
+        // Verify we logged the warning about response started
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("The response has already started")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        // Verify we did NOT attempt to write to the body or set status code (which would fail on started response anyway)
+        responseMock.VerifySet(r => r.StatusCode = It.IsAny<int>(), Times.Never);
+    }
 }

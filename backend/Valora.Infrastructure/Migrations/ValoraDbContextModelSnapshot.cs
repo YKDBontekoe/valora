@@ -154,49 +154,6 @@ namespace Valora.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.ActivityLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ActorId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Metadata")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Summary")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid?>("TargetListingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActorId");
-
-                    b.HasIndex("WorkspaceId");
-
-                    b.ToTable("ActivityLogs");
-                });
-
             modelBuilder.Entity("Valora.Domain.Entities.AiModelConfig", b =>
                 {
                     b.Property<Guid>("Id")
@@ -319,6 +276,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+
                     b.Property<string>("Error")
                         .HasColumnType("text");
 
@@ -360,7 +318,7 @@ namespace Valora.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_BatchJob_Status", "\"Status\" IN ('Pending', 'Processing', 'Completed', 'Failed')");
 
-                            t.HasCheckConstraint("CK_BatchJob_Type", "\"Type\" IN ('CityIngestion', 'MapGeneration')");
+                            t.HasCheckConstraint("CK_BatchJob_Type", "\"Type\" IN ('CityIngestion')");
                         });
                 });
 
@@ -599,8 +557,6 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("Bedrooms");
 
-                    b.HasIndex("City");
-
                     b.HasIndex("ContextCompositeScore");
 
                     b.HasIndex("ContextSafetyScore");
@@ -612,13 +568,9 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("LastFundaFetchUtc");
 
-                    b.HasIndex("Latitude");
-
                     b.HasIndex("ListedDate");
 
                     b.HasIndex("LivingAreaM2");
-
-                    b.HasIndex("Longitude");
 
                     b.HasIndex("PostalCode");
 
@@ -662,48 +614,6 @@ namespace Valora.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_Listing_Price", "\"Price\" > 0");
                         });
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.ListingComment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ParentCommentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reactions")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("SavedListingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentCommentId");
-
-                    b.HasIndex("SavedListingId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ListingComments");
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.Neighborhood", b =>
@@ -884,118 +794,6 @@ namespace Valora.Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.SavedListing", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AddedByUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ListingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddedByUserId");
-
-                    b.HasIndex("ListingId");
-
-                    b.HasIndex("WorkspaceId", "ListingId")
-                        .IsUnique();
-
-                    b.ToTable("SavedListings");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.Workspace", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("Workspaces");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.WorkspaceMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("InvitedEmail")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("JoinedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("WorkspaceId", "InvitedEmail")
-                        .IsUnique()
-                        .HasFilter("\"InvitedEmail\" IS NOT NULL");
-
-                    b.HasIndex("WorkspaceId", "UserId")
-                        .IsUnique()
-                        .HasFilter("\"UserId\" IS NOT NULL");
-
-                    b.ToTable("WorkspaceMembers");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1047,51 +845,6 @@ namespace Valora.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.ActivityLog", b =>
-                {
-                    b.HasOne("Valora.Domain.Entities.ApplicationUser", "Actor")
-                        .WithMany()
-                        .HasForeignKey("ActorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
-                        .WithMany("ActivityLogs")
-                        .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Actor");
-
-                    b.Navigation("Workspace");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.ListingComment", b =>
-                {
-                    b.HasOne("Valora.Domain.Entities.ListingComment", "ParentComment")
-                        .WithMany("Replies")
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Valora.Domain.Entities.SavedListing", "SavedListing")
-                        .WithMany("Comments")
-                        .HasForeignKey("SavedListingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Valora.Domain.Entities.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ParentComment");
-
-                    b.Navigation("SavedListing");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Valora.Domain.Entities.PriceHistory", b =>
                 {
                     b.HasOne("Valora.Domain.Entities.Listing", "Listing")
@@ -1114,60 +867,6 @@ namespace Valora.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.SavedListing", b =>
-                {
-                    b.HasOne("Valora.Domain.Entities.ApplicationUser", "AddedByUser")
-                        .WithMany()
-                        .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Valora.Domain.Entities.Listing", "Listing")
-                        .WithMany()
-                        .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
-                        .WithMany("SavedListings")
-                        .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AddedByUser");
-
-                    b.Navigation("Listing");
-
-                    b.Navigation("Workspace");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.Workspace", b =>
-                {
-                    b.HasOne("Valora.Domain.Entities.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.WorkspaceMember", b =>
-                {
-                    b.HasOne("Valora.Domain.Entities.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
-                        .WithMany("Members")
-                        .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-
-                    b.Navigation("Workspace");
-                });
-
             modelBuilder.Entity("Valora.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("RefreshTokens");
@@ -1176,25 +875,6 @@ namespace Valora.Infrastructure.Migrations
             modelBuilder.Entity("Valora.Domain.Entities.Listing", b =>
                 {
                     b.Navigation("PriceHistory");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.ListingComment", b =>
-                {
-                    b.Navigation("Replies");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.SavedListing", b =>
-                {
-                    b.Navigation("Comments");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.Workspace", b =>
-                {
-                    b.Navigation("ActivityLogs");
-
-                    b.Navigation("Members");
-
-                    b.Navigation("SavedListings");
                 });
 #pragma warning restore 612, 618
         }

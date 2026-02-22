@@ -29,7 +29,7 @@ describe('BatchJobs Page', () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    (adminService.getJobs as Mock).mockResolvedValue({ items: mockJobs, totalPages: 1 });
+    (adminService.getJobs as Mock).mockResolvedValue(mockJobs);
 
     render(<BatchJobs />);
 
@@ -37,7 +37,7 @@ describe('BatchJobs Page', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Amsterdam')).toBeInTheDocument();
-      expect(screen.getAllByText('Completed').length).toBeGreaterThan(0);
+      expect(screen.getByText('Completed')).toBeInTheDocument();
     });
   });
 
@@ -62,7 +62,7 @@ describe('BatchJobs Page', () => {
         createdAt: new Date().toISOString(),
       },
     ];
-    (adminService.getJobs as Mock).mockResolvedValue({ items: mockJobs, totalPages: 1 });
+    (adminService.getJobs as Mock).mockResolvedValue(mockJobs);
     (adminService.getJobDetails as Mock).mockResolvedValue({
         ...mockJobs[0],
         executionLog: 'Logs...',
@@ -103,7 +103,7 @@ describe('BatchJobs Page', () => {
               error: 'Error',
           },
       ];
-      (adminService.getJobs as Mock).mockResolvedValue({ items: mockJobs, totalPages: 1 });
+      (adminService.getJobs as Mock).mockResolvedValue(mockJobs);
       (adminService.getJobDetails as Mock).mockResolvedValue({
           ...mockJobs[0],
           executionLog: 'Failed logs',
