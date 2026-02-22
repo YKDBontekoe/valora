@@ -53,7 +53,7 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
-    expect(find.text('No notifications'), findsOneWidget);
+    expect(find.text('All caught up!'), findsOneWidget);
   });
 
   testWidgets('NotificationsScreen shows error state', (WidgetTester tester) async {
@@ -101,7 +101,7 @@ void main() {
     expect(find.text('Test Title 2'), findsOneWidget);
 
     // Check for "Mark all read" button
-    expect(find.text('Mark all read'), findsOneWidget);
+    expect(find.text('Read all'), findsOneWidget);
   });
 
   testWidgets('NotificationsScreen calls fetchNotifications on init', (WidgetTester tester) async {
@@ -120,7 +120,7 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mark all read'));
+    await tester.tap(find.text('Read all'));
     await tester.pumpAndSettle(); // Show dialog
 
     expect(find.text('Mark all as read?'), findsOneWidget);

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 import '../../core/theme/valora_shadows.dart';
+import '../../services/notification_service.dart';
 import '../valora_glass_container.dart';
 
 class HomeBottomNavBar extends StatelessWidget {
@@ -19,11 +21,10 @@ class HomeBottomNavBar extends StatelessWidget {
   });
 
   static const List<_NavItem> _navItems = [
-    _NavItem(icon: Icons.search_rounded, label: 'Search', index: 0),
-    _NavItem(icon: Icons.map_rounded, label: 'Insights', index: 1),
-    _NavItem(icon: Icons.analytics_rounded, label: 'Report', index: 2),
-    _NavItem(icon: Icons.favorite_rounded, label: 'Saved', index: 3),
-    _NavItem(icon: Icons.settings_rounded, label: 'Settings', index: 4),
+    _NavItem(icon: Icons.search_rounded, activeIcon: Icons.search_rounded, label: 'Search', index: 0),
+    _NavItem(icon: Icons.map_outlined, activeIcon: Icons.map_rounded, label: 'Insights', index: 1),
+    _NavItem(icon: Icons.notifications_none_rounded, activeIcon: Icons.notifications_rounded, label: 'Alerts', index: 2),
+    _NavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Settings', index: 3),
   ];
 
   @override
@@ -77,10 +78,11 @@ class HomeBottomNavBar extends StatelessWidget {
               return Expanded(
                 flex: isSelected && !isCompactNav ? 2 : 1,
                 child: _GlassNavItem(
-                  icon: item.icon,
+                  icon: isSelected ? item.activeIcon : item.icon,
                   label: item.label,
                   isSelected: isSelected,
                   showSelectedLabel: !isCompactNav,
+                  showBadge: item.index == 2, // Notifications tab
                   onTap: () => onTap(item.index),
                 ),
               );
@@ -94,11 +96,13 @@ class HomeBottomNavBar extends StatelessWidget {
 
 class _NavItem {
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final int index;
 
   const _NavItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
     required this.index,
   });
@@ -109,6 +113,7 @@ class _GlassNavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final bool showSelectedLabel;
+  final bool showBadge;
   final VoidCallback onTap;
 
   const _GlassNavItem({
@@ -116,6 +121,7 @@ class _GlassNavItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.showSelectedLabel,
+    this.showBadge = false,
     required this.onTap,
   });
 
@@ -174,22 +180,59 @@ class _GlassNavItem extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                            icon,
-                            size: ValoraSpacing.iconSizeMd,
-                            semanticLabel: null,
-                            color: isSelected
-                                ? ValoraColors.primary
-                                : unselectedColor,
-                          )
-                          .animate(target: isSelected ? 1 : 0)
-                          .scale(
-                            begin: const Offset(1, 1),
-                            end: const Offset(1.15, 1.15),
-                            duration: ValoraAnimations.fast,
-                            curve: ValoraAnimations.emphatic,
-                          )
-                          .tint(color: ValoraColors.primary, end: 1),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                                icon,
+                                size: ValoraSpacing.iconSizeMd,
+                                semanticLabel: null,
+                                color: isSelected
+                                    ? ValoraColors.primary
+                                    : unselectedColor,
+                              )
+                              .animate(target: isSelected ? 1 : 0)
+                              .scale(
+                                begin: const Offset(1, 1),
+                                end: const Offset(1.15, 1.15),
+                                duration: ValoraAnimations.fast,
+                                curve: ValoraAnimations.emphatic,
+                              )
+                              .tint(color: ValoraColors.primary, end: 1),
+                          if (showBadge)
+                            Selector<NotificationService, int>(
+                              selector: (_, s) => s.unreadCount,
+                              builder: (context, unreadCount, _) {
+                                if (unreadCount == 0) return const SizedBox.shrink();
+                                return Positioned(
+                                  top: -4,
+                                  right: -6,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: const BoxDecoration(
+                                      color: ValoraColors.error,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        unreadCount > 9 ? '9+' : '$unreadCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
                       if (showSelectedLabel) ...[
                         Flexible(
                           child: AnimatedSize(

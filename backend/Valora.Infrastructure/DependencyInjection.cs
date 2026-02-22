@@ -31,19 +31,15 @@ public static class DependencyInjection
 
         services.AddDbContext<ValoraDbContext>(options =>
         {
-<<<<<<< refactor/repository-pattern-and-api-client-12056244307917596599
-            options.UseNpgsql(
-=======
             if (connectionString != null && connectionString.StartsWith("InMemory", StringComparison.OrdinalIgnoreCase))
                 return;
 
             options.UseSqlServer(
->>>>>>> main
                 connectionString,
-                npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+                sqlOptions => sqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorCodesToAdd: null));
+                    errorNumbersToAdd: null));
             options.ConfigureWarnings(w => w.Log(RelationalEventId.PendingModelChangesWarning));
         });
 

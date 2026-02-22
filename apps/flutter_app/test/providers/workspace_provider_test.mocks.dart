@@ -119,31 +119,57 @@ class MockApiClient extends _i1.Mock implements _i4.ApiClient {
           as _i2.Future<dynamic>);
 
   @override
-  _i2.Future<dynamic> post(String? path, dynamic data, {Duration? timeout}) =>
+  _i2.Future<dynamic> post(
+    String? path,
+    dynamic data, {
+    Duration? timeout,
+    bool? retry = false,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#post, [path, data], {#timeout: timeout}),
+            Invocation.method(
+              #post,
+              [path, data],
+              {#timeout: timeout, #retry: retry},
+            ),
             returnValue: _i2.Future<dynamic>.value(),
           )
           as _i2.Future<dynamic>);
 
   @override
-  _i2.Future<dynamic> delete(String? path, {Duration? timeout}) =>
+  _i2.Future<dynamic> delete(
+    String? path, {
+    Duration? timeout,
+    bool? retry = false,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#delete, [path], {#timeout: timeout}),
+            Invocation.method(
+              #delete,
+              [path],
+              {#timeout: timeout, #retry: retry},
+            ),
             returnValue: _i2.Future<dynamic>.value(),
           )
           as _i2.Future<dynamic>);
 
   @override
   _i2.Future<_i3.Response> requestWithRetry(
-    _i2.Future<_i3.Response> Function()? requestFn,
-  ) =>
+    _i2.Future<_i3.Response> Function()? requestFn, {
+    bool? retryOnError = true,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#requestWithRetry, [requestFn]),
+            Invocation.method(
+              #requestWithRetry,
+              [requestFn],
+              {#retryOnError: retryOnError},
+            ),
             returnValue: _i2.Future<_i3.Response>.value(
               _FakeResponse_3(
                 this,
-                Invocation.method(#requestWithRetry, [requestFn]),
+                Invocation.method(
+                  #requestWithRetry,
+                  [requestFn],
+                  {#retryOnError: retryOnError},
+                ),
               ),
             ),
           )
@@ -163,6 +189,12 @@ class MockApiClient extends _i1.Mock implements _i4.ApiClient {
             ),
           )
           as _i2.Future<_i3.Response>);
+
+  @override
+  void close() => super.noSuchMethod(
+    Invocation.method(#close, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i2.Future<bool> healthCheck() =>

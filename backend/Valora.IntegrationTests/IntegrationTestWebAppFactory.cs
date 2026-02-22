@@ -67,11 +67,12 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
                                                      d.ServiceType.GetGenericArguments()[0] == typeof(ValoraDbContext)).ToList();
             foreach (var s in configServices) services.Remove(s);
 
-            var npgsqlServices = services.Where(d =>
-                d.ServiceType.FullName?.Contains("Npgsql") == true ||
-                d.ImplementationType?.FullName?.Contains("Npgsql") == true).ToList();
+            var sqlServerServices = services.Where(d =>
+                d.ServiceType.FullName?.Contains("SqlServer") == true ||
+                d.ImplementationType?.FullName?.Contains("SqlServer") == true ||
+                d.ServiceType.FullName?.Contains("Microsoft.EntityFrameworkCore.Infrastructure") == true && d.ServiceType.FullName?.Contains("SqlServer") == true).ToList();
 
-            foreach (var s in npgsqlServices)
+            foreach (var s in sqlServerServices)
             {
                 services.Remove(s);
             }
@@ -87,7 +88,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             else
             {
                 services.AddDbContext<ValoraDbContext>(options =>
-                    options.UseNpgsql(_connectionString)
+                    options.UseSqlServer(_connectionString)
                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
             }
 
