@@ -142,7 +142,7 @@ class ApiClient {
     var response = await withTimeout(request(headers));
 
     if (response.statusCode == 401 && _refreshTokenCallback != null) {
-      final newToken = await _refreshTokenCallback();
+      final newToken = await _refreshTokenCallback!();
       if (newToken != null) {
         _authToken = newToken;
         headers['Authorization'] = 'Bearer $newToken';
@@ -190,14 +190,17 @@ class ApiClient {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Look in extensions (RFC 7807)
+        // Standard traceId (ASP.NET Core ProblemDetails)
+        if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
+
+        // Extensions (RFC 7807)
         if (jsonBody['extensions'] is Map<String, dynamic>) {
           final extensions = jsonBody['extensions'] as Map<String, dynamic>;
           if (extensions['traceId'] is String) return extensions['traceId'] as String;
           if (extensions['requestId'] is String) return extensions['requestId'] as String;
         }
-        // Look in root
-        if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
+
+        // Legacy fallback
         if (jsonBody['requestId'] is String) return jsonBody['requestId'] as String;
       }
     } catch (_) {
@@ -210,7 +213,13 @@ class ApiClient {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Handle FluentValidation 'errors' dictionary
+        // 1. Standard ProblemDetails 'detail'
+        if (jsonBody['detail'] is String) return jsonBody['detail'] as String;
+
+        // 2. Standard ProblemDetails 'title' (if detail is missing)
+        if (jsonBody['title'] is String) return jsonBody['title'] as String;
+
+        // 3. Validation ProblemDetails 'errors'
         if (jsonBody['errors'] is Map<String, dynamic>) {
           final errors = jsonBody['errors'] as Map<String, dynamic>;
           final messages = errors.entries.map((e) {
@@ -221,8 +230,9 @@ class ApiClient {
           return messages.join('\n');
         }
 
-        // Handle RFC 7807 problem details
-        return jsonBody['detail'] as String? ?? jsonBody['title'] as String?;
+        // 4. Legacy fallback
+        if (jsonBody['error'] is String) return jsonBody['error'] as String;
+        if (jsonBody['message'] is String) return jsonBody['message'] as String;
       }
     } catch (_) {
       // Ignore parsing errors
@@ -232,11 +242,6 @@ class ApiClient {
 
   Future<T> handleResponse<T>(http.Response response, T Function(String body) parser) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // If parser involves heavy computation, consider using _runner (compute)
-      // But _runner is instance method. We can expose runner or just execute here.
-      // Since parsing might be simple JSON decoding, executing here is fine.
-      // If heavy, the caller can wrap parser in compute.
-      // However, ApiService was using _runner(parser, body).
       return await _runner(parser, response.body);
     }
 

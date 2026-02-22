@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Application.DTOs.Shared;
 using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
@@ -17,18 +19,12 @@ public static class AdminEndpoints
         group.MapGet("/users", async (
             IAdminService adminService,
             ClaimsPrincipal user,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            [AsParameters] PaginationRequest pagination,
             [FromQuery] string? q = null,
             [FromQuery] string? sort = null) =>
         {
-            if (page < 1 || pageSize < 1 || pageSize > 100)
-            {
-                return Results.BadRequest(new { error = "Invalid pagination parameters." });
-            }
-
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            var paginatedUsers = await adminService.GetUsersAsync(page, pageSize, q, sort, currentUserId);
+            var paginatedUsers = await adminService.GetUsersAsync(pagination.Page, pagination.PageSize, q, sort, currentUserId);
 
             return Results.Ok(new {
                 paginatedUsers.Items,
@@ -38,7 +34,8 @@ public static class AdminEndpoints
                 paginatedUsers.HasNextPage,
                 paginatedUsers.HasPreviousPage
             });
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<PaginationRequest>>();
 
         group.MapDelete("/users/{id}", async (
             string id,
@@ -49,7 +46,7 @@ public static class AdminEndpoints
 
             if (string.IsNullOrEmpty(currentUserId))
             {
-                 return Results.Unauthorized();
+                 return Results.Problem(detail: "Unauthorized.", statusCode: 401);
             }
 
             var result = await adminService.DeleteUserAsync(id, currentUserId);
@@ -62,8 +59,8 @@ public static class AdminEndpoints
             return result.ErrorCode switch
             {
                 "Forbidden" => Results.Forbid(),
-                "NotFound" => Results.NotFound(new { error = result.Errors.FirstOrDefault() ?? "Resource not found." }),
-                _ => Results.BadRequest(new { error = result.Errors.FirstOrDefault() ?? "Operation failed." })
+                "NotFound" => Results.Problem(detail: result.Errors.FirstOrDefault() ?? "Resource not found.", statusCode: 404),
+                _ => Results.Problem(detail: result.Errors.FirstOrDefault() ?? "Operation failed.", statusCode: 400)
             };
         });
 
@@ -89,7 +86,7 @@ public static class AdminEndpoints
         {
             if (!Enum.TryParse<BatchJobType>(request.Type, out var jobType))
             {
-                return Results.BadRequest(new { error = "Invalid job type." });
+                return Results.Problem(detail: "Invalid job type.", statusCode: 400);
             }
 
             var job = await jobService.EnqueueJobAsync(jobType, request.Target, ct);
@@ -100,17 +97,11 @@ public static class AdminEndpoints
         group.MapGet("/jobs", async (
             IBatchJobService jobService,
             CancellationToken ct,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            [AsParameters] PaginationRequest pagination,
             [FromQuery] string? status = null,
             [FromQuery] string? type = null) =>
         {
-            if (page < 1 || pageSize < 1 || pageSize > 100)
-            {
-                return Results.BadRequest(new { error = "Invalid pagination parameters. Page must be >= 1, PageSize must be between 1 and 100." });
-            }
-
-            var jobs = await jobService.GetJobsAsync(page, pageSize, status, type, ct);
+            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, ct);
             return Results.Ok(new {
                 jobs.Items,
                 jobs.PageIndex,
@@ -119,7 +110,8 @@ public static class AdminEndpoints
                 jobs.HasNextPage,
                 jobs.HasPreviousPage
             });
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<PaginationRequest>>();
 
         group.MapGet("/jobs/{id}", async (
             Guid id,
@@ -133,7 +125,7 @@ public static class AdminEndpoints
             }
             catch (KeyNotFoundException)
             {
-                return Results.NotFound(new { error = "Job not found." });
+                return Results.Problem(detail: "Job not found.", statusCode: 404);
             }
         });
 
@@ -149,11 +141,11 @@ public static class AdminEndpoints
             }
             catch (KeyNotFoundException)
             {
-                return Results.NotFound(new { error = "Job not found." });
+                return Results.Problem(detail: "Job not found.", statusCode: 404);
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.Problem(detail: ex.Message, statusCode: 400);
             }
         });
 
@@ -169,11 +161,11 @@ public static class AdminEndpoints
             }
             catch (KeyNotFoundException)
             {
-                return Results.NotFound(new { error = "Job not found." });
+                return Results.Problem(detail: "Job not found.", statusCode: 404);
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.Problem(detail: ex.Message, statusCode: 400);
             }
 
         });

@@ -23,7 +23,7 @@ public static class AuthEndpoints
             }
 
             // Return generic error to avoid leaking implementation details
-            return Results.BadRequest(new { error = "Registration failed. Please check your details and try again." });
+            return Results.Problem(detail: "Registration failed. Please check your details and try again.", statusCode: 400);
         })
         .AddEndpointFilter<ValidationFilter<RegisterDto>>();
 
@@ -35,7 +35,7 @@ public static class AuthEndpoints
 
             if (response == null)
             {
-                return Results.Unauthorized();
+                return Results.Problem(detail: "Invalid email or password.", statusCode: 401);
             }
 
             return Results.Ok(response);
@@ -50,7 +50,7 @@ public static class AuthEndpoints
 
             if (response == null)
             {
-                return Results.Unauthorized();
+                return Results.Problem(detail: "Invalid refresh token.", statusCode: 401);
             }
 
             return Results.Ok(response);
@@ -65,7 +65,7 @@ public static class AuthEndpoints
 
             if (response == null)
             {
-                return Results.Unauthorized();
+                return Results.Problem(detail: "External authentication failed.", statusCode: 401);
             }
 
             return Results.Ok(response);
