@@ -101,7 +101,7 @@ public class WorkspaceService : IWorkspaceService
 
         var existingMember = await _context.WorkspaceMembers
             .FirstOrDefaultAsync(m => m.WorkspaceId == workspaceId &&
-                ((m.UserId != null && m.User!.Email == dto.Email) || m.InvitedEmail == dto.Email), ct);
+                ((m.UserId != null && m.User.Email == dto.Email) || m.InvitedEmail == dto.Email), ct);
 
         if (existingMember != null) return;
 

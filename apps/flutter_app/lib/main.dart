@@ -92,10 +92,16 @@ Future<void> main() async {
                 previous ?? AuthProvider(authService: authService),
           ),
           ProxyProvider2<AuthService, AuthProvider, ApiClient>(
-            update: (context, authService, authProvider, _) => ApiClient(
-              authToken: authProvider.token,
-              refreshTokenCallback: authProvider.refreshSession,
-            ),
+            update: (context, authService, authProvider, previous) {
+              // Reusing the client is tricky if we want to dispose it when this provider is disposed.
+              // ProxyProvider's 'dispose' callback is called when the *provided value* is replaced or the provider is removed.
+              // So if we create a new ApiClient here, the previous one will be disposed via 'dispose'.
+              return ApiClient(
+                authToken: authProvider.token,
+                refreshTokenCallback: authProvider.refreshSession,
+              );
+            },
+            dispose: (_, client) => client.close(),
           ),
           ProxyProvider<ApiClient, ContextReportRepository>(
             update: (_, client, __) => ContextReportRepository(client),

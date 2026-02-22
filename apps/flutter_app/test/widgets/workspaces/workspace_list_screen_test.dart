@@ -90,8 +90,8 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    expect(find.text('New Workspace'), findsNWidgets(2)); // FAB + Dialog title
-    expect(find.text('Workspace Name'), findsOneWidget);
+    expect(find.text('New Workspace'), findsOneWidget);
+    expect(find.text('Name'), findsOneWidget);
     expect(find.text('Create'), findsOneWidget);
   });
 }

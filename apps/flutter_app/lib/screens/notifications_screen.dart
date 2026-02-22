@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
-import '../core/theme/valora_spacing.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
 import '../widgets/valora_widgets.dart';
@@ -45,6 +44,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             _scrollController.position.maxScrollExtent - 200 &&
         !provider.isLoadingMore &&
         provider.hasMore) {
+      // We allow loadMore even if there was a previous error,
+      // as loadMoreNotifications clears the error on start.
       provider.loadMoreNotifications();
     }
   }
@@ -127,7 +128,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -141,39 +141,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (context, unreadCount, _) {
                 return SliverAppBar(
                   pinned: true,
-                  backgroundColor:
-                      colorScheme.surface.withValues(alpha: 0.95),
+                  backgroundColor: isDark
+                      ? ValoraColors.backgroundDark.withValues(alpha: 0.95)
+                      : ValoraColors.backgroundLight.withValues(alpha: 0.95),
                   surfaceTintColor: Colors.transparent,
-                  automaticallyImplyLeading: false,
-                  title: Row(
-                    children: [
-                      Text(
-                        'Alerts',
-                        style: ValoraTypography.headlineMedium.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (unreadCount > 0) ...[
-                        const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: ValoraColors.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  title: Text(
+                    'Notifications',
+                    style: ValoraTypography.headlineMedium.copyWith(
+                      color: isDark
+                          ? ValoraColors.neutral50
+                          : ValoraColors.neutral900,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   centerTitle: false,
                   actions: [
@@ -181,7 +160,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       TextButton.icon(
                         onPressed: _confirmMarkAllRead,
                         icon: const Icon(Icons.done_all_rounded, size: 18),
-                        label: const Text('Read all'),
+                        label: const Text('Mark all read'),
                         style: TextButton.styleFrom(
                           foregroundColor: ValoraColors.primary,
                         ),
@@ -189,15 +168,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     const SizedBox(width: 8),
                   ],
                 );
-              },
+              }
             ),
             Consumer<NotificationService>(
               builder: (context, provider, _) {
                 if (provider.isLoading && provider.notifications.isEmpty) {
-                  return const SliverFillRemaining(
+                   return const SliverFillRemaining(
                     child: Center(
-                      child: ValoraLoadingIndicator(
-                          message: 'Loading notifications...'),
+                      child: ValoraLoadingIndicator(message: 'Loading notifications...'),
                     ),
                   );
                 }
@@ -206,13 +184,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
-                      child: ValoraEmptyState(
-                        icon: Icons.error_outline_rounded,
-                        title: 'Something went wrong',
-                        subtitle:
-                            'We couldn\'t load your notifications. Please try again.',
-                        actionLabel: 'Retry',
-                        onAction: _handleRefresh,
+                      child: Builder(
+                        builder: (context) {
+                          return ValoraEmptyState(
+                            icon: Icons.error_outline_rounded,
+                            title: 'Something went wrong',
+                            subtitle: 'We couldn\'t load your notifications. Please try again.',
+                            actionLabel: 'Retry',
+                            onAction: _handleRefresh,
+                          );
+                        },
                       ),
                     ),
                   );
@@ -222,42 +203,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 80),
-                        child: ValoraEmptyState(
-                          icon: Icons.notifications_active_rounded,
-                          title: 'All caught up!',
-                          subtitle:
-                              "No new alerts right now.\nWe'll notify you about price drops and new listings.",
-                        ),
+                      child: ValoraEmptyState(
+                        icon: Icons.notifications_off_outlined,
+                        title: 'No notifications',
+                        subtitle: "You're all caught up! Check back later for updates.",
                       ),
                     ),
                   );
                 }
 
                 return SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: ValoraSpacing.sm,
-                      horizontal: ValoraSpacing.md),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index == provider.notifications.length) {
-                          if (provider.isLoadingMore) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child:
-                                  Center(child: ValoraLoadingIndicator()),
-                            );
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index == provider.notifications.length) {
+                            if (provider.isLoadingMore) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(child: ValoraLoadingIndicator()),
+                              );
+                            }
+                            return const SizedBox(height: 80);
                           }
-                          return const SizedBox(height: 100);
-                        }
 
-                        final notification = provider.notifications[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                              bottom: ValoraSpacing.sm),
-                          child: _NotificationCard(
+                          final notification = provider.notifications[index];
+                          return _NotificationItem(
                             key: Key(notification.id),
                             notification: notification,
                             provider: provider,
@@ -265,14 +236,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             formatTime: _formatTime,
                             getIcon: _getIconForType,
                             getColor: _getColorForType,
-                          ),
-                        );
-                      },
-                      childCount: provider.notifications.length + 1,
+                          );
+                        },
+                        childCount: provider.notifications.length + 1,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+              }
             ),
           ],
         ),
@@ -281,7 +251,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 }
 
-class _NotificationCard extends StatelessWidget {
+class _NotificationItem extends StatelessWidget {
   final ValoraNotification notification;
   final NotificationService provider;
   final bool isDark;
@@ -289,7 +259,7 @@ class _NotificationCard extends StatelessWidget {
   final IconData Function(NotificationType) getIcon;
   final Color Function(NotificationType, bool) getColor;
 
-  const _NotificationCard({
+  const _NotificationItem({
     super.key,
     required this.notification,
     required this.provider,
@@ -301,16 +271,15 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = getColor(notification.type, isDark);
+    final backgroundColor = isDark
+        ? (notification.isRead ? ValoraColors.backgroundDark : ValoraColors.surfaceVariantDark.withValues(alpha: 0.3))
+        : (notification.isRead ? ValoraColors.backgroundLight : ValoraColors.primary.withValues(alpha: 0.05));
 
     return Dismissible(
       key: Key(notification.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        decoration: BoxDecoration(
-          color: ValoraColors.error,
-          borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-        ),
+        color: ValoraColors.error,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
@@ -320,9 +289,6 @@ class _NotificationCard extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Notification deleted'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
             action: SnackBarAction(
               label: 'Undo',
               onPressed: () {
@@ -332,7 +298,7 @@ class _NotificationCard extends StatelessWidget {
           ),
         );
       },
-      child: ValoraCard(
+      child: InkWell(
         onTap: () async {
           if (!notification.isRead) {
             provider.markAsRead(notification.id);
@@ -340,93 +306,88 @@ class _NotificationCard extends StatelessWidget {
           if (notification.actionUrl != null) {
             final uri = Uri.parse(notification.actionUrl!);
             if (await canLaunchUrl(uri)) {
-              await launchUrl(uri);
+               await launchUrl(uri);
             }
           }
         },
-        borderColor: notification.isRead
-            ? null
-            : accentColor.withValues(alpha: 0.3),
-        padding: const EdgeInsets.all(ValoraSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon circle
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                getIcon(notification.type),
-                color: accentColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: ValoraSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          notification.title,
-                          style: ValoraTypography.bodyLarge.copyWith(
-                            fontWeight: notification.isRead
-                                ? FontWeight.w500
-                                : FontWeight.bold,
-                            color: isDark
-                                ? ValoraColors.neutral50
-                                : ValoraColors.neutral900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        formatTime(notification.createdAt),
-                        style: ValoraTypography.labelSmall.copyWith(
-                          color: isDark
-                              ? ValoraColors.neutral500
-                              : ValoraColors.neutral400,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    notification.body,
-                    style: ValoraTypography.bodyMedium.copyWith(
-                      color: isDark
-                          ? ValoraColors.neutral300
-                          : ValoraColors.neutral600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!notification.isRead)
-              Padding(
-                padding: const EdgeInsets.only(left: 8, top: 6),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.4),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
+        child: Container(
+          color: backgroundColor,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 16,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: getColor(notification.type, isDark).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  getIcon(notification.type),
+                  color: getColor(notification.type, isDark),
+                  size: 20,
                 ),
               ),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notification.title,
+                            style: ValoraTypography.bodyLarge.copyWith(
+                              fontWeight: notification.isRead
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
+                              color: isDark
+                                  ? ValoraColors.neutral50
+                                  : ValoraColors.neutral900,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          formatTime(notification.createdAt),
+                          style: ValoraTypography.labelSmall.copyWith(
+                            color: isDark
+                                ? ValoraColors.neutral400
+                                : ValoraColors.neutral500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notification.body,
+                      style: ValoraTypography.bodyMedium.copyWith(
+                        color: isDark
+                            ? ValoraColors.neutral300
+                            : ValoraColors.neutral600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!notification.isRead)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 12),
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: ValoraColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

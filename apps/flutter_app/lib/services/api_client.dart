@@ -42,14 +42,33 @@ class ApiClient {
   ApiRunner get runner => _runner;
 
   Future<http.Response> _requestWithRetry(
-    Future<http.Response> Function() requestFn,
-  ) {
+    Future<http.Response> Function() requestFn, {
+    bool retryOnError = true,
+  }) {
+    if (!retryOnError) {
+      return requestFn();
+    }
+
     return _retryOptions.retry(
       () async {
         final response = await requestFn();
+        // Don't throw for 5xx/429 here if it's the final attempt,
+        // return it so handleResponse can parse the error details.
+        // However, retry library needs an exception to trigger retry.
+        // We will throw TransientHttpException, but if retries are exhausted,
+        // the library rethrows.
+        // To achieve "return response on exhaustion", we can catch the exception outside retry?
+        // No, 'retry' rethrows the last exception.
+
+        // Actually, to support Option A (return last response), we should
+        // ONLY throw if we want to retry. If we don't want to retry (or can't), return response.
+        // But retry() library logic is: retry if exception.
+        // So we must throw to retry.
+
         if (response.statusCode >= 500 || response.statusCode == 429) {
-          throw TransientHttpException(
+           throw TransientHttpException(
             'Service temporarily unavailable (Status: ${response.statusCode})',
+            response: response, // Attach response to exception for recovery
           );
         }
         return response;
@@ -58,7 +77,13 @@ class ApiClient {
           e is SocketException ||
           e is TimeoutException ||
           e is TransientHttpException,
-    );
+    ).catchError((e) {
+      // Recover the response from the exception if available
+      if (e is TransientHttpException && e.response != null) {
+        return e.response!;
+      }
+      throw e;
+    });
   }
 
   Future<http.Response> _authenticatedRequest(
@@ -120,17 +145,19 @@ class ApiClient {
         );
       case 429:
         throw ServerException(
-          'Too many requests. Please try again later.$traceSuffix',
+          (message ?? 'Too many requests. Please try again later.') + traceSuffix,
         );
       case 503:
         throw ServerException(
-          'Service is temporarily unavailable. Please try again later.$traceSuffix',
+          (message ?? 'Service is temporarily unavailable. Please try again later.') +
+              traceSuffix,
         );
       case 500:
       case 502:
       case 504:
         throw ServerException(
-          'We are experiencing technical difficulties. Please try again later.$traceSuffix',
+          (message ?? 'We are experiencing technical difficulties. Please try again later.') +
+              traceSuffix,
         );
       default:
         throw ServerException(
@@ -149,14 +176,14 @@ class ApiClient {
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiClient');
 
     // Report non-business exceptions to Sentry
-    CrashReportingService.captureException(
+    unawaited(CrashReportingService.captureException(
       error,
       stackTrace: stack ?? (error is Error ? error.stackTrace : null),
       context: {
         'url': urlString,
         'error_type': error.runtimeType.toString(),
       },
-    );
+    ));
 
     if (error is SocketException) {
       return NetworkException('No internet connection. Please check your settings.');
@@ -226,6 +253,7 @@ class ApiClient {
           (headers) =>
               _client.get(uri, headers: headers).timeout(timeout ?? timeoutDuration),
         ),
+        retryOnError: true, // GET is safe to retry
       );
       return handleResponse(response, (body) => json.decode(body));
     } catch (e, stack) {
@@ -233,7 +261,7 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> post(String path, dynamic data, {Duration? timeout}) async {
+  Future<dynamic> post(String path, dynamic data, {Duration? timeout, bool retry = false}) async {
     final uri = Uri.parse('$baseUrl$path');
     try {
       final response = await _requestWithRetry(
@@ -244,6 +272,7 @@ class ApiClient {
             body: json.encode(data),
           ).timeout(timeout ?? timeoutDuration),
         ),
+        retryOnError: retry,
       );
       if (response.statusCode == 204) return null;
       return handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
@@ -252,13 +281,14 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> delete(String path, {Duration? timeout}) async {
+  Future<dynamic> delete(String path, {Duration? timeout, bool retry = false}) async {
     final uri = Uri.parse('$baseUrl$path');
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
           (headers) => _client.delete(uri, headers: headers).timeout(timeout ?? timeoutDuration),
         ),
+        retryOnError: retry,
       );
       if (response.statusCode == 204) return null;
       return handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
@@ -269,14 +299,19 @@ class ApiClient {
 
   // Exposed for specialized repositories needing raw request handling
   Future<http.Response> requestWithRetry(
-    Future<http.Response> Function() requestFn,
-  ) => _requestWithRetry(requestFn);
+    Future<http.Response> Function() requestFn, {
+    bool retryOnError = true,
+  }) => _requestWithRetry(requestFn, retryOnError: retryOnError);
 
   Future<http.Response> authenticatedRequest(
     Future<http.Response> Function(Map<String, String> headers) request,
   ) => _authenticatedRequest(request);
 
   http.Client get client => _client;
+
+  void close() {
+    _client.close();
+  }
 
   Future<bool> healthCheck() async {
     final uri = Uri.parse('$baseUrl/health');
@@ -287,4 +322,15 @@ class ApiClient {
       return false;
     }
   }
+}
+
+// Exception wrapper to carry the response
+class TransientHttpException implements Exception {
+  final String message;
+  final http.Response? response;
+
+  TransientHttpException(this.message, {this.response});
+
+  @override
+  String toString() => 'TransientHttpException: $message';
 }

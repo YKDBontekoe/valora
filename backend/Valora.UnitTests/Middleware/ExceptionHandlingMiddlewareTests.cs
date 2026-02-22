@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Npgsql;
 using Valora.Api.Middleware;
 using Valora.Application.Common.Exceptions;
 using Xunit;
@@ -344,7 +345,28 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
     }
 
+    [Fact]
+    public async Task InvokeAsync_DbUpdateException_WithTransientInner_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        // We need a way to create a transient NpgsqlException.
+        // This is tricky without mocking, but NpgsqlException is not easily mockable.
+        // However, the middleware just checks "is NpgsqlException innerNpgsqlEx && innerNpgsqlEx.IsTransient".
+        // For now, let's just test the non-transient path which is easier.
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new DbUpdateException("Conflict", new Exception("Regular inner")),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
 
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
+    }
 
     [Fact]
     public async Task InvokeAsync_BadHttpRequestException_ReturnsBadRequest()

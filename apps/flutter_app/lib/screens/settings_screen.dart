@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'workspace_list_screen.dart';
+import 'notifications_screen.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -139,20 +138,17 @@ class SettingsScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         ValoraSettingsTile(
-                          icon: Icons.workspaces_rounded,
+                          icon: Icons.notifications_active_rounded,
                           iconColor: Colors.blue,
                           iconBackgroundColor: Colors.blue.withValues(alpha: 0.1),
-                          title: 'Workspaces',
-                          subtitle: 'Collaborate on your property search',
+                          title: 'Smart Alerts',
+                          subtitle: 'Instant updates on price drops',
                           showDivider: true,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ChangeNotifierProvider.value(
-                                  value: context.read<WorkspaceProvider>(),
-                                  child: const WorkspaceListScreen(),
-                                ),
+                                builder: (context) => const NotificationsScreen(),
                               ),
                             );
                           },
