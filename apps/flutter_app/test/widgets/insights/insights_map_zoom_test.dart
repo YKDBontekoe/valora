@@ -65,7 +65,8 @@ void main() {
       ),
     );
 
-    await tester.pump(); // Allow map to build
+    // Wait for the map to fully render including tiles
+    await tester.pumpAndSettle();
 
     // Verify that PolygonLayer is present
     expect(find.byType(PolygonLayer), findsOneWidget);
@@ -95,7 +96,8 @@ void main() {
       ),
     );
 
-    await tester.pump();
+    // Wait for the map to fully render
+    await tester.pumpAndSettle();
 
     // Verify that MarkerLayer is present (for clusters)
     // There's always one MarkerLayer for cities, so we expect 2 if clusters are shown
