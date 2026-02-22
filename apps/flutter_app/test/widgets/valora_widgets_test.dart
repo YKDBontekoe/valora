@@ -26,17 +26,50 @@ void main() {
           home: Scaffold(
             body: ValoraCard(
               onTap: () => tapped = true,
-              child: const SizedBox(width: 100, height: 100),
+              child: const Text('Tap Me'),
             ),
           ),
         ),
       );
 
       await tester.pumpAndSettle();
+      // Added warnIfMissed: false to handle hit-testing on cards with internal margins/scaling
       await tester.tap(find.byType(ValoraCard), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
+    });
+
+    testWidgets('handles mouse hover for default elevation (Sm)', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraCard(
+              onTap: () {},
+              child: const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+
+      final cardFinder = find.byType(AnimatedContainer);
+      final container = tester.widget<AnimatedContainer>(cardFinder);
+      final decoration = container.decoration as BoxDecoration;
+      // Default elevation is Sm
+      expect(decoration.boxShadow, ValoraShadows.sm);
+
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
+      await tester.pumpAndSettle();
+
+      final hoveredContainer = tester.widget<AnimatedContainer>(cardFinder);
+      final hoveredDecoration = hoveredContainer.decoration as BoxDecoration;
+      expect(hoveredDecoration.boxShadow, ValoraShadows.md);
     });
 
     testWidgets('handles elevationNone (no shadows)', (
@@ -74,8 +107,6 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
-
       final cardFinder = find.byType(AnimatedContainer);
       final container = tester.widget<AnimatedContainer>(cardFinder);
       final decoration = container.decoration as BoxDecoration;
@@ -85,6 +116,7 @@ void main() {
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
+      await tester.pump();
       await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
       await tester.pumpAndSettle();
 
@@ -108,8 +140,6 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
-
       final cardFinder = find.byType(AnimatedContainer);
       final container = tester.widget<AnimatedContainer>(cardFinder);
       final decoration = container.decoration as BoxDecoration;
@@ -119,6 +149,7 @@ void main() {
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
+      await tester.pump();
       await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
       await tester.pumpAndSettle();
 
@@ -141,14 +172,13 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
-
       final cardFinder = find.byType(AnimatedContainer);
 
       // Hover first to lift it
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
+      await tester.pump();
       await gesture.moveTo(tester.getCenter(find.byType(ValoraCard)));
       await tester.pumpAndSettle();
 
@@ -169,13 +199,13 @@ void main() {
     testWidgets('uses dark mode shadows', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.dark(),
           home: Scaffold(
             body: ValoraCard(
               onTap: () {},
               child: const SizedBox(width: 100, height: 100),
             ),
           ),
+          theme: ThemeData.dark(),
         ),
       );
 
@@ -184,8 +214,10 @@ void main() {
       final cardFinder = find.byType(AnimatedContainer);
       final container = tester.widget<AnimatedContainer>(cardFinder);
       final decoration = container.decoration as BoxDecoration;
-      // Default dark shadow
       expect(decoration.boxShadow, ValoraShadows.smDark);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 
@@ -203,7 +235,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle(); // Resolve animations
+      await tester.pumpAndSettle();
 
       expect(find.text('Click Me'), findsOneWidget);
       expect(find.byIcon(Icons.add), findsOneWidget);
@@ -224,14 +256,11 @@ void main() {
         ),
       );
 
-      // Allow button entrance animation (scale) to complete
-      // but do not wait for the infinite spinner
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text('Click Me'), findsNothing);
 
-      // Force disposal to stop infinite animation and pump to clear
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
@@ -252,17 +281,12 @@ void main() {
         ),
       );
 
-      // Pump enough time for the button press animation (scale) to complete
-      // but do not settle (as spinner is infinite)
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Try to tap
+      await tester.pump();
       await tester.tap(find.byType(ValoraButton), warnIfMissed: false);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(pressed, isFalse);
 
-      // Force disposal and pump to clear
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
@@ -278,7 +302,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle(); // Allow animations to complete
+      await tester.pumpAndSettle();
 
       expect(find.text('New'), findsOneWidget);
       expect(find.byIcon(Icons.star), findsOneWidget);
@@ -301,7 +325,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle(); // Allow animations to complete
+      await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.error), findsOneWidget);
       expect(find.text('Nothing here'), findsOneWidget);
@@ -324,8 +348,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
       expect(find.text('Test Chip'), findsOneWidget);
+      expect(find.byIcon(Icons.close_rounded), findsNothing);
 
       await tester.tap(find.text('Test Chip'));
       await tester.pumpAndSettle();
@@ -347,7 +371,6 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
       expect(find.byIcon(Icons.close_rounded), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.close_rounded));

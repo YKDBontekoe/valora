@@ -10,7 +10,7 @@ using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Valora.Application.Common.Interfaces;
 using Moq;
-using Valora.Infrastructure.Services.External;
+using Valora.Application.Common.Interfaces.External;
 
 namespace Valora.IntegrationTests;
 

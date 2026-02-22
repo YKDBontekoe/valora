@@ -1,7 +1,7 @@
 using Google.Apis.Auth;
 using Moq;
 using Valora.Application.Common.Exceptions;
-using Valora.Infrastructure.Services.External;
+using Valora.Application.Common.Interfaces.External;
 using Valora.Infrastructure.Services;
 using Xunit;
 

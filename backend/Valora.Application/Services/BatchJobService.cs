@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
@@ -39,7 +40,15 @@ public class BatchJobService : IBatchJobService
 
     public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
-        return await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
+        var jobs = await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
+        return jobs.Select(MapToSummaryDto).ToList();
+    }
+
+    public async Task<PaginatedList<BatchJobSummaryDto>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, CancellationToken cancellationToken = default)
+    {
+        var paginatedJobs = await _jobRepository.GetJobsAsync(pageIndex, pageSize, status, type, cancellationToken);
+        var dtos = paginatedJobs.Items.Select(MapToSummaryDto).ToList();
+        return new PaginatedList<BatchJobSummaryDto>(dtos, paginatedJobs.TotalCount, paginatedJobs.PageIndex, pageSize);
     }
 
     public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -152,6 +161,19 @@ public class BatchJobService : IBatchJobService
         else
             job.ExecutionLog += Environment.NewLine + entry;
     }
+
+    private static BatchJobSummaryDto MapToSummaryDto(BatchJob job) => new(
+        job.Id,
+        job.Type.ToString(),
+        job.Status.ToString(),
+        job.Target,
+        job.Progress,
+        job.Error,
+        job.ResultSummary,
+        job.CreatedAt,
+        job.StartedAt,
+        job.CompletedAt
+    );
 
     private static BatchJobDto MapToDto(BatchJob job) => new(
         job.Id,

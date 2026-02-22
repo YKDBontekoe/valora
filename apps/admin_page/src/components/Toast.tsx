@@ -29,11 +29,10 @@ const Toast = () => {
     };
 
     toastManager.addEventListener('toast', handleToast);
-    const currentTimers = timers.current;
     return () => {
       toastManager.removeEventListener('toast', handleToast);
       // Clear all timers on unmount
-      Object.values(currentTimers).forEach(window.clearTimeout);
+      Object.values(timers.current).forEach(window.clearTimeout);
     };
   }, []);
 

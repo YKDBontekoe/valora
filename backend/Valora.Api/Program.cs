@@ -248,6 +248,7 @@ app.MapNotificationEndpoints();
 app.MapAiEndpoints();
 app.MapMapEndpoints();
 app.MapAdminEndpoints();
+app.MapWorkspaceEndpoints();
 
 // API Endpoints
 var api = app.MapGroup("/api").RequireRateLimiting("fixed");

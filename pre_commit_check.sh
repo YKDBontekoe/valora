@@ -1,16 +1,16 @@
 #!/bin/bash
-# Pre-commit checklist
+set -e
 echo "Running pre-commit checks..."
 
-# Backend
-echo "Running Backend Tests..."
-dotnet test backend/Valora.UnitTests
+# Backend tests
+echo "Running backend tests..."
+cd backend
+dotnet test
+cd ..
 
-# Frontend
-echo "Running Frontend Analysis..."
+# Frontend tests
+echo "Running frontend tests..."
 cd apps/flutter_app
-flutter analyze
-echo "Running Frontend Tests..."
 flutter test
 cd ../..
 

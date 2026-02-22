@@ -1,7 +1,7 @@
 using Google.Apis.Auth;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
-using Valora.Infrastructure.Services.External;
+using Valora.Application.Common.Interfaces.External;
 
 namespace Valora.Infrastructure.Services;
 
