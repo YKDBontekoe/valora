@@ -147,4 +147,57 @@ public class BatchJobEndpointTests : BaseIntegrationTest
         dto!.Status.ShouldBe(BatchJobStatus.Failed.ToString());
         dto.Error.ShouldBe("Job cancelled by user.");
     }
+
+    [Fact]
+    public async Task RetryJob_ShouldFail_WhenJobIsPending()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+        var job = new BatchJob
+        {
+            Type = BatchJobType.CityIngestion,
+            Target = "PendingRetry",
+            Status = BatchJobStatus.Pending,
+            Progress = 0
+        };
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            context.BatchJobs.Add(job);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var response = await Client.PostAsync($"/api/admin/jobs/{job.Id}/retry", null);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CancelJob_ShouldFail_WhenJobIsCompleted()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+        var job = new BatchJob
+        {
+            Type = BatchJobType.CityIngestion,
+            Target = "CompletedCancel",
+            Status = BatchJobStatus.Completed,
+            Progress = 100,
+            CompletedAt = DateTime.UtcNow
+        };
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            context.BatchJobs.Add(job);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var response = await Client.PostAsync($"/api/admin/jobs/{job.Id}/cancel", null);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
 }
