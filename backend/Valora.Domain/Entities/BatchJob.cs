@@ -12,7 +12,8 @@ public enum BatchJobStatus
 
 public enum BatchJobType
 {
-    CityIngestion
+    CityIngestion,
+    MapGeneration
 }
 
 public class BatchJob : BaseEntity

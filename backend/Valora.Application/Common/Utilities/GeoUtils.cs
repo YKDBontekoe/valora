@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Valora.Application.Common.Exceptions;
 
@@ -8,20 +9,37 @@ public static class GeoUtils
     private const double MaxSpan = 0.5;
 
     /// <summary>
-    /// Determines if a point is inside a GeoJSON Polygon or MultiPolygon.
+    /// Parses a WKT POINT string (e.g., "POINT(4.895 52.370)") into (X, Y) coordinates.
     /// </summary>
-    /// <param name="lat">Latitude of the point.</param>
-    /// <param name="lon">Longitude of the point.</param>
-    /// <param name="geoJson">The GeoJSON element (Feature, Polygon, or MultiPolygon).</param>
-    /// <returns>True if the point is strictly inside the polygon(s).</returns>
-    /// <remarks>
-    /// <para>
-    /// <strong>Performance Optimization:</strong><br/>
-    /// This method iterates directly over the <see cref="JsonElement"/> structure.
-    /// It avoids deserializing the entire JSON into C# objects (like List&lt;Coordinate&gt;) to minimize heap allocations
-    /// and Garbage Collection pressure, which is critical when processing large MultiPolygons (e.g., detailed city boundaries).
-    /// </para>
-    /// </remarks>
+    public static (double X, double Y)? TryParseWktPoint(string? point)
+    {
+        if (string.IsNullOrWhiteSpace(point))
+        {
+            return null;
+        }
+
+        const string prefix = "POINT(";
+        if (!point.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || !point.EndsWith(')'))
+        {
+            return null;
+        }
+
+        var body = point[prefix.Length..^1];
+        var parts = body.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
+        {
+            return null;
+        }
+
+        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ||
+            !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+        {
+            return null;
+        }
+
+        return (x, y);
+    }
+
     public static bool IsPointInPolygon(double lat, double lon, JsonElement geoJson)
     {
         if (geoJson.ValueKind != JsonValueKind.Object) return false;
@@ -63,21 +81,6 @@ public static class GeoUtils
         return false;
     }
 
-    /// <summary>
-    /// Implements the Point-in-Polygon check for a single Polygon geometry.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>Algorithm: Ray Casting</strong><br/>
-    /// Uses the Ray Casting (Even-Odd) algorithm via <see cref="IsPointInLinearRing"/>.
-    /// </para>
-    /// <para>
-    /// <strong>Optimization: Bounding Box Pre-Check</strong><br/>
-    /// Before running the expensive Ray Casting algorithm (O(N)), we calculate the Bounding Box of the exterior ring (O(N))
-    /// and check if the point is within it. This acts as a fast "fail-early" mechanism, rejecting points that are far outside
-    /// the polygon with minimal computation.
-    /// </para>
-    /// </remarks>
     private static bool IsPointInPolygonCoordinates(double lat, double lon, JsonElement polygonCoordinates)
     {
         // GeoJSON Polygon coordinates are an array of LinearRings.
@@ -112,14 +115,6 @@ public static class GeoUtils
         return true;
     }
 
-    /// <summary>
-    /// Calculates the Bounding Box of a linear ring and checks if the point is inside it.
-    /// </summary>
-    /// <remarks>
-    /// This is an O(N) operation that iterates through all points in the ring to find min/max lat/lon.
-    /// Although O(N), it involves only simple comparisons, making it much faster than the trigonometric/arithmetic
-    /// operations required for the Ray Casting algorithm.
-    /// </remarks>
     private static bool IsPointInBoundingBox(double lat, double lon, JsonElement ring)
     {
         double minLat = double.MaxValue;
@@ -142,16 +137,6 @@ public static class GeoUtils
         return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
     }
 
-    /// <summary>
-    /// Determines if a point is inside a Linear Ring using the Ray Casting algorithm.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>Ray Casting Algorithm (Even-Odd Rule):</strong><br/>
-    /// The algorithm projects a ray from the point in a fixed direction (horizontal) and counts how many times it intersects
-    /// the polygon's edges. An odd number of intersections means the point is inside; an even number means it's outside.
-    /// </para>
-    /// </remarks>
     private static bool IsPointInLinearRing(double lat, double lon, JsonElement ring)
     {
         bool inside = false;

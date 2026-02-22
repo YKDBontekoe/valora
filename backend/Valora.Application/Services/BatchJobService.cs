@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
@@ -39,7 +40,15 @@ public class BatchJobService : IBatchJobService
 
     public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
-        return await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
+        var jobs = await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
+        return jobs.Select(MapToSummaryDto).ToList();
+    }
+
+    public async Task<PaginatedList<BatchJobSummaryDto>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, CancellationToken cancellationToken = default)
+    {
+        var paginatedJobs = await _jobRepository.GetJobsAsync(pageIndex, pageSize, status, type, cancellationToken);
+        var dtos = paginatedJobs.Items.Select(MapToSummaryDto).ToList();
+        return new PaginatedList<BatchJobSummaryDto>(dtos, paginatedJobs.TotalCount, paginatedJobs.PageIndex, pageSize);
     }
 
     public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -100,48 +109,74 @@ public class BatchJobService : IBatchJobService
         var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
         if (job == null) return;
 
+        await MarkJobAsStartedAsync(job, cancellationToken);
+
+        try
+        {
+            await ExecuteProcessorAsync(job, cancellationToken);
+            MarkJobAsCompleted(job);
+        }
+        catch (OperationCanceledException)
+        {
+            MarkJobAsCancelled(job);
+        }
+        catch (Exception ex)
+        {
+            MarkJobAsFailed(job, ex);
+        }
+
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+    }
+
+    private async Task MarkJobAsStartedAsync(BatchJob job, CancellationToken cancellationToken)
+    {
         job.Status = BatchJobStatus.Processing;
         job.StartedAt = DateTime.UtcNow;
         AppendLog(job, "Job started.");
         await _jobRepository.UpdateAsync(job, cancellationToken);
+    }
 
-        try
+    private async Task ExecuteProcessorAsync(BatchJob job, CancellationToken cancellationToken)
+    {
+        var processor = _processors.SingleOrDefault(p => p.JobType == job.Type);
+        if (processor == null)
         {
-            var processor = _processors.SingleOrDefault(p => p.JobType == job.Type);
-            if (processor == null)
-            {
-                _logger.LogError("No processor found for job type {JobType}", job.Type);
-                throw new InvalidOperationException("System configuration error: processor missing for job type.");
-            }
-
-            await processor.ProcessAsync(job, cancellationToken);
-
-            if (job.Status == BatchJobStatus.Processing)
-            {
-                AppendLog(job, "Job completed successfully.");
-                job.Status = BatchJobStatus.Completed;
-                job.CompletedAt = DateTime.UtcNow;
-                job.Progress = 100;
-            }
+            _logger.LogError("No processor found for job type {JobType}", job.Type);
+            throw new InvalidOperationException("System configuration error: processor missing for job type.");
         }
-        catch (OperationCanceledException)
+
+        await processor.ProcessAsync(job, cancellationToken);
+    }
+
+    private void MarkJobAsCompleted(BatchJob job)
+    {
+        // Only mark as completed if the processor didn't already set it to Failed/Cancelled
+        if (job.Status == BatchJobStatus.Processing)
         {
-            _logger.LogInformation("Batch job {JobId} cancelled", job.Id);
-            AppendLog(job, "Job cancelled by user.");
-            job.Status = BatchJobStatus.Failed;
-            job.Error = "Job cancelled by user.";
+            AppendLog(job, "Job completed successfully.");
+            job.Status = BatchJobStatus.Completed;
             job.CompletedAt = DateTime.UtcNow;
+            job.Progress = 100;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
-            AppendLog(job, $"Job failed: {ex.Message}");
-            job.Status = BatchJobStatus.Failed;
-            job.Error = ex.Message;
-            job.CompletedAt = DateTime.UtcNow;
-        }
+    }
 
-        await _jobRepository.UpdateAsync(job, cancellationToken);
+    private void MarkJobAsCancelled(BatchJob job)
+    {
+        _logger.LogInformation("Batch job {JobId} cancelled", job.Id);
+        AppendLog(job, "Job cancelled by user.");
+        // The domain model has no distinct Cancelled enum value, so we map cancellations to Failed.
+        job.Status = BatchJobStatus.Failed;
+        job.Error = "Job cancelled by user.";
+        job.CompletedAt = DateTime.UtcNow;
+    }
+
+    private void MarkJobAsFailed(BatchJob job, Exception ex)
+    {
+        _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
+        AppendLog(job, $"Job failed: {ex.Message}");
+        job.Status = BatchJobStatus.Failed;
+        job.Error = ex.Message;
+        job.CompletedAt = DateTime.UtcNow;
     }
 
     private void AppendLog(BatchJob job, string message)
@@ -152,6 +187,19 @@ public class BatchJobService : IBatchJobService
         else
             job.ExecutionLog += Environment.NewLine + entry;
     }
+
+    private static BatchJobSummaryDto MapToSummaryDto(BatchJob job) => new(
+        job.Id,
+        job.Type.ToString(),
+        job.Status.ToString(),
+        job.Target,
+        job.Progress,
+        job.Error,
+        job.ResultSummary,
+        job.CreatedAt,
+        job.StartedAt,
+        job.CompletedAt
+    );
 
     private static BatchJobDto MapToDto(BatchJob job) => new(
         job.Id,

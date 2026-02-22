@@ -46,28 +46,23 @@ public sealed class ContextReportService : IContextReportService
     /// This method acts as the orchestrator for the "Fan-Out" pattern. It does NOT query databases sequentially.
     /// Instead, it delegates the parallel fetching of data to <see cref="IContextDataProvider"/> (Fan-Out),
     /// waits for all tasks to complete, and then aggregates the results (Fan-In) into a single report.
-    /// This reduces total latency to the duration of the slowest single source (plus overhead), rather than the sum of all sources.
     /// </para>
     /// <para>
     /// <strong>Why Real-Time?</strong><br/>
-    /// We do not store pre-computed reports for every address in the Netherlands because:
-    /// <list type="bullet">
-    /// <item><strong>Data Volume:</strong> Storing millions of addresses with constantly changing public data is inefficient.</item>
-    /// <item><strong>Freshness:</strong> Public data (e.g., Air Quality) changes frequently. Real-time fetching ensures accuracy.</item>
-    /// </list>
-    /// Instead, we generate them on-demand and cache them aggressively (Read-Through Cache).
+    /// We do not store pre-computed reports for every address in the Netherlands (too much data, stale too quickly).
+    /// Instead, we generate them on-demand and cache them aggressively.
     /// </para>
     /// <para>
     /// Key Decisions:
     /// <list type="bullet">
     /// <item>
     /// <strong>Radius Clamping:</strong> The search radius is clamped between 200m and 5000m.
-    /// Values > 5km cause excessive load on the Overpass API (OSM) and result in timeouts or HTTP 429s.
+    /// Values > 5km cause excessive load on the Overpass API (OSM) and result in timeouts.
     /// </item>
     /// <item>
     /// <strong>High-Precision Caching:</strong> We resolve the location to coordinates first, then use
     /// 5-decimal precision (~1 meter) for the cache key. This ensures "Damrak 1" and "Damrak 1, Amsterdam"
-    /// resolve to the same coordinates and share the same expensive report generation result.
+    /// share the same expensive report generation.
     /// </item>
     /// </list>
     /// </para>
@@ -109,7 +104,7 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 4. Build normalized metrics and compute scores (Fan-In)
-        var report = BuildReport(location, sourceData, warnings);
+        var report = ContextReportBuilder.Build(location, sourceData, warnings);
 
         // Cache the result for the configured duration (default: 24h)
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
@@ -119,89 +114,9 @@ public sealed class ContextReportService : IContextReportService
     private static string GetCacheKey(ResolvedLocationDto location, int radius)
     {
         // Key format: context-report:v3:{lat_f5}_{lon_f5}:{radius}
-        // Design Decision: 5 decimal places (F5) gives precision to approx 1.1 meters.
-        // This is precise enough to distinguish buildings but coarse enough to handle minor floating point drift.
+        // Using 5 decimal places (F5) gives precision to ~1 meter.
         var latKey = location.Latitude.ToString("F5", CultureInfo.InvariantCulture);
         var lonKey = location.Longitude.ToString("F5", CultureInfo.InvariantCulture);
         return $"{ReportConstants.CacheKeyPrefix}:{latKey}_{lonKey}:{radius}";
-    }
-
-    /// <summary>
-    /// Aggregates raw data into a scored report (The "Fan-In" phase).
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>Normalization Strategy:</strong><br/>
-    /// Raw values (e.g., "45 crimes per 1000 residents") are meaningless to end-users.
-    /// We use specific "Builders" (e.g., <see cref="SocialMetricBuilder"/>) to convert these raw numbers
-    /// into a normalized 0-100 score based on national averages and heuristics.
-    /// </para>
-    /// <para>
-    /// <strong>Separation of Concerns:</strong><br/>
-    /// This method delegates the specific scoring logic to domain services (<see cref="ContextScoreCalculator"/>)
-    /// to keep the Application layer focused on orchestration, not business rules.
-    /// </para>
-    /// </remarks>
-    private static ContextReportDto BuildReport(
-        ResolvedLocationDto location,
-        ContextSourceData sourceData,
-        List<string> warnings)
-    {
-        var cbs = sourceData.NeighborhoodStats;
-        var crime = sourceData.CrimeStats;
-        var amenities = sourceData.AmenityStats;
-        var air = sourceData.AirQualitySnapshot;
-
-        // Raw data is converted to uniform ContextMetricDto objects.
-        // Each Builder encapsulates the logic for a specific domain (Social, Crime, etc.)
-        var socialMetrics = SocialMetricBuilder.Build(cbs, warnings);
-        var crimeMetrics = CrimeMetricBuilder.Build(crime, warnings);
-        var demographicsMetrics = DemographicsMetricBuilder.Build(cbs, warnings);
-        var housingMetrics = HousingMetricBuilder.Build(cbs, warnings); // Phase 2
-        var mobilityMetrics = MobilityMetricBuilder.Build(cbs, warnings); // Phase 2
-        var amenityMetrics = AmenityMetricBuilder.Build(amenities, cbs, warnings); // Phase 2: CBS Proximity
-        var environmentMetrics = EnvironmentMetricBuilder.Build(air, warnings);
-
-        // Compute scores
-        // We map DTOs to Domain Models here to enforce Clean Architecture boundaries.
-        // The Domain layer calculates the final scores.
-        var metricsInput = new CategoryMetricsModel(
-            MapToDomain(socialMetrics),
-            MapToDomain(crimeMetrics),
-            MapToDomain(demographicsMetrics),
-            MapToDomain(housingMetrics),
-            MapToDomain(mobilityMetrics),
-            MapToDomain(amenityMetrics),
-            MapToDomain(environmentMetrics));
-
-        var categoryScores = ContextScoreCalculator.ComputeCategoryScores(metricsInput);
-        var compositeScore = ContextScoreCalculator.ComputeCompositeScore(categoryScores);
-
-        return new ContextReportDto(
-            Location: location,
-            SocialMetrics: socialMetrics,
-            CrimeMetrics: crimeMetrics,
-            DemographicsMetrics: demographicsMetrics,
-            HousingMetrics: housingMetrics,
-            MobilityMetrics: mobilityMetrics,
-            AmenityMetrics: amenityMetrics,
-            EnvironmentMetrics: environmentMetrics,
-            CompositeScore: Math.Round(compositeScore, 1),
-            CategoryScores: categoryScores,
-            Sources: sourceData.Sources,
-            Warnings: warnings);
-    }
-
-    private static IReadOnlyList<ContextMetricModel> MapToDomain(IEnumerable<ContextMetricDto> dtos)
-    {
-        return dtos.Select(d => new ContextMetricModel(
-            d.Key,
-            d.Label,
-            d.Value,
-            d.Unit,
-            d.Score,
-            d.Source,
-            d.Note
-        )).ToList();
     }
 }
