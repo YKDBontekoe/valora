@@ -23,7 +23,9 @@ Run the database container.
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
-*Troubleshooting:* If `docker-compose` fails, ensure Docker Desktop is running. Check port 5432 availability.
+*Troubleshooting:*
+- If `docker-compose` fails, ensure Docker Desktop is running.
+- Ensure port `5432` is not already in use by another Postgres instance.
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
@@ -31,7 +33,7 @@ The backend aggregates data and serves the API.
 ```bash
 cd backend
 cp .env.example .env
-# default .env values work out-of-the-box for local dev
+# Important: Open .env and ensure JWT_SECRET is set to a secure value.
 dotnet run --project Valora.Api
 ```
 *Verify: Open `http://localhost:5253/api/health` in your browser (or port `5001` if running via Docker). You should see `{"status":"healthy", "timestamp": "..."}`.*
@@ -66,6 +68,49 @@ npm run dev
 ## 🏗️ Architecture
 
 Valora follows **Clean Architecture** principles to ensure modularity and testability.
+
+### System Overview
+
+```mermaid
+graph TD
+    subgraph "Clients"
+        Flutter[Flutter App]
+        Admin[Admin Dashboard]
+    end
+
+    subgraph "Valora Backend"
+        API[API Layer (Valora.Api)]
+        App[Application Layer (MediatR)]
+        Domain[Domain Layer (Entities)]
+        Infra[Infrastructure Layer]
+    end
+
+    subgraph "Persistence"
+        DB[(PostgreSQL)]
+        Cache[(Memory Cache)]
+    end
+
+    subgraph "External Data Sources"
+        PDOK[PDOK Locatieserver]
+        CBS[CBS Open Data]
+        OSM[OpenStreetMap]
+        Air[Luchtmeetnet]
+    end
+
+    Flutter -->|HTTPS| API
+    Admin -->|HTTPS| API
+
+    API --> App
+    App --> Domain
+    App --> Infra
+
+    Infra --> DB
+    Infra --> Cache
+    Infra --> PDOK
+    Infra --> CBS
+    Infra --> OSM
+    Infra --> Air
+```
 
 ### The "Fan-Out" Aggregation Pattern
 When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results ("Fan-In") into a unified score.
@@ -137,7 +182,8 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 - **[Onboarding Guide](docs/onboarding.md)**: Detailed setup & troubleshooting.
 - **[Developer Guide](docs/developer-guide.md)**: Coding standards & patterns.
 - **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
-- **[Data Flow: Reports](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
+- **[Data Flow: Reading (Reports)](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
+- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**: User registration and data saving.
 - **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
 
 ---

@@ -85,6 +85,18 @@ public class BatchJobService : IBatchJobService
         return MapToDto(job);
     }
 
+    /// <summary>
+    /// Resets a failed or completed job to 'Pending' so it can be picked up again by a processor.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is useful for transient failures (e.g., API timeout) or when a job was cancelled by mistake.
+    /// </para>
+    /// <para>
+    /// <strong>State Transition:</strong> Failed/Completed -> Pending.<br/>
+    /// <strong>Queue Position:</strong> The `CreatedAt` timestamp is updated to <see cref="DateTime.UtcNow"/> to move it to the end of the FIFO queue.
+    /// </para>
+    /// </remarks>
     public async Task<BatchJobDto> RetryJobAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
@@ -111,6 +123,17 @@ public class BatchJobService : IBatchJobService
         return MapToDto(job);
     }
 
+    /// <summary>
+    /// Marks a pending or processing job as failed with a cancellation message.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>State Transition:</strong> Pending/Processing -> Failed.<br/>
+    /// Note: If the job is currently processing, this method updates the database status, but the running thread
+    /// might continue until it checks the cancellation token or completes. The processor should ideally
+    /// check the database status periodically if it's a long-running operation.
+    /// </para>
+    /// </remarks>
     public async Task<BatchJobDto> CancelJobAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
@@ -131,6 +154,25 @@ public class BatchJobService : IBatchJobService
         return MapToDto(job);
     }
 
+    /// <summary>
+    /// Picks the next pending job from the queue and executes it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Concurrency:</strong> This method relies on <see cref="IBatchJobRepository.GetNextPendingJobAsync"/> to atomically
+    /// fetch and lock the next job (often using `SELECT ... FOR UPDATE SKIP LOCKED` in Postgres).
+    /// </para>
+    /// <para>
+    /// <strong>Lifecycle:</strong>
+    /// <list type="number">
+    /// <item>Fetch next 'Pending' job.</item>
+    /// <item>Mark as 'Processing' immediately.</item>
+    /// <item>Find appropriate <see cref="IBatchJobProcessor"/>.</item>
+    /// <item>Execute logic.</item>
+    /// <item>Mark as 'Completed' or 'Failed'.</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
     public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
