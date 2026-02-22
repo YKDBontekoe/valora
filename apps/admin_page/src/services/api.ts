@@ -178,6 +178,15 @@ export interface UpdateAiModelConfigDto {
   safetySettings?: string;
 }
 
+export interface AiModel {
+  id: string;
+  name: string;
+  description: string;
+  contextLength: number;
+  promptPrice: number;
+  completionPrice: number;
+}
+
 export const aiService = {
   getConfigs: async (): Promise<AiModelConfig[]> => {
     const response = await api.get<AiModelConfig[]>('/ai/config');
@@ -185,6 +194,10 @@ export const aiService = {
   },
   updateConfig: async (intent: string, dto: UpdateAiModelConfigDto): Promise<AiModelConfig> => {
     const response = await api.put<AiModelConfig>(`/ai/config/${intent}`, dto);
+    return response.data;
+  },
+  getAvailableModels: async (): Promise<AiModel[]> => {
+    const response = await api.get<AiModel[]>('/ai/config/models');
     return response.data;
   }
 };

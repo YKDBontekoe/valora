@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { aiService, type AiModelConfig } from '../services/api';
+import React, { useEffect, useState, useMemo } from 'react';
+import { aiService, type AiModelConfig, type AiModel } from '../services/api';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,21 +21,29 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
+type SortOption = 'name' | 'price_asc' | 'price_desc';
+
 const AiModels: React.FC = () => {
   const [configs, setConfigs] = useState<AiModelConfig[]>([]);
+  const [availableModels, setAvailableModels] = useState<AiModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingConfig, setEditingConfig] = useState<AiModelConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [modelSort, setModelSort] = useState<SortOption>('name');
 
   useEffect(() => {
-    loadConfigs();
+    loadData();
   }, []);
 
-  const loadConfigs = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await aiService.getConfigs();
-      setConfigs(data);
+      const [configsData, modelsData] = await Promise.all([
+        aiService.getConfigs(),
+        aiService.getAvailableModels()
+      ]);
+      setConfigs(configsData);
+      setAvailableModels(modelsData);
     } catch (error) {
       console.error(error);
       showToast('Failed to load AI configurations', 'error');
@@ -43,6 +51,21 @@ const AiModels: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const sortedModels = useMemo(() => {
+    return [...availableModels].sort((a, b) => {
+      if (modelSort === 'name') return a.name.localeCompare(b.name);
+      if (modelSort === 'price_asc') {
+        if (a.promptPrice !== b.promptPrice) return a.promptPrice - b.promptPrice;
+        return a.completionPrice - b.completionPrice;
+      }
+      if (modelSort === 'price_desc') {
+        if (a.promptPrice !== b.promptPrice) return b.promptPrice - a.promptPrice;
+        return b.completionPrice - a.completionPrice;
+      }
+      return 0;
+    });
+  }, [availableModels, modelSort]);
 
   const handleEdit = (config: AiModelConfig) => {
     setEditingConfig({ ...config });
@@ -59,7 +82,7 @@ const AiModels: React.FC = () => {
       await aiService.updateConfig(editingConfig.intent, editingConfig);
       showToast('Configuration saved successfully', 'success');
       setEditingConfig(null);
-      loadConfigs();
+      loadData();
     } catch (error) {
       console.error(error);
       showToast('Failed to save configuration', 'error');
@@ -262,27 +285,62 @@ const AiModels: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Primary Model</label>
-                      <input
-                        type="text"
-                        className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono"
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-[10px] font-black text-brand-400 uppercase tracking-widest ml-1">Primary Model</label>
+                        <select
+                          value={modelSort}
+                          onChange={(e) => setModelSort(e.target.value as SortOption)}
+                          className="bg-brand-50 border border-brand-100 rounded-lg text-[10px] font-bold text-brand-500 px-2 py-1 outline-none focus:border-primary-500"
+                        >
+                          <option value="name">Name</option>
+                          <option value="price_asc">Price: Low to High</option>
+                          <option value="price_desc">Price: High to Low</option>
+                        </select>
+                      </div>
+                      <select
+                        className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono appearance-none"
                         value={editingConfig.primaryModel}
                         onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
-                        placeholder="openai/gpt-4o"
-                      />
+                      >
+                        <option value="">Select a model...</option>
+                        {sortedModels.map(model => (
+                          <option key={model.id} value={model.id}>
+                            {model.name} ({model.id}) - ${model.promptPrice}/1M
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
                   <div className="space-y-6">
                     <div>
                       <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Fallback Strategy (CSV)</label>
-                      <input
-                        type="text"
-                        className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono"
-                        value={editingConfig.fallbackModels.join(', ')}
-                        onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
-                        placeholder="gpt-4o-mini, claude-3-haiku"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono"
+                          value={editingConfig.fallbackModels.join(', ')}
+                          onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
+                          placeholder="gpt-4o-mini, claude-3-haiku"
+                        />
+                         <select
+                            className="w-1/3 px-3 py-4 bg-brand-50 border border-brand-100 rounded-2xl font-bold text-brand-900 text-sm outline-none"
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    if (!editingConfig.fallbackModels.includes(e.target.value)) {
+                                        const newFallbacks = [...editingConfig.fallbackModels, e.target.value];
+                                        setEditingConfig({ ...editingConfig, fallbackModels: newFallbacks });
+                                    }
+                                    e.target.value = ""; // Reset select
+                                }
+                            }}
+                         >
+                            <option value="">+ Add</option>
+                            {sortedModels.map(model => (
+                                <option key={model.id} value={model.id}>{model.name}</option>
+                            ))}
+                         </select>
+                      </div>
                       <p className="mt-2 text-[10px] text-brand-300 font-bold ml-1">Comma-separated list of models to try if primary fails.</p>
                     </div>
 
