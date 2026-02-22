@@ -47,15 +47,30 @@ public class BatchJobService : IBatchJobService
     public async Task<PaginatedList<BatchJobSummaryDto>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, CancellationToken cancellationToken = default)
     {
         BatchJobStatus? statusEnum = null;
-        if (!string.IsNullOrEmpty(status) && Enum.TryParse<BatchJobStatus>(status, true, out var parsedStatus))
+        if (!string.IsNullOrEmpty(status))
         {
-            statusEnum = parsedStatus;
+            if (Enum.TryParse<BatchJobStatus>(status, true, out var parsedStatus))
+            {
+                statusEnum = parsedStatus;
+            }
+            else
+            {
+                 // Throwing ArgumentException for invalid input which will be mapped to 400 Bad Request by middleware
+                 throw new ArgumentException($"Invalid status: {status}");
+            }
         }
 
         BatchJobType? typeEnum = null;
-        if (!string.IsNullOrEmpty(type) && Enum.TryParse<BatchJobType>(type, true, out var parsedType))
+        if (!string.IsNullOrEmpty(type))
         {
-            typeEnum = parsedType;
+            if (Enum.TryParse<BatchJobType>(type, true, out var parsedType))
+            {
+                typeEnum = parsedType;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid job type: {type}");
+            }
         }
 
         var paginatedJobs = await _jobRepository.GetJobsAsync(pageIndex, pageSize, statusEnum, typeEnum, cancellationToken);
