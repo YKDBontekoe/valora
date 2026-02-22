@@ -37,7 +37,9 @@ public class ContextAnalysisServiceTests
         Assert.Equal("Cheap areas.", result.Explanation);
         Assert.NotNull(result.TargetLocation);
         Assert.Equal(52.0, result.TargetLocation!.Lat);
+        Assert.NotNull(result.Filter); // Ensure Filter is not null
         Assert.Equal(MapOverlayMetric.PricePerSquareMeter, result.Filter!.Metric);
+        Assert.NotNull(result.Filter.AmenityTypes); // Ensure AmenityTypes is not null
         Assert.Contains("park", result.Filter.AmenityTypes);
     }
 
@@ -57,5 +59,27 @@ public class ContextAnalysisServiceTests
         Assert.Equal(invalidResponse, result.Explanation);
         Assert.Null(result.TargetLocation);
         Assert.Null(result.Filter);
+    }
+
+    [Fact]
+    public async Task PlanMapQueryAsync_MarkdownJson_ReturnsDto()
+    {
+        // Arrange
+        var jsonResponse = @"```json
+{
+    ""explanation"": ""Markdown wrapped."",
+    ""targetLocation"": null,
+    ""filter"": null
+}
+```";
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "map_query", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        // Act
+        var result = await _service.PlanMapQueryAsync("test query", null, CancellationToken.None);
+
+        // Assert
+        Assert.Equal("Markdown wrapped.", result.Explanation);
     }
 }
