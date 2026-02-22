@@ -115,4 +115,33 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         Assert.Single(result.Items);
         Assert.Equal("MapGeneration", result.Items[0].Type);
     }
+
+    [Fact]
+    public async Task GetJobs_ShouldIgnoreInvalidFilters()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        var jobs = new List<BatchJob>
+        {
+            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Completed, Target = "C1", CreatedAt = DateTime.UtcNow },
+            new() { Type = BatchJobType.MapGeneration, Status = BatchJobStatus.Pending, Target = "C2", CreatedAt = DateTime.UtcNow }
+        };
+        DbContext.BatchJobs.AddRange(jobs);
+        await DbContext.SaveChangesAsync();
+
+        // Act - Invalid Status (Should return all)
+        var response = await Client.GetAsync("/api/admin/jobs?status=InvalidStatus");
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+        Assert.NotNull(result);
+        Assert.Equal(2, result.TotalCount);
+
+        // Act - Invalid Type (Should return all)
+        response = await Client.GetAsync("/api/admin/jobs?type=InvalidType");
+        response.EnsureSuccessStatusCode();
+        result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
+        Assert.NotNull(result);
+        Assert.Equal(2, result.TotalCount);
+    }
 }
