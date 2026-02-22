@@ -127,9 +127,9 @@ const BatchJobs: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-[2rem] border border-brand-100 shadow-premium relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-5">
-            <Database size={100} />
+      <div className="bg-white p-8 rounded-[2rem] border border-brand-100 shadow-premium relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 text-brand-50 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-6 opacity-50">
+            <Database size={160} />
         </div>
         <div className="relative z-10">
             <h2 className="text-xl font-black text-brand-900 mb-6 flex items-center gap-2">

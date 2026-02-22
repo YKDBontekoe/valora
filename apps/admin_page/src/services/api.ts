@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
-import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus } from '../types';
+import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus, SystemHealth } from '../types';
 import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -88,7 +88,9 @@ api.interceptors.response.use(
       || error.message
       || 'An unexpected error occurred';
 
-    if (error.response?.status !== 401) {
+    const isHealthEndpoint = originalRequest.url?.endsWith('/health');
+
+    if (error.response?.status !== 401 && !isHealthEndpoint) {
        showToast(message, 'error');
     }
 
@@ -145,6 +147,12 @@ export const adminService = {
   },
   getDatasetStatus: async (): Promise<DatasetStatus[]> => {
     const response = await api.get<DatasetStatus[]>('/admin/dataset/status');
+    return response.data;
+  },
+  getHealth: async (): Promise<SystemHealth> => {
+    const response = await api.get<SystemHealth>('/health', {
+      validateStatus: (status) => (status >= 200 && status < 300) || status === 503
+    });
     return response.data;
   },
 };

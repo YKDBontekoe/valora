@@ -45,3 +45,11 @@ export interface DatasetStatus {
   neighborhoodCount: number;
   lastUpdated: string | null;
 }
+
+export interface SystemHealth {
+  status: 'Healthy' | 'Degraded' | 'Unhealthy';
+  database: boolean;
+  apiLatency: number;
+  activeJobs: number;
+  timestamp: string;
+}

@@ -2,23 +2,43 @@ import React, { useEffect, useState } from 'react';
 import { aiService, type AiModelConfig } from '../services/api';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Settings2, Cpu, Sparkles, Plus, Edit2, AlertCircle, X, Check, Save } from 'lucide-react';
+import Skeleton from '../components/Skeleton';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
 
 const AiModels: React.FC = () => {
   const [configs, setConfigs] = useState<AiModelConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingConfig, setEditingConfig] = useState<AiModelConfig | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadConfigs();
   }, []);
 
   const loadConfigs = async () => {
+    setLoading(true);
     try {
       const data = await aiService.getConfigs();
       setConfigs(data);
     } catch (error) {
       console.error(error);
-      showToast('Failed to load AI configs', 'error');
+      showToast('Failed to load AI configurations', 'error');
     } finally {
       setLoading(false);
     }
@@ -29,141 +49,298 @@ const AiModels: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!editingConfig || !editingConfig.intent) { showToast("Intent is required", "error"); return; }
+    if (!editingConfig || !editingConfig.intent) {
+      showToast("Intent is required", "error");
+      return;
+    }
+
+    setIsSaving(true);
     try {
       await aiService.updateConfig(editingConfig.intent, editingConfig);
-      showToast('Config saved', 'success');
+      showToast('Configuration saved successfully', 'success');
       setEditingConfig(null);
       loadConfigs();
     } catch (error) {
-       console.error(error);
-       showToast('Failed to save config', 'error');
+      console.error(error);
+      showToast('Failed to save configuration', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
-
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">AI Model Configurations</h1>
-          <Button onClick={() => {
-              // Creating a new config template
-              setEditingConfig({
-                  id: '',
-                  intent: '',
-                  primaryModel: 'openai/gpt-4o-mini',
-                  fallbackModels: [],
-                  description: '',
-                  isEnabled: true,
-                  safetySettings: ''
-              });
-          }}>Add Configuration</Button>
+    <div className="space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-brand-900 tracking-tight">AI Orchestration</h1>
+          <p className="text-brand-500 mt-2 font-medium">Configure model routing and fallback strategies for various intents.</p>
+        </div>
+        <Button
+          onClick={() => setEditingConfig({
+            id: '',
+            intent: '',
+            primaryModel: 'openai/gpt-4o-mini',
+            fallbackModels: [],
+            description: '',
+            isEnabled: true,
+            safetySettings: ''
+          })}
+          variant="secondary"
+          leftIcon={<Plus size={18} />}
+        >
+          New Configuration
+        </Button>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Intent</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary Model</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fallbacks</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {configs.length === 0 ? (
-                <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">No configurations found. Add one to override defaults.</td>
-                </tr>
-            ) : configs.map((config) => (
-              <tr key={config.id || config.intent}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{config.intent}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{config.primaryModel}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{config.fallbackModels.join(', ')}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${config.isEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {config.isEnabled ? 'Enabled' : 'Disabled'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Button onClick={() => handleEdit(config)} variant="secondary" size="sm">Edit</Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {editingConfig && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">{editingConfig.id ? 'Edit' : 'Add'} Configuration</h2>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">Intent</label>
-              <input
-                type="text"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={editingConfig.intent}
-                onChange={(e) => setEditingConfig({ ...editingConfig, intent: e.target.value })}
-                disabled={!!editingConfig.id} // Disable editing intent for existing configs
-                placeholder="e.g. quick_summary"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">Primary Model</label>
-              <input
-                type="text"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={editingConfig.primaryModel}
-                onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
-                placeholder="openai/gpt-4o"
-              />
-            </div>
-
-            <div className="mb-4">
-               <label className="block text-gray-700 text-sm font-bold mb-2">Fallback Models (comma separated)</label>
-               <input
-                type="text"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={editingConfig.fallbackModels.join(', ')}
-                onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
-                placeholder="openai/gpt-4o-mini, anthropic/claude-3-haiku"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">Description</label>
-              <textarea
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={editingConfig.description}
-                onChange={(e) => setEditingConfig({ ...editingConfig, description: e.target.value })}
-              />
-            </div>
-
-            <div className="mb-6">
-               <label className="flex items-center cursor-pointer">
-                 <input
-                   type="checkbox"
-                   className="sr-only peer"
-                   checked={editingConfig.isEnabled}
-                   onChange={(e) => setEditingConfig({ ...editingConfig, isEnabled: e.target.checked })}
-                 />
-                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 relative"></div>
-                 <span className="ml-3 text-sm font-medium text-gray-900">Enabled</span>
-               </label>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button onClick={() => setEditingConfig(null)} variant="danger">Cancel</Button>
-              <Button onClick={handleSave}>Save</Button>
-            </div>
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="bg-white rounded-[2rem] border border-brand-100 shadow-premium overflow-hidden"
+      >
+        <div className="px-8 py-6 border-b border-brand-100 bg-brand-50/30 flex items-center justify-between">
+          <h2 className="font-black text-brand-900 uppercase tracking-wider text-xs flex items-center gap-2">
+            <Settings2 size={16} className="text-primary-600" />
+            Routing Configurations
+          </h2>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
+            <span className="text-[10px] font-black text-brand-700 uppercase tracking-wider">Active Policy: Dynamic</span>
           </div>
         </div>
-      )}
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-brand-100">
+            <thead>
+              <tr className="bg-brand-50/10">
+                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Intent</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Primary Model</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Fallback Stack</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Status</th>
+                <th className="px-8 py-4 text-right text-[10px] font-black text-brand-400 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-brand-100">
+              {loading ? (
+                [...Array(3)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-8 py-6"><Skeleton variant="text" width="40%" /></td>
+                    <td className="px-8 py-6"><Skeleton variant="text" width="60%" /></td>
+                    <td className="px-8 py-6"><Skeleton variant="text" width="50%" /></td>
+                    <td className="px-8 py-6"><Skeleton variant="rectangular" width={80} height={24} className="rounded-full" /></td>
+                    <td className="px-8 py-6"></td>
+                  </tr>
+                ))
+              ) : configs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-8 py-16 text-center">
+                    <div className="flex flex-col items-center gap-2 text-brand-400">
+                      <Cpu size={32} className="opacity-20 mb-2" />
+                      <span className="font-bold">No custom configurations found. Defaults are in use.</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  {configs.map((config) => (
+                    <motion.tr
+                      key={config.id || config.intent}
+                      variants={item}
+                      initial="hidden"
+                      animate="show"
+                      exit="hidden"
+                      layout
+                      className="hover:bg-brand-50/50 transition-colors group"
+                    >
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-50 rounded-lg text-primary-600">
+                            <Sparkles size={14} />
+                          </div>
+                          <span className="text-sm font-black text-brand-900">{config.intent}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <span className="text-sm font-bold text-brand-600 font-mono bg-brand-50 px-2 py-1 rounded">
+                          {config.primaryModel}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <div className="flex flex-wrap gap-1">
+                          {config.fallbackModels.length > 0 ? (
+                            config.fallbackModels.map((m, idx) => (
+                              <span key={idx} className="text-[10px] font-bold text-brand-400 border border-brand-100 px-1.5 py-0.5 rounded">
+                                {m}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-brand-300 italic font-medium">No fallbacks</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 w-fit ${
+                          config.isEnabled
+                            ? 'bg-success-50 text-success-700 border border-success-100'
+                            : 'bg-error-50 text-error-700 border border-error-100'
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${config.isEnabled ? 'bg-success-500' : 'bg-error-500'}`} />
+                          {config.isEnabled ? 'Active' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 whitespace-nowrap text-right">
+                        <Button
+                          onClick={() => handleEdit(config)}
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Edit2 size={14} />}
+                          className="text-brand-400 hover:text-primary-600 hover:bg-primary-50"
+                        >
+                          Configure
+                        </Button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {editingConfig && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingConfig(null)}
+              className="absolute inset-0 bg-brand-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-premium-xl overflow-hidden border border-white/20"
+            >
+              <div className="p-8 md:p-10">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary-600 rounded-2xl shadow-lg shadow-primary-200/50 text-white">
+                      <Cpu size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-brand-900 tracking-tight">
+                        {editingConfig.id ? 'Edit Configuration' : 'New Configuration'}
+                      </h2>
+                      <p className="text-brand-400 text-sm font-bold">Define how requests for this intent are handled.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEditingConfig(null)}
+                    className="p-2 text-brand-300 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Intent Identifier</label>
+                      <input
+                        type="text"
+                        className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 disabled:opacity-50"
+                        value={editingConfig.intent}
+                        onChange={(e) => setEditingConfig({ ...editingConfig, intent: e.target.value })}
+                        disabled={!!editingConfig.id}
+                        placeholder="e.g. quick_summary"
+                      />
+                      <p className="mt-2 text-[10px] text-brand-300 font-bold ml-1">The system key used to trigger this routing.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Primary Model</label>
+                      <input
+                        type="text"
+                        className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono"
+                        value={editingConfig.primaryModel}
+                        onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
+                        placeholder="openai/gpt-4o"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Fallback Strategy (CSV)</label>
+                      <input
+                        type="text"
+                        className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 font-mono"
+                        value={editingConfig.fallbackModels.join(', ')}
+                        onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
+                        placeholder="gpt-4o-mini, claude-3-haiku"
+                      />
+                      <p className="mt-2 text-[10px] text-brand-300 font-bold ml-1">Comma-separated list of models to try if primary fails.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Routing Status</label>
+                      <button
+                        onClick={() => setEditingConfig({ ...editingConfig, isEnabled: !editingConfig.isEnabled })}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                          editingConfig.isEnabled
+                            ? 'bg-success-50 border-success-100 text-success-700'
+                            : 'bg-brand-50 border-brand-100 text-brand-400'
+                        }`}
+                      >
+                        <span className="font-bold">{editingConfig.isEnabled ? 'Enabled & Routing' : 'Disabled / Paused'}</span>
+                        {editingConfig.isEnabled ? <Check size={20} /> : <X size={20} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <label className="block text-[10px] font-black text-brand-400 uppercase tracking-widest mb-2 ml-1">Description & Context</label>
+                  <textarea
+                    className="w-full px-5 py-4 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900 min-h-[100px]"
+                    value={editingConfig.description}
+                    onChange={(e) => setEditingConfig({ ...editingConfig, description: e.target.value })}
+                    placeholder="Describe what this intent is used for..."
+                  />
+                </div>
+
+                <div className="mt-10 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 text-warning-600">
+                    <AlertCircle size={16} />
+                    <span className="text-[10px] font-black uppercase tracking-wider">Changes take effect immediately</span>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={() => setEditingConfig(null)}
+                      variant="ghost"
+                      className="text-brand-500 font-bold"
+                    >
+                      Discard
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      isLoading={isSaving}
+                      leftIcon={<Save size={18} />}
+                      className="shadow-premium shadow-primary-200/50"
+                    >
+                      Apply Changes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

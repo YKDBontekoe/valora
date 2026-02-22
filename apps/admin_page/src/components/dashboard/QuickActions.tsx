@@ -44,9 +44,14 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
   };
 
   return (
-    <div className="mt-8 p-6 bg-white rounded-3xl border border-brand-100 shadow-sm">
-      <h2 className="text-lg font-black text-brand-900 mb-4">Quick Actions</h2>
-      <div className="flex flex-wrap gap-4">
+    <div className="mt-8 p-8 bg-white rounded-[2rem] border border-brand-100 shadow-premium relative overflow-hidden group">
+      {/* Subtle background icon */}
+      <div className="absolute -right-4 -bottom-4 text-brand-50 transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-12 opacity-50">
+          <PlayCircle size={120} />
+      </div>
+
+      <h2 className="text-xl font-black text-brand-900 mb-6 tracking-tight relative z-10">Administrative Control</h2>
+      <div className="flex flex-wrap gap-4 relative z-10">
         <Button
             onClick={onRefreshStats}
             variant="outline"

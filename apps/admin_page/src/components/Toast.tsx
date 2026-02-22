@@ -16,6 +16,7 @@ const Toast = () => {
   };
 
   useEffect(() => {
+    const currentTimers = timers.current;
     const handleToast = (event: Event) => {
       const customEvent = event as CustomEvent<ToastMessage>;
       const newToast = customEvent.detail;
@@ -25,14 +26,14 @@ const Toast = () => {
         removeToast(newToast.id);
       }, 5000);
 
-      timers.current[newToast.id] = timer;
+      currentTimers[newToast.id] = timer;
     };
 
     toastManager.addEventListener('toast', handleToast);
     return () => {
       toastManager.removeEventListener('toast', handleToast);
       // Clear all timers on unmount
-      Object.values(timers.current).forEach(window.clearTimeout);
+      Object.values(currentTimers).forEach(window.clearTimeout);
     };
   }, []);
 
