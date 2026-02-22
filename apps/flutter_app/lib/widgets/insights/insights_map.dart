@@ -72,7 +72,7 @@ class InsightsMap extends StatelessWidget {
             onPositionChanged: (position, hasGesture) {
               if (hasGesture) onMapChanged();
             },
-            onTap: (_, __) => provider.clearSelection(),
+            onTap: (_, _) => provider.clearSelection(),
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),

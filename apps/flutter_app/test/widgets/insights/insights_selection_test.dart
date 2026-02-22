@@ -11,7 +11,7 @@ import 'package:valora_app/models/map_amenity_cluster.dart';
 import 'package:valora_app/models/map_overlay.dart';
 import 'package:valora_app/models/map_overlay_tile.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mockito/mockito.dart';
+
 
 class FakeMapRepository extends Fake implements MapRepository {
   @override
