@@ -17,6 +17,9 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     timeout-minutes: 10
     environment: production
+    env:
+      # Must match the SENTRY_RELEASE set in the docker workflow (same SHA)
+      SENTRY_RELEASE: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Log in to Azure
         uses: azure/login@v2
@@ -56,3 +59,19 @@ jobs:
             echo "⚠️ Health check returned HTTP $STATUS — investigate manually."
             exit 1
           fi
+
+      # ── Finalise Sentry Release ─────────────────────────────────────────
+      # Mark the release as deployed to production *after* the health check
+      # passes. This tells Sentry the exact moment production went live.
+      - name: Finalise Sentry release
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_BACKEND }}
+        with:
+          environment: production
+          version: ${{ env.SENTRY_RELEASE }}
+          finalize: true
+          # Don't re-associate commits — already done in the docker workflow
+          set_commits: skip

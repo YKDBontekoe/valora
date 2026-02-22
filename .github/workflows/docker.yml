@@ -14,6 +14,9 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  # Sentry release name: tied to the triggering commit SHA so it matches
+  # what we later finalize in the deploy workflow.
+  SENTRY_RELEASE: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   build:
@@ -27,6 +30,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # Required for Sentry to read commit metadata via the GitHub integration
+      deployments: write
 
     steps:
       - name: Checkout repository
@@ -64,3 +69,23 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: true
           sbom: true
+          build-args: |
+            SENTRY_RELEASE=${{ env.SENTRY_RELEASE }}
+
+      # ── Sentry Release ─────────────────────────────────────────────────
+      # Creates a release in Sentry, associates commits for suspect-commit
+      # blame and finalises the build artifact. The release is NOT deployed
+      # here — that happens in the deploy-aca workflow.
+      - name: Create Sentry release
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_BACKEND }}
+        with:
+          environment: production
+          version: ${{ env.SENTRY_RELEASE }}
+          # Associate commits so Sentry can link errors to the right code
+          set_commits: auto
+          # Don't mark as deployed yet — that's done after ACA is live
+          finalize: false
