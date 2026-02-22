@@ -2,14 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Valora.Api.Filters;
 
-public class ValidationFilter<T> : IEndpointFilter where T : class
+public class ValidationFilter<T> : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var argument = context.Arguments.OfType<T>().FirstOrDefault();
+
         if (argument == null)
         {
-            return Results.BadRequest("Invalid request body.");
+            return Results.Problem(detail: "Invalid request parameters.", statusCode: 400);
         }
 
         var validationContext = new ValidationContext(argument);
