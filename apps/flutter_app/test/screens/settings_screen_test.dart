@@ -79,11 +79,18 @@ class MockSettingsProvider extends ChangeNotifier implements SettingsProvider {
 
   bool setNotificationsCalled = false;
   bool setReportRadiusCalled = false;
+  bool persistReportRadiusCalled = false;
   bool clearAllDataCalled = false;
 
   @override
-  Future<void> setReportRadius(double value) async {
+  void setReportRadius(double value) {
     setReportRadiusCalled = true;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> persistReportRadius() async {
+    persistReportRadiusCalled = true;
     notifyListeners();
   }
 
@@ -139,16 +146,6 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   Future<void> addComment(String savedListingId, String content, String? parentId) async {}
   @override
   Future<List<Comment>> fetchComments(String savedListingId) async => [];
-  @override
-  Future<void> deleteWorkspace(String id) async {}
-  @override
-  Future<void> updateWorkspace(String id, String name, String? description) async {}
-  @override
-  Future<void> removeMember(String workspaceId, String userId) async {}
-  @override
-  Future<void> updateMemberRole(String workspaceId, String userId, String role) async {}
-  @override
-  Future<void> deleteComment(String workspaceId, String savedListingId, String commentId) async {}
 }
 
 void main() {
@@ -270,6 +267,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(mockAuthProvider.logoutCalled, isTrue);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  });
+
+  testWidgets('Persists report radius on drag end', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2000, 3000);
+    tester.view.devicePixelRatio = 2.0;
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    final sliderFinder = find.byType(Slider);
+
+    // Tap slider to trigger onChangeEnd (simulating release)
+    await tester.tapAt(tester.getCenter(sliderFinder));
+    await tester.pumpAndSettle();
+
+    expect(mockSettingsProvider.persistReportRadiusCalled, isTrue);
 
     addTearDown(() {
       tester.view.resetPhysicalSize();

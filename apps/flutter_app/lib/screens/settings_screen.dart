@@ -186,6 +186,7 @@ class SettingsScreen extends StatelessWidget {
                               divisions: 19,
                               label: '${settings.reportRadius.toInt()}m',
                               onChanged: (value) => settings.setReportRadius(value),
+                              onChangeEnd: (value) => settings.persistReportRadius(),
                             ),
                             const Divider(height: 1, indent: 16, endIndent: 16),
                             Padding(

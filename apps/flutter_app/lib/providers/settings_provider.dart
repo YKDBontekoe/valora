@@ -56,15 +56,20 @@ class SettingsProvider extends ChangeNotifier {
       // Fallback or ignore if platform info fails
       _appVersion = 'Unknown';
       _buildNumber = '0';
+      debugPrint('Error loading app info: $e');
     }
     notifyListeners();
   }
 
-  Future<void> setReportRadius(double value) async {
+  // Update UI immediately, but persist only when finished
+  void setReportRadius(double value) {
     _reportRadius = value;
     notifyListeners();
+  }
+
+  Future<void> persistReportRadius() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_reportRadiusKey, value);
+    await prefs.setDouble(_reportRadiusKey, _reportRadius);
   }
 
   Future<void> setMapDefaultMetric(String value) async {
