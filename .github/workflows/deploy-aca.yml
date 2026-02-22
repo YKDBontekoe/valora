@@ -30,4 +30,4 @@ jobs:
             az containerapp update \
               --name valora-backend \
               --resource-group rg-valora \
-              --image ghcr.io/${{ env.REPO }}:latest
+              --image ghcr.io/${{ env.REPO }}:sha-${{ github.event.workflow_run.head_sha }}
