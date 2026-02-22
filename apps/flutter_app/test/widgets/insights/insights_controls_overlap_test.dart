@@ -5,7 +5,7 @@ import 'package:valora_app/providers/insights_provider.dart';
 import 'package:valora_app/widgets/insights/insights_controls.dart';
 import 'package:valora_app/models/map_city_insight.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mockito/mockito.dart';
+
 
 class MockInsightsProvider extends ChangeNotifier implements InsightsProvider {
   @override
