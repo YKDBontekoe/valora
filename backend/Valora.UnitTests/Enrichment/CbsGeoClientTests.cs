@@ -228,7 +228,7 @@ public class CbsGeoClientTests
     }
 
     [Fact]
-    public async Task GetAllMunicipalitiesAsync_ReturnsEmpty_OnHttpFailure()
+    public async Task GetAllMunicipalitiesAsync_ThrowsOnHttpFailure()
     {
         var handlerMock = CreateHandlerMock(HttpStatusCode.InternalServerError, "{}");
         var httpClient = new HttpClient(handlerMock.Object);
@@ -241,9 +241,7 @@ public class CbsGeoClientTests
             _options,
             _loggerMock.Object);
 
-        var result = await client.GetAllMunicipalitiesAsync();
-
-        Assert.Empty(result);
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAllMunicipalitiesAsync());
     }
 
     [Fact]

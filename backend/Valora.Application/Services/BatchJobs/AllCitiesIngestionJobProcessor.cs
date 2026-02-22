@@ -41,6 +41,22 @@ public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
         int count = 0;
         foreach (var city in cities)
         {
+             cancellationToken.ThrowIfCancellationRequested();
+
+             // Check for cancellation every 10 iterations
+             if (count % 10 == 0)
+             {
+                 var status = await _jobRepository.GetStatusAsync(job.Id, cancellationToken);
+                 if (status == BatchJobStatus.Failed)
+                 {
+                     _logger.LogInformation("Job {JobId} was cancelled during execution", job.Id);
+                     throw new OperationCanceledException("Job cancelled by user.");
+                 }
+
+                 job.Progress = (int)((double)count / cities.Count * 100);
+                 await _jobRepository.UpdateAsync(job, cancellationToken);
+             }
+
              var newJob = new BatchJob
              {
                  Type = BatchJobType.CityIngestion,
@@ -51,13 +67,6 @@ public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
 
             await _jobRepository.AddAsync(newJob, cancellationToken);
             count++;
-
-            // Update progress every 10 items
-            if (count % 10 == 0)
-            {
-                 job.Progress = (int)((double)count / cities.Count * 100);
-                 await _jobRepository.UpdateAsync(job, cancellationToken);
-            }
         }
 
         job.ResultSummary = $"Queued ingestion for {cities.Count} municipalities.";

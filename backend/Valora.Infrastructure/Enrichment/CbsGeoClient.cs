@@ -176,10 +176,11 @@ public sealed class CbsGeoClient : ICbsGeoClient
         var url = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
+
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
-            return [];
+            _logger.LogError("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
+            response.EnsureSuccessStatusCode(); // Throw exception on failure
         }
 
         using var content = await response.Content.ReadAsStreamAsync(cancellationToken);

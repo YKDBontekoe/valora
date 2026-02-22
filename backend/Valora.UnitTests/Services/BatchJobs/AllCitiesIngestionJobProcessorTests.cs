@@ -61,22 +61,21 @@ public class AllCitiesIngestionJobProcessorTests
     }
 
     [Fact]
-    public async Task ProcessAsync_ShouldUpdateProgress_WhenManyItems()
+    public async Task ProcessAsync_ShouldHandleCancellation()
     {
         // Arrange
         var processor = CreateProcessor();
         var job = new BatchJob { Type = BatchJobType.AllCitiesIngestion, Target = "Netherlands", Status = BatchJobStatus.Processing };
-        var cities = Enumerable.Range(1, 25).Select(i => $"City{i}").ToList();
+        var cities = Enumerable.Range(1, 20).Select(i => $"City{i}").ToList();
 
         _geoClientMock.Setup(x => x.GetAllMunicipalitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(cities);
 
-        // Act
-        await processor.ProcessAsync(job, CancellationToken.None);
+        // Simulate cancellation in DB
+        _jobRepositoryMock.Setup(x => x.GetStatusAsync(job.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BatchJobStatus.Failed);
 
-        // Assert
-        // Should update at 10 and 20
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeast(3)); // Start + 10 + 20
-        // Check if progress was updated (can't easily check intermediate values with simple Verify, but we know it was called)
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync(job, CancellationToken.None));
     }
 }
