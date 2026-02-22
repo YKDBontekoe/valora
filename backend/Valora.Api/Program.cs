@@ -270,12 +270,24 @@ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 /// </summary>
 api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 {
-    if (await db.Database.CanConnectAsync(ct))
+    var canConnect = await db.Database.CanConnectAsync(ct);
+    var activeJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct);
+
+    var response = new
     {
-        return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+        status = canConnect ? "Healthy" : "Unhealthy",
+        database = canConnect,
+        apiLatency = 42, // Mocked for now
+        activeJobs = activeJobs,
+        timestamp = DateTime.UtcNow
+    };
+
+    if (canConnect)
+    {
+        return Results.Ok(response);
     }
 
-    return Results.Problem("Service unavailable", statusCode: 503);
+    return Results.Json(response, statusCode: 503);
 })
 .DisableRateLimiting();
 

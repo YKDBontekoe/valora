@@ -47,8 +47,12 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
           <motion.div
             key={card.title}
             variants={item}
-            whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
-            className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium hover:shadow-premium-lg rounded-2xl transition-all duration-300 border border-brand-100/50 group cursor-default`}
+            whileHover={{
+              y: -12,
+              scale: 1.02,
+              transition: { type: 'spring', stiffness: 400, damping: 10 }
+            }}
+            className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium hover:shadow-premium-xl rounded-3xl transition-all duration-500 border border-brand-100/50 group cursor-default`}
           >
             <div className="p-8">
               <div className="flex items-center">

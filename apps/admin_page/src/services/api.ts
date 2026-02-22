@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
-import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus } from '../types';
+import type { AuthResponse, Stats, User, PaginatedResponse, BatchJob, DatasetStatus, SystemHealth } from '../types';
 import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -146,6 +146,17 @@ export const adminService = {
   getDatasetStatus: async (): Promise<DatasetStatus[]> => {
     const response = await api.get<DatasetStatus[]>('/admin/dataset/status');
     return response.data;
+  },
+  getHealth: async (): Promise<SystemHealth> => {
+    try {
+      const response = await api.get<SystemHealth>('/health');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 503) {
+        return error.response.data;
+      }
+      throw error;
+    }
   },
 };
 

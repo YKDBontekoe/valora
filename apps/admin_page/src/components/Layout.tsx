@@ -76,6 +76,7 @@ const Layout = () => {
                       <motion.div
                         key={item.name}
                         whileTap={{ scale: 0.98 }}
+                        whileHover={{ x: 4 }}
                         className="relative"
                       >
                         <Link

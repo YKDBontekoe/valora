@@ -21,6 +21,13 @@ vi.mock('react-router-dom', async () => {
 describe('Dashboard Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (adminService.getHealth as Mock).mockResolvedValue({
+      status: 'Healthy',
+      database: true,
+      apiLatency: 42,
+      activeJobs: 0,
+      timestamp: new Date().toISOString()
+    });
   });
 
   it('renders loading state initially', () => {
@@ -67,7 +74,7 @@ describe('Dashboard Page', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
 
     // Wait for initial render
-    await waitFor(() => expect(screen.getByText('System Health')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
     const retryButton = screen.getByText('Retry Failed Jobs');
     fireEvent.click(retryButton);
@@ -96,7 +103,7 @@ describe('Dashboard Page', () => {
       .mockResolvedValueOnce({});
 
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('System Health')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
     const retryButton = screen.getByText('Retry Failed Jobs');
     fireEvent.click(retryButton);
@@ -115,7 +122,7 @@ describe('Dashboard Page', () => {
     });
 
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('System Health')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
     const retryButton = screen.getByText('Retry Failed Jobs');
     fireEvent.click(retryButton);
@@ -131,7 +138,7 @@ describe('Dashboard Page', () => {
     (adminService.getJobs as Mock).mockRejectedValue(new Error('API Error'));
 
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('System Health')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
     const retryButton = screen.getByText('Retry Failed Jobs');
     fireEvent.click(retryButton);
@@ -144,7 +151,7 @@ describe('Dashboard Page', () => {
   it('navigates to users page on Manage Users click', async () => {
      (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
      render(<MemoryRouter><Dashboard /></MemoryRouter>);
-     await waitFor(() => expect(screen.getByText('System Health')).toBeInTheDocument());
+     await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
      const usersButton = screen.getByText('Manage Users');
      fireEvent.click(usersButton);
