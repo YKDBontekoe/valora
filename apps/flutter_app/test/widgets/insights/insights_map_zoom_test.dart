@@ -68,7 +68,7 @@ void main() {
     // Wait for the map to fully render including tiles
     await tester.pumpAndSettle();
 
-    // Verify that PolygonLayer is present
+    // Verify that PolygonLayer is present (for tiles)
     expect(find.byType(PolygonLayer), findsOneWidget);
   });
 
