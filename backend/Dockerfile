@@ -1,5 +1,5 @@
 # Use the official .NET SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
 # Copy the solution file and project files
@@ -19,9 +19,13 @@ COPY . .
 WORKDIR /src/Valora.Api
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# Use the official ASP.NET Core runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
-RUN apt-get update && apt-get install -y libgssapi-krb5-2 && rm -rf /var/lib/apt/lists/*
+# Use the official ASP.NET Core runtime image (Alpine based for size optimization)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
+# Install dependencies for SQL Server (GSSAPI) and Globalization (ICU)
+RUN apk add --no-cache icu-libs krb5-libs libintl
+# Ensure globalization uses ICU instead of invariant mode (needed for many .NET apps)
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
