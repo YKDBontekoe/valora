@@ -69,7 +69,7 @@ class _AskMapSheetState extends State<AskMapSheet> {
             decoration: InputDecoration(
               hintText: 'Describe what you are looking for...',
               filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,

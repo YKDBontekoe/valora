@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -84,6 +85,9 @@ public class MapQueryIntegrationTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(jsonResponse);
 
+        // Fix: Provide valid JsonElement to avoid serialization error
+        var validGeoJson = JsonDocument.Parse("{}").RootElement;
+
         _mockMapService
             .Setup(x => x.GetMapOverlaysAsync(
                 It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
@@ -91,7 +95,7 @@ public class MapQueryIntegrationTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapOverlayDto>
             {
-                new MapOverlayDto("id", "name", "CrimeRate", 10, "Low", default)
+                new MapOverlayDto("id", "name", "CrimeRate", 10, "Low", validGeoJson)
             });
 
         // Act

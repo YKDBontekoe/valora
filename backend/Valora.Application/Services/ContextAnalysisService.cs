@@ -121,8 +121,19 @@ public class ContextAnalysisService : IContextAnalysisService
                          // Check metric param
                         if (action.Parameters.ContainsKey("metric"))
                         {
-                            var metricStr = action.Parameters["metric"].ToString();
-                            if (Enum.TryParse<MapOverlayMetric>(metricStr, true, out var metric))
+                            var metricVal = action.Parameters["metric"];
+                            string? metricStr = null;
+
+                            if (metricVal is JsonElement metricEl && metricEl.ValueKind == JsonValueKind.String)
+                            {
+                                metricStr = metricEl.GetString();
+                            }
+                            else
+                            {
+                                metricStr = metricVal?.ToString();
+                            }
+
+                            if (!string.IsNullOrEmpty(metricStr) && Enum.TryParse<MapOverlayMetric>(metricStr, true, out var metric))
                             {
                                 // Use current viewport or default to Amsterdam if null
                                 double lat = request.CenterLat ?? 52.3676;
@@ -140,21 +151,27 @@ public class ContextAnalysisService : IContextAnalysisService
                     case "show_amenities":
                         if (action.Parameters.ContainsKey("types"))
                         {
-                            var typesJson = action.Parameters["types"].ToString();
+                            var typesVal = action.Parameters["types"];
                             List<string> types = new List<string>();
 
-                            // Handle JsonElement if using System.Text.Json dictionary deserialization
-                            if (action.Parameters["types"] is JsonElement element && element.ValueKind == JsonValueKind.Array)
+                            if (typesVal is JsonElement element && element.ValueKind == JsonValueKind.Array)
                             {
                                 foreach (var item in element.EnumerateArray())
                                 {
-                                    types.Add(item.GetString() ?? "");
+                                    if (item.ValueKind == JsonValueKind.String)
+                                    {
+                                        types.Add(item.GetString() ?? "");
+                                    }
                                 }
                             }
-                            else if (typesJson != null)
+                            else if (typesVal != null)
                             {
                                 // Fallback manual parse if string
-                                types = typesJson.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                                var typesJson = typesVal.ToString();
+                                if (!string.IsNullOrEmpty(typesJson))
+                                {
+                                    types = typesJson.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                                }
                             }
 
                             if (types.Any())
