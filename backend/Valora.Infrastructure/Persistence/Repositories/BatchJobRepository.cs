@@ -28,18 +28,18 @@ public class BatchJobRepository : IBatchJobRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, CancellationToken cancellationToken = default)
+    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.BatchJobs.AsQueryable();
+        var query = _context.BatchJobs.AsNoTracking();
 
-        if (!string.IsNullOrEmpty(status) && Enum.TryParse<BatchJobStatus>(status, true, out var statusEnum))
+        if (status.HasValue)
         {
-            query = query.Where(j => j.Status == statusEnum);
+            query = query.Where(j => j.Status == status.Value);
         }
 
-        if (!string.IsNullOrEmpty(type) && Enum.TryParse<BatchJobType>(type, true, out var typeEnum))
+        if (type.HasValue)
         {
-            query = query.Where(j => j.Type == typeEnum);
+            query = query.Where(j => j.Type == type.Value);
         }
 
         return await query

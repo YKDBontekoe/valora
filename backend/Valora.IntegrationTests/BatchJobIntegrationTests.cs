@@ -117,34 +117,18 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task GetJobs_ShouldIgnoreInvalidFilters()
+    public async Task GetJobs_ShouldReturnBadRequest_ForInvalidFilters()
     {
         // Arrange
         await AuthenticateAsAdminAsync();
 
-        var jobs = new List<BatchJob>
-        {
-            new() { Type = BatchJobType.CityIngestion, Status = BatchJobStatus.Completed, Target = "C1", CreatedAt = DateTime.UtcNow },
-            new() { Type = BatchJobType.MapGeneration, Status = BatchJobStatus.Pending, Target = "C2", CreatedAt = DateTime.UtcNow }
-        };
-        DbContext.BatchJobs.AddRange(jobs);
-        await DbContext.SaveChangesAsync();
-
-        // Act - Invalid Status (Should be treated as no filter per current implementation)
-        // TODO: In the future, this should probably return 400 BadRequest, but for now we keep backward compatibility logic
-        // where Enum.TryParse returns false and we skip the filter.
+        // Act - Invalid Status
         var response = await Client.GetAsync("/api/admin/jobs?status=InvalidStatus");
-        response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
-        Assert.NotNull(result);
-        Assert.True(result.TotalCount >= 2);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         // Act - Invalid Type
         response = await Client.GetAsync("/api/admin/jobs?type=InvalidType");
-        response.EnsureSuccessStatusCode();
-        result = await response.Content.ReadFromJsonAsync<PaginatedResponse<BatchJobSummaryDto>>();
-        Assert.NotNull(result);
-        Assert.True(result.TotalCount >= 2);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
