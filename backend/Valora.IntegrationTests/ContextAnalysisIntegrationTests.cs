@@ -11,14 +11,15 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
-public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatabaseFixture>, IAsyncLifetime
+[Collection("TestcontainersDatabase")]
+public class ContextAnalysisIntegrationTests : IAsyncLifetime
 {
     private readonly TestcontainersDatabaseFixture _fixture;
     private readonly Mock<IAiService> _mockAiService = new();
     private readonly Mock<ICurrentUserService> _mockCurrentUserService = new();
-    private IServiceScope _scope;
-    private IContextAnalysisService _sut;
-    private ValoraDbContext _dbContext;
+    private IServiceScope? _scope;
+    private IContextAnalysisService? _sut;
+    private ValoraDbContext? _dbContext;
 
     public ContextAnalysisIntegrationTests(TestcontainersDatabaseFixture fixture)
     {
@@ -67,7 +68,7 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
             .ReturnsAsync("AI Response");
 
         // Act
-        await _sut.ChatAsync("Hello", "chat", CancellationToken.None);
+        await _sut!.ChatAsync("Hello", "chat", CancellationToken.None);
 
         // Assert
         Assert.Contains("You are Valora", caughtSystemPrompt);
@@ -80,6 +81,10 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
         // Arrange
         var userId = "user-123";
         _mockCurrentUserService.Setup(x => x.UserId).Returns(userId);
+
+        // Create the user first to satisfy FK constraint
+        var user = new ApplicationUser { Id = userId, UserName = "testuser", Email = "test@example.com" };
+        _dbContext!.Users.Add(user);
 
         var profile = new UserAiProfile
         {
@@ -99,7 +104,7 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
             .ReturnsAsync("AI Response");
 
         // Act
-        await _sut.ChatAsync("Find me a home", "chat", CancellationToken.None);
+        await _sut!.ChatAsync("Find me a home", "chat", CancellationToken.None);
 
         // Assert
         Assert.Contains("User Personalization Profile", caughtSystemPrompt);
@@ -113,6 +118,10 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
         // Arrange
         var userId = "user-456";
         _mockCurrentUserService.Setup(x => x.UserId).Returns(userId);
+
+        // Create the user first to satisfy FK constraint
+        var user = new ApplicationUser { Id = userId, UserName = "testuser2", Email = "test2@example.com" };
+        _dbContext!.Users.Add(user);
 
         var profile = new UserAiProfile
         {
@@ -146,7 +155,7 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
             .ReturnsAsync("Analysis Result");
 
         // Act
-        await _sut.AnalyzeReportAsync(report, CancellationToken.None);
+        await _sut!.AnalyzeReportAsync(report, CancellationToken.None);
 
         // Assert
         Assert.Contains("User Personalization Profile", caughtSystemPrompt);
@@ -159,6 +168,10 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
         // Arrange
         var userId = "user-disabled";
         _mockCurrentUserService.Setup(x => x.UserId).Returns(userId);
+
+        // Create the user first to satisfy FK constraint
+        var user = new ApplicationUser { Id = userId, UserName = "testuser3", Email = "test3@example.com" };
+        _dbContext!.Users.Add(user);
 
         var profile = new UserAiProfile
         {
@@ -177,7 +190,7 @@ public class ContextAnalysisIntegrationTests : IClassFixture<TestcontainersDatab
             .ReturnsAsync("AI Response");
 
         // Act
-        await _sut.ChatAsync("Hello", "chat", CancellationToken.None);
+        await _sut!.ChatAsync("Hello", "chat", CancellationToken.None);
 
         // Assert
         Assert.DoesNotContain("User Personalization Profile", caughtSystemPrompt);

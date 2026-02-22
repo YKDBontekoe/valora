@@ -1,6 +1,7 @@
 using Testcontainers.MsSql;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Valora.Infrastructure.Persistence;
 
 namespace Valora.IntegrationTests;
@@ -12,23 +13,35 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         .Build();
 
     public IntegrationTestWebAppFactory? Factory { get; private set; }
+    public Exception? InitializationException { get; private set; }
 
     public async Task InitializeAsync()
     {
+        bool isSqlServer = false;
         try
         {
             await _dbContainer.StartAsync();
             Factory = new IntegrationTestWebAppFactory(_dbContainer.GetConnectionString());
+            isSqlServer = true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            InitializationException = ex;
             // Fallback for environments where Testcontainers is not supported (e.g. OverlayFS issues)
             Factory = new IntegrationTestWebAppFactory("InMemory:TestcontainersFallback");
         }
 
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-        await context.Database.EnsureCreatedAsync();
+
+        if (isSqlServer)
+        {
+            await context.Database.MigrateAsync();
+        }
+        else
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
     }
 
     public async Task DisposeAsync()
@@ -36,4 +49,12 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         if (Factory != null) await Factory.DisposeAsync();
         await _dbContainer.DisposeAsync();
     }
+}
+
+[CollectionDefinition("TestcontainersDatabase")]
+public class TestcontainersDatabaseCollection : ICollectionFixture<TestcontainersDatabaseFixture>
+{
+    // This class has no code, and is never created. Its purpose is simply
+    // to be the place to apply [CollectionDefinition] and all the
+    // ICollectionFixture<> interfaces.
 }
