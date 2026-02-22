@@ -47,7 +47,7 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
             throw new ApplicationException($"Failed to fetch neighborhoods for city '{job.Target}': {ex.Message}", ex);
         }
 
-        if (!neighborhoods.Any())
+        if (neighborhoods == null || !neighborhoods.Any())
         {
             AppendLog(job, "No neighborhoods found for city.");
             job.ResultSummary = "No neighborhoods found for city.";
