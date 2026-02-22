@@ -92,4 +92,43 @@ public class BatchJobWorkerTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldStopWorkerOnDatabaseAuthenticationFailure()
+    {
+        // Arrange
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        var serviceScopeMock = new Mock<IServiceScope>();
+        var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
+        var jobServiceMock = new Mock<IBatchJobService>();
+        var loggerMock = new Mock<ILogger<BatchJobWorker>>();
+
+        serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory)))
+            .Returns(serviceScopeFactoryMock.Object);
+        serviceScopeFactoryMock.Setup(x => x.CreateScope())
+            .Returns(serviceScopeMock.Object);
+        serviceScopeMock.Setup(x => x.ServiceProvider)
+            .Returns(serviceProviderMock.Object);
+        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobService)))
+            .Returns(jobServiceMock.Object);
+
+        jobServiceMock.Setup(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Login failed for user 'ykdbonte'."));
+
+        var worker = new TestBatchJobWorker(serviceProviderMock.Object, loggerMock.Object);
+
+        // Act
+        await worker.PublicExecuteAsync(CancellationToken.None);
+
+        // Assert
+        jobServiceMock.Verify(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()), Times.Once);
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Critical,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }
