@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -6,11 +7,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Valora.Infrastructure.Migrations
 {
     /// <inheritdoc />
+    [ExcludeFromCodeCoverage]
     public partial class UpdateBatchJobTypeConstraint : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("DELETE FROM BatchJobs WHERE Type = 'AllCitiesIngestion'");
+
             migrationBuilder.DropCheckConstraint(
                 name: "CK_BatchJob_Type",
                 table: "BatchJobs");
@@ -49,7 +53,8 @@ namespace Valora.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_UserAiProfiles_UserId",
                 table: "UserAiProfiles",
-                column: "UserId");
+                column: "UserId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -57,6 +62,8 @@ namespace Valora.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "UserAiProfiles");
+
+            migrationBuilder.Sql("DELETE FROM BatchJobs WHERE Type = 'AllCitiesIngestion'");
 
             migrationBuilder.DropCheckConstraint(
                 name: "CK_BatchJob_Type",
