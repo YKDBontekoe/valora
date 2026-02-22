@@ -8,8 +8,7 @@ namespace Valora.IntegrationTests;
 
 public class TestcontainersDatabaseFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder()
-        .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .Build();
 
     public IntegrationTestWebAppFactory? Factory { get; private set; }
