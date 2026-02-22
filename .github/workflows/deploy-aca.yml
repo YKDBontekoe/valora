@@ -1,17 +1,25 @@
-name: Deploy backend to Azure Container App
+name: Deploy Backend to Azure Container App
 
 on:
   workflow_run:
     workflows: ["Docker Build & Push"]
-    types:
-      - completed
-    branches:
-      - main
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-aca
+  cancel-in-progress: false # Never cancel an in-progress deployment
 
 jobs:
   deploy:
+    name: Deploy to ACA
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 10
+    environment: production
+    env:
+      # Must match the SENTRY_RELEASE set in the docker workflow (same SHA)
+      SENTRY_RELEASE: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Log in to Azure
         uses: azure/login@v2
@@ -31,3 +39,39 @@ jobs:
               --name valora-backend \
               --resource-group rg-valora \
               --image ghcr.io/${{ env.REPO }}:sha-${{ github.event.workflow_run.head_sha }}
+
+      - name: Verify deployment health
+        run: |
+          echo "⏳ Waiting for deployment to stabilise..."
+          sleep 30
+
+          FQDN=$(az containerapp show \
+            --name valora-backend \
+            --resource-group rg-valora \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+
+          echo "🔍 Health-checking https://$FQDN/api/health"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FQDN/api/health" --max-time 15 || true)
+
+          if [[ "$STATUS" == "200" ]]; then
+            echo "✅ Deployment healthy (HTTP $STATUS)"
+          else
+            echo "⚠️ Health check returned HTTP $STATUS — investigate manually."
+            exit 1
+          fi
+
+      # ── Finalise Sentry Release ─────────────────────────────────────────
+      # Mark the release as deployed to production *after* the health check
+      # passes. This tells Sentry the exact moment production went live.
+      - name: Finalise Sentry release
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_BACKEND }}
+        with:
+          environment: production
+          version: ${{ env.SENTRY_RELEASE }}
+          finalize: true
+          # Don't re-associate commits — already done in the docker workflow
+          set_commits: skip

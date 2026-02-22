@@ -17,7 +17,6 @@ import '../widgets/report/comparison_view.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_animations.dart';
 import '../core/theme/valora_typography.dart';
-import '../core/theme/valora_spacing.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key, this.pdokService, this.onFabChanged});
@@ -477,71 +476,18 @@ class _CompactSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return TypeAheadField<PdokSuggestion>(
       controller: controller,
       builder: (context, controller, focusNode) {
-        return Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: isDark
-                ? ValoraColors.surfaceDark
-                : ValoraColors.neutral50,
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-            border: Border.all(
-              color: isDark
-                  ? ValoraColors.neutral700.withValues(alpha: 0.4)
-                  : ValoraColors.neutral200,
-            ),
-          ),
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (val) {
-              FocusScope.of(context).unfocus();
-              provider.generate(val);
-            },
-            style: ValoraTypography.bodyMedium.copyWith(
-              color: isDark
-                  ? ValoraColors.neutral50
-                  : ValoraColors.neutral900,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Search another address...',
-              hintStyle: ValoraTypography.bodyMedium.copyWith(
-                color: isDark
-                    ? ValoraColors.neutral500
-                    : ValoraColors.neutral400,
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                size: 20,
-                color: isDark
-                    ? ValoraColors.neutral500
-                    : ValoraColors.neutral400,
-              ),
-              suffixIcon: controller.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500,
-                      ),
-                      onPressed: () {
-                        controller.clear();
-                        provider.clear();
-                      },
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
-            ),
-          ),
+        return ValoraSearchField(
+          controller: controller,
+          focusNode: focusNode,
+          hintText: 'Search another address...',
+          onSubmitted: (val) {
+            FocusScope.of(context).unfocus();
+            provider.generate(val);
+          },
+          onClear: provider.clear,
         );
       },
       suggestionsCallback: (pattern) async {
@@ -668,25 +614,12 @@ class _RadiusSelector extends StatelessWidget {
           Selector<ContextReportProvider, int>(
             selector: (_, p) => p.radiusMeters,
             builder: (context, radiusMeters, _) {
-              return SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 4,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 8),
-                  overlayShape:
-                      const RoundSliderOverlayShape(overlayRadius: 18),
-                  activeTrackColor: theme.colorScheme.primary,
-                  inactiveTrackColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
-                ),
-                child: Slider(
-                  min: 200,
-                  max: 5000,
-                  divisions: 24,
-                  value: radiusMeters.toDouble(),
-                  onChanged: (value) =>
-                      provider.setRadiusMeters(value.round()),
-                ),
+              return ValoraSlider(
+                min: 200,
+                max: 5000,
+                divisions: 24,
+                value: radiusMeters.toDouble(),
+                onChanged: (value) => provider.setRadiusMeters(value.round()),
               );
             },
           ),
@@ -782,84 +715,26 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Row(
       children: [
-        _QuickActionChip(
-          icon: Icons.map_rounded,
+        ValoraButton(
           label: 'Pick on Map',
-          onTap: () => _pickLocation(context),
-          isDark: isDark,
+          icon: Icons.map_rounded,
+          variant: ValoraButtonVariant.secondary,
+          size: ValoraButtonSize.small,
+          onPressed: () => _pickLocation(context),
         ),
         const SizedBox(width: 10),
-        _QuickActionChip(
-          icon: Icons.gps_fixed_rounded,
+        ValoraButton(
           label: 'My Location',
-          onTap: () {
+          icon: Icons.gps_fixed_rounded,
+          variant: ValoraButtonVariant.secondary,
+          size: ValoraButtonSize.small,
+          onPressed: () {
             // TODO: implement current location lookup
           },
-          isDark: isDark,
         ),
       ],
-    );
-  }
-}
-
-class _QuickActionChip extends StatelessWidget {
-  const _QuickActionChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.isDark,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: isDark
-                ? ValoraColors.surfaceDark
-                : ValoraColors.neutral50,
-            borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
-            border: Border.all(
-              color: isDark
-                  ? ValoraColors.neutral700.withValues(alpha: 0.4)
-                  : ValoraColors.neutral200,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: ValoraColors.primary),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: ValoraTypography.labelMedium.copyWith(
-                  color: isDark
-                      ? ValoraColors.neutral200
-                      : ValoraColors.neutral700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -891,15 +766,9 @@ class _HistorySection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Recent',
-                    style: ValoraTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  const ValoraSectionHeader(title: 'Recent'),
                   TextButton(
-                    onPressed: () =>
-                        _confirmClearHistory(context, provider),
+                    onPressed: () => _confirmClearHistory(context, provider),
                     child: Text(
                       'Clear',
                       style: ValoraTypography.labelMedium
