@@ -5,6 +5,7 @@ using Moq;
 using Valora.Api.Endpoints;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
+using Valora.Application.DTOs.Shared;
 using Xunit;
 
 namespace Valora.UnitTests.Endpoints;
@@ -40,6 +41,7 @@ public class MapEndpointsTests
         // Arrange
         List<string>? capturedTypes = null;
         var amenities = new List<MapAmenityDto> { new MapAmenityDto("id", "type", "name", 0, 0, null) };
+        var bounds = new BoundsRequest(52, 4, 53, 5);
         
         _mapServiceMock.Setup(x => x.GetMapAmenitiesAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
@@ -48,7 +50,7 @@ public class MapEndpointsTests
             .ReturnsAsync(amenities);
 
         // Act
-        var result = await MapEndpoints.GetMapAmenitiesHandler(52, 4, 53, 5, " school , park ", _mapServiceMock.Object, CancellationToken.None);
+        var result = await MapEndpoints.GetMapAmenitiesHandler(bounds, " school , park ", _mapServiceMock.Object, CancellationToken.None);
 
         // Assert
         var okResult = Assert.IsType<Ok<List<MapAmenityDto>>>(result);
@@ -62,12 +64,13 @@ public class MapEndpointsTests
     [Fact]
     public async Task GetMapAmenitiesHandler_HandlesNullTypes()
     {
+        var bounds = new BoundsRequest(52, 4, 53, 5);
         _mapServiceMock.Setup(x => x.GetMapAmenitiesAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapAmenityDto>());
 
-        var result = await MapEndpoints.GetMapAmenitiesHandler(52, 4, 53, 5, null, _mapServiceMock.Object, CancellationToken.None);
+        var result = await MapEndpoints.GetMapAmenitiesHandler(bounds, null, _mapServiceMock.Object, CancellationToken.None);
 
         Assert.IsType<Ok<List<MapAmenityDto>>>(result);
     }
@@ -75,12 +78,13 @@ public class MapEndpointsTests
     [Fact]
     public async Task GetMapAmenityClustersHandler_ReturnsOk()
     {
+        var bounds = new BoundsRequest(52, 4, 53, 5);
         _mapServiceMock.Setup(x => x.GetMapAmenityClustersAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapAmenityClusterDto>());
 
-        var result = await MapEndpoints.GetMapAmenityClustersHandler(52, 4, 53, 5, 10, null, _mapServiceMock.Object, CancellationToken.None);
+        var result = await MapEndpoints.GetMapAmenityClustersHandler(bounds, 10, null, _mapServiceMock.Object, CancellationToken.None);
 
         Assert.IsType<Ok<List<MapAmenityClusterDto>>>(result);
     }
@@ -89,6 +93,7 @@ public class MapEndpointsTests
     public async Task GetMapOverlaysHandler_ReturnsOk()
     {
         // Arrange
+        var bounds = new BoundsRequest(52, 4, 53, 5);
         var overlays = new List<MapOverlayDto> { new MapOverlayDto("id", "name", "metric", 0, "val", default) };
         _mapServiceMock.Setup(x => x.GetMapOverlaysAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
@@ -96,7 +101,7 @@ public class MapEndpointsTests
             .ReturnsAsync(overlays);
 
         // Act
-        var result = await MapEndpoints.GetMapOverlaysHandler(52, 4, 53, 5, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
+        var result = await MapEndpoints.GetMapOverlaysHandler(bounds, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
 
         // Assert
         var okResult = Assert.IsType<Ok<List<MapOverlayDto>>>(result);
@@ -106,12 +111,13 @@ public class MapEndpointsTests
     [Fact]
     public async Task GetMapOverlayTilesHandler_ReturnsOk()
     {
+        var bounds = new BoundsRequest(52, 4, 53, 5);
         _mapServiceMock.Setup(x => x.GetMapOverlayTilesAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapOverlayTileDto>());
 
-        var result = await MapEndpoints.GetMapOverlayTilesHandler(52, 4, 53, 5, 10, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
+        var result = await MapEndpoints.GetMapOverlayTilesHandler(bounds, 10, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
 
         Assert.IsType<Ok<List<MapOverlayTileDto>>>(result);
     }
