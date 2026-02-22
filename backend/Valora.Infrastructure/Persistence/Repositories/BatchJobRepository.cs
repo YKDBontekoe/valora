@@ -30,7 +30,7 @@ public class BatchJobRepository : IBatchJobRepository
 
     public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.BatchJobs.AsQueryable();
+        var query = _context.BatchJobs.AsNoTracking();
 
         if (status.HasValue)
         {
