@@ -85,4 +85,49 @@ public class ValoraDbContextTests
 
         Assert.Empty(quotedCheckConstraints);
     }
+
+    [Fact]
+    public void OnModelCreating_UsesSqlServerSafeDeleteBehaviorsForWorkspaceCollaborationRelationships()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<ValoraDbContext>()
+            .UseInMemoryDatabase(databaseName: "ValoraDbContextTests_DeleteBehaviors")
+            .Options;
+
+        using var context = new ValoraDbContext(options);
+
+        // Act
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var workspaceEntity = model.FindEntityType(typeof(Workspace));
+        var activityLogEntity = model.FindEntityType(typeof(ActivityLog));
+        var savedListingEntity = model.FindEntityType(typeof(SavedListing));
+        var listingCommentEntity = model.FindEntityType(typeof(ListingComment));
+
+        // Assert
+        Assert.NotNull(workspaceEntity);
+        Assert.NotNull(activityLogEntity);
+        Assert.NotNull(savedListingEntity);
+        Assert.NotNull(listingCommentEntity);
+
+        Assert.Equal(
+            DeleteBehavior.NoAction,
+            workspaceEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "OwnerId").DeleteBehavior);
+
+        Assert.Equal(
+            DeleteBehavior.NoAction,
+            activityLogEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "ActorId").DeleteBehavior);
+
+        Assert.Equal(
+            DeleteBehavior.NoAction,
+            savedListingEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "AddedByUserId").DeleteBehavior);
+
+        Assert.Equal(
+            DeleteBehavior.NoAction,
+            listingCommentEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "UserId").DeleteBehavior);
+
+        Assert.Equal(
+            DeleteBehavior.NoAction,
+            listingCommentEntity.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "ParentCommentId").DeleteBehavior);
+    }
 }

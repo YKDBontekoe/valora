@@ -15,6 +15,7 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.HasOne<ApplicationUser>()
             .WithMany()
             .HasForeignKey(w => w.OwnerId)
+            .OnDelete(DeleteBehavior.NoAction)
             .IsRequired();
 
         builder.HasMany(w => w.Members)

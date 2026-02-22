@@ -1055,7 +1055,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.ApplicationUser", "Actor")
                         .WithMany()
                         .HasForeignKey("ActorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
@@ -1074,7 +1074,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.ListingComment", "ParentComment")
                         .WithMany("Replies")
                         .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Valora.Domain.Entities.SavedListing", "SavedListing")
                         .WithMany("Comments")
@@ -1085,7 +1085,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("ParentComment");
@@ -1122,7 +1122,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.ApplicationUser", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Valora.Domain.Entities.Listing", "Listing")
@@ -1149,7 +1149,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 

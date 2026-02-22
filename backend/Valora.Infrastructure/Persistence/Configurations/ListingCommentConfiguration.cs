@@ -17,12 +17,12 @@ public class ListingCommentConfiguration : IEntityTypeConfiguration<ListingComme
         builder.HasOne(c => c.User)
             .WithMany()
             .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(c => c.ParentComment)
             .WithMany(p => p.Replies)
             .HasForeignKey(c => c.ParentCommentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Property(c => c.Reactions)
             .HasConversion(

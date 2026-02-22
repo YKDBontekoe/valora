@@ -18,7 +18,7 @@ public class SavedListingConfiguration : IEntityTypeConfiguration<SavedListing>
         builder.HasOne(sl => sl.AddedByUser)
             .WithMany()
             .HasForeignKey(sl => sl.AddedByUserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasMany(sl => sl.Comments)
             .WithOne(c => c.SavedListing)

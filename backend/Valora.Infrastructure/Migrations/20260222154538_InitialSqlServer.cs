@@ -366,8 +366,7 @@ namespace Valora.Infrastructure.Migrations
                         name: "FK_Workspaces_AspNetUsers_OwnerId",
                         column: x => x.OwnerId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -414,8 +413,7 @@ namespace Valora.Infrastructure.Migrations
                         name: "FK_ActivityLogs_AspNetUsers_ActorId",
                         column: x => x.ActorId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ActivityLogs_Workspaces_WorkspaceId",
                         column: x => x.WorkspaceId,
@@ -443,8 +441,7 @@ namespace Valora.Infrastructure.Migrations
                         name: "FK_SavedListings_AspNetUsers_AddedByUserId",
                         column: x => x.AddedByUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_SavedListings_Listings_ListingId",
                         column: x => x.ListingId,
@@ -509,14 +506,12 @@ namespace Valora.Infrastructure.Migrations
                         name: "FK_ListingComments_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ListingComments_ListingComments_ParentCommentId",
                         column: x => x.ParentCommentId,
                         principalTable: "ListingComments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ListingComments_SavedListings_SavedListingId",
                         column: x => x.SavedListingId,
