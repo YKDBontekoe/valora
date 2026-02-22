@@ -28,6 +28,14 @@ public class ContextAnalysisService : IContextAnalysisService
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Sends a user prompt to the AI service (e.g., OpenAI) and returns the response.
+    /// </summary>
+    /// <param name="prompt">The user's question or statement.</param>
+    /// <param name="intent">An optional intent string (e.g., "chat", "search") to guide the AI model.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="sessionProfile">Optional user profile override for this specific request.</param>
+    /// <returns>The AI's textual response.</returns>
     public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
         var systemPrompt = ChatSystemPrompt;
@@ -52,6 +60,13 @@ public class ContextAnalysisService : IContextAnalysisService
         return await _aiService.ChatAsync(prompt, systemPrompt, intent ?? "chat", cancellationToken);
     }
 
+    /// <summary>
+    /// Generates a summary analysis of a context report using the AI service.
+    /// </summary>
+    /// <param name="report">The context report data to analyze.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="sessionProfile">Optional user profile override.</param>
+    /// <returns>A concise summary of the neighborhood vibe, pros, and cons.</returns>
     public async Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
         var prompt = BuildAnalysisPrompt(report);
@@ -110,6 +125,19 @@ public class ContextAnalysisService : IContextAnalysisService
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Sanitizes input strings before injecting them into the AI prompt.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why sanitize?</strong><br/>
+    /// 1. <strong>Security:</strong> Prevent "Prompt Injection" attacks where malicious user input overrides system instructions.
+    ///    We treat all user input as untrusted data.
+    /// 2. <strong>Token Limits:</strong> Truncate long strings to save API costs and prevent context window overflow.
+    /// 3. <strong>XML/HTML Parsing:</strong> Since we wrap data in XML tags (e.g., &lt;context_report&gt;), we must escape
+    ///    characters like '&lt;' and '&gt;' to prevent breaking the structure.
+    /// </para>
+    /// </remarks>
     private static string SanitizeForPrompt(string? input, int maxLength = 200)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
