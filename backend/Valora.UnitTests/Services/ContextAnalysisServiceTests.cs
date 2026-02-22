@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Application.DTOs.Ai;
+using Valora.Application.DTOs.Map;
 using Valora.Application.Services;
 
 namespace Valora.UnitTests.Services;
@@ -8,10 +11,11 @@ namespace Valora.UnitTests.Services;
 public class ContextAnalysisServiceTests
 {
     private readonly Mock<IAiService> _aiServiceMock = new();
+    private readonly Mock<IMapService> _mapServiceMock = new();
 
     private ContextAnalysisService CreateService()
     {
-        return new ContextAnalysisService(_aiServiceMock.Object);
+        return new ContextAnalysisService(_aiServiceMock.Object, _mapServiceMock.Object);
     }
 
     [Fact]
@@ -88,7 +92,7 @@ public class ContextAnalysisServiceTests
         var report = CreateFullReportDto();
 
         // Inject malicious/special chars into a metric
-        var maliciousMetric = new ContextMetricDto("test_key", "Bad <Script> Label & More", 5, "Unit", 10, "Source", null);
+        var maliciousMetric = new ContextMetricDto(Key: "test_key", Label: "Bad <Script> Label & More", Value: 5, Unit: "Unit", Score: 10, Source: "Source", Note: null);
         report = report with { SocialMetrics = new List<ContextMetricDto> { maliciousMetric } };
 
         string capturedPrompt = "";
@@ -105,17 +109,85 @@ public class ContextAnalysisServiceTests
         Assert.Contains(">5 Unit (Score: 10)<", capturedPrompt);
     }
 
+    [Fact]
+    public async Task PlanMapQueryAsync_ExecutesValidPlan()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new MapQueryRequest { Query = "Show me safe areas", CenterLat = 52.0, CenterLon = 4.0, Zoom = 12 };
+
+        var jsonResponse = """
+        {
+          "explanation": "Here are the safe areas.",
+          "actions": [
+            { "type": "set_overlay", "parameters": { "metric": "CrimeRate" } }
+          ]
+        }
+        """;
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "map_query", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        _mapServiceMock.Setup(x => x.GetMapOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), MapOverlayMetric.CrimeRate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MapOverlayDto> { new MapOverlayDto("id", "name", "CrimeRate", 10, "Low", default) });
+
+        // Act
+        var result = await service.PlanMapQueryAsync(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal("Here are the safe areas.", result.Explanation);
+        Assert.NotNull(result.Overlays);
+        Assert.Single(result.Overlays);
+        _mapServiceMock.Verify(x => x.GetMapOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), MapOverlayMetric.CrimeRate, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PlanMapQueryAsync_HandlesMultipleActions()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new MapQueryRequest { Query = "Show me schools in safe areas", CenterLat = 52.0, CenterLon = 4.0, Zoom = 12 };
+
+        var jsonResponse = """
+        {
+          "explanation": "Showing schools and safety.",
+          "actions": [
+            { "type": "set_overlay", "parameters": { "metric": "CrimeRate" } },
+            { "type": "show_amenities", "parameters": { "types": ["school"] } }
+          ]
+        }
+        """;
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "map_query", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        _mapServiceMock.Setup(x => x.GetMapOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), MapOverlayMetric.CrimeRate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MapOverlayDto>());
+
+        _mapServiceMock.Setup(x => x.GetMapAmenitiesAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MapAmenityDto>());
+
+        // Act
+        var result = await service.PlanMapQueryAsync(request, CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result.Overlays);
+        Assert.NotNull(result.Amenities);
+        _mapServiceMock.Verify(x => x.GetMapOverlaysAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), MapOverlayMetric.CrimeRate, It.IsAny<CancellationToken>()), Times.Once);
+        _mapServiceMock.Verify(x => x.GetMapAmenitiesAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.Is<List<string>>(l => l.Contains("school")), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static ContextReportDto CreateFullReportDto()
     {
         return new ContextReportDto(
             Location: new ResolvedLocationDto("q", "Damrak 1, Amsterdam", 52.37, 4.89, null, null, "Muni", "Amsterdam", "Dist", "Centrum", "Neigh", "Oude Zijde", "1012LG"),
             SocialMetrics: new List<ContextMetricDto>
             {
-                new("restaurants", "Restaurants", 15, "count", 85, "OSM", null)
+                new ContextMetricDto(Key: "restaurants", Label: "Restaurants", Value: 15, Unit: "count", Score: 85, Source: "OSM", Note: null)
             },
             CrimeMetrics: new List<ContextMetricDto>
             {
-                new("crime_rate", "Crime Rate", 100, "risk", 90, "Police", null)
+                new ContextMetricDto(Key: "crime_rate", Label: "Crime Rate", Value: 100, Unit: "risk", Score: 90, Source: "Police", Note: null)
             },
             DemographicsMetrics: new List<ContextMetricDto>(),
             HousingMetrics: new List<ContextMetricDto>(),

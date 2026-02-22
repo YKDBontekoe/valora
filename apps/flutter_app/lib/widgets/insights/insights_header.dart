@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
 import '../../providers/insights_provider.dart';
+import 'ask_map_sheet.dart';
 
 class InsightsHeader extends StatelessWidget {
   const InsightsHeader({super.key});
@@ -60,6 +61,19 @@ class InsightsHeader extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.travel_explore_rounded, color: ValoraColors.primary),
+                tooltip: 'Ask the Map',
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const AskMapSheet(),
+                  );
+                },
               ),
             ],
           ),

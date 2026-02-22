@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Application.DTOs.Ai;
 using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
@@ -60,6 +61,29 @@ public static class AiEndpoints
             }
         })
         .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AiAnalysisRequest>>();
+
+        group.MapPost("/map-query", async (
+            [FromBody] MapQueryRequest request,
+            IContextAnalysisService contextAnalysisService,
+            ILogger<MapQueryRequest> logger,
+            CancellationToken ct) =>
+        {
+            try
+            {
+                var response = await contextAnalysisService.PlanMapQueryAsync(request, ct);
+                return Results.Ok(response);
+            }
+            catch (OperationCanceledException)
+            {
+                return Results.Problem(detail: "Request was cancelled", statusCode: 499);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing map query.");
+                return Results.Problem(detail: "An unexpected error occurred while processing your map query.", statusCode: 500);
+            }
+        })
+        .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<MapQueryRequest>>();
 
         // Config Endpoints
         var configGroup = app.MapGroup("/api/ai/config")

@@ -15,6 +15,7 @@ import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
+import '../models/map_query_response.dart';
 import '../models/notification.dart';
 import 'crash_reporting_service.dart';
 
@@ -559,6 +560,38 @@ class ApiService {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
     }
   }
+  Future<MapQueryResponse> askMap({
+    required String query,
+    double? centerLat,
+    double? centerLon,
+    double? zoom,
+  }) async {
+    final uri = Uri.parse('$baseUrl/ai/map-query');
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) => _client.post(
+            uri,
+            headers: headers..['Content-Type'] = 'application/json',
+            body: json.encode({
+              'query': query,
+              'centerLat': centerLat,
+              'centerLon': centerLon,
+              'zoom': zoom,
+            }),
+          ).timeout(timeoutDuration),
+        ),
+      );
+
+      return _handleResponse(
+        response,
+        (body) => MapQueryResponse.fromJson(json.decode(body)),
+      );
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
   Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: queryParameters);
     try {

@@ -1,7 +1,10 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Application.DTOs.Ai;
+using Valora.Application.DTOs.Map;
 using Valora.Domain.Services;
 
 namespace Valora.Application.Services;
@@ -9,6 +12,7 @@ namespace Valora.Application.Services;
 public class ContextAnalysisService : IContextAnalysisService
 {
     private readonly IAiService _aiService;
+    private readonly IMapService _mapService;
 
     // Made public for testing
     public static readonly string ChatSystemPrompt =
@@ -19,9 +23,15 @@ public class ContextAnalysisService : IContextAnalysisService
     public static readonly string AnalysisSystemPrompt =
         "You are an expert real estate analyst helping a potential resident evaluate a neighborhood.";
 
-    public ContextAnalysisService(IAiService aiService)
+    public static readonly string MapQuerySystemPrompt =
+        "You are a GIS expert converting natural language queries into map operations. " +
+        "You have access to specific map layers and amenities. " +
+        "Output ONLY valid JSON matching the schema provided. Do not include markdown formatting.";
+
+    public ContextAnalysisService(IAiService aiService, IMapService mapService)
     {
         _aiService = aiService;
+        _mapService = mapService;
     }
 
     public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken)
@@ -36,23 +46,179 @@ public class ContextAnalysisService : IContextAnalysisService
         return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, "detailed_analysis", cancellationToken);
     }
 
+    public async Task<MapQueryResponse> PlanMapQueryAsync(MapQueryRequest request, CancellationToken cancellationToken)
+    {
+        var prompt = BuildMapQueryPrompt(request);
+        var jsonResponse = await _aiService.ChatAsync(prompt, MapQuerySystemPrompt, "map_query", cancellationToken);
+
+        var plan = ParseMapQueryPlan(jsonResponse);
+
+        var response = new MapQueryResponse
+        {
+            Explanation = plan.Explanation,
+            FollowUpQuestions = plan.FollowUpQuestions
+        };
+
+        await ExecutePlanAsync(plan, response, request, cancellationToken);
+
+        return response;
+    }
+
+    private string BuildMapQueryPrompt(MapQueryRequest request)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Convert the user's query into a structured map plan.");
+        sb.AppendLine("Available Actions:");
+        sb.AppendLine("- set_overlay: parameters { metric: string (PricePerSquareMeter, CrimeRate, PopulationDensity, AverageWoz) }");
+        sb.AppendLine("- show_amenities: parameters { types: [string] (school, park, supermarket, station, gym, restaurant, cafe, doctor) }");
+        sb.AppendLine("- zoom_to: parameters { lat: double, lon: double, zoom: double }");
+        sb.AppendLine();
+        if (request.CenterLat.HasValue && request.CenterLon.HasValue)
+        {
+            sb.AppendLine($"Current Viewport: Center({request.CenterLat}, {request.CenterLon}), Zoom({request.Zoom})");
+        }
+        sb.AppendLine();
+        sb.AppendLine("User Query: " + request.Query);
+        sb.AppendLine();
+        sb.AppendLine("Return a JSON object with this structure:");
+        sb.AppendLine("{");
+        sb.AppendLine("  \"explanation\": \"Brief explanation of what is being shown.\",");
+        sb.AppendLine("  \"actions\": [ { \"type\": \"action_name\", \"parameters\": { ... } } ],");
+        sb.AppendLine("  \"follow_up_questions\": [ \"Optional clarifying question\" ]");
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private MapQueryPlan ParseMapQueryPlan(string json)
+    {
+        // Strip markdown code blocks if present
+        var cleanJson = Regex.Replace(json, @"^```json\s*|\s*```$", "", RegexOptions.Multiline).Trim();
+        // Also remove generic markdown blocks
+        cleanJson = Regex.Replace(cleanJson, @"^```\s*|\s*```$", "", RegexOptions.Multiline).Trim();
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            return JsonSerializer.Deserialize<MapQueryPlan>(cleanJson, options) ?? new MapQueryPlan();
+        }
+        catch
+        {
+            // Fallback for malformed JSON
+            return new MapQueryPlan { Explanation = "I processed your request but encountered an issue with the map data." };
+        }
+    }
+
+    private async Task ExecutePlanAsync(MapQueryPlan plan, MapQueryResponse response, MapQueryRequest request, CancellationToken ct)
+    {
+        foreach (var action in plan.Actions)
+        {
+            try
+            {
+                switch (action.Type.ToLowerInvariant())
+                {
+                    case "set_overlay":
+                         // Check metric param
+                        if (action.Parameters.ContainsKey("metric"))
+                        {
+                            var metricStr = action.Parameters["metric"].ToString();
+                            if (Enum.TryParse<MapOverlayMetric>(metricStr, true, out var metric))
+                            {
+                                // Use current viewport or default to Amsterdam if null
+                                double lat = request.CenterLat ?? 52.3676;
+                                double lon = request.CenterLon ?? 4.9041;
+                                double span = 0.05; // ~5km radius approx
+
+                                response.Overlays = await _mapService.GetMapOverlaysAsync(
+                                    lat - span, lon - span,
+                                    lat + span, lon + span,
+                                    metric, ct);
+                            }
+                        }
+                        break;
+
+                    case "show_amenities":
+                        if (action.Parameters.ContainsKey("types"))
+                        {
+                            var typesJson = action.Parameters["types"].ToString();
+                            List<string> types = new List<string>();
+
+                            // Handle JsonElement if using System.Text.Json dictionary deserialization
+                            if (action.Parameters["types"] is JsonElement element && element.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var item in element.EnumerateArray())
+                                {
+                                    types.Add(item.GetString() ?? "");
+                                }
+                            }
+                            else if (typesJson != null)
+                            {
+                                // Fallback manual parse if string
+                                types = typesJson.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                            }
+
+                            if (types.Any())
+                            {
+                                double lat = request.CenterLat ?? 52.3676;
+                                double lon = request.CenterLon ?? 4.9041;
+                                double span = 0.02; // Smaller span for amenities
+
+                                response.Amenities = await _mapService.GetMapAmenitiesAsync(
+                                    lat - span, lon - span,
+                                    lat + span, lon + span,
+                                    types, ct);
+                            }
+                        }
+                        break;
+
+                    case "zoom_to":
+                         if (action.Parameters.TryGetValue("lat", out var latVal) &&
+                             action.Parameters.TryGetValue("lon", out var lonVal))
+                         {
+                             // Parse doubles from JsonElement or object
+                             double? lat = null;
+                             double? lon = null;
+
+                             if (latVal is JsonElement latEl && latEl.ValueKind == JsonValueKind.Number) lat = latEl.GetDouble();
+                             else if (double.TryParse(latVal.ToString(), out double l)) lat = l;
+
+                             if (lonVal is JsonElement lonEl && lonEl.ValueKind == JsonValueKind.Number) lon = lonEl.GetDouble();
+                             else if (double.TryParse(lonVal.ToString(), out double l2)) lon = l2;
+
+                             if (lat.HasValue && lon.HasValue)
+                             {
+                                 response.SuggestCenterLat = lat.Value;
+                                 response.SuggestCenterLon = lon.Value;
+                             }
+                         }
+                         if (action.Parameters.TryGetValue("zoom", out var zoomVal))
+                         {
+                             if (zoomVal is JsonElement zoomEl && zoomEl.ValueKind == JsonValueKind.Number)
+                                response.SuggestZoom = zoomEl.GetDouble();
+                             else if (double.TryParse(zoomVal.ToString(), out double z))
+                                response.SuggestZoom = z;
+                         }
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+                // Continue best effort
+            }
+        }
+    }
+
     private static string SanitizeForPrompt(string? input, int maxLength = 200)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
 
-        // Truncate first to prevent massive strings from being processed by Regex
         if (input.Length > maxLength)
         {
             input = input.Substring(0, maxLength);
         }
 
-        // Strip characters that are not letters, digits, standard punctuation, whitespace, symbols (\p{S}), numbers (\p{N}), or basic math symbols like < and >.
-        // This whitelist allows currency symbols (€, $), units (m²), superscripts (²), and other common text while removing control characters.
-        // We explicitly allow < and > so we can escape them properly in the next step.
         var sanitized = Regex.Replace(input, @"[^\w\s\p{P}\p{S}\p{N}<>]", "");
 
-        // Escape XML-like characters to prevent tag injection if we use XML-style wrapping
-        // Note: Replace & first to avoid double-escaping entity references
         sanitized = sanitized.Replace("&", "&amp;")
                              .Replace("\"", "&quot;")
                              .Replace("<", "&lt;")

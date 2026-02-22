@@ -25,6 +25,9 @@ class InsightsProvider extends ChangeNotifier {
   List<MapOverlayTile> _overlayTiles = [];
 
   bool _isLoading = false;
+  bool _isQueryLoading = false;
+  String? _queryExplanation;
+  String? _queryError;
   String? _error;
   String? _mapError;
   InsightMetric _selectedMetric = InsightMetric.composite;
@@ -67,6 +70,9 @@ class InsightsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get mapError => _mapError;
+  bool get isQueryLoading => _isQueryLoading;
+  String? get queryExplanation => _queryExplanation;
+  String? get queryError => _queryError;
   InsightMetric get selectedMetric => _selectedMetric;
 
   bool get showAmenities => _showAmenities;
@@ -301,6 +307,47 @@ class InsightsProvider extends ChangeNotifier {
       _selectedOverlayMetric = metric;
       _overlaysCoverage = null;
       _overlayTilesCoverage = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> askMap(String query, {double? lat, double? lon, double? zoom}) async {
+    _isQueryLoading = true;
+    _queryError = null;
+    _queryExplanation = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.askMap(
+        query: query,
+        centerLat: lat,
+        centerLon: lon,
+        zoom: zoom,
+      );
+
+      _queryExplanation = response.explanation;
+
+      if (response.overlays != null) {
+        _overlays = response.overlays!;
+        _showOverlays = true;
+        // Clear coverage to force map update if needed, or rely on _overlays content
+        _overlaysCoverage = null;
+      }
+
+      if (response.amenities != null) {
+        _amenities = response.amenities!;
+        _showAmenities = true;
+        _amenitiesCoverage = null;
+      }
+
+      if (response.cityInsights != null) {
+        _cities = response.cityInsights!;
+      }
+
+    } catch (e) {
+      _queryError = e.toString();
+    } finally {
+      _isQueryLoading = false;
       notifyListeners();
     }
   }
