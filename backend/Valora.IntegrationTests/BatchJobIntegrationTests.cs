@@ -171,6 +171,7 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
 
         Assert.NotNull(result);
         Assert.True(result.TotalCount >= 1);
+        Assert.NotEmpty(result.Items);
         Assert.All(result.Items, item =>
         {
             Assert.Equal("Completed", item.Status);

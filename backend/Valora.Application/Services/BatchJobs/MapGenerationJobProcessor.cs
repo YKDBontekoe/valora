@@ -16,6 +16,7 @@ public class MapGenerationJobProcessor : IBatchJobProcessor
 
     public Task ProcessAsync(BatchJob job, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Processing Map Generation Job {JobId} for target {Target}", job.Id, job.Target);
 
         // Placeholder implementation
