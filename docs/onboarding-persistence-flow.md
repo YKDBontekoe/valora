@@ -9,70 +9,66 @@ The following diagram illustrates the lifecycle of a `POST /api/auth/register` r
 ```mermaid
 sequenceDiagram
     participant Client as Flutter App
-    participant API as Valora.Api
+    participant API as Valora.Api (AuthEndpoints)
     participant Service as AuthService (Application)
-    participant Repo as UserRepository (Infrastructure)
+    participant Identity as IdentityService (Infrastructure)
+    participant UserMgr as UserManager<ApplicationUser>
     participant DB as PostgreSQL
 
-    Client->>API: POST /api/auth/register { email, password }
-    API->>Service: RegisterAsync(email, password)
+    Client->>API: POST /api/auth/register { email, password, confirmPassword }
+    API->>Service: RegisterAsync(RegisterDto)
 
-    Service->>Service: Validate Input (Email format, Password strength)
-    Service->>Repo: GetByEmailAsync(email)
+    Service->>Service: Validate Input (Password mismatch)
+    Service->>Identity: CreateUserAsync(email, password)
 
-    alt Email Exists
-        Repo-->>Service: User Entity
-        Service-->>API: Throw ValidationException ("User exists")
-        API-->>Client: 400 Bad Request
+    Identity->>UserMgr: CreateAsync(user, password)
+    UserMgr->>DB: INSERT INTO "AspNetUsers" (...)
+    DB-->>UserMgr: Success / Failure (e.g., Duplicate Email)
+
+    alt Success
+        UserMgr-->>Identity: IdentityResult.Success
+        Identity-->>Service: Result.Success
+        Service-->>API: Result.Success
+        API-->>Client: 200 OK { message: "User created successfully" }
+    else Failure
+        UserMgr-->>Identity: IdentityResult.Failed(Errors)
+        Identity-->>Service: Result.Failure(Errors)
+        Service-->>API: Result.Failure
+        API-->>Client: 400 Bad Request { error: "Registration failed..." }
     end
-
-    Service->>Service: Hash Password (BCrypt/Argon2)
-    Service->>Service: Create User Entity (Domain)
-
-    Service->>Repo: AddAsync(user)
-    Repo->>DB: INSERT INTO "Users" (...)
-    DB-->>Repo: Success
-    Repo-->>Service: Success
-
-    Service->>Service: Generate JWT Tokens
-    Service-->>API: AuthResponseDto (Tokens)
-    API-->>Client: 200 OK (Logged In)
 ```
 
 ## Detailed Steps
 
 ### 1. Request Handling (`Valora.Api`)
 - The endpoint `POST /api/auth/register` receives the request body.
-- It maps the JSON body to a `RegisterRequestDto`.
+- It maps the JSON body to a `RegisterDto`.
 - It delegates the work to the `IAuthService` interface.
 
 ### 2. Application Logic (`Valora.Application`)
-- **Validation:** The service checks business rules (e.g., password length, allowed domains).
-- **Uniqueness Check:** It calls `IUserRepository.GetByEmailAsync` to ensure the user doesn't already exist.
-- **Entity Creation:** It instantiates a new `User` entity from `Valora.Domain`. This ensures the entity is always in a valid state.
-- **Security:** Passwords are never stored in plain text. The service uses a password hasher to generate a secure hash.
+- **Validation:** The service checks business rules (e.g., password matches confirmation).
+- **Identity Abstraction:** It calls `IIdentityService.CreateUserAsync`. The application layer does *not* depend directly on ASP.NET Core Identity.
+- **Security:**
+  - Passwords are hashed automatically by `UserManager` (using PBKDF2/Argon2 by default).
+  - **Error Handling:** If registration fails (e.g., email exists), the service logs the specific error for debugging but returns a generic result to the API layer to prevent User Enumeration attacks.
 
 ### 3. Infrastructure & Persistence (`Valora.Infrastructure`)
-- **Repository Pattern:** The `UserRepository` implements `IUserRepository`. It encapsulates all EF Core logic.
-- **EF Core:** The repository uses `ValoraDbContext` to add the new user.
-- **Transaction:** The operation is atomic. `SaveChangesAsync` is called to commit the transaction to PostgreSQL.
+- **Identity Service:** The `IdentityService` wraps `UserManager<ApplicationUser>`.
+- **EF Core Identity:** The `ValoraDbContext` inherits from `IdentityDbContext` to manage user tables (`AspNetUsers`, `AspNetRoles`, etc.).
+- **Transaction:** `UserManager` handles the database transaction implicitly.
 
 ### 4. Response
-- Upon successful persistence, the service generates an Access Token and Refresh Token.
-- These are returned to the client in an `AuthResponseDto`.
+- Upon successful persistence, the API returns a simple 200 OK message.
+- **Note:** The client must subsequently call `/api/auth/login` to obtain Access and Refresh tokens. Tokens are *not* returned immediately upon registration.
 
 ## Key Concepts
 
 ### Command vs. Query
 Valora separates "Reads" (Queries) from "Writes" (Commands).
 - **Reads** (like Context Reports) often bypass the Domain layer for performance or aggregation.
-- **Writes** (like Registration) **always** go through the Domain layer to enforce invariants and business rules.
+- **Writes** (like Registration) **always** go through the Domain or Identity layer to enforce invariants and business rules.
 
-### Domain Entities
-Entities in `Valora.Domain` are not just data bags. They contain logic.
-- Example: `User.UpdatePassword(...)` handles the state change, rather than the service modifying properties directly.
-
-### Repositories
-We use repositories to abstract the database.
-- **Why?** It allows us to swap the database (e.g., to In-Memory for tests) without changing the business logic.
-- **Rule:** Services should never depend on `DbContext` directly.
+### Identity Management
+We use ASP.NET Core Identity for user management but abstract it behind `IIdentityService`.
+- **Why?** This keeps `Valora.Application` clean of framework-specific dependencies (Clean Architecture).
+- **Repositories?** For standard entities (like `ContextReport`), we use Repositories. For Users, we use the `IdentityService` wrapper.

@@ -30,13 +30,21 @@ docker-compose -f docker/docker-compose.yml up -d
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
 
+**Note:** The `.env` file is primarily used by Docker. When running locally via `dotnet run`, configuration is read from `appsettings.Development.json` or Environment Variables.
+
 ```bash
 cd backend
-cp .env.example .env
-# Important: Open .env and ensure JWT_SECRET is set to a secure value.
+# Option A: Set secrets via User Secrets (Recommended)
+dotnet user-secrets init --project Valora.Api
+dotnet user-secrets set "JWT_SECRET" "YourStrongSecretKeyHere_MustBeAtLeast32CharsLong!" --project Valora.Api
+
+# Option B: Set Environment Variable manually
+export JWT_SECRET="YourStrongSecretKeyHere_MustBeAtLeast32CharsLong!"
+
+# Run the API
 dotnet run --project Valora.Api
 ```
-*Verify: Open `http://localhost:5253/api/health` in your browser (or port `5001` if running via Docker). You should see `{"status":"healthy", "timestamp": "..."}`.*
+*Verify: Open `http://localhost:5253/api/health` in your browser. You should see `{"status":"healthy", "timestamp": "..."}`.*
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
