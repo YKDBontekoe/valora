@@ -117,6 +117,13 @@ public class MapService : IMapService
 
         var tiles = new List<MapOverlayTileDto>();
 
+        // Pre-parse geometries for performance
+        var parsedOverlays = overlays.Select(o => new
+        {
+            Dto = o,
+            Geometry = GeoUtils.ParseGeometry(o.GeoJson)
+        }).ToList();
+
         // Rasterize into grid
         // Iterate by half cell size to center the points
         for (double lat = minLat + cellSize / 2; lat < maxLat; lat += cellSize)
@@ -124,8 +131,8 @@ public class MapService : IMapService
             for (double lon = minLon + cellSize / 2; lon < maxLon; lon += cellSize)
             {
                 // Simple point-in-polygon check for the center of the tile
-                var overlay = overlays.FirstOrDefault(o =>
-                    GeoUtils.IsPointInPolygon(lat, lon, o.GeoJson));
+                var overlay = parsedOverlays.FirstOrDefault(o =>
+                    GeoUtils.IsPointInPolygon(lat, lon, o.Geometry));
 
                 if (overlay != null)
                 {
@@ -133,8 +140,8 @@ public class MapService : IMapService
                         lat,
                         lon,
                         cellSize,
-                        overlay.MetricValue,
-                        overlay.DisplayValue
+                        overlay.Dto.MetricValue,
+                        overlay.Dto.DisplayValue
                     ));
                 }
             }
@@ -156,9 +163,10 @@ public class MapService : IMapService
 
         return overlays.Select(overlay =>
         {
+            var geometry = GeoUtils.ParseGeometry(overlay.GeoJson);
             var neighborhoodListings = listingData.Where(l =>
                 l.Latitude.HasValue && l.Longitude.HasValue &&
-                GeoUtils.IsPointInPolygon(l.Latitude.Value, l.Longitude.Value, overlay.GeoJson));
+                GeoUtils.IsPointInPolygon(l.Latitude.Value, l.Longitude.Value, geometry));
 
             var avgPrice = CalculateAveragePrice(neighborhoodListings);
 

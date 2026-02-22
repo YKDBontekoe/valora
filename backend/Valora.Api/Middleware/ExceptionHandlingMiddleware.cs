@@ -5,7 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
-using Npgsql;
+
 using Sentry;
 using Valora.Application.Common.Exceptions;
 
@@ -79,38 +79,9 @@ public class ExceptionHandlingMiddleware
                 detail = "The resource has been modified by another user.";
                 break;
             case DbUpdateException dbEx:
-                if (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
-                {
-                    statusCode = (int)HttpStatusCode.Conflict;
-                    title = "Already Exists";
-                    detail = "A record with the same unique identifier already exists.";
-                }
-                else if (dbEx.InnerException is NpgsqlException innerNpgsqlEx && innerNpgsqlEx.IsTransient)
-                {
-                    statusCode = (int)HttpStatusCode.ServiceUnavailable;
-                    title = "Service Unavailable";
-                    detail = "The service is temporarily unavailable due to database connectivity issues.";
-                }
-                else
-                {
-                    statusCode = (int)HttpStatusCode.Conflict;
-                    title = "Database Conflict";
-                    detail = "A database constraint violation occurred.";
-                }
-                break;
-            case NpgsqlException npgsqlEx:
-                if (npgsqlEx.IsTransient)
-                {
-                    statusCode = (int)HttpStatusCode.ServiceUnavailable;
-                    title = "Service Unavailable";
-                    detail = "The service is temporarily unavailable due to database connectivity issues.";
-                }
-                else
-                {
-                    statusCode = (int)HttpStatusCode.InternalServerError;
-                    title = "Database Error";
-                    detail = "A database error occurred.";
-                }
+                statusCode = (int)HttpStatusCode.Conflict;
+                title = "Database Conflict";
+                detail = "A database constraint violation occurred.";
                 break;
             case BadHttpRequestException:
                 statusCode = (int)HttpStatusCode.BadRequest;

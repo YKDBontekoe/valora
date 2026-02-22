@@ -90,8 +90,8 @@ void main() {
     expect(find.byType(MetricCategoryCard).evaluate().length, lessThan(7));
 
     // 2. Find Safety and expand it
-    final listFinder = find.byType(ListView);
-    await tester.dragUntilVisible(find.text('Safety'), listFinder, const Offset(0, -100));
+    final scrollableFinder = find.byType(Scrollable).first;
+    await tester.dragUntilVisible(find.text('Safety'), scrollableFinder, const Offset(0, -100));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Safety'));
@@ -101,12 +101,12 @@ void main() {
     expect(find.text('SafetyMetric'), findsWidgets);
 
     // 3. Scroll it way off-screen
-    await tester.drag(listFinder, const Offset(0, -2000));
+    await tester.drag(scrollableFinder, const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(find.text('Safety'), findsNothing);
 
     // 4. Scroll back to top and find Safety
-    await tester.dragUntilVisible(find.text('Safety'), listFinder, const Offset(0, 100));
+    await tester.dragUntilVisible(find.text('Safety'), scrollableFinder, const Offset(0, 100));
     await tester.pumpAndSettle();
 
     // 5. Verify expansion state was preserved

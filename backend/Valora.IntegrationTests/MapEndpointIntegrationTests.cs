@@ -42,7 +42,7 @@ public class MapEndpointIntegrationTests : BaseIntegrationTest
     public async Task GetMapAmenities_ShouldParseTypes()
     {
         await AuthenticateAsync();
-        List<string> capturedTypes = null;
+        List<string>? capturedTypes = null;
         Factory.AmenityClientMock.Setup(x => x.GetAmenitiesInBboxAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
@@ -58,8 +58,8 @@ public class MapEndpointIntegrationTests : BaseIntegrationTest
     }
 
     [Theory]
-    [InlineData(52.0, 4.0, 51.0, 4.1, "minLat must be less than maxLat")]
-    public async Task GetMapAmenities_ShouldReturnBadRequest_ForInvalidParams(double minLat, double minLon, double maxLat, double maxLon, string expectedError)
+    [InlineData(52.0, 4.0, 51.0, 4.1)]
+    public async Task GetMapAmenities_ShouldReturnBadRequest_ForInvalidParams(double minLat, double minLon, double maxLat, double maxLon)
     {
         await AuthenticateAsync();
         var response = await Client.GetAsync($"/api/map/amenities?minLat={minLat}&minLon={minLon}&maxLat={maxLat}&maxLon={maxLon}");
@@ -103,7 +103,7 @@ public class MapEndpointIntegrationTests : BaseIntegrationTest
     public async Task GetMapAmenityClusters_ShouldParseTypes()
     {
         await AuthenticateAsync();
-        List<string> capturedTypes = null;
+        List<string>? capturedTypes = null;
         Factory.AmenityClientMock.Setup(x => x.GetAmenitiesInBboxAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))

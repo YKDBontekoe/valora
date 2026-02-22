@@ -8,6 +8,40 @@ public static class GeoUtils
 {
     private const double MaxSpan = 0.5;
 
+    public class ParsedGeometry
+    {
+        public List<List<List<Coordinate>>> Polygons { get; set; } = new();
+        public BoundingBox BBox { get; set; } = new();
+    }
+
+    public struct Coordinate
+    {
+        public double Lon;
+        public double Lat;
+
+        public Coordinate(double lon, double lat)
+        {
+            Lon = lon;
+            Lat = lat;
+        }
+    }
+
+    public struct BoundingBox
+    {
+        public double MinLat;
+        public double MaxLat;
+        public double MinLon;
+        public double MaxLon;
+
+        public BoundingBox()
+        {
+            MinLat = double.MaxValue;
+            MaxLat = double.MinValue;
+            MinLon = double.MaxValue;
+            MaxLon = double.MinValue;
+        }
+    }
+
     /// <summary>
     /// Parses a WKT POINT string (e.g., "POINT(4.895 52.370)") into (X, Y) coordinates.
     /// </summary>
@@ -42,71 +76,112 @@ public static class GeoUtils
 
     public static bool IsPointInPolygon(double lat, double lon, JsonElement geoJson)
     {
-        if (geoJson.ValueKind != JsonValueKind.Object) return false;
+        var parsed = ParseGeometry(geoJson);
+        return IsPointInPolygon(lat, lon, parsed);
+    }
 
-        // Handle Feature objects by extracting geometry
+    public static ParsedGeometry ParseGeometry(JsonElement geoJson)
+    {
+        var parsed = new ParsedGeometry();
+        var bbox = new BoundingBox();
+
+        if (geoJson.ValueKind != JsonValueKind.Object) return parsed;
+
         if (geoJson.TryGetProperty("type", out var typeProp) &&
             string.Equals(typeProp.GetString(), "Feature", StringComparison.OrdinalIgnoreCase))
         {
             if (geoJson.TryGetProperty("geometry", out var geometry))
             {
-                return IsPointInPolygon(lat, lon, geometry);
+                return ParseGeometry(geometry);
             }
-            return false;
+            return parsed;
         }
 
         if (!geoJson.TryGetProperty("type", out typeProp) ||
             !geoJson.TryGetProperty("coordinates", out var coordsProp))
         {
-            return false;
+            return parsed;
         }
 
         var type = typeProp.GetString();
 
         if (string.Equals(type, "Polygon", StringComparison.OrdinalIgnoreCase))
         {
-            return IsPointInPolygonCoordinates(lat, lon, coordsProp);
+            parsed.Polygons.Add(ParsePolygonCoordinates(coordsProp, ref bbox));
         }
         else if (string.Equals(type, "MultiPolygon", StringComparison.OrdinalIgnoreCase))
         {
             foreach (var polygonCoords in coordsProp.EnumerateArray())
             {
-                if (IsPointInPolygonCoordinates(lat, lon, polygonCoords))
+                parsed.Polygons.Add(ParsePolygonCoordinates(polygonCoords, ref bbox));
+            }
+        }
+
+        parsed.BBox = bbox;
+        return parsed;
+    }
+
+    private static List<List<Coordinate>> ParsePolygonCoordinates(JsonElement polygonCoordinates, ref BoundingBox bbox)
+    {
+        var rings = new List<List<Coordinate>>();
+        foreach (var ringElement in polygonCoordinates.EnumerateArray())
+        {
+            var ring = new List<Coordinate>();
+            foreach (var pointElement in ringElement.EnumerateArray())
+            {
+                if (pointElement.ValueKind == JsonValueKind.Array && pointElement.GetArrayLength() >= 2)
                 {
-                    return true;
+                    double lon = pointElement[0].GetDouble();
+                    double lat = pointElement[1].GetDouble();
+                    ring.Add(new Coordinate(lon, lat));
+
+                    // Update bbox
+                    if (lat < bbox.MinLat) bbox.MinLat = lat;
+                    if (lat > bbox.MaxLat) bbox.MaxLat = lat;
+                    if (lon < bbox.MinLon) bbox.MinLon = lon;
+                    if (lon > bbox.MaxLon) bbox.MaxLon = lon;
                 }
+            }
+            rings.Add(ring);
+        }
+        return rings;
+    }
+
+    public static bool IsPointInPolygon(double lat, double lon, ParsedGeometry geometry)
+    {
+        // 1. Quick Bounding Box Check
+        if (lat < geometry.BBox.MinLat || lat > geometry.BBox.MaxLat ||
+            lon < geometry.BBox.MinLon || lon > geometry.BBox.MaxLon)
+        {
+            return false;
+        }
+
+        // 2. Check actual polygons
+        foreach (var polygon in geometry.Polygons)
+        {
+            if (IsPointInPolygonRings(lat, lon, polygon))
+            {
+                return true;
             }
         }
 
         return false;
     }
 
-    private static bool IsPointInPolygonCoordinates(double lat, double lon, JsonElement polygonCoordinates)
+    private static bool IsPointInPolygonRings(double lat, double lon, List<List<Coordinate>> rings)
     {
-        // GeoJSON Polygon coordinates are an array of LinearRings.
-        // The first ring is the exterior boundary.
-        // Subsequent rings are interior boundaries (holes).
+        if (rings.Count == 0) return false;
 
-        var rings = polygonCoordinates.EnumerateArray();
-        if (!rings.MoveNext()) return false; // No rings
-
-        var exteriorRing = rings.Current;
-
-        // Optimization: Check Bounding Box of exterior ring first
-        if (!IsPointInBoundingBox(lat, lon, exteriorRing))
-        {
-            return false;
-        }
-
+        var exteriorRing = rings[0];
         if (!IsPointInLinearRing(lat, lon, exteriorRing))
         {
             return false;
         }
 
         // Check holes (if point is in a hole, it's NOT in the polygon)
-        while (rings.MoveNext())
+        for (int i = 1; i < rings.Count; i++)
         {
-            if (IsPointInLinearRing(lat, lon, rings.Current))
+            if (IsPointInLinearRing(lat, lon, rings[i]))
             {
                 return false;
             }
@@ -115,45 +190,17 @@ public static class GeoUtils
         return true;
     }
 
-    private static bool IsPointInBoundingBox(double lat, double lon, JsonElement ring)
-    {
-        double minLat = double.MaxValue;
-        double maxLat = double.MinValue;
-        double minLon = double.MaxValue;
-        double maxLon = double.MinValue;
-
-        foreach (var point in ring.EnumerateArray())
-        {
-            if (point.ValueKind != JsonValueKind.Array || point.GetArrayLength() < 2) continue;
-            double pLon = point[0].GetDouble();
-            double pLat = point[1].GetDouble();
-
-            if (pLat < minLat) minLat = pLat;
-            if (pLat > maxLat) maxLat = pLat;
-            if (pLon < minLon) minLon = pLon;
-            if (pLon > maxLon) maxLon = pLon;
-        }
-
-        return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
-    }
-
-    private static bool IsPointInLinearRing(double lat, double lon, JsonElement ring)
+    private static bool IsPointInLinearRing(double lat, double lon, List<Coordinate> ring)
     {
         bool inside = false;
-        // Filter out invalid points
-        var points = ring.EnumerateArray()
-            .Where(p => p.ValueKind == JsonValueKind.Array && p.GetArrayLength() >= 2)
-            .ToList();
-
-        int count = points.Count;
+        int count = ring.Count;
 
         for (int i = 0, j = count - 1; i < count; j = i++)
         {
-            // GeoJSON is [lon, lat]
-            double xi = points[i][0].GetDouble();
-            double yi = points[i][1].GetDouble();
-            double xj = points[j][0].GetDouble();
-            double yj = points[j][1].GetDouble();
+            double xi = ring[i].Lon;
+            double yi = ring[i].Lat;
+            double xj = ring[j].Lon;
+            double yj = ring[j].Lat;
 
             bool intersect = ((yi > lat) != (yj > lat)) &&
                              (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
