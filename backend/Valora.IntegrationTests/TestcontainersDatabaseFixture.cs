@@ -17,12 +17,10 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        bool isSqlServer = false;
         try
         {
             await _dbContainer.StartAsync();
             Factory = new IntegrationTestWebAppFactory(_dbContainer.GetConnectionString());
-            isSqlServer = true;
         }
         catch (Exception ex)
         {
@@ -34,14 +32,9 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        if (isSqlServer)
-        {
-            await context.Database.MigrateAsync();
-        }
-        else
-        {
-            await context.Database.EnsureCreatedAsync();
-        }
+        // EnsureCreatedAsync creates the schema based on the current DbContext model.
+        // This is necessary because the project does not contain migration files.
+        await context.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync()
