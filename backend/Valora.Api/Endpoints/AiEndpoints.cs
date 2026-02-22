@@ -65,6 +65,21 @@ public static class AiEndpoints
         var configGroup = app.MapGroup("/api/ai/config")
             .RequireAuthorization("Admin");
 
+        configGroup.MapGet("/models", async (
+            IAiService aiService,
+            CancellationToken ct) =>
+        {
+            try
+            {
+                var models = await aiService.GetAvailableModelsAsync(ct);
+                return Results.Ok(models);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(detail: ex.Message, statusCode: 500);
+            }
+        });
+
         configGroup.MapGet("/", async (
             IAiModelService aiModelService,
             CancellationToken ct) =>

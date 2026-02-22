@@ -17,6 +17,7 @@ public class AiServiceTests : IDisposable
     private readonly WireMockServer _server;
     private readonly IConfiguration _validConfig;
     private readonly Mock<IAiModelService> _mockAiModelService;
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
 
     public AiServiceTests()
     {
@@ -34,11 +35,16 @@ public class AiServiceTests : IDisposable
             .Build();
 
         _mockAiModelService = new Mock<IAiModelService>();
+        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
 
         // Default mock setup
         _mockAiModelService
             .Setup(x => x.GetModelsForIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(("openrouter/default", new List<string>()));
+
+        // Setup HttpClientFactory to return a client that points to WireMock
+        var client = _server.CreateClient();
+        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(client);
     }
 
     [Fact]
@@ -59,7 +65,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         var result = await sut.ChatAsync("Hello", null, "chat");
@@ -103,7 +109,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         var result = await sut.ChatAsync("Hello", null, "chat");
@@ -119,7 +125,7 @@ public class AiServiceTests : IDisposable
     [Fact]
     public async Task ChatAsync_ThrowsOperationCanceledException_WhenCancelled()
     {
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -136,7 +142,7 @@ public class AiServiceTests : IDisposable
                 .WithStatusCode(400)
                 .WithBody("Bad Request"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
@@ -175,7 +181,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         var result = await sut.ChatAsync("Hello", null, "chat");
@@ -208,7 +214,7 @@ public class AiServiceTests : IDisposable
                     }]
                 }"));
 
-        var sut = new OpenRouterAiService(customConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(customConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act
         await sut.ChatAsync("Hello", null, "chat");
@@ -229,7 +235,7 @@ public class AiServiceTests : IDisposable
             .Build();
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object));
+        Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object));
     }
 
     [Fact]
@@ -246,10 +252,40 @@ public class AiServiceTests : IDisposable
             .RespondWith(Response.Create()
                 .WithStatusCode(500));
 
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object);
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
+    }
+
+    [Fact]
+    public async Task GetAvailableModelsAsync_ReturnsModels_WhenApiCallSucceeds()
+    {
+        // Arrange
+        _server
+            .Given(Request.Create().WithPath("/models").UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""data"": [{
+                        ""id"": ""model-1"",
+                        ""name"": ""Model 1"",
+                        ""pricing"": { ""prompt"": ""0.1"", ""completion"": ""0.2"" },
+                        ""context_length"": 1000
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act
+        var result = await sut.GetAvailableModelsAsync();
+
+        // Assert
+        Assert.Single(result);
+        var model = result.First();
+        Assert.Equal("model-1", model.Id);
+        Assert.Equal("Model 1", model.Name);
+        Assert.Equal(0.1m, model.PromptPrice);
     }
 
     public void Dispose()
