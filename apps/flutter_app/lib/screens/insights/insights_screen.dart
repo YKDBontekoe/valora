@@ -69,9 +69,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
       body: Selector<InsightsProvider, (bool, bool, String?)>(
         selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error),
         builder: (context, state, child) {
-          final isLoading = state.;
-          final isEmpty = state.;
-          final error = state.;
+          final isLoading = state.$1;
+          final isEmpty = state.$2;
+          final error = state.$3;
 
           if (isLoading && isEmpty) {
             return const Center(child: CircularProgressIndicator());

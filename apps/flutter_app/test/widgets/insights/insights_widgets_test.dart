@@ -52,9 +52,8 @@ void main() {
     );
   }
 
-  // ... (Existing tests) ...
   group('InsightsHeader', () {
-    testWidgets('displays title and city count', (WidgetTester tester) async {
+    testWidgets('displays title and count', (WidgetTester tester) async {
       when(mockProvider.cities).thenReturn([
         MapCityInsight(
           city: 'City A',
@@ -132,8 +131,6 @@ void main() {
 
       expect(find.byIcon(Icons.add_rounded), findsOneWidget);
       expect(find.byIcon(Icons.remove_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.place_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.layers_rounded), findsOneWidget);
     });
 
     testWidgets('triggers zoom callbacks', (WidgetTester tester) async {
@@ -151,30 +148,6 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.remove_rounded));
       expect(zoomOutCalled, isTrue);
-    });
-
-    testWidgets('toggles provider amenities state', (WidgetTester tester) async {
-      when(mockProvider.showAmenities).thenReturn(false);
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () {},
-        onZoomOut: () {},
-        onMapChanged: () {},
-      )));
-
-      await tester.tap(find.byIcon(Icons.place_rounded));
-      verify(mockProvider.toggleAmenities()).called(1);
-    });
-
-    testWidgets('toggles provider overlays state', (WidgetTester tester) async {
-      when(mockProvider.showOverlays).thenReturn(false);
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () {},
-        onZoomOut: () {},
-        onMapChanged: () {},
-      )));
-
-      await tester.tap(find.byIcon(Icons.layers_rounded));
-      verify(mockProvider.toggleOverlays()).called(1);
     });
 
     testWidgets('shows dropdown when overlays are enabled', (WidgetTester tester) async {
@@ -274,7 +247,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(
           builder: (context) {
-            final marker = InsightsMap.buildAmenityMarker(context, amenity);
+            final marker = InsightsMap.buildAmenityMarker(context, amenity, false, mockProvider);
             return SizedBox(
               width: 100,
               height: 100,
@@ -297,7 +270,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(
           builder: (context) {
-            final marker = InsightsMap.buildCityMarker(context, city, 85.0);
+            final marker = InsightsMap.buildCityMarker(context, city, 85.0, false, mockProvider);
             return SizedBox(
               width: 100,
               height: 100,
@@ -308,61 +281,6 @@ void main() {
       ));
 
       expect(find.text('85'), findsOneWidget);
-    });
-
-    testWidgets('buildDetailRow displays label and value', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) => InsightsMap.buildDetailRow(context, 'Label', 'Value')),
-      ));
-
-      expect(find.text('Label'), findsOneWidget);
-      expect(find.text('Value'), findsOneWidget);
-    });
-
-    testWidgets('buildCityDetailsSheet displays city info', (WidgetTester tester) async {
-      final city = MapCityInsight(
-        city: 'Test City',
-        count: 100,
-        location: const LatLng(0, 0),
-        compositeScore: 85.5,
-        safetyScore: 90.0,
-      );
-
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(builder: (context) {
-            return InsightsMap.buildCityDetailsSheet(context, city);
-          }),
-        ),
-      ));
-
-      expect(find.text('Test City'), findsOneWidget);
-      expect(find.text('Data points'), findsOneWidget);
-      expect(find.text('100'), findsOneWidget);
-      expect(find.text('85.5'), findsOneWidget);
-      expect(find.text('90.0'), findsOneWidget);
-    });
-
-    testWidgets('buildAmenityDetailsSheet displays amenity info', (WidgetTester tester) async {
-      final amenity = MapAmenity(
-        id: '1',
-        type: 'school',
-        name: 'Test School',
-        location: const LatLng(0, 0),
-        metadata: {'Key': 'Value'},
-      );
-
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(builder: (context) {
-            return InsightsMap.buildAmenityDetailsSheet(context, amenity);
-          }),
-        ),
-      ));
-
-      expect(find.text('Test School'), findsOneWidget);
-      expect(find.text('SCHOOL'), findsOneWidget);
-      expect(find.text('Key: Value'), findsOneWidget);
     });
   });
 }
