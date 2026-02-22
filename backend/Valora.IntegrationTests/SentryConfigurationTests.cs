@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
 using Xunit;
 
 namespace Valora.IntegrationTests;
@@ -19,6 +20,7 @@ public class SentryConfigurationTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var factory = _factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -43,6 +45,7 @@ public class SentryConfigurationTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var factory = _factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -66,6 +69,7 @@ public class SentryConfigurationTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var factory = _factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -88,6 +92,7 @@ public class SentryConfigurationTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var factory = _factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
