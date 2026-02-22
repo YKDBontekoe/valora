@@ -40,6 +40,30 @@ public class ContextAnalysisServiceTests
     }
 
     [Fact]
+    public async Task AnalyzeReportAsync_TruncatesLongInput()
+    {
+        // Arrange
+        var service = CreateService();
+        var longAddress = new string('A', 300); // Exceeds default 200 char limit
+        var report = CreateFullReportDto() with
+        {
+            Location = new ResolvedLocationDto("q", longAddress, 0, 0, null, null, null, null, null, null, null, null, null)
+        };
+
+        string capturedPrompt = "";
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "detailed_analysis", It.IsAny<CancellationToken>()))
+            .Callback<string, string, string, CancellationToken>((prompt, sys, model, ct) => capturedPrompt = prompt)
+            .ReturnsAsync("Result");
+
+        // Act
+        await service.AnalyzeReportAsync(report, CancellationToken.None);
+
+        // Assert
+        Assert.Contains(new string('A', 200), capturedPrompt);
+        Assert.DoesNotContain(new string('A', 201), capturedPrompt);
+    }
+
+    [Fact]
     public async Task ParseMapQueryPlan_HandlesMarkdownAndJsonElements()
     {
         // Arrange
@@ -156,6 +180,64 @@ public class ContextAnalysisServiceTests
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.Is<List<string>>(l => l.Contains("school") && l.Contains("park")),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PlanMapQueryAsync_HandlesSetOverlay_WithJsonElementString()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new MapQueryRequest { Query = "Crime" };
+
+        var jsonResponse = """
+        {
+          "actions": [
+            { "type": "set_overlay", "parameters": { "metric": "CrimeRate" } }
+          ]
+        }
+        """;
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "map_query", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        _mapServiceMock.Setup(x => x.GetMapOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            MapOverlayMetric.CrimeRate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MapOverlayDto>());
+
+        // Act
+        await service.PlanMapQueryAsync(request, CancellationToken.None);
+
+        // Assert
+        _mapServiceMock.Verify(x => x.GetMapOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            MapOverlayMetric.CrimeRate, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PlanMapQueryAsync_HandlesZoomTo_WithJsonElementNumbers()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new MapQueryRequest { Query = "Zoom" };
+        var jsonResponse = """
+        {
+          "actions": [
+            { "type": "zoom_to", "parameters": { "lat": 52.123, "lon": 4.123, "zoom": 14.5 } }
+          ]
+        }
+        """;
+
+        _aiServiceMock.Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "map_query", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(jsonResponse);
+
+        // Act
+        var result = await service.PlanMapQueryAsync(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(52.123, result.SuggestCenterLat);
+        Assert.Equal(4.123, result.SuggestCenterLon);
+        Assert.Equal(14.5, result.SuggestZoom);
     }
 
     [Fact]
