@@ -51,9 +51,11 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IAiModelService, AiModelService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
+        services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
         

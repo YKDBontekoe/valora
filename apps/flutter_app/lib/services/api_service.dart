@@ -111,8 +111,6 @@ class ApiService {
         'radiusMeters': radiusMeters,
       });
 
-      // Context report generation is a heavy read operation (idempotent side effects only).
-      // We retry on server errors to handle transient load spikes.
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
           (headers) => _client
@@ -255,9 +253,6 @@ class ApiService {
     }
   }
 
-  /// Centralized response handler.
-  /// Maps HTTP status codes to typed Application Exceptions for consistent UI error handling.
-  /// Also logs non-success responses for debugging.
   T _handleResponse<T>(http.Response response, T Function(String body) parser) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parser(response.body);
@@ -313,13 +308,11 @@ class ApiService {
   Exception _handleException(dynamic error, StackTrace? stack, [Uri? uri]) {
     if (error is AppException) return error;
 
-    // Redact query parameters to prevent PII leakage
     final redactedUri = uri?.replace(queryParameters: {}) ?? Uri();
     final urlString = redactedUri.toString().isEmpty ? 'unknown URL' : redactedUri.toString();
 
     developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
 
-    // Report non-business exceptions to Sentry
     CrashReportingService.captureException(
       error,
       stackTrace: stack ?? (error is Error ? error.stackTrace : null),
@@ -342,26 +335,19 @@ class ApiService {
     return UnknownException('An unexpected error occurred. Please try again.');
   }
 
-  /// Extracts the Correlation ID (TraceId) from standard Problem Details (RFC 7807) responses.
-  /// This allows us to display a "Reference ID" to the user, which support can use to find
-  /// the exact error log in the backend (Sentry/Kibana).
   String? _parseTraceId(String body) {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Look in extensions (RFC 7807)
         if (jsonBody['extensions'] is Map<String, dynamic>) {
           final extensions = jsonBody['extensions'] as Map<String, dynamic>;
           if (extensions['traceId'] is String) return extensions['traceId'] as String;
           if (extensions['requestId'] is String) return extensions['requestId'] as String;
         }
-        // Look in root
         if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
         if (jsonBody['requestId'] is String) return jsonBody['requestId'] as String;
       }
-    } catch (_) {
-      // Ignore parsing errors
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -369,7 +355,6 @@ class ApiService {
     try {
       final jsonBody = json.decode(body);
       if (jsonBody is Map<String, dynamic>) {
-        // Handle FluentValidation 'errors' dictionary
         if (jsonBody['errors'] is Map<String, dynamic>) {
           final errors = jsonBody['errors'] as Map<String, dynamic>;
           final messages = errors.entries.map((e) {
@@ -379,13 +364,9 @@ class ApiService {
           });
           return messages.join('\n');
         }
-
-        // Handle RFC 7807 problem details
         return jsonBody['detail'] as String? ?? jsonBody['title'] as String?;
       }
-    } catch (_) {
-      // Ignore parsing errors
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -417,7 +398,6 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      final uri = Uri.parse('$baseUrl/map/cities');
       throw _handleException(e, stack, uri);
     }
   }
@@ -452,7 +432,7 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities'));
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -488,7 +468,7 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities/clusters'));
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -522,7 +502,7 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays'));
+      throw _handleException(e, stack, uri);
     }
   }
 
@@ -558,9 +538,11 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
+      throw _handleException(e, stack, uri);
     }
   }
+
+  // --- Feature specific methods ---
 
   Future<PropertyDetail> getPropertyDetail(String id) async {
     final uri = Uri.parse('$baseUrl/properties/$id');
@@ -577,7 +559,6 @@ class ApiService {
         (body) => PropertyDetail.fromJson(json.decode(body)),
       );
     } catch (e, stack) {
-      final uri = Uri.parse('$baseUrl/properties/$id');
       throw _handleException(e, stack, uri);
     }
   }
@@ -610,7 +591,57 @@ class ApiService {
         },
       );
     } catch (e, stack) {
-      final uri = Uri.parse('$baseUrl/map/properties');
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  // --- Generic REST methods (from Main) ---
+
+  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: queryParameters);
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) =>
+              _client.get(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+      return _handleResponse(response, (body) => json.decode(body));
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<dynamic> post(String path, dynamic data) async {
+    final uri = Uri.parse('$baseUrl$path');
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) => _client.post(
+            uri,
+            headers: headers..['Content-Type'] = 'application/json',
+            body: json.encode(data),
+          ).timeout(timeoutDuration),
+        ),
+      );
+      if (response.statusCode == 204) return null;
+      return _handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
+    } catch (e, stack) {
+      throw _handleException(e, stack, uri);
+    }
+  }
+
+  Future<dynamic> delete(String path) async {
+    final uri = Uri.parse('$baseUrl$path');
+    try {
+      final response = await _requestWithRetry(
+        () => _authenticatedRequest(
+          (headers) => _client.delete(uri, headers: headers).timeout(timeoutDuration),
+        ),
+      );
+      if (response.statusCode == 204) return null;
+      return _handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
+    } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
   }

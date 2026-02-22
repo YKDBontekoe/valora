@@ -119,8 +119,11 @@ export const adminService = {
   deleteUser: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);
   },
-  getJobs: async (limit = 10): Promise<BatchJob[]> => {
-    const response = await api.get<BatchJob[]>(`/admin/jobs?limit=${limit}`);
+  getJobs: async (page = 1, pageSize = 10, status?: string, type?: string): Promise<PaginatedResponse<BatchJob>> => {
+    let url = `/admin/jobs?page=${page}&pageSize=${pageSize}`;
+    if (status && status !== 'All') url += `&status=${encodeURIComponent(status)}`;
+    if (type && type !== 'All') url += `&type=${encodeURIComponent(type)}`;
+    const response = await api.get<PaginatedResponse<BatchJob>>(url);
     return response.data;
   },
   getJobDetails: async (id: string): Promise<BatchJob> => {
@@ -142,3 +145,33 @@ export const adminService = {
 };
 
 export default api;
+
+export interface AiModelConfig {
+  id: string;
+  intent: string;
+  primaryModel: string;
+  fallbackModels: string[];
+  description: string;
+  isEnabled: boolean;
+  safetySettings?: string;
+}
+
+export interface UpdateAiModelConfigDto {
+  intent: string;
+  primaryModel: string;
+  fallbackModels: string[];
+  description: string;
+  isEnabled: boolean;
+  safetySettings?: string;
+}
+
+export const aiService = {
+  getConfigs: async (): Promise<AiModelConfig[]> => {
+    const response = await api.get<AiModelConfig[]>('/ai/config');
+    return response.data;
+  },
+  updateConfig: async (intent: string, dto: UpdateAiModelConfigDto): Promise<AiModelConfig> => {
+    const response = await api.put<AiModelConfig>(`/ai/config/${intent}`, dto);
+    return response.data;
+  }
+};

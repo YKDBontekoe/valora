@@ -62,15 +62,16 @@ public class AiEndpointTests
     {
         // Arrange
         await AuthenticateAsync();
-        var request = new AiChatRequest { Prompt = "Hello", Model = "openai/gpt-4o" };
+        // Updated to use Intent
+        var request = new AiChatRequest { Prompt = "Hello", Intent = "chat" };
 
         // Fix: Verify system prompt is passed correctly (security check)
-        // Updated signature: prompt, systemPrompt, model, ct
+        // Updated signature: prompt, systemPrompt, intent, ct
         _mockAiService
             .Setup(x => x.ChatAsync(
                 "Hello",
                 ContextAnalysisService.ChatSystemPrompt, // Explicitly verify system prompt
-                "openai/gpt-4o",
+                "chat",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync("AI Response");
 
@@ -86,7 +87,7 @@ public class AiEndpointTests
         _mockAiService.Verify(x => x.ChatAsync(
             "Hello",
             ContextAnalysisService.ChatSystemPrompt,
-            "openai/gpt-4o",
+            "chat",
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -122,9 +123,9 @@ public class AiEndpointTests
             .Setup(x => x.ChatAsync(
                 It.IsAny<string>(), // Prompt
                 ContextAnalysisService.AnalysisSystemPrompt, // System Prompt
-                null, // Model
+                "detailed_analysis", // Intent
                 It.IsAny<CancellationToken>()))
-            .Callback<string, string?, string?, CancellationToken>((p, sp, m, ct) => capturedPrompt = p)
+            .Callback<string, string?, string?, CancellationToken>((p, sp, intent, ct) => capturedPrompt = p)
             .ReturnsAsync("Safe Summary");
 
         // Act
@@ -173,8 +174,8 @@ public class AiEndpointTests
 
         string capturedPrompt = string.Empty;
         _mockAiService
-            .Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
-            .Callback<string, string?, string?, CancellationToken>((p, sp, m, ct) => capturedPrompt = p)
+            .Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), "detailed_analysis", It.IsAny<CancellationToken>()))
+            .Callback<string, string?, string?, CancellationToken>((p, sp, intent, ct) => capturedPrompt = p)
             .ReturnsAsync("Safe Summary");
 
         // Act
@@ -224,7 +225,7 @@ public class AiEndpointTests
     {
         // Arrange
         await AuthenticateAsync();
-        var request = new AiChatRequest { Prompt = "", Model = "openai/gpt-4o" };
+        var request = new AiChatRequest { Prompt = "", Intent = "chat" };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/ai/chat", request);
