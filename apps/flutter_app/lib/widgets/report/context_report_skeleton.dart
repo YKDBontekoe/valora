@@ -30,17 +30,37 @@ class ContextReportSkeleton extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+                const Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1.4,
+                    child: ValoraShimmer(borderRadius: 20),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+                const Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1.4,
+                    child: ValoraShimmer(borderRadius: 20),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+                const Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1.4,
+                    child: ValoraShimmer(borderRadius: 20),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                const Expanded(child: AspectRatio(aspectRatio: 1.4, child: ValoraShimmer(borderRadius: 20))),
+                const Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1.4,
+                    child: ValoraShimmer(borderRadius: 20),
+                  ),
+                ),
               ],
             ),
           ],
@@ -52,10 +72,13 @@ class ContextReportSkeleton extends StatelessWidget {
         const SizedBox(height: 32),
 
         // Categories skeleton
-        ...List.generate(3, (index) => const Padding(
-          padding: EdgeInsets.only(bottom: 16),
-          child: ValoraShimmer(height: 80, borderRadius: 20),
-        )),
+        ...List.generate(
+          3,
+          (index) => const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: ValoraShimmer(height: 80, borderRadius: 20),
+          ),
+        ),
       ],
     );
   }

@@ -15,7 +15,10 @@ class MockApiService extends ApiService {
   final Map<String, ContextReport> reports = {};
 
   @override
-  Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
+  Future<ContextReport> getContextReport(
+    String input, {
+    int radiusMeters = 1000,
+  }) async {
     if (reports.containsKey(input)) {
       return reports[input]!;
     }
@@ -75,9 +78,7 @@ class _TestScaffoldHostState extends State<_TestScaffoldHost> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        Provider<ApiService>.value(value: widget.apiService),
-      ],
+      providers: [Provider<ApiService>.value(value: widget.apiService)],
       child: Scaffold(
         floatingActionButton: _fab,
         body: ContextReportScreen(
@@ -106,10 +107,7 @@ void main() {
 
   Widget createWidget() {
     return MaterialApp(
-      home: _TestScaffoldHost(
-        apiService: apiService,
-        pdokService: pdokService,
-      ),
+      home: _TestScaffoldHost(apiService: apiService, pdokService: pdokService),
     );
   }
 

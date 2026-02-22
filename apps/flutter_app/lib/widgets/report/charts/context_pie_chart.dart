@@ -24,7 +24,10 @@ class ContextPieChart extends StatelessWidget {
     final validMetrics = metrics.where((m) => (m.value ?? 0) > 0).toList();
     if (validMetrics.isEmpty) return const SizedBox.shrink();
 
-    final total = validMetrics.fold<double>(0, (sum, e) => sum + (e.value ?? 0));
+    final total = validMetrics.fold<double>(
+      0,
+      (sum, e) => sum + (e.value ?? 0),
+    );
     final colors = [
       theme.colorScheme.primary,
       theme.colorScheme.secondary,
@@ -39,15 +42,19 @@ class ContextPieChart extends StatelessWidget {
         SizedBox(
           width: size,
           height: size,
-          child: CustomPaint(
-            painter: _PiePainter(
-              metrics: validMetrics,
-              total: total,
-              colors: colors,
-              holeRadiusPercent: holeRadiusPercent,
-              backgroundColor: backgroundColor,
-            ),
-          ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
+          child:
+              CustomPaint(
+                    painter: _PiePainter(
+                      metrics: validMetrics,
+                      total: total,
+                      colors: colors,
+                      holeRadiusPercent: holeRadiusPercent,
+                      backgroundColor: backgroundColor,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .scale(begin: const Offset(0.8, 0.8)),
         ),
         const SizedBox(width: 24),
         Expanded(
@@ -60,32 +67,37 @@ class ContextPieChart extends StatelessWidget {
               final percentage = (metric.value ?? 0) / total * 100;
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: colors[index % colors.length],
-                        shape: BoxShape.circle,
-                      ),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: colors[index % colors.length],
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            metric.label,
+                            style: theme.textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${percentage.toStringAsFixed(0)}%',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        metric.label,
-                        style: theme.textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Text(
-                      '${percentage.toStringAsFixed(0)}%',
-                      style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ).animate().fadeIn(delay: (index * 100).ms, duration: 400.ms).slideX(begin: 0.1);
+                  )
+                  .animate()
+                  .fadeIn(delay: (index * 100).ms, duration: 400.ms)
+                  .slideX(begin: 0.1);
             }).toList(),
           ),
         ),
@@ -141,7 +153,8 @@ class _PiePainter extends CustomPainter {
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = backgroundColor; // Using background color for separators as well
+      ..color =
+          backgroundColor; // Using background color for separators as well
 
     startAngle = -math.pi / 2;
     for (int i = 0; i < metrics.length; i++) {

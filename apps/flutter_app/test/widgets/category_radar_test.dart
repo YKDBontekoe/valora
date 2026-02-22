@@ -6,9 +6,7 @@ void main() {
   testWidgets('CategoryRadar renders empty state', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: CategoryRadar(categoryScores: {}),
-        ),
+        home: Scaffold(body: CategoryRadar(categoryScores: {})),
       ),
     );
 

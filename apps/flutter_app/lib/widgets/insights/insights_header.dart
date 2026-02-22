@@ -16,9 +16,13 @@ class InsightsHeader extends StatelessWidget {
       right: 12,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
+          color: isDark
+              ? ValoraColors.glassBlackStrong
+              : ValoraColors.glassWhiteStrong,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+          border: Border.all(
+            color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+          ),
           boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
         ),
         child: Padding(

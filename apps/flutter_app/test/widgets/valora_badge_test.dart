@@ -19,15 +19,9 @@ void main() {
     };
   });
 
-  Widget createWidget({
-    bool enableBlur = true,
-    bool enableAnimation = true,
-  }) {
+  Widget createWidget({bool enableBlur = true, bool enableAnimation = true}) {
     return MaterialApp(
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-      ),
+      theme: ThemeData(fontFamily: 'Roboto', useMaterial3: true),
       home: Scaffold(
         body: ValoraBadge(
           label: 'Test Badge',
@@ -38,7 +32,9 @@ void main() {
     );
   }
 
-  testWidgets('ValoraBadge renders with blur and animation by default', (tester) async {
+  testWidgets('ValoraBadge renders with blur and animation by default', (
+    tester,
+  ) async {
     await tester.pumpWidget(createWidget());
     await tester.pump(); // Start animation
     await tester.pump(const Duration(milliseconds: 500)); // Finish animation
@@ -51,11 +47,16 @@ void main() {
 
     // Check for Animate widget effects
     final backdropFilter = find.byType(BackdropFilter);
-    final clipRRect = find.ancestor(of: backdropFilter, matching: find.byType(ClipRRect));
+    final clipRRect = find.ancestor(
+      of: backdropFilter,
+      matching: find.byType(ClipRRect),
+    );
     expect(clipRRect, findsOneWidget);
   });
 
-  testWidgets('ValoraBadge skips blur when enableBlur is false', (tester) async {
+  testWidgets('ValoraBadge skips blur when enableBlur is false', (
+    tester,
+  ) async {
     await tester.pumpWidget(createWidget(enableBlur: false));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500)); // Finish animation
@@ -67,7 +68,9 @@ void main() {
     expect(find.byType(BackdropFilter), findsNothing);
   });
 
-  testWidgets('ValoraBadge skips animation when enableAnimation is false', (tester) async {
+  testWidgets('ValoraBadge skips animation when enableAnimation is false', (
+    tester,
+  ) async {
     await tester.pumpWidget(createWidget(enableAnimation: false));
     await tester.pumpAndSettle();
 

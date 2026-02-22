@@ -23,7 +23,9 @@ void main() {
 
   group('NotificationService Coverage', () {
     test('_fetchUnreadCount failure is handled silently', () async {
-      when(mockApiService.getUnreadNotificationCount()).thenThrow(Exception('Poll failed'));
+      when(
+        mockApiService.getUnreadNotificationCount(),
+      ).thenThrow(Exception('Poll failed'));
 
       // Should not throw
       notificationService.startPolling();
@@ -34,8 +36,12 @@ void main() {
     });
 
     test('loadMoreNotifications failure sets error state', () async {
-      when(mockApiService.getNotifications(limit: anyNamed('limit'), offset: anyNamed('offset')))
-          .thenThrow(Exception('Load failed'));
+      when(
+        mockApiService.getNotifications(
+          limit: anyNamed('limit'),
+          offset: anyNamed('offset'),
+        ),
+      ).thenThrow(Exception('Load failed'));
 
       // Setup initial state to allow loadMore
       // We need _hasMore = true (default) and not loading.
@@ -53,16 +59,31 @@ void main() {
     });
 
     test('markAsRead failure is handled', () async {
-      final n = ValoraNotification(id: '1', title: 'T', body: 'B', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
+      final n = ValoraNotification(
+        id: '1',
+        title: 'T',
+        body: 'B',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      );
       // We need to inject notification into service private list.
       // Fetch first.
-      when(mockApiService.getNotifications(limit: anyNamed('limit'), offset: anyNamed('offset')))
-          .thenAnswer((_) async => [n]);
-      when(mockApiService.getUnreadNotificationCount()).thenAnswer((_) async => 1);
+      when(
+        mockApiService.getNotifications(
+          limit: anyNamed('limit'),
+          offset: anyNamed('offset'),
+        ),
+      ).thenAnswer((_) async => [n]);
+      when(
+        mockApiService.getUnreadNotificationCount(),
+      ).thenAnswer((_) async => 1);
 
       await notificationService.fetchNotifications();
 
-      when(mockApiService.markNotificationAsRead('1')).thenThrow(Exception('Mark failed'));
+      when(
+        mockApiService.markNotificationAsRead('1'),
+      ).thenThrow(Exception('Mark failed'));
 
       await notificationService.markAsRead('1');
 
@@ -73,14 +94,29 @@ void main() {
     });
 
     test('markAllAsRead failure is handled', () async {
-      final n = ValoraNotification(id: '1', title: 'T', body: 'B', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
-      when(mockApiService.getNotifications(limit: anyNamed('limit'), offset: anyNamed('offset')))
-          .thenAnswer((_) async => [n]);
-      when(mockApiService.getUnreadNotificationCount()).thenAnswer((_) async => 1);
+      final n = ValoraNotification(
+        id: '1',
+        title: 'T',
+        body: 'B',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      );
+      when(
+        mockApiService.getNotifications(
+          limit: anyNamed('limit'),
+          offset: anyNamed('offset'),
+        ),
+      ).thenAnswer((_) async => [n]);
+      when(
+        mockApiService.getUnreadNotificationCount(),
+      ).thenAnswer((_) async => 1);
 
       await notificationService.fetchNotifications();
 
-      when(mockApiService.markAllNotificationsAsRead()).thenThrow(Exception('Mark all failed'));
+      when(
+        mockApiService.markAllNotificationsAsRead(),
+      ).thenThrow(Exception('Mark all failed'));
 
       await notificationService.markAllAsRead();
 

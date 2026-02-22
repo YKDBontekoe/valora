@@ -23,7 +23,10 @@ class ContextBarChart extends StatelessWidget {
 
     if (metrics.isEmpty) return const SizedBox.shrink();
 
-    final maxVal = metrics.fold<double>(0, (max, e) => (e.value ?? 0) > max ? (e.value ?? 0) : max);
+    final maxVal = metrics.fold<double>(
+      0,
+      (max, e) => (e.value ?? 0) > max ? (e.value ?? 0) : max,
+    );
 
     return SizedBox(
       height: height,
@@ -50,28 +53,28 @@ class ContextBarChart extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Flexible(
-                    child: FractionallySizedBox(
-                      heightFactor: percentage.clamp(0.05, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              color,
-                              color.withValues(alpha: 0.6),
-                            ],
+                    child:
+                        FractionallySizedBox(
+                          heightFactor: percentage.clamp(0.05, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [color, color.withValues(alpha: 0.6)],
+                              ),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(6),
+                              ),
+                            ),
                           ),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                        ).animate().scaleY(
+                          begin: 0,
+                          alignment: Alignment.bottomCenter,
+                          duration: 600.ms,
+                          curve: Curves.easeOutBack,
+                          delay: (index * 50).ms,
                         ),
-                      ),
-                    ).animate().scaleY(
-                      begin: 0,
-                      alignment: Alignment.bottomCenter,
-                      duration: 600.ms,
-                      curve: Curves.easeOutBack,
-                      delay: (index * 50).ms,
-                    ),
                   ),
                   if (showLabels) ...[
                     const SizedBox(height: 8),

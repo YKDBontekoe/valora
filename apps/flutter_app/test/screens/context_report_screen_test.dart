@@ -29,10 +29,7 @@ void main() {
         value: mockApiService,
         child: ContextReportScreen(pdokService: mockPdokService),
       ),
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-      ),
+      theme: ThemeData(fontFamily: 'Roboto', useMaterial3: true),
     );
   }
 
@@ -40,8 +37,12 @@ void main() {
   final originalOnError = FlutterError.onError;
   setUpAll(() {
     FlutterError.onError = (FlutterErrorDetails details) {
-      if (details.exception.toString().contains('GoogleFonts') || details.exception.toString().contains('Failed to load font') || details.exception.toString().contains('NetworkImage') ||
-          details.exception.toString().contains('MissingPluginException') && (details.exception.toString().contains('font') || details.exception.toString().contains('google_fonts'))) {
+      if (details.exception.toString().contains('GoogleFonts') ||
+          details.exception.toString().contains('Failed to load font') ||
+          details.exception.toString().contains('NetworkImage') ||
+          details.exception.toString().contains('MissingPluginException') &&
+              (details.exception.toString().contains('font') ||
+                  details.exception.toString().contains('google_fonts'))) {
         return;
       }
       originalOnError?.call(details);
@@ -53,7 +54,9 @@ void main() {
   });
 
   // TODO(issue/#): re-enable once font loading is handled in tests
-  testWidgets('ContextReportScreen renders search form components', (tester) async {
+  testWidgets('ContextReportScreen renders search form components', (
+    tester,
+  ) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(createWidget());
       await tester.pump();
@@ -67,7 +70,9 @@ void main() {
   }, skip: true);
 
   // TODO(issue/#): re-enable once font loading is handled in tests
-  testWidgets('Input validation prevents search with less than 3 characters', (tester) async {
+  testWidgets('Input validation prevents search with less than 3 characters', (
+    tester,
+  ) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
@@ -81,7 +86,12 @@ void main() {
       await tester.pumpAndSettle(); // Ensure SnackBars and animations settle
 
       // Verify no API call was made
-      verifyNever(mockApiService.getContextReport(any, radiusMeters: anyNamed('radiusMeters')));
+      verifyNever(
+        mockApiService.getContextReport(
+          any,
+          radiusMeters: anyNamed('radiusMeters'),
+        ),
+      );
 
       // Verify SnackBar appears
       expect(find.text('Please enter at least 3 characters.'), findsOneWidget);
@@ -89,11 +99,18 @@ void main() {
   }, skip: true);
 
   // TODO(issue/#): re-enable once font loading is handled in tests
-  testWidgets('Input validation allows search with 3 or more characters', (tester) async {
+  testWidgets('Input validation allows search with 3 or more characters', (
+    tester,
+  ) async {
     await tester.runAsync(() async {
       // Setup successful API response to avoid errors
-      when(mockApiService.getContextReport(any, radiusMeters: anyNamed('radiusMeters'))).thenAnswer((_) async =>
-        ContextReport(
+      when(
+        mockApiService.getContextReport(
+          any,
+          radiusMeters: anyNamed('radiusMeters'),
+        ),
+      ).thenAnswer(
+        (_) async => ContextReport(
           location: ContextLocation(
             query: 'abc',
             displayAddress: 'Main St 123',
@@ -113,7 +130,7 @@ void main() {
           environmentMetrics: [],
           sources: [],
           warnings: [],
-        )
+        ),
       );
 
       await tester.pumpWidget(createWidget());
@@ -122,10 +139,16 @@ void main() {
       final inputFinder = find.byType(TextField);
       await tester.enterText(inputFinder, 'abc');
       await tester.testTextInput.receiveAction(TextInputAction.search);
-      await tester.pumpAndSettle(); // Ensure API call and subsequent UI updates settle
+      await tester
+          .pumpAndSettle(); // Ensure API call and subsequent UI updates settle
 
       // Verify API call was made
-      verify(mockApiService.getContextReport('abc', radiusMeters: anyNamed('radiusMeters'))).called(1);
+      verify(
+        mockApiService.getContextReport(
+          'abc',
+          radiusMeters: anyNamed('radiusMeters'),
+        ),
+      ).called(1);
     });
   }, skip: true);
 

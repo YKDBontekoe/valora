@@ -344,10 +344,7 @@ abstract final class ValoraTheme {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
-      borderSide: const BorderSide(
-        color: ValoraColors.primaryLight,
-        width: 2,
-      ),
+      borderSide: const BorderSide(color: ValoraColors.primaryLight, width: 2),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
@@ -401,9 +398,7 @@ abstract final class ValoraTheme {
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
     ),
-    side: BorderSide(
-      color: ValoraColors.neutral200.withValues(alpha: 0.8),
-    ),
+    side: BorderSide(color: ValoraColors.neutral200.withValues(alpha: 0.8)),
     labelStyle: ValoraTypography.labelMedium,
     secondaryLabelStyle: ValoraTypography.labelMedium,
     selectedColor: ValoraColors.primary.withValues(alpha: 0.12),
@@ -419,9 +414,7 @@ abstract final class ValoraTheme {
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
     ),
-    side: BorderSide(
-      color: ValoraColors.neutral700.withValues(alpha: 0.6),
-    ),
+    side: BorderSide(color: ValoraColors.neutral700.withValues(alpha: 0.6)),
     labelStyle: ValoraTypography.labelMedium,
     secondaryLabelStyle: ValoraTypography.labelMedium,
     selectedColor: ValoraColors.primary.withValues(alpha: 0.16),
@@ -475,21 +468,20 @@ abstract final class ValoraTheme {
         modalBarrierColor: Colors.black.withValues(alpha: 0.2),
       );
 
-  static BottomSheetThemeData get _darkBottomSheetTheme =>
-      BottomSheetThemeData(
-        backgroundColor: ValoraColors.surfaceVariantDark,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(ValoraSpacing.radiusXxl),
-          ),
-        ),
-        showDragHandle: true,
-        dragHandleColor: ValoraColors.neutral600,
-        dragHandleSize: const Size(40, 4),
-        shadowColor: Colors.black.withValues(alpha: 0.5),
-        modalBarrierColor: Colors.black.withValues(alpha: 0.5),
-      );
+  static BottomSheetThemeData get _darkBottomSheetTheme => BottomSheetThemeData(
+    backgroundColor: ValoraColors.surfaceVariantDark,
+    surfaceTintColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(ValoraSpacing.radiusXxl),
+      ),
+    ),
+    showDragHandle: true,
+    dragHandleColor: ValoraColors.neutral600,
+    dragHandleSize: const Size(40, 4),
+    shadowColor: Colors.black.withValues(alpha: 0.5),
+    modalBarrierColor: Colors.black.withValues(alpha: 0.5),
+  );
 
   // ============================================
   // NAVIGATION BAR THEME

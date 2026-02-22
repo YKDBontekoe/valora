@@ -38,18 +38,18 @@ class _ValoraChipState extends State<ValoraChip> {
     final bgColor = widget.isSelected
         ? selectedColor.withValues(alpha: isDark ? 0.18 : 0.1)
         : (_isHovered
-            ? (isDark
-                ? ValoraColors.neutral800.withValues(alpha: 0.6)
-                : ValoraColors.neutral100)
-            : (isDark
-                ? ValoraColors.surfaceVariantDark.withValues(alpha: 0.5)
-                : ValoraColors.surfaceLight));
+              ? (isDark
+                    ? ValoraColors.neutral800.withValues(alpha: 0.6)
+                    : ValoraColors.neutral100)
+              : (isDark
+                    ? ValoraColors.surfaceVariantDark.withValues(alpha: 0.5)
+                    : ValoraColors.surfaceLight));
 
     final borderColor = widget.isSelected
         ? selectedColor.withValues(alpha: 0.4)
         : (isDark
-            ? ValoraColors.neutral700.withValues(alpha: 0.4)
-            : ValoraColors.neutral200.withValues(alpha: 0.8));
+              ? ValoraColors.neutral700.withValues(alpha: 0.4)
+              : ValoraColors.neutral200.withValues(alpha: 0.8));
 
     final textColor = widget.isSelected
         ? selectedColor
@@ -79,15 +79,20 @@ class _ValoraChipState extends State<ValoraChip> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, size: ValoraSpacing.iconSizeSm, color: textColor),
+                Icon(
+                  widget.icon,
+                  size: ValoraSpacing.iconSizeSm,
+                  color: textColor,
+                ),
                 const SizedBox(width: ValoraSpacing.xs),
               ],
               Text(
                 widget.label,
                 style: ValoraTypography.labelMedium.copyWith(
                   color: textColor,
-                  fontWeight:
-                      widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.w600
+                      : FontWeight.w500,
                 ),
               ),
               if (widget.onDeleted != null) ...[

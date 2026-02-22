@@ -31,12 +31,7 @@ class ContextReportView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(
         count,
-        (index) => buildChild(
-          context,
-          index,
-          report,
-          showHeader: showHeader,
-        ),
+        (index) => buildChild(context, index, report, showHeader: showHeader),
       ),
     );
   }
@@ -97,7 +92,10 @@ class ContextReportView extends StatelessWidget {
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.location_on_rounded, color: theme.colorScheme.primary),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  color: theme.colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -111,7 +109,9 @@ class ContextReportView extends StatelessWidget {
                     if (subtitleParts.isNotEmpty)
                       Text(
                         subtitleParts.join(', '),
-                        style: ValoraTypography.bodyMedium.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        style: ValoraTypography.bodyMedium.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),
@@ -153,10 +153,7 @@ class ContextReportView extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Neighborhood Profile',
-            style: ValoraTypography.titleMedium,
-          ),
+          Text('Neighborhood Profile', style: ValoraTypography.titleMedium),
           const SizedBox(height: 16),
           SmartInsightsGrid(report: report),
         ],
@@ -294,11 +291,18 @@ class ContextReportView extends StatelessWidget {
                 children: [
                   const Icon(Icons.info_outline_rounded, size: 18),
                   const SizedBox(width: 8),
-                  Text('Data Notes', style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Data Notes',
+                    style: ValoraTypography.labelLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
-              ...report.warnings.map((w) => Text('• $w', style: ValoraTypography.bodySmall)),
+              ...report.warnings.map(
+                (w) => Text('• $w', style: ValoraTypography.bodySmall),
+              ),
             ],
           ),
         );
@@ -310,11 +314,20 @@ class ContextReportView extends StatelessWidget {
       return ExpansionTile(
         title: Text('Data Sources', style: ValoraTypography.labelMedium),
         tilePadding: EdgeInsets.zero,
-        children: report.sources.map((s) => ListTile(
-          title: Text(s.source, style: ValoraTypography.labelSmall),
-          subtitle: Text(s.license, style: ValoraTypography.labelSmall.copyWith(color: ValoraColors.neutral500)),
-          dense: true,
-        )).toList(),
+        children: report.sources
+            .map(
+              (s) => ListTile(
+                title: Text(s.source, style: ValoraTypography.labelSmall),
+                subtitle: Text(
+                  s.license,
+                  style: ValoraTypography.labelSmall.copyWith(
+                    color: ValoraColors.neutral500,
+                  ),
+                ),
+                dense: true,
+              ),
+            )
+            .toList(),
       );
     }
     if (index == currentIndex++) return const SizedBox(height: 40);

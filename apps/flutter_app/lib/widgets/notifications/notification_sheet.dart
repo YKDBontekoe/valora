@@ -86,15 +86,19 @@ class _NotificationSheetState extends State<NotificationSheet> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline_rounded,
-                            size: 48, color: ValoraColors.error),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 48,
+                          color: ValoraColors.error,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Something went wrong',
                           style: ValoraTypography.bodyMedium,
                         ),
                         TextButton(
-                          onPressed: () => service.fetchNotifications(refresh: true),
+                          onPressed: () =>
+                              service.fetchNotifications(refresh: true),
                           child: const Text('Try Again'),
                         ),
                       ],
@@ -117,7 +121,9 @@ class _NotificationSheetState extends State<NotificationSheet> {
                         Text(
                           'No notifications yet',
                           style: ValoraTypography.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -129,12 +135,11 @@ class _NotificationSheetState extends State<NotificationSheet> {
                   child: ListView.separated(
                     controller: _scrollController,
                     shrinkWrap: true,
-                    itemCount: service.notifications.length +
+                    itemCount:
+                        service.notifications.length +
                         (service.isLoadingMore ? 1 : 0),
-                    separatorBuilder: (context, index) => const Divider(
-                      height: 1,
-                      indent: 72,
-                    ),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1, indent: 72),
                     itemBuilder: (context, index) {
                       if (index == service.notifications.length) {
                         return const Padding(
@@ -164,7 +169,8 @@ class _NotificationSheetState extends State<NotificationSheet> {
                                 ValoraButton(
                                   label: 'Cancel',
                                   variant: ValoraButtonVariant.ghost,
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                 ),
                                 ValoraButton(
                                   label: 'Delete',
@@ -185,7 +191,9 @@ class _NotificationSheetState extends State<NotificationSheet> {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Failed to delete notification'),
+                                  content: Text(
+                                    'Failed to delete notification',
+                                  ),
                                   backgroundColor: ValoraColors.error,
                                 ),
                               );

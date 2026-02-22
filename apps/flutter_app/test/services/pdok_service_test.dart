@@ -8,13 +8,21 @@ void main() {
   group('PdokService Tests', () {
     test('search returns suggestions on 200', () async {
       final mockClient = MockClient((request) async {
-        return http.Response(json.encode({
-          'response': {
-            'docs': [
-              {'id': '1', 'type': 'adres', 'weergavenaam': 'Damrak 1', 'score': 10.0}
-            ]
-          }
-        }), 200);
+        return http.Response(
+          json.encode({
+            'response': {
+              'docs': [
+                {
+                  'id': '1',
+                  'type': 'adres',
+                  'weergavenaam': 'Damrak 1',
+                  'score': 10.0,
+                },
+              ],
+            },
+          }),
+          200,
+        );
       });
 
       final service = PdokService(client: mockClient);
@@ -26,13 +34,16 @@ void main() {
 
     test('reverseLookup returns address on 200', () async {
       final mockClient = MockClient((request) async {
-        return http.Response(json.encode({
-          'response': {
-            'docs': [
-              {'weergavenaam': 'Damrak 1, Amsterdam'}
-            ]
-          }
-        }), 200);
+        return http.Response(
+          json.encode({
+            'response': {
+              'docs': [
+                {'weergavenaam': 'Damrak 1, Amsterdam'},
+              ],
+            },
+          }),
+          200,
+        );
       });
 
       final service = PdokService(client: mockClient);
@@ -43,9 +54,12 @@ void main() {
 
     test('reverseLookup returns null on empty docs', () async {
       final mockClient = MockClient((request) async {
-        return http.Response(json.encode({
-          'response': {'docs': []}
-        }), 200);
+        return http.Response(
+          json.encode({
+            'response': {'docs': []},
+          }),
+          200,
+        );
       });
 
       final service = PdokService(client: mockClient);

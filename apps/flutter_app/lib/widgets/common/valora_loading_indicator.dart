@@ -37,22 +37,18 @@ class ValoraLoadingIndicator extends StatelessWidget {
           if (message != null) ...[
             const SizedBox(height: ValoraSpacing.md),
             Text(
-              message!,
-              style: ValoraTypography.bodySmall.copyWith(
-                color: isDark
-                    ? ValoraColors.neutral400
-                    : ValoraColors.neutral500,
-              ),
-              textAlign: TextAlign.center,
-            )
+                  message!,
+                  style: ValoraTypography.bodySmall.copyWith(
+                    color: isDark
+                        ? ValoraColors.neutral400
+                        : ValoraColors.neutral500,
+                  ),
+                  textAlign: TextAlign.center,
+                )
                 .animate(onPlay: (c) => c.repeat(reverse: true))
                 .fadeIn(duration: ValoraAnimations.verySlow)
                 .then()
-                .fade(
-                  begin: 1,
-                  end: 0.4,
-                  duration: ValoraAnimations.verySlow,
-                ),
+                .fade(begin: 1, end: 0.4, duration: ValoraAnimations.verySlow),
           ],
         ],
       ),

@@ -90,7 +90,7 @@ class ContextReportProvider extends ChangeNotifier {
       _saveComparisonSet();
 
       if (!_activeReports.containsKey(id)) {
-         await fetchReport(query, radius);
+        await fetchReport(query, radius);
       }
     }
   }
@@ -173,7 +173,8 @@ class ContextReportProvider extends ChangeNotifier {
   // AI Insight state management
   String? getAiInsight(String location) => _aiInsights[location];
   String? getAiInsightError(String location) => _aiInsightErrors[location];
-  bool isAiInsightLoading(String location) => _loadingAiInsights.contains(location);
+  bool isAiInsightLoading(String location) =>
+      _loadingAiInsights.contains(location);
 
   Future<void> generateAiInsight(ContextReport report) async {
     final location = report.location.displayAddress;
@@ -249,8 +250,9 @@ class ContextReportProvider extends ChangeNotifier {
     } catch (e) {
       if (_isDisposed) return;
       _currentReportId = null;
-      _error =
-          e is AppException ? e.message : 'Failed to generate context report.';
+      _error = e is AppException
+          ? e.message
+          : 'Failed to generate context report.';
     } finally {
       if (!_isDisposed) {
         _isLoading = false;

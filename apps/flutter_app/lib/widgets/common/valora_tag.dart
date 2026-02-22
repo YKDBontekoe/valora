@@ -36,13 +36,16 @@ class _ValoraTagState extends State<ValoraTag> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bgColor = widget.backgroundColor ??
+    final bgColor =
+        widget.backgroundColor ??
         (isDark
             ? ValoraColors.neutral800.withValues(alpha: 0.6)
             : ValoraColors.neutral100);
-    final textColor = widget.textColor ??
+    final textColor =
+        widget.textColor ??
         (isDark ? ValoraColors.neutral300 : ValoraColors.neutral600);
-    final effectiveBorderColor = widget.borderColor ??
+    final effectiveBorderColor =
+        widget.borderColor ??
         (isDark
             ? ValoraColors.neutral700.withValues(alpha: 0.4)
             : ValoraColors.neutral200.withValues(alpha: 0.8));

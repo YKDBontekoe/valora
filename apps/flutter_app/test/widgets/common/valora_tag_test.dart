@@ -4,17 +4,16 @@ import 'package:valora_app/widgets/common/valora_tag.dart';
 
 void main() {
   group('ValoraTag', () {
-    testWidgets('renders label and icon correctly', (WidgetTester tester) async {
+    testWidgets('renders label and icon correctly', (
+      WidgetTester tester,
+    ) async {
       const String testLabel = 'Test Tag';
       const IconData testIcon = Icons.home;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ValoraTag(
-              label: testLabel,
-              icon: testIcon,
-            ),
+            body: ValoraTag(label: testLabel, icon: testIcon),
           ),
         ),
       );
@@ -25,7 +24,9 @@ void main() {
       expect(find.byIcon(testIcon), findsOneWidget);
     });
 
-    testWidgets('responds to tap when onTap is provided', (WidgetTester tester) async {
+    testWidgets('responds to tap when onTap is provided', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
 
       await tester.pumpWidget(
@@ -49,14 +50,12 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('does not wrap in GestureDetector when onTap is null', (WidgetTester tester) async {
+    testWidgets('does not wrap in GestureDetector when onTap is null', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ValoraTag(
-              label: 'Static Tag',
-            ),
-          ),
+          home: Scaffold(body: ValoraTag(label: 'Static Tag')),
         ),
       );
       await tester.pumpAndSettle();
@@ -94,10 +93,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ValoraTag(
-              label: 'Red Tag',
-              backgroundColor: customColor,
-            ),
+            body: ValoraTag(label: 'Red Tag', backgroundColor: customColor),
           ),
         ),
       );

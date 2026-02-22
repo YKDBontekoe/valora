@@ -33,20 +33,19 @@ class InsightsMap extends StatelessWidget {
         List<MapAmenity>,
         List<MapAmenityCluster>,
         List<MapCityInsight>,
-        MapOverlayMetric
+        MapOverlayMetric,
       )
     >(
-      selector:
-          (_, p) => (
-            p.showOverlays,
-            p.showAmenities,
-            p.overlays,
-            p.overlayTiles,
-            p.amenities,
-            p.amenityClusters,
-            p.cities,
-            p.selectedOverlayMetric,
-          ),
+      selector: (_, p) => (
+        p.showOverlays,
+        p.showAmenities,
+        p.overlays,
+        p.overlayTiles,
+        p.amenities,
+        p.amenityClusters,
+        p.cities,
+        p.selectedOverlayMetric,
+      ),
       builder: (context, data, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final showOverlays = data.$1;
@@ -75,8 +74,9 @@ class InsightsMap extends StatelessWidget {
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+              urlTemplate: isDark
+                  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                  : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
               userAgentPackageName: 'com.valora.app',
               subdomains: const ['a', 'b', 'c', 'd'],
               retinaMode: RetinaMode.isHighDensity(context),
@@ -84,40 +84,41 @@ class InsightsMap extends StatelessWidget {
             if (showOverlays) ...[
               if (overlays.isNotEmpty)
                 PolygonLayer(
-                  polygons:
-                      overlays.map((overlay) {
-                        return buildPolygon(overlay, provider.selectedOverlayMetric);
-                      }).toList(),
+                  polygons: overlays.map((overlay) {
+                    return buildPolygon(
+                      overlay,
+                      provider.selectedOverlayMetric,
+                    );
+                  }).toList(),
                 ),
               if (overlayTiles.isNotEmpty)
                 PolygonLayer(
-                  polygons:
-                      overlayTiles.map((tile) {
-                        return buildTilePolygon(tile, provider.selectedOverlayMetric);
-                      }).toList(),
+                  polygons: overlayTiles.map((tile) {
+                    return buildTilePolygon(
+                      tile,
+                      provider.selectedOverlayMetric,
+                    );
+                  }).toList(),
                 ),
             ],
             if (showAmenities) ...[
               if (amenities.isNotEmpty)
                 MarkerLayer(
-                  markers:
-                      amenities.map((amenity) {
-                        return buildAmenityMarker(context, amenity);
-                      }).toList(),
+                  markers: amenities.map((amenity) {
+                    return buildAmenityMarker(context, amenity);
+                  }).toList(),
                 ),
               if (amenityClusters.isNotEmpty)
                 MarkerLayer(
-                  markers:
-                      amenityClusters.map((cluster) {
-                        return buildClusterMarker(context, cluster);
-                      }).toList(),
+                  markers: amenityClusters.map((cluster) {
+                    return buildClusterMarker(context, cluster);
+                  }).toList(),
                 ),
             ],
             MarkerLayer(
-              markers:
-                  cities.map((city) {
-                    return buildCityMarker(context, city, provider.getScore(city));
-                  }).toList(),
+              markers: cities.map((city) {
+                return buildCityMarker(context, city, provider.getScore(city));
+              }).toList(),
             ),
           ],
         );
@@ -128,10 +129,7 @@ class InsightsMap extends StatelessWidget {
   static Polygon buildPolygon(MapOverlay overlay, MapOverlayMetric metric) {
     final points = MapUtils.parsePolygonGeometry(overlay.geoJson['geometry']);
 
-    final color = MapUtils.getOverlayColor(
-      overlay.metricValue,
-      metric,
-    );
+    final color = MapUtils.getOverlayColor(overlay.metricValue, metric);
 
     return Polygon(
       points: points,
@@ -142,7 +140,10 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Polygon buildTilePolygon(MapOverlayTile tile, MapOverlayMetric metric) {
+  static Polygon buildTilePolygon(
+    MapOverlayTile tile,
+    MapOverlayMetric metric,
+  ) {
     // Create a square polygon around the center
     final halfSize = tile.size / 2;
     final points = [
@@ -152,10 +153,7 @@ class InsightsMap extends StatelessWidget {
       LatLng(tile.latitude + halfSize, tile.longitude - halfSize),
     ];
 
-    final color = MapUtils.getOverlayColor(
-      tile.value,
-      metric,
-    );
+    final color = MapUtils.getOverlayColor(tile.value, metric);
 
     return Polygon(
       points: points,
@@ -198,7 +196,10 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Marker buildClusterMarker(BuildContext context, MapAmenityCluster cluster) {
+  static Marker buildClusterMarker(
+    BuildContext context,
+    MapAmenityCluster cluster,
+  ) {
     return Marker(
       point: LatLng(cluster.latitude, cluster.longitude),
       width: 40,
@@ -262,7 +263,10 @@ class InsightsMap extends StatelessWidget {
               ],
             ),
             shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2.2),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.surface,
+              width: 2.2,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).shadowColor.withValues(alpha: 0.2),
@@ -286,7 +290,10 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Widget buildAmenityDetailsSheet(BuildContext context, MapAmenity amenity) {
+  static Widget buildAmenityDetailsSheet(
+    BuildContext context,
+    MapAmenity amenity,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -333,7 +340,10 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Widget buildCityDetailsSheet(BuildContext context, MapCityInsight city) {
+  static Widget buildCityDetailsSheet(
+    BuildContext context,
+    MapCityInsight city,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -347,19 +357,23 @@ class InsightsMap extends StatelessWidget {
           Text(city.city, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 16),
           buildDetailRow(context, 'Data points', city.count.toString()),
-          buildDetailRow(context,
+          buildDetailRow(
+            context,
             'Composite Score',
             city.compositeScore?.toStringAsFixed(1),
           ),
-          buildDetailRow(context,
+          buildDetailRow(
+            context,
             'Safety Score',
             city.safetyScore?.toStringAsFixed(1),
           ),
-          buildDetailRow(context,
+          buildDetailRow(
+            context,
             'Social Score',
             city.socialScore?.toStringAsFixed(1),
           ),
-          buildDetailRow(context,
+          buildDetailRow(
+            context,
             'Amenities Score',
             city.amenitiesScore?.toStringAsFixed(1),
           ),
@@ -369,13 +383,22 @@ class InsightsMap extends StatelessWidget {
     );
   }
 
-  static Widget buildDetailRow(BuildContext context, String label, String? value) {
+  static Widget buildDetailRow(
+    BuildContext context,
+    String label,
+    String? value,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
+          ),
           Text(
             value ?? '-',
             style: const TextStyle(fontWeight: FontWeight.bold),

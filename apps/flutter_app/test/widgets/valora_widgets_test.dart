@@ -341,7 +341,9 @@ void main() {
   });
 
   group('ValoraChip Tests', () {
-    testWidgets('renders label and handles selection', (WidgetTester tester) async {
+    testWidgets('renders label and handles selection', (
+      WidgetTester tester,
+    ) async {
       bool selected = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -363,7 +365,9 @@ void main() {
       expect(selected, isTrue);
     });
 
-    testWidgets('shows delete icon and handles deletion', (WidgetTester tester) async {
+    testWidgets('shows delete icon and handles deletion', (
+      WidgetTester tester,
+    ) async {
       bool deleted = false;
       await tester.pumpWidget(
         MaterialApp(

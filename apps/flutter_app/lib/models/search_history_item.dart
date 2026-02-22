@@ -2,16 +2,10 @@ class SearchHistoryItem {
   final String query;
   final DateTime timestamp;
 
-  SearchHistoryItem({
-    required this.query,
-    required this.timestamp,
-  });
+  SearchHistoryItem({required this.query, required this.timestamp});
 
   Map<String, dynamic> toJson() {
-    return {
-      'query': query,
-      'timestamp': timestamp.toIso8601String(),
-    };
+    return {'query': query, 'timestamp': timestamp.toIso8601String()};
   }
 
   factory SearchHistoryItem.fromJson(Map<String, dynamic> json) {

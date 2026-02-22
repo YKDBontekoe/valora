@@ -231,8 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         textInputAction: TextInputAction.done,
-                        onSubmitted:
-                            isLoading ? null : (_) => _submit(),
+                        onSubmitted: isLoading ? null : (_) => _submit(),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Required';

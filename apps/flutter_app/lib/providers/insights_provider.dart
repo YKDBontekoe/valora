@@ -144,7 +144,9 @@ class InsightsProvider extends ChangeNotifier {
             _amenityClustersCoverage!.contains(viewport);
 
         if (!isCovered) {
-          fetches.add(_fetchAmenityClustersForViewport(viewport, zoomBucket, zoom));
+          fetches.add(
+            _fetchAmenityClustersForViewport(viewport, zoomBucket, zoom),
+          );
         }
       }
     } else {
@@ -196,7 +198,12 @@ class InsightsProvider extends ChangeNotifier {
 
         if (!isCovered) {
           fetches.add(
-            _fetchOverlayTilesForViewport(viewport, zoomBucket, zoom, overlayMetric),
+            _fetchOverlayTilesForViewport(
+              viewport,
+              zoomBucket,
+              zoom,
+              overlayMetric,
+            ),
           );
         }
       }
@@ -450,7 +457,8 @@ class InsightsProvider extends ChangeNotifier {
     String metric,
   ) async {
     final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'overlay_tiles:$metric:${bounds.cacheKey(zoomBucket)}';
+    final String cacheKey =
+        'overlay_tiles:$metric:${bounds.cacheKey(zoomBucket)}';
     final cached = _overlayTilesCache[cacheKey];
     if (cached != null) {
       return _LayerFetchResult.overlayTiles(

@@ -12,7 +12,10 @@ class _MockApiService extends ApiService {
   bool shouldFail = false;
 
   @override
-  Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
+  Future<ContextReport> getContextReport(
+    String input, {
+    int radiusMeters = 1000,
+  }) async {
     if (shouldFail) {
       throw Exception('API Failed');
     }

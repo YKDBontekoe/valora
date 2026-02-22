@@ -12,7 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Mock Provider using subclass
 class MockProvider extends ContextReportProvider {
-  MockProvider() : super(apiService: ApiService(), historyService: SearchHistoryService());
+  MockProvider()
+    : super(apiService: ApiService(), historyService: SearchHistoryService());
 
   String? _insight;
   String? _error;
@@ -33,9 +34,20 @@ class MockProvider extends ContextReportProvider {
   }
 
   // Helpers to set state
-  void setInsight(String? value) { _insight = value; notifyListeners(); }
-  void setError(String? value) { _error = value; notifyListeners(); }
-  void setLoading(bool value) { _loading = value; notifyListeners(); }
+  void setInsight(String? value) {
+    _insight = value;
+    notifyListeners();
+  }
+
+  void setError(String? value) {
+    _error = value;
+    notifyListeners();
+  }
+
+  void setLoading(bool value) {
+    _loading = value;
+    notifyListeners();
+  }
 }
 
 void main() {
@@ -70,9 +82,7 @@ void main() {
     return MaterialApp(
       home: ChangeNotifierProvider<ContextReportProvider>.value(
         value: provider,
-        child: Scaffold(
-          body: AiInsightCard(report: report),
-        ),
+        child: Scaffold(body: AiInsightCard(report: report)),
       ),
     );
   }

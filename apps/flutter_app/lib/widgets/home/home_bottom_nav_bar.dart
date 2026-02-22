@@ -21,10 +21,30 @@ class HomeBottomNavBar extends StatelessWidget {
   });
 
   static const List<_NavItem> _navItems = [
-    _NavItem(icon: Icons.search_rounded, activeIcon: Icons.search_rounded, label: 'Search', index: 0),
-    _NavItem(icon: Icons.map_outlined, activeIcon: Icons.map_rounded, label: 'Insights', index: 1),
-    _NavItem(icon: Icons.notifications_none_rounded, activeIcon: Icons.notifications_rounded, label: 'Alerts', index: 2),
-    _NavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Settings', index: 3),
+    _NavItem(
+      icon: Icons.search_rounded,
+      activeIcon: Icons.search_rounded,
+      label: 'Search',
+      index: 0,
+    ),
+    _NavItem(
+      icon: Icons.map_outlined,
+      activeIcon: Icons.map_rounded,
+      label: 'Insights',
+      index: 1,
+    ),
+    _NavItem(
+      icon: Icons.notifications_none_rounded,
+      activeIcon: Icons.notifications_rounded,
+      label: 'Alerts',
+      index: 2,
+    ),
+    _NavItem(
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings_rounded,
+      label: 'Settings',
+      index: 3,
+    ),
   ];
 
   @override
@@ -203,7 +223,8 @@ class _GlassNavItem extends StatelessWidget {
                             Selector<NotificationService, int>(
                               selector: (_, s) => s.unreadCount,
                               builder: (context, unreadCount, _) {
-                                if (unreadCount == 0) return const SizedBox.shrink();
+                                if (unreadCount == 0)
+                                  return const SizedBox.shrink();
                                 return Positioned(
                                   top: -4,
                                   right: -6,

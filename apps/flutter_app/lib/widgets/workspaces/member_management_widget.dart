@@ -6,7 +6,11 @@ class MemberManagementWidget extends StatelessWidget {
   final List<WorkspaceMember> members;
   final bool canInvite;
 
-  const MemberManagementWidget({super.key, required this.members, this.canInvite = false});
+  const MemberManagementWidget({
+    super.key,
+    required this.members,
+    this.canInvite = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +34,18 @@ class MemberManagementWidget extends StatelessWidget {
             itemBuilder: (context, index) {
               final member = members[index];
               return ListTile(
-                leading: CircleAvatar(child: Text(member.email?.isNotEmpty == true ? member.email![0].toUpperCase() : '?')),
+                leading: CircleAvatar(
+                  child: Text(
+                    member.email?.isNotEmpty == true
+                        ? member.email![0].toUpperCase()
+                        : '?',
+                  ),
+                ),
                 title: Text(member.email ?? 'Unknown User'),
                 subtitle: Text(member.role.name.toUpperCase()),
-                trailing: member.isPending ? const Chip(label: Text('Pending')) : null,
+                trailing: member.isPending
+                    ? const Chip(label: Text('Pending'))
+                    : null,
               );
             },
           ),

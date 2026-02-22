@@ -22,7 +22,9 @@ class MapOverlay {
       metricName: json['metricName']?.toString() ?? '',
       metricValue: (json['metricValue'] as num?)?.toDouble() ?? 0.0,
       displayValue: json['displayValue']?.toString() ?? '',
-      geoJson: json['geoJson'] != null ? Map<String, dynamic>.from(json['geoJson']) : {},
+      geoJson: json['geoJson'] != null
+          ? Map<String, dynamic>.from(json['geoJson'])
+          : {},
     );
   }
 }

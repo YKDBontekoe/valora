@@ -92,8 +92,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                     MaterialPageRoute(
                       builder: (_) => ChangeNotifierProvider.value(
                         value: context.read<WorkspaceProvider>(),
-                        child: WorkspaceDetailScreen(
-                            workspaceId: workspace.id),
+                        child: WorkspaceDetailScreen(workspaceId: workspace.id),
                       ),
                     ),
                   );
@@ -134,11 +133,13 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.people_alt_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? ValoraColors.neutral400
-                                      : ValoraColors.neutral500),
+                              Icon(
+                                Icons.people_alt_rounded,
+                                size: 14,
+                                color: isDark
+                                    ? ValoraColors.neutral400
+                                    : ValoraColors.neutral500,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '${workspace.memberCount} members',
@@ -149,11 +150,13 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Icon(Icons.bookmark_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? ValoraColors.neutral400
-                                      : ValoraColors.neutral500),
+                              Icon(
+                                Icons.bookmark_rounded,
+                                size: 14,
+                                color: isDark
+                                    ? ValoraColors.neutral400
+                                    : ValoraColors.neutral500,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '${workspace.savedListingCount} saved',
@@ -168,10 +171,12 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded,
-                        color: isDark
-                            ? ValoraColors.neutral500
-                            : ValoraColors.neutral400),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDark
+                          ? ValoraColors.neutral500
+                          : ValoraColors.neutral400,
+                    ),
                   ],
                 ),
               );
@@ -201,11 +206,11 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
             onPressed: () {
               if (nameController.text.trim().isNotEmpty) {
                 context.read<WorkspaceProvider>().createWorkspace(
-                      nameController.text.trim(),
-                      descController.text.trim().isEmpty
-                          ? null
-                          : descController.text.trim(),
-                    );
+                  nameController.text.trim(),
+                  descController.text.trim().isEmpty
+                      ? null
+                      : descController.text.trim(),
+                );
                 Navigator.pop(ctx);
               }
             },

@@ -8,7 +8,8 @@ import 'package:valora_app/models/saved_listing.dart';
 import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/models/comment.dart';
 
-class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
+class MockWorkspaceProvider extends ChangeNotifier
+    implements WorkspaceProvider {
   bool inviteCalled = false;
 
   @override
@@ -48,13 +49,19 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   Future<void> saveListing(String listingId, String? notes) async {}
   @override
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {}
+  Future<void> addComment(
+    String savedListingId,
+    String content,
+    String? parentId,
+  ) async {}
   @override
   Future<List<Comment>> fetchComments(String savedListingId) async => [];
 }
 
 void main() {
-  testWidgets('ShareWorkspaceDialog submits invite', (WidgetTester tester) async {
+  testWidgets('ShareWorkspaceDialog submits invite', (
+    WidgetTester tester,
+  ) async {
     final mockProvider = MockWorkspaceProvider();
 
     await tester.pumpWidget(

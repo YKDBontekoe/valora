@@ -9,7 +9,12 @@ class CommentThreadWidget extends StatefulWidget {
   final List<Comment> comments;
   final VoidCallback? onRefresh;
 
-  const CommentThreadWidget({super.key, required this.savedListingId, required this.comments, this.onRefresh});
+  const CommentThreadWidget({
+    super.key,
+    required this.savedListingId,
+    required this.comments,
+    this.onRefresh,
+  });
 
   @override
   State<CommentThreadWidget> createState() => _CommentThreadWidgetState();
@@ -25,11 +30,12 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
       children: [
         Expanded(
           child: widget.comments.isEmpty
-          ? const Center(child: Text('No comments yet.'))
-          : ListView.builder(
-            itemCount: widget.comments.length,
-            itemBuilder: (context, index) => _buildComment(widget.comments[index]),
-          ),
+              ? const Center(child: Text('No comments yet.'))
+              : ListView.builder(
+                  itemCount: widget.comments.length,
+                  itemBuilder: (context, index) =>
+                      _buildComment(widget.comments[index]),
+                ),
         ),
         _buildInput(),
       ],
@@ -43,9 +49,17 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            leading: CircleAvatar(child: Text(comment.userId.isNotEmpty ? comment.userId[0].toUpperCase() : '?')),
+            leading: CircleAvatar(
+              child: Text(
+                comment.userId.isNotEmpty
+                    ? comment.userId[0].toUpperCase()
+                    : '?',
+              ),
+            ),
             title: Text(comment.content),
-            subtitle: Text(DateFormat.yMMMd().add_jm().format(comment.createdAt)),
+            subtitle: Text(
+              DateFormat.yMMMd().add_jm().format(comment.createdAt),
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.reply),
               onPressed: () => setState(() => _replyToId = comment.id),
@@ -83,10 +97,7 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: _submit,
-          ),
+          IconButton(icon: const Icon(Icons.send), onPressed: _submit),
         ],
       ),
     );
@@ -94,7 +105,11 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
 
   void _submit() async {
     if (_controller.text.isEmpty) return;
-    await context.read<WorkspaceProvider>().addComment(widget.savedListingId, _controller.text, _replyToId);
+    await context.read<WorkspaceProvider>().addComment(
+      widget.savedListingId,
+      _controller.text,
+      _replyToId,
+    );
     _controller.clear();
     setState(() => _replyToId = null);
     widget.onRefresh?.call();

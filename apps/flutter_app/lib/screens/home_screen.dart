@@ -32,14 +32,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<WorkspaceProvider>(
-      create: (context) => WorkspaceProvider(
-        context.read<ApiService>(),
-      ),
+      create: (context) => WorkspaceProvider(context.read<ApiService>()),
       child: Scaffold(
         extendBody: true,
         // Only show the FAB when on the Search tab (index 0)
-        floatingActionButton:
-            _currentNavIndex == 0 ? _contextReportFab : null,
+        floatingActionButton: _currentNavIndex == 0 ? _contextReportFab : null,
         bottomNavigationBar: HomeBottomNavBar(
           currentIndex: _currentNavIndex,
           onTap: (index) => setState(() => _currentNavIndex = index),

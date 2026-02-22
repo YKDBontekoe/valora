@@ -38,7 +38,9 @@ Future<void> main() async {
       } catch (_) {
         // Neither file available — app will use AppConfig fallback values
         if (kDebugMode) {
-          debugPrint('Warning: No .env file found. Using fallback configuration.');
+          debugPrint(
+            'Warning: No .env file found. Using fallback configuration.',
+          );
         }
       }
     }
@@ -94,9 +96,11 @@ Future<void> main() async {
             ),
           ),
           ChangeNotifierProxyProvider<ApiService, NotificationService>(
-            create: (context) => NotificationService(context.read<ApiService>()),
+            create: (context) =>
+                NotificationService(context.read<ApiService>()),
             update: (context, apiService, previous) =>
-                (previous ?? NotificationService(apiService))..update(apiService),
+                (previous ?? NotificationService(apiService))
+                  ..update(apiService),
           ),
           ChangeNotifierProxyProvider<ApiService, InsightsProvider>(
             create: (context) => InsightsProvider(context.read<ApiService>()),

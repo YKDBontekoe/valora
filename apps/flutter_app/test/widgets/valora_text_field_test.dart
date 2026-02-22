@@ -19,25 +19,18 @@ void main() {
     };
   });
 
-  Widget createWidget({
-    FocusNode? focusNode,
-    String? label,
-  }) {
+  Widget createWidget({FocusNode? focusNode, String? label}) {
     return MaterialApp(
-      theme: ThemeData(
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-      ),
+      theme: ThemeData(fontFamily: 'Roboto', useMaterial3: true),
       home: Scaffold(
-        body: ValoraTextField(
-          focusNode: focusNode,
-          label: label,
-        ),
+        body: ValoraTextField(focusNode: focusNode, label: label),
       ),
     );
   }
 
-  testWidgets('ValoraTextField manages internal focus node when none provided', (tester) async {
+  testWidgets('ValoraTextField manages internal focus node when none provided', (
+    tester,
+  ) async {
     await tester.pumpWidget(createWidget(label: 'Test Input'));
 
     // Find the internal TextField
@@ -55,13 +48,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // Should have focus
-    final focusNode = (textField.evaluate().first.widget as TextField).focusNode;
+    final focusNode =
+        (textField.evaluate().first.widget as TextField).focusNode;
     expect(focusNode?.hasFocus, isTrue);
   });
 
   testWidgets('ValoraTextField respects external focus node', (tester) async {
     final focusNode = FocusNode();
-    await tester.pumpWidget(createWidget(focusNode: focusNode, label: 'External Node'));
+    await tester.pumpWidget(
+      createWidget(focusNode: focusNode, label: 'External Node'),
+    );
 
     final textField = find.byType(TextField);
     expect(textField, findsOneWidget);
@@ -76,7 +72,9 @@ void main() {
     expect(focusNode.hasFocus, isTrue);
   });
 
-  testWidgets('ValoraTextField updates focus listener when FocusNode changes', (tester) async {
+  testWidgets('ValoraTextField updates focus listener when FocusNode changes', (
+    tester,
+  ) async {
     final focusNode1 = FocusNode();
     final focusNode2 = FocusNode();
 

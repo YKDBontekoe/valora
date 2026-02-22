@@ -71,7 +71,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
 
   Widget? _buildChart() {
     if (widget.title == 'Demographics') {
-      final ageMetrics = widget.metrics.where((m) => m.key.startsWith('age_')).toList();
+      final ageMetrics = widget.metrics
+          .where((m) => m.key.startsWith('age_'))
+          .toList();
       if (ageMetrics.isNotEmpty) {
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -79,7 +81,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           children: [
             Text(
               'Age Distribution',
-              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+              style: ValoraTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             ContextBarChart(metrics: ageMetrics, height: 120),
@@ -90,7 +94,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     }
 
     if (widget.title == 'Housing') {
-      final housingTypeMetrics = widget.metrics.where((m) => m.key.startsWith('housing_')).toList();
+      final housingTypeMetrics = widget.metrics
+          .where((m) => m.key.startsWith('housing_'))
+          .toList();
       if (housingTypeMetrics.isNotEmpty) {
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -98,7 +104,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           children: [
             Text(
               'Housing Profile',
-              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+              style: ValoraTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             ContextPieChart(metrics: housingTypeMetrics, size: 140),
@@ -109,7 +117,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     }
 
     if (widget.title == 'Amenities') {
-      final distMetrics = widget.metrics.where((m) => m.key.startsWith('dist_')).toList();
+      final distMetrics = widget.metrics
+          .where((m) => m.key.startsWith('dist_'))
+          .toList();
       if (distMetrics.isNotEmpty) {
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -117,7 +127,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
           children: [
             Text(
               'Proximity to Amenities',
-              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+              style: ValoraTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             ProximityChart(metrics: distMetrics),
@@ -172,7 +184,10 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                _MiniScoreBar(score: widget.score!, color: accentColor),
+                                _MiniScoreBar(
+                                  score: widget.score!,
+                                  color: accentColor,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   '${widget.score!.round()}% Score',
@@ -188,7 +203,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                       ),
                     ),
                     Icon(
-                      widget.isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                      widget.isExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ],
@@ -207,7 +224,9 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
                     const Divider(height: 1),
                     const SizedBox(height: 20),
                     _buildChart() ?? const SizedBox.shrink(),
-                    ...widget.metrics.map((metric) => _MetricRow(metric: metric)),
+                    ...widget.metrics.map(
+                      (metric) => _MetricRow(metric: metric),
+                    ),
                   ],
                 ),
               ),

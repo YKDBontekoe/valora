@@ -18,10 +18,10 @@ class NotificationService extends ChangeNotifier {
   Timer? _pollingTimer;
 
   final Map<String, Timer> _pendingDeletions = {};
-  final Map<String, (int index, ValoraNotification notification)> _pendingDeletedNotifications = {};
+  final Map<String, (int index, ValoraNotification notification)>
+  _pendingDeletedNotifications = {};
 
   NotificationService(this._apiService);
-
 
   void update(ApiService apiService) {
     _apiService = apiService;
@@ -74,7 +74,7 @@ class NotificationService extends ChangeNotifier {
     // unless we want to reset the timer. But if it's not in _notifications,
     // we can't remove it again.
     if (_pendingDeletions.containsKey(id)) {
-        return;
+      return;
     }
 
     final index = _notifications.indexWhere((n) => n.id == id);
@@ -146,7 +146,9 @@ class NotificationService extends ChangeNotifier {
       var count = results[1] as int;
 
       // Filter out items that are currently pending deletion
-      fetched = fetched.where((n) => !_pendingDeletions.containsKey(n.id)).toList();
+      fetched = fetched
+          .where((n) => !_pendingDeletions.containsKey(n.id))
+          .toList();
 
       // Adjust unread count
       for (final pending in _pendingDeletedNotifications.values) {
@@ -178,7 +180,10 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
+      final fetched = await _apiService.getNotifications(
+        limit: _pageSize,
+        offset: _offset,
+      );
 
       if (fetched.isEmpty) {
         _hasMore = false;
@@ -224,15 +229,19 @@ class NotificationService extends ChangeNotifier {
   Future<void> markAllAsRead() async {
     try {
       // Optimistic update
-      _notifications = _notifications.map((n) => ValoraNotification(
-        id: n.id,
-        title: n.title,
-        body: n.body,
-        isRead: true,
-        createdAt: n.createdAt,
-        type: n.type,
-        actionUrl: n.actionUrl,
-      )).toList();
+      _notifications = _notifications
+          .map(
+            (n) => ValoraNotification(
+              id: n.id,
+              title: n.title,
+              body: n.body,
+              isRead: true,
+              createdAt: n.createdAt,
+              type: n.type,
+              actionUrl: n.actionUrl,
+            ),
+          )
+          .toList();
       _unreadCount = 0;
       notifyListeners();
 

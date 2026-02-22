@@ -19,7 +19,9 @@ class ActivityFeedWidget extends StatelessWidget {
         return ListTile(
           leading: const Icon(Icons.history),
           title: Text(activity.summary),
-          subtitle: Text('${activity.actorId} • ${DateFormat.yMMMd().add_jm().format(activity.createdAt)}'),
+          subtitle: Text(
+            '${activity.actorId} • ${DateFormat.yMMMd().add_jm().format(activity.createdAt)}',
+          ),
         );
       },
     );

@@ -32,13 +32,8 @@ import 'package:valora_app/services/api_service.dart' as _i3;
 // ignore_for_file: invalid_use_of_internal_member
 
 class _FakeContextReport_0 extends _i1.SmartFake implements _i2.ContextReport {
-  _FakeContextReport_0(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
+  _FakeContextReport_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
 }
 
 /// A class which mocks [ApiService].
@@ -55,36 +50,36 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     int? radiusMeters = 1000,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getContextReport,
-          [input],
-          {#radiusMeters: radiusMeters},
-        ),
-        returnValue: _i4.Future<_i2.ContextReport>.value(_FakeContextReport_0(
-          this,
-          Invocation.method(
-            #getContextReport,
-            [input],
-            {#radiusMeters: radiusMeters},
-          ),
-        )),
-      ) as _i4.Future<_i2.ContextReport>);
+            Invocation.method(
+              #getContextReport,
+              [input],
+              {#radiusMeters: radiusMeters},
+            ),
+            returnValue: _i4.Future<_i2.ContextReport>.value(
+              _FakeContextReport_0(
+                this,
+                Invocation.method(
+                  #getContextReport,
+                  [input],
+                  {#radiusMeters: radiusMeters},
+                ),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.ContextReport>);
 
   @override
   _i4.Future<String> getAiAnalysis(_i2.ContextReport? report) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getAiAnalysis,
-          [report],
-        ),
-        returnValue: _i4.Future<String>.value(_i5.dummyValue<String>(
-          this,
-          Invocation.method(
-            #getAiAnalysis,
-            [report],
-          ),
-        )),
-      ) as _i4.Future<String>);
+            Invocation.method(#getAiAnalysis, [report]),
+            returnValue: _i4.Future<String>.value(
+              _i5.dummyValue<String>(
+                this,
+                Invocation.method(#getAiAnalysis, [report]),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
 
   @override
   _i4.Future<List<_i6.ValoraNotification>> getNotifications({
@@ -93,76 +88,69 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     int? offset = 0,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getNotifications,
-          [],
-          {
-            #unreadOnly: unreadOnly,
-            #limit: limit,
-            #offset: offset,
-          },
-        ),
-        returnValue: _i4.Future<List<_i6.ValoraNotification>>.value(
-            <_i6.ValoraNotification>[]),
-      ) as _i4.Future<List<_i6.ValoraNotification>>);
+            Invocation.method(#getNotifications, [], {
+              #unreadOnly: unreadOnly,
+              #limit: limit,
+              #offset: offset,
+            }),
+            returnValue: _i4.Future<List<_i6.ValoraNotification>>.value(
+              <_i6.ValoraNotification>[],
+            ),
+          )
+          as _i4.Future<List<_i6.ValoraNotification>>);
 
   @override
-  _i4.Future<int> getUnreadNotificationCount() => (super.noSuchMethod(
-        Invocation.method(
-          #getUnreadNotificationCount,
-          [],
-        ),
-        returnValue: _i4.Future<int>.value(0),
-      ) as _i4.Future<int>);
+  _i4.Future<int> getUnreadNotificationCount() =>
+      (super.noSuchMethod(
+            Invocation.method(#getUnreadNotificationCount, []),
+            returnValue: _i4.Future<int>.value(0),
+          )
+          as _i4.Future<int>);
 
   @override
-  _i4.Future<void> markNotificationAsRead(String? id) => (super.noSuchMethod(
-        Invocation.method(
-          #markNotificationAsRead,
-          [id],
-        ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
+  _i4.Future<void> markNotificationAsRead(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#markNotificationAsRead, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
-  _i4.Future<void> markAllNotificationsAsRead() => (super.noSuchMethod(
-        Invocation.method(
-          #markAllNotificationsAsRead,
-          [],
-        ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
+  _i4.Future<void> markAllNotificationsAsRead() =>
+      (super.noSuchMethod(
+            Invocation.method(#markAllNotificationsAsRead, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
-  _i4.Future<void> deleteNotification(String? id) => (super.noSuchMethod(
-        Invocation.method(
-          #deleteNotification,
-          [id],
-        ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
+  _i4.Future<void> deleteNotification(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteNotification, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
-  _i4.Future<bool> healthCheck() => (super.noSuchMethod(
-        Invocation.method(
-          #healthCheck,
-          [],
-        ),
-        returnValue: _i4.Future<bool>.value(false),
-      ) as _i4.Future<bool>);
+  _i4.Future<bool> healthCheck() =>
+      (super.noSuchMethod(
+            Invocation.method(#healthCheck, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
 
   @override
-  _i4.Future<List<_i7.MapCityInsight>> getCityInsights() => (super.noSuchMethod(
-        Invocation.method(
-          #getCityInsights,
-          [],
-        ),
-        returnValue:
-            _i4.Future<List<_i7.MapCityInsight>>.value(<_i7.MapCityInsight>[]),
-      ) as _i4.Future<List<_i7.MapCityInsight>>);
+  _i4.Future<List<_i7.MapCityInsight>> getCityInsights() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCityInsights, []),
+            returnValue: _i4.Future<List<_i7.MapCityInsight>>.value(
+              <_i7.MapCityInsight>[],
+            ),
+          )
+          as _i4.Future<List<_i7.MapCityInsight>>);
 
   @override
   _i4.Future<List<_i8.MapAmenity>> getMapAmenities({
@@ -173,19 +161,18 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     List<String>? types,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getMapAmenities,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #types: types,
-          },
-        ),
-        returnValue: _i4.Future<List<_i8.MapAmenity>>.value(<_i8.MapAmenity>[]),
-      ) as _i4.Future<List<_i8.MapAmenity>>);
+            Invocation.method(#getMapAmenities, [], {
+              #minLat: minLat,
+              #minLon: minLon,
+              #maxLat: maxLat,
+              #maxLon: maxLon,
+              #types: types,
+            }),
+            returnValue: _i4.Future<List<_i8.MapAmenity>>.value(
+              <_i8.MapAmenity>[],
+            ),
+          )
+          as _i4.Future<List<_i8.MapAmenity>>);
 
   @override
   _i4.Future<List<_i9.MapAmenityCluster>> getMapAmenityClusters({
@@ -197,21 +184,19 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     List<String>? types,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getMapAmenityClusters,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-            #types: types,
-          },
-        ),
-        returnValue: _i4.Future<List<_i9.MapAmenityCluster>>.value(
-            <_i9.MapAmenityCluster>[]),
-      ) as _i4.Future<List<_i9.MapAmenityCluster>>);
+            Invocation.method(#getMapAmenityClusters, [], {
+              #minLat: minLat,
+              #minLon: minLon,
+              #maxLat: maxLat,
+              #maxLon: maxLon,
+              #zoom: zoom,
+              #types: types,
+            }),
+            returnValue: _i4.Future<List<_i9.MapAmenityCluster>>.value(
+              <_i9.MapAmenityCluster>[],
+            ),
+          )
+          as _i4.Future<List<_i9.MapAmenityCluster>>);
 
   @override
   _i4.Future<List<_i10.MapOverlay>> getMapOverlays({
@@ -222,20 +207,18 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     required String? metric,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getMapOverlays,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #metric: metric,
-          },
-        ),
-        returnValue:
-            _i4.Future<List<_i10.MapOverlay>>.value(<_i10.MapOverlay>[]),
-      ) as _i4.Future<List<_i10.MapOverlay>>);
+            Invocation.method(#getMapOverlays, [], {
+              #minLat: minLat,
+              #minLon: minLon,
+              #maxLat: maxLat,
+              #maxLon: maxLon,
+              #metric: metric,
+            }),
+            returnValue: _i4.Future<List<_i10.MapOverlay>>.value(
+              <_i10.MapOverlay>[],
+            ),
+          )
+          as _i4.Future<List<_i10.MapOverlay>>);
 
   @override
   _i4.Future<List<_i11.MapOverlayTile>> getMapOverlayTiles({
@@ -247,21 +230,19 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     required String? metric,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getMapOverlayTiles,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-            #metric: metric,
-          },
-        ),
-        returnValue: _i4.Future<List<_i11.MapOverlayTile>>.value(
-            <_i11.MapOverlayTile>[]),
-      ) as _i4.Future<List<_i11.MapOverlayTile>>);
+            Invocation.method(#getMapOverlayTiles, [], {
+              #minLat: minLat,
+              #minLon: minLon,
+              #maxLat: maxLat,
+              #maxLon: maxLon,
+              #zoom: zoom,
+              #metric: metric,
+            }),
+            returnValue: _i4.Future<List<_i11.MapOverlayTile>>.value(
+              <_i11.MapOverlayTile>[],
+            ),
+          )
+          as _i4.Future<List<_i11.MapOverlayTile>>);
 
   @override
   _i4.Future<dynamic> get(
@@ -269,36 +250,28 @@ class MockApiService extends _i1.Mock implements _i3.ApiService {
     Map<String, dynamic>? queryParameters,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #get,
-          [path],
-          {#queryParameters: queryParameters},
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
+            Invocation.method(
+              #get,
+              [path],
+              {#queryParameters: queryParameters},
+            ),
+            returnValue: _i4.Future<dynamic>.value(),
+          )
+          as _i4.Future<dynamic>);
 
   @override
-  _i4.Future<dynamic> post(
-    String? path,
-    dynamic data,
-  ) =>
+  _i4.Future<dynamic> post(String? path, dynamic data) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #post,
-          [
-            path,
-            data,
-          ],
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
+            Invocation.method(#post, [path, data]),
+            returnValue: _i4.Future<dynamic>.value(),
+          )
+          as _i4.Future<dynamic>);
 
   @override
-  _i4.Future<dynamic> delete(String? path) => (super.noSuchMethod(
-        Invocation.method(
-          #delete,
-          [path],
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
+  _i4.Future<dynamic> delete(String? path) =>
+      (super.noSuchMethod(
+            Invocation.method(#delete, [path]),
+            returnValue: _i4.Future<dynamic>.value(),
+          )
+          as _i4.Future<dynamic>);
 }

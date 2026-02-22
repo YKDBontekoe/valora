@@ -26,7 +26,8 @@ class LoggingService {
           'logger': record.loggerName,
           'message': record.message,
           if (record.error != null) 'error': record.error.toString(),
-          if (record.stackTrace != null) 'stackTrace': record.stackTrace.toString(),
+          if (record.stackTrace != null)
+            'stackTrace': record.stackTrace.toString(),
         };
         debugPrint(jsonEncode(logEntry));
       }

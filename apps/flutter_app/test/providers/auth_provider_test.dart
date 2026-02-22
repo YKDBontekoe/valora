@@ -7,7 +7,12 @@ import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/services/auth_service.dart';
 
-@GenerateMocks([AuthService, GoogleSignIn, GoogleSignInAccount, GoogleSignInAuthentication])
+@GenerateMocks([
+  AuthService,
+  GoogleSignIn,
+  GoogleSignInAccount,
+  GoogleSignInAuthentication,
+])
 import 'auth_provider_test.mocks.dart';
 
 void main() {
@@ -225,32 +230,37 @@ void main() {
       expect(authProvider.email, null);
     });
 
-    test('refreshSession should log severe and keep state on unexpected failure', () async {
+    test(
+      'refreshSession should log severe and keep state on unexpected failure',
+      () async {
+        final header = base64Url.encode(
+          utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+        );
+        final payload = base64Url.encode(
+          utf8.encode(json.encode({'email': 'unexpected@example.com'})),
+        );
+        final token = '$header.$payload.signature';
+
+        when(mockAuthService.getToken()).thenAnswer((_) async => token);
+        await authProvider.checkAuth();
+
+        when(
+          mockAuthService.refreshToken(),
+        ).thenThrow(Exception('Unexpected error'));
+
+        final result = await authProvider.refreshSession();
+
+        expect(result, isNull);
+        expect(authProvider.isAuthenticated, true);
+        expect(authProvider.email, 'unexpected@example.com');
+        verifyNever(mockAuthService.deleteToken());
+      },
+    );
+
+    test('checkAuth handles JWT parsing error gracefully', () async {
       final header = base64Url.encode(
         utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
       );
-      final payload = base64Url.encode(
-        utf8.encode(json.encode({'email': 'unexpected@example.com'})),
-      );
-      final token = '$header.$payload.signature';
-
-      when(mockAuthService.getToken()).thenAnswer((_) async => token);
-      await authProvider.checkAuth();
-
-      when(
-        mockAuthService.refreshToken(),
-      ).thenThrow(Exception('Unexpected error'));
-
-      final result = await authProvider.refreshSession();
-
-      expect(result, isNull);
-      expect(authProvider.isAuthenticated, true);
-      expect(authProvider.email, 'unexpected@example.com');
-      verifyNever(mockAuthService.deleteToken());
-    });
-
-    test('checkAuth handles JWT parsing error gracefully', () async {
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
       final invalidPayload = base64Url.encode(utf8.encode('this is not json'));
       final token = '$header.$invalidPayload.signature';
 
@@ -265,18 +275,24 @@ void main() {
     test('loginWithGoogle success path', () async {
       final mockAccount = MockGoogleSignInAccount();
       final mockAuth = MockGoogleSignInAuthentication();
-      final header = base64Url.encode(utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})));
-      final payload = base64Url.encode(utf8.encode(json.encode({'email': 'google@example.com'})));
+      final header = base64Url.encode(
+        utf8.encode(json.encode({'typ': 'JWT', 'alg': 'HS256'})),
+      );
+      final payload = base64Url.encode(
+        utf8.encode(json.encode({'email': 'google@example.com'})),
+      );
       final token = '$header.$payload.signature';
 
       when(mockGoogleSignIn.initialize()).thenAnswer((_) async {});
-      when(mockGoogleSignIn.authenticate(scopeHint: anyNamed('scopeHint')))
-          .thenAnswer((_) async => mockAccount);
+      when(
+        mockGoogleSignIn.authenticate(scopeHint: anyNamed('scopeHint')),
+      ).thenAnswer((_) async => mockAccount);
       when(mockAccount.authentication).thenReturn(mockAuth);
       when(mockAuth.idToken).thenReturn('google_id_token');
 
-      when(mockAuthService.externalLogin('google', 'google_id_token'))
-          .thenAnswer((_) async => {'token': token});
+      when(
+        mockAuthService.externalLogin('google', 'google_id_token'),
+      ).thenAnswer((_) async => {'token': token});
 
       await authProvider.loginWithGoogle();
 
@@ -284,7 +300,9 @@ void main() {
       expect(authProvider.email, 'google@example.com');
       verify(mockGoogleSignIn.initialize()).called(1);
       verify(mockGoogleSignIn.authenticate(scopeHint: ['email'])).called(1);
-      verify(mockAuthService.externalLogin('google', 'google_id_token')).called(1);
+      verify(
+        mockAuthService.externalLogin('google', 'google_id_token'),
+      ).called(1);
     });
 
     test('loginWithGoogle handles missing idToken', () async {
@@ -292,8 +310,9 @@ void main() {
       final mockAuth = MockGoogleSignInAuthentication();
 
       when(mockGoogleSignIn.initialize()).thenAnswer((_) async {});
-      when(mockGoogleSignIn.authenticate(scopeHint: anyNamed('scopeHint')))
-          .thenAnswer((_) async => mockAccount);
+      when(
+        mockGoogleSignIn.authenticate(scopeHint: anyNamed('scopeHint')),
+      ).thenAnswer((_) async => mockAccount);
       when(mockAccount.authentication).thenReturn(mockAuth);
       when(mockAuth.idToken).thenReturn(null);
 

@@ -21,9 +21,15 @@ class InsightsLegend extends StatelessWidget {
             width: 168,
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
+              color: isDark
+                  ? ValoraColors.glassBlackStrong
+                  : ValoraColors.glassWhiteStrong,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+              border: Border.all(
+                color: isDark
+                    ? ValoraColors.neutral700
+                    : ValoraColors.neutral200,
+              ),
               boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
             ),
             child: Column(
@@ -31,9 +37,9 @@ class InsightsLegend extends StatelessWidget {
               children: [
                 Text(
                   '${_getMetricLabel(metric)} score',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 _buildLegendRow(context, '80+', ValoraColors.success),

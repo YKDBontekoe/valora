@@ -17,7 +17,10 @@ class _MockApiService extends ApiService {
   bool delayFetch = false;
 
   @override
-  Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
+  Future<ContextReport> getContextReport(
+    String input, {
+    int radiusMeters = 1000,
+  }) async {
     if (reports.containsKey(input)) {
       return reports[input]!;
     }
@@ -38,7 +41,11 @@ void main() {
   late ContextReportProvider provider;
   late _MockApiService apiService;
 
-  ContextReport createReport(String query, double score, {Map<String, double>? categories}) {
+  ContextReport createReport(
+    String query,
+    double score, {
+    Map<String, double>? categories,
+  }) {
     return ContextReport(
       location: ContextLocation(
         query: query,
@@ -54,10 +61,7 @@ void main() {
       amenityMetrics: [],
       environmentMetrics: [],
       compositeScore: score,
-      categoryScores: categories ?? {
-        'Social': 80,
-        'Safety': 90,
-      },
+      categoryScores: categories ?? {'Social': 80, 'Safety': 90},
       sources: [],
       warnings: [],
     );
@@ -84,12 +88,16 @@ void main() {
     );
   }
 
-  testWidgets('ComparisonView shows message when empty', (WidgetTester tester) async {
+  testWidgets('ComparisonView shows message when empty', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(createTestWidget());
     expect(find.text('No reports to compare'), findsOneWidget);
   });
 
-  testWidgets('ComparisonView shows reports when added', (WidgetTester tester) async {
+  testWidgets('ComparisonView shows reports when added', (
+    WidgetTester tester,
+  ) async {
     await provider.addToComparison('A', 1000);
     await provider.addToComparison('B', 1000);
 
@@ -134,8 +142,14 @@ void main() {
     expect(find.byType(ScoreGauge), findsOneWidget);
   });
 
-  testWidgets('ComparisonView handles different categories', (WidgetTester tester) async {
-    apiService.reports['C'] = createReport('C', 70, categories: {'Social': 60, 'Environment': 80});
+  testWidgets('ComparisonView handles different categories', (
+    WidgetTester tester,
+  ) async {
+    apiService.reports['C'] = createReport(
+      'C',
+      70,
+      categories: {'Social': 60, 'Environment': 80},
+    );
     await provider.addToComparison('A', 1000); // Has Social, Safety
     await provider.addToComparison('C', 1000); // Has Social, Environment
 

@@ -109,9 +109,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.72),
-                                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.02),
-                                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.14),
+                                Theme.of(context).scaffoldBackgroundColor
+                                    .withValues(alpha: 0.72),
+                                Theme.of(context).scaffoldBackgroundColor
+                                    .withValues(alpha: 0.02),
+                                Theme.of(context).scaffoldBackgroundColor
+                                    .withValues(alpha: 0.14),
                               ],
                               stops: const [0, 0.42, 1],
                             ),

@@ -11,7 +11,9 @@ void main() {
     longitude: 0,
   );
 
-  testWidgets('SmartInsightsGrid renders correct scores and labels', (tester) async {
+  testWidgets('SmartInsightsGrid renders correct scores and labels', (
+    tester,
+  ) async {
     final report = ContextReport(
       location: testLocation,
       socialMetrics: [
@@ -19,8 +21,18 @@ void main() {
       ],
       crimeMetrics: [],
       demographicsMetrics: [
-        ContextMetric(key: 'family_friendly', label: 'Family', source: 'S', score: 90),
-        ContextMetric(key: 'income_per_inhabitant', label: 'Income', source: 'S', score: 75),
+        ContextMetric(
+          key: 'family_friendly',
+          label: 'Family',
+          source: 'S',
+          score: 90,
+        ),
+        ContextMetric(
+          key: 'income_per_inhabitant',
+          label: 'Income',
+          source: 'S',
+          score: 75,
+        ),
       ],
       housingMetrics: [],
       mobilityMetrics: [],
@@ -32,9 +44,11 @@ void main() {
       warnings: [],
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: SmartInsightsGrid(report: report)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SmartInsightsGrid(report: report)),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('Family Friendly'), findsOneWidget);
@@ -60,7 +74,12 @@ void main() {
       socialMetrics: [],
       crimeMetrics: [],
       demographicsMetrics: [
-        ContextMetric(key: 'income_per_inhabitant', label: 'Inc', source: 'S', score: 90),
+        ContextMetric(
+          key: 'income_per_inhabitant',
+          label: 'Inc',
+          source: 'S',
+          score: 90,
+        ),
         // No family metrics at all
       ],
       housingMetrics: [],
@@ -73,9 +92,11 @@ void main() {
       warnings: [],
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: SmartInsightsGrid(report: partialReport)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SmartInsightsGrid(report: partialReport)),
+      ),
+    );
     await tester.pump();
 
     // Economic: (90 + 50) / 2 = 70
@@ -99,9 +120,11 @@ void main() {
       warnings: [],
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: SmartInsightsGrid(report: emptyReport)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SmartInsightsGrid(report: emptyReport)),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('N/A'), findsNWidgets(4));

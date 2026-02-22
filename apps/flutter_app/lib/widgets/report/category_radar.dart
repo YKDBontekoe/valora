@@ -100,10 +100,12 @@ class _RadarPainter extends CustomPainter {
       final angle = startAngle + angleStep * i;
       final value = (entries[i].value / 100).clamp(0.0, 1.0) * progress;
       final radius = maxRadius * value;
-      points.add(Offset(
-        center.dx + radius * math.cos(angle),
-        center.dy + radius * math.sin(angle),
-      ));
+      points.add(
+        Offset(
+          center.dx + radius * math.cos(angle),
+          center.dy + radius * math.sin(angle),
+        ),
+      );
     }
 
     // Draw filled polygon

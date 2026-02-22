@@ -30,7 +30,7 @@ class ScoreGauge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scoreColor = _getScoreColor(score);
-    
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: score.clamp(0, 100)),
       duration: animationDuration,
@@ -48,7 +48,9 @@ class ScoreGauge extends StatelessWidget {
                 painter: _GaugePainter(
                   score: 100,
                   strokeWidth: strokeWidth,
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.5,
+                  ),
                 ),
               ),
               // Animated score arc
@@ -118,10 +120,7 @@ class _GaugePainter extends CustomPainter {
       paint.shader = SweepGradient(
         startAngle: startAngle,
         endAngle: startAngle + math.max(0.001, sweepAngle),
-        colors: [
-          color.withValues(alpha: 0.6),
-          color,
-        ],
+        colors: [color.withValues(alpha: 0.6), color],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     } else {
       paint.color = color;

@@ -3,10 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../models/context_report.dart';
 
 class ProximityChart extends StatelessWidget {
-  const ProximityChart({
-    super.key,
-    required this.metrics,
-  });
+  const ProximityChart({super.key, required this.metrics});
 
   final List<ContextMetric> metrics;
 
@@ -50,7 +47,9 @@ class ProximityChart extends StatelessWidget {
                 children: [
                   Text(
                     metric.label,
-                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   Text(
                     '${distance.toStringAsFixed(1)} km',

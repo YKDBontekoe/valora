@@ -28,10 +28,15 @@ class SearchHistoryService {
     final List<SearchHistoryItem> history = await getHistory();
 
     // Remove existing item if same query (case-insensitive)
-    history.removeWhere((item) => item.query.toLowerCase() == query.toLowerCase());
+    history.removeWhere(
+      (item) => item.query.toLowerCase() == query.toLowerCase(),
+    );
 
     // Add new item to top
-    history.insert(0, SearchHistoryItem(query: query, timestamp: DateTime.now()));
+    history.insert(
+      0,
+      SearchHistoryItem(query: query, timestamp: DateTime.now()),
+    );
 
     // Limit size
     if (history.length > _maxHistory) {

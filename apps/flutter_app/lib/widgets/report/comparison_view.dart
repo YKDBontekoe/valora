@@ -22,7 +22,10 @@ class ComparisonView extends StatelessWidget {
       return const Center(child: Text('No reports to compare'));
     }
 
-    final reports = ids.map((id) => provider.getReportById(id)).whereType<ContextReport>().toList();
+    final reports = ids
+        .map((id) => provider.getReportById(id))
+        .whereType<ContextReport>()
+        .toList();
 
     // Header Row
     return ListView(
@@ -43,11 +46,11 @@ class ComparisonView extends StatelessWidget {
               final radius = int.tryParse(parts[1]) ?? 1000;
 
               if (loadedReport == null) {
-                 return const SizedBox(
-                   width: 160,
-                   height: 200,
-                   child: Center(child: CircularProgressIndicator())
-                 );
+                return const SizedBox(
+                  width: 160,
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                );
               }
 
               return Container(
@@ -71,7 +74,7 @@ class ComparisonView extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.close, size: 20),
                       onPressed: () {
-                         provider.removeFromComparison(query, radius);
+                        provider.removeFromComparison(query, radius);
                       },
                     ),
                     const SizedBox(height: 16),
@@ -105,17 +108,22 @@ class ComparisonView extends StatelessWidget {
 
         Text('AI Insights', style: ValoraTypography.titleMedium),
         const SizedBox(height: 16),
-        ...reports.map((report) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
-              const SizedBox(height: 8),
-              AiInsightCard(report: report),
-            ],
+        ...reports.map(
+          (report) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  report.location.displayAddress,
+                  style: ValoraTypography.labelMedium,
+                ),
+                const SizedBox(height: 8),
+                AiInsightCard(report: report),
+              ],
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
@@ -130,8 +138,8 @@ class ComparisonView extends StatelessWidget {
       border: TableBorder(
         horizontalInside: BorderSide(
           color: ValoraColors.neutral200,
-          width: 0.5
-        )
+          width: 0.5,
+        ),
       ),
       columnWidths: const {
         0: FixedColumnWidth(100), // Label
@@ -140,35 +148,47 @@ class ComparisonView extends StatelessWidget {
         // Header row
         TableRow(
           children: [
-             const SizedBox(), // Label column
-             ...reports.map((r) => Padding(
-               padding: const EdgeInsets.all(8.0),
-               child: Text(
-                 r.location.displayAddress.split(',')[0],
-                 style: ValoraTypography.labelSmall,
-                 textAlign: TextAlign.center,
-                 maxLines: 1,
-                 overflow: TextOverflow.ellipsis,
-               ),
-             )),
-          ]
+            const SizedBox(), // Label column
+            ...reports.map(
+              (r) => Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  r.location.displayAddress.split(',')[0],
+                  style: ValoraTypography.labelSmall,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
         ),
         ...categories.map((category) {
-           return TableRow(
-             children: [
-               Padding(
-                 padding: const EdgeInsets.symmetric(vertical: 12),
-                 child: Text(category, style: ValoraTypography.labelSmall.copyWith(fontWeight: FontWeight.bold)),
-               ),
-               ...reports.map((report) {
-                 final score = report.categoryScores[category] ?? 0;
-                 return Padding(
-                   padding: const EdgeInsets.symmetric(vertical: 12),
-                   child: Center(child: Text(score.toStringAsFixed(1), style: ValoraTypography.bodyMedium)),
-                 );
-               }),
-             ]
-           );
+          return TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  category,
+                  style: ValoraTypography.labelSmall.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ...reports.map((report) {
+                final score = report.categoryScores[category] ?? 0;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: Text(
+                      score.toStringAsFixed(1),
+                      style: ValoraTypography.bodyMedium,
+                    ),
+                  ),
+                );
+              }),
+            ],
+          );
         }),
       ],
     );

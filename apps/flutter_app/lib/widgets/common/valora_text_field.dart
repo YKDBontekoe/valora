@@ -111,7 +111,8 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final effectiveFillColor = widget.fillColor ??
+    final effectiveFillColor =
+        widget.fillColor ??
         (isDark
             ? ValoraColors.surfaceVariantDark.withValues(alpha: 0.5)
             : ValoraColors.neutral50);
@@ -128,8 +129,8 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
               color: _isFocused
                   ? (isDark ? ValoraColors.primaryLight : ValoraColors.primary)
                   : (isDark
-                      ? ValoraColors.neutral400
-                      : ValoraColors.neutral500),
+                        ? ValoraColors.neutral400
+                        : ValoraColors.neutral500),
               fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w500,
             ),
             child: Text(widget.label!),
@@ -146,10 +147,11 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
             boxShadow: _isFocused
                 ? [
                     BoxShadow(
-                      color: (isDark
-                              ? ValoraColors.primaryLight
-                              : ValoraColors.primary)
-                          .withValues(alpha: 0.12),
+                      color:
+                          (isDark
+                                  ? ValoraColors.primaryLight
+                                  : ValoraColors.primary)
+                              .withValues(alpha: 0.12),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                       spreadRadius: -2,
@@ -171,8 +173,7 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
             inputFormatters: widget.inputFormatters,
             textInputAction: widget.textInputAction,
             style: ValoraTypography.bodyMedium.copyWith(
-              color:
-                  isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
+              color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
             ),
             decoration: InputDecoration(
               hintText: widget.hint,
@@ -185,13 +186,11 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
                 vertical: ValoraSpacing.md,
               ),
               border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(ValoraSpacing.radiusLg),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(ValoraSpacing.radiusLg),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
                 borderSide: BorderSide(
                   color: isDark
                       ? ValoraColors.neutral700.withValues(alpha: 0.4)
@@ -199,8 +198,7 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(ValoraSpacing.radiusLg),
+                borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
                 borderSide: BorderSide(
                   color: isDark
                       ? ValoraColors.primaryLight

@@ -30,8 +30,9 @@ void main() {
     when(mockProvider.cities).thenReturn([]);
     when(mockProvider.overlays).thenReturn([]);
     when(mockProvider.amenities).thenReturn([]);
-    when(mockProvider.selectedOverlayMetric)
-        .thenReturn(MapOverlayMetric.pricePerSquareMeter);
+    when(
+      mockProvider.selectedOverlayMetric,
+    ).thenReturn(MapOverlayMetric.pricePerSquareMeter);
     when(mockProvider.mapError).thenReturn(null);
 
     HttpOverrides.global = null;
@@ -56,16 +57,8 @@ void main() {
   group('InsightsHeader', () {
     testWidgets('displays title and city count', (WidgetTester tester) async {
       when(mockProvider.cities).thenReturn([
-        MapCityInsight(
-          city: 'City A',
-          count: 10,
-          location: const LatLng(0, 0),
-        ),
-        MapCityInsight(
-          city: 'City B',
-          count: 5,
-          location: const LatLng(0, 0),
-        ),
+        MapCityInsight(city: 'City A', count: 10, location: const LatLng(0, 0)),
+        MapCityInsight(city: 'City B', count: 5, location: const LatLng(0, 0)),
       ]);
 
       await tester.pumpWidget(createWidget(const InsightsHeader()));
@@ -77,13 +70,17 @@ void main() {
   });
 
   group('InsightsLegend', () {
-    testWidgets('displays correct label for Overall metric', (WidgetTester tester) async {
+    testWidgets('displays correct label for Overall metric', (
+      WidgetTester tester,
+    ) async {
       when(mockProvider.selectedMetric).thenReturn(InsightMetric.composite);
       await tester.pumpWidget(createWidget(const InsightsLegend()));
       expect(find.text('Overall score'), findsOneWidget);
     });
 
-    testWidgets('displays correct label for Safety metric', (WidgetTester tester) async {
+    testWidgets('displays correct label for Safety metric', (
+      WidgetTester tester,
+    ) async {
       when(mockProvider.selectedMetric).thenReturn(InsightMetric.safety);
       await tester.pumpWidget(createWidget(const InsightsLegend()));
       expect(find.text('Safety score'), findsOneWidget);
@@ -120,15 +117,21 @@ void main() {
   });
 
   group('InsightsControls', () {
-    testWidgets('displays zoom buttons and toggles', (WidgetTester tester) async {
+    testWidgets('displays zoom buttons and toggles', (
+      WidgetTester tester,
+    ) async {
       when(mockProvider.showOverlays).thenReturn(false);
       when(mockProvider.showAmenities).thenReturn(false);
 
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () {},
-        onZoomOut: () {},
-        onMapChanged: () {},
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InsightsControls(
+            onZoomIn: () {},
+            onZoomOut: () {},
+            onMapChanged: () {},
+          ),
+        ),
+      );
 
       expect(find.byIcon(Icons.add_rounded), findsOneWidget);
       expect(find.byIcon(Icons.remove_rounded), findsOneWidget);
@@ -140,11 +143,15 @@ void main() {
       bool zoomInCalled = false;
       bool zoomOutCalled = false;
 
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () => zoomInCalled = true,
-        onZoomOut: () => zoomOutCalled = true,
-        onMapChanged: () {},
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InsightsControls(
+            onZoomIn: () => zoomInCalled = true,
+            onZoomOut: () => zoomOutCalled = true,
+            onMapChanged: () {},
+          ),
+        ),
+      );
 
       await tester.tap(find.byIcon(Icons.add_rounded));
       expect(zoomInCalled, isTrue);
@@ -153,13 +160,19 @@ void main() {
       expect(zoomOutCalled, isTrue);
     });
 
-    testWidgets('toggles provider amenities state', (WidgetTester tester) async {
+    testWidgets('toggles provider amenities state', (
+      WidgetTester tester,
+    ) async {
       when(mockProvider.showAmenities).thenReturn(false);
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () {},
-        onZoomOut: () {},
-        onMapChanged: () {},
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InsightsControls(
+            onZoomIn: () {},
+            onZoomOut: () {},
+            onMapChanged: () {},
+          ),
+        ),
+      );
 
       await tester.tap(find.byIcon(Icons.place_rounded));
       verify(mockProvider.toggleAmenities()).called(1);
@@ -167,26 +180,37 @@ void main() {
 
     testWidgets('toggles provider overlays state', (WidgetTester tester) async {
       when(mockProvider.showOverlays).thenReturn(false);
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () {},
-        onZoomOut: () {},
-        onMapChanged: () {},
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InsightsControls(
+            onZoomIn: () {},
+            onZoomOut: () {},
+            onMapChanged: () {},
+          ),
+        ),
+      );
 
       await tester.tap(find.byIcon(Icons.layers_rounded));
       verify(mockProvider.toggleOverlays()).called(1);
     });
 
-    testWidgets('shows dropdown when overlays are enabled', (WidgetTester tester) async {
+    testWidgets('shows dropdown when overlays are enabled', (
+      WidgetTester tester,
+    ) async {
       when(mockProvider.showOverlays).thenReturn(true);
-      when(mockProvider.selectedOverlayMetric)
-          .thenReturn(MapOverlayMetric.pricePerSquareMeter);
+      when(
+        mockProvider.selectedOverlayMetric,
+      ).thenReturn(MapOverlayMetric.pricePerSquareMeter);
 
-      await tester.pumpWidget(createWidget(InsightsControls(
-        onZoomIn: () {},
-        onZoomOut: () {},
-        onMapChanged: () {},
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InsightsControls(
+            onZoomIn: () {},
+            onZoomOut: () {},
+            onMapChanged: () {},
+          ),
+        ),
+      );
 
       expect(find.byType(DropdownButton<MapOverlayMetric>), findsOneWidget);
       expect(find.text('Price/m²'), findsOneWidget);
@@ -194,17 +218,22 @@ void main() {
   });
 
   group('InsightsMap Widget', () {
-    testWidgets('renders FlutterMap with TileLayer', (WidgetTester tester) async {
-      await tester.pumpWidget(createWidget(InsightsMap(
-        mapController: MapController(),
-        onMapChanged: () {},
-      )));
+    testWidgets('renders FlutterMap with TileLayer', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        createWidget(
+          InsightsMap(mapController: MapController(), onMapChanged: () {}),
+        ),
+      );
 
       expect(find.byType(FlutterMap), findsOneWidget);
       expect(find.byType(TileLayer), findsOneWidget);
     });
 
-    testWidgets('renders city markers via widget tree', (WidgetTester tester) async {
+    testWidgets('renders city markers via widget tree', (
+      WidgetTester tester,
+    ) async {
       when(mockProvider.cities).thenReturn([
         MapCityInsight(
           city: 'Test City',
@@ -215,10 +244,11 @@ void main() {
       ]);
       when(mockProvider.getScore(any)).thenReturn(85.0);
 
-      await tester.pumpWidget(createWidget(InsightsMap(
-        mapController: MapController(),
-        onMapChanged: () {},
-      )));
+      await tester.pumpWidget(
+        createWidget(
+          InsightsMap(mapController: MapController(), onMapChanged: () {}),
+        ),
+      );
 
       await tester.pumpAndSettle();
 
@@ -244,10 +274,10 @@ void main() {
                 [5.1, 52.0],
                 [5.1, 52.1],
                 [5.0, 52.1],
-                [5.0, 52.0]
-              ]
-            ]
-          }
+                [5.0, 52.0],
+              ],
+            ],
+          },
         },
       );
 
@@ -263,7 +293,9 @@ void main() {
       expect(polygon.borderColor, Colors.orange);
     });
 
-    testWidgets('buildAmenityMarker returns correct Marker', (WidgetTester tester) async {
+    testWidgets('buildAmenityMarker returns correct Marker', (
+      WidgetTester tester,
+    ) async {
       final amenity = MapAmenity(
         id: '1',
         type: 'school',
@@ -271,55 +303,62 @@ void main() {
         location: const LatLng(52.0, 5.0),
       );
 
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(
-          builder: (context) {
-            final marker = InsightsMap.buildAmenityMarker(context, amenity);
-            return SizedBox(
-              width: 100,
-              height: 100,
-              child: marker.child,
-            );
-          },
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final marker = InsightsMap.buildAmenityMarker(context, amenity);
+              return SizedBox(width: 100, height: 100, child: marker.child);
+            },
+          ),
         ),
-      ));
+      );
 
       expect(find.byIcon(Icons.school_rounded), findsOneWidget);
     });
 
-    testWidgets('buildCityMarker returns correct Marker', (WidgetTester tester) async {
+    testWidgets('buildCityMarker returns correct Marker', (
+      WidgetTester tester,
+    ) async {
       final city = MapCityInsight(
         city: 'City',
         count: 100,
         location: const LatLng(52.0, 5.0),
       );
 
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(
-          builder: (context) {
-            final marker = InsightsMap.buildCityMarker(context, city, 85.0);
-            return SizedBox(
-              width: 100,
-              height: 100,
-              child: marker.child,
-            );
-          },
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final marker = InsightsMap.buildCityMarker(context, city, 85.0);
+              return SizedBox(width: 100, height: 100, child: marker.child);
+            },
+          ),
         ),
-      ));
+      );
 
       expect(find.text('85'), findsOneWidget);
     });
 
-    testWidgets('buildDetailRow displays label and value', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) => InsightsMap.buildDetailRow(context, 'Label', 'Value')),
-      ));
+    testWidgets('buildDetailRow displays label and value', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) =>
+                InsightsMap.buildDetailRow(context, 'Label', 'Value'),
+          ),
+        ),
+      );
 
       expect(find.text('Label'), findsOneWidget);
       expect(find.text('Value'), findsOneWidget);
     });
 
-    testWidgets('buildCityDetailsSheet displays city info', (WidgetTester tester) async {
+    testWidgets('buildCityDetailsSheet displays city info', (
+      WidgetTester tester,
+    ) async {
       final city = MapCityInsight(
         city: 'Test City',
         count: 100,
@@ -328,13 +367,17 @@ void main() {
         safetyScore: 90.0,
       );
 
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(builder: (context) {
-            return InsightsMap.buildCityDetailsSheet(context, city);
-          }),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return InsightsMap.buildCityDetailsSheet(context, city);
+              },
+            ),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('Test City'), findsOneWidget);
       expect(find.text('Data points'), findsOneWidget);
@@ -343,7 +386,9 @@ void main() {
       expect(find.text('90.0'), findsOneWidget);
     });
 
-    testWidgets('buildAmenityDetailsSheet displays amenity info', (WidgetTester tester) async {
+    testWidgets('buildAmenityDetailsSheet displays amenity info', (
+      WidgetTester tester,
+    ) async {
       final amenity = MapAmenity(
         id: '1',
         type: 'school',
@@ -352,13 +397,17 @@ void main() {
         metadata: {'Key': 'Value'},
       );
 
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(builder: (context) {
-            return InsightsMap.buildAmenityDetailsSheet(context, amenity);
-          }),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return InsightsMap.buildAmenityDetailsSheet(context, amenity);
+              },
+            ),
+          ),
         ),
-      ));
+      );
 
       expect(find.text('Test School'), findsOneWidget);
       expect(find.text('SCHOOL'), findsOneWidget);

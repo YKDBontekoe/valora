@@ -16,11 +16,7 @@ void main() {
   Widget createWidget() {
     return ChangeNotifierProvider<NotificationService>.value(
       value: mockService,
-      child: const MaterialApp(
-        home: Scaffold(
-          body: NotificationSheet(),
-        ),
-      ),
+      child: const MaterialApp(home: Scaffold(body: NotificationSheet())),
     );
   }
 

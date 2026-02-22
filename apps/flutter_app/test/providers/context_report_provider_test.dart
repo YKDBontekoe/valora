@@ -14,7 +14,10 @@ class _FakeApiService extends ApiService {
   final Exception? error;
 
   @override
-  Future<ContextReport> getContextReport(String input, {int radiusMeters = 1000}) async {
+  Future<ContextReport> getContextReport(
+    String input, {
+    int radiusMeters = 1000,
+  }) async {
     if (error != null) {
       throw error!;
     }
@@ -81,21 +84,24 @@ void main() {
     expect(provider.history.first.query, 'Damrak 1 Amsterdam');
   });
 
-  test('generate sets user-friendly error on failure and does not update history', () async {
-    final provider = ContextReportProvider(
-      apiService: _FakeApiService(error: ServerException('boom')),
-      historyService: SearchHistoryService(),
-    );
+  test(
+    'generate sets user-friendly error on failure and does not update history',
+    () async {
+      final provider = ContextReportProvider(
+        apiService: _FakeApiService(error: ServerException('boom')),
+        historyService: SearchHistoryService(),
+      );
 
-    await provider.generate('Damrak 1 Amsterdam');
+      await provider.generate('Damrak 1 Amsterdam');
 
-    expect(provider.report, isNull);
-    expect(provider.error, 'boom');
-    expect(provider.isLoading, isFalse);
+      expect(provider.report, isNull);
+      expect(provider.error, 'boom');
+      expect(provider.isLoading, isFalse);
 
-    // Check history
-    expect(provider.history, isEmpty);
-  });
+      // Check history
+      expect(provider.history, isEmpty);
+    },
+  );
 
   test('generate returns report even if history service fails', () async {
     final provider = ContextReportProvider(
@@ -147,13 +153,18 @@ void main() {
   });
 
   test('history list is unmodifiable', () async {
-     final provider = ContextReportProvider(
+    final provider = ContextReportProvider(
       apiService: _FakeApiService(report: buildReport()),
       historyService: SearchHistoryService(),
     );
 
     await provider.generate('search 1');
 
-    expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
+    expect(
+      () => provider.history.add(
+        SearchHistoryItem(query: 'test', timestamp: DateTime.now()),
+      ),
+      throwsUnsupportedError,
+    );
   });
 }

@@ -35,23 +35,24 @@ class ValoraEmptyState extends StatelessWidget {
           children: [
             // Icon with subtle background circle
             Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: (isDark
-                        ? ValoraColors.primaryLight
-                        : ValoraColors.primary)
-                    .withValues(alpha: 0.08),
-              ),
-              child: Icon(
-                icon,
-                size: 36,
-                color: isDark
-                    ? ValoraColors.neutral400
-                    : ValoraColors.neutral400,
-              ),
-            )
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color:
+                        (isDark
+                                ? ValoraColors.primaryLight
+                                : ValoraColors.primary)
+                            .withValues(alpha: 0.08),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 36,
+                    color: isDark
+                        ? ValoraColors.neutral400
+                        : ValoraColors.neutral400,
+                  ),
+                )
                 .animate()
                 .fadeIn(duration: ValoraAnimations.medium)
                 .scale(
@@ -65,16 +66,15 @@ class ValoraEmptyState extends StatelessWidget {
             Text(
               title,
               style: ValoraTypography.titleMedium.copyWith(
-                color:
-                    isDark ? ValoraColors.neutral100 : ValoraColors.neutral800,
+                color: isDark
+                    ? ValoraColors.neutral100
+                    : ValoraColors.neutral800,
               ),
               textAlign: TextAlign.center,
-            )
-                .animate()
-                .fadeIn(
-                  delay: 100.ms,
-                  duration: ValoraAnimations.medium,
-                ),
+            ).animate().fadeIn(
+              delay: 100.ms,
+              duration: ValoraAnimations.medium,
+            ),
 
             if (subtitle != null) ...[
               const SizedBox(height: ValoraSpacing.sm),
@@ -86,27 +86,22 @@ class ValoraEmptyState extends StatelessWidget {
                       : ValoraColors.neutral500,
                 ),
                 textAlign: TextAlign.center,
-              )
-                  .animate()
-                  .fadeIn(
-                    delay: 200.ms,
-                    duration: ValoraAnimations.medium,
-                  ),
+              ).animate().fadeIn(
+                delay: 200.ms,
+                duration: ValoraAnimations.medium,
+              ),
             ],
 
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: ValoraSpacing.lg),
               ValoraButton(
-                label: actionLabel!,
-                onPressed: onAction!,
-                variant: ValoraButtonVariant.secondary,
-                size: ValoraButtonSize.small,
-              )
-                  .animate()
-                  .fadeIn(
-                    delay: 300.ms,
-                    duration: ValoraAnimations.medium,
+                    label: actionLabel!,
+                    onPressed: onAction!,
+                    variant: ValoraButtonVariant.secondary,
+                    size: ValoraButtonSize.small,
                   )
+                  .animate()
+                  .fadeIn(delay: 300.ms, duration: ValoraAnimations.medium)
                   .slideY(
                     begin: 0.2,
                     end: 0,

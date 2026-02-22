@@ -42,15 +42,23 @@ class _ShareWorkspaceDialogState extends State<ShareWorkspaceDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () async {
             try {
-              await context.read<WorkspaceProvider>().inviteMember(_emailController.text, _role);
+              await context.read<WorkspaceProvider>().inviteMember(
+                _emailController.text,
+                _role,
+              );
               if (context.mounted) Navigator.pop(context);
             } catch (e) {
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Failed: $e')));
               }
             }
           },

@@ -22,6 +22,7 @@ import '../core/theme/valora_spacing.dart';
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key, this.pdokService, this.onFabChanged});
   final PdokService? pdokService;
+
   /// Called whenever the desired FAB widget changes (or becomes null).
   final ValueChanged<Widget?>? onFabChanged;
 
@@ -72,8 +73,7 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
             // Report the FAB to the parent HomeScreen
             final Widget? fab = comparisonCount > 0 && !_isComparisonMode
                 ? FloatingActionButton.extended(
-                    onPressed: () =>
-                        setState(() => _isComparisonMode = true),
+                    onPressed: () => setState(() => _isComparisonMode = true),
                     backgroundColor: ValoraColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 6,
@@ -147,9 +147,7 @@ class _SearchLayout extends StatelessWidget {
       slivers: [
         // Minimal top spacing for status bar
         SliverToBoxAdapter(
-          child: SizedBox(
-            height: MediaQuery.of(context).padding.top + 16,
-          ),
+          child: SizedBox(height: MediaQuery.of(context).padding.top + 16),
         ),
 
         // Hero section
@@ -166,7 +164,10 @@ class _SearchLayout extends StatelessWidget {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [ValoraColors.primary, ValoraColors.primaryLight],
+                          colors: [
+                            ValoraColors.primary,
+                            ValoraColors.primaryLight,
+                          ],
                           begin: Alignment.bottomLeft,
                           end: Alignment.topRight,
                         ),
@@ -205,10 +206,13 @@ class _SearchLayout extends StatelessWidget {
 
                 // Search field
                 _SearchField(
-                  controller: inputController,
-                  provider: provider,
-                  pdokService: pdokService,
-                ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1),
+                      controller: inputController,
+                      provider: provider,
+                      pdokService: pdokService,
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 100.ms)
+                    .slideY(begin: 0.1),
 
                 const SizedBox(height: 16),
 
@@ -221,10 +225,10 @@ class _SearchLayout extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Generate button
-                _GenerateButton(
-                  controller: inputController,
-                  provider: provider,
-                ).animate().fadeIn(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1),
+                _GenerateButton(controller: inputController, provider: provider)
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 300.ms)
+                    .slideY(begin: 0.1),
 
                 // Error state
                 if (provider.error != null) ...[
@@ -246,9 +250,11 @@ class _SearchLayout extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
-            child: _QuickActions(pdokService: pdokService, provider: provider, controller: inputController)
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 350.ms),
+            child: _QuickActions(
+              pdokService: pdokService,
+              provider: provider,
+              controller: inputController,
+            ).animate().fadeIn(duration: 400.ms, delay: 350.ms),
           ),
         ),
 
@@ -261,9 +267,7 @@ class _SearchLayout extends StatelessWidget {
         ),
 
         // Bottom padding for nav bar
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 120),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
     );
   }
@@ -312,17 +316,14 @@ class _ReportLayout extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               // Compare toggle
-              if (provider.report != null)
-                _CompareButton(provider: provider),
+              if (provider.report != null) _CompareButton(provider: provider),
             ],
           ),
         ),
 
         // Content
         if (isLoading)
-          const SliverFillRemaining(
-            child: ContextReportSkeleton(),
-          )
+          const SliverFillRemaining(child: ContextReportSkeleton())
         else if (provider.report != null)
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -336,16 +337,13 @@ class _ReportLayout extends StatelessWidget {
                     provider.report!,
                   ),
                 ),
-                childCount:
-                    ContextReportView.childCount(provider.report!),
+                childCount: ContextReportView.childCount(provider.report!),
               ),
             ),
           ),
 
         // Bottom padding for nav bar
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 120),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
     );
   }
@@ -356,10 +354,7 @@ class _ReportLayout extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 
 class _ComparisonLayout extends StatelessWidget {
-  const _ComparisonLayout({
-    required this.onBack,
-    required this.onClear,
-  });
+  const _ComparisonLayout({required this.onBack, required this.onClear});
 
   final VoidCallback onBack;
   final VoidCallback onClear;
@@ -444,10 +439,11 @@ class _SearchField extends StatelessWidget {
       itemBuilder: (context, suggestion) {
         return ListTile(
           leading: const Icon(Icons.location_on_outlined, size: 20),
-          title: Text(suggestion.displayName,
-              style: ValoraTypography.bodyMedium),
-          subtitle: Text(suggestion.type,
-              style: ValoraTypography.labelSmall),
+          title: Text(
+            suggestion.displayName,
+            style: ValoraTypography.bodyMedium,
+          ),
+          subtitle: Text(suggestion.type, style: ValoraTypography.labelSmall),
         );
       },
       onSelected: (suggestion) {
@@ -485,9 +481,7 @@ class _CompactSearchField extends StatelessWidget {
         return Container(
           height: 48,
           decoration: BoxDecoration(
-            color: isDark
-                ? ValoraColors.surfaceDark
-                : ValoraColors.neutral50,
+            color: isDark ? ValoraColors.surfaceDark : ValoraColors.neutral50,
             borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
             border: Border.all(
               color: isDark
@@ -504,9 +498,7 @@ class _CompactSearchField extends StatelessWidget {
               provider.generate(val);
             },
             style: ValoraTypography.bodyMedium.copyWith(
-              color: isDark
-                  ? ValoraColors.neutral50
-                  : ValoraColors.neutral900,
+              color: isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
             ),
             decoration: InputDecoration(
               hintText: 'Search another address...',
@@ -538,8 +530,10 @@ class _CompactSearchField extends StatelessWidget {
                     )
                   : null,
               border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 0,
+                vertical: 14,
+              ),
             ),
           ),
         );
@@ -551,10 +545,11 @@ class _CompactSearchField extends StatelessWidget {
       itemBuilder: (context, suggestion) {
         return ListTile(
           leading: const Icon(Icons.location_on_outlined, size: 20),
-          title: Text(suggestion.displayName,
-              style: ValoraTypography.bodyMedium),
-          subtitle: Text(suggestion.type,
-              style: ValoraTypography.labelSmall),
+          title: Text(
+            suggestion.displayName,
+            style: ValoraTypography.bodyMedium,
+          ),
+          subtitle: Text(suggestion.type, style: ValoraTypography.labelSmall),
         );
       },
       onSelected: (suggestion) {
@@ -574,7 +569,9 @@ class _CompareButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isComparing = provider.isComparing(
-        provider.report!.location.query, provider.radiusMeters);
+      provider.report!.location.query,
+      provider.radiusMeters,
+    );
 
     return Material(
       color: Colors.transparent,
@@ -582,7 +579,9 @@ class _CompareButton extends StatelessWidget {
         onTap: () {
           HapticFeedback.lightImpact();
           provider.toggleComparison(
-              provider.report!.location.query, provider.radiusMeters);
+            provider.report!.location.query,
+            provider.radiusMeters,
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
@@ -591,24 +590,21 @@ class _CompareButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: isComparing
                 ? ValoraColors.primary.withValues(alpha: 0.15)
-                : (isDark
-                    ? ValoraColors.surfaceDark
-                    : ValoraColors.neutral100),
+                : (isDark ? ValoraColors.surfaceDark : ValoraColors.neutral100),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isComparing
                   ? ValoraColors.primary.withValues(alpha: 0.3)
                   : (isDark
-                      ? ValoraColors.neutral700.withValues(alpha: 0.4)
-                      : ValoraColors.neutral200),
+                        ? ValoraColors.neutral700.withValues(alpha: 0.4)
+                        : ValoraColors.neutral200),
             ),
           ),
           child: Icon(
             isComparing
                 ? Icons.playlist_add_check_rounded
                 : Icons.playlist_add_rounded,
-            color:
-                isComparing ? ValoraColors.primary : ValoraColors.neutral500,
+            color: isComparing ? ValoraColors.primary : ValoraColors.neutral500,
             size: 22,
           ),
         ),
@@ -647,8 +643,9 @@ class _RadiusSelector extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Analysis Radius',
-                    style: ValoraTypography.labelLarge
-                        .copyWith(fontWeight: FontWeight.w600),
+                    style: ValoraTypography.labelLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -671,21 +668,23 @@ class _RadiusSelector extends StatelessWidget {
               return SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 4,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 8),
-                  overlayShape:
-                      const RoundSliderOverlayShape(overlayRadius: 18),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 18,
+                  ),
                   activeTrackColor: theme.colorScheme.primary,
-                  inactiveTrackColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
+                  inactiveTrackColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.1,
+                  ),
                 ),
                 child: Slider(
                   min: 200,
                   max: 5000,
                   divisions: 24,
                   value: radiusMeters.toDouble(),
-                  onChanged: (value) =>
-                      provider.setRadiusMeters(value.round()),
+                  onChanged: (value) => provider.setRadiusMeters(value.round()),
                 ),
               );
             },
@@ -698,10 +697,7 @@ class _RadiusSelector extends StatelessWidget {
 
 /// Generate button
 class _GenerateButton extends StatelessWidget {
-  const _GenerateButton({
-    required this.controller,
-    required this.provider,
-  });
+  const _GenerateButton({required this.controller, required this.provider});
 
   final TextEditingController controller;
   final ContextReportProvider provider;
@@ -752,13 +748,16 @@ class _QuickActions extends StatelessWidget {
           content: const Text('Resolving address…'),
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
 
-      final String? address =
-          await pdokService.reverseLookup(result.latitude, result.longitude);
+      final String? address = await pdokService.reverseLookup(
+        result.latitude,
+        result.longitude,
+      );
 
       if (!context.mounted) return;
 
@@ -769,11 +768,13 @@ class _QuickActions extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-                'Could not resolve an address. Try searching by text.'),
+              'Could not resolve an address. Try searching by text.',
+            ),
             backgroundColor: ValoraColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -832,9 +833,7 @@ class _QuickActionChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark
-                ? ValoraColors.surfaceDark
-                : ValoraColors.neutral50,
+            color: isDark ? ValoraColors.surfaceDark : ValoraColors.neutral50,
             borderRadius: BorderRadius.circular(ValoraSpacing.radiusFull),
             border: Border.all(
               color: isDark
@@ -866,10 +865,7 @@ class _QuickActionChip extends StatelessWidget {
 
 /// History section
 class _HistorySection extends StatelessWidget {
-  const _HistorySection({
-    required this.controller,
-    required this.provider,
-  });
+  const _HistorySection({required this.controller, required this.provider});
 
   final TextEditingController controller;
   final ContextReportProvider provider;
@@ -898,12 +894,12 @@ class _HistorySection extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () =>
-                        _confirmClearHistory(context, provider),
+                    onPressed: () => _confirmClearHistory(context, provider),
                     child: Text(
                       'Clear',
-                      style: ValoraTypography.labelMedium
-                          .copyWith(color: theme.colorScheme.primary),
+                      style: ValoraTypography.labelMedium.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -920,14 +916,15 @@ class _HistorySection extends StatelessWidget {
                             provider.generate(item.query);
                           },
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: ValoraColors.primary
-                                .withValues(alpha: 0.08),
+                            color: ValoraColors.primary.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -963,23 +960,33 @@ class _HistorySection extends StatelessWidget {
                         ),
                         // Compare toggle
                         IconButton(
-                          tooltip: provider.isComparing(
-                                  item.query, provider.radiusMeters)
+                          tooltip:
+                              provider.isComparing(
+                                item.query,
+                                provider.radiusMeters,
+                              )
                               ? 'Remove from Compare'
                               : 'Add to Compare',
                           icon: Icon(
                             provider.isComparing(
-                                    item.query, provider.radiusMeters)
+                                  item.query,
+                                  provider.radiusMeters,
+                                )
                                 ? Icons.playlist_add_check_rounded
                                 : Icons.playlist_add_rounded,
                             size: 20,
-                            color: provider.isComparing(
-                                    item.query, provider.radiusMeters)
+                            color:
+                                provider.isComparing(
+                                  item.query,
+                                  provider.radiusMeters,
+                                )
                                 ? ValoraColors.primary
                                 : ValoraColors.neutral400,
                           ),
                           onPressed: () => provider.toggleComparison(
-                              item.query, provider.radiusMeters),
+                            item.query,
+                            provider.radiusMeters,
+                          ),
                         ),
                         Icon(
                           Icons.chevron_right_rounded,
@@ -1001,7 +1008,9 @@ class _HistorySection extends StatelessWidget {
   }
 
   Future<void> _confirmClearHistory(
-      BuildContext context, ContextReportProvider provider) async {
+    BuildContext context,
+    ContextReportProvider provider,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => ValoraDialog(
@@ -1018,8 +1027,9 @@ class _HistorySection extends StatelessWidget {
             onPressed: () => Navigator.pop(context, true),
           ),
         ],
-        child:
-            const Text('Are you sure you want to clear your search history?'),
+        child: const Text(
+          'Are you sure you want to clear your search history?',
+        ),
       ),
     );
 

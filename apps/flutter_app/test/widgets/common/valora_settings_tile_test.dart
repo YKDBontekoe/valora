@@ -62,10 +62,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final mouseRegion = tester.widget<MouseRegion>(
-      find.descendant(
-        of: find.byType(ValoraSettingsTile),
-        matching: find.byType(MouseRegion),
-      ).first,
+      find
+          .descendant(
+            of: find.byType(ValoraSettingsTile),
+            matching: find.byType(MouseRegion),
+          )
+          .first,
     );
 
     expect(mouseRegion.cursor, SystemMouseCursors.basic);
@@ -90,10 +92,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final mouseRegion = tester.widget<MouseRegion>(
-      find.descendant(
-        of: find.byType(ValoraSettingsTile),
-        matching: find.byType(MouseRegion),
-      ).first,
+      find
+          .descendant(
+            of: find.byType(ValoraSettingsTile),
+            matching: find.byType(MouseRegion),
+          )
+          .first,
     );
 
     expect(mouseRegion.cursor, SystemMouseCursors.click);

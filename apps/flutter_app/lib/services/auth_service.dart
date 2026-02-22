@@ -105,11 +105,14 @@ class AuthService {
         if (newToken != null) {
           await saveToken(newToken);
           if (newRefreshToken != null) {
-             try {
-               await _storage.write(key: _refreshTokenKey, value: newRefreshToken);
-             } catch (e) {
-               _log.warning('Failed to update refresh token', e);
-             }
+            try {
+              await _storage.write(
+                key: _refreshTokenKey,
+                value: newRefreshToken,
+              );
+            } catch (e) {
+              _log.warning('Failed to update refresh token', e);
+            }
           }
           return newToken;
         }
@@ -170,7 +173,7 @@ class AuthService {
               value: data['refreshToken'],
             );
           } catch (e) {
-             _log.warning('SecureStorage write refresh failed', e);
+            _log.warning('SecureStorage write refresh failed', e);
           }
         }
         return data;
@@ -183,7 +186,10 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> externalLogin(String provider, String idToken) async {
+  Future<Map<String, dynamic>> externalLogin(
+    String provider,
+    String idToken,
+  ) async {
     try {
       final response = await _retryOptions.retry(
         () async {
@@ -219,7 +225,7 @@ class AuthService {
               value: data['refreshToken'],
             );
           } catch (e) {
-             _log.warning('SecureStorage write refresh failed', e);
+            _log.warning('SecureStorage write refresh failed', e);
           }
         }
         return data;

@@ -1,8 +1,4 @@
-enum WorkspaceRole {
-  owner,
-  editor,
-  viewer
-}
+enum WorkspaceRole { owner, editor, viewer }
 
 class Workspace {
   final String id;
@@ -60,10 +56,12 @@ class WorkspaceMember {
       email: json['email'],
       role: WorkspaceRole.values.firstWhere(
         (e) => e.name.toLowerCase() == (json['role'] as String).toLowerCase(),
-        orElse: () => WorkspaceRole.viewer
+        orElse: () => WorkspaceRole.viewer,
       ),
       isPending: json['isPending'],
-      joinedAt: json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : null,
+      joinedAt: json['joinedAt'] != null
+          ? DateTime.parse(json['joinedAt'])
+          : null,
     );
   }
 }

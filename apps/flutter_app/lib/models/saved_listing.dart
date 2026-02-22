@@ -21,7 +21,9 @@ class SavedListing {
     return SavedListing(
       id: json['id'],
       listingId: json['listingId'],
-      listing: json['listing'] != null ? ListingSummary.fromJson(json['listing']) : null,
+      listing: json['listing'] != null
+          ? ListingSummary.fromJson(json['listing'])
+          : null,
       addedByUserId: json['addedByUserId'],
       notes: json['notes'],
       addedAt: DateTime.parse(json['addedAt']),

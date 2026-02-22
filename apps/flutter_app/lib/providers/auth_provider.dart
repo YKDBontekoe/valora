@@ -111,14 +111,26 @@ class AuthProvider extends ChangeNotifier {
         return newToken;
       }
     } on RefreshTokenInvalidException catch (e, stackTrace) {
-      _log.warning('Refresh token invalid for user: ${_email ?? "unknown"}. Clearing auth state.', e, stackTrace);
+      _log.warning(
+        'Refresh token invalid for user: ${_email ?? "unknown"}. Clearing auth state.',
+        e,
+        stackTrace,
+      );
       await logout();
       return null;
     } on AppException catch (e, stackTrace) {
-      _log.warning('Refresh token failed (transient) for user: ${_email ?? "unknown"}. Keeping auth state.', e, stackTrace);
+      _log.warning(
+        'Refresh token failed (transient) for user: ${_email ?? "unknown"}. Keeping auth state.',
+        e,
+        stackTrace,
+      );
       return null;
     } catch (e, stackTrace) {
-      _log.severe('Refresh token failed (unexpected) for user: ${_email ?? "unknown"}. Keeping auth state.', e, stackTrace);
+      _log.severe(
+        'Refresh token failed (unexpected) for user: ${_email ?? "unknown"}. Keeping auth state.',
+        e,
+        stackTrace,
+      );
       return null;
     }
 
@@ -183,8 +195,8 @@ class AuthProvider extends ChangeNotifier {
         final data = await _authService.externalLogin('google', idToken);
         _token = data['token'];
         if (_token != null) {
-           _parseJwt(_token!);
-           _isAuthenticated = true;
+          _parseJwt(_token!);
+          _isAuthenticated = true;
         }
       } else {
         throw Exception("Failed to retrieve Google ID Token");

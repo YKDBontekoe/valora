@@ -37,7 +37,7 @@ void main() {
             [1.0, 2.0],
             [3.0, 4.0],
             [5.0, 6.0],
-          ]
+          ],
         ],
       });
 
@@ -59,8 +59,8 @@ void main() {
             [
               [10.0, 20.0],
               [30.0, 40.0],
-            ]
-          ]
+            ],
+          ],
         ],
       });
 
@@ -75,7 +75,7 @@ void main() {
       final points = MapUtils.parsePolygonGeometry({
         'type': 'Polygon',
         'coordinates': [
-          ['invalid', 'data']
+          ['invalid', 'data'],
         ],
       });
       expect(points, isEmpty);
@@ -87,19 +87,28 @@ void main() {
       expect(MapUtils.getAmenityIcon('school'), Icons.school_rounded);
     });
     test('returns supermarket icon for supermarket', () {
-      expect(MapUtils.getAmenityIcon('supermarket'), Icons.shopping_basket_rounded);
+      expect(
+        MapUtils.getAmenityIcon('supermarket'),
+        Icons.shopping_basket_rounded,
+      );
     });
     test('returns park icon for park', () {
       expect(MapUtils.getAmenityIcon('park'), Icons.park_rounded);
     });
     test('returns healthcare icon for healthcare', () {
-      expect(MapUtils.getAmenityIcon('healthcare'), Icons.medical_services_rounded);
+      expect(
+        MapUtils.getAmenityIcon('healthcare'),
+        Icons.medical_services_rounded,
+      );
     });
     test('returns transit icon for transit', () {
       expect(MapUtils.getAmenityIcon('transit'), Icons.directions_bus_rounded);
     });
     test('returns charging_station icon for charging_station', () {
-      expect(MapUtils.getAmenityIcon('charging_station'), Icons.ev_station_rounded);
+      expect(
+        MapUtils.getAmenityIcon('charging_station'),
+        Icons.ev_station_rounded,
+      );
     });
     test('returns place icon for unknown type', () {
       expect(MapUtils.getAmenityIcon('unknown'), Icons.place_rounded);
@@ -108,24 +117,57 @@ void main() {
 
   group('MapUtils.getOverlayColor', () {
     test('returns correct colors for PricePerSquareMeter', () {
-      expect(MapUtils.getOverlayColor(6001, MapOverlayMetric.pricePerSquareMeter), Colors.red);
-      expect(MapUtils.getOverlayColor(4501, MapOverlayMetric.pricePerSquareMeter), Colors.orange);
-      expect(MapUtils.getOverlayColor(3001, MapOverlayMetric.pricePerSquareMeter), Colors.yellow);
-      expect(MapUtils.getOverlayColor(1000, MapOverlayMetric.pricePerSquareMeter), Colors.green);
+      expect(
+        MapUtils.getOverlayColor(6001, MapOverlayMetric.pricePerSquareMeter),
+        Colors.red,
+      );
+      expect(
+        MapUtils.getOverlayColor(4501, MapOverlayMetric.pricePerSquareMeter),
+        Colors.orange,
+      );
+      expect(
+        MapUtils.getOverlayColor(3001, MapOverlayMetric.pricePerSquareMeter),
+        Colors.yellow,
+      );
+      expect(
+        MapUtils.getOverlayColor(1000, MapOverlayMetric.pricePerSquareMeter),
+        Colors.green,
+      );
     });
 
     test('returns correct colors for CrimeRate (inverted)', () {
-      expect(MapUtils.getOverlayColor(101, MapOverlayMetric.crimeRate), Colors.red);
-      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.crimeRate), Colors.orange);
-      expect(MapUtils.getOverlayColor(21, MapOverlayMetric.crimeRate), Colors.yellow);
-      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.crimeRate), Colors.green);
+      expect(
+        MapUtils.getOverlayColor(101, MapOverlayMetric.crimeRate),
+        Colors.red,
+      );
+      expect(
+        MapUtils.getOverlayColor(51, MapOverlayMetric.crimeRate),
+        Colors.orange,
+      );
+      expect(
+        MapUtils.getOverlayColor(21, MapOverlayMetric.crimeRate),
+        Colors.yellow,
+      );
+      expect(
+        MapUtils.getOverlayColor(10, MapOverlayMetric.crimeRate),
+        Colors.green,
+      );
     });
 
     test('returns correct colors for default metrics (higher is better)', () {
       // Testing with PopulationDensity as a default case
-      expect(MapUtils.getOverlayColor(81, MapOverlayMetric.populationDensity), Colors.green);
-      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.populationDensity), Colors.orange);
-      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.populationDensity), Colors.red);
+      expect(
+        MapUtils.getOverlayColor(81, MapOverlayMetric.populationDensity),
+        Colors.green,
+      );
+      expect(
+        MapUtils.getOverlayColor(51, MapOverlayMetric.populationDensity),
+        Colors.orange,
+      );
+      expect(
+        MapUtils.getOverlayColor(10, MapOverlayMetric.populationDensity),
+        Colors.red,
+      );
     });
   });
 

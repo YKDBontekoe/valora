@@ -59,8 +59,9 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: ValoraColors.primary,
-          unselectedLabelColor:
-              isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+          unselectedLabelColor: isDark
+              ? ValoraColors.neutral400
+              : ValoraColors.neutral500,
           indicatorColor: ValoraColors.primary,
           indicatorSize: TabBarIndicatorSize.label,
           labelStyle: ValoraTypography.labelLarge.copyWith(
@@ -68,18 +69,12 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
           ),
           unselectedLabelStyle: ValoraTypography.labelLarge,
           tabs: const [
-            Tab(
-              icon: Icon(Icons.bookmark_rounded, size: 20),
-              text: 'Saved',
-            ),
+            Tab(icon: Icon(Icons.bookmark_rounded, size: 20), text: 'Saved'),
             Tab(
               icon: Icon(Icons.people_alt_rounded, size: 20),
               text: 'Members',
             ),
-            Tab(
-              icon: Icon(Icons.history_rounded, size: 20),
-              text: 'Activity',
-            ),
+            Tab(icon: Icon(Icons.history_rounded, size: 20), text: 'Activity'),
           ],
         ),
       ),
@@ -97,8 +92,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                 title: 'Something went wrong',
                 subtitle: 'Could not load workspace details.',
                 actionLabel: 'Retry',
-                onAction: () =>
-                    provider.selectWorkspace(widget.workspaceId),
+                onAction: () => provider.selectWorkspace(widget.workspaceId),
               ),
             );
           }
@@ -119,8 +113,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
     );
   }
 
-  Widget _buildSavedListings(
-      BuildContext context, WorkspaceProvider provider) {
+  Widget _buildSavedListings(BuildContext context, WorkspaceProvider provider) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (provider.savedListings.isEmpty) {
@@ -128,8 +121,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
         child: ValoraEmptyState(
           icon: Icons.bookmark_add_rounded,
           title: 'No saved listings',
-          subtitle:
-              'Properties you save to this workspace will appear here.',
+          subtitle: 'Properties you save to this workspace will appear here.',
         ),
       );
     }
@@ -169,13 +161,19 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                         listing!.imageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => const Center(
-                          child: Icon(Icons.home_rounded,
-                              color: ValoraColors.primary, size: 28),
+                          child: Icon(
+                            Icons.home_rounded,
+                            color: ValoraColors.primary,
+                            size: 28,
+                          ),
                         ),
                       )
                     : const Center(
-                        child: Icon(Icons.home_rounded,
-                            color: ValoraColors.primary, size: 28),
+                        child: Icon(
+                          Icons.home_rounded,
+                          color: ValoraColors.primary,
+                          size: 28,
+                        ),
                       ),
               ),
               const SizedBox(width: ValoraSpacing.md),
@@ -191,8 +189,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (listing?.city != null &&
-                        listing!.city!.isNotEmpty) ...[
+                    if (listing?.city != null && listing!.city!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         listing.city!,
@@ -206,11 +203,13 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.chat_bubble_outline_rounded,
-                            size: 14,
-                            color: isDark
-                                ? ValoraColors.neutral500
-                                : ValoraColors.neutral400),
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 14,
+                          color: isDark
+                              ? ValoraColors.neutral500
+                              : ValoraColors.neutral400,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '${saved.commentCount} comments',
@@ -220,14 +219,15 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                                 : ValoraColors.neutral400,
                           ),
                         ),
-                        if (saved.notes != null &&
-                            saved.notes!.isNotEmpty) ...[
+                        if (saved.notes != null && saved.notes!.isNotEmpty) ...[
                           const SizedBox(width: 12),
-                          Icon(Icons.note_rounded,
-                              size: 14,
-                              color: isDark
-                                  ? ValoraColors.neutral500
-                                  : ValoraColors.neutral400),
+                          Icon(
+                            Icons.note_rounded,
+                            size: 14,
+                            color: isDark
+                                ? ValoraColors.neutral500
+                                : ValoraColors.neutral400,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -247,10 +247,12 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded,
-                  color: isDark
-                      ? ValoraColors.neutral500
-                      : ValoraColors.neutral400),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark
+                    ? ValoraColors.neutral500
+                    : ValoraColors.neutral400,
+              ),
             ],
           ),
         );

@@ -98,9 +98,13 @@ class _ValoraButtonState extends State<ValoraButton> {
   TextStyle _getTextStyle() {
     switch (widget.size) {
       case ValoraButtonSize.small:
-        return ValoraTypography.labelMedium.copyWith(fontWeight: FontWeight.w600);
+        return ValoraTypography.labelMedium.copyWith(
+          fontWeight: FontWeight.w600,
+        );
       case ValoraButtonSize.medium:
-        return ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.w600);
+        return ValoraTypography.labelLarge.copyWith(
+          fontWeight: FontWeight.w600,
+        );
       case ValoraButtonSize.large:
         return ValoraTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600);
     }

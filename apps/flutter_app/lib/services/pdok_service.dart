@@ -44,8 +44,10 @@ class PdokService {
         'rows': '5',
         'fq': 'type:(woonplaats OR weg OR adres OR postcode)',
       });
-      
-      final response = await _client.get(uri).timeout(const Duration(seconds: 10));
+
+      final response = await _client
+          .get(uri)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -70,7 +72,9 @@ class PdokService {
         'type': 'adres',
       });
 
-      final response = await _client.get(uri).timeout(const Duration(seconds: 10));
+      final response = await _client
+          .get(uri)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

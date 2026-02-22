@@ -89,7 +89,9 @@ void main() {
     expect(passwordFieldFinder, findsOneWidget);
   });
 
-  testWidgets('Tapping Google button calls loginWithGoogle', (WidgetTester tester) async {
+  testWidgets('Tapping Google button calls loginWithGoogle', (
+    WidgetTester tester,
+  ) async {
     final authProvider = SpyAuthProvider();
 
     await tester.binding.setSurfaceSize(const Size(800, 2000));

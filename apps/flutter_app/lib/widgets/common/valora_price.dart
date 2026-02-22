@@ -19,8 +19,8 @@ class ValoraPrice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveColor = color ??
-        (isDark ? ValoraColors.priceTagDark : ValoraColors.priceTag);
+    final effectiveColor =
+        color ?? (isDark ? ValoraColors.priceTagDark : ValoraColors.priceTag);
 
     final TextStyle style;
     switch (size) {

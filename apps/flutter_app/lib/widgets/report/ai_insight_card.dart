@@ -42,10 +42,7 @@ class AiInsightCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _MarkdownText(
-              key: const Key('ai-summary-text'),
-              text: summary,
-            ),
+            _MarkdownText(key: const Key('ai-summary-text'), text: summary),
           ],
         ),
       ).animate().fadeIn().scale(alignment: Alignment.topCenter);
@@ -66,7 +63,9 @@ class AiInsightCard extends StatelessWidget {
           children: [
             Text(
               'Failed to generate insight',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
             const SizedBox(height: 8),
             ValoraButton(
@@ -93,7 +92,9 @@ class AiInsightCard extends StatelessWidget {
                   children: [
                     Text(
                       'Unlock Neighborhood Insights',
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       'Get an AI-powered summary of the pros & cons.',

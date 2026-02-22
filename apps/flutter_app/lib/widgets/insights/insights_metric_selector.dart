@@ -26,19 +26,25 @@ class InsightsMetricSelector extends StatelessWidget {
                   child: FilterChip(
                     label: Text(_getMetricLabel(metric)),
                     selected: isSelected,
-                    onSelected:
-                        (_) =>
-                            context.read<InsightsProvider>().setMetric(metric),
+                    onSelected: (_) =>
+                        context.read<InsightsProvider>().setMetric(metric),
                     checkmarkColor: ValoraColors.primaryDark,
                     side: BorderSide(
-                      color:
-                          isSelected
-                              ? ValoraColors.primary
-                              : (isDark ? ValoraColors.neutral700 : ValoraColors.neutral300),
+                      color: isSelected
+                          ? ValoraColors.primary
+                          : (isDark
+                                ? ValoraColors.neutral700
+                                : ValoraColors.neutral300),
                     ),
-                    backgroundColor: (isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong).withValues(alpha: 0.88),
+                    backgroundColor:
+                        (isDark
+                                ? ValoraColors.glassBlackStrong
+                                : ValoraColors.glassWhiteStrong)
+                            .withValues(alpha: 0.88),
                     selectedColor: ValoraColors.primary.withValues(alpha: 0.2),
-                    shadowColor: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.08),
+                    shadowColor: isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.08),
                     elevation: 2,
                   ),
                 );

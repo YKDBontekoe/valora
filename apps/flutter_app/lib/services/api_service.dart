@@ -18,7 +18,12 @@ import '../models/map_overlay_tile.dart';
 import '../models/notification.dart';
 import 'crash_reporting_service.dart';
 
-typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
+typedef ApiRunner =
+    Future<R> Function<Q, R>(
+      ComputeCallback<Q, R> callback,
+      Q message, {
+      String? debugLabel,
+    });
 
 class ApiService {
   String? _authToken;
@@ -36,13 +41,17 @@ class ApiService {
     http.Client? client,
     ApiRunner? runner,
     RetryOptions? retryOptions,
-  })  : _authToken = authToken,
-        _refreshTokenCallback = refreshTokenCallback,
-        _client = client ?? http.Client(),
-        _runner = runner ?? _defaultRunner,
-        _retryOptions = retryOptions ?? const RetryOptions(maxAttempts: 3);
+  }) : _authToken = authToken,
+       _refreshTokenCallback = refreshTokenCallback,
+       _client = client ?? http.Client(),
+       _runner = runner ?? _defaultRunner,
+       _retryOptions = retryOptions ?? const RetryOptions(maxAttempts: 3);
 
-  static Future<R> _defaultRunner<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel}) async {
+  static Future<R> _defaultRunner<Q, R>(
+    ComputeCallback<Q, R> callback,
+    Q message, {
+    String? debugLabel,
+  }) async {
     return await callback(message);
   }
 
@@ -131,9 +140,7 @@ class ApiService {
   Future<String> getAiAnalysis(ContextReport report) async {
     final uri = Uri.parse('$baseUrl/ai/analyze-report');
     try {
-      final payload = json.encode({
-        'report': report.toJson(),
-      });
+      final payload = json.encode({'report': report.toJson()});
 
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -143,13 +150,10 @@ class ApiService {
         ),
       );
 
-      return await _handleResponse(
-        response,
-        (body) {
-          final jsonBody = json.decode(body);
-          return jsonBody['summary'] as String;
-        },
-      );
+      return await _handleResponse(response, (body) {
+        final jsonBody = json.decode(body);
+        return jsonBody['summary'] as String;
+      });
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
@@ -196,13 +200,10 @@ class ApiService {
         ),
       );
 
-      return await _handleResponse(
-        response,
-        (body) {
-          final jsonBody = json.decode(body);
-          return jsonBody['count'] as int;
-        },
-      );
+      return await _handleResponse(response, (body) {
+        final jsonBody = json.decode(body);
+        return jsonBody['count'] as int;
+      });
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
@@ -272,17 +273,13 @@ class ApiService {
 
     switch (response.statusCode) {
       case 400:
-        throw ValidationException(
-          (message ?? 'Invalid request') + traceSuffix,
-        );
+        throw ValidationException((message ?? 'Invalid request') + traceSuffix);
       case 401:
         throw UnauthorizedException(
           (message ?? 'Unauthorized access') + traceSuffix,
         );
       case 403:
-        throw ForbiddenException(
-          (message ?? 'Access denied') + traceSuffix,
-        );
+        throw ForbiddenException((message ?? 'Access denied') + traceSuffix);
       case 404:
         throw NotFoundException(
           (message ?? 'Resource not found') + traceSuffix,
@@ -313,26 +310,34 @@ class ApiService {
 
     // Redact query parameters to prevent PII leakage
     final redactedUri = uri?.replace(queryParameters: {}) ?? Uri();
-    final urlString = redactedUri.toString().isEmpty ? 'unknown URL' : redactedUri.toString();
+    final urlString = redactedUri.toString().isEmpty
+        ? 'unknown URL'
+        : redactedUri.toString();
 
-    developer.log('Network Error: $error (URI: $urlString)', name: 'ApiService');
+    developer.log(
+      'Network Error: $error (URI: $urlString)',
+      name: 'ApiService',
+    );
 
     // Report non-business exceptions to Sentry
     CrashReportingService.captureException(
       error,
       stackTrace: stack ?? (error is Error ? error.stackTrace : null),
-      context: {
-        'url': urlString,
-        'error_type': error.runtimeType.toString(),
-      },
+      context: {'url': urlString, 'error_type': error.runtimeType.toString()},
     );
 
     if (error is SocketException) {
-      return NetworkException('No internet connection. Please check your settings.');
+      return NetworkException(
+        'No internet connection. Please check your settings.',
+      );
     } else if (error is TimeoutException) {
-      return NetworkException('Request timed out. Please check your connection or try again later.');
+      return NetworkException(
+        'Request timed out. Please check your connection or try again later.',
+      );
     } else if (error is http.ClientException) {
-      return NetworkException('Unable to reach the server. Please check your connection.');
+      return NetworkException(
+        'Unable to reach the server. Please check your connection.',
+      );
     } else if (error is FormatException) {
       return JsonParsingException('Failed to process server response.');
     }
@@ -350,12 +355,15 @@ class ApiService {
         // Look in extensions (RFC 7807)
         if (jsonBody['extensions'] is Map<String, dynamic>) {
           final extensions = jsonBody['extensions'] as Map<String, dynamic>;
-          if (extensions['traceId'] is String) return extensions['traceId'] as String;
-          if (extensions['requestId'] is String) return extensions['requestId'] as String;
+          if (extensions['traceId'] is String)
+            return extensions['traceId'] as String;
+          if (extensions['requestId'] is String)
+            return extensions['requestId'] as String;
         }
         // Look in root
         if (jsonBody['traceId'] is String) return jsonBody['traceId'] as String;
-        if (jsonBody['requestId'] is String) return jsonBody['requestId'] as String;
+        if (jsonBody['requestId'] is String)
+          return jsonBody['requestId'] as String;
       }
     } catch (_) {
       // Ignore parsing errors
@@ -407,13 +415,10 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
-        response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapCityInsight.fromJson(e)).toList();
-        },
-      );
+      return _handleResponse(response, (body) {
+        final List<dynamic> jsonList = json.decode(body);
+        return jsonList.map((e) => MapCityInsight.fromJson(e)).toList();
+      });
     } catch (e, stack) {
       final uri = Uri.parse('$baseUrl/map/cities');
       throw _handleException(e, stack, uri);
@@ -427,13 +432,15 @@ class ApiService {
     required double maxLon,
     List<String>? types,
   }) async {
-    final uri = Uri.parse('$baseUrl/map/amenities').replace(queryParameters: {
-      'minLat': minLat.toString(),
-      'minLon': minLon.toString(),
-      'maxLat': maxLat.toString(),
-      'maxLon': maxLon.toString(),
-      if (types != null) 'types': types.join(','),
-    });
+    final uri = Uri.parse('$baseUrl/map/amenities').replace(
+      queryParameters: {
+        'minLat': minLat.toString(),
+        'minLon': minLon.toString(),
+        'maxLat': maxLat.toString(),
+        'maxLon': maxLon.toString(),
+        if (types != null) 'types': types.join(','),
+      },
+    );
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -442,13 +449,10 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
-        response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapAmenity.fromJson(e)).toList();
-        },
-      );
+      return _handleResponse(response, (body) {
+        final List<dynamic> jsonList = json.decode(body);
+        return jsonList.map((e) => MapAmenity.fromJson(e)).toList();
+      });
     } catch (e, stack) {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities'));
     }
@@ -462,14 +466,16 @@ class ApiService {
     required double zoom,
     List<String>? types,
   }) async {
-    final uri = Uri.parse('$baseUrl/map/amenities/clusters').replace(queryParameters: {
-      'minLat': minLat.toString(),
-      'minLon': minLon.toString(),
-      'maxLat': maxLat.toString(),
-      'maxLon': maxLon.toString(),
-      'zoom': zoom.toString(),
-      if (types != null) 'types': types.join(','),
-    });
+    final uri = Uri.parse('$baseUrl/map/amenities/clusters').replace(
+      queryParameters: {
+        'minLat': minLat.toString(),
+        'minLon': minLon.toString(),
+        'maxLat': maxLat.toString(),
+        'maxLon': maxLon.toString(),
+        'zoom': zoom.toString(),
+        if (types != null) 'types': types.join(','),
+      },
+    );
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -478,15 +484,16 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
-        response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapAmenityCluster.fromJson(e)).toList();
-        },
-      );
+      return _handleResponse(response, (body) {
+        final List<dynamic> jsonList = json.decode(body);
+        return jsonList.map((e) => MapAmenityCluster.fromJson(e)).toList();
+      });
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/amenities/clusters'));
+      throw _handleException(
+        e,
+        stack,
+        Uri.parse('$baseUrl/map/amenities/clusters'),
+      );
     }
   }
 
@@ -497,13 +504,15 @@ class ApiService {
     required double maxLon,
     required String metric,
   }) async {
-    final uri = Uri.parse('$baseUrl/map/overlays').replace(queryParameters: {
-      'minLat': minLat.toString(),
-      'minLon': minLon.toString(),
-      'maxLat': maxLat.toString(),
-      'maxLon': maxLon.toString(),
-      'metric': metric,
-    });
+    final uri = Uri.parse('$baseUrl/map/overlays').replace(
+      queryParameters: {
+        'minLat': minLat.toString(),
+        'minLon': minLon.toString(),
+        'maxLat': maxLat.toString(),
+        'maxLon': maxLon.toString(),
+        'metric': metric,
+      },
+    );
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -512,13 +521,10 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
-        response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapOverlay.fromJson(e)).toList();
-        },
-      );
+      return _handleResponse(response, (body) {
+        final List<dynamic> jsonList = json.decode(body);
+        return jsonList.map((e) => MapOverlay.fromJson(e)).toList();
+      });
     } catch (e, stack) {
       throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays'));
     }
@@ -532,14 +538,16 @@ class ApiService {
     required double zoom,
     required String metric,
   }) async {
-    final uri = Uri.parse('$baseUrl/map/overlays/tiles').replace(queryParameters: {
-      'minLat': minLat.toString(),
-      'minLon': minLon.toString(),
-      'maxLat': maxLat.toString(),
-      'maxLon': maxLon.toString(),
-      'zoom': zoom.toString(),
-      'metric': metric,
-    });
+    final uri = Uri.parse('$baseUrl/map/overlays/tiles').replace(
+      queryParameters: {
+        'minLat': minLat.toString(),
+        'minLon': minLon.toString(),
+        'maxLat': maxLat.toString(),
+        'maxLon': maxLon.toString(),
+        'zoom': zoom.toString(),
+        'metric': metric,
+      },
+    );
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -548,19 +556,26 @@ class ApiService {
         ),
       );
 
-      return _handleResponse(
-        response,
-        (body) {
-          final List<dynamic> jsonList = json.decode(body);
-          return jsonList.map((e) => MapOverlayTile.fromJson(e)).toList();
-        },
-      );
+      return _handleResponse(response, (body) {
+        final List<dynamic> jsonList = json.decode(body);
+        return jsonList.map((e) => MapOverlayTile.fromJson(e)).toList();
+      });
     } catch (e, stack) {
-      throw _handleException(e, stack, Uri.parse('$baseUrl/map/overlays/tiles'));
+      throw _handleException(
+        e,
+        stack,
+        Uri.parse('$baseUrl/map/overlays/tiles'),
+      );
     }
   }
-  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
-    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: queryParameters);
+
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl$path',
+    ).replace(queryParameters: queryParameters);
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
@@ -579,15 +594,20 @@ class ApiService {
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
-          (headers) => _client.post(
-            uri,
-            headers: headers..['Content-Type'] = 'application/json',
-            body: json.encode(data),
-          ).timeout(timeoutDuration),
+          (headers) => _client
+              .post(
+                uri,
+                headers: headers..['Content-Type'] = 'application/json',
+                body: json.encode(data),
+              )
+              .timeout(timeoutDuration),
         ),
       );
       if (response.statusCode == 204) return null;
-      return _handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
+      return _handleResponse(
+        response,
+        (body) => body.isNotEmpty ? json.decode(body) : null,
+      );
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }
@@ -598,11 +618,15 @@ class ApiService {
     try {
       final response = await _requestWithRetry(
         () => _authenticatedRequest(
-          (headers) => _client.delete(uri, headers: headers).timeout(timeoutDuration),
+          (headers) =>
+              _client.delete(uri, headers: headers).timeout(timeoutDuration),
         ),
       );
       if (response.statusCode == 204) return null;
-      return _handleResponse(response, (body) => body.isNotEmpty ? json.decode(body) : null);
+      return _handleResponse(
+        response,
+        (body) => body.isNotEmpty ? json.decode(body) : null,
+      );
     } catch (e, stack) {
       throw _handleException(e, stack, uri);
     }

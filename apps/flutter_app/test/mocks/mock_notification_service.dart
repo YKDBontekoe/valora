@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/models/notification.dart';
 
-class MockNotificationService extends ChangeNotifier implements NotificationService {
+class MockNotificationService extends ChangeNotifier
+    implements NotificationService {
   List<ValoraNotification> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;

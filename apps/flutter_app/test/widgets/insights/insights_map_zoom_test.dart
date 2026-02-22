@@ -38,7 +38,9 @@ class MockInsightsProvider extends ChangeNotifier implements InsightsProvider {
 }
 
 void main() {
-  testWidgets('InsightsMap renders tiles when overlayTiles are present', (WidgetTester tester) async {
+  testWidgets('InsightsMap renders tiles when overlayTiles are present', (
+    WidgetTester tester,
+  ) async {
     final provider = MockInsightsProvider();
     provider.showOverlays = true;
     provider.overlayTiles = [
@@ -69,7 +71,9 @@ void main() {
     expect(find.byType(PolygonLayer), findsOneWidget);
   });
 
-  testWidgets('InsightsMap renders clusters when amenityClusters are present', (WidgetTester tester) async {
+  testWidgets('InsightsMap renders clusters when amenityClusters are present', (
+    WidgetTester tester,
+  ) async {
     final provider = MockInsightsProvider();
     provider.showAmenities = true;
     provider.amenityClusters = [

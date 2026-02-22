@@ -17,7 +17,6 @@ class SmartInsightsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final insights = [
       _InsightData(
         title: 'Family Friendly',
@@ -137,12 +136,18 @@ class SmartInsightsGrid extends StatelessWidget {
   }
 
   double _calculateFamilyScore() {
-    final familyMetric = _findMetric(report.demographicsMetrics, 'family_friendly');
+    final familyMetric = _findMetric(
+      report.demographicsMetrics,
+      'family_friendly',
+    );
     if (familyMetric?.score != null) return familyMetric!.score!;
 
     // Fallback logic if family_friendly isn't directly scored
     final schoolMetric = _findMetric(report.amenityMetrics, 'dist_school');
-    final childrenMetric = _findMetric(report.demographicsMetrics, 'households_with_children');
+    final childrenMetric = _findMetric(
+      report.demographicsMetrics,
+      'households_with_children',
+    );
 
     if (schoolMetric == null && childrenMetric == null) return 0;
 
@@ -174,7 +179,10 @@ class SmartInsightsGrid extends StatelessWidget {
   }
 
   double _calculateEconomicScore() {
-    final incomeMetric = _findMetric(report.demographicsMetrics, 'income_per_inhabitant');
+    final incomeMetric = _findMetric(
+      report.demographicsMetrics,
+      'income_per_inhabitant',
+    );
     final wozMetric = _findMetric(report.socialMetrics, 'average_woz');
 
     if (incomeMetric == null && wozMetric == null) return 0;

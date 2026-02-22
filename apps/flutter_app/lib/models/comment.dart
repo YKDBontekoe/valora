@@ -18,10 +18,14 @@ class Comment {
   });
 
   factory Comment.fromJson(Map<String, dynamic> json) {
-    var repliesList = (json['replies'] as List?)?.map((e) => Comment.fromJson(e)).toList() ?? [];
-    var reactionsMap = (json['reactions'] as Map<String, dynamic>?)?.map(
-        (key, value) => MapEntry(key, (value as List).cast<String>())
-      ) ?? {};
+    var repliesList =
+        (json['replies'] as List?)?.map((e) => Comment.fromJson(e)).toList() ??
+        [];
+    var reactionsMap =
+        (json['reactions'] as Map<String, dynamic>?)?.map(
+          (key, value) => MapEntry(key, (value as List).cast<String>()),
+        ) ??
+        {};
 
     return Comment(
       id: json['id'],

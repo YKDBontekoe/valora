@@ -87,38 +87,38 @@ class HomeSliverAppBar extends StatelessWidget {
                     onTap: onProfilePressed,
                     customBorder: const CircleBorder(),
                     child: Ink(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [
-                              ValoraColors.primary,
-                              ValoraColors.primaryLight,
-                            ],
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                          ),
-                          border: Border.all(
-                            color: isDark
-                                ? ValoraColors.surfaceDark
-                                : ValoraColors.surfaceLight,
-                            width: 2,
-                          ),
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [
+                            ValoraColors.primary,
+                            ValoraColors.primaryLight,
+                          ],
+                          begin: Alignment.bottomLeft,
+                          end: Alignment.topRight,
                         ),
-                        child: Center(
-                          child: Text(
-                            userInitials ?? '?',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
+                        border: Border.all(
+                          color: isDark
+                              ? ValoraColors.surfaceDark
+                              : ValoraColors.surfaceLight,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          userInitials ?? '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
                       ),
                     ),
                   ),
+                ),
               ),
             ],
           ),

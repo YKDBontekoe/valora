@@ -141,8 +141,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (context, unreadCount, _) {
                 return SliverAppBar(
                   pinned: true,
-                  backgroundColor:
-                      colorScheme.surface.withValues(alpha: 0.95),
+                  backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
                   surfaceTintColor: Colors.transparent,
                   automaticallyImplyLeading: false,
                   title: Row(
@@ -158,7 +157,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         const SizedBox(width: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: ValoraColors.primary,
                             borderRadius: BorderRadius.circular(12),
@@ -197,7 +198,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   return const SliverFillRemaining(
                     child: Center(
                       child: ValoraLoadingIndicator(
-                          message: 'Loading notifications...'),
+                        message: 'Loading notifications...',
+                      ),
                     ),
                   );
                 }
@@ -237,39 +239,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
                 return SliverPadding(
                   padding: const EdgeInsets.symmetric(
-                      vertical: ValoraSpacing.sm,
-                      horizontal: ValoraSpacing.md),
+                    vertical: ValoraSpacing.sm,
+                    horizontal: ValoraSpacing.md,
+                  ),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index == provider.notifications.length) {
-                          if (provider.isLoadingMore) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child:
-                                  Center(child: ValoraLoadingIndicator()),
-                            );
-                          }
-                          return const SizedBox(height: 100);
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index == provider.notifications.length) {
+                        if (provider.isLoadingMore) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(child: ValoraLoadingIndicator()),
+                          );
                         }
+                        return const SizedBox(height: 100);
+                      }
 
-                        final notification = provider.notifications[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                              bottom: ValoraSpacing.sm),
-                          child: _NotificationCard(
-                            key: Key(notification.id),
-                            notification: notification,
-                            provider: provider,
-                            isDark: isDark,
-                            formatTime: _formatTime,
-                            getIcon: _getIconForType,
-                            getColor: _getColorForType,
-                          ),
-                        );
-                      },
-                      childCount: provider.notifications.length + 1,
-                    ),
+                      final notification = provider.notifications[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: ValoraSpacing.sm,
+                        ),
+                        child: _NotificationCard(
+                          key: Key(notification.id),
+                          notification: notification,
+                          provider: provider,
+                          isDark: isDark,
+                          formatTime: _formatTime,
+                          getIcon: _getIconForType,
+                          getColor: _getColorForType,
+                        ),
+                      );
+                    }, childCount: provider.notifications.length + 1),
                   ),
                 );
               },
@@ -322,7 +322,8 @@ class _NotificationCard extends StatelessWidget {
             content: const Text('Notification deleted'),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
             action: SnackBarAction(
               label: 'Undo',
               onPressed: () {

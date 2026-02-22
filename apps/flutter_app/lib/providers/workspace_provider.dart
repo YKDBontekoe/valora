@@ -67,13 +67,19 @@ class WorkspaceProvider extends ChangeNotifier {
       _selectedWorkspace = Workspace.fromJson(wData);
 
       final mData = await _apiService.get('/api/workspaces/$id/members');
-      _members = (mData as List).map((j) => WorkspaceMember.fromJson(j)).toList();
+      _members = (mData as List)
+          .map((j) => WorkspaceMember.fromJson(j))
+          .toList();
 
       final sData = await _apiService.get('/api/workspaces/$id/listings');
-      _savedListings = (sData as List).map((j) => SavedListing.fromJson(j)).toList();
+      _savedListings = (sData as List)
+          .map((j) => SavedListing.fromJson(j))
+          .toList();
 
       final aData = await _apiService.get('/api/workspaces/$id/activity');
-      _activityLogs = (aData as List).map((j) => ActivityLog.fromJson(j)).toList();
+      _activityLogs = (aData as List)
+          .map((j) => ActivityLog.fromJson(j))
+          .toList();
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -85,12 +91,16 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> inviteMember(String email, WorkspaceRole role) async {
     if (_selectedWorkspace == null) return;
     try {
-      await _apiService.post('/api/workspaces/${_selectedWorkspace!.id}/members', {
-        'email': email,
-        'role': role.name,
-      });
-      final mData = await _apiService.get('/api/workspaces/${_selectedWorkspace!.id}/members');
-      _members = (mData as List).map((j) => WorkspaceMember.fromJson(j)).toList();
+      await _apiService.post(
+        '/api/workspaces/${_selectedWorkspace!.id}/members',
+        {'email': email, 'role': role.name},
+      );
+      final mData = await _apiService.get(
+        '/api/workspaces/${_selectedWorkspace!.id}/members',
+      );
+      _members = (mData as List)
+          .map((j) => WorkspaceMember.fromJson(j))
+          .toList();
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -100,35 +110,45 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> saveListing(String listingId, String? notes) async {
     if (_selectedWorkspace == null) return;
     try {
-      await _apiService.post('/api/workspaces/${_selectedWorkspace!.id}/listings', {
-        'listingId': listingId,
-        'notes': notes,
-      });
-      final sData = await _apiService.get('/api/workspaces/${_selectedWorkspace!.id}/listings');
-      _savedListings = (sData as List).map((j) => SavedListing.fromJson(j)).toList();
+      await _apiService.post(
+        '/api/workspaces/${_selectedWorkspace!.id}/listings',
+        {'listingId': listingId, 'notes': notes},
+      );
+      final sData = await _apiService.get(
+        '/api/workspaces/${_selectedWorkspace!.id}/listings',
+      );
+      _savedListings = (sData as List)
+          .map((j) => SavedListing.fromJson(j))
+          .toList();
       notifyListeners();
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {
-     if (_selectedWorkspace == null) return;
-     try {
-       await _apiService.post('/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments', {
-         'content': content,
-         'parentId': parentId,
-       });
-       notifyListeners();
-     } catch (e) {
-       rethrow;
-     }
+  Future<void> addComment(
+    String savedListingId,
+    String content,
+    String? parentId,
+  ) async {
+    if (_selectedWorkspace == null) return;
+    try {
+      await _apiService.post(
+        '/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments',
+        {'content': content, 'parentId': parentId},
+      );
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<List<Comment>> fetchComments(String savedListingId) async {
     if (_selectedWorkspace == null) return [];
     try {
-      final List<dynamic> data = await _apiService.get('/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments');
+      final List<dynamic> data = await _apiService.get(
+        '/api/workspaces/${_selectedWorkspace!.id}/listings/$savedListingId/comments',
+      );
       return data.map((j) => Comment.fromJson(j)).toList();
     } catch (e) {
       rethrow;

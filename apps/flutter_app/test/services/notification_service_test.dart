@@ -19,7 +19,11 @@ class MockApiService extends Fake implements ApiService {
   Future<int> getUnreadNotificationCount() async => _unreadCount;
 
   @override
-  Future<List<ValoraNotification>> getNotifications({bool unreadOnly = false, int limit = 50, int offset = 0}) async {
+  Future<List<ValoraNotification>> getNotifications({
+    bool unreadOnly = false,
+    int limit = 50,
+    int offset = 0,
+  }) async {
     return _notifications;
   }
 
@@ -39,47 +43,50 @@ class MockApiService extends Fake implements ApiService {
 }
 
 void main() {
-  test('deleteNotification removes item immediately and calls API after delay', () {
-    fakeAsync((async) {
-      // 1. Setup
-      final mockApiService = MockApiService();
-      final service = NotificationService(mockApiService);
+  test(
+    'deleteNotification removes item immediately and calls API after delay',
+    () {
+      fakeAsync((async) {
+        // 1. Setup
+        final mockApiService = MockApiService();
+        final service = NotificationService(mockApiService);
 
-      final notification = ValoraNotification(
-        id: '1',
-        title: 'Test',
-        body: 'Body',
-        isRead: false,
-        createdAt: DateTime.now(),
-        type: NotificationType.info,
-      );
-      mockApiService.notifications = [notification];
-      mockApiService.unreadCount = 1;
+        final notification = ValoraNotification(
+          id: '1',
+          title: 'Test',
+          body: 'Body',
+          isRead: false,
+          createdAt: DateTime.now(),
+          type: NotificationType.info,
+        );
+        mockApiService.notifications = [notification];
+        mockApiService.unreadCount = 1;
 
-      // Initialize service data
-      service.fetchNotifications();
-      async.flushMicrotasks();
+        // Initialize service data
+        service.fetchNotifications();
+        async.flushMicrotasks();
 
-      expect(service.notifications.length, 1);
-      expect(service.unreadCount, 1);
+        expect(service.notifications.length, 1);
+        expect(service.unreadCount, 1);
 
-      // 2. Delete
-      service.deleteNotification('1');
+        // 2. Delete
+        service.deleteNotification('1');
 
-      // 3. Verify optimistic removal
-      expect(service.notifications.isEmpty, true);
-      expect(service.unreadCount, 0);
-      expect(mockApiService.deletedIds.isEmpty, true); // API not called yet
+        // 3. Verify optimistic removal
+        expect(service.notifications.isEmpty, true);
+        expect(service.unreadCount, 0);
+        expect(mockApiService.deletedIds.isEmpty, true); // API not called yet
 
-      // 4. Fast forward time < 4 seconds
-      async.elapse(const Duration(seconds: 3));
-      expect(mockApiService.deletedIds.isEmpty, true); // Still not called
+        // 4. Fast forward time < 4 seconds
+        async.elapse(const Duration(seconds: 3));
+        expect(mockApiService.deletedIds.isEmpty, true); // Still not called
 
-      // 5. Fast forward past 4 seconds
-      async.elapse(const Duration(seconds: 2)); // Total 5s
-      expect(mockApiService.deletedIds, contains('1')); // API called
-    });
-  });
+        // 5. Fast forward past 4 seconds
+        async.elapse(const Duration(seconds: 2)); // Total 5s
+        expect(mockApiService.deletedIds, contains('1')); // API called
+      });
+    },
+  );
 
   test('undoDelete restores item and prevents API call', () {
     fakeAsync((async) {
@@ -152,8 +159,22 @@ void main() {
       final mockApiService = MockApiService();
       final service = NotificationService(mockApiService);
 
-      final n1 = ValoraNotification(id: '1', title: 'Test', body: 'Body', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
-      final n2 = ValoraNotification(id: '2', title: 'Test 2', body: 'Body', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
+      final n1 = ValoraNotification(
+        id: '1',
+        title: 'Test',
+        body: 'Body',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      );
+      final n2 = ValoraNotification(
+        id: '2',
+        title: 'Test 2',
+        body: 'Body',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      );
 
       mockApiService.notifications = [n1, n2];
       mockApiService.unreadCount = 2;
@@ -183,7 +204,14 @@ void main() {
       mockApiService.shouldFailDelete = true;
       final service = NotificationService(mockApiService);
 
-      final n1 = ValoraNotification(id: '1', title: 'Test', body: 'Body', isRead: false, createdAt: DateTime.now(), type: NotificationType.info);
+      final n1 = ValoraNotification(
+        id: '1',
+        title: 'Test',
+        body: 'Body',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      );
       mockApiService.notifications = [n1];
 
       service.fetchNotifications();

@@ -34,7 +34,9 @@ void main() {
     );
   }
 
-  testWidgets('NotificationsScreen shows loading indicator initially', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen shows loading indicator initially', (
+    WidgetTester tester,
+  ) async {
     when(mockNotificationService.isLoading).thenReturn(true);
     when(mockNotificationService.notifications).thenReturn([]);
 
@@ -46,7 +48,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
-  testWidgets('NotificationsScreen shows empty state', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen shows empty state', (
+    WidgetTester tester,
+  ) async {
     when(mockNotificationService.isLoading).thenReturn(false);
     when(mockNotificationService.notifications).thenReturn([]);
 
@@ -56,7 +60,9 @@ void main() {
     expect(find.text('All caught up!'), findsOneWidget);
   });
 
-  testWidgets('NotificationsScreen shows error state', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen shows error state', (
+    WidgetTester tester,
+  ) async {
     when(mockNotificationService.isLoading).thenReturn(false);
     when(mockNotificationService.notifications).thenReturn([]);
     when(mockNotificationService.error).thenReturn('Network error');
@@ -67,10 +73,15 @@ void main() {
     expect(find.text('Something went wrong'), findsOneWidget);
     // Should show generic message, not the raw error
     expect(find.text('Network error'), findsNothing);
-    expect(find.textContaining('We couldn\'t load your notifications'), findsOneWidget);
+    expect(
+      find.textContaining('We couldn\'t load your notifications'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('NotificationsScreen displays list of notifications', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen displays list of notifications', (
+    WidgetTester tester,
+  ) async {
     final notifications = [
       ValoraNotification(
         id: '1',
@@ -104,16 +115,27 @@ void main() {
     expect(find.text('Read all'), findsOneWidget);
   });
 
-  testWidgets('NotificationsScreen calls fetchNotifications on init', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen calls fetchNotifications on init', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pump();
     verify(mockNotificationService.fetchNotifications()).called(1);
     await tester.pumpAndSettle();
   });
 
-  testWidgets('NotificationsScreen calls markAllAsRead', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen calls markAllAsRead', (
+    WidgetTester tester,
+  ) async {
     when(mockNotificationService.notifications).thenReturn([
-       ValoraNotification(id: '1', title: 'A', body: 'B', isRead: false, createdAt: DateTime.now(), type: NotificationType.info)
+      ValoraNotification(
+        id: '1',
+        title: 'A',
+        body: 'B',
+        isRead: false,
+        createdAt: DateTime.now(),
+        type: NotificationType.info,
+      ),
     ]);
     when(mockNotificationService.unreadCount).thenReturn(1);
 
@@ -132,14 +154,16 @@ void main() {
     verify(mockNotificationService.markAllAsRead()).called(1);
   });
 
-  testWidgets('NotificationsScreen calls markAsRead on tap', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen calls markAsRead on tap', (
+    WidgetTester tester,
+  ) async {
     final notification = ValoraNotification(
-        id: '1',
-        title: 'Title',
-        body: 'Body',
-        isRead: false,
-        createdAt: DateTime.now(),
-        type: NotificationType.info,
+      id: '1',
+      title: 'Title',
+      body: 'Body',
+      isRead: false,
+      createdAt: DateTime.now(),
+      type: NotificationType.info,
     );
     when(mockNotificationService.notifications).thenReturn([notification]);
 
@@ -150,14 +174,16 @@ void main() {
     verify(mockNotificationService.markAsRead('1')).called(1);
   });
 
-  testWidgets('NotificationsScreen swipes to delete', (WidgetTester tester) async {
+  testWidgets('NotificationsScreen swipes to delete', (
+    WidgetTester tester,
+  ) async {
     final notification = ValoraNotification(
-        id: '1',
-        title: 'Title',
-        body: 'Body',
-        isRead: true,
-        createdAt: DateTime.now(),
-        type: NotificationType.info,
+      id: '1',
+      title: 'Title',
+      body: 'Body',
+      isRead: true,
+      createdAt: DateTime.now(),
+      type: NotificationType.info,
     );
     when(mockNotificationService.notifications).thenReturn([notification]);
 

@@ -45,8 +45,8 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
     final isInteractive = widget.onTap != null;
 
     final effectiveIconColor = widget.iconColor ?? colorScheme.primary;
-    final effectiveIconBg = widget.iconBackgroundColor ??
-        effectiveIconColor.withValues(alpha: 0.1);
+    final effectiveIconBg =
+        widget.iconBackgroundColor ?? effectiveIconColor.withValues(alpha: 0.1);
 
     final textColor = colorScheme.onSurface;
     final subtitleColor = colorScheme.onSurfaceVariant;
@@ -69,11 +69,19 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
               _isPressed = false;
             })
           : null,
-      cursor: isInteractive ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: isInteractive
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       child: GestureDetector(
-        onTapDown: isInteractive ? (_) => setState(() => _isPressed = true) : null,
-        onTapUp: isInteractive ? (_) => setState(() => _isPressed = false) : null,
-        onTapCancel: isInteractive ? () => setState(() => _isPressed = false) : null,
+        onTapDown: isInteractive
+            ? (_) => setState(() => _isPressed = true)
+            : null,
+        onTapUp: isInteractive
+            ? (_) => setState(() => _isPressed = false)
+            : null,
+        onTapCancel: isInteractive
+            ? () => setState(() => _isPressed = false)
+            : null,
         onTap: isInteractive
             ? () {
                 HapticFeedback.lightImpact();
@@ -95,25 +103,25 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
                   children: [
                     // Icon Container
                     Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: effectiveIconBg,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        widget.icon,
-                        color: effectiveIconColor,
-                        size: ValoraSpacing.iconSizeSm,
-                      ),
-                    )
-                    .animate(target: showHighlight ? 1 : 0)
-                    .scale(
-                      begin: const Offset(1, 1),
-                      end: const Offset(1.1, 1.1),
-                      duration: ValoraAnimations.fast,
-                      curve: ValoraAnimations.snappy,
-                    ),
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: effectiveIconBg,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            color: effectiveIconColor,
+                            size: ValoraSpacing.iconSizeSm,
+                          ),
+                        )
+                        .animate(target: showHighlight ? 1 : 0)
+                        .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.1, 1.1),
+                          duration: ValoraAnimations.fast,
+                          curve: ValoraAnimations.snappy,
+                        ),
 
                     const SizedBox(width: ValoraSpacing.md),
 
@@ -147,19 +155,19 @@ class _ValoraSettingsTileState extends State<ValoraSettingsTile> {
                       widget.trailing!
                     else if (widget.showChevron && isInteractive)
                       Icon(
-                        Icons.chevron_right_rounded,
-                        color: isDark
-                            ? ValoraColors.neutral500
-                            : ValoraColors.neutral300,
-                        size: ValoraSpacing.iconSizeMd,
-                      )
-                      .animate(target: showHighlight ? 1 : 0)
-                      .moveX(
-                        begin: 0,
-                        end: 4,
-                        duration: ValoraAnimations.fast,
-                        curve: ValoraAnimations.snappy,
-                      ),
+                            Icons.chevron_right_rounded,
+                            color: isDark
+                                ? ValoraColors.neutral500
+                                : ValoraColors.neutral300,
+                            size: ValoraSpacing.iconSizeMd,
+                          )
+                          .animate(target: showHighlight ? 1 : 0)
+                          .moveX(
+                            begin: 0,
+                            end: 4,
+                            duration: ValoraAnimations.fast,
+                            curve: ValoraAnimations.snappy,
+                          ),
                   ],
                 ),
               ),

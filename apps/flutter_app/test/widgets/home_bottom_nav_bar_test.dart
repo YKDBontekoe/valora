@@ -23,10 +23,7 @@ Widget _buildTestWidget({
         builder: (context, setState) {
           return Stack(
             children: [
-              HomeBottomNavBar(
-                currentIndex: currentIndex,
-                onTap: onTap,
-              ),
+              HomeBottomNavBar(currentIndex: currentIndex, onTap: onTap),
             ],
           );
         },

@@ -12,7 +12,7 @@ void main() {
         'name': 'Test School',
         'latitude': 52.0,
         'longitude': 4.0,
-        'metadata': {'key': 'value'}
+        'metadata': {'key': 'value'},
       };
       final amenity = MapAmenity.fromJson(json);
       expect(amenity.id, '123');
@@ -21,11 +21,7 @@ void main() {
     });
 
     test('fromJson handles null values gracefully', () {
-      final json = {
-        'id': null,
-        'latitude': null,
-        'longitude': null,
-      };
+      final json = {'id': null, 'latitude': null, 'longitude': null};
       final amenity = MapAmenity.fromJson(json);
       expect(amenity.id, '');
       expect(amenity.location, const LatLng(0.0, 0.0));
@@ -41,7 +37,7 @@ void main() {
         'metricName': 'Price',
         'metricValue': 123.45,
         'displayValue': '€ 123',
-        'geoJson': {'type': 'Feature'}
+        'geoJson': {'type': 'Feature'},
       };
       final overlay = MapOverlay.fromJson(json);
       expect(overlay.id, 'BU01');
@@ -50,9 +46,7 @@ void main() {
     });
 
     test('fromJson handles null metricValue', () {
-      final json = {
-        'metricValue': null,
-      };
+      final json = {'metricValue': null};
       final overlay = MapOverlay.fromJson(json);
       expect(overlay.metricValue, 0.0);
     });

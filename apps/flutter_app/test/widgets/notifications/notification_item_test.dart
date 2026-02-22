@@ -5,11 +5,7 @@ import 'package:valora_app/widgets/notifications/notification_item.dart';
 
 void main() {
   Widget createWidget(NotificationItem item) {
-    return MaterialApp(
-      home: Scaffold(
-        body: item,
-      ),
-    );
+    return MaterialApp(home: Scaffold(body: item));
   }
 
   testWidgets('NotificationItem renders content correctly', (tester) async {
@@ -22,7 +18,9 @@ void main() {
       type: NotificationType.info,
     );
 
-    await tester.pumpWidget(createWidget(NotificationItem(notification: notification)));
+    await tester.pumpWidget(
+      createWidget(NotificationItem(notification: notification)),
+    );
 
     expect(find.text('Test Notification'), findsOneWidget);
     expect(find.text('This is a test body'), findsOneWidget);
@@ -44,12 +42,14 @@ void main() {
       type: NotificationType.priceDrop,
     );
 
-    await tester.pumpWidget(createWidget(
-      NotificationItem(
-        notification: notification,
-        onTap: () => tapped = true,
+    await tester.pumpWidget(
+      createWidget(
+        NotificationItem(
+          notification: notification,
+          onTap: () => tapped = true,
+        ),
       ),
-    ));
+    );
 
     await tester.tap(find.byType(NotificationItem));
     expect(tapped, isTrue);
@@ -65,7 +65,9 @@ void main() {
       type: NotificationType.priceDrop,
     );
 
-    await tester.pumpWidget(createWidget(NotificationItem(notification: notification)));
+    await tester.pumpWidget(
+      createWidget(NotificationItem(notification: notification)),
+    );
 
     expect(find.byIcon(Icons.trending_down_rounded), findsOneWidget);
   });

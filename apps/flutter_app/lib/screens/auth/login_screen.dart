@@ -40,17 +40,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-    Future<void> _openSocialProvider(String provider) async {
+  Future<void> _openSocialProvider(String provider) async {
     if (provider.toLowerCase() == 'google') {
-       try {
-         await context.read<AuthProvider>().loginWithGoogle();
-       } catch (e) {
-         if (!mounted) return;
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Google Login failed: $e')),
-         );
-       }
-       return;
+      try {
+        await context.read<AuthProvider>().loginWithGoogle();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google Login failed: $e')));
+      }
+      return;
     }
 
     final Uri uri = Uri.parse('https://valora.nl/auth/$provider');
@@ -63,7 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
   }
-
 
   @override
   void dispose() {

@@ -1,9 +1,4 @@
-enum NotificationType {
-  info,
-  priceDrop,
-  newListing,
-  system,
-}
+enum NotificationType { info, priceDrop, newListing, system }
 
 class ValoraNotification {
   final String id;
@@ -26,7 +21,8 @@ class ValoraNotification {
 
   factory ValoraNotification.fromJson(Map<String, dynamic> json) {
     final int typeIndex = json['type'] as int;
-    final NotificationType type = (typeIndex >= 0 && typeIndex < NotificationType.values.length)
+    final NotificationType type =
+        (typeIndex >= 0 && typeIndex < NotificationType.values.length)
         ? NotificationType.values[typeIndex]
         : NotificationType.info;
 

@@ -9,7 +9,8 @@ import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/models/comment.dart';
 
 // Create a simple mock manually instead of using Mockito's generator for this quick test
-class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
+class MockWorkspaceProvider extends ChangeNotifier
+    implements WorkspaceProvider {
   @override
   bool get isLoading => false;
 
@@ -41,7 +42,7 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
 
   @override
   Future<void> selectWorkspace(String id) async {
-     // Mock implementation
+    // Mock implementation
   }
 
   @override
@@ -57,14 +58,20 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   Future<void> saveListing(String listingId, String? notes) async {}
 
   @override
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {}
+  Future<void> addComment(
+    String savedListingId,
+    String content,
+    String? parentId,
+  ) async {}
 
   @override
   Future<List<Comment>> fetchComments(String savedListingId) async => [];
 }
 
 void main() {
-  testWidgets('WorkspaceDetailScreen renders correctly', (WidgetTester tester) async {
+  testWidgets('WorkspaceDetailScreen renders correctly', (
+    WidgetTester tester,
+  ) async {
     final mockProvider = MockWorkspaceProvider();
 
     await tester.pumpWidget(

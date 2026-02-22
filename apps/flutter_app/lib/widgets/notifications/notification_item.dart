@@ -8,11 +8,7 @@ class NotificationItem extends StatelessWidget {
   final ValoraNotification notification;
   final VoidCallback? onTap;
 
-  const NotificationItem({
-    super.key,
-    required this.notification,
-    this.onTap,
-  });
+  const NotificationItem({super.key, required this.notification, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +20,8 @@ class NotificationItem extends StatelessWidget {
         color: notification.isRead
             ? null
             : (isDark
-                ? ValoraColors.primary.withValues(alpha: 0.1)
-                : ValoraColors.primary.withValues(alpha: 0.05)),
+                  ? ValoraColors.primary.withValues(alpha: 0.1)
+                  : ValoraColors.primary.withValues(alpha: 0.05)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +90,6 @@ class NotificationItem extends StatelessWidget {
         color = ValoraColors.neutral500;
         break;
       case NotificationType.info:
-
         iconData = Icons.info_outline_rounded;
         color = ValoraColors.info;
         break;

@@ -35,100 +35,118 @@ import 'package:valora_app/services/api_service.dart' as _i8;
 /// See the documentation for Mockito's code generation for more information.
 class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
   @override
-  List<_i3.MapCityInsight> get cities => (super.noSuchMethod(
-        Invocation.getter(#cities),
-        returnValue: <_i3.MapCityInsight>[],
-        returnValueForMissingStub: <_i3.MapCityInsight>[],
-      ) as List<_i3.MapCityInsight>);
+  List<_i3.MapCityInsight> get cities =>
+      (super.noSuchMethod(
+            Invocation.getter(#cities),
+            returnValue: <_i3.MapCityInsight>[],
+            returnValueForMissingStub: <_i3.MapCityInsight>[],
+          )
+          as List<_i3.MapCityInsight>);
 
   @override
-  List<_i4.MapAmenity> get amenities => (super.noSuchMethod(
-        Invocation.getter(#amenities),
-        returnValue: <_i4.MapAmenity>[],
-        returnValueForMissingStub: <_i4.MapAmenity>[],
-      ) as List<_i4.MapAmenity>);
+  List<_i4.MapAmenity> get amenities =>
+      (super.noSuchMethod(
+            Invocation.getter(#amenities),
+            returnValue: <_i4.MapAmenity>[],
+            returnValueForMissingStub: <_i4.MapAmenity>[],
+          )
+          as List<_i4.MapAmenity>);
 
   @override
-  List<_i5.MapAmenityCluster> get amenityClusters => (super.noSuchMethod(
-        Invocation.getter(#amenityClusters),
-        returnValue: <_i5.MapAmenityCluster>[],
-        returnValueForMissingStub: <_i5.MapAmenityCluster>[],
-      ) as List<_i5.MapAmenityCluster>);
+  List<_i5.MapAmenityCluster> get amenityClusters =>
+      (super.noSuchMethod(
+            Invocation.getter(#amenityClusters),
+            returnValue: <_i5.MapAmenityCluster>[],
+            returnValueForMissingStub: <_i5.MapAmenityCluster>[],
+          )
+          as List<_i5.MapAmenityCluster>);
 
   @override
-  List<_i6.MapOverlay> get overlays => (super.noSuchMethod(
-        Invocation.getter(#overlays),
-        returnValue: <_i6.MapOverlay>[],
-        returnValueForMissingStub: <_i6.MapOverlay>[],
-      ) as List<_i6.MapOverlay>);
+  List<_i6.MapOverlay> get overlays =>
+      (super.noSuchMethod(
+            Invocation.getter(#overlays),
+            returnValue: <_i6.MapOverlay>[],
+            returnValueForMissingStub: <_i6.MapOverlay>[],
+          )
+          as List<_i6.MapOverlay>);
 
   @override
-  List<_i7.MapOverlayTile> get overlayTiles => (super.noSuchMethod(
-        Invocation.getter(#overlayTiles),
-        returnValue: <_i7.MapOverlayTile>[],
-        returnValueForMissingStub: <_i7.MapOverlayTile>[],
-      ) as List<_i7.MapOverlayTile>);
+  List<_i7.MapOverlayTile> get overlayTiles =>
+      (super.noSuchMethod(
+            Invocation.getter(#overlayTiles),
+            returnValue: <_i7.MapOverlayTile>[],
+            returnValueForMissingStub: <_i7.MapOverlayTile>[],
+          )
+          as List<_i7.MapOverlayTile>);
 
   @override
-  bool get isLoading => (super.noSuchMethod(
-        Invocation.getter(#isLoading),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get isLoading =>
+      (super.noSuchMethod(
+            Invocation.getter(#isLoading),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  _i2.InsightMetric get selectedMetric => (super.noSuchMethod(
-        Invocation.getter(#selectedMetric),
-        returnValue: _i2.InsightMetric.composite,
-        returnValueForMissingStub: _i2.InsightMetric.composite,
-      ) as _i2.InsightMetric);
+  _i2.InsightMetric get selectedMetric =>
+      (super.noSuchMethod(
+            Invocation.getter(#selectedMetric),
+            returnValue: _i2.InsightMetric.composite,
+            returnValueForMissingStub: _i2.InsightMetric.composite,
+          )
+          as _i2.InsightMetric);
 
   @override
-  bool get showAmenities => (super.noSuchMethod(
-        Invocation.getter(#showAmenities),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get showAmenities =>
+      (super.noSuchMethod(
+            Invocation.getter(#showAmenities),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  bool get showOverlays => (super.noSuchMethod(
-        Invocation.getter(#showOverlays),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get showOverlays =>
+      (super.noSuchMethod(
+            Invocation.getter(#showOverlays),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
-  _i6.MapOverlayMetric get selectedOverlayMetric => (super.noSuchMethod(
-        Invocation.getter(#selectedOverlayMetric),
-        returnValue: _i6.MapOverlayMetric.pricePerSquareMeter,
-        returnValueForMissingStub: _i6.MapOverlayMetric.pricePerSquareMeter,
-      ) as _i6.MapOverlayMetric);
+  _i6.MapOverlayMetric get selectedOverlayMetric =>
+      (super.noSuchMethod(
+            Invocation.getter(#selectedOverlayMetric),
+            returnValue: _i6.MapOverlayMetric.pricePerSquareMeter,
+            returnValueForMissingStub: _i6.MapOverlayMetric.pricePerSquareMeter,
+          )
+          as _i6.MapOverlayMetric);
 
   @override
-  bool get hasListeners => (super.noSuchMethod(
-        Invocation.getter(#hasListeners),
-        returnValue: false,
-        returnValueForMissingStub: false,
-      ) as bool);
+  bool get hasListeners =>
+      (super.noSuchMethod(
+            Invocation.getter(#hasListeners),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
 
   @override
   void update(_i8.ApiService? apiService) => super.noSuchMethod(
-        Invocation.method(
-          #update,
-          [apiService],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#update, [apiService]),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  _i9.Future<void> loadInsights() => (super.noSuchMethod(
-        Invocation.method(
-          #loadInsights,
-          [],
-        ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
+  _i9.Future<void> loadInsights() =>
+      (super.noSuchMethod(
+            Invocation.method(#loadInsights, []),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
+          )
+          as _i9.Future<void>);
 
   @override
   _i9.Future<void> fetchMapData({
@@ -139,99 +157,71 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
     double? zoom = 7.5,
   }) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #fetchMapData,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-          },
-        ),
-        returnValue: _i9.Future<void>.value(),
-        returnValueForMissingStub: _i9.Future<void>.value(),
-      ) as _i9.Future<void>);
+            Invocation.method(#fetchMapData, [], {
+              #minLat: minLat,
+              #minLon: minLon,
+              #maxLat: maxLat,
+              #maxLon: maxLon,
+              #zoom: zoom,
+            }),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
+          )
+          as _i9.Future<void>);
 
   @override
   void toggleAmenities() => super.noSuchMethod(
-        Invocation.method(
-          #toggleAmenities,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#toggleAmenities, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void toggleOverlays() => super.noSuchMethod(
-        Invocation.method(
-          #toggleOverlays,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#toggleOverlays, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void setOverlayMetric(_i6.MapOverlayMetric? metric) => super.noSuchMethod(
-        Invocation.method(
-          #setOverlayMetric,
-          [metric],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#setOverlayMetric, [metric]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void setMetric(_i2.InsightMetric? metric) => super.noSuchMethod(
-        Invocation.method(
-          #setMetric,
-          [metric],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#setMetric, [metric]),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  double? getScore(_i3.MapCityInsight? city) => (super.noSuchMethod(
-        Invocation.method(
-          #getScore,
-          [city],
-        ),
-        returnValueForMissingStub: null,
-      ) as double?);
+  double? getScore(_i3.MapCityInsight? city) =>
+      (super.noSuchMethod(
+            Invocation.method(#getScore, [city]),
+            returnValueForMissingStub: null,
+          )
+          as double?);
 
   @override
   void addListener(_i10.VoidCallback? listener) => super.noSuchMethod(
-        Invocation.method(
-          #addListener,
-          [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#addListener, [listener]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void removeListener(_i10.VoidCallback? listener) => super.noSuchMethod(
-        Invocation.method(
-          #removeListener,
-          [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#removeListener, [listener]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void notifyListeners() => super.noSuchMethod(
-        Invocation.method(
-          #notifyListeners,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+    Invocation.method(#notifyListeners, []),
+    returnValueForMissingStub: null,
+  );
 }

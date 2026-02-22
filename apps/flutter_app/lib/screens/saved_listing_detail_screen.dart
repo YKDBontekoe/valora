@@ -30,9 +30,9 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
 
   void _refreshComments() {
     setState(() {
-      _commentsFuture = context
-          .read<WorkspaceProvider>()
-          .fetchComments(widget.savedListing.id);
+      _commentsFuture = context.read<WorkspaceProvider>().fetchComments(
+        widget.savedListing.id,
+      );
     });
   }
 
@@ -70,8 +70,11 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                           errorBuilder: (_, _, _) => Container(
                             color: ValoraColors.primary.withValues(alpha: 0.1),
                             child: const Center(
-                              child: Icon(Icons.home_rounded,
-                                  size: 64, color: ValoraColors.primary),
+                              child: Icon(
+                                Icons.home_rounded,
+                                size: 64,
+                                color: ValoraColors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -81,10 +84,7 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black26,
-                              ],
+                              colors: [Colors.transparent, Colors.black26],
                             ),
                           ),
                         ),
@@ -109,16 +109,17 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (listing?.city != null &&
-                        listing!.city!.isNotEmpty) ...[
+                    if (listing?.city != null && listing!.city!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on_outlined,
-                              size: 16,
-                              color: isDark
-                                  ? ValoraColors.neutral400
-                                  : ValoraColors.neutral500),
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 16,
+                            color: isDark
+                                ? ValoraColors.neutral400
+                                : ValoraColors.neutral500,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             listing.city!,
@@ -133,9 +134,7 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                     ],
                     if (listing?.price != null) ...[
                       const SizedBox(height: ValoraSpacing.md),
-                      ValoraPrice(
-                        price: listing!.price!,
-                      ),
+                      ValoraPrice(price: listing!.price!),
                     ],
                     if (listing?.bedrooms != null ||
                         listing?.livingAreaM2 != null) ...[
@@ -171,20 +170,24 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: ValoraSpacing.md),
+                  horizontal: ValoraSpacing.md,
+                ),
                 child: ValoraCard(
                   padding: const EdgeInsets.all(ValoraSpacing.md),
                   borderColor: ValoraColors.primary.withValues(alpha: 0.15),
-                  backgroundColor:
-                      ValoraColors.primary.withValues(alpha: isDark ? 0.08 : 0.03),
+                  backgroundColor: ValoraColors.primary.withValues(
+                    alpha: isDark ? 0.08 : 0.03,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.sticky_note_2_rounded,
-                          size: 20,
-                          color: isDark
-                              ? ValoraColors.primaryLight
-                              : ValoraColors.primary),
+                      Icon(
+                        Icons.sticky_note_2_rounded,
+                        size: 20,
+                        color: isDark
+                            ? ValoraColors.primaryLight
+                            : ValoraColors.primary,
+                      ),
                       const SizedBox(width: ValoraSpacing.sm),
                       Expanded(
                         child: Column(
@@ -221,7 +224,11 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                  ValoraSpacing.lg, ValoraSpacing.lg, ValoraSpacing.lg, ValoraSpacing.sm),
+                ValoraSpacing.lg,
+                ValoraSpacing.lg,
+                ValoraSpacing.lg,
+                ValoraSpacing.sm,
+              ),
               child: Text(
                 'Comments',
                 style: ValoraTypography.titleMedium.copyWith(
@@ -240,7 +247,8 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: ValoraLoadingIndicator(
-                        message: 'Loading comments...'),
+                      message: 'Loading comments...',
+                    ),
                   );
                 }
                 if (snapshot.hasError) {
@@ -294,25 +302,22 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark
-            ? ValoraColors.neutral800
-            : ValoraColors.neutral100,
+        color: isDark ? ValoraColors.neutral800 : ValoraColors.neutral100,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16,
-              color: isDark
-                  ? ValoraColors.neutral300
-                  : ValoraColors.neutral600),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? ValoraColors.neutral300 : ValoraColors.neutral600,
+          ),
           const SizedBox(width: 4),
           Text(
             label,
             style: ValoraTypography.labelSmall.copyWith(
-              color: isDark
-                  ? ValoraColors.neutral300
-                  : ValoraColors.neutral600,
+              color: isDark ? ValoraColors.neutral300 : ValoraColors.neutral600,
               fontWeight: FontWeight.w500,
             ),
           ),

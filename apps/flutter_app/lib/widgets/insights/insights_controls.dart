@@ -32,9 +32,15 @@ class InsightsControls extends StatelessWidget {
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
+                    color: isDark
+                        ? ValoraColors.glassBlackStrong
+                        : ValoraColors.glassWhiteStrong,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+                    border: Border.all(
+                      color: isDark
+                          ? ValoraColors.neutral700
+                          : ValoraColors.neutral200,
+                    ),
                     boxShadow: isDark ? ValoraShadows.smDark : ValoraShadows.sm,
                   ),
                   child: Padding(
@@ -61,19 +67,22 @@ class InsightsControls extends StatelessWidget {
                     ),
                   ),
                 ),
-              _buildActionButton(context,
+              _buildActionButton(
+                context,
                 key: const Key('insights_zoom_in_button'),
                 icon: Icons.add_rounded,
                 onPressed: onZoomIn,
               ),
               const SizedBox(height: 8),
-              _buildActionButton(context,
+              _buildActionButton(
+                context,
                 key: const Key('insights_zoom_out_button'),
                 icon: Icons.remove_rounded,
                 onPressed: onZoomOut,
               ),
               const SizedBox(height: 8),
-              _buildActionButton(context,
+              _buildActionButton(
+                context,
                 icon: Icons.place_rounded,
                 isActive: provider.showAmenities,
                 onPressed: () {
@@ -82,7 +91,8 @@ class InsightsControls extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 8),
-              _buildActionButton(context,
+              _buildActionButton(
+                context,
                 icon: Icons.layers_rounded,
                 isActive: provider.showOverlays,
                 onPressed: () {
@@ -97,7 +107,8 @@ class InsightsControls extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, {
+  Widget _buildActionButton(
+    BuildContext context, {
     Key? key,
     required IconData icon,
     required VoidCallback onPressed,
@@ -107,12 +118,20 @@ class InsightsControls extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive
             ? ValoraColors.primary
-            : (Theme.of(context).brightness == Brightness.dark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong),
+            : (Theme.of(context).brightness == Brightness.dark
+                  ? ValoraColors.glassBlackStrong
+                  : ValoraColors.glassWhiteStrong),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isActive ? ValoraColors.primaryDark : (Theme.of(context).brightness == Brightness.dark ? ValoraColors.neutral700 : ValoraColors.neutral200),
+          color: isActive
+              ? ValoraColors.primaryDark
+              : (Theme.of(context).brightness == Brightness.dark
+                    ? ValoraColors.neutral700
+                    : ValoraColors.neutral200),
         ),
-        boxShadow: Theme.of(context).brightness == Brightness.dark ? ValoraShadows.smDark : ValoraShadows.sm,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? ValoraShadows.smDark
+            : ValoraShadows.sm,
       ),
       child: SizedBox(
         width: 44,

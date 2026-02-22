@@ -141,7 +141,9 @@ class SettingsScreen extends StatelessWidget {
                         ValoraSettingsTile(
                           icon: Icons.workspaces_rounded,
                           iconColor: Colors.blue,
-                          iconBackgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          iconBackgroundColor: Colors.blue.withValues(
+                            alpha: 0.1,
+                          ),
                           title: 'Workspaces',
                           subtitle: 'Collaborate on your property search',
                           showDivider: true,
@@ -149,10 +151,11 @@ class SettingsScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ChangeNotifierProvider.value(
-                                  value: context.read<WorkspaceProvider>(),
-                                  child: const WorkspaceListScreen(),
-                                ),
+                                builder: (context) =>
+                                    ChangeNotifierProvider.value(
+                                      value: context.read<WorkspaceProvider>(),
+                                      child: const WorkspaceListScreen(),
+                                    ),
                               ),
                             );
                           },
@@ -160,7 +163,9 @@ class SettingsScreen extends StatelessWidget {
                         ValoraSettingsTile(
                           icon: Icons.tune_rounded,
                           iconColor: Colors.purple,
-                          iconBackgroundColor: Colors.purple.withValues(alpha: 0.1),
+                          iconBackgroundColor: Colors.purple.withValues(
+                            alpha: 0.1,
+                          ),
                           title: 'Search Preferences',
                           subtitle: 'Location, Price, Amenities',
                           showDivider: true,
@@ -172,7 +177,9 @@ class SettingsScreen extends StatelessWidget {
                         ValoraSettingsTile(
                           icon: Icons.palette_rounded,
                           iconColor: Colors.orange,
-                          iconBackgroundColor: Colors.orange.withValues(alpha: 0.1),
+                          iconBackgroundColor: Colors.orange.withValues(
+                            alpha: 0.1,
+                          ),
                           title: 'Appearance',
                           subtitle: 'Theme & Display settings',
                           showDivider: false,
@@ -210,7 +217,9 @@ class SettingsScreen extends StatelessWidget {
                         ValoraSettingsTile(
                           icon: Icons.lock_rounded,
                           iconColor: Colors.grey,
-                          iconBackgroundColor: Colors.grey.withValues(alpha: 0.1),
+                          iconBackgroundColor: Colors.grey.withValues(
+                            alpha: 0.1,
+                          ),
                           title: 'Privacy & Security',
                           subtitle: 'Password, FaceID',
                           showDivider: false,

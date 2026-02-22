@@ -21,7 +21,12 @@ void main() {
       municipalityName: 'Test Municipality',
     ),
     socialMetrics: [
-      ContextMetric(key: 'residents', label: 'Residents', source: 'CBS', value: 1000),
+      ContextMetric(
+        key: 'residents',
+        label: 'Residents',
+        source: 'CBS',
+        value: 1000,
+      ),
     ],
     crimeMetrics: [
       ContextMetric(key: 'theft', label: 'Theft', source: 'Police', value: 5),
@@ -34,7 +39,11 @@ void main() {
     compositeScore: 85.0,
     categoryScores: {'Social': 80.0, 'Safety': 90.0},
     sources: [
-      SourceAttribution(source: 'CBS', url: 'https://cbs.nl', license: 'Open Data'),
+      SourceAttribution(
+        source: 'CBS',
+        url: 'https://cbs.nl',
+        license: 'Open Data',
+      ),
     ],
     warnings: ['Test Warning'],
   );
@@ -52,9 +61,9 @@ void main() {
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1.0;
 
-    await tester.pumpWidget(createWidgetUnderTest(
-      ContextReportView(report: testReport),
-    ));
+    await tester.pumpWidget(
+      createWidgetUnderTest(ContextReportView(report: testReport)),
+    );
 
     expect(find.text('Test Address'), findsOneWidget);
     expect(find.text('Social'), findsOneWidget);
@@ -67,24 +76,28 @@ void main() {
     });
   });
 
-  testWidgets('ContextReportView.buildChild returns expected components', (tester) async {
+  testWidgets('ContextReportView.buildChild returns expected components', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1.0;
 
-    await tester.pumpWidget(createWidgetUnderTest(
-      Builder(
-        builder: (context) {
-          final count = ContextReportView.childCount(testReport);
-          return Column(
-            children: List.generate(count, (index) => ContextReportView.buildChild(
-              context,
-              index,
-              testReport,
-            )),
-          );
-        },
+    await tester.pumpWidget(
+      createWidgetUnderTest(
+        Builder(
+          builder: (context) {
+            final count = ContextReportView.childCount(testReport);
+            return Column(
+              children: List.generate(
+                count,
+                (index) =>
+                    ContextReportView.buildChild(context, index, testReport),
+              ),
+            );
+          },
+        ),
       ),
-    ));
+    );
 
     expect(find.text('Test Address'), findsOneWidget);
     expect(find.byType(ScoreGauge), findsOneWidget);
@@ -122,13 +135,17 @@ void main() {
     expect(find.text('100'), findsOneWidget);
   });
 
-  testWidgets('ContextReportView respects showHeader parameter', (tester) async {
+  testWidgets('ContextReportView respects showHeader parameter', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1.0;
 
-    await tester.pumpWidget(createWidgetUnderTest(
-      ContextReportView(report: testReport, showHeader: false),
-    ));
+    await tester.pumpWidget(
+      createWidgetUnderTest(
+        ContextReportView(report: testReport, showHeader: false),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Test Address'), findsNothing);

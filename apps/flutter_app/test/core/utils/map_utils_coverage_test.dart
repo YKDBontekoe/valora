@@ -12,7 +12,11 @@ void main() {
   test('parsePolygonGeometry handles invalid coordinates gracefully', () {
     final invalid = {
       'type': 'Polygon',
-      'coordinates': [[['not', 'numbers']]]
+      'coordinates': [
+        [
+          ['not', 'numbers'],
+        ],
+      ],
     };
 
     expect(MapUtils.parsePolygonGeometry(invalid), isEmpty);

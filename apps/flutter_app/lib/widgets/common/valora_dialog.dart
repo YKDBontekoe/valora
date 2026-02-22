@@ -26,58 +26,61 @@ class ValoraDialog extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.all(ValoraSpacing.lg),
-      child: ValoraCard(
-        borderRadius: ValoraSpacing.radiusXxl,
-        elevation: ValoraSpacing.elevationLg,
-        padding: const EdgeInsets.all(ValoraSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: ValoraTypography.titleLarge.copyWith(
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: ValoraSpacing.md),
-            Flexible(
-              child: SingleChildScrollView(
-                child: DefaultTextStyle(
-                  style: ValoraTypography.bodyMedium.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  child: child,
+      child:
+          ValoraCard(
+                borderRadius: ValoraSpacing.radiusXxl,
+                elevation: ValoraSpacing.elevationLg,
+                padding: const EdgeInsets.all(ValoraSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: ValoraSpacing.md),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: DefaultTextStyle(
+                          style: ValoraTypography.bodyMedium.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          child: child,
+                        ),
+                      ),
+                    ),
+                    if (actions.isNotEmpty) ...[
+                      const SizedBox(height: ValoraSpacing.lg),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: actions.map((action) {
+                          final index = actions.indexOf(action);
+                          if (index > 0) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                left: ValoraSpacing.sm,
+                              ),
+                              child: action,
+                            );
+                          }
+                          return action;
+                        }).toList(),
+                      ),
+                    ],
+                  ],
                 ),
+              )
+              .animate()
+              .fadeIn(duration: ValoraAnimations.normal)
+              .scale(
+                begin: const Offset(0.92, 0.92),
+                end: const Offset(1, 1),
+                duration: ValoraAnimations.medium,
+                curve: ValoraAnimations.deceleration,
               ),
-            ),
-            if (actions.isNotEmpty) ...[
-              const SizedBox(height: ValoraSpacing.lg),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: actions.map((action) {
-                  final index = actions.indexOf(action);
-                  if (index > 0) {
-                    return Padding(
-                      padding: const EdgeInsets.only(left: ValoraSpacing.sm),
-                      child: action,
-                    );
-                  }
-                  return action;
-                }).toList(),
-              ),
-            ],
-          ],
-        ),
-      )
-          .animate()
-          .fadeIn(duration: ValoraAnimations.normal)
-          .scale(
-            begin: const Offset(0.92, 0.92),
-            end: const Offset(1, 1),
-            duration: ValoraAnimations.medium,
-            curve: ValoraAnimations.deceleration,
-          ),
     );
   }
 }

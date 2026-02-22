@@ -54,9 +54,11 @@ class _ValoraCardState extends State<ValoraCard> {
 
     if (_isHovered) {
       // Relative lift logic: one level higher than current elevation
-      if (widget.elevation <= ValoraSpacing.elevationSm + _precisionErrorTolerance) {
+      if (widget.elevation <=
+          ValoraSpacing.elevationSm + _precisionErrorTolerance) {
         effectiveElevation = ValoraSpacing.elevationMd;
-      } else if (widget.elevation <= ValoraSpacing.elevationMd + _precisionErrorTolerance) {
+      } else if (widget.elevation <=
+          ValoraSpacing.elevationMd + _precisionErrorTolerance) {
         effectiveElevation = ValoraSpacing.elevationLg;
       } else {
         effectiveElevation = ValoraSpacing.elevationXl;
@@ -86,10 +88,12 @@ class _ValoraCardState extends State<ValoraCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final backgroundColor = widget.backgroundColor ??
+    final backgroundColor =
+        widget.backgroundColor ??
         (isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight);
 
-    final borderColor = widget.borderColor ??
+    final borderColor =
+        widget.borderColor ??
         (isDark
             ? ValoraColors.neutral700.withValues(alpha: 0.5)
             : ValoraColors.neutral200.withValues(alpha: 0.7));
@@ -107,8 +111,8 @@ class _ValoraCardState extends State<ValoraCard> {
         border: Border.all(
           color: _isHovered
               ? (isDark
-                  ? ValoraColors.neutral600.withValues(alpha: 0.7)
-                  : ValoraColors.neutral300.withValues(alpha: 0.9))
+                    ? ValoraColors.neutral600.withValues(alpha: 0.7)
+                    : ValoraColors.neutral300.withValues(alpha: 0.9))
               : borderColor,
           width: effectiveBorderWidth,
         ),

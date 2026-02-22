@@ -49,7 +49,7 @@ void main() {
       final history = await service.getHistory();
       expect(history.length, 10);
       expect(history.first.query, 'query 14'); // Latest
-      expect(history.last.query, 'query 5');   // Oldest kept
+      expect(history.last.query, 'query 5'); // Oldest kept
     });
 
     test('removeFromHistory removes item', () async {

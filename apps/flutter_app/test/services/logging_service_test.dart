@@ -95,7 +95,10 @@ void main() {
       expect(() => Logger.root.severe('Critical error'), returnsNormally);
 
       // Test with error object
-      expect(() => Logger.root.severe('Critical error', Exception('Fatal')), returnsNormally);
+      expect(
+        () => Logger.root.severe('Critical error', Exception('Fatal')),
+        returnsNormally,
+      );
     });
   });
 }

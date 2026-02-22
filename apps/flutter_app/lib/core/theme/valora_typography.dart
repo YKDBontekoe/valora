@@ -14,7 +14,8 @@ abstract final class ValoraTypography {
   static String get fontFamily => GoogleFonts.inter().fontFamily!;
 
   /// Display/heading override — Plus Jakarta Sans (modern, geometric display face)
-  static String get displayFontFamily => GoogleFonts.plusJakartaSans().fontFamily!;
+  static String get displayFontFamily =>
+      GoogleFonts.plusJakartaSans().fontFamily!;
 
   // ============================================
   // FONT WEIGHTS

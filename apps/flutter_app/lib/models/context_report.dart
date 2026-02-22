@@ -29,7 +29,9 @@ class ContextReport {
 
   factory ContextReport.fromJson(Map<String, dynamic> json) {
     return ContextReport(
-      location: ContextLocation.fromJson(json['location'] as Map<String, dynamic>),
+      location: ContextLocation.fromJson(
+        json['location'] as Map<String, dynamic>,
+      ),
       socialMetrics: _parseMetrics(json['socialMetrics']),
       crimeMetrics: _parseMetrics(json['crimeMetrics']),
       demographicsMetrics: _parseMetrics(json['demographicsMetrics']),
@@ -54,7 +56,9 @@ class ContextReport {
       'location': location.toJson(),
       'socialMetrics': socialMetrics.map((e) => e.toJson()).toList(),
       'crimeMetrics': crimeMetrics.map((e) => e.toJson()).toList(),
-      'demographicsMetrics': demographicsMetrics.map((e) => e.toJson()).toList(),
+      'demographicsMetrics': demographicsMetrics
+          .map((e) => e.toJson())
+          .toList(),
       'housingMetrics': housingMetrics.map((e) => e.toJson()).toList(),
       'mobilityMetrics': mobilityMetrics.map((e) => e.toJson()).toList(),
       'amenityMetrics': amenityMetrics.map((e) => e.toJson()).toList(),
@@ -77,7 +81,9 @@ class ContextReport {
   static Map<String, double> _parseCategoryScores(dynamic value) {
     if (value == null) return {};
     final Map<String, dynamic> map = value as Map<String, dynamic>;
-    return map.map((key, value) => MapEntry(key, (value as num?)?.toDouble() ?? 0));
+    return map.map(
+      (key, value) => MapEntry(key, (value as num?)?.toDouble() ?? 0),
+    );
   }
 }
 
@@ -189,10 +195,6 @@ class SourceAttribution {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'source': source,
-      'url': url,
-      'license': license,
-    };
+    return {'source': source, 'url': url, 'license': license};
   }
 }
