@@ -1,107 +1,81 @@
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace Valora.IntegrationTests;
 
-public class SentryConfigurationTests : IClassFixture<WebApplicationFactory<Program>>
+// These tests verify that the app starts successfully under different Sentry
+// configurations. They use IntegrationTestWebAppFactory (InMemory DB) instead
+// of the bare WebApplicationFactory<Program> to avoid the EF Core
+// "SqlServer + InMemory both registered" error that occurs when no
+// DATABASE_URL is set (e.g. in CI).
+public class SentryConfigurationTests
 {
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public SentryConfigurationTests(WebApplicationFactory<Program> factory)
+    private static IntegrationTestWebAppFactory CreateFactory(Dictionary<string, string?> extraConfig)
     {
-        _factory = factory;
+        // Use a unique DB name per factory so parallel tests don't share state.
+        var dbName = $"InMemory:SentryTest-{Guid.NewGuid()}";
+        var factory = new IntegrationTestWebAppFactory(dbName);
+
+        // WithWebHostBuilder does not support AddInMemoryCollection layering on
+        // IntegrationTestWebAppFactory cleanly; instead we pass values through
+        // environment variables, which ConfigureAppConfiguration picks up last (highest priority).
+        foreach (var (key, value) in extraConfig)
+        {
+            if (value is not null)
+                Environment.SetEnvironmentVariable(key, value);
+        }
+
+        return factory;
     }
 
     [Fact]
     public void BuildHost_WithSentryProfilingEnabled_DoesNotCrash()
     {
-        // Arrange
-        var factory = _factory.WithWebHostBuilder(builder =>
+        using var factory = CreateFactory(new Dictionary<string, string?>
         {
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    { "SENTRY_DSN", "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456" },
-                    { "SENTRY_PROFILES_SAMPLE_RATE", "1.0" },
-                    { "SENTRY_RELEASE", "test-release" }
-                });
-            });
+            ["SENTRY_DSN"] = "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456",
+            ["SENTRY_PROFILES_SAMPLE_RATE"] = "1.0",
+            ["SENTRY_RELEASE"] = "test-release",
         });
 
-        // Act
         var client = factory.CreateClient();
-
-        // Assert
         Assert.NotNull(client);
     }
 
     [Fact]
     public void BuildHost_WithSentryProfilingDisabled_DoesNotCrash()
     {
-        // Arrange
-        var factory = _factory.WithWebHostBuilder(builder =>
+        using var factory = CreateFactory(new Dictionary<string, string?>
         {
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    { "SENTRY_DSN", "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456" },
-                    { "SENTRY_PROFILES_SAMPLE_RATE", "0.0" }
-                });
-            });
+            ["SENTRY_DSN"] = "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456",
+            ["SENTRY_PROFILES_SAMPLE_RATE"] = "0.0",
         });
 
-        // Act
         var client = factory.CreateClient();
-
-        // Assert
         Assert.NotNull(client);
     }
 
     [Fact]
     public void BuildHost_WithoutSentryDsn_DoesNotCrash()
     {
-        // Arrange
-        var factory = _factory.WithWebHostBuilder(builder =>
+        using var factory = CreateFactory(new Dictionary<string, string?>
         {
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    { "SENTRY_DSN", "" }
-                });
-            });
+            ["SENTRY_DSN"] = "",
         });
 
-        // Act
         var client = factory.CreateClient();
-
-        // Assert
         Assert.NotNull(client);
     }
 
     [Fact]
     public void BuildHost_WithSentryFallbacks_DoesNotCrash()
     {
-        // Arrange
-        var factory = _factory.WithWebHostBuilder(builder =>
+        // No SENTRY_TRACES_SAMPLE_RATE, No SENTRY_PROFILES_SAMPLE_RATE, No SENTRY_RELEASE
+        using var factory = CreateFactory(new Dictionary<string, string?>
         {
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    { "SENTRY_DSN", "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456" }
-                    // No SENTRY_TRACES_SAMPLE_RATE, No SENTRY_PROFILES_SAMPLE_RATE, No SENTRY_RELEASE
-                });
-            });
+            ["SENTRY_DSN"] = "https://d7879133400742199b24471545465c4a@o123456.ingest.sentry.io/123456",
         });
 
-        // Act
         var client = factory.CreateClient();
-
-        // Assert
         Assert.NotNull(client);
     }
 }
