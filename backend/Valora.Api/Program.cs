@@ -268,59 +268,77 @@ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
 /// </summary>
-api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
+api.MapGet("/health", async (ValoraDbContext db, ILogger<Program> logger, CancellationToken ct) =>
 {
     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-    bool canConnect = false;
+
     try
     {
-        canConnect = await db.Database.CanConnectAsync(ct);
+        // 1. Check DB Connectivity
+        var canConnect = await db.Database.CanConnectAsync(ct);
+        if (!canConnect)
+        {
+            stopwatch.Stop();
+            return Results.Json(new HealthStatusDto
+            {
+                Status = "Unhealthy",
+                DatabaseStatus = "Disconnected",
+                ApiLatencyMs = stopwatch.ElapsedMilliseconds,
+                ActiveJobs = 0,
+                QueuedJobs = 0,
+                FailedJobs = 0,
+                LastPipelineSuccess = null,
+                Timestamp = DateTime.UtcNow
+            }, statusCode: 503);
+        }
+
+        // 2. Gather Metrics (protected by try-catch)
+        var activeJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct);
+        var queuedJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Pending, ct);
+
+        // Only count failures in the last 24 hours to avoid permanent degradation
+        var failuresSince = DateTime.UtcNow.AddHours(-24);
+        var failedJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Failed && j.CompletedAt >= failuresSince, ct);
+
+        var lastSuccess = await db.BatchJobs
+            .Where(j => j.Status == BatchJobStatus.Completed)
+            .OrderByDescending(j => j.CompletedAt)
+            .Select(j => j.CompletedAt)
+            .FirstOrDefaultAsync(ct);
+
+        stopwatch.Stop(); // Stop timing after ALL work is done
+
+        var status = "Healthy";
+        if (failedJobs > 5) status = "Degraded";
+
+        return Results.Ok(new HealthStatusDto
+        {
+            Status = status,
+            DatabaseStatus = "Connected",
+            ApiLatencyMs = stopwatch.ElapsedMilliseconds,
+            ActiveJobs = activeJobs,
+            QueuedJobs = queuedJobs,
+            FailedJobs = failedJobs,
+            LastPipelineSuccess = lastSuccess,
+            Timestamp = DateTime.UtcNow
+        });
     }
-    catch
+    catch (Exception ex)
     {
-        canConnect = false;
+        logger.LogError(ex, "Health check failed unexpectedly");
+        stopwatch.Stop();
+        return Results.Json(new HealthStatusDto
+        {
+            Status = "Unhealthy",
+            DatabaseStatus = "Error",
+            ApiLatencyMs = stopwatch.ElapsedMilliseconds,
+            ActiveJobs = 0,
+            QueuedJobs = 0,
+            FailedJobs = 0,
+            LastPipelineSuccess = null,
+            Timestamp = DateTime.UtcNow
+        }, statusCode: 503);
     }
-    stopwatch.Stop();
-
-    if (!canConnect)
-    {
-         return Results.Json(new HealthStatusDto
-         {
-             Status = "Unhealthy",
-             DatabaseStatus = "Disconnected",
-             ApiLatencyMs = stopwatch.ElapsedMilliseconds,
-             ActiveJobs = 0,
-             QueuedJobs = 0,
-             FailedJobs = 0,
-             LastPipelineSuccess = null,
-             Timestamp = DateTime.UtcNow
-         }, statusCode: 503);
-    }
-
-    // Gather metrics
-    var activeJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct);
-    var queuedJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Pending, ct);
-    var failedJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Failed, ct);
-    var lastSuccess = await db.BatchJobs
-        .Where(j => j.Status == BatchJobStatus.Completed)
-        .OrderByDescending(j => j.CompletedAt)
-        .Select(j => j.CompletedAt)
-        .FirstOrDefaultAsync(ct);
-
-    var status = "Healthy";
-    if (failedJobs > 5) status = "Degraded";
-
-    return Results.Ok(new HealthStatusDto
-    {
-        Status = status,
-        DatabaseStatus = "Connected",
-        ApiLatencyMs = stopwatch.ElapsedMilliseconds,
-        ActiveJobs = activeJobs,
-        QueuedJobs = queuedJobs,
-        FailedJobs = failedJobs,
-        LastPipelineSuccess = lastSuccess,
-        Timestamp = DateTime.UtcNow
-    });
 })
 .DisableRateLimiting();
 

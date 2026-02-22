@@ -53,13 +53,15 @@ const BatchJobs: React.FC = () => {
 
   useEffect(() => {
     fetchJobs();
-    fetchHealth();
-    const interval = setInterval(() => {
-        fetchJobs();
-        fetchHealth(); // Refresh health with jobs
-    }, 5000);
+    const interval = setInterval(fetchJobs, 5000); // Poll jobs every 5s
     return () => clearInterval(interval);
   }, [fetchJobs]);
+
+  useEffect(() => {
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 30000); // Poll health every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   const handleStartJob = async (e: React.FormEvent) => {
     e.preventDefault();
