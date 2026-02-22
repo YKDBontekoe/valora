@@ -19,8 +19,9 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  public componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {
+    // Log a generic message to avoid leaking sensitive data in unstructured logs
+    console.error('UI Error caught by ErrorBoundary. Check internal monitoring for details.');
   }
 
   private handleReload = () => {
@@ -43,12 +44,6 @@ class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-600 mb-6">
               We're sorry, but an unexpected error occurred. Please try reloading the page.
             </p>
-
-            {this.state.error && (
-              <div className="bg-gray-100 p-4 rounded-md mb-6 text-left overflow-auto max-h-40 text-sm font-mono text-gray-700">
-                {this.state.error.toString()}
-              </div>
-            )}
 
             <button
               onClick={this.handleReload}

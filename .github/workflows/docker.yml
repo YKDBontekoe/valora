@@ -1,44 +1,26 @@
 name: Docker Build & Push
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  push:
+    branches: [ "main" ]
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
   workflow_dispatch:
-
-concurrency:
-  group: docker-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  # Sentry release name: tied to the triggering commit SHA so it matches
-  # what we later finalize in the deploy workflow.
-  SENTRY_RELEASE: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   build:
-    name: Build & Push Image
     runs-on: ubuntu-latest
-    # Only run when CI passed (or on manual dispatch)
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
-    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
-      # Required for Sentry to read commit metadata via the GitHub integration
-      deployments: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -55,8 +37,6 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=long
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -65,27 +45,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
-          build-args: |
-            SENTRY_RELEASE=${{ env.SENTRY_RELEASE }}
-
-      # ── Sentry Release ─────────────────────────────────────────────────
-      # Creates a release in Sentry, associates commits for suspect-commit
-      # blame and finalises the build artifact. The release is NOT deployed
-      # here — that happens in the deploy-aca workflow.
-      - name: Create Sentry release
-        uses: getsentry/action-release@v3
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_BACKEND }}
-        with:
-          environment: production
-          version: ${{ env.SENTRY_RELEASE }}
-          # Associate commits so Sentry can link errors to the right code
-          set_commits: auto
-          # Don't mark as deployed yet — that's done after ACA is live
-          finalize: false

@@ -11,8 +11,6 @@ import '../../widgets/insights/insights_legend.dart';
 import '../../widgets/insights/insights_controls.dart';
 import '../../widgets/insights/insights_metric_selector.dart';
 import '../../widgets/insights/insights_map.dart';
-import '../../widgets/insights/map_mode_selector.dart';
-import '../../widgets/insights/persistent_details_panel.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -66,16 +64,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Selector<InsightsProvider, (bool, bool, String?, MapMode)>(
-        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error, p.mapMode),
-        shouldRebuild: (prev, next) {
-          // If map mode changed, trigger data fetch for current viewport
-          if (prev.$4 != next.$4) {
-            // Schedule fetch after build to ensure provider state is settled
-            WidgetsBinding.instance.addPostFrameCallback((_) => _onMapChanged());
-          }
-          return prev != next;
-        },
+      body: Selector<InsightsProvider, (bool, bool, String?)>(
+        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error),
         builder: (context, state, child) {
           final isLoading = state.$1;
           final isEmpty = state.$2;
@@ -131,12 +121,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
                       ),
                       const InsightsHeader(),
                       const InsightsMetricSelector(),
-                      const Positioned(
-                        top: 140,
-                        left: 0,
-                        right: 0,
-                        child: MapModeSelector(),
-                      ),
                       const InsightsLegend(),
                       InsightsControls(
                         onZoomIn: () => _zoomMap(0.7),
@@ -155,7 +139,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
                           );
                         },
                       ),
-                      const PersistentDetailsPanel(),
                     ],
                   ),
                 ),

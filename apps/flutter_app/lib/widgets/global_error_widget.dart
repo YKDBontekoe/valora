@@ -30,9 +30,9 @@ class GlobalErrorWidget extends StatelessWidget {
           );
         }
 
-        return Material(
-          color: colorScheme.surface,
-          child: Center(
+        return Scaffold(
+          backgroundColor: colorScheme.surface,
+          body: Center(
             child: Padding(
               padding: const EdgeInsets.all(ValoraSpacing.xl),
               child: Column(

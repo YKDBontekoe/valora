@@ -13,8 +13,6 @@ import '../repositories/map_repository.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
 
-enum MapMode { cities, overlays, amenities }
-
 class InsightsProvider extends ChangeNotifier {
   MapRepository _repository;
 
@@ -26,9 +24,8 @@ class InsightsProvider extends ChangeNotifier {
   List<MapOverlayTile> _overlayTiles = [];
 
   bool _isLoading = false;
-  MapMode _mapMode = MapMode.cities;
-  Object? _selectedFeature;
-
+  bool _showAmenities = false;
+  bool _showOverlays = false;
   String? _error;
   String? _mapError;
 
@@ -69,13 +66,8 @@ class InsightsProvider extends ChangeNotifier {
   List<MapOverlay> get overlays => _overlays;
   List<MapOverlayTile> get overlayTiles => _overlayTiles;
   bool get isLoading => _isLoading;
-
-  MapMode get mapMode => _mapMode;
-  Object? get selectedFeature => _selectedFeature;
-
-  bool get showAmenities => _mapMode == MapMode.amenities;
-  bool get showOverlays => _mapMode == MapMode.overlays;
-
+  bool get showAmenities => _showAmenities;
+  bool get showOverlays => _showOverlays;
   String? get error => _error;
   String? get mapError => _mapError;
   InsightMetric get selectedMetric => _selectedMetric;
@@ -97,43 +89,6 @@ class InsightsProvider extends ChangeNotifier {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  void setMapMode(MapMode mode) {
-    if (_mapMode == mode) return;
-
-    _mapMode = mode;
-    _selectedFeature = null;
-
-    // Clear data if leaving a mode
-    if (_mapMode != MapMode.amenities) {
-      _amenities = [];
-      _amenityClusters = [];
-      _amenitiesCoverage = null;
-      _amenityClustersCoverage = null;
-    }
-    if (_mapMode != MapMode.overlays) {
-      _overlays = [];
-      _overlayTiles = [];
-      _overlaysCoverage = null;
-      _overlayTilesCoverage = null;
-    }
-
-    notifyListeners();
-  }
-
-  void selectFeature(Object? feature) {
-    if (_selectedFeature != feature) {
-      _selectedFeature = feature;
-      notifyListeners();
-    }
-  }
-
-  void clearSelection() {
-    if (_selectedFeature != null) {
-      _selectedFeature = null;
       notifyListeners();
     }
   }
@@ -172,7 +127,7 @@ class InsightsProvider extends ChangeNotifier {
     final List<Future<_LayerFetchResult>> tasks = [];
 
     // Check if we need amenities
-    if (showAmenities) {
+    if (_showAmenities) {
       if (zoom >= 14) {
         // Fetch individual amenities
         _amenityClusters = []; // Clear clusters
@@ -191,7 +146,7 @@ class InsightsProvider extends ChangeNotifier {
     }
 
     // Check if we need overlays
-    if (showOverlays) {
+    if (_showOverlays) {
       final metric = _getOverlayMetricString(_selectedOverlayMetric);
 
       if (zoom >= 13) {
@@ -271,19 +226,25 @@ class InsightsProvider extends ChangeNotifier {
   }
 
   void toggleAmenities() {
-    if (_mapMode == MapMode.amenities) {
-      setMapMode(MapMode.cities);
-    } else {
-      setMapMode(MapMode.amenities);
+    _showAmenities = !_showAmenities;
+    if (!_showAmenities) {
+      _amenities = [];
+      _amenityClusters = [];
+      _amenitiesCoverage = null;
+      _amenityClustersCoverage = null;
     }
+    notifyListeners();
   }
 
   void toggleOverlays() {
-    if (_mapMode == MapMode.overlays) {
-      setMapMode(MapMode.cities);
-    } else {
-      setMapMode(MapMode.overlays);
+    _showOverlays = !_showOverlays;
+    if (!_showOverlays) {
+      _overlays = [];
+      _overlayTiles = [];
+      _overlaysCoverage = null;
+      _overlayTilesCoverage = null;
     }
+    notifyListeners();
   }
 
   void setOverlayMetric(MapOverlayMetric metric) {
@@ -320,11 +281,11 @@ class InsightsProvider extends ChangeNotifier {
       case MapOverlayMetric.pricePerSquareMeter:
         return 'PricePerSquareMeter';
       case MapOverlayMetric.crimeRate:
-        return 'Crime Rate';
+        return 'CrimeRate';
       case MapOverlayMetric.populationDensity:
-        return 'Pop. Density';
+        return 'PopulationDensity';
       case MapOverlayMetric.averageWoz:
-        return 'Avg WOZ';
+        return 'AverageWoz';
     }
   }
 

@@ -2,33 +2,29 @@ name: Deploy Flutter Web to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'apps/flutter_app/**'
-      - '.github/workflows/deploy_flutter_web.yml'
-
-concurrency:
-  group: deploy-flutter-web
-  cancel-in-progress: true
 
 jobs:
   build_and_deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     defaults:
       run:
         working-directory: apps/flutter_app
     permissions:
-      contents: write
+      contents: write # Needed for deploying to gh-pages
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.24.5'
           cache: true
 
       - name: Install dependencies
@@ -53,7 +49,7 @@ jobs:
         run: flutter build web --release --base-href "${{ env.BASE_HREF }}"
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0 (Node 18 compatible)
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

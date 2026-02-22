@@ -28,8 +28,6 @@ class MockInsightsProvider extends ChangeNotifier implements InsightsProvider {
   List<MapCityInsight> cities = [];
   @override
   MapOverlayMetric selectedOverlayMetric = MapOverlayMetric.pricePerSquareMeter;
-  @override
-  Object? selectedFeature;
 
   @override
   double? getScore(MapCityInsight city) => city.compositeScore;
@@ -65,10 +63,9 @@ void main() {
       ),
     );
 
-    // Wait for the map to fully render including tiles
-    await tester.pumpAndSettle();
+    await tester.pump(); // Allow map to build
 
-    // Verify that PolygonLayer is present (for tiles)
+    // Verify that PolygonLayer is present
     expect(find.byType(PolygonLayer), findsOneWidget);
   });
 
@@ -96,8 +93,7 @@ void main() {
       ),
     );
 
-    // Wait for the map to fully render
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     // Verify that MarkerLayer is present (for clusters)
     // There's always one MarkerLayer for cities, so we expect 2 if clusters are shown
