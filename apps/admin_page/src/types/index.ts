@@ -39,3 +39,21 @@ export interface BatchJob {
   startedAt: string | null;
   completedAt: string | null;
 }
+
+export interface SystemHealth {
+  status: 'healthy' | 'degraded';
+  timestamp: string;
+  database: 'connected' | 'disconnected';
+  dbLatencyMs: number;
+  apiLatency: {
+    p50: number;
+    p95: number;
+    p99: number;
+  };
+  jobs: {
+    active: number;
+    queued: number;
+    failed: number;
+    lastSuccess: string | null;
+  };
+}
