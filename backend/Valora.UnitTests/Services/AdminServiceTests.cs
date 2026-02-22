@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
-using Valora.Application.DTOs;
 using Valora.Application.Services;
 using Valora.Domain.Entities;
 using Xunit;
@@ -13,7 +12,6 @@ public class AdminServiceTests
 {
     private readonly Mock<IIdentityService> _identityServiceMock = new();
     private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
-    private readonly Mock<INeighborhoodRepository> _neighborhoodRepositoryMock = new();
     private readonly Mock<ILogger<AdminService>> _loggerMock = new();
 
     private AdminService CreateService()
@@ -21,7 +19,6 @@ public class AdminServiceTests
         return new AdminService(
             _identityServiceMock.Object,
             _notificationRepositoryMock.Object,
-            _neighborhoodRepositoryMock.Object,
             _loggerMock.Object);
     }
 
@@ -131,28 +128,5 @@ public class AdminServiceTests
         // Assert
         Assert.Equal(10, result.TotalUsers);
         Assert.Equal(5, result.TotalNotifications);
-    }
-
-    [Fact]
-    public async Task GetDatasetStatusAsync_ReturnsStatus()
-    {
-        // Arrange
-        var service = CreateService();
-        var expectedStatus = new List<DatasetStatusDto>
-        {
-            new DatasetStatusDto("CityA", 10, DateTime.UtcNow)
-        };
-
-        _neighborhoodRepositoryMock
-            .Setup(x => x.GetDatasetStatusAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedStatus);
-
-        // Act
-        var result = await service.GetDatasetStatusAsync();
-
-        // Assert
-        Assert.Single(result);
-        Assert.Equal("CityA", result[0].City);
-        _neighborhoodRepositoryMock.Verify(x => x.GetDatasetStatusAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

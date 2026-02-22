@@ -5,11 +5,10 @@ import 'package:valora_app/widgets/report/context_report_view.dart';
 import 'package:valora_app/widgets/report/report_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
-import 'package:valora_app/repositories/context_report_repository.dart';
-import 'package:valora_app/services/search_history_service.dart';
+import 'package:valora_app/services/api_service.dart';
 import 'package:mockito/mockito.dart';
 
-class MockContextReportRepository extends Mock implements ContextReportRepository {}
+class MockApiService extends Mock implements ApiService {}
 
 void main() {
   final testReport = ContextReport(
@@ -43,10 +42,7 @@ void main() {
   Widget createWidgetUnderTest(Widget child) {
     return MaterialApp(
       home: ChangeNotifierProvider(
-        create: (_) => ContextReportProvider(
-          repository: MockContextReportRepository(),
-          historyService: SearchHistoryService(),
-        ),
+        create: (_) => ContextReportProvider(apiService: MockApiService()),
         child: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );

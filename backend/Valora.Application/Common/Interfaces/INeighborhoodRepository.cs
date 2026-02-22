@@ -1,4 +1,3 @@
-using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Common.Interfaces;
@@ -7,7 +6,6 @@ public interface INeighborhoodRepository
 {
     Task<Neighborhood?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
     Task<List<Neighborhood>> GetByCityAsync(string city, CancellationToken cancellationToken = default);
-    Task<List<DatasetStatusDto>> GetDatasetStatusAsync(CancellationToken cancellationToken = default);
     Task<Neighborhood> AddAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default);
     Task UpdateAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default);
 

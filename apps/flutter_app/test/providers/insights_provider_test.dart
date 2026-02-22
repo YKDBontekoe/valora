@@ -5,19 +5,19 @@ import 'package:valora_app/models/map_amenity.dart';
 import 'package:valora_app/models/map_amenity_cluster.dart';
 import 'package:valora_app/models/map_overlay_tile.dart';
 import 'package:valora_app/providers/insights_provider.dart';
-import 'package:valora_app/repositories/map_repository.dart';
+import 'package:valora_app/services/api_service.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'insights_provider_test.mocks.dart';
 
-@GenerateMocks([MapRepository])
+@GenerateMocks([ApiService])
 void main() {
   late InsightsProvider provider;
-  late MockMapRepository mockRepository;
+  late MockApiService mockApiService;
 
   setUp(() {
-    mockRepository = MockMapRepository();
-    provider = InsightsProvider(mockRepository);
+    mockApiService = MockApiService();
+    provider = InsightsProvider(mockApiService);
   });
 
   group('InsightsProvider', () {
@@ -39,7 +39,7 @@ void main() {
         provider.toggleAmenities();
 
         when(
-          mockRepository.getMapAmenities(
+          mockApiService.getMapAmenities(
             minLat: anyNamed('minLat'),
             minLon: anyNamed('minLon'),
             maxLat: anyNamed('maxLat'),
@@ -73,7 +73,7 @@ void main() {
       provider.toggleAmenities();
 
       when(
-        mockRepository.getMapAmenities(
+        mockApiService.getMapAmenities(
           minLat: anyNamed('minLat'),
           minLon: anyNamed('minLon'),
           maxLat: anyNamed('maxLat'),
@@ -97,7 +97,7 @@ void main() {
       provider.toggleAmenities();
 
       when(
-        mockRepository.getMapAmenityClusters(
+        mockApiService.getMapAmenityClusters(
           minLat: anyNamed('minLat'),
           minLon: anyNamed('minLon'),
           maxLat: anyNamed('maxLat'),
@@ -132,7 +132,7 @@ void main() {
       provider.toggleOverlays();
 
       when(
-        mockRepository.getMapOverlayTiles(
+        mockApiService.getMapOverlayTiles(
           minLat: anyNamed('minLat'),
           minLon: anyNamed('minLon'),
           maxLat: anyNamed('maxLat'),

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers } from 'lucide-react';
+import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
 import Skeleton from '../components/Skeleton';
 import JobDetailsModal from './JobDetailsModal';
-import DatasetStatusModal from './DatasetStatusModal';
 
 const BatchJobs: React.FC = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);
@@ -26,7 +25,6 @@ const BatchJobs: React.FC = () => {
   // Modal State
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDatasetModalOpen, setIsDatasetModalOpen] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -39,7 +37,7 @@ const BatchJobs: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, statusFilter, typeFilter]);
+  }, [page, statusFilter, typeFilter, pageSize]);
 
   useEffect(() => {
     fetchJobs();
@@ -59,21 +57,6 @@ const BatchJobs: React.FC = () => {
       fetchJobs();
     } catch {
       // Toast handled by api interceptor
-    } finally {
-      setIsStarting(false);
-    }
-  };
-
-  const handleIngestAll = async () => {
-    if (!window.confirm('Are you sure you want to trigger ingestion for ALL municipalities? This will queue hundreds of jobs.')) return;
-
-    setIsStarting(true);
-    try {
-      await adminService.startJob('AllCitiesIngestion', 'Netherlands');
-      showToast('Full dataset ingestion pipeline initiated', 'success');
-      fetchJobs();
-    } catch {
-       // handled
     } finally {
       setIsStarting(false);
     }
@@ -158,30 +141,6 @@ const BatchJobs: React.FC = () => {
                 Execute Pipeline
               </Button>
             </form>
-
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-8 pt-6 border-t border-brand-100/50">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsDatasetModalOpen(true)}
-                    leftIcon={<Layers size={16} />}
-                    className="text-brand-600 hover:bg-brand-50 font-bold"
-                >
-                    View Dataset Status
-                </Button>
-                <div className="hidden sm:block flex-1" />
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleIngestAll}
-                    disabled={isStarting}
-                    leftIcon={<Globe size={16} />}
-                    className="w-full sm:w-auto border-brand-200 text-brand-600 hover:bg-brand-50 font-bold"
-                >
-                    Ingest All Netherlands
-                </Button>
-            </div>
-
             <p className="text-[10px] text-brand-400 mt-4 font-bold uppercase tracking-wider">
                 Note: Ingestion jobs are resource-intensive. Avoid overlapping same-city jobs.
             </p>
@@ -212,7 +171,6 @@ const BatchJobs: React.FC = () => {
                   <option value="All">All Types</option>
                   <option value="CityIngestion">CityIngestion</option>
                   <option value="MapGeneration">MapGeneration</option>
-                  <option value="AllCitiesIngestion">AllCitiesIngestion</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -369,11 +327,6 @@ const BatchJobs: React.FC = () => {
         onClose={closeDetails}
         jobId={selectedJobId}
         onJobUpdated={fetchJobs}
-      />
-
-      <DatasetStatusModal
-        isOpen={isDatasetModalOpen}
-        onClose={() => setIsDatasetModalOpen(false)}
       />
     </div>
   );

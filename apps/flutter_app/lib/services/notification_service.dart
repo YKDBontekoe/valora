@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import '../models/notification.dart';
-import '../repositories/notification_repository.dart';
+import 'api_service.dart';
 
 class NotificationService extends ChangeNotifier {
   static final _log = Logger('NotificationService');
-  NotificationRepository _repository;
+  ApiService _apiService;
   List<ValoraNotification> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;
@@ -20,10 +20,11 @@ class NotificationService extends ChangeNotifier {
   final Map<String, Timer> _pendingDeletions = {};
   final Map<String, (int index, ValoraNotification notification)> _pendingDeletedNotifications = {};
 
-  NotificationService(this._repository);
+  NotificationService(this._apiService);
 
-  void update(NotificationRepository repository) {
-    _repository = repository;
+
+  void update(ApiService apiService) {
+    _apiService = apiService;
   }
 
   List<ValoraNotification> get notifications => _notifications;
@@ -48,7 +49,7 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> _fetchUnreadCount() async {
     try {
-      int count = await _repository.getUnreadNotificationCount();
+      int count = await _apiService.getUnreadNotificationCount();
 
       // Adjust count to account for locally pending deletes
       for (final pending in _pendingDeletedNotifications.values) {
@@ -68,6 +69,10 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<void> deleteNotification(String id) async {
+    // If it's already pending deletion, ignore or just let it continue.
+    // However, if the user triggered delete again, we shouldn't cancel the old one
+    // unless we want to reset the timer. But if it's not in _notifications,
+    // we can't remove it again.
     if (_pendingDeletions.containsKey(id)) {
         return;
     }
@@ -90,21 +95,28 @@ class NotificationService extends ChangeNotifier {
     // Schedule API call
     _pendingDeletions[id] = Timer(const Duration(seconds: 4), () async {
       _pendingDeletions.remove(id);
+      // We keep it in _pendingDeletedNotifications until success or failure is handled
+      // But actually, once the timer fires, the undo window is closed.
+      // So we remove it from there too. But we need a reference for restoration on failure.
+
       final pendingRestore = _pendingDeletedNotifications.remove(id);
 
       try {
-        await _repository.deleteNotification(id);
+        await _apiService.deleteNotification(id);
       } catch (e) {
         _log.warning('Error deleting notification', e);
 
         // Restore on failure
         if (pendingRestore != null) {
           final (idx, notification) = pendingRestore;
+          // We need to re-insert carefully. The list might have changed (other deletions/additions).
+          // Using the old index is a best-effort.
           if (idx >= 0 && idx <= _notifications.length) {
             _notifications.insert(idx, notification);
           } else {
             _notifications.add(notification);
           }
+          // Restore unread count
           if (!notification.isRead) {
             _unreadCount++;
           }
@@ -126,8 +138,8 @@ class NotificationService extends ChangeNotifier {
     try {
       // Fetch unread count in parallel with notifications
       final results = await Future.wait([
-        _repository.getNotifications(limit: _pageSize, offset: 0),
-        _repository.getUnreadNotificationCount(),
+        _apiService.getNotifications(limit: _pageSize, offset: 0),
+        _apiService.getUnreadNotificationCount(),
       ]);
 
       var fetched = results[0] as List<ValoraNotification>;
@@ -159,13 +171,14 @@ class NotificationService extends ChangeNotifier {
     if (_isLoading || _isLoadingMore || !_hasMore) return;
 
     _isLoadingMore = true;
+    // Clear any previous error when attempting to load more
     if (_error != null) {
       _error = null;
     }
     notifyListeners();
 
     try {
-      final fetched = await _repository.getNotifications(limit: _pageSize, offset: _offset);
+      final fetched = await _apiService.getNotifications(limit: _pageSize, offset: _offset);
 
       if (fetched.isEmpty) {
         _hasMore = false;
@@ -200,10 +213,11 @@ class NotificationService extends ChangeNotifier {
         _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
         notifyListeners();
 
-        await _repository.markNotificationAsRead(id);
+        await _apiService.markNotificationAsRead(id);
       }
     } catch (e) {
       _log.warning('Error marking notification as read', e);
+      // Revert if needed, but for read status it's usually fine
     }
   }
 
@@ -222,7 +236,7 @@ class NotificationService extends ChangeNotifier {
       _unreadCount = 0;
       notifyListeners();
 
-      await _repository.markAllNotificationsAsRead();
+      await _apiService.markAllNotificationsAsRead();
     } catch (e) {
       _log.warning('Error marking all notifications as read', e);
     }

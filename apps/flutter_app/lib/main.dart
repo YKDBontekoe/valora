@@ -1,25 +1,20 @@
+import 'providers/insights_provider.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 import 'core/config/app_config.dart';
 import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/insights_provider.dart';
 import 'screens/startup_screen.dart';
-import 'services/api_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/logging_service.dart';
 import 'services/notification_service.dart';
-import 'repositories/map_repository.dart';
-import 'repositories/notification_repository.dart';
-import 'repositories/context_report_repository.dart';
-import 'repositories/workspace_repository.dart';
 import 'widgets/global_error_widget.dart';
 
 // coverage:ignore-start
@@ -92,33 +87,21 @@ Future<void> main() async {
             update: (context, authService, previous) =>
                 previous ?? AuthProvider(authService: authService),
           ),
-          ProxyProvider2<AuthService, AuthProvider, ApiClient>(
-            update: (context, authService, authProvider, _) => ApiClient(
+          ProxyProvider2<AuthService, AuthProvider, ApiService>(
+            update: (context, authService, authProvider, _) => ApiService(
               authToken: authProvider.token,
               refreshTokenCallback: authProvider.refreshSession,
             ),
           ),
-          ProxyProvider<ApiClient, MapRepository>(
-            update: (context, client, _) => MapRepository(client),
+          ChangeNotifierProxyProvider<ApiService, NotificationService>(
+            create: (context) => NotificationService(context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? NotificationService(apiService))..update(apiService),
           ),
-          ProxyProvider<ApiClient, NotificationRepository>(
-            update: (context, client, _) => NotificationRepository(client),
-          ),
-          ProxyProvider<ApiClient, ContextReportRepository>(
-            update: (context, client, _) => ContextReportRepository(client),
-          ),
-          ProxyProvider<ApiClient, WorkspaceRepository>(
-            update: (context, client, _) => WorkspaceRepository(client),
-          ),
-          ChangeNotifierProxyProvider<NotificationRepository, NotificationService>(
-            create: (context) => NotificationService(context.read<NotificationRepository>()),
-            update: (context, repo, previous) =>
-                (previous ?? NotificationService(repo))..update(repo),
-          ),
-          ChangeNotifierProxyProvider<MapRepository, InsightsProvider>(
-            create: (context) => InsightsProvider(context.read<MapRepository>()),
-            update: (context, repo, previous) =>
-                (previous ?? InsightsProvider(repo))..update(repo),
+          ChangeNotifierProxyProvider<ApiService, InsightsProvider>(
+            create: (context) => InsightsProvider(context.read<ApiService>()),
+            update: (context, apiService, previous) =>
+                (previous ?? InsightsProvider(apiService))..update(apiService),
           ),
         ],
         child: const ValoraApp(),

@@ -2,34 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
-import 'package:valora_app/repositories/workspace_repository.dart';
+import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/models/workspace.dart';
-import 'package:valora_app/models/saved_listing.dart';
-import 'package:valora_app/models/comment.dart';
 
-@GenerateMocks([WorkspaceRepository])
+@GenerateMocks([ApiService])
 import 'workspace_provider_test.mocks.dart';
 
 void main() {
   late WorkspaceProvider provider;
-  late MockWorkspaceRepository mockRepository;
+  late MockApiService mockApiService;
 
   setUp(() {
-    mockRepository = MockWorkspaceRepository();
-    provider = WorkspaceProvider(mockRepository);
+    mockApiService = MockApiService();
+    provider = WorkspaceProvider(mockApiService);
   });
 
   group('WorkspaceProvider', () {
     test('fetchWorkspaces populates list on success', () async {
-      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [
-        Workspace(
-          id: '1',
-          name: 'Test',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
+      when(mockApiService.get('/api/workspaces')).thenAnswer((_) async => [
+        {
+          'id': '1',
+          'name': 'Test',
+          'ownerId': 'user1',
+          'createdAt': DateTime.now().toIso8601String(),
+          'memberCount': 1,
+          'savedListingCount': 0
+        }
       ]);
 
       await provider.fetchWorkspaces();
@@ -41,7 +39,7 @@ void main() {
     });
 
     test('fetchWorkspaces handles error', () async {
-      when(mockRepository.fetchWorkspaces()).thenThrow(Exception('Network error'));
+      when(mockApiService.get('/api/workspaces')).thenThrow(Exception('Network error'));
 
       await provider.fetchWorkspaces();
 
@@ -51,16 +49,14 @@ void main() {
     });
 
     test('createWorkspace adds new workspace', () async {
-      final newWs = Workspace(
-        id: '2',
-        name: 'New',
-        ownerId: 'user1',
-        createdAt: DateTime.now(),
-        memberCount: 1,
-        savedListingCount: 0,
-      );
-
-      when(mockRepository.createWorkspace(any, any)).thenAnswer((_) async => newWs);
+      when(mockApiService.post('/api/workspaces', any)).thenAnswer((_) async => {
+        'id': '2',
+        'name': 'New',
+        'ownerId': 'user1',
+        'createdAt': DateTime.now().toIso8601String(),
+        'memberCount': 1,
+        'savedListingCount': 0
+      });
 
       await provider.createWorkspace('New', 'Desc');
 
@@ -69,19 +65,17 @@ void main() {
     });
 
     test('selectWorkspace fetches details', () async {
-      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
-        Workspace(
-          id: '1',
-          name: 'WS',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      );
-      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1')).thenAnswer((_) async => {
+        'id': '1',
+        'name': 'WS',
+        'ownerId': 'user1',
+        'createdAt': DateTime.now().toIso8601String(),
+        'memberCount': 1,
+        'savedListingCount': 0
+      });
+      when(mockApiService.get('/api/workspaces/1/members')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/listings')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/activity')).thenAnswer((_) async => []);
 
       await provider.selectWorkspace('1');
 
@@ -91,33 +85,32 @@ void main() {
 
     test('inviteMember calls API and refreshes members', () async {
       // Setup selected workspace
-      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
-        Workspace(
-          id: '1',
-          name: 'WS',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      );
-      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1')).thenAnswer((_) async => {
+        'id': '1',
+        'name': 'WS',
+        'ownerId': 'user1',
+        'createdAt': DateTime.now().toIso8601String(),
+        'memberCount': 1,
+        'savedListingCount': 0
+      });
+      when(mockApiService.get('/api/workspaces/1/members')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/listings')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/activity')).thenAnswer((_) async => []);
 
       await provider.selectWorkspace('1');
 
       // Setup invite call
-      when(mockRepository.inviteMember(any, any, any)).thenAnswer((_) async {});
-      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => [
-        WorkspaceMember(
-          id: 'wm1',
-          userId: 'u2',
-          role: WorkspaceRole.viewer,
-          email: 'test@example.com',
-          isPending: false,
-          joinedAt: DateTime.now(),
-        )
+      when(mockApiService.post('/api/workspaces/1/members', any)).thenAnswer((_) async => {});
+      when(mockApiService.get('/api/workspaces/1/members')).thenAnswer((_) async => [
+        {
+          'id': 'wm1',
+          'userId': 'u2',
+          'workspaceId': '1',
+          'role': 'Viewer',
+          'email': 'test@example.com',
+          'isPending': false,
+          'joinedAt': '2023-01-01T00:00:00Z'
+        }
       ]);
 
       await provider.inviteMember('test@example.com', WorkspaceRole.viewer);
@@ -128,32 +121,33 @@ void main() {
 
     test('saveListing calls API and refreshes listings', () async {
       // Setup selected workspace
-      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
-        Workspace(
-          id: '1',
-          name: 'WS',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      );
-      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1')).thenAnswer((_) async => {
+        'id': '1',
+        'name': 'WS',
+        'ownerId': 'user1',
+        'createdAt': DateTime.now().toIso8601String(),
+        'memberCount': 1,
+        'savedListingCount': 0
+      });
+      when(mockApiService.get('/api/workspaces/1/members')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/listings')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/activity')).thenAnswer((_) async => []);
       await provider.selectWorkspace('1');
 
       // Setup save call
-      when(mockRepository.saveListing(any, any, any)).thenAnswer((_) async {});
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => [
-        SavedListing(
-          id: 'sl1',
-          listingId: 'l1',
-          addedByUserId: 'u1',
-          addedAt: DateTime.now(),
-          commentCount: 0,
-          listing: ListingSummary(id: 'l1', address: '123 St')
-        )
+      when(mockApiService.post('/api/workspaces/1/listings', any)).thenAnswer((_) async => {});
+      when(mockApiService.get('/api/workspaces/1/listings')).thenAnswer((_) async => [
+        {
+          'id': 'sl1',
+          'listingId': 'l1',
+          'addedByUserId': 'u1',
+          'addedAt': '2023-01-01T00:00:00Z',
+          'commentCount': 0,
+          'listing': {
+             'id': 'l1',
+             'address': '123 St'
+          }
+        }
       ]);
 
       await provider.saveListing('l1', 'notes');
@@ -164,54 +158,46 @@ void main() {
 
     test('addComment calls API', () async {
       // Setup selected workspace
-      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
-        Workspace(
-          id: '1',
-          name: 'WS',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      );
-      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1')).thenAnswer((_) async => {
+        'id': '1',
+        'name': 'WS',
+        'ownerId': 'user1',
+        'createdAt': DateTime.now().toIso8601String(),
+        'memberCount': 1,
+        'savedListingCount': 0
+      });
+      when(mockApiService.get('/api/workspaces/1/members')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/listings')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/activity')).thenAnswer((_) async => []);
       await provider.selectWorkspace('1');
 
-      when(mockRepository.addComment(any, any, any, any)).thenAnswer((_) async {});
+      when(mockApiService.post('/api/workspaces/1/listings/sl1/comments', any)).thenAnswer((_) async => {});
 
       await provider.addComment('sl1', 'content', null);
 
-      verify(mockRepository.addComment('1', 'sl1', 'content', null)).called(1);
+      verify(mockApiService.post('/api/workspaces/1/listings/sl1/comments', {
+        'content': 'content',
+        'parentId': null,
+      })).called(1);
     });
 
     test('fetchComments returns list', () async {
       // Setup selected workspace
-      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
-        Workspace(
-          id: '1',
-          name: 'WS',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      );
-      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1')).thenAnswer((_) async => {
+        'id': '1',
+        'name': 'WS',
+        'ownerId': 'user1',
+        'createdAt': DateTime.now().toIso8601String(),
+        'memberCount': 1,
+        'savedListingCount': 0
+      });
+      when(mockApiService.get('/api/workspaces/1/members')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/listings')).thenAnswer((_) async => []);
+      when(mockApiService.get('/api/workspaces/1/activity')).thenAnswer((_) async => []);
       await provider.selectWorkspace('1');
 
-      when(mockRepository.fetchComments('1', 'sl1')).thenAnswer((_) async => [
-        Comment(
-          id: 'c1',
-          userId: 'u1',
-          content: 'Hello',
-          createdAt: DateTime.now(),
-          replies: [],
-          reactions: {},
-        )
+      when(mockApiService.get('/api/workspaces/1/listings/sl1/comments')).thenAnswer((_) async => [
+        {'id': 'c1', 'savedListingId': 'sl1', 'userId': 'u1', 'content': 'Hello', 'createdAt': '2023-01-01T00:00:00Z', 'replies': []}
       ]);
 
       final comments = await provider.fetchComments('sl1');

@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
@@ -37,7 +36,8 @@ public class AiServiceTests : IDisposable
 
         _mockAiModelService = new Mock<IAiModelService>();
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient());
+        // We don't need to setup CreateClient because ChatAsync doesn't use it.
+        // It uses OpenAI SDK's ChatClient which manages its own HTTP transport.
 
         // Default mock setup
         _mockAiModelService
