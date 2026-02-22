@@ -26,6 +26,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, Valora.Api.Services.CurrentUserService>();
+builder.Services.AddSingleton<Valora.Api.Services.IRequestMetricsService, Valora.Api.Services.RequestMetricsService>();
 // Configure Sentry
 // Design Decision: We use Sentry for error tracking but limit the volume of data sent.
 // - Information logs are kept as 'breadcrumbs' to provide context leading up to an error.
@@ -240,6 +241,7 @@ var app = builder.Build();
 
 app.UseCors();
 
+app.UseMiddleware<Valora.Api.Middleware.RequestMetricsMiddleware>();
 app.UseMiddleware<Valora.Api.Middleware.ExceptionHandlingMiddleware>();
 
 // Log warning if CORS is insecurely configured in production
@@ -299,19 +301,54 @@ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
 /// </summary>
-api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
+/// <summary>
+/// Health check endpoint. Used by Docker Compose and load balancers.
+/// </summary>
+api.MapGet("/health", async (ValoraDbContext db, Valora.Api.Services.IRequestMetricsService metricsService, CancellationToken ct) =>
 {
     try
     {
         var canConnect = await db.Database.CanConnectAsync(ct);
-        var activeJobs = canConnect ? await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct) : 0;
+
+        int activeJobs = 0;
+        int queuedJobs = 0;
+        int failedJobs = 0;
+        DateTime? lastPipelineSuccess = null;
+
+        if (canConnect)
+        {
+            var jobStats = await db.BatchJobs
+                .GroupBy(j => j.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+
+            activeJobs = jobStats.TryGetValue(BatchJobStatus.Processing, out var processing) ? processing : 0;
+            queuedJobs = jobStats.TryGetValue(BatchJobStatus.Pending, out var pending) ? pending : 0;
+            failedJobs = jobStats.TryGetValue(BatchJobStatus.Failed, out var failed) ? failed : 0;
+
+            lastPipelineSuccess = await db.BatchJobs
+                .Where(j => j.Status == BatchJobStatus.Completed)
+                .OrderByDescending(j => j.CompletedAt)
+                .Select(j => j.CompletedAt)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        var p50 = metricsService.GetPercentile(50);
+        var p95 = metricsService.GetPercentile(95);
+        var p99 = metricsService.GetPercentile(99);
 
         var response = new
         {
             status = canConnect ? "Healthy" : "Unhealthy",
             database = canConnect,
-            apiLatency = 42, // Mocked for now
+            apiLatency = (int)p50,
+            apiLatencyP50 = (int)p50,
+            apiLatencyP95 = (int)p95,
+            apiLatencyP99 = (int)p99,
             activeJobs = activeJobs,
+            queuedJobs = queuedJobs,
+            failedJobs = failedJobs,
+            lastPipelineSuccess = lastPipelineSuccess,
             timestamp = DateTime.UtcNow
         };
 
@@ -329,7 +366,13 @@ api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
             status = "Unhealthy",
             database = false,
             apiLatency = 0,
+            apiLatencyP50 = 0,
+            apiLatencyP95 = 0,
+            apiLatencyP99 = 0,
             activeJobs = 0,
+            queuedJobs = 0,
+            failedJobs = 0,
+            lastPipelineSuccess = (DateTime?)null,
             timestamp = DateTime.UtcNow,
             error = "Critical system failure"
         }, statusCode: 503);

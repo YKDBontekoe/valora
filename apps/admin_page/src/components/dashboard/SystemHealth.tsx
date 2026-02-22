@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Server, Database, Activity, RefreshCw } from 'lucide-react';
+import { TrendingUp, Server, Database, Activity, RefreshCw, AlertTriangle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { adminService } from '../../services/api';
 import type { SystemHealth as SystemHealthType } from '../../types';
@@ -13,17 +13,19 @@ const item = {
 const SystemHealth = () => {
   const [health, setHealth] = useState<SystemHealthType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isStale, setIsStale] = useState(false);
 
   const fetchHealth = async () => {
     try {
+      setLoading(true);
       const data = await adminService.getHealth();
       setHealth(data);
       setLastUpdated(new Date());
+      setIsStale(false);
     } catch (error) {
       console.error('Failed to fetch system health:', error);
-      // Don't clear health if we have old data, but mark it as stale if needed
-      // For now, just stop loading
+      setIsStale(true);
     } finally {
       setLoading(false);
     }
@@ -69,15 +71,24 @@ const SystemHealth = () => {
               <Server className="text-primary-600" />
               System Infrastructure
             </h2>
-            <p className="text-brand-400 text-sm font-bold mt-1">
-              Real-time cluster performance and health monitoring.
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-brand-400 text-sm font-bold">
+                Real-time cluster performance and health monitoring.
+              </p>
+              {isStale && (
+                <span className="flex items-center gap-1 text-[10px] font-black text-warning-600 bg-warning-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <AlertTriangle size={10} />
+                  Stale Data
+                </span>
+              )}
+            </div>
           </div>
           <motion.button
             whileHover={{ rotate: 180 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => { setLoading(true); fetchHealth(); }}
-            className="p-3 bg-brand-50 text-brand-500 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-colors"
+            onClick={fetchHealth}
+            disabled={loading}
+            className={`p-3 bg-brand-50 text-brand-500 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
           </motion.button>
@@ -93,7 +104,7 @@ const SystemHealth = () => {
               <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Database Engine</span>
             </div>
             <AnimatePresence mode="wait">
-              {loading && !health ? (
+              {loading && !health && !isStale ? (
                 <Skeleton variant="text" width="80%" height={24} />
               ) : (
                 <motion.div
@@ -116,10 +127,10 @@ const SystemHealth = () => {
               <div className="p-2 bg-white rounded-lg shadow-sm">
                 <Activity size={18} className="text-primary-600" />
               </div>
-              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">API Response</span>
+              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">API Response (P95)</span>
             </div>
             <AnimatePresence mode="wait">
-              {loading && !health ? (
+              {loading && !health && !isStale ? (
                 <Skeleton variant="text" width="60%" height={24} />
               ) : (
                 <motion.div
@@ -128,11 +139,11 @@ const SystemHealth = () => {
                   className="flex items-center gap-3"
                 >
                   <span className="font-black text-brand-900 text-xl">
-                    {health ? `${health.apiLatency}ms` : '--'}
+                    {health ? `${health.apiLatencyP95}ms` : '--'}
                   </span>
                   {health && (
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${getLatencyStatus(health.apiLatency).color}`}>
-                      {getLatencyStatus(health.apiLatency).label}
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${getLatencyStatus(health.apiLatencyP95).color}`}>
+                      {getLatencyStatus(health.apiLatencyP95).label}
                     </span>
                   )}
                 </motion.div>
@@ -140,29 +151,39 @@ const SystemHealth = () => {
             </AnimatePresence>
           </div>
 
-          {/* Active Jobs */}
+          {/* Job Queue */}
           <div className="p-6 bg-brand-50/50 rounded-2xl border border-brand-100/50 hover:border-primary-100 transition-colors">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-white rounded-lg shadow-sm">
                 <TrendingUp size={18} className="text-primary-600" />
               </div>
-              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Parallel Tasks</span>
+              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Job Queue</span>
             </div>
             <AnimatePresence mode="wait">
-              {loading && !health ? (
+              {loading && !health && !isStale ? (
                 <Skeleton variant="text" width="40%" height={24} />
               ) : (
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-3"
+                  className="flex flex-col gap-2"
                 >
-                  <span className="font-black text-brand-900 text-xl">
-                    {health ? health.activeJobs : '--'}
-                  </span>
-                  <span className="text-xs text-brand-400 font-bold italic">
-                    {health ? (health.activeJobs === 0 ? 'Quiet workload' : 'Processing backlog') : 'Syncing...'}
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5" title="Active">
+                        <Activity size={12} className="text-primary-500" />
+                        <span className="font-black text-brand-900 text-lg">{health ? health.activeJobs : '-'}</span>
+                    </div>
+                    <div className="w-px h-4 bg-brand-200" />
+                    <div className="flex items-center gap-1.5" title="Queued">
+                        <Clock size={12} className="text-brand-400" />
+                        <span className="font-bold text-brand-600 text-lg">{health ? health.queuedJobs : '-'}</span>
+                    </div>
+                    <div className="w-px h-4 bg-brand-200" />
+                    <div className="flex items-center gap-1.5" title="Failed">
+                         <AlertTriangle size={12} className="text-error-500" />
+                        <span className="font-bold text-error-600 text-lg">{health ? health.failedJobs : '-'}</span>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -178,10 +199,17 @@ const SystemHealth = () => {
                 </div>
               ))}
             </div>
-            <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">All Nodes Operational</span>
+            <div className="flex flex-col">
+                <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">All Nodes Operational</span>
+                {health?.lastPipelineSuccess && (
+                     <span className="text-[10px] font-medium text-brand-300">
+                        Last Success: {new Date(health.lastPipelineSuccess).toLocaleString()}
+                     </span>
+                )}
+            </div>
           </div>
           <span className="text-[10px] font-bold text-brand-300 uppercase tracking-[0.2em]">
-            Last Sync: {lastUpdated.toLocaleTimeString()}
+            Last Sync: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}
           </span>
         </div>
       </div>

@@ -50,6 +50,12 @@ export interface SystemHealth {
   status: 'Healthy' | 'Degraded' | 'Unhealthy';
   database: boolean;
   apiLatency: number;
+  apiLatencyP50: number;
+  apiLatencyP95: number;
+  apiLatencyP99: number;
   activeJobs: number;
+  queuedJobs: number;
+  failedJobs: number;
+  lastPipelineSuccess: string | null;
   timestamp: string;
 }
