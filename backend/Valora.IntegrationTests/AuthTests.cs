@@ -228,7 +228,7 @@ public class AuthTests : BaseIntegrationTest
         var idToken = "valid_google_token";
         var email = "googleuser@example.com";
 
-        var payload = new GoogleJsonWebSignature.Payload
+        var payload = new GoogleTokenPayloadDto
         {
             Subject = "123456789",
             Email = email,
@@ -272,7 +272,7 @@ public class AuthTests : BaseIntegrationTest
         var provider = "google";
         var idToken = "valid_google_token_existing";
 
-        var payload = new GoogleJsonWebSignature.Payload
+        var payload = new GoogleTokenPayloadDto
         {
             Subject = "987654321",
             Email = email,
