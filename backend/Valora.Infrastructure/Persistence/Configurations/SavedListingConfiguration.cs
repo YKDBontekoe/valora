@@ -25,6 +25,9 @@ public class SavedListingConfiguration : IEntityTypeConfiguration<SavedListing>
             .HasForeignKey(c => c.SavedListingId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Property(sl => sl.Notes)
+            .HasMaxLength(2000);
+
         builder.HasIndex(sl => new { sl.WorkspaceId, sl.ListingId }).IsUnique();
     }
 }

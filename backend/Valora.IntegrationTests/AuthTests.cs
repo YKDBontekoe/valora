@@ -33,6 +33,21 @@ public class AuthTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task Register_WithShortPassword_ReturnsBadRequest()
+    {
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            Email = "short@example.com",
+            Password = "ShortPwd1!",
+            ConfirmPassword = "ShortPwd1!"
+        });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
     {
         // Arrange
@@ -228,7 +243,7 @@ public class AuthTests : BaseIntegrationTest
         var idToken = "valid_google_token";
         var email = "googleuser@example.com";
 
-        var payload = new GoogleJsonWebSignature.Payload
+        var payload = new GoogleTokenPayloadDto
         {
             Subject = "123456789",
             Email = email,
@@ -272,7 +287,7 @@ public class AuthTests : BaseIntegrationTest
         var provider = "google";
         var idToken = "valid_google_token_existing";
 
-        var payload = new GoogleJsonWebSignature.Payload
+        var payload = new GoogleTokenPayloadDto
         {
             Subject = "987654321",
             Email = email,

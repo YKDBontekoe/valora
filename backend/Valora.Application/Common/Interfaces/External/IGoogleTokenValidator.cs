@@ -1,8 +1,8 @@
-using Google.Apis.Auth;
+using Valora.Application.DTOs;
 
 namespace Valora.Application.Common.Interfaces.External;
 
 public interface IGoogleTokenValidator
 {
-    Task<GoogleJsonWebSignature.Payload> ValidateAsync(string idToken);
+    Task<GoogleTokenPayloadDto> ValidateAsync(string idToken);
 }

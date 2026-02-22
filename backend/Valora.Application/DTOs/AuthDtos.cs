@@ -14,8 +14,8 @@ public record RegisterDto
     public string Email { get; init; } = string.Empty;
 
     [Required]
-    [MinLength(8)]
-    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$", ErrorMessage = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")]
+    [MinLength(12)]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{12,}$", ErrorMessage = "Password must be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")]
     public string Password { get; init; } = string.Empty;
 
     [Required]
@@ -39,3 +39,11 @@ public record ExternalLoginRequestDto(
     [property: Required] [property: StringLength(50)] string Provider,
     [property: Required] [property: StringLength(5000)] string IdToken
 );
+
+public record GoogleTokenPayloadDto
+{
+    public string Email { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Picture { get; init; }
+    public string Subject { get; init; } = string.Empty;
+}

@@ -13,20 +13,27 @@ public static class WorkspaceEndpoints
             .RequireAuthorization()
             .WithTags("Workspaces");
 
-        group.MapPost("/", CreateWorkspace);
+        group.MapPost("/", CreateWorkspace)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<CreateWorkspaceDto>>();
+
         group.MapGet("/", GetUserWorkspaces);
         group.MapGet("/{id}", GetWorkspace);
 
         group.MapGet("/{id}/members", GetMembers);
-        group.MapPost("/{id}/members", InviteMember);
+        group.MapPost("/{id}/members", InviteMember)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<InviteMemberDto>>();
+
         group.MapDelete("/{id}/members/{memberId}", RemoveMember);
 
         group.MapGet("/{id}/listings", GetSavedListings);
-        group.MapPost("/{id}/listings", SaveListing);
+        group.MapPost("/{id}/listings", SaveListing)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<SaveListingDto>>();
+
         group.MapDelete("/{id}/listings/{savedListingId}", RemoveSavedListing);
 
         group.MapGet("/{id}/listings/{savedListingId}/comments", GetComments);
-        group.MapPost("/{id}/listings/{savedListingId}/comments", AddComment);
+        group.MapPost("/{id}/listings/{savedListingId}/comments", AddComment)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AddCommentDto>>();
 
         group.MapGet("/{id}/activity", GetActivityLogs);
 
@@ -128,7 +135,7 @@ public static class WorkspaceEndpoints
     private static async Task<IResult> SaveListing(
         ClaimsPrincipal user,
         Guid id,
-        [FromBody] SaveListingRequest request,
+        [FromBody] SaveListingDto request,
         IWorkspaceService service,
         CancellationToken ct)
     {
@@ -195,5 +202,4 @@ public static class WorkspaceEndpoints
         return Results.Ok(result);
     }
 
-    public record SaveListingRequest(Guid ListingId, string? Notes);
 }

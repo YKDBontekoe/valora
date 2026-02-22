@@ -113,7 +113,7 @@ public class WorkspaceService : IWorkspaceService
             Role = dto.Role,
             InvitedEmail = dto.Email,
             UserId = invitedUser?.Id,
-            JoinedAt = invitedUser != null ? DateTime.UtcNow : null
+            JoinedAt = invitedUser != null ? DateTime.UtcNow : (DateTime?)null
         };
 
         _context.WorkspaceMembers.Add(member);

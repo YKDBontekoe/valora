@@ -2,6 +2,7 @@ using Google.Apis.Auth;
 using Moq;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces.External;
+using Valora.Application.DTOs;
 using Valora.Infrastructure.Services;
 using Xunit;
 
@@ -21,7 +22,7 @@ public class ExternalAuthServiceTests
     [Fact]
     public async Task VerifyTokenAsync_ValidGoogleToken_ReturnsUser()
     {
-        var payload = new GoogleJsonWebSignature.Payload
+        var payload = new GoogleTokenPayloadDto
         {
             Subject = "123",
             Email = "test@gmail.com",
