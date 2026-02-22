@@ -21,7 +21,7 @@ public class BatchJobConfiguration : IEntityTypeConfiguration<BatchJob>
 
         builder.ToTable(t =>
         {
-            t.HasCheckConstraint("CK_BatchJob_Type", "[Type] IN ('CityIngestion', 'MapGeneration')");
+            t.HasCheckConstraint("CK_BatchJob_Type", "[Type] IN ('CityIngestion', 'MapGeneration', 'AllCitiesIngestion')");
             t.HasCheckConstraint("CK_BatchJob_Status", "[Status] IN ('Pending', 'Processing', 'Completed', 'Failed')");
         });
     }
