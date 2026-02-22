@@ -39,6 +39,7 @@ class _ValoraSearchFieldState extends State<ValoraSearchField> {
     _ownsFocusNode = widget.focusNode == null;
     _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_onFocusChange);
+    widget.controller.addListener(_onTextChange);
     // Initial check
     _isFocused = _focusNode.hasFocus;
   }
@@ -46,6 +47,12 @@ class _ValoraSearchFieldState extends State<ValoraSearchField> {
   void _onFocusChange() {
     if (mounted) {
       setState(() => _isFocused = _focusNode.hasFocus);
+    }
+  }
+
+  void _onTextChange() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -62,11 +69,16 @@ class _ValoraSearchFieldState extends State<ValoraSearchField> {
       _focusNode.addListener(_onFocusChange);
       _isFocused = _focusNode.hasFocus;
     }
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_onTextChange);
+      widget.controller.addListener(_onTextChange);
+    }
   }
 
   @override
   void dispose() {
     _focusNode.removeListener(_onFocusChange);
+    widget.controller.removeListener(_onTextChange);
     if (_ownsFocusNode) {
       _focusNode.dispose();
     }
@@ -145,7 +157,6 @@ class _ValoraSearchFieldState extends State<ValoraSearchField> {
                   onPressed: () {
                     widget.controller.clear();
                     widget.onClear?.call();
-                    setState(() {}); // Trigger rebuild to hide suffix
                   },
                 )
               : null,
