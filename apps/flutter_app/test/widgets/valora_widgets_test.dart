@@ -385,4 +385,135 @@ void main() {
       expect(deleted, isTrue);
     });
   });
+
+  group('ValoraAvatar Tests', () {
+    testWidgets('renders initials', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraAvatar(initials: 'JD'),
+          ),
+        ),
+      );
+
+      expect(find.text('JD'), findsOneWidget);
+    });
+
+    testWidgets('shows online indicator', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraAvatar(initials: 'JD', showOnlineIndicator: true),
+          ),
+        ),
+      );
+
+      expect(
+        find.descendant(
+          of: find.byType(ValoraAvatar),
+          matching: find.byType(Stack),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('ValoraSearchField Tests', () {
+    testWidgets('renders hint text', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraSearchField(controller: TextEditingController()),
+          ),
+        ),
+      );
+
+      expect(find.text('Search...'), findsOneWidget);
+    });
+
+    testWidgets('shows clear button when text is entered', (WidgetTester tester) async {
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraSearchField(controller: controller),
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.close_rounded), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'Test');
+      await tester.pump();
+
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+    });
+
+    testWidgets('clears text when clear button is pressed', (WidgetTester tester) async {
+      final controller = TextEditingController();
+      bool cleared = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraSearchField(
+              controller: controller,
+              onClear: () => cleared = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Test');
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pump();
+
+      expect(controller.text, isEmpty);
+      expect(cleared, isTrue);
+    });
+  });
+
+  group('ValoraSlider Tests', () {
+    testWidgets('renders slider and handles changes', (WidgetTester tester) async {
+      double value = 0.2;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return ValoraSlider(
+                  value: value,
+                  onChanged: (val) {
+                    setState(() => value = val);
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Slider), findsOneWidget);
+
+      await tester.tap(find.byType(Slider));
+      await tester.pumpAndSettle();
+
+      expect(value, closeTo(0.5, 0.05));
+    });
+  });
+
+  group('ValoraSectionHeader Tests', () {
+    testWidgets('renders title uppercase', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ValoraSectionHeader(title: 'Settings'),
+          ),
+        ),
+      );
+
+      expect(find.text('SETTINGS'), findsOneWidget);
+    });
+  });
 }

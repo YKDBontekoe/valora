@@ -132,16 +132,16 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: ValoraSpacing.xl),
 
                   // Preferences Section
-                  _buildSectionHeader('PREFERENCES', subtextColor),
-                  const SizedBox(height: ValoraSpacing.sm),
+                  const ValoraSectionHeader(title: 'PREFERENCES'),
                   ValoraCard(
                     padding: EdgeInsets.zero,
                     child: Column(
                       children: [
                         ValoraSettingsTile(
                           icon: Icons.workspaces_rounded,
-                          iconColor: Colors.blue,
-                          iconBackgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.info,
+                          iconBackgroundColor:
+                              ValoraColors.info.withValues(alpha: 0.1),
                           title: 'Workspaces',
                           subtitle: 'Collaborate on your property search',
                           showDivider: true,
@@ -149,7 +149,8 @@ class SettingsScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ChangeNotifierProvider.value(
+                                builder: (context) =>
+                                    ChangeNotifierProvider.value(
                                   value: context.read<WorkspaceProvider>(),
                                   child: const WorkspaceListScreen(),
                                 ),
@@ -159,8 +160,9 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ValoraSettingsTile(
                           icon: Icons.tune_rounded,
-                          iconColor: Colors.purple,
-                          iconBackgroundColor: Colors.purple.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.primary,
+                          iconBackgroundColor:
+                              ValoraColors.primary.withValues(alpha: 0.1),
                           title: 'Search Preferences',
                           subtitle: 'Location, Price, Amenities',
                           showDivider: true,
@@ -171,8 +173,9 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ValoraSettingsTile(
                           icon: Icons.palette_rounded,
-                          iconColor: Colors.orange,
-                          iconBackgroundColor: Colors.orange.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.accent,
+                          iconBackgroundColor:
+                              ValoraColors.accent.withValues(alpha: 0.1),
                           title: 'Appearance',
                           subtitle: 'Theme & Display settings',
                           showDivider: false,
@@ -187,8 +190,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: ValoraSpacing.xl),
 
                   // Account & Security Section
-                  _buildSectionHeader('ACCOUNT & SECURITY', subtextColor),
-                  const SizedBox(height: ValoraSpacing.sm),
+                  const ValoraSectionHeader(title: 'ACCOUNT & SECURITY'),
                   ValoraCard(
                     padding: EdgeInsets.zero,
                     child: Column(
@@ -209,8 +211,9 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ValoraSettingsTile(
                           icon: Icons.lock_rounded,
-                          iconColor: Colors.grey,
-                          iconBackgroundColor: Colors.grey.withValues(alpha: 0.1),
+                          iconColor: ValoraColors.neutral500,
+                          iconBackgroundColor:
+                              ValoraColors.neutral500.withValues(alpha: 0.1),
                           title: 'Privacy & Security',
                           subtitle: 'Password, FaceID',
                           showDivider: false,
@@ -314,46 +317,10 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(ValoraSpacing.md),
       child: Row(
         children: [
-          Stack(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: ValoraColors.primary.withValues(alpha: 0.12),
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    initials,
-                    style: ValoraTypography.titleLarge.copyWith(
-                      color: ValoraColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: ValoraColors.success,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colorScheme.surface, width: 2),
-                  ),
-                ),
-              ),
-            ],
+          ValoraAvatar(
+            initials: initials,
+            size: ValoraAvatarSize.large,
+            showOnlineIndicator: true,
           ),
           const SizedBox(width: ValoraSpacing.md),
           Expanded(
@@ -390,23 +357,6 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, Color color) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(left: ValoraSpacing.xs),
-        child: Text(
-          title,
-          style: ValoraTypography.labelSmall.copyWith(
-            color: color,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.0,
-          ),
-        ),
       ),
     );
   }
