@@ -46,7 +46,19 @@ public class BatchJobService : IBatchJobService
 
     public async Task<PaginatedList<BatchJobSummaryDto>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, CancellationToken cancellationToken = default)
     {
-        var paginatedJobs = await _jobRepository.GetJobsAsync(pageIndex, pageSize, status, type, cancellationToken);
+        BatchJobStatus? statusEnum = null;
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<BatchJobStatus>(status, true, out var parsedStatus))
+        {
+            statusEnum = parsedStatus;
+        }
+
+        BatchJobType? typeEnum = null;
+        if (!string.IsNullOrEmpty(type) && Enum.TryParse<BatchJobType>(type, true, out var parsedType))
+        {
+            typeEnum = parsedType;
+        }
+
+        var paginatedJobs = await _jobRepository.GetJobsAsync(pageIndex, pageSize, statusEnum, typeEnum, cancellationToken);
         var dtos = paginatedJobs.Items.Select(MapToSummaryDto).ToList();
         return new PaginatedList<BatchJobSummaryDto>(dtos, paginatedJobs.TotalCount, paginatedJobs.PageIndex, pageSize);
     }
