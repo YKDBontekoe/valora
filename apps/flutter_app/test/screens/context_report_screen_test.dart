@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/screens/context_report_screen.dart';
-import 'package:valora_app/services/api_service.dart';
+import 'package:valora_app/repositories/context_report_repository.dart';
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:valora_app/models/context_report.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-@GenerateMocks([ApiService, PdokService])
+@GenerateMocks([ContextReportRepository, PdokService])
 import 'context_report_screen_test.mocks.dart';
 
 void main() {
-  late MockApiService mockApiService;
+  late MockContextReportRepository mockRepository;
   late MockPdokService mockPdokService;
 
   setUp(() {
-    mockApiService = MockApiService();
+    mockRepository = MockContextReportRepository();
     mockPdokService = MockPdokService();
     // Disable runtime fetching to avoid network calls during tests and suppress missing asset errors.
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -25,8 +25,8 @@ void main() {
 
   Widget createWidget() {
     return MaterialApp(
-      home: Provider<ApiService>.value(
-        value: mockApiService,
+      home: Provider<ContextReportRepository>.value(
+        value: mockRepository,
         child: ContextReportScreen(pdokService: mockPdokService),
       ),
       theme: ThemeData(
@@ -81,7 +81,7 @@ void main() {
       await tester.pumpAndSettle(); // Ensure SnackBars and animations settle
 
       // Verify no API call was made
-      verifyNever(mockApiService.getContextReport(any, radiusMeters: anyNamed('radiusMeters')));
+      verifyNever(mockRepository.getContextReport(any, radiusMeters: anyNamed('radiusMeters')));
 
       // Verify SnackBar appears
       expect(find.text('Please enter at least 3 characters.'), findsOneWidget);
@@ -92,7 +92,7 @@ void main() {
   testWidgets('Input validation allows search with 3 or more characters', (tester) async {
     await tester.runAsync(() async {
       // Setup successful API response to avoid errors
-      when(mockApiService.getContextReport(any, radiusMeters: anyNamed('radiusMeters'))).thenAnswer((_) async =>
+      when(mockRepository.getContextReport(any, radiusMeters: anyNamed('radiusMeters'))).thenAnswer((_) async =>
         ContextReport(
           location: ContextLocation(
             query: 'abc',
@@ -125,7 +125,7 @@ void main() {
       await tester.pumpAndSettle(); // Ensure API call and subsequent UI updates settle
 
       // Verify API call was made
-      verify(mockApiService.getContextReport('abc', radiusMeters: anyNamed('radiusMeters'))).called(1);
+      verify(mockRepository.getContextReport('abc', radiusMeters: anyNamed('radiusMeters'))).called(1);
     });
   }, skip: true);
 

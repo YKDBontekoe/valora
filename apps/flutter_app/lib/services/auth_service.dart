@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:retry/retry.dart';
 import '../core/exceptions/app_exceptions.dart';
-import 'api_service.dart';
+import 'api_client.dart';
 
 class AuthService {
   static final _log = Logger('AuthService');
@@ -20,7 +20,7 @@ class AuthService {
     delayFactor: Duration(seconds: 1),
   );
 
-  String get baseUrl => ApiService.baseUrl;
+  String get baseUrl => ApiClient.baseUrl;
 
   AuthService({FlutterSecureStorage? storage, http.Client? client})
     : _storage =
@@ -84,7 +84,7 @@ class AuthService {
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode({'refreshToken': refreshToken}),
               )
-              .timeout(ApiService.timeoutDuration);
+              .timeout(ApiClient.timeoutDuration);
 
           if (res.statusCode >= 500) {
             throw ServerException('Server error (${res.statusCode})');
@@ -144,7 +144,7 @@ class AuthService {
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode({'email': email, 'password': password}),
               )
-              .timeout(ApiService.timeoutDuration);
+              .timeout(ApiClient.timeoutDuration);
 
           if (res.statusCode >= 500) {
             throw ServerException('Server error (${res.statusCode})');
@@ -193,7 +193,7 @@ class AuthService {
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode({'provider': provider, 'idToken': idToken}),
               )
-              .timeout(ApiService.timeoutDuration);
+              .timeout(ApiClient.timeoutDuration);
 
           if (res.statusCode >= 500) {
             throw ServerException('Server error (${res.statusCode})');
@@ -250,7 +250,7 @@ class AuthService {
                   'confirmPassword': confirmPassword,
                 }),
               )
-              .timeout(ApiService.timeoutDuration);
+              .timeout(ApiClient.timeoutDuration);
 
           if (res.statusCode >= 500) {
             throw ServerException('Server error (${res.statusCode})');

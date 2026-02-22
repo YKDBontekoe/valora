@@ -4,20 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/search_history_item.dart';
-import '../services/api_service.dart';
+import '../repositories/context_report_repository.dart';
 import '../services/search_history_service.dart';
 
 class ContextReportProvider extends ChangeNotifier {
   ContextReportProvider({
-    required ApiService apiService,
+    required ContextReportRepository repository,
     SearchHistoryService? historyService,
-  }) : _apiService = apiService,
+  }) : _repository = repository,
        _historyService = historyService ?? SearchHistoryService() {
     _loadHistory();
     loadComparisonSet();
   }
 
-  final ApiService _apiService;
+  final ContextReportRepository _repository;
   final SearchHistoryService _historyService;
 
   bool _isLoading = false;
@@ -100,7 +100,7 @@ class ContextReportProvider extends ChangeNotifier {
     if (_activeReports.containsKey(id)) return;
 
     try {
-      final report = await _apiService.getContextReport(
+      final report = await _repository.getContextReport(
         query,
         radiusMeters: radius,
       );
@@ -184,7 +184,7 @@ class ContextReportProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final insight = await _apiService.getAiAnalysis(report);
+      final insight = await _repository.getAiAnalysis(report);
       if (_isDisposed) return;
       _aiInsights[location] = insight;
     } catch (e) {
@@ -224,7 +224,7 @@ class ContextReportProvider extends ChangeNotifier {
 
     try {
       // 1. Fetch Report
-      final report = await _apiService.getContextReport(
+      final report = await _repository.getContextReport(
         trimmed,
         radiusMeters: _radiusMeters,
       );

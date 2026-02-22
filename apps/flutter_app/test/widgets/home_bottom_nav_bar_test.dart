@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:valora_app/repositories/notification_repository.dart';
 import 'package:valora_app/services/notification_service.dart';
-import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/home/home_bottom_nav_bar.dart';
+import 'package:valora_app/models/notification.dart';
+import 'package:mockito/mockito.dart';
 
-class _MockApiService extends ApiService {
-  _MockApiService() : super();
+class MockNotificationRepository extends Mock implements NotificationRepository {
+  @override
+  Future<int> getUnreadNotificationCount() async => 0;
+
+  @override
+  Future<List<ValoraNotification>> getNotifications({bool unreadOnly = false, int limit = 50, int offset = 0}) async => [];
 }
 
 Widget _buildTestWidget({
@@ -14,8 +20,7 @@ Widget _buildTestWidget({
   required ValueChanged<int> onTap,
   Size? screenSize,
 }) {
-  final apiService = _MockApiService();
-  final notificationService = NotificationService(apiService);
+  final notificationService = NotificationService(MockNotificationRepository());
 
   Widget child = MaterialApp(
     home: Scaffold(

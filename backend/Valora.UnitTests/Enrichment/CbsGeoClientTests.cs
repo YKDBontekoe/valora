@@ -191,6 +191,105 @@ public class CbsGeoClientTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public async Task GetAllMunicipalitiesAsync_ReturnsMunicipalitiesOnSuccess()
+    {
+        var features = new[]
+        {
+            new
+            {
+                type = "Feature",
+                properties = new { gemeentenaam = "Amsterdam" }
+            },
+            new
+            {
+                type = "Feature",
+                properties = new { gemeentenaam = "Rotterdam" }
+            }
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result = await client.GetAllMunicipalitiesAsync();
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains("Amsterdam", result);
+        Assert.Contains("Rotterdam", result);
+    }
+
+    [Fact]
+    public async Task GetAllMunicipalitiesAsync_ThrowsOnHttpFailure()
+    {
+        var handlerMock = CreateHandlerMock(HttpStatusCode.InternalServerError, "{}");
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAllMunicipalitiesAsync());
+    }
+
+    [Fact]
+    public async Task GetAllMunicipalitiesAsync_HandlesMalformedJson()
+    {
+        var jsonResponse = "{\"type\": \"FeatureCollection\", \"features\": \"not-an-array\"}";
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result = await client.GetAllMunicipalitiesAsync();
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllMunicipalitiesAsync_HandlesMissingProperties()
+    {
+        var features = new object[]
+        {
+            new { type = "Feature" }, // Missing properties
+            new { type = "Feature", properties = new { other = "value" } } // Missing gemeentenaam
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result = await client.GetAllMunicipalitiesAsync();
+
+        Assert.Empty(result);
+    }
+
     private static Mock<HttpMessageHandler> CreateHandlerMock(HttpStatusCode statusCode, string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);

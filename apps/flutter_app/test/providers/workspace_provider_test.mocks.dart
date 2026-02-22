@@ -6,15 +6,11 @@
 import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:valora_app/models/context_report.dart' as _i2;
-import 'package:valora_app/models/map_amenity.dart' as _i8;
-import 'package:valora_app/models/map_amenity_cluster.dart' as _i9;
-import 'package:valora_app/models/map_city_insight.dart' as _i7;
-import 'package:valora_app/models/map_overlay.dart' as _i10;
-import 'package:valora_app/models/map_overlay_tile.dart' as _i11;
-import 'package:valora_app/models/notification.dart' as _i6;
-import 'package:valora_app/services/api_service.dart' as _i3;
+import 'package:valora_app/models/activity_log.dart' as _i6;
+import 'package:valora_app/models/comment.dart' as _i7;
+import 'package:valora_app/models/saved_listing.dart' as _i5;
+import 'package:valora_app/models/workspace.dart' as _i2;
+import 'package:valora_app/repositories/workspace_repository.dart' as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -31,274 +27,139 @@ import 'package:valora_app/services/api_service.dart' as _i3;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeContextReport_0 extends _i1.SmartFake implements _i2.ContextReport {
-  _FakeContextReport_0(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
+class _FakeWorkspace_0 extends _i1.SmartFake implements _i2.Workspace {
+  _FakeWorkspace_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
 }
 
-/// A class which mocks [ApiService].
+/// A class which mocks [WorkspaceRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockApiService extends _i1.Mock implements _i3.ApiService {
-  MockApiService() {
+class MockWorkspaceRepository extends _i1.Mock
+    implements _i3.WorkspaceRepository {
+  MockWorkspaceRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<_i2.ContextReport> getContextReport(
-    String? input, {
-    int? radiusMeters = 1000,
-  }) =>
+  _i4.Future<List<_i2.Workspace>> fetchWorkspaces() =>
       (super.noSuchMethod(
-        Invocation.method(
-          #getContextReport,
-          [input],
-          {#radiusMeters: radiusMeters},
-        ),
-        returnValue: _i4.Future<_i2.ContextReport>.value(_FakeContextReport_0(
-          this,
-          Invocation.method(
-            #getContextReport,
-            [input],
-            {#radiusMeters: radiusMeters},
-          ),
-        )),
-      ) as _i4.Future<_i2.ContextReport>);
+            Invocation.method(#fetchWorkspaces, []),
+            returnValue: _i4.Future<List<_i2.Workspace>>.value(
+              <_i2.Workspace>[],
+            ),
+          )
+          as _i4.Future<List<_i2.Workspace>>);
 
   @override
-  _i4.Future<String> getAiAnalysis(_i2.ContextReport? report) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getAiAnalysis,
-          [report],
-        ),
-        returnValue: _i4.Future<String>.value(_i5.dummyValue<String>(
-          this,
-          Invocation.method(
-            #getAiAnalysis,
-            [report],
-          ),
-        )),
-      ) as _i4.Future<String>);
-
-  @override
-  _i4.Future<List<_i6.ValoraNotification>> getNotifications({
-    bool? unreadOnly = false,
-    int? limit = 50,
-    int? offset = 0,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getNotifications,
-          [],
-          {
-            #unreadOnly: unreadOnly,
-            #limit: limit,
-            #offset: offset,
-          },
-        ),
-        returnValue: _i4.Future<List<_i6.ValoraNotification>>.value(
-            <_i6.ValoraNotification>[]),
-      ) as _i4.Future<List<_i6.ValoraNotification>>);
-
-  @override
-  _i4.Future<int> getUnreadNotificationCount() => (super.noSuchMethod(
-        Invocation.method(
-          #getUnreadNotificationCount,
-          [],
-        ),
-        returnValue: _i4.Future<int>.value(0),
-      ) as _i4.Future<int>);
-
-  @override
-  _i4.Future<void> markNotificationAsRead(String? id) => (super.noSuchMethod(
-        Invocation.method(
-          #markNotificationAsRead,
-          [id],
-        ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> markAllNotificationsAsRead() => (super.noSuchMethod(
-        Invocation.method(
-          #markAllNotificationsAsRead,
-          [],
-        ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> deleteNotification(String? id) => (super.noSuchMethod(
-        Invocation.method(
-          #deleteNotification,
-          [id],
-        ),
-        returnValue: _i4.Future<void>.value(),
-        returnValueForMissingStub: _i4.Future<void>.value(),
-      ) as _i4.Future<void>);
-
-  @override
-  _i4.Future<bool> healthCheck() => (super.noSuchMethod(
-        Invocation.method(
-          #healthCheck,
-          [],
-        ),
-        returnValue: _i4.Future<bool>.value(false),
-      ) as _i4.Future<bool>);
-
-  @override
-  _i4.Future<List<_i7.MapCityInsight>> getCityInsights() => (super.noSuchMethod(
-        Invocation.method(
-          #getCityInsights,
-          [],
-        ),
-        returnValue:
-            _i4.Future<List<_i7.MapCityInsight>>.value(<_i7.MapCityInsight>[]),
-      ) as _i4.Future<List<_i7.MapCityInsight>>);
-
-  @override
-  _i4.Future<List<_i8.MapAmenity>> getMapAmenities({
-    required double? minLat,
-    required double? minLon,
-    required double? maxLat,
-    required double? maxLon,
-    List<String>? types,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMapAmenities,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #types: types,
-          },
-        ),
-        returnValue: _i4.Future<List<_i8.MapAmenity>>.value(<_i8.MapAmenity>[]),
-      ) as _i4.Future<List<_i8.MapAmenity>>);
-
-  @override
-  _i4.Future<List<_i9.MapAmenityCluster>> getMapAmenityClusters({
-    required double? minLat,
-    required double? minLon,
-    required double? maxLat,
-    required double? maxLon,
-    required double? zoom,
-    List<String>? types,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMapAmenityClusters,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-            #types: types,
-          },
-        ),
-        returnValue: _i4.Future<List<_i9.MapAmenityCluster>>.value(
-            <_i9.MapAmenityCluster>[]),
-      ) as _i4.Future<List<_i9.MapAmenityCluster>>);
-
-  @override
-  _i4.Future<List<_i10.MapOverlay>> getMapOverlays({
-    required double? minLat,
-    required double? minLon,
-    required double? maxLat,
-    required double? maxLon,
-    required String? metric,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMapOverlays,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #metric: metric,
-          },
-        ),
-        returnValue:
-            _i4.Future<List<_i10.MapOverlay>>.value(<_i10.MapOverlay>[]),
-      ) as _i4.Future<List<_i10.MapOverlay>>);
-
-  @override
-  _i4.Future<List<_i11.MapOverlayTile>> getMapOverlayTiles({
-    required double? minLat,
-    required double? minLon,
-    required double? maxLat,
-    required double? maxLon,
-    required double? zoom,
-    required String? metric,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMapOverlayTiles,
-          [],
-          {
-            #minLat: minLat,
-            #minLon: minLon,
-            #maxLat: maxLat,
-            #maxLon: maxLon,
-            #zoom: zoom,
-            #metric: metric,
-          },
-        ),
-        returnValue: _i4.Future<List<_i11.MapOverlayTile>>.value(
-            <_i11.MapOverlayTile>[]),
-      ) as _i4.Future<List<_i11.MapOverlayTile>>);
-
-  @override
-  _i4.Future<dynamic> get(
-    String? path, {
-    Map<String, dynamic>? queryParameters,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #get,
-          [path],
-          {#queryParameters: queryParameters},
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
-
-  @override
-  _i4.Future<dynamic> post(
-    String? path,
-    dynamic data,
+  _i4.Future<_i2.Workspace> createWorkspace(
+    String? name,
+    String? description,
   ) =>
       (super.noSuchMethod(
-        Invocation.method(
-          #post,
-          [
-            path,
-            data,
-          ],
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
+            Invocation.method(#createWorkspace, [name, description]),
+            returnValue: _i4.Future<_i2.Workspace>.value(
+              _FakeWorkspace_0(
+                this,
+                Invocation.method(#createWorkspace, [name, description]),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Workspace>);
 
   @override
-  _i4.Future<dynamic> delete(String? path) => (super.noSuchMethod(
-        Invocation.method(
-          #delete,
-          [path],
-        ),
-        returnValue: _i4.Future<dynamic>.value(),
-      ) as _i4.Future<dynamic>);
+  _i4.Future<_i2.Workspace> getWorkspace(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkspace, [id]),
+            returnValue: _i4.Future<_i2.Workspace>.value(
+              _FakeWorkspace_0(this, Invocation.method(#getWorkspace, [id])),
+            ),
+          )
+          as _i4.Future<_i2.Workspace>);
+
+  @override
+  _i4.Future<List<_i2.WorkspaceMember>> getWorkspaceMembers(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkspaceMembers, [id]),
+            returnValue: _i4.Future<List<_i2.WorkspaceMember>>.value(
+              <_i2.WorkspaceMember>[],
+            ),
+          )
+          as _i4.Future<List<_i2.WorkspaceMember>>);
+
+  @override
+  _i4.Future<List<_i5.SavedListing>> getWorkspaceListings(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkspaceListings, [id]),
+            returnValue: _i4.Future<List<_i5.SavedListing>>.value(
+              <_i5.SavedListing>[],
+            ),
+          )
+          as _i4.Future<List<_i5.SavedListing>>);
+
+  @override
+  _i4.Future<List<_i6.ActivityLog>> getWorkspaceActivity(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkspaceActivity, [id]),
+            returnValue: _i4.Future<List<_i6.ActivityLog>>.value(
+              <_i6.ActivityLog>[],
+            ),
+          )
+          as _i4.Future<List<_i6.ActivityLog>>);
+
+  @override
+  _i4.Future<void> inviteMember(
+    String? workspaceId,
+    String? email,
+    String? role,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#inviteMember, [workspaceId, email, role]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> saveListing(
+    String? workspaceId,
+    String? listingId,
+    String? notes,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#saveListing, [workspaceId, listingId, notes]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> addComment(
+    String? workspaceId,
+    String? listingId,
+    String? content,
+    String? parentId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#addComment, [
+              workspaceId,
+              listingId,
+              content,
+              parentId,
+            ]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<List<_i7.Comment>> fetchComments(
+    String? workspaceId,
+    String? listingId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchComments, [workspaceId, listingId]),
+            returnValue: _i4.Future<List<_i7.Comment>>.value(<_i7.Comment>[]),
+          )
+          as _i4.Future<List<_i7.Comment>>);
 }

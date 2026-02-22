@@ -17,4 +17,6 @@ public interface ICbsGeoClient
     Task<List<NeighborhoodGeometryDto>> GetNeighborhoodsByMunicipalityAsync(
         string municipalityName,
         CancellationToken cancellationToken = default);
+
+    Task<List<string>> GetAllMunicipalitiesAsync(CancellationToken cancellationToken = default);
 }
