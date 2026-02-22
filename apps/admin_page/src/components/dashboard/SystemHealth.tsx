@@ -22,6 +22,8 @@ const SystemHealth = () => {
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Failed to fetch system health:', error);
+      // Don't clear health if we have old data, but mark it as stale if needed
+      // For now, just stop loading
     } finally {
       setLoading(false);
     }
@@ -99,9 +101,9 @@ const SystemHealth = () => {
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-center gap-3"
                 >
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(health?.status || 'Unhealthy')} shadow-lg shadow-current/20 ${health?.status === 'Healthy' ? 'animate-pulse' : ''}`} />
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(health?.status || 'Unhealthy')} shadow-lg shadow-current/20 ${(health?.status === 'Healthy' && !loading) ? 'animate-pulse' : ''}`} />
                   <span className="font-black text-brand-900">
-                    {health?.database ? 'Healthy & Connected' : 'Connection Failed'}
+                    {health ? (health.database ? 'Healthy & Connected' : 'Connection Failed') : 'Status Unknown'}
                   </span>
                 </motion.div>
               )}
@@ -125,7 +127,9 @@ const SystemHealth = () => {
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-center gap-3"
                 >
-                  <span className="font-black text-brand-900 text-xl">{health?.apiLatency}ms</span>
+                  <span className="font-black text-brand-900 text-xl">
+                    {health ? `${health.apiLatency}ms` : '--'}
+                  </span>
                   {health && (
                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${getLatencyStatus(health.apiLatency).color}`}>
                       {getLatencyStatus(health.apiLatency).label}
@@ -153,9 +157,11 @@ const SystemHealth = () => {
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-center gap-3"
                 >
-                  <span className="font-black text-brand-900 text-xl">{health?.activeJobs}</span>
+                  <span className="font-black text-brand-900 text-xl">
+                    {health ? health.activeJobs : '--'}
+                  </span>
                   <span className="text-xs text-brand-400 font-bold italic">
-                    {health?.activeJobs === 0 ? 'Quiet workload' : 'Processing backlog'}
+                    {health ? (health.activeJobs === 0 ? 'Quiet workload' : 'Processing backlog') : 'Syncing...'}
                   </span>
                 </motion.div>
               )}

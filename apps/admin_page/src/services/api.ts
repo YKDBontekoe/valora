@@ -88,7 +88,9 @@ api.interceptors.response.use(
       || error.message
       || 'An unexpected error occurred';
 
-    if (error.response?.status !== 401) {
+    const isHealthEndpoint = originalRequest.url?.endsWith('/health');
+
+    if (error.response?.status !== 401 && !isHealthEndpoint) {
        showToast(message, 'error');
     }
 
@@ -148,15 +150,10 @@ export const adminService = {
     return response.data;
   },
   getHealth: async (): Promise<SystemHealth> => {
-    try {
-      const response = await api.get<SystemHealth>('/health');
-      return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 503) {
-        return error.response.data;
-      }
-      throw error;
-    }
+    const response = await api.get<SystemHealth>('/health', {
+      validateStatus: (status) => (status >= 200 && status < 300) || status === 503
+    });
+    return response.data;
   },
 };
 

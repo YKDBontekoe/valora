@@ -270,24 +270,39 @@ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 /// </summary>
 api.MapGet("/health", async (ValoraDbContext db, CancellationToken ct) =>
 {
-    var canConnect = await db.Database.CanConnectAsync(ct);
-    var activeJobs = await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct);
-
-    var response = new
+    try
     {
-        status = canConnect ? "Healthy" : "Unhealthy",
-        database = canConnect,
-        apiLatency = 42, // Mocked for now
-        activeJobs = activeJobs,
-        timestamp = DateTime.UtcNow
-    };
+        var canConnect = await db.Database.CanConnectAsync(ct);
+        var activeJobs = canConnect ? await db.BatchJobs.CountAsync(j => j.Status == BatchJobStatus.Processing, ct) : 0;
 
-    if (canConnect)
-    {
-        return Results.Ok(response);
+        var response = new
+        {
+            status = canConnect ? "Healthy" : "Unhealthy",
+            database = canConnect,
+            apiLatency = 42, // Mocked for now
+            activeJobs = activeJobs,
+            timestamp = DateTime.UtcNow
+        };
+
+        if (canConnect)
+        {
+            return Results.Ok(response);
+        }
+
+        return Results.Json(response, statusCode: 503);
     }
-
-    return Results.Json(response, statusCode: 503);
+    catch (Exception)
+    {
+        return Results.Json(new
+        {
+            status = "Unhealthy",
+            database = false,
+            apiLatency = 0,
+            activeJobs = 0,
+            timestamp = DateTime.UtcNow,
+            error = "Critical system failure"
+        }, statusCode: 503);
+    }
 })
 .DisableRateLimiting();
 
