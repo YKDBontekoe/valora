@@ -36,10 +36,14 @@ void main() {
     // Verify initial state
     expect(find.byIcon(Icons.search_rounded), findsOneWidget);
     expect(find.byIcon(Icons.map_rounded), findsOneWidget); // Insights
+    expect(find.byIcon(Icons.analytics_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
     expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
     expect(find.byTooltip('Search'), findsOneWidget);
     expect(find.byTooltip('Insights'), findsOneWidget);
+    expect(find.byTooltip('Report'), findsOneWidget);
+    expect(find.byTooltip('Saved'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
 
     // Tap Insights (index 1)
@@ -47,10 +51,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
 
-    // Tap Settings (index 2)
-    await tester.tap(find.byTooltip('Settings'));
+    // Tap Report (index 2)
+    await tester.tap(find.byTooltip('Report'));
     await tester.pumpAndSettle();
     expect(selectedIndex, 2);
+
+    // Tap Saved (index 3)
+    await tester.tap(find.byTooltip('Saved'));
+    await tester.pumpAndSettle();
+    expect(selectedIndex, 3);
+
+    // Tap Settings (index 4)
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(selectedIndex, 4);
 
     // Tap Search (index 0)
     await tester.tap(find.byTooltip('Search'));
@@ -67,7 +81,7 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             bottomNavigationBar: HomeBottomNavBar(
-              currentIndex: 2, // Settings
+              currentIndex: 2,
               onTap: (_) {},
             ),
           ),
@@ -77,7 +91,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Settings'), findsNothing);
-    expect(find.byTooltip('Settings'), findsOneWidget);
+    expect(find.text('Report'), findsNothing);
+    expect(find.byTooltip('Report'), findsOneWidget);
   });
 }

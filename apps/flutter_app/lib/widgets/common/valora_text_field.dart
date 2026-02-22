@@ -26,7 +26,6 @@ class ValoraTextField extends StatefulWidget {
     this.autofocus = false,
     this.enabled = true,
     this.fillColor,
-    this.autofillHints,
   });
 
   final TextEditingController? controller;
@@ -46,7 +45,6 @@ class ValoraTextField extends StatefulWidget {
   final bool autofocus;
   final bool enabled;
   final Color? fillColor;
-  final Iterable<String>? autofillHints;
 
   @override
   State<ValoraTextField> createState() => _ValoraTextFieldState();
@@ -172,7 +170,6 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
             enabled: widget.enabled,
             inputFormatters: widget.inputFormatters,
             textInputAction: widget.textInputAction,
-            autofillHints: widget.autofillHints,
             style: ValoraTypography.bodyMedium.copyWith(
               color:
                   isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
