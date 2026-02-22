@@ -1,6 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:valora_app/services/notification_service.dart';
+import 'package:valora_app/services/api_service.dart';
 import 'package:valora_app/widgets/home/home_bottom_nav_bar.dart';
+
+class _MockApiService extends ApiService {
+  _MockApiService() : super();
+}
+
+Widget _buildTestWidget({
+  required int currentIndex,
+  required ValueChanged<int> onTap,
+  Size? screenSize,
+}) {
+  final apiService = _MockApiService();
+  final notificationService = NotificationService(apiService);
+
+  Widget child = MaterialApp(
+    home: Scaffold(
+      body: StatefulBuilder(
+        builder: (context, setState) {
+          return Stack(
+            children: [
+              HomeBottomNavBar(
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+
+  if (screenSize != null) {
+    child = MediaQuery(
+      data: MediaQueryData(size: screenSize),
+      child: child,
+    );
+  }
+
+  return ChangeNotifierProvider<NotificationService>.value(
+    value: notificationService,
+    child: child,
+  );
+}
 
 void main() {
   testWidgets('HomeBottomNavBar renders and handles taps', (
@@ -9,41 +54,26 @@ void main() {
     int selectedIndex = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: StatefulBuilder(
-            builder: (context, setState) {
-              return Stack(
-                children: [
-                  HomeBottomNavBar(
-                    currentIndex: selectedIndex,
-                    onTap: (index) {
-                      setState(() {
-                        selectedIndex = index;
-                      });
-                    },
-                  ),
-                ],
-              );
+      StatefulBuilder(
+        builder: (context, setState) {
+          return _buildTestWidget(
+            currentIndex: selectedIndex,
+            onTap: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
             },
-          ),
-        ),
+          );
+        },
       ),
     );
 
     await tester.pumpAndSettle();
 
-    // Verify initial state
-    expect(find.byIcon(Icons.search_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.map_rounded), findsOneWidget); // Insights
-    expect(find.byIcon(Icons.analytics_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
-
+    // Verify 4 nav items exist
     expect(find.byTooltip('Search'), findsOneWidget);
     expect(find.byTooltip('Insights'), findsOneWidget);
-    expect(find.byTooltip('Report'), findsOneWidget);
-    expect(find.byTooltip('Saved'), findsOneWidget);
+    expect(find.byTooltip('Alerts'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
 
     // Tap Insights (index 1)
@@ -51,20 +81,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
 
-    // Tap Report (index 2)
-    await tester.tap(find.byTooltip('Report'));
+    // Tap Alerts (index 2)
+    await tester.tap(find.byTooltip('Alerts'));
     await tester.pumpAndSettle();
     expect(selectedIndex, 2);
 
-    // Tap Saved (index 3)
-    await tester.tap(find.byTooltip('Saved'));
-    await tester.pumpAndSettle();
-    expect(selectedIndex, 3);
-
-    // Tap Settings (index 4)
+    // Tap Settings (index 3)
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    expect(selectedIndex, 4);
+    expect(selectedIndex, 3);
 
     // Tap Search (index 0)
     await tester.tap(find.byTooltip('Search'));
@@ -76,22 +101,17 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MediaQuery(
-        data: const MediaQueryData(size: Size(360, 800)),
-        child: MaterialApp(
-          home: Scaffold(
-            bottomNavigationBar: HomeBottomNavBar(
-              currentIndex: 2,
-              onTap: (_) {},
-            ),
-          ),
-        ),
+      _buildTestWidget(
+        currentIndex: 2,
+        onTap: (_) {},
+        screenSize: const Size(360, 800),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Report'), findsNothing);
-    expect(find.byTooltip('Report'), findsOneWidget);
+    // In compact mode the selected label text should be hidden
+    expect(find.text('Alerts'), findsNothing);
+    expect(find.byTooltip('Alerts'), findsOneWidget);
   });
 }

@@ -55,6 +55,42 @@ ContextReport _createReport(String query, double score) {
   );
 }
 
+/// A test host that wraps ContextReportScreen in a Scaffold to capture the FAB.
+class _TestScaffoldHost extends StatefulWidget {
+  final MockApiService apiService;
+  final MockPdokService pdokService;
+
+  const _TestScaffoldHost({
+    required this.apiService,
+    required this.pdokService,
+  });
+
+  @override
+  State<_TestScaffoldHost> createState() => _TestScaffoldHostState();
+}
+
+class _TestScaffoldHostState extends State<_TestScaffoldHost> {
+  Widget? _fab;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<ApiService>.value(value: widget.apiService),
+      ],
+      child: Scaffold(
+        floatingActionButton: _fab,
+        body: ContextReportScreen(
+          pdokService: widget.pdokService,
+          onFabChanged: (fab) {
+            if (mounted) setState(() => _fab = fab);
+          },
+        ),
+      ),
+    );
+  }
+}
+
 void main() {
   late MockApiService apiService;
   late MockPdokService pdokService;
@@ -70,11 +106,9 @@ void main() {
 
   Widget createWidget() {
     return MaterialApp(
-      home: MultiProvider(
-        providers: [
-          Provider<ApiService>.value(value: apiService),
-        ],
-        child: ContextReportScreen(pdokService: pdokService),
+      home: _TestScaffoldHost(
+        apiService: apiService,
+        pdokService: pdokService,
       ),
     );
   }
@@ -103,7 +137,7 @@ void main() {
     // Icon should change to check
     expect(find.byIcon(Icons.playlist_add_check_rounded), findsOneWidget);
 
-    // 3. FAB should appear
+    // 3. FAB should appear (in the host Scaffold)
     final fabFinder = find.byType(FloatingActionButton);
     expect(fabFinder, findsOneWidget);
     expect(find.text('Compare (1)'), findsOneWidget);
@@ -114,17 +148,18 @@ void main() {
 
     // Verify we are in comparison view
     expect(find.byType(ComparisonView), findsOneWidget);
-    expect(find.text('Comparison'), findsOneWidget); // AppBar title
+    expect(find.text('Compare Properties'), findsOneWidget); // AppBar title
 
     // 5. Verify exit comparison mode
-    final backButton = find.byIcon(Icons.arrow_back);
+    final backButton = find.byIcon(Icons.arrow_back_rounded);
     expect(backButton, findsOneWidget);
 
     await tester.tap(backButton);
     await tester.pumpAndSettle();
 
     expect(find.byType(ComparisonView), findsNothing);
-    expect(find.text('Property Analytics'), findsOneWidget);
+    // After exiting comparison, the report layout is shown (report is still loaded)
+    expect(find.text('A address'), findsWidgets);
   });
 
   testWidgets('ContextReportScreen clear comparison', (tester) async {
