@@ -8,10 +8,12 @@ namespace Valora.UnitTests.Services;
 public class ContextAnalysisServiceTests
 {
     private readonly Mock<IAiService> _aiServiceMock = new();
+    private readonly Mock<IUserAiProfileService> _profileServiceMock = new();
+    private readonly Mock<ICurrentUserService> _currentUserServiceMock = new();
 
     private ContextAnalysisService CreateService()
     {
-        return new ContextAnalysisService(_aiServiceMock.Object);
+        return new ContextAnalysisService(_aiServiceMock.Object, _profileServiceMock.Object, _currentUserServiceMock.Object);
     }
 
     [Fact]
@@ -103,6 +105,89 @@ public class ContextAnalysisServiceTests
         // < and > should be escaped to &lt; and &gt;
         Assert.Contains("label=\"Bad &lt;Script&gt; Label &amp; More\"", capturedPrompt);
         Assert.Contains(">5 Unit (Score: 10)<", capturedPrompt);
+    }
+
+    [Fact]
+    public async Task ChatAsync_WithEnabledProfile_ShouldAugmentPrompt()
+    {
+        // Arrange
+        var service = CreateService();
+        var userId = "user1";
+        var prompt = "Hello";
+        var profile = new UserAiProfileDto
+        {
+            UserId = userId,
+            IsEnabled = true,
+            Preferences = "I like quiet areas."
+        };
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        _profileServiceMock.Setup(x => x.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(profile);
+
+        // Act
+        await service.ChatAsync(prompt, null, CancellationToken.None);
+
+        // Assert
+        _aiServiceMock.Verify(x => x.ChatAsync(
+            prompt,
+            It.Is<string>(s => s.Contains("User Personalization Profile") && s.Contains("I like quiet areas.")),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChatAsync_WithDisabledProfile_ShouldNotAugmentPrompt()
+    {
+        // Arrange
+        var service = CreateService();
+        var userId = "user1";
+        var prompt = "Hello";
+        var profile = new UserAiProfileDto
+        {
+            UserId = userId,
+            IsEnabled = false,
+            Preferences = "I like quiet areas."
+        };
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        _profileServiceMock.Setup(x => x.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(profile);
+
+        // Act
+        await service.ChatAsync(prompt, null, CancellationToken.None);
+
+        // Assert
+        _aiServiceMock.Verify(x => x.ChatAsync(
+            prompt,
+            It.Is<string>(s => !s.Contains("User Personalization Profile")),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChatAsync_WithSessionProfile_ShouldUseSessionProfile()
+    {
+        // Arrange
+        var service = CreateService();
+        var userId = "user1";
+        var prompt = "Hello";
+        var storedProfile = new UserAiProfileDto { UserId = userId, IsEnabled = false };
+        var sessionProfile = new UserAiProfileDto { UserId = userId, IsEnabled = true, Preferences = "Session pref" };
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        _profileServiceMock.Setup(x => x.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storedProfile);
+
+        // Act
+        await service.ChatAsync(prompt, null, CancellationToken.None, sessionProfile);
+
+        // Assert
+        _aiServiceMock.Verify(x => x.ChatAsync(
+            prompt,
+            It.Is<string>(s => s.Contains("Session pref")),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static ContextReportDto CreateFullReportDto()

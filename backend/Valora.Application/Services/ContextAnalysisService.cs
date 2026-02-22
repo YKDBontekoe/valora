@@ -9,6 +9,8 @@ namespace Valora.Application.Services;
 public class ContextAnalysisService : IContextAnalysisService
 {
     private readonly IAiService _aiService;
+    private readonly IUserAiProfileService _profileService;
+    private readonly ICurrentUserService _currentUserService;
 
     // Made public for testing
     public static readonly string ChatSystemPrompt =
@@ -19,21 +21,93 @@ public class ContextAnalysisService : IContextAnalysisService
     public static readonly string AnalysisSystemPrompt =
         "You are an expert real estate analyst helping a potential resident evaluate a neighborhood.";
 
-    public ContextAnalysisService(IAiService aiService)
+    public ContextAnalysisService(IAiService aiService, IUserAiProfileService profileService, ICurrentUserService currentUserService)
     {
         _aiService = aiService;
+        _profileService = profileService;
+        _currentUserService = currentUserService;
     }
 
-    public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken)
+    public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
-        return await _aiService.ChatAsync(prompt, ChatSystemPrompt, intent ?? "chat", cancellationToken);
+        var systemPrompt = ChatSystemPrompt;
+
+        // Use session profile if provided
+        if (sessionProfile != null)
+        {
+            if (sessionProfile.IsEnabled)
+            {
+                 systemPrompt = AugmentSystemPrompt(ChatSystemPrompt, sessionProfile);
+            }
+        }
+        else if (!string.IsNullOrEmpty(_currentUserService.UserId))
+        {
+             var profile = await _profileService.GetProfileAsync(_currentUserService.UserId, cancellationToken);
+             if (profile != null && profile.IsEnabled)
+             {
+                 systemPrompt = AugmentSystemPrompt(ChatSystemPrompt, profile);
+             }
+        }
+
+        return await _aiService.ChatAsync(prompt, systemPrompt, intent ?? "chat", cancellationToken);
     }
 
-    public async Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken)
+    public async Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
         var prompt = BuildAnalysisPrompt(report);
+        var systemPrompt = AnalysisSystemPrompt;
+
+        // Use session profile if provided
+        if (sessionProfile != null)
+        {
+            if (sessionProfile.IsEnabled)
+            {
+                 systemPrompt = AugmentSystemPrompt(AnalysisSystemPrompt, sessionProfile);
+            }
+        }
+        else if (!string.IsNullOrEmpty(_currentUserService.UserId))
+        {
+             var profile = await _profileService.GetProfileAsync(_currentUserService.UserId, cancellationToken);
+             if (profile != null && profile.IsEnabled)
+             {
+                 systemPrompt = AugmentSystemPrompt(AnalysisSystemPrompt, profile);
+             }
+        }
+
         // "detailed_analysis" intent for report analysis
-        return await _aiService.ChatAsync(prompt, AnalysisSystemPrompt, "detailed_analysis", cancellationToken);
+        return await _aiService.ChatAsync(prompt, systemPrompt, "detailed_analysis", cancellationToken);
+    }
+
+    private string AugmentSystemPrompt(string baseSystemPrompt, UserAiProfileDto profile)
+    {
+        var sb = new StringBuilder(baseSystemPrompt);
+        sb.AppendLine();
+        sb.AppendLine("### User Personalization Profile");
+
+        if (!string.IsNullOrWhiteSpace(profile.HouseholdProfile))
+        {
+            sb.AppendLine("Household Profile:");
+            sb.AppendLine(profile.HouseholdProfile);
+        }
+
+        if (!string.IsNullOrWhiteSpace(profile.Preferences))
+        {
+            sb.AppendLine("Preferences:");
+            sb.AppendLine(profile.Preferences);
+        }
+
+        if (profile.DisallowedSuggestions != null && profile.DisallowedSuggestions.Any())
+        {
+            sb.AppendLine("Disallowed Suggestions (Do NOT suggest these):");
+            foreach (var disallowed in profile.DisallowedSuggestions)
+            {
+                sb.AppendLine($"- {disallowed}");
+            }
+        }
+
+        sb.AppendLine("Please tailor your response to these preferences where relevant.");
+
+        return sb.ToString();
     }
 
     private static string SanitizeForPrompt(string? input, int maxLength = 200)
