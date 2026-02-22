@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Full history for changelog generation
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git tag --sort=-creatordate | head -n 2 | tail -n 1)
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "Changes since $PREV_TAG:" >> changelog.md
+            echo "" >> changelog.md
+
+            # Group commits by type
+            echo "### 🚀 Features" >> changelog.md
+            git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --grep="^feat" >> changelog.md || true
+            echo "" >> changelog.md
+            echo "" >> changelog.md
+
+            echo "### 🐛 Bug Fixes" >> changelog.md
+            git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --grep="^fix" >> changelog.md || true
+            echo "" >> changelog.md
+            echo "" >> changelog.md
+
+            echo "### 📦 Dependencies" >> changelog.md
+            git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --grep="^deps" >> changelog.md || true
+            echo "" >> changelog.md
+            echo "" >> changelog.md
+
+            echo "### 🔧 Other Changes" >> changelog.md
+            git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --invert-grep --grep="^feat" --grep="^fix" --grep="^deps" >> changelog.md || true
+            echo "" >> changelog.md
+          else
+            echo "Initial release." >> changelog.md
+          fi
+
+          echo "" >> changelog.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURRENT_TAG}" >> changelog.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: changelog.md
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}

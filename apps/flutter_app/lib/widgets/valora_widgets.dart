@@ -10,3 +10,7 @@ export 'common/valora_chip.dart';
 export 'common/valora_dialog.dart';
 export 'common/valora_tag.dart';
 export 'common/valora_settings_tile.dart';
+export 'common/valora_avatar.dart';
+export 'common/valora_search_field.dart';
+export 'common/valora_slider.dart';
+export 'common/valora_section_header.dart';

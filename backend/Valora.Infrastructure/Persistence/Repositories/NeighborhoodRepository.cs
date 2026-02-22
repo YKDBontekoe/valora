@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Repositories;
@@ -22,6 +23,20 @@ public class NeighborhoodRepository : INeighborhoodRepository
     {
         return await _context.Neighborhoods
             .Where(x => x.City.ToLower() == city.ToLower())
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<DatasetStatusDto>> GetDatasetStatusAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Neighborhoods
+            .AsNoTracking()
+            .GroupBy(n => n.City)
+            .Select(g => new DatasetStatusDto(
+                g.Key,
+                g.Count(),
+                g.Max(n => n.LastUpdated)
+            ))
+            .OrderBy(d => d.City)
             .ToListAsync(cancellationToken);
     }
 

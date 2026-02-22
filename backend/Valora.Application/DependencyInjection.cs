@@ -22,6 +22,7 @@ public static class DependencyInjection
         // Batch Job Processors
         services.AddScoped<IBatchJobProcessor, CityIngestionJobProcessor>();
         services.AddScoped<IBatchJobProcessor, MapGenerationJobProcessor>();
+        services.AddScoped<IBatchJobProcessor, AllCitiesIngestionJobProcessor>();
 
         return services;
     }
