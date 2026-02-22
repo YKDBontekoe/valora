@@ -6,6 +6,34 @@ namespace Valora.UnitTests.Utilities;
 
 public class GeoUtilsTests
 {
+    [Theory]
+    [InlineData("POINT(4.895 52.370)", 4.895, 52.370)]
+    [InlineData("POINT(0 0)", 0, 0)]
+    [InlineData("POINT(-10.5 20.1)", -10.5, 20.1)]
+    public void TryParseWktPoint_ReturnsCoordinates_ForValidInput(string input, double expectedX, double expectedY)
+    {
+        var result = GeoUtils.TryParseWktPoint(input);
+        Assert.NotNull(result);
+        Assert.Equal(expectedX, result.Value.X);
+        Assert.Equal(expectedY, result.Value.Y);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("INVALID")]
+    [InlineData("POINT(1 2")] // Missing closing parenthesis
+    [InlineData("POINT 1 2)")] // Missing opening parenthesis
+    [InlineData("POINT(1)")] // Missing Y coordinate
+    [InlineData("POINT(1 2 3)")] // Too many coordinates
+    [InlineData("POINT(foo bar)")] // Non-numeric
+    public void TryParseWktPoint_ReturnsNull_ForInvalidInput(string? input)
+    {
+        var result = GeoUtils.TryParseWktPoint(input);
+        Assert.Null(result);
+    }
+
     [Fact]
     public void IsPointInPolygon_ReturnsTrue_ForSimplePolygon()
     {
