@@ -89,8 +89,8 @@ namespace Valora.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BatchJobs", x => x.Id);
-                    table.CheckConstraint("CK_BatchJob_Status", "\"Status\" IN ('Pending', 'Processing', 'Completed', 'Failed')");
-                    table.CheckConstraint("CK_BatchJob_Type", "\"Type\" IN ('CityIngestion', 'MapGeneration')");
+                    table.CheckConstraint("CK_BatchJob_Status", "[Status] IN ('Pending', 'Processing', 'Completed', 'Failed')");
+                    table.CheckConstraint("CK_BatchJob_Type", "[Type] IN ('CityIngestion', 'MapGeneration')");
                 });
 
             migrationBuilder.CreateTable(
@@ -115,7 +115,7 @@ namespace Valora.Infrastructure.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EnergyLabel = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     YearBuilt = table.Column<int>(type: "int", nullable: true),
-                    ImageUrls = table.Column<string>(type: "jsonb", nullable: false),
+                    ImageUrls = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     OwnershipType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CadastralDesignation = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     VVEContribution = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
@@ -129,18 +129,18 @@ namespace Valora.Infrastructure.Migrations
                     BalconyM2 = table.Column<int>(type: "int", nullable: true),
                     GardenM2 = table.Column<int>(type: "int", nullable: true),
                     ExternalStorageM2 = table.Column<int>(type: "int", nullable: true),
-                    Features = table.Column<string>(type: "jsonb", nullable: false),
+                    Features = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Latitude = table.Column<double>(type: "float", nullable: true),
                     Longitude = table.Column<double>(type: "float", nullable: true),
                     VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     VirtualTourUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FloorPlanUrls = table.Column<string>(type: "jsonb", nullable: false),
+                    FloorPlanUrls = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BrochureUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ViewCount = table.Column<int>(type: "int", nullable: true),
                     SaveCount = table.Column<int>(type: "int", nullable: true),
                     NeighborhoodPopulation = table.Column<int>(type: "int", nullable: true),
                     NeighborhoodAvgPriceM2 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    OpenHouseDates = table.Column<string>(type: "jsonb", nullable: false),
+                    OpenHouseDates = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RoofType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     NumberOfFloors = table.Column<int>(type: "int", nullable: true),
                     ConstructionPeriod = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
@@ -153,28 +153,28 @@ namespace Valora.Infrastructure.Migrations
                     FiberAvailable = table.Column<bool>(type: "bit", nullable: true),
                     PublicationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsSoldOrRented = table.Column<bool>(type: "bit", nullable: false),
-                    Labels = table.Column<string>(type: "jsonb", nullable: false),
+                    Labels = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastFundaFetchUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ContextCompositeScore = table.Column<double>(type: "float", nullable: true),
                     ContextSafetyScore = table.Column<double>(type: "float", nullable: true),
                     ContextSocialScore = table.Column<double>(type: "float", nullable: true),
                     ContextAmenitiesScore = table.Column<double>(type: "float", nullable: true),
                     ContextEnvironmentScore = table.Column<double>(type: "float", nullable: true),
-                    ContextReport = table.Column<string>(type: "jsonb", nullable: true),
+                    ContextReport = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Listings", x => x.Id);
-                    table.CheckConstraint("CK_Listing_Bedrooms", "\"Bedrooms\" >= 0");
-                    table.CheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
-                    table.CheckConstraint("CK_Listing_ContextCompositeScore", "\"ContextCompositeScore\" >= 0 AND \"ContextCompositeScore\" <= 100");
-                    table.CheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
-                    table.CheckConstraint("CK_Listing_ContextSafetyScore", "\"ContextSafetyScore\" >= 0 AND \"ContextSafetyScore\" <= 100");
-                    table.CheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
-                    table.CheckConstraint("CK_Listing_LivingAreaM2", "\"LivingAreaM2\" > 0");
-                    table.CheckConstraint("CK_Listing_Price", "\"Price\" > 0");
+                    table.CheckConstraint("CK_Listing_Bedrooms", "[Bedrooms] >= 0");
+                    table.CheckConstraint("CK_Listing_ContextAmenitiesScore", "[ContextAmenitiesScore] >= 0 AND [ContextAmenitiesScore] <= 100");
+                    table.CheckConstraint("CK_Listing_ContextCompositeScore", "[ContextCompositeScore] >= 0 AND [ContextCompositeScore] <= 100");
+                    table.CheckConstraint("CK_Listing_ContextEnvironmentScore", "[ContextEnvironmentScore] >= 0 AND [ContextEnvironmentScore] <= 100");
+                    table.CheckConstraint("CK_Listing_ContextSafetyScore", "[ContextSafetyScore] >= 0 AND [ContextSafetyScore] <= 100");
+                    table.CheckConstraint("CK_Listing_ContextSocialScore", "[ContextSocialScore] >= 0 AND [ContextSocialScore] <= 100");
+                    table.CheckConstraint("CK_Listing_LivingAreaM2", "[LivingAreaM2] > 0");
+                    table.CheckConstraint("CK_Listing_Price", "[Price] > 0");
                 });
 
             migrationBuilder.CreateTable(
@@ -384,7 +384,7 @@ namespace Valora.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PriceHistories", x => x.Id);
-                    table.CheckConstraint("CK_PriceHistory_Price", "\"Price\" > 0");
+                    table.CheckConstraint("CK_PriceHistory_Price", "[Price] > 0");
                     table.ForeignKey(
                         name: "FK_PriceHistories_Listings_ListingId",
                         column: x => x.ListingId,
@@ -402,7 +402,7 @@ namespace Valora.Infrastructure.Migrations
                     ActorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Summary = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Metadata = table.Column<string>(type: "jsonb", nullable: true),
+                    Metadata = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TargetListingId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -498,7 +498,7 @@ namespace Valora.Infrastructure.Migrations
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     ParentCommentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Reactions = table.Column<string>(type: "jsonb", nullable: false),
+                    Reactions = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },

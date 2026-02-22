@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Xunit;
@@ -19,7 +21,7 @@ public class ValoraDbContextTests
 
         // Act
         // Accessing the Model property triggers OnModelCreating
-        var model = context.Model;
+        var model = context.GetService<IDesignTimeModel>().Model;
         var listingEntity = model.FindEntityType(typeof(Listing));
 
         // Assert
@@ -47,5 +49,40 @@ public class ValoraDbContextTests
         Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.CVBoilerBrand))?.GetMaxLength());
         Assert.Equal(50, listingEntity.FindProperty(nameof(Listing.BrokerPhone))?.GetMaxLength());
         Assert.Equal(20, listingEntity.FindProperty(nameof(Listing.BrokerAssociationCode))?.GetMaxLength());
+    }
+
+    [Fact]
+    public void OnModelCreating_DoesNotUsePostgresSpecificColumnTypesOrConstraintSql()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<ValoraDbContext>()
+            .UseInMemoryDatabase(databaseName: "ValoraDbContextTests_ProviderAgnostic")
+            .Options;
+
+        using var context = new ValoraDbContext(options);
+
+        // Act
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        // Assert
+        var postgresColumnTypes = model
+            .GetEntityTypes()
+            .SelectMany(entity => entity.GetProperties())
+            .Where(property =>
+                string.Equals(
+                    property.FindAnnotation(RelationalAnnotationNames.ColumnType)?.Value?.ToString(),
+                    "jsonb",
+                    StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        Assert.Empty(postgresColumnTypes);
+
+        var quotedCheckConstraints = model
+            .GetEntityTypes()
+            .SelectMany(entity => entity.GetCheckConstraints())
+            .Where(constraint => constraint.Sql.Contains('\"'))
+            .ToList();
+
+        Assert.Empty(quotedCheckConstraints);
     }
 }

@@ -72,7 +72,6 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
 
         // Store Features as JSON - use conversion for broad compatibility (especially InMemory tests)
         builder.Property(e => e.Features)
-            .HasColumnType("jsonb") // Hint for Postgres
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<Dictionary<string, string>>(v))
@@ -80,21 +79,18 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
 
         // Phase 4: JSON conversions for list properties
         builder.Property(e => e.ImageUrls)
-            .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<List<string>>(v))
             .Metadata.SetValueComparer(ValueComparers.StringListComparer);
 
         builder.Property(e => e.FloorPlanUrls)
-            .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<List<string>>(v))
             .Metadata.SetValueComparer(ValueComparers.StringListComparer);
 
         builder.Property(e => e.OpenHouseDates)
-            .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<List<DateTime>>(v))
@@ -102,14 +98,12 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
 
         // New: Labels from Summary API (e.g., "Nieuw", "Open huis")
         builder.Property(e => e.Labels)
-            .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<List<string>>(v))
             .Metadata.SetValueComparer(ValueComparers.StringListComparer);
 
         builder.Property(e => e.ContextReport)
-            .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => string.IsNullOrWhiteSpace(v) ? null : JsonHelper.Deserialize<ContextReportModel?>(v))
@@ -118,15 +112,15 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
         // Check Constraints
         builder.ToTable(t =>
         {
-            t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "\"ContextCompositeScore\" >= 0 AND \"ContextCompositeScore\" <= 100");
-            t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "\"ContextSafetyScore\" >= 0 AND \"ContextSafetyScore\" <= 100");
-            t.HasCheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
-            t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
-            t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
+            t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "[ContextCompositeScore] >= 0 AND [ContextCompositeScore] <= 100");
+            t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "[ContextSafetyScore] >= 0 AND [ContextSafetyScore] <= 100");
+            t.HasCheckConstraint("CK_Listing_ContextSocialScore", "[ContextSocialScore] >= 0 AND [ContextSocialScore] <= 100");
+            t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "[ContextAmenitiesScore] >= 0 AND [ContextAmenitiesScore] <= 100");
+            t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "[ContextEnvironmentScore] >= 0 AND [ContextEnvironmentScore] <= 100");
 
-            t.HasCheckConstraint("CK_Listing_Price", "\"Price\" > 0");
-            t.HasCheckConstraint("CK_Listing_LivingAreaM2", "\"LivingAreaM2\" > 0");
-            t.HasCheckConstraint("CK_Listing_Bedrooms", "\"Bedrooms\" >= 0");
+            t.HasCheckConstraint("CK_Listing_Price", "[Price] > 0");
+            t.HasCheckConstraint("CK_Listing_LivingAreaM2", "[LivingAreaM2] > 0");
+            t.HasCheckConstraint("CK_Listing_Bedrooms", "[Bedrooms] >= 0");
         });
     }
 }

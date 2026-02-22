@@ -25,7 +25,6 @@ public class ListingCommentConfiguration : IEntityTypeConfiguration<ListingComme
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(c => c.Reactions)
-            .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<Dictionary<string, List<string>>>(v))

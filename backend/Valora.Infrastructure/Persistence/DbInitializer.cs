@@ -24,7 +24,7 @@ public static class DbInitializer
         {
             if (dbContext.Database.IsRelational())
             {
-                dbContext.Database.Migrate();
+                await dbContext.Database.MigrateAsync();
             }
 
             // Seed Admin User
@@ -67,8 +67,8 @@ public static class DbInitializer
         }
         catch (Exception ex)
         {
-            // Log error or handle it (e.g., if database is not ready yet)
             logger.LogError(ex, "An error occurred while migrating the database.");
+            throw;
         }
     }
 }

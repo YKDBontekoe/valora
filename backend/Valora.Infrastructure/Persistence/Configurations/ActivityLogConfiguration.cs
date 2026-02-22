@@ -12,7 +12,7 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
 
         builder.Property(a => a.Type).HasConversion<string>();
         builder.Property(a => a.Summary).IsRequired().HasMaxLength(500);
-        builder.Property(a => a.Metadata).HasColumnType("jsonb");
+        builder.Property(a => a.Metadata);
 
         builder.HasOne(a => a.Actor)
             .WithMany()

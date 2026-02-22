@@ -169,7 +169,7 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Metadata")
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Summary")
                         .IsRequired()
@@ -360,9 +360,9 @@ namespace Valora.Infrastructure.Migrations
 
                     b.ToTable("BatchJobs", t =>
                         {
-                            t.HasCheckConstraint("CK_BatchJob_Status", "\"Status\" IN ('Pending', 'Processing', 'Completed', 'Failed')");
+                            t.HasCheckConstraint("CK_BatchJob_Status", "[Status] IN ('Pending', 'Processing', 'Completed', 'Failed')");
 
-                            t.HasCheckConstraint("CK_BatchJob_Type", "\"Type\" IN ('CityIngestion', 'MapGeneration')");
+                            t.HasCheckConstraint("CK_BatchJob_Type", "[Type] IN ('CityIngestion', 'MapGeneration')");
                         });
                 });
 
@@ -436,7 +436,7 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("float");
 
                     b.Property<string>("ContextReport")
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double?>("ContextSafetyScore")
                         .HasColumnType("float");
@@ -459,14 +459,14 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("Features")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool?>("FiberAvailable")
                         .HasColumnType("bit");
 
                     b.Property<string>("FloorPlanUrls")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FundaId")
                         .IsRequired()
@@ -493,7 +493,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("ImageUrls")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InsulationType")
                         .HasMaxLength(100)
@@ -504,7 +504,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("Labels")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastFundaFetchUtc")
                         .HasColumnType("datetime2");
@@ -532,7 +532,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("OpenHouseDates")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OwnershipType")
                         .HasMaxLength(100)
@@ -648,21 +648,21 @@ namespace Valora.Infrastructure.Migrations
 
                     b.ToTable("Listings", t =>
                         {
-                            t.HasCheckConstraint("CK_Listing_Bedrooms", "\"Bedrooms\" >= 0");
+                            t.HasCheckConstraint("CK_Listing_Bedrooms", "[Bedrooms] >= 0");
 
-                            t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "\"ContextAmenitiesScore\" >= 0 AND \"ContextAmenitiesScore\" <= 100");
+                            t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "[ContextAmenitiesScore] >= 0 AND [ContextAmenitiesScore] <= 100");
 
-                            t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "\"ContextCompositeScore\" >= 0 AND \"ContextCompositeScore\" <= 100");
+                            t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "[ContextCompositeScore] >= 0 AND [ContextCompositeScore] <= 100");
 
-                            t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "\"ContextEnvironmentScore\" >= 0 AND \"ContextEnvironmentScore\" <= 100");
+                            t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "[ContextEnvironmentScore] >= 0 AND [ContextEnvironmentScore] <= 100");
 
-                            t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "\"ContextSafetyScore\" >= 0 AND \"ContextSafetyScore\" <= 100");
+                            t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "[ContextSafetyScore] >= 0 AND [ContextSafetyScore] <= 100");
 
-                            t.HasCheckConstraint("CK_Listing_ContextSocialScore", "\"ContextSocialScore\" >= 0 AND \"ContextSocialScore\" <= 100");
+                            t.HasCheckConstraint("CK_Listing_ContextSocialScore", "[ContextSocialScore] >= 0 AND [ContextSocialScore] <= 100");
 
-                            t.HasCheckConstraint("CK_Listing_LivingAreaM2", "\"LivingAreaM2\" > 0");
+                            t.HasCheckConstraint("CK_Listing_LivingAreaM2", "[LivingAreaM2] > 0");
 
-                            t.HasCheckConstraint("CK_Listing_Price", "\"Price\" > 0");
+                            t.HasCheckConstraint("CK_Listing_Price", "[Price] > 0");
                         });
                 });
 
@@ -685,7 +685,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("Reactions")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("SavedListingId")
                         .HasColumnType("uniqueidentifier");
@@ -845,7 +845,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.ToTable("PriceHistories", t =>
                         {
-                            t.HasCheckConstraint("CK_PriceHistory_Price", "\"Price\" > 0");
+                            t.HasCheckConstraint("CK_PriceHistory_Price", "[Price] > 0");
                         });
                 });
 
