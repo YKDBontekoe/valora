@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
 import Button from './Button';
@@ -5,7 +6,7 @@ import Button from './Button';
 interface ConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   title: string;
   message: string;
   confirmLabel?: string;
@@ -23,6 +24,17 @@ const ConfirmationDialog = ({
   cancelLabel = 'Cancel',
   isDestructive = false,
 }: ConfirmationDialogProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      await onConfirm();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -31,7 +43,7 @@ const ConfirmationDialog = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={() => !isSubmitting && onClose()}
             className="absolute inset-0 bg-brand-900/40 backdrop-blur-sm"
           />
           <motion.div
@@ -47,8 +59,9 @@ const ConfirmationDialog = ({
                   <AlertCircle size={24} />
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={() => !isSubmitting && onClose()}
                   className="p-2 text-brand-400 hover:text-brand-900 transition-colors rounded-xl hover:bg-brand-50"
+                  disabled={isSubmitting}
                 >
                   <X size={20} />
                 </button>
@@ -66,13 +79,16 @@ const ConfirmationDialog = ({
                   variant="outline"
                   onClick={onClose}
                   className="flex-1"
+                  disabled={isSubmitting}
                 >
                   {cancelLabel}
                 </Button>
                 <Button
                   variant={isDestructive ? 'danger' : 'secondary'}
-                  onClick={onConfirm}
+                  onClick={handleConfirm}
                   className="flex-1"
+                  isLoading={isSubmitting}
+                  disabled={isSubmitting}
                 >
                   {confirmLabel}
                 </Button>

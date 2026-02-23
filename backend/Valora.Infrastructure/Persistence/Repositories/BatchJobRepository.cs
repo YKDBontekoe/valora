@@ -28,7 +28,7 @@ public class BatchJobRepository : IBatchJobRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, CancellationToken cancellationToken = default)
+    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
     {
         var query = _context.BatchJobs.AsNoTracking();
 
@@ -42,8 +42,29 @@ public class BatchJobRepository : IBatchJobRepository
             query = query.Where(j => j.Type == type.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+            // Note: Case-insensitivity depends on database collation.
+            // For SQL Server, default collation is usually case-insensitive.
+            // Removing .ToLower() to make query sargable and improve performance.
+            query = query.Where(j => j.Target.Contains(search));
+        }
+
+        query = sort switch
+        {
+            "createdAt_asc" => query.OrderBy(x => x.CreatedAt),
+            "createdAt_desc" => query.OrderByDescending(x => x.CreatedAt),
+            "status_asc" => query.OrderBy(x => x.Status),
+            "status_desc" => query.OrderByDescending(x => x.Status),
+            "type_asc" => query.OrderBy(x => x.Type),
+            "type_desc" => query.OrderByDescending(x => x.Type),
+            "target_asc" => query.OrderBy(x => x.Target),
+            "target_desc" => query.OrderByDescending(x => x.Target),
+            _ => query.OrderByDescending(x => x.CreatedAt)
+        };
+
         return await query
-            .OrderByDescending(x => x.CreatedAt)
             .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
     }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers } from 'lucide-react';
+import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
 import { adminService } from '../services/api';
 import type { BatchJob, SystemHealth } from '../types';
 import Button from '../components/Button';
@@ -8,6 +8,7 @@ import { showToast } from '../services/toast';
 import Skeleton from '../components/Skeleton';
 import JobDetailsModal from './JobDetailsModal';
 import DatasetStatusModal from './DatasetStatusModal';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 const BatchJobs: React.FC = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);
@@ -22,16 +23,62 @@ const BatchJobs: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const pageSize = 10;
 
   // Modal State
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDatasetModalOpen, setIsDatasetModalOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => Promise<void>;
+    isDestructive?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmLabel: '',
+    onConfirm: async () => {},
+  });
+
+  const hasActiveFilters = statusFilter !== 'All' || typeFilter !== 'All' || searchQuery !== '';
+
+  const clearFilters = () => {
+    setStatusFilter('All');
+    setTypeFilter('All');
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setSortBy(undefined);
+    setPage(1);
+  };
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  const toggleSort = (field: string) => {
+    setSortBy(current => {
+      if (current === `${field}_asc`) return `${field}_desc`;
+      if (current === `${field}_desc`) return undefined;
+      return `${field}_asc`;
+    });
+    setPage(1);
+  };
 
   const fetchJobs = useCallback(async () => {
     try {
-      const data = await adminService.getJobs(page, pageSize, statusFilter, typeFilter);
+      const data = await adminService.getJobs(page, pageSize, statusFilter, typeFilter, debouncedSearch, sortBy);
       setJobs(data.items);
       setTotalPages(data.totalPages);
       setError(null);
@@ -40,7 +87,7 @@ const BatchJobs: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, statusFilter, typeFilter]);
+  }, [page, pageSize, statusFilter, typeFilter, debouncedSearch, sortBy]);
 
   const fetchHealth = useCallback(async () => {
     try {
@@ -79,18 +126,24 @@ const BatchJobs: React.FC = () => {
   };
 
   const handleIngestAll = async () => {
-    if (!window.confirm('Are you sure you want to trigger ingestion for ALL municipalities? This will queue hundreds of jobs.')) return;
-
-    setIsStarting(true);
-    try {
-      await adminService.startJob('AllCitiesIngestion', 'Netherlands');
-      showToast('Full dataset ingestion pipeline initiated', 'success');
-      fetchJobs();
-    } catch {
-       // handled
-    } finally {
-      setIsStarting(false);
-    }
+    setConfirmation({
+        isOpen: true,
+        title: 'Start Full Ingestion?',
+        message: 'Are you sure you want to trigger ingestion for ALL municipalities? This will queue hundreds of jobs and may impact system performance.',
+        confirmLabel: 'Start Ingestion',
+        isDestructive: false,
+        onConfirm: async () => {
+            try {
+              await adminService.startJob('AllCitiesIngestion', 'Netherlands');
+              showToast('Full dataset ingestion pipeline initiated', 'success');
+              fetchJobs();
+            } catch {
+              showToast('Failed to start ingestion pipeline. Please try again.', 'error');
+            } finally {
+              setConfirmation(prev => ({ ...prev, isOpen: false }));
+            }
+        }
+     });
   };
 
   const openDetails = (jobId: string) => {
@@ -203,10 +256,41 @@ const BatchJobs: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-[2rem] border border-brand-100 shadow-premium overflow-hidden">
-        <div className="px-8 py-6 border-b border-brand-100 bg-brand-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="font-black text-brand-900 uppercase tracking-wider text-xs">Pipeline Execution History</h2>
-          <div className="flex items-center gap-4">
+        <div className="px-8 py-6 border-b border-brand-100 bg-brand-50/30 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            <h2 className="font-black text-brand-900 uppercase tracking-wider text-xs whitespace-nowrap">Pipeline Execution History</h2>
+             <div className="relative max-w-xs w-full group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-400 group-focus-within:text-primary-500 transition-colors" />
+                <input
+                    type="text"
+                    placeholder="Search by target..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-brand-900 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:font-medium"
+                />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-2">
+              <AnimatePresence>
+                {hasActiveFilters && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                    >
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearFilters}
+                            leftIcon={<X size={14} />}
+                            className="text-brand-400 hover:text-brand-600 hover:bg-brand-50 mr-2"
+                        >
+                            Clear
+                        </Button>
+                    </motion.div>
+                )}
+              </AnimatePresence>
               <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
@@ -239,12 +323,56 @@ const BatchJobs: React.FC = () => {
           <table className="min-w-full divide-y divide-brand-100">
             <thead>
               <tr className="bg-brand-50/10">
-                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Job Definition</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Target</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Status</th>
+                <th
+                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    onClick={() => toggleSort('type')}
+                >
+                    <div className="flex items-center gap-1">
+                        Job Definition
+                        <div className="flex flex-col">
+                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'type_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'type_desc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                        </div>
+                    </div>
+                </th>
+                <th
+                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    onClick={() => toggleSort('target')}
+                >
+                    <div className="flex items-center gap-1">
+                        Target
+                        <div className="flex flex-col">
+                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'target_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'target_desc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                        </div>
+                    </div>
+                </th>
+                <th
+                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    onClick={() => toggleSort('status')}
+                >
+                    <div className="flex items-center gap-1">
+                        Status
+                        <div className="flex flex-col">
+                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'status_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'status_desc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                        </div>
+                    </div>
+                </th>
                 <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Internal Progress</th>
                 <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Details</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Timestamp</th>
+                <th
+                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    onClick={() => toggleSort('createdAt')}
+                >
+                    <div className="flex items-center gap-1">
+                        Timestamp
+                        <div className="flex flex-col">
+                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'createdAt_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'createdAt_desc' || (!sortBy) ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                        </div>
+                    </div>
+                </th>
                 <th className="px-8 py-4 text-right text-[10px] font-black text-brand-400 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
@@ -388,6 +516,16 @@ const BatchJobs: React.FC = () => {
       <DatasetStatusModal
         isOpen={isDatasetModalOpen}
         onClose={() => setIsDatasetModalOpen(false)}
+      />
+
+      <ConfirmationDialog
+        isOpen={confirmation.isOpen}
+        onClose={() => setConfirmation(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmation.onConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        confirmLabel={confirmation.confirmLabel}
+        isDestructive={confirmation.isDestructive}
       />
     </div>
   );

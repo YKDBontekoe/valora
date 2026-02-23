@@ -99,9 +99,11 @@ public static class AdminEndpoints
             CancellationToken ct,
             [AsParameters] PaginationRequest pagination,
             [FromQuery] string? status = null,
-            [FromQuery] string? type = null) =>
+            [FromQuery] string? type = null,
+            [FromQuery] string? q = null,
+            [FromQuery] string? sort = null) =>
         {
-            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, ct);
+            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, q, sort, ct);
             return Results.Ok(new {
                 jobs.Items,
                 jobs.PageIndex,
