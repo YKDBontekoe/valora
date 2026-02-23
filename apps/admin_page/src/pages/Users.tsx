@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { User } from '../types';
 import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search, UserPlus, AlertCircle } from 'lucide-react';
+import { showToast } from '../services/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUsers } from '../hooks/useUsers';
 import ConfirmationDialog from '../components/ConfirmationDialog';
@@ -39,12 +40,9 @@ const Users = () => {
     user: null,
   });
 
-  const [actionError, setActionError] = useState<string | null>(null);
-
   const handleDeleteClick = (user: User) => {
     if (user.id === currentUserId) return;
     setDeleteConfirmation({ isOpen: true, user });
-    setActionError(null);
   };
 
   const confirmDelete = async () => {
@@ -52,8 +50,9 @@ const Users = () => {
     try {
       await deleteUser(deleteConfirmation.user);
       setDeleteConfirmation({ isOpen: false, user: null });
+      showToast('User access revoked successfully.', 'success');
     } catch {
-      setActionError('Failed to delete user. It might be protected or you might have lost permissions.');
+      showToast('Failed to delete user. It might be protected or you might have lost permissions.', 'error');
       setDeleteConfirmation({ isOpen: false, user: null });
     }
   };

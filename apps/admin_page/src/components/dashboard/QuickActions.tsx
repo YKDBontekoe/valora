@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { RefreshCw, PlayCircle, Users, Activity } from 'lucide-react';
-import Button from '../Button';
 import { adminService } from '../../services/api';
 import { showToast } from '../../services/toast';
 import { useNavigate } from 'react-router-dom';
@@ -85,7 +84,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-4">
-            {actionCards.map((action, idx) => (
+            {actionCards.map((action) => (
                 <motion.button
                     key={action.title}
                     whileHover={{ x: 8 }}
