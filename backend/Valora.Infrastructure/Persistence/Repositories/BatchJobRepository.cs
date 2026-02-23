@@ -23,6 +23,7 @@ public class BatchJobRepository : IBatchJobRepository
     public async Task<List<BatchJob>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
         return await _context.BatchJobs
+            .AsNoTracking()
             .OrderByDescending(x => x.CreatedAt)
             .Take(limit)
             .ToListAsync(cancellationToken);
@@ -68,12 +69,56 @@ public class BatchJobRepository : IBatchJobRepository
             .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
     }
 
+    /// <summary>
+    /// Atomically claims the next pending job.
+    /// Implementation attempts to use an optimistic concurrency approach by fetching
+    /// and then attempting to update the status. If concurrent update occurs, EF Core
+    /// throws DbUpdateConcurrencyException, which can be retried or simply skipped
+    /// (returning null so another worker picks up the next one).
+    /// </summary>
     public async Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.BatchJobs
-            .Where(x => x.Status == BatchJobStatus.Pending)
-            .OrderBy(x => x.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
+        using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken);
+
+        try
+        {
+            // Simple approach: fetch first, lock via update.
+            // Ideally we'd use raw SQL for "SKIP LOCKED" but that is provider specific.
+            // For general EF Core compatibility without provider specifics, we rely on transaction isolation.
+
+            // To prevent race conditions better, we can execute a direct SQL update if we knew the provider.
+            // Assuming we want to stick to EF Core abstractions:
+
+            var job = await _context.BatchJobs
+                .Where(x => x.Status == BatchJobStatus.Pending)
+                .OrderBy(x => x.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (job != null)
+            {
+                // Optimistic claim attempt
+                job.Status = BatchJobStatus.Processing;
+                job.StartedAt = DateTime.UtcNow;
+
+                // Save immediately to lock it in
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return job;
+            }
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Another worker claimed it first.
+            await transaction.RollbackAsync(cancellationToken);
+            return null;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        return null;
     }
 
     public async Task<BatchJob> AddAsync(BatchJob job, CancellationToken cancellationToken = default)

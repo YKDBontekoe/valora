@@ -45,7 +45,8 @@ public class BatchJobExecutorTests
     public async Task ProcessNextJobAsync_ShouldCallCorrectProcessor()
     {
         var executor = CreateExecutor();
-        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        // Updated test expectation: The job returned by GetNextPendingJobAsync is already Processing
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
@@ -60,7 +61,7 @@ public class BatchJobExecutorTests
     public async Task ProcessNextJobAsync_ShouldHandleProcessorFailure()
     {
         var executor = CreateExecutor();
-        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
@@ -79,7 +80,7 @@ public class BatchJobExecutorTests
     {
         // Setup executor with empty processors list
         var executor = new BatchJobExecutor(_jobRepositoryMock.Object, new List<IBatchJobProcessor>(), _loggerMock.Object);
-        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
@@ -102,7 +103,7 @@ public class BatchJobExecutorTests
         var processors = new List<IBatchJobProcessor> { processor1.Object, processor2.Object };
         var executor = new BatchJobExecutor(_jobRepositoryMock.Object, processors, _loggerMock.Object);
 
-        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
@@ -119,7 +120,7 @@ public class BatchJobExecutorTests
     public async Task ProcessNextJobAsync_ShouldHandleCancellation()
     {
         var executor = CreateExecutor();
-        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
@@ -137,7 +138,7 @@ public class BatchJobExecutorTests
     public async Task ProcessNextJobAsync_ShouldNotOverwriteStatus_IfChangedByProcessor()
     {
         var executor = CreateExecutor();
-        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Pending };
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 

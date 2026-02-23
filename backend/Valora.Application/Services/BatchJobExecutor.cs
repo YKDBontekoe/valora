@@ -42,10 +42,14 @@ public class BatchJobExecutor : IBatchJobExecutor
     /// </remarks>
     public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
     {
+        // Repository now handles the atomic claim (find + mark processing)
         var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
         if (job == null) return;
 
-        await UpdateJobStatusAsync(job, BatchJobStatus.Processing, "Job started.", cancellationToken: cancellationToken);
+        // Job is already marked as Processing by the repository claim method.
+        // We log it here for tracking.
+        AppendLog(job, "Job started.");
+        await _jobRepository.UpdateAsync(job, cancellationToken); // Save log update
 
         try
         {

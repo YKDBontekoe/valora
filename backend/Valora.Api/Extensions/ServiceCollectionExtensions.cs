@@ -184,14 +184,20 @@ public static class ServiceCollectionExtensions
                 {
                     OnAuthenticationFailed = context =>
                     {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogError(context.Exception, "Authentication failed.");
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
                     {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogDebug("Token validated for user: {User}", context.Principal?.Identity?.Name);
                         return Task.CompletedTask;
                     },
                     OnChallenge = context =>
                     {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogWarning("Authentication challenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
                         return Task.CompletedTask;
                     }
                 };
