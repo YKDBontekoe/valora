@@ -178,31 +178,27 @@ public class BatchJobService : IBatchJobService
         var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
         if (job == null) return;
 
-        await MarkJobAsStartedAsync(job, cancellationToken);
+        await UpdateJobStatusAsync(job, BatchJobStatus.Processing, "Job started.", cancellationToken: cancellationToken);
 
         try
         {
             await ExecuteProcessorAsync(job, cancellationToken);
-            MarkJobAsCompleted(job);
+
+            // Only mark as completed if the processor didn't already set it to Failed/Cancelled
+            if (job.Status == BatchJobStatus.Processing)
+            {
+                await UpdateJobStatusAsync(job, BatchJobStatus.Completed, "Job completed successfully.", cancellationToken: cancellationToken);
+            }
         }
         catch (OperationCanceledException)
         {
-            MarkJobAsCancelled(job);
+            // Use CancellationToken.None to ensure the status update persists even if the job token was cancelled
+            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, "Job cancelled by user.", cancellationToken: CancellationToken.None);
         }
         catch (Exception ex)
         {
-            MarkJobAsFailed(job, ex);
+            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, ex, cancellationToken);
         }
-
-        await _jobRepository.UpdateAsync(job, cancellationToken);
-    }
-
-    private async Task MarkJobAsStartedAsync(BatchJob job, CancellationToken cancellationToken)
-    {
-        job.Status = BatchJobStatus.Processing;
-        job.StartedAt = DateTime.UtcNow;
-        AppendLog(job, "Job started.");
-        await _jobRepository.UpdateAsync(job, cancellationToken);
     }
 
     private async Task ExecuteProcessorAsync(BatchJob job, CancellationToken cancellationToken)
@@ -217,35 +213,41 @@ public class BatchJobService : IBatchJobService
         await processor.ProcessAsync(job, cancellationToken);
     }
 
-    private void MarkJobAsCompleted(BatchJob job)
+    private async Task UpdateJobStatusAsync(BatchJob job, BatchJobStatus newStatus, string? message = null, Exception? ex = null, CancellationToken cancellationToken = default)
     {
-        // Only mark as completed if the processor didn't already set it to Failed/Cancelled
-        if (job.Status == BatchJobStatus.Processing)
+        job.Status = newStatus;
+
+        if (newStatus == BatchJobStatus.Processing)
         {
-            AppendLog(job, "Job completed successfully.");
-            job.Status = BatchJobStatus.Completed;
+            job.StartedAt = DateTime.UtcNow;
+            AppendLog(job, message ?? "Job started.");
+        }
+        else if (newStatus == BatchJobStatus.Completed)
+        {
             job.CompletedAt = DateTime.UtcNow;
             job.Progress = 100;
+            AppendLog(job, message ?? "Job completed successfully.");
         }
-    }
+        else if (newStatus == BatchJobStatus.Failed)
+        {
+            job.CompletedAt = DateTime.UtcNow;
 
-    private void MarkJobAsCancelled(BatchJob job)
-    {
-        _logger.LogInformation("Batch job {JobId} cancelled", job.Id);
-        AppendLog(job, "Job cancelled by user.");
-        // The domain model has no distinct Cancelled enum value, so we map cancellations to Failed.
-        job.Status = BatchJobStatus.Failed;
-        job.Error = "Job cancelled by user.";
-        job.CompletedAt = DateTime.UtcNow;
-    }
+            if (ex != null)
+            {
+                // Do not expose raw exception details to the public job status
+                job.Error = "Job failed due to an internal error.";
+                _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
+                AppendLog(job, "Job failed due to an internal error.");
+            }
+            else
+            {
+                job.Error = message ?? "Job failed.";
+                _logger.LogInformation("Batch job {JobId} cancelled/failed: {Message}", job.Id, job.Error);
+                AppendLog(job, message ?? "Job failed.");
+            }
+        }
 
-    private void MarkJobAsFailed(BatchJob job, Exception ex)
-    {
-        _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
-        AppendLog(job, $"Job failed: {ex.Message}");
-        job.Status = BatchJobStatus.Failed;
-        job.Error = ex.Message;
-        job.CompletedAt = DateTime.UtcNow;
+        await _jobRepository.UpdateAsync(job, cancellationToken);
     }
 
     private void AppendLog(BatchJob job, string message)
