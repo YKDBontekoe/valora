@@ -12,7 +12,10 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   bool inviteCalled = false;
 
   @override
-  bool get isLoading => false;
+  bool get isWorkspacesLoading => false;
+  @override
+  bool get isWorkspaceDetailLoading => false;
+
   @override
   String? get error => null;
   @override

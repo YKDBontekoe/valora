@@ -18,18 +18,15 @@ public class UserAiProfileConfiguration : IEntityTypeConfiguration<UserAiProfile
 
         builder.HasIndex(e => e.UserId).IsUnique();
 
-        builder.Property(e => e.HouseholdProfile)
-            .HasMaxLength(2000);
+        builder.Property(e => e.HouseholdProfile);
 
-        builder.Property(e => e.Preferences)
-            .HasMaxLength(2000);
+        builder.Property(e => e.Preferences);
 
         // Store List<string> as JSON
         builder.Property(e => e.DisallowedSuggestions)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
-            )
-            .HasColumnType("TEXT");
+            );
     }
 }

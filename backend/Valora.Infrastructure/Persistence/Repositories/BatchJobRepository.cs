@@ -29,9 +29,9 @@ public class BatchJobRepository : IBatchJobRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
+    private IQueryable<BatchJob> ApplyJobFiltersAndSorting(IQueryable<BatchJob> query, BatchJobStatus? status, BatchJobType? type, string? search, string? sort)
     {
-        var query = _context.BatchJobs.AsNoTracking();
+        query = query.AsNoTracking();
 
         if (status.HasValue)
         {
@@ -46,13 +46,10 @@ public class BatchJobRepository : IBatchJobRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             search = search.Trim();
-            // Note: Case-insensitivity depends on database collation.
-            // For SQL Server, default collation is usually case-insensitive.
-            // Removing .ToLower() to make query sargable and improve performance.
             query = query.Where(j => j.Target.Contains(search));
         }
 
-        query = sort switch
+        return sort switch
         {
             "createdAt_asc" => query.OrderBy(x => x.CreatedAt),
             "createdAt_desc" => query.OrderByDescending(x => x.CreatedAt),
@@ -64,8 +61,33 @@ public class BatchJobRepository : IBatchJobRepository
             "target_desc" => query.OrderByDescending(x => x.Target),
             _ => query.OrderByDescending(x => x.CreatedAt)
         };
+    }
+
+    public async Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
+    {
+        var query = ApplyJobFiltersAndSorting(_context.BatchJobs, status, type, search, sort);
 
         return await query
+            .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
+    }
+
+    public async Task<PaginatedList<BatchJobSummaryDto>> GetJobSummariesAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
+    {
+        var query = ApplyJobFiltersAndSorting(_context.BatchJobs, status, type, search, sort);
+
+        return await query
+            .Select(job => new BatchJobSummaryDto(
+                job.Id,
+                job.Type,
+                job.Status,
+                job.Target,
+                job.Progress,
+                job.Error,
+                job.ResultSummary,
+                job.CreatedAt,
+                job.StartedAt,
+                job.CompletedAt
+            ))
             .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
     }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
@@ -85,7 +86,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
       ),
       body: Consumer<WorkspaceProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
+          if (provider.isWorkspaceDetailLoading) {
             return const Center(
               child: ValoraLoadingIndicator(message: 'Loading workspace...'),
             );
@@ -165,10 +166,14 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: listing?.imageUrl != null
-                    ? Image.network(
-                        listing!.imageUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: listing!.imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Center(
+                        placeholder: (context, url) => const ValoraShimmer(
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                        errorWidget: (context, url, error) => const Center(
                           child: Icon(Icons.home_rounded,
                               color: ValoraColors.primary, size: 28),
                         ),

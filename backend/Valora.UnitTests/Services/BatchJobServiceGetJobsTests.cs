@@ -3,7 +3,6 @@ using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Services;
-using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
 
 namespace Valora.UnitTests.Services;
@@ -30,13 +29,13 @@ public class BatchJobServiceGetJobsTests
         var page = 1;
         var pageSize = 10;
 
-        var jobs = new List<BatchJob>
+        var dtos = new List<BatchJobSummaryDto>
         {
-            new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Completed }
+            new BatchJobSummaryDto(Guid.NewGuid(), BatchJobType.CityIngestion, BatchJobStatus.Completed, "Amsterdam", 100, null, null, DateTime.UtcNow, null, null)
         };
-        var repoList = new PaginatedList<BatchJob>(jobs, 1, 1, 10);
+        var repoList = new PaginatedList<BatchJobSummaryDto>(dtos, 1, 1, 10);
 
-        _jobRepositoryMock.Setup(x => x.GetJobsAsync(
+        _jobRepositoryMock.Setup(x => x.GetJobSummariesAsync(
             page,
             pageSize,
             It.IsAny<BatchJobStatus?>(),
@@ -50,7 +49,7 @@ public class BatchJobServiceGetJobsTests
         var result = await service.GetJobsAsync(page, pageSize, null, null, search, sort);
 
         // Assert
-        _jobRepositoryMock.Verify(x => x.GetJobsAsync(
+        _jobRepositoryMock.Verify(x => x.GetJobSummariesAsync(
             page,
             pageSize,
             null,
@@ -70,9 +69,9 @@ public class BatchJobServiceGetJobsTests
         var service = CreateService();
         var page = 1;
         var pageSize = 10;
-        var repoList = new PaginatedList<BatchJob>(new List<BatchJob>(), 0, 1, 10);
+        var repoList = new PaginatedList<BatchJobSummaryDto>(new List<BatchJobSummaryDto>(), 0, 1, 10);
 
-        _jobRepositoryMock.Setup(x => x.GetJobsAsync(
+        _jobRepositoryMock.Setup(x => x.GetJobSummariesAsync(
             page,
             pageSize,
             null,
@@ -86,7 +85,7 @@ public class BatchJobServiceGetJobsTests
         await service.GetJobsAsync(page, pageSize, null, null, null, null);
 
         // Assert
-        _jobRepositoryMock.Verify(x => x.GetJobsAsync(
+        _jobRepositoryMock.Verify(x => x.GetJobSummariesAsync(
             page,
             pageSize,
             null,
@@ -104,9 +103,9 @@ public class BatchJobServiceGetJobsTests
         var search = "";
         var page = 1;
         var pageSize = 10;
-        var repoList = new PaginatedList<BatchJob>(new List<BatchJob>(), 0, 1, 10);
+        var repoList = new PaginatedList<BatchJobSummaryDto>(new List<BatchJobSummaryDto>(), 0, 1, 10);
 
-        _jobRepositoryMock.Setup(x => x.GetJobsAsync(
+        _jobRepositoryMock.Setup(x => x.GetJobSummariesAsync(
             page,
             pageSize,
             null,
@@ -120,7 +119,7 @@ public class BatchJobServiceGetJobsTests
         await service.GetJobsAsync(page, pageSize, null, null, search, null);
 
         // Assert
-        _jobRepositoryMock.Verify(x => x.GetJobsAsync(
+        _jobRepositoryMock.Verify(x => x.GetJobSummariesAsync(
             page,
             pageSize,
             null,

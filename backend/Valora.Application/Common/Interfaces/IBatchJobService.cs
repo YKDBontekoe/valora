@@ -19,8 +19,8 @@ public record BatchJobDto(
 
 public record BatchJobSummaryDto(
     Guid Id,
-    string Type,
-    string Status,
+    BatchJobType Type,
+    BatchJobStatus Status,
     string Target,
     int Progress,
     string? Error,
