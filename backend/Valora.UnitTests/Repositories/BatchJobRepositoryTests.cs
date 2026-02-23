@@ -160,4 +160,59 @@ public class BatchJobRepositoryTests
         var resultDesc = await repository.GetJobsAsync(1, 10, sort: "target_desc");
         Assert.Equal("Utrecht", resultDesc.Items[0].Target);
     }
+
+    [Fact]
+    public async Task GetJobsAsync_ShouldSortByType()
+    {
+        using var context = new ValoraDbContext(_options);
+        await SeedDatabase(context);
+        var repository = new BatchJobRepository(context);
+
+        // Enum: CityIngestion(0), MapGeneration(1), AllCitiesIngestion(2)
+        // Seed:
+        // Amsterdam: CityIngestion (0)
+        // Rotterdam: MapGeneration (1)
+        // Utrecht: CityIngestion (0)
+        // Netherlands: AllCitiesIngestion (2)
+
+        var resultAsc = await repository.GetJobsAsync(1, 10, sort: "type_asc");
+        Assert.Contains(resultAsc.Items[0].Type, new[] { BatchJobType.CityIngestion, BatchJobType.CityIngestion }); // Should be 0
+        Assert.Equal(BatchJobType.AllCitiesIngestion, resultAsc.Items[3].Type); // Should be 2
+
+        var resultDesc = await repository.GetJobsAsync(1, 10, sort: "type_desc");
+        Assert.Equal(BatchJobType.AllCitiesIngestion, resultDesc.Items[0].Type); // Should be 2
+        Assert.Contains(resultDesc.Items[3].Type, new[] { BatchJobType.CityIngestion, BatchJobType.CityIngestion }); // Should be 0
+    }
+
+    [Fact]
+    public async Task GetJobsAsync_ShouldReturnEmpty_WhenSearchDoesNotMatch()
+    {
+        using var context = new ValoraDbContext(_options);
+        await SeedDatabase(context);
+        var repository = new BatchJobRepository(context);
+
+        var result = await repository.GetJobsAsync(1, 10, search: "NonExistentCity");
+
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task GetJobsAsync_ShouldCombineFilters()
+    {
+        using var context = new ValoraDbContext(_options);
+        await SeedDatabase(context);
+        var repository = new BatchJobRepository(context);
+
+        // Search "dam" (Amsterdam, Rotterdam)
+        // Status Completed (Amsterdam)
+        // Type CityIngestion (Amsterdam)
+
+        var result = await repository.GetJobsAsync(1, 10,
+            status: BatchJobStatus.Completed,
+            type: BatchJobType.CityIngestion,
+            search: "dam");
+
+        Assert.Single(result.Items);
+        Assert.Equal("Amsterdam", result.Items[0].Target);
+    }
 }

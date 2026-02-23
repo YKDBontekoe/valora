@@ -135,4 +135,28 @@ public class BatchJobServiceGetJobsTests
             null,
             It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task GetJobsAsync_ShouldThrow_WhenStatusInvalid()
+    {
+        // Arrange
+        var service = CreateService();
+        var invalidStatus = "InvalidStatus";
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.GetJobsAsync(1, 10, status: invalidStatus));
+    }
+
+    [Fact]
+    public async Task GetJobsAsync_ShouldThrow_WhenTypeInvalid()
+    {
+        // Arrange
+        var service = CreateService();
+        var invalidType = "InvalidType";
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.GetJobsAsync(1, 10, type: invalidType));
+    }
 }
