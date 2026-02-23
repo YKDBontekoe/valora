@@ -64,3 +64,8 @@ class TransientHttpException extends AppException {
   TransientHttpException([String? message])
     : super(message ?? 'Service is temporarily unavailable', 'System Error: ');
 }
+
+class ConflictException extends AppException {
+  ConflictException([String? message])
+    : super(message ?? 'Action could not be completed', 'Conflict: ');
+}

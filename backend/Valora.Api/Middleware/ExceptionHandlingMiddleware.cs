@@ -56,11 +56,17 @@ public class ExceptionHandlingMiddleware
                 detail = "One or more validation errors occurred.";
                 errors = validationEx.Errors;
                 break;
+            case KeyNotFoundException:
             case NotFoundException:
                 statusCode = (int)HttpStatusCode.NotFound;
                 title = "Resource Not Found";
                 // Hide specific not found details in production to prevent enumeration/leakage
                 detail = _env.IsProduction() ? "The requested resource was not found." : exception.Message;
+                break;
+            case InvalidOperationException:
+                statusCode = (int)HttpStatusCode.Conflict;
+                title = "Operation Conflict";
+                detail = exception.Message;
                 break;
             case UnauthorizedAccessException:
                 statusCode = (int)HttpStatusCode.Unauthorized;
