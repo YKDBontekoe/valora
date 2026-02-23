@@ -18,6 +18,11 @@ public class RefreshToken : BaseEntity
 
     public static RefreshToken Create(string userId, TimeProvider timeProvider)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+        }
+
         var randomNumber = new byte[64];
         RandomNumberGenerator.Fill(randomNumber);
 

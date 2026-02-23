@@ -5,12 +5,13 @@ namespace Valora.UnitTests.Domain;
 
 public class RefreshTokenTests
 {
-    [Fact]
-    public void ComputeHash_WithNullOrEmpty_ThrowsArgumentException()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ComputeHash_WithNullOrEmpty_ThrowsArgumentException(string? token)
     {
-        Assert.Throws<ArgumentException>(() => RefreshToken.ComputeHash(null!));
-        Assert.Throws<ArgumentException>(() => RefreshToken.ComputeHash(""));
-        Assert.Throws<ArgumentException>(() => RefreshToken.ComputeHash("   "));
+        Assert.Throws<ArgumentException>(() => RefreshToken.ComputeHash(token!));
     }
 
     [Fact]
@@ -21,5 +22,14 @@ public class RefreshTokenTests
         Assert.NotNull(hash);
         Assert.NotEmpty(hash);
         Assert.NotEqual(token, hash);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_WithInvalidUserId_ThrowsArgumentException(string? userId)
+    {
+        Assert.Throws<ArgumentException>(() => RefreshToken.Create(userId!, TimeProvider.System));
     }
 }
