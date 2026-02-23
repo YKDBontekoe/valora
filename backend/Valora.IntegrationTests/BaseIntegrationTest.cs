@@ -33,6 +33,9 @@ public class BaseIntegrationTest : IAsyncLifetime
         // Explicitly clear Listings to prevent state leakage between tests
         DbContext.Listings.RemoveRange(DbContext.Listings);
 
+        // Clear BatchJobs to prevent state leakage between tests (e.g. BatchJobLifecycleTests)
+        DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
+
         if (DbContext.Users.Any())
         {
             DbContext.Users.RemoveRange(DbContext.Users);
