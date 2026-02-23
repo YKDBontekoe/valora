@@ -53,6 +53,8 @@ const BatchJobs: React.FC = () => {
     setStatusFilter('All');
     setTypeFilter('All');
     setSearchQuery('');
+    setDebouncedSearch('');
+    setSortBy(undefined);
     setPage(1);
   };
 
@@ -131,15 +133,13 @@ const BatchJobs: React.FC = () => {
         confirmLabel: 'Start Ingestion',
         isDestructive: false,
         onConfirm: async () => {
-            setIsStarting(true);
             try {
               await adminService.startJob('AllCitiesIngestion', 'Netherlands');
               showToast('Full dataset ingestion pipeline initiated', 'success');
               fetchJobs();
             } catch {
-               // handled
+              showToast('Failed to start ingestion pipeline. Please try again.', 'error');
             } finally {
-              setIsStarting(false);
               setConfirmation(prev => ({ ...prev, isOpen: false }));
             }
         }

@@ -44,7 +44,11 @@ public class BatchJobRepository : IBatchJobRepository
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(j => j.Target.ToLower().Contains(search.ToLower()));
+            search = search.Trim();
+            // Note: Case-insensitivity depends on database collation.
+            // For SQL Server, default collation is usually case-insensitive.
+            // Removing .ToLower() to make query sargable and improve performance.
+            query = query.Where(j => j.Target.Contains(search));
         }
 
         query = sort switch

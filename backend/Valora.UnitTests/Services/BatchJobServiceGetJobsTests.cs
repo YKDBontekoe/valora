@@ -36,7 +36,11 @@ public class BatchJobServiceGetJobsTests
         {
             new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Completed }
         };
-        var paginatedList = new PaginatedList<BatchJob>(jobs, 1, 1, 10);
+        var paginatedList = new PaginatedList<BatchJobSummaryDto>(
+            jobs.Select(j => new BatchJobSummaryDto(j.Id, j.Type.ToString(), j.Status.ToString(), j.Target, j.Progress, j.Error, j.ResultSummary, j.CreatedAt, j.StartedAt, j.CompletedAt)).ToList(),
+            1, 1, 10
+        );
+        var repoList = new PaginatedList<BatchJob>(jobs, 1, 1, 10);
 
         _jobRepositoryMock.Setup(x => x.GetJobsAsync(
             page,
@@ -46,7 +50,7 @@ public class BatchJobServiceGetJobsTests
             search,
             sort,
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(paginatedList);
+            .ReturnsAsync(repoList);
 
         // Act
         var result = await service.GetJobsAsync(page, pageSize, null, null, search, sort);
@@ -63,5 +67,72 @@ public class BatchJobServiceGetJobsTests
 
         Assert.Single(result.Items);
         Assert.Equal("Amsterdam", result.Items[0].Target);
+    }
+
+    [Fact]
+    public async Task GetJobsAsync_NullSearchAndSort_PassesNulls()
+    {
+        // Arrange
+        var service = CreateService();
+        var page = 1;
+        var pageSize = 10;
+        var repoList = new PaginatedList<BatchJob>(new List<BatchJob>(), 0, 1, 10);
+
+        _jobRepositoryMock.Setup(x => x.GetJobsAsync(
+            page,
+            pageSize,
+            null,
+            null,
+            null,
+            null,
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(repoList);
+
+        // Act
+        await service.GetJobsAsync(page, pageSize, null, null, null, null);
+
+        // Assert
+        _jobRepositoryMock.Verify(x => x.GetJobsAsync(
+            page,
+            pageSize,
+            null,
+            null,
+            null,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetJobsAsync_EmptySearch_PassesEmpty()
+    {
+        // Arrange
+        var service = CreateService();
+        var search = "";
+        var page = 1;
+        var pageSize = 10;
+        var repoList = new PaginatedList<BatchJob>(new List<BatchJob>(), 0, 1, 10);
+
+        _jobRepositoryMock.Setup(x => x.GetJobsAsync(
+            page,
+            pageSize,
+            null,
+            null,
+            search,
+            null,
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(repoList);
+
+        // Act
+        await service.GetJobsAsync(page, pageSize, null, null, search, null);
+
+        // Assert
+        _jobRepositoryMock.Verify(x => x.GetJobsAsync(
+            page,
+            pageSize,
+            null,
+            null,
+            search,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }
