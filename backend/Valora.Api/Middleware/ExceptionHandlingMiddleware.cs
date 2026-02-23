@@ -66,7 +66,8 @@ public class ExceptionHandlingMiddleware
             case InvalidOperationException:
                 statusCode = (int)HttpStatusCode.Conflict;
                 title = "Operation Conflict";
-                detail = exception.Message;
+                // Hide specific details in production to prevent leakage of internal state logic
+                detail = _env.IsProduction() ? "The operation failed due to a conflict with the current state of the resource." : exception.Message;
                 break;
             case UnauthorizedAccessException:
                 statusCode = (int)HttpStatusCode.Unauthorized;
