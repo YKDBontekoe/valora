@@ -84,6 +84,8 @@ public class TokenService : ITokenService
 
     public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
     {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
         var tokenHash = RefreshToken.ComputeHash(token);
         return await _context.RefreshTokens
             .Include(r => r.User)
@@ -92,6 +94,8 @@ public class TokenService : ITokenService
 
     public async Task<RefreshToken?> GetActiveRefreshTokenAsync(string token)
     {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
         var tokenHash = RefreshToken.ComputeHash(token);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -105,6 +109,8 @@ public class TokenService : ITokenService
 
     public async Task RevokeRefreshTokenAsync(string token)
     {
+        if (string.IsNullOrWhiteSpace(token)) return;
+
         var tokenHash = RefreshToken.ComputeHash(token);
         var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
         if (existingToken != null)

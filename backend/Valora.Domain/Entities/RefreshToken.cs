@@ -36,6 +36,11 @@ public class RefreshToken : BaseEntity
 
     public static string ComputeHash(string rawToken)
     {
+        if (string.IsNullOrWhiteSpace(rawToken))
+        {
+            throw new ArgumentException("Token cannot be null or empty.", nameof(rawToken));
+        }
+
         var bytes = Encoding.UTF8.GetBytes(rawToken);
         var hash = SHA256.HashData(bytes);
         return Convert.ToBase64String(hash);
