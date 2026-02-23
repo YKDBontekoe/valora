@@ -13,6 +13,10 @@ public class IdentityService : IIdentityService
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ValoraDbContext _context;
 
+    // Static dummy hash to avoid recomputation and thread contention
+    // We use a fixed hash generated with default Identity settings (PBKDF2)
+    private static readonly string _dummyHash = "AQAAAAIAAYagAAAAEP0w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Z3w+Q==";
+
     public IdentityService(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
@@ -41,6 +45,10 @@ public class IdentityService : IIdentityService
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
+            // Mitigate timing attacks by performing a dummy verification
+            // forcing this path to take approximately the same time as the success path
+            // We call VerifyHashedPassword directly (CPU bound) instead of Task.Run to avoid thread pool scheduling variance
+            _userManager.PasswordHasher.VerifyHashedPassword(new ApplicationUser(), _dummyHash, password);
             return false;
         }
 

@@ -37,8 +37,9 @@ public class IdentityServiceTests : IDisposable
 
         // Setup Mock UserManager
         var store = new Mock<IUserStore<ApplicationUser>>();
+        var hasher = new PasswordHasher<ApplicationUser>();
         _mockUserManager = new Mock<UserManager<ApplicationUser>>(
-            store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
+            store.Object, null!, hasher, null!, null!, null!, null!, null!, null!);
 
         // Make FindByIdAsync return the user
         _mockUserManager.Setup(x => x.FindByIdAsync(_testUser.Id))

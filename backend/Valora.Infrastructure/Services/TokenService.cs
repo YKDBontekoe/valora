@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Valora.Application.Common.Interfaces;
@@ -19,17 +20,20 @@ public class TokenService : ITokenService
     private readonly ValoraDbContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly Microsoft.Extensions.Logging.ILogger<TokenService> _logger;
 
     public TokenService(
         IOptions<JwtOptions> options,
         ValoraDbContext context,
         TimeProvider timeProvider,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        Microsoft.Extensions.Logging.ILogger<TokenService> logger)
     {
         _options = options.Value;
         _context = context;
         _timeProvider = timeProvider;
         _userManager = userManager;
+        _logger = logger;
     }
 
     public async Task<string> CreateJwtTokenAsync(ApplicationUser user)
@@ -124,6 +128,24 @@ public class TokenService : ITokenService
         if (existingToken != null)
         {
             existingToken.Revoked = _timeProvider.GetUtcNow().UtcDateTime;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task RevokeAllRefreshTokensAsync(string userId)
+    {
+        var tokens = await _context.RefreshTokens
+            .Where(r => r.UserId == userId && r.Revoked == null)
+            .ToListAsync();
+
+        if (tokens.Any())
+        {
+            _logger.LogWarning("Security: Revoking all {Count} active refresh tokens for user {UserId}", tokens.Count, userId);
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            foreach (var token in tokens)
+            {
+                token.Revoked = now;
+            }
             await _context.SaveChangesAsync();
         }
     }

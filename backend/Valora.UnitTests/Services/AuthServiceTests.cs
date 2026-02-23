@@ -24,7 +24,7 @@ public class AuthServiceTests
         _mockTokenService = new Mock<ITokenService>();
         _mockLogger = new Mock<ILogger<AuthService>>();
         _mockExternalAuthService = new Mock<IExternalAuthService>();
-        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object, _mockExternalAuthService.Object);
+        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object, _mockExternalAuthService.Object, TimeProvider.System);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class AuthServiceTests
     [Fact]
     public async Task RefreshTokenAsync_InvalidToken_ReturnsNull()
     {
-        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("bad")).ReturnsAsync((RefreshToken?)null);
+        _mockTokenService.Setup(x => x.GetRefreshTokenAsync("bad")).ReturnsAsync((RefreshToken?)null);
         var result = await _authService.RefreshTokenAsync("bad");
         Assert.Null(result);
     }
@@ -96,19 +96,23 @@ public class AuthServiceTests
     [Fact]
     public async Task RefreshTokenAsync_RevokedToken_ReturnsNull()
     {
-        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("revoked"))
-            .ReturnsAsync((RefreshToken?)null);
+        // Reuse detection logic: returns null and revokes all tokens
+        var revokedToken = new RefreshToken { UserId = "1", Revoked = DateTime.UtcNow.AddMinutes(-10) };
+        _mockTokenService.Setup(x => x.GetRefreshTokenAsync("revoked"))
+            .ReturnsAsync(revokedToken);
 
         var result = await _authService.RefreshTokenAsync("revoked");
 
         Assert.Null(result);
+        _mockTokenService.Verify(x => x.RevokeAllRefreshTokensAsync("1"), Times.Once);
     }
 
     [Fact]
     public async Task RefreshTokenAsync_ExpiredToken_ReturnsNull()
     {
-        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("expired"))
-            .ReturnsAsync((RefreshToken?)null);
+        var expiredToken = new RefreshToken { UserId = "1", Expires = DateTime.UtcNow.AddMinutes(-10) };
+        _mockTokenService.Setup(x => x.GetRefreshTokenAsync("expired"))
+            .ReturnsAsync(expiredToken);
 
         var result = await _authService.RefreshTokenAsync("expired");
 
@@ -123,11 +127,12 @@ public class AuthServiceTests
         {
             RawToken = "old",
             UserId = "1",
-            User = user
+            User = user,
+            Expires = DateTime.UtcNow.AddMinutes(10)
         };
         var newToken = new RefreshToken { RawToken = "new", UserId = "1" };
 
-        _mockTokenService.Setup(x => x.GetActiveRefreshTokenAsync("old")).ReturnsAsync(oldToken);
+        _mockTokenService.Setup(x => x.GetRefreshTokenAsync("old")).ReturnsAsync(oldToken);
         _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(newToken);
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("new_access");
 

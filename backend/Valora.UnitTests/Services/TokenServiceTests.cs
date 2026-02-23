@@ -66,7 +66,8 @@ public class TokenServiceTests
             _mockOptions.Object,
             new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object,
             TimeProvider.System,
-            _mockUserManager.Object);
+            _mockUserManager.Object,
+            Mock.Of<ILogger<TokenService>>());
 
         var user = new ApplicationUser
         {
@@ -119,7 +120,8 @@ public class TokenServiceTests
             _mockOptions.Object,
             new Mock<ValoraDbContext>(new DbContextOptions<ValoraDbContext>()).Object,
             TimeProvider.System,
-            _mockUserManager.Object);
+            _mockUserManager.Object,
+            Mock.Of<ILogger<TokenService>>());
 
         var user = new ApplicationUser { Id = "1", UserName = "test" };
 

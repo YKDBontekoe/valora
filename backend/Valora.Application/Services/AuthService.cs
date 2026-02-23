@@ -15,13 +15,15 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly ILogger<AuthService> _logger;
     private readonly IExternalAuthService _externalAuthService;
+    private readonly TimeProvider _timeProvider;
 
-    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger, IExternalAuthService externalAuthService)
+    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger, IExternalAuthService externalAuthService, TimeProvider timeProvider)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _logger = logger;
         _externalAuthService = externalAuthService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result> RegisterAsync(RegisterDto registerDto)
@@ -74,9 +76,28 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
     {
-        var existingToken = await _tokenService.GetActiveRefreshTokenAsync(refreshToken);
+        var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
 
-        if (existingToken == null || existingToken.User == null)
+        if (existingToken == null)
+        {
+            return null;
+        }
+
+        // Reuse Detection: If token is already revoked, it might be a theft attempt.
+        if (existingToken.Revoked != null)
+        {
+            _logger.LogWarning("Security Alert: Reuse of revoked refresh token detected for user {UserId}. Revoking all sessions.", existingToken.UserId);
+            await _tokenService.RevokeAllRefreshTokensAsync(existingToken.UserId);
+            return null;
+        }
+
+        // Check if expired
+        if (existingToken.Expires <= _timeProvider.GetUtcNow().UtcDateTime)
+        {
+            return null;
+        }
+
+        if (existingToken.User == null)
         {
             return null;
         }
@@ -133,8 +154,66 @@ public class AuthService : IAuthService
 
     private static string GenerateRandomPassword()
     {
-        // Generates a password satisfying the requirement:
-        // 8+ chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
-        return Guid.NewGuid().ToString("N") + "A1!";
+        // Generates a cryptographically strong password
+        // Requirements: 16 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
+        const string uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string lowers = "abcdefghijklmnopqrstuvwxyz";
+        const string digits = "0123456789";
+        const string specials = "!@#$%^&*()";
+        const string allChars = uppers + lowers + digits + specials;
+
+        var chars = new char[16];
+
+        // Ensure at least one of each required type
+        chars[0] = GetRandomChar(uppers);
+        chars[1] = GetRandomChar(lowers);
+        chars[2] = GetRandomChar(digits);
+        chars[3] = GetRandomChar(specials);
+
+        // Fill the rest randomly
+        for (int i = 4; i < chars.Length; i++)
+        {
+            chars[i] = GetRandomChar(allChars);
+        }
+
+        // Shuffle the result to avoid predictable pattern at start
+        // Fisher-Yates shuffle
+        for (int i = chars.Length - 1; i > 0; i--)
+        {
+            // Random index from 0 to i (inclusive)
+            int j = GetRandomInt(i + 1);
+            (chars[i], chars[j]) = (chars[j], chars[i]);
+        }
+
+        return new string(chars);
+    }
+
+    /// <summary>
+    /// Selects a random character from the given set using unbiased rejection sampling.
+    /// </summary>
+    private static char GetRandomChar(string charSet)
+    {
+        if (string.IsNullOrEmpty(charSet)) throw new ArgumentException("Character set cannot be empty", nameof(charSet));
+        return charSet[GetRandomInt(charSet.Length)];
+    }
+
+    /// <summary>
+    /// Generates a random integer between 0 (inclusive) and max (exclusive) using unbiased rejection sampling.
+    /// </summary>
+    private static int GetRandomInt(int max)
+    {
+        if (max <= 0) throw new ArgumentOutOfRangeException(nameof(max));
+
+        // Determine how many full sets of 'max' fit into the byte range [0, 255]
+        // This is the "fair" range. Any value >= this limit is rejected to avoid bias.
+        int limit = (256 / max) * max;
+
+        byte[] buffer = new byte[1];
+        do
+        {
+            System.Security.Cryptography.RandomNumberGenerator.Fill(buffer);
+        } while (buffer[0] >= limit);
+
+        return buffer[0] % max;
     }
 }
