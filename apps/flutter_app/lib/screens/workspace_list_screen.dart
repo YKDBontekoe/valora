@@ -89,9 +89,11 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                 const SizedBox(height: ValoraSpacing.sm),
             itemBuilder: (context, index) {
               final workspace = provider.workspaces[index];
-              return ValoraListItem(
-                title: workspace.name,
-                onTap: () {
+              return KeyedSubtree(
+                key: ValueKey(workspace.id),
+                child: ValoraListItem(
+                  title: workspace.name,
+                  onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -154,11 +156,12 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                       ),
                     ),
                   ],
-                ),
-              )
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: (50 * index).ms)
-                  .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut);
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: (50 * index).ms)
+                    .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut),
+              );
             },
           );
         },

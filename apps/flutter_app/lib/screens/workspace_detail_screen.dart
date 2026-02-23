@@ -142,9 +142,11 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
       itemBuilder: (context, index) {
         final saved = provider.savedListings[index];
         final listing = saved.listing;
-        return ValoraListItem(
-          onTap: () {
-            Navigator.push(
+        return KeyedSubtree(
+          key: ValueKey(saved.id),
+          child: ValoraListItem(
+            onTap: () {
+              Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => ChangeNotifierProvider.value(
@@ -232,12 +234,13 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                   ],
                 ],
               ),
-            ],
-          ),
-        )
-            .animate()
-            .fadeIn(duration: 400.ms, delay: (50 * index).ms)
-            .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut);
+              ],
+            ),
+          )
+              .animate()
+              .fadeIn(duration: 400.ms, delay: (50 * index).ms)
+              .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut),
+        );
       },
     );
   }
