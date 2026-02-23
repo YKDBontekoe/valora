@@ -13,15 +13,7 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
     {
     }
 
-    public override async Task InitializeAsync()
-    {
-        // Need to be careful with initialization as BaseIntegrationTest might have its own logic.
-        // But here we just want to clear BatchJobs.
-        // Calling base.InitializeAsync() first.
-        await base.InitializeAsync();
-        DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
-        await DbContext.SaveChangesAsync();
-    }
+    // InitializeAsync is now handled in BaseIntegrationTest for BatchJobs cleanup
 
     [Fact]
     public async Task GetJobs_ShouldReturnPaginatedJobs()
