@@ -87,9 +87,9 @@ graph TD
     end
 
     subgraph "Valora Backend"
-        API[API Layer (Valora.Api)]
-        App[Application Layer (MediatR)]
-        Domain[Domain Layer (Entities)]
+        API["API Layer (Valora.Api)"]
+        App["Application Layer (MediatR)"]
+        Domain["Domain Layer (Entities)"]
         Infra[Infrastructure Layer]
     end
 
