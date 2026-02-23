@@ -10,6 +10,24 @@ import JobDetailsModal from './JobDetailsModal';
 import DatasetStatusModal from './DatasetStatusModal';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 
+const listVariants = {
+  visible: {
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const rowVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+  },
+  exit: { opacity: 0, x: 10, transition: { duration: 0.2 } }
+};
+
 const BatchJobs: React.FC = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -175,42 +193,42 @@ const BatchJobs: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10">
-      <div className="flex items-center justify-between">
+    <div className="space-y-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-brand-900 tracking-tight">Batch Jobs</h1>
-          <p className="text-brand-500 mt-2 font-medium">Automated data ingestion and synchronization pipelines.</p>
+          <h1 className="text-5xl font-black text-brand-900 tracking-tightest">Batch Jobs</h1>
+          <p className="text-brand-400 mt-3 font-bold text-lg">Automated data ingestion and synchronization pipelines.</p>
         </div>
-        <div className="hidden md:flex items-center gap-4 px-6 py-3 bg-white rounded-2xl border border-brand-100 shadow-premium">
-            <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${health?.status === 'Healthy' ? 'bg-success-500 animate-pulse' : 'bg-error-500'}`} />
-                <span className="text-xs font-bold text-brand-700">Cluster: Primary-A</span>
+        <div className="flex items-center gap-4 px-6 py-4 bg-white rounded-2xl border border-brand-100 shadow-premium group cursor-default">
+            <div className="flex items-center gap-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${health?.status === 'Healthy' ? 'bg-success-500 animate-pulse' : 'bg-error-500'}`} />
+                <span className="text-[10px] font-black text-brand-900 uppercase tracking-widest">Cluster: Primary-A</span>
             </div>
-            <div className="w-px h-4 bg-brand-100" />
-            <div className="flex items-center gap-2">
-                <Activity size={14} className={health?.status === 'Healthy' ? "text-success-500" : "text-error-500"} />
-                <span className="text-xs font-bold text-brand-700">{health?.status || 'Connecting...'}</span>
+            <div className="w-px h-6 bg-brand-100" />
+            <div className="flex items-center gap-3">
+                <Activity size={16} className={health?.status === 'Healthy' ? "text-success-500" : "text-error-500"} />
+                <span className="text-sm font-black text-brand-900">{health?.status || 'Connecting...'}</span>
             </div>
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-[2rem] border border-brand-100 shadow-premium relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-8 text-brand-50 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-6 opacity-50">
-            <Database size={160} />
+      <div className="bg-white p-10 rounded-[2.5rem] border border-brand-100 shadow-premium relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-10 text-brand-50 transition-transform duration-1000 group-hover:scale-125 group-hover:rotate-12 opacity-50">
+            <Database size={200} />
         </div>
         <div className="relative z-10">
-            <h2 className="text-xl font-black text-brand-900 mb-6 flex items-center gap-2">
-                <Sparkles className="text-primary-500" size={20} />
+            <h2 className="text-2xl font-black text-brand-900 mb-8 flex items-center gap-3">
+                <Sparkles className="text-primary-500" size={24} />
                 Start Ingestion Pipeline
             </h2>
-            <form onSubmit={handleStartJob} className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 group">
+            <form onSubmit={handleStartJob} className="flex flex-col sm:flex-row gap-5">
+              <div className="flex-1 relative group/input">
                 <input
                   type="text"
                   placeholder="Target City (e.g. Rotterdam)"
                   value={targetCity}
                   onChange={(e) => setTargetCity(e.target.value)}
-                  className="w-full px-5 py-4 bg-brand-50/50 rounded-[1.25rem] border border-brand-100 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-bold text-brand-900"
+                  className="w-full px-6 py-5 bg-brand-50/50 rounded-2xl border border-brand-100 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 placeholder:text-brand-300 placeholder:font-bold"
                   disabled={isStarting}
                 />
               </div>
@@ -219,20 +237,20 @@ const BatchJobs: React.FC = () => {
                 variant="secondary"
                 disabled={isStarting || !targetCity}
                 isLoading={isStarting}
-                leftIcon={!isStarting && <Play size={18} fill="currentColor" />}
-                className="px-8"
+                leftIcon={!isStarting && <Play size={20} fill="currentColor" />}
+                className="px-10"
               >
                 Execute Pipeline
               </Button>
             </form>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-8 pt-6 border-t border-brand-100/50">
+            <div className="flex flex-col sm:flex-row items-center gap-6 mt-10 pt-8 border-t border-brand-100/50">
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsDatasetModalOpen(true)}
-                    leftIcon={<Layers size={16} />}
-                    className="text-brand-600 hover:bg-brand-50 font-bold"
+                    leftIcon={<Layers size={18} />}
+                    className="text-brand-500 hover:bg-brand-50 font-black"
                 >
                     View Dataset Status
                 </Button>
@@ -242,36 +260,36 @@ const BatchJobs: React.FC = () => {
                     size="sm"
                     onClick={handleIngestAll}
                     disabled={isStarting}
-                    leftIcon={<Globe size={16} />}
-                    className="w-full sm:w-auto border-brand-200 text-brand-600 hover:bg-brand-50 font-bold"
+                    leftIcon={<Globe size={18} />}
+                    className="w-full sm:w-auto border-brand-200 text-brand-500 hover:bg-brand-50 font-black"
                 >
                     Ingest All Netherlands
                 </Button>
             </div>
 
-            <p className="text-[10px] text-brand-400 mt-4 font-bold uppercase tracking-wider">
-                Note: Ingestion jobs are resource-intensive. Avoid overlapping same-city jobs.
+            <p className="text-[10px] text-brand-300 mt-6 font-black uppercase tracking-[0.2em]">
+                Warning: Ingestion jobs are resource-intensive. Avoid overlapping same-city jobs.
             </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-brand-100 shadow-premium overflow-hidden">
-        <div className="px-8 py-6 border-b border-brand-100 bg-brand-50/30 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            <h2 className="font-black text-brand-900 uppercase tracking-wider text-xs whitespace-nowrap">Pipeline Execution History</h2>
-             <div className="relative max-w-xs w-full group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-400 group-focus-within:text-primary-500 transition-colors" />
+      <div className="bg-white rounded-[2.5rem] border border-brand-100 shadow-premium overflow-hidden">
+        <div className="px-10 py-8 border-b border-brand-100 bg-brand-50/30 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex items-center gap-6 flex-1">
+            <h2 className="font-black text-brand-900 uppercase tracking-[0.2em] text-xs whitespace-nowrap">Pipeline History</h2>
+             <div className="relative max-w-sm w-full group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-brand-300 group-focus-within:text-primary-500 transition-colors" />
                 <input
                     type="text"
                     placeholder="Search by target..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-brand-900 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:font-medium"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-brand-100 rounded-xl text-sm font-black text-brand-900 outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:font-bold placeholder:text-brand-200"
                 />
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <AnimatePresence>
                 {hasActiveFilters && (
                     <motion.div
@@ -283,7 +301,7 @@ const BatchJobs: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             onClick={clearFilters}
-                            leftIcon={<X size={14} />}
+                            leftIcon={<X size={16} />}
                             className="text-brand-400 hover:text-brand-600 hover:bg-brand-50 mr-2"
                         >
                             Clear
@@ -294,7 +312,7 @@ const BatchJobs: React.FC = () => {
               <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  className="px-4 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-brand-700 outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer hover:border-brand-200 transition-colors"
+                  className="px-5 py-2.5 bg-white border border-brand-100 rounded-xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 cursor-pointer hover:border-brand-200 transition-colors appearance-none"
               >
                   <option value="All">All Statuses</option>
                   <option value="Pending">Pending</option>
@@ -305,7 +323,7 @@ const BatchJobs: React.FC = () => {
                <select
                   value={typeFilter}
                   onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-                  className="px-4 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-brand-700 outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer hover:border-brand-200 transition-colors"
+                  className="px-5 py-2.5 bg-white border border-brand-100 rounded-xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 cursor-pointer hover:border-brand-200 transition-colors appearance-none"
               >
                   <option value="All">All Types</option>
                   <option value="CityIngestion">CityIngestion</option>
@@ -313,7 +331,7 @@ const BatchJobs: React.FC = () => {
                   <option value="AllCitiesIngestion">AllCitiesIngestion</option>
               </select>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-primary-50 px-3 py-1.5 rounded-full border border-primary-100/50 ml-2">
                 <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
                 <span className="text-[10px] font-black text-primary-700 uppercase tracking-wider hidden sm:inline">Live</span>
             </div>
@@ -324,87 +342,92 @@ const BatchJobs: React.FC = () => {
             <thead>
               <tr className="bg-brand-50/10">
                 <th
-                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
                     onClick={() => toggleSort('type')}
                 >
-                    <div className="flex items-center gap-1">
-                        Job Definition
+                    <div className="flex items-center gap-2">
+                        Definition
                         <div className="flex flex-col">
-                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'type_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
-                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'type_desc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'type_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                            <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'type_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
                         </div>
                     </div>
                 </th>
                 <th
-                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
                     onClick={() => toggleSort('target')}
                 >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         Target
                         <div className="flex flex-col">
-                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'target_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
-                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'target_desc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'target_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                            <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'target_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
                         </div>
                     </div>
                 </th>
                 <th
-                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
                     onClick={() => toggleSort('status')}
                 >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         Status
                         <div className="flex flex-col">
-                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'status_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
-                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'status_desc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'status_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                            <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'status_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
                         </div>
                     </div>
                 </th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Internal Progress</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider">Details</th>
+                <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Progress</th>
+                <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Context</th>
                 <th
-                    className="px-8 py-4 text-left text-[10px] font-black text-brand-400 uppercase tracking-wider cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
                     onClick={() => toggleSort('createdAt')}
                 >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         Timestamp
                         <div className="flex flex-col">
-                            <ArrowUp className={`w-2 h-2 -mb-0.5 transition-colors ${sortBy === 'createdAt_asc' ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
-                            <ArrowDown className={`w-2 h-2 transition-colors ${sortBy === 'createdAt_desc' || (!sortBy) ? 'text-primary-600' : 'text-brand-300 group-hover:text-brand-400'}`} />
+                            <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'createdAt_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                            <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'createdAt_desc' || (!sortBy) ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
                         </div>
                     </div>
                 </th>
-                <th className="px-8 py-4 text-right text-[10px] font-black text-brand-400 uppercase tracking-wider">Action</th>
+                <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-100">
+            <motion.tbody
+                initial="hidden"
+                animate="visible"
+                variants={listVariants}
+                className="divide-y divide-brand-100"
+            >
               {loading && jobs.length === 0 ? (
                 [...Array(5)].map((_, i) => (
                     <tr key={i}>
-                        <td className="px-8 py-6"><Skeleton variant="text" width="40%" /></td>
-                        <td className="px-8 py-6"><Skeleton variant="text" width="60%" /></td>
-                        <td className="px-8 py-6"><Skeleton variant="rectangular" width={80} height={24} className="rounded-lg" /></td>
-                        <td className="px-8 py-6"><Skeleton variant="rectangular" width="100%" height={8} className="rounded-full" /></td>
-                        <td className="px-8 py-6"><Skeleton variant="text" width="50%" /></td>
-                        <td className="px-8 py-6"><Skeleton variant="text" width="80%" /></td>
-                        <td className="px-8 py-6"></td>
+                        <td className="px-10 py-6"><Skeleton variant="text" width="40%" /></td>
+                        <td className="px-10 py-6"><Skeleton variant="text" width="60%" /></td>
+                        <td className="px-10 py-6"><Skeleton variant="rectangular" width={80} height={24} className="rounded-lg" /></td>
+                        <td className="px-10 py-6"><Skeleton variant="rectangular" width="100%" height={8} className="rounded-full" /></td>
+                        <td className="px-10 py-6"><Skeleton variant="text" width="50%" /></td>
+                        <td className="px-10 py-6"><Skeleton variant="text" width="80%" /></td>
+                        <td className="px-10 py-6"></td>
                     </tr>
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="px-8 py-16 text-center">
-                    <div className="flex flex-col items-center gap-4 text-error-500">
-                        <AlertCircle size={32} className="opacity-50" />
-                        <span className="font-bold">{error}</span>
-                        <Button onClick={fetchJobs} variant="outline" size="sm" className="mt-2 border-error-200 text-error-700">Retry</Button>
+                  <td colSpan={7} className="px-10 py-20 text-center">
+                    <div className="flex flex-col items-center gap-6 text-error-500">
+                        <AlertCircle size={48} className="opacity-20" />
+                        <span className="font-black text-xl">{error}</span>
+                        <Button onClick={fetchJobs} variant="outline" size="sm" className="mt-4 border-error-200 text-error-700">Retry Pipeline Sync</Button>
                     </div>
                   </td>
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-8 py-16 text-center">
-                    <div className="flex flex-col items-center gap-2 text-brand-400">
-                        <Activity size={32} className="opacity-20 mb-2" />
-                        <span className="font-bold">No pipeline history available.</span>
+                  <td colSpan={7} className="px-10 py-24 text-center">
+                    <div className="flex flex-col items-center gap-4 text-brand-200">
+                        <Activity size={64} className="opacity-10 mb-2" />
+                        <span className="font-black text-xl uppercase tracking-widest">Empty Pipeline History</span>
                     </div>
                   </td>
                 </tr>
@@ -413,83 +436,84 @@ const BatchJobs: React.FC = () => {
                   {jobs.map((job) => (
                     <motion.tr
                       key={job.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="hover:bg-brand-50/50 transition-colors group cursor-pointer"
+                      variants={rowVariants}
+                      whileHover={{ scale: 1.005, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
+                      className="group cursor-pointer relative"
                       onClick={() => openDetails(job.id)}
                     >
-                      <td className="px-8 py-5 whitespace-nowrap">
+                      <td className="px-10 py-6 whitespace-nowrap">
                         <div className="flex flex-col">
-                            <span className="text-sm font-black text-brand-900">{job.type}</span>
-                            <span className="text-[10px] text-brand-400 uppercase tracking-tighter">Job ID: {job.id.slice(0, 8)}...</span>
+                            <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{job.type}</span>
+                            <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-0.5">ID: {job.id.slice(0, 8)}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-brand-600">{job.target}</td>
-                      <td className="px-8 py-5 whitespace-nowrap">
+                      <td className="px-10 py-6 whitespace-nowrap text-sm font-black text-brand-600">{job.target}</td>
+                      <td className="px-10 py-6 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <span className={getStatusBadge(job.status)}>{job.status}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5 whitespace-nowrap">
-                        <div className="flex flex-col gap-2">
-                            <div className="w-full bg-brand-100 rounded-full h-2 min-w-[120px] overflow-hidden relative">
+                      <td className="px-10 py-6 whitespace-nowrap">
+                        <div className="flex flex-col gap-2.5">
+                            <div className="w-full bg-brand-50 rounded-full h-2.5 min-w-[140px] overflow-hidden relative border border-brand-100/50">
                               <motion.div
-                                className={`h-2 rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500' : 'bg-primary-600'}`}
+                                className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]'}`}
                                 initial={{ width: 0 }}
                                 animate={{ width: `${job.progress}%` }}
-                                transition={{ duration: 1, ease: "easeOut" }}
+                                transition={{ duration: 1.2, ease: "circOut" }}
                               >
                                 {job.status === 'Processing' && (
                                   <motion.div
-                                    className="absolute inset-0 bg-white/30"
-                                    animate={{ x: ['-100%', '100%'] }}
-                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent"
+                                    animate={{ x: ['-100%', '200%'] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                   />
                                 )}
                               </motion.div>
                             </div>
-                            <span className="text-[10px] text-brand-400 font-black tracking-wider">{job.progress}% COMPLETE</span>
+                            <span className="text-[10px] text-brand-400 font-black tracking-widest">{job.progress}% COMPLETE</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5 whitespace-nowrap">
-                          <div className="flex items-center gap-2 text-brand-600 text-sm font-medium max-w-[200px] truncate">
-                              {(job.error || job.resultSummary) && <Info size={14} className="text-brand-300 flex-shrink-0" />}
-                              {job.error ? 'Pipeline Error (see logs)' : (job.resultSummary || '-')}
+                      <td className="px-10 py-6 whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-brand-500 text-sm font-bold max-w-[220px] truncate">
+                              {(job.error || job.resultSummary) && <Info size={14} className="text-brand-200 flex-shrink-0" />}
+                              {job.error ? 'Pipeline Fault (check logs)' : (job.resultSummary || 'No summary available')}
                           </div>
                       </td>
-                      <td className="px-8 py-5 whitespace-nowrap text-[11px] font-bold text-brand-500">
+                      <td className="px-10 py-6 whitespace-nowrap text-[11px] font-black text-brand-400">
                         {new Date(job.createdAt).toLocaleString()}
                       </td>
-                       <td className="px-8 py-5 whitespace-nowrap text-right">
+                       <td className="px-10 py-6 whitespace-nowrap text-right">
                          <Button
                             variant="ghost"
                             size="sm"
-                            className="text-brand-400 hover:text-brand-600 hover:bg-brand-100"
+                            className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
                             onClick={(e) => { e.stopPropagation(); openDetails(job.id); }}
                          >
-                            View
+                            Details
                          </Button>
                        </td>
                     </motion.tr>
                   ))}
                 </AnimatePresence>
               )}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        <div className="px-8 py-6 border-t border-brand-100 bg-brand-50/10 flex items-center justify-between">
-          <div className="text-[10px] font-black text-brand-400 uppercase tracking-[0.1em]">
-            Page <span className="text-brand-900">{page}</span> <span className="mx-2 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+        <div className="px-10 py-8 border-t border-brand-100 bg-brand-50/10 flex items-center justify-between">
+          <div className="text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">
+            Sequence <span className="text-brand-900">{page}</span> <span className="mx-3 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <Button
               variant="outline"
               size="sm"
               onClick={prevPage}
               disabled={page === 1 || loading}
-              leftIcon={<ChevronLeft size={14} />}
+              leftIcon={<ChevronLeft size={16} />}
+              className="font-black"
             >
               Previous
             </Button>
@@ -498,7 +522,8 @@ const BatchJobs: React.FC = () => {
               size="sm"
               onClick={nextPage}
               disabled={page === totalPages || loading}
-              rightIcon={<ChevronRight size={14} />}
+              rightIcon={<ChevronRight size={16} />}
+              className="font-black"
             >
               Next
             </Button>

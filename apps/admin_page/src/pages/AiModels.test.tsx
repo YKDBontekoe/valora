@@ -56,9 +56,9 @@ describe('AiModels Page', () => {
 
     await waitFor(() => screen.getByText('test-intent'));
 
-    fireEvent.click(screen.getByText('Configure'));
+    fireEvent.click(screen.getByText('Modify'));
 
-    expect(screen.getByText('Edit Configuration')).toBeInTheDocument();
+    expect(screen.getByText('Edit Policy')).toBeInTheDocument();
     expect(screen.getByDisplayValue('test-intent')).toBeDisabled();
 
     // Select should have the value 'test-model'
@@ -86,12 +86,12 @@ describe('AiModels Page', () => {
     render(<MemoryRouter><AiModels /></MemoryRouter>);
 
     await waitFor(() => screen.getByText('test-intent'));
-    fireEvent.click(screen.getByText('Configure'));
+    fireEvent.click(screen.getByText('Modify'));
 
     const primaryModelSelect = screen.getByRole('combobox', { name: /primary model/i });
     fireEvent.change(primaryModelSelect, { target: { value: 'new-model' } });
 
-    fireEvent.click(screen.getByText('Apply Changes'));
+    fireEvent.click(screen.getByText('Commit Policy'));
 
     await waitFor(() => {
       expect(aiService.updateConfig).toHaveBeenCalledWith('test-intent', expect.objectContaining({

@@ -26,7 +26,7 @@ describe('Users Page', () => {
 
     render(<Users />);
 
-    expect(screen.getByText('User Management')).toBeInTheDocument();
+    expect(screen.getByText('Users')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('user@example.com')).toBeInTheDocument();

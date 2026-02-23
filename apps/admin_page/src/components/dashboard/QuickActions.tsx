@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { RefreshCw, PlayCircle, Filter } from 'lucide-react';
+import { RefreshCw, PlayCircle, Users, Activity } from 'lucide-react';
 import Button from '../Button';
 import { adminService } from '../../services/api';
 import { showToast } from '../../services/toast';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 interface QuickActionsProps {
   onRefreshStats: () => void;
@@ -20,7 +21,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
       const failedJobs = response.items;
 
       if (failedJobs.length === 0) {
-        showToast('No failed jobs found.', 'info');
+        showToast('No failed jobs found in the cluster.', 'info');
         setRetrying(false);
         return;
       }
@@ -35,47 +36,74 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         }
       }
 
-      showToast(`Retried ${successCount} failed jobs.`, 'success');
-    } catch (error) { console.error(error);
-        showToast('Failed to retry jobs.', 'error');
+      showToast(`Successfully re-queued ${successCount} failed jobs.`, 'success');
+      onRefreshStats();
+    } catch (error) {
+        console.error(error);
+        showToast('System failed to re-queue jobs.', 'error');
     } finally {
       setRetrying(false);
     }
   };
 
-  return (
-    <div className="mt-8 p-8 bg-white rounded-[2rem] border border-brand-100 shadow-premium relative overflow-hidden group">
-      {/* Subtle background icon */}
-      <div className="absolute -right-4 -bottom-4 text-brand-50 transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-12 opacity-50">
-          <PlayCircle size={120} />
-      </div>
+  const actionCards = [
+      {
+          title: 'Sync Cluster',
+          description: 'Force a full refresh of system metrics.',
+          icon: RefreshCw,
+          onClick: onRefreshStats,
+          color: 'text-primary-600',
+          bg: 'bg-primary-50',
+          hoverBg: 'hover:bg-primary-100/50'
+      },
+      {
+          title: 'Retry Pipeline',
+          description: 'Re-queue all currently failed batch jobs.',
+          icon: PlayCircle,
+          onClick: handleRetryFailedJobs,
+          isLoading: retrying,
+          color: 'text-warning-600',
+          bg: 'bg-warning-50',
+          hoverBg: 'hover:bg-warning-100/50'
+      },
+      {
+          title: 'User Control',
+          description: 'Navigate to enterprise user management.',
+          icon: Users,
+          onClick: () => navigate('/users'),
+          color: 'text-info-600',
+          bg: 'bg-info-50',
+          hoverBg: 'hover:bg-info-100/50'
+      }
+  ];
 
-      <h2 className="text-xl font-black text-brand-900 mb-6 tracking-tight relative z-10">Administrative Control</h2>
-      <div className="flex flex-wrap gap-4 relative z-10">
-        <Button
-            onClick={onRefreshStats}
-            variant="outline"
-            leftIcon={<RefreshCw className="w-4 h-4" />}
-        >
-          Refresh Status
-        </Button>
-        <Button
-            onClick={handleRetryFailedJobs}
-            isLoading={retrying}
-            variant="outline"
-            className="border-warning-200 text-warning-700 hover:bg-warning-50"
-            leftIcon={<PlayCircle className="w-4 h-4" />}
-        >
-          Retry Failed Jobs
-        </Button>
-        <Button
-            onClick={() => navigate('/users')}
-            variant="outline"
-            leftIcon={<Filter className="w-4 h-4" />}
-        >
-          Manage Users
-        </Button>
-      </div>
+  return (
+    <div className="h-full flex flex-col gap-8">
+        <div className="flex items-center gap-3">
+            <Activity className="text-primary-600" size={20} />
+            <h2 className="text-xl font-black text-brand-900 uppercase tracking-widest">Control Center</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-4">
+            {actionCards.map((action, idx) => (
+                <motion.button
+                    key={action.title}
+                    whileHover={{ x: 8 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={action.onClick}
+                    disabled={action.isLoading}
+                    className={`flex items-center gap-5 p-6 bg-white rounded-3xl border border-brand-100 shadow-premium hover:shadow-premium-lg transition-all duration-300 text-left group ${action.hoverBg}`}
+                >
+                    <div className={`w-14 h-14 ${action.bg} rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+                        <action.icon className={`w-7 h-7 ${action.color} ${action.isLoading ? 'animate-spin' : ''}`} />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-lg font-black text-brand-900 leading-tight">{action.title}</h3>
+                        <p className="text-xs font-bold text-brand-400 mt-1">{action.description}</p>
+                    </div>
+                </motion.button>
+            ))}
+        </div>
     </div>
   );
 };
