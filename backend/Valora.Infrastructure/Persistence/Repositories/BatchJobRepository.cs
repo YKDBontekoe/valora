@@ -71,53 +71,45 @@ public class BatchJobRepository : IBatchJobRepository
 
     /// <summary>
     /// Atomically claims the next pending job.
-    /// Implementation attempts to use an optimistic concurrency approach by fetching
-    /// and then attempting to update the status. If concurrent update occurs, EF Core
-    /// throws DbUpdateConcurrencyException, which can be retried or simply skipped
-    /// (returning null so another worker picks up the next one).
+    /// Uses ExecuteUpdateAsync (EF Core 7+) to perform an atomic update on the database
+    /// without needing explicit transactions or locking hints, ensuring only one worker
+    /// successfully claims a specific job.
     /// </summary>
     public async Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken);
+        // 1. Fetch the ID of a potential job to process.
+        // We don't lock here; we just need a candidate.
+        var candidateId = await _context.BatchJobs
+            .Where(x => x.Status == BatchJobStatus.Pending)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        try
+        if (candidateId == Guid.Empty)
         {
-            // Simple approach: fetch first, lock via update.
-            // Ideally we'd use raw SQL for "SKIP LOCKED" but that is provider specific.
-            // For general EF Core compatibility without provider specifics, we rely on transaction isolation.
-
-            // To prevent race conditions better, we can execute a direct SQL update if we knew the provider.
-            // Assuming we want to stick to EF Core abstractions:
-
-            var job = await _context.BatchJobs
-                .Where(x => x.Status == BatchJobStatus.Pending)
-                .OrderBy(x => x.CreatedAt)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (job != null)
-            {
-                // Optimistic claim attempt
-                job.Status = BatchJobStatus.Processing;
-                job.StartedAt = DateTime.UtcNow;
-
-                // Save immediately to lock it in
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-                return job;
-            }
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            // Another worker claimed it first.
-            await transaction.RollbackAsync(cancellationToken);
             return null;
         }
-        catch (Exception)
+
+        // 2. Attempt to atomically claim this specific job.
+        // This update will only succeed (return 1) if the status is still Pending at the moment of execution.
+        var rowsAffected = await _context.BatchJobs
+            .Where(x => x.Id == candidateId && x.Status == BatchJobStatus.Pending)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(j => j.Status, BatchJobStatus.Processing)
+                .SetProperty(j => j.StartedAt, DateTime.UtcNow),
+                cancellationToken);
+
+        if (rowsAffected > 0)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
+            // 3. If claimed successfully, return the full entity.
+            // We fetch it again to get the updated state (and all properties).
+            // Since we just claimed it, we are the owner.
+            return await _context.BatchJobs.FindAsync(new object[] { candidateId }, cancellationToken);
         }
 
+        // 4. If rowsAffected == 0, another worker claimed it in between step 1 and 2.
+        // We return null to indicate "no job claimed" for this attempt.
+        // The worker loop will retry immediately or after a delay.
         return null;
     }
 
