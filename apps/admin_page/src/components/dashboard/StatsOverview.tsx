@@ -101,7 +101,6 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
                       >
                         {card.value.toLocaleString()}
                       </motion.span>
-                      <span className="text-xs font-bold text-success-500">+12%</span>
                     </dd>
                 </div>
               </div>

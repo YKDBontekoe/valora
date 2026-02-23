@@ -35,7 +35,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         }
       }
 
-      showToast(`Successfully re-queued ${successCount} failed jobs.`, 'success');
+      showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
       onRefreshStats();
     } catch (error) {
         console.error(error);

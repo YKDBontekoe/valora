@@ -111,7 +111,7 @@ describe('Dashboard Page', () => {
     await waitFor(() => {
       expect(adminService.retryJob).toHaveBeenCalledTimes(2);
       // Only 1 succeeded
-      expect(showToast).toHaveBeenCalledWith('Successfully re-queued 1 failed jobs.', 'success');
+      expect(showToast).toHaveBeenCalledWith('Successfully re-queued 1 failed job.', 'success');
     });
   });
 
