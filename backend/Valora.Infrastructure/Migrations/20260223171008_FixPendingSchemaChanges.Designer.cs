@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Valora.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    partial class ValoraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260223171008_FixPendingSchemaChanges")]
+    partial class FixPendingSchemaChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -347,7 +350,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -357,12 +360,6 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("Status");
-
-                    b.HasIndex("Target");
-
-                    b.HasIndex("Type");
-
-                    b.HasIndex("Status", "CreatedAt");
 
                     b.ToTable("BatchJobs", t =>
                         {

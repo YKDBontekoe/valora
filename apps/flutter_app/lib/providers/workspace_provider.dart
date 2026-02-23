@@ -49,7 +49,7 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> createWorkspace(String name, String? description) async {
     try {
       final newWorkspace = await _repository.createWorkspace(name, description);
-      _workspaces.insert(0, newWorkspace);
+      _workspaces = [newWorkspace, ..._workspaces];
       notifyListeners();
     } catch (e) {
       rethrow;

@@ -12,7 +12,7 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    [Migration("20260223165154_AddBatchJobIndexes")]
+    [Migration("20260223171049_AddBatchJobIndexes")]
     partial class AddBatchJobIndexes
     {
         /// <inheritdoc />
@@ -944,12 +944,11 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("DisallowedSuggestions")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HouseholdProfile")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
@@ -959,8 +958,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("Preferences")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
