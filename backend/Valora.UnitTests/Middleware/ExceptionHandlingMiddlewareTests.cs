@@ -82,6 +82,34 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_ObjectDisposedException_ReturnsInternalServerError()
+    {
+        // Arrange
+        var middleware = new ExceptionHandlingMiddleware(
+            next: (innerHttpContext) => throw new ObjectDisposedException("Resource"),
+            logger: _loggerMock.Object,
+            env: _envMock.Object);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+        // Should log error since it's a 500
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<ObjectDisposedException>(),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task InvokeAsync_NotFoundException_ReturnsNotFound()
     {
         // Arrange
