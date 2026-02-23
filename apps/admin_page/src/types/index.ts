@@ -7,6 +7,7 @@ export interface User {
 export interface Stats {
   totalUsers: number;
   totalNotifications: number;
+  activeJobs?: number;
 }
 
 export interface AuthResponse {

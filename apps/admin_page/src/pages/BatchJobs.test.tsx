@@ -9,6 +9,7 @@ vi.mock('../services/api', () => ({
     getJobDetails: vi.fn(),
     retryJob: vi.fn(),
     cancelJob: vi.fn(),
+    getHealth: vi.fn().mockResolvedValue({ status: 'Healthy' }),
   },
 }));
 
@@ -76,12 +77,12 @@ describe('BatchJobs Page', () => {
       expect(screen.getByText('Amsterdam')).toBeInTheDocument();
     });
 
-    // Click View button
-    const viewButton = screen.getByText('View');
+    // Click Details button (was View)
+    const viewButton = screen.getByText('Details');
     fireEvent.click(viewButton);
 
     await waitFor(() => {
-        expect(screen.getByText('Job Details')).toBeInTheDocument();
+        expect(screen.getByText('Pipeline Diagnostics')).toBeInTheDocument();
         expect(screen.getByText('Logs...')).toBeInTheDocument();
     });
 
@@ -120,13 +121,13 @@ describe('BatchJobs Page', () => {
           expect(screen.getByText('Rotterdam')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('View'));
+      fireEvent.click(screen.getByText('Details'));
 
       await waitFor(() => {
-          expect(screen.getByText('Retry Job')).toBeInTheDocument();
+          expect(screen.getByText('Restart Pipeline')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Retry Job'));
+      fireEvent.click(screen.getByText('Restart Pipeline'));
 
       await waitFor(() => {
           expect(adminService.retryJob).toHaveBeenCalledWith('2');

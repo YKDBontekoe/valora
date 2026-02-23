@@ -26,10 +26,10 @@ describe('Layout Component', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Valora Admin')).toBeInTheDocument();
+    expect(screen.getByText('Valora')).toBeInTheDocument();
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Batch Jobs')).toBeInTheDocument();
-    expect(screen.getByText('Logout')).toBeInTheDocument();
+    expect(screen.getByText('Sign Out')).toBeInTheDocument();
   });
 
   it('hides Users link for non-Admin', () => {
@@ -66,7 +66,7 @@ describe('Layout Component', () => {
       </MemoryRouter>
     );
 
-    const logoutButton = screen.getByText('Logout');
+    const logoutButton = screen.getByText('Sign Out');
     fireEvent.click(logoutButton);
 
     // Verify localStorage is cleared
