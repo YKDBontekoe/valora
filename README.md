@@ -38,7 +38,7 @@ docker-compose -f docker/docker-compose.yml up -d
 ```
 *Troubleshooting:*
 - If `docker-compose` fails, ensure Docker Desktop is running.
-- Ensure port `5432` is not already in use by another Postgres instance.
+- Ensure port `1433` is not already in use by another SQL Server instance.
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
