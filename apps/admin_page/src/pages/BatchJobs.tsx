@@ -23,10 +23,10 @@ const rowVariants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }
   },
   exit: { opacity: 0, x: 10, transition: { duration: 0.2 } }
-};
+} as const;
 
 const BatchJobs: React.FC = () => {
   const [jobs, setJobs] = useState<BatchJob[]>([]);

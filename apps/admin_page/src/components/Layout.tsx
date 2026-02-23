@@ -146,8 +146,8 @@ const Layout = () => {
               exit={{ opacity: 0, y: -20, scale: 0.98 }}
               transition={{
                 duration: 0.5,
-                ease: [0.22, 1, 0.36, 1]
-              } as const}
+                ease: [0.22, 1, 0.36, 1] as const
+              }}
             >
               <Outlet />
             </motion.div>

@@ -16,16 +16,16 @@ const container = {
       delayChildren: 0.2
     }
   }
-};
+} as const;
 
 const titleVariants = {
     hidden: { opacity: 0, x: -20 },
     show: {
         opacity: 1,
         x: 0,
-        transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
+        transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }
     }
-};
+} as const;
 
 const Dashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);

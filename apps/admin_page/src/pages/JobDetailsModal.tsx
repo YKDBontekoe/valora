@@ -49,8 +49,8 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       onJobUpdated();
       fetchJobDetails(job.id);
     } catch (error) {
-      const axiosError = error as AxiosError<{ error: string }>;
-      showToast(axiosError.response?.data?.error || "Reset failed", "error");
+      console.error('Failed to retry job:', error);
+      showToast("System failed to re-queue the pipeline.", "error");
     } finally {
         setProcessingAction(false);
     }
@@ -65,8 +65,8 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       onJobUpdated();
       fetchJobDetails(job.id);
     } catch (error) {
-      const axiosError = error as AxiosError<{ error: string }>;
-      showToast(axiosError.response?.data?.error || "Termination failed", "error");
+      console.error('Failed to cancel job:', error);
+      showToast("System failed to terminate the process.", "error");
     } finally {
         setProcessingAction(false);
     }
