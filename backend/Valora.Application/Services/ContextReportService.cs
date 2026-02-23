@@ -95,6 +95,9 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 3. Fetch Data from Provider (Fan-Out)
+        // This is the critical "Fan-Out" step where multiple external APIs (CBS, PDOK, OSM, Luchtmeetnet)
+        // are queried in parallel. See `ContextDataProvider.GetSourceDataAsync` for the implementation
+        // of Task.WhenAll.
         var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
         var warnings = new List<string>(sourceData.Warnings);
 
@@ -104,9 +107,12 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 4. Build normalized metrics and compute scores (Fan-In)
+        // Raw data from disparate sources is normalized into a common format (0-100 scores)
+        // and aggregated into category scores (Social, Safety, Amenities, etc.).
         var report = ContextReportBuilder.Build(location, sourceData, warnings);
 
         // Cache the result for the configured duration (default: 24h)
+        // We cache the *final report*, not the raw data, to save on re-computation costs.
         _cache.Set(cacheKey, report, TimeSpan.FromMinutes(_options.ReportCacheMinutes));
         return report;
     }

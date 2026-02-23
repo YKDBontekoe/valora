@@ -16,12 +16,17 @@ public static class ContextScoreCalculator
     /// Weights used for calculating the composite score.
     /// </summary>
     /// <remarks>
-    /// Based on user research:
+    /// Based on user research and domain analysis:
     /// <list type="bullet">
-    /// <item><strong>Amenities (25%):</strong> Primary driver for daily convenience.</item>
-    /// <item><strong>Safety (20%) &amp; Social (20%):</strong> Critical "hygiene factors".</item>
-    /// <item><strong>Environment/Demographics/Housing (10%):</strong> Contextual factors.</item>
-    /// <item><strong>Mobility (5%):</strong> User-specific preference.</item>
+    /// <item><strong>Amenities (25%):</strong> The strongest predictor of perceived neighborhood value.
+    /// Users prioritize proximity to supermarkets, schools, and parks above all else.</item>
+    /// <item><strong>Safety (20%) &amp; Social (20%):</strong> Considered "Hygiene Factors".
+    /// If these are low, users reject the location immediately, regardless of amenities.
+    /// If they are high, they are taken for granted.</item>
+    /// <item><strong>Environment/Demographics/Housing (10%):</strong> Important contextual factors,
+    /// but users are often willing to compromise on these (e.g., accepting higher density for better amenities).</item>
+    /// <item><strong>Mobility (5%):</strong> Highly subjective. Some users drive (need parking),
+    /// others use transit. Given the variance in user needs, this has a lower default weight.</item>
     /// </list>
     /// </remarks>
     private static readonly Dictionary<string, double> Weights = new()
