@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Valora.Domain.Common;
 
 namespace Valora.Domain.Entities;
@@ -13,4 +15,29 @@ public class RefreshToken : BaseEntity
 
     public string UserId { get; set; } = string.Empty;
     public ApplicationUser? User { get; set; }
+
+    public static RefreshToken Create(string userId, TimeProvider timeProvider)
+    {
+        var randomNumber = new byte[64];
+        RandomNumberGenerator.Fill(randomNumber);
+
+        var rawToken = Convert.ToBase64String(randomNumber);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        return new RefreshToken
+        {
+            RawToken = rawToken,
+            TokenHash = ComputeHash(rawToken),
+            Expires = now.AddDays(30),
+            CreatedAt = now,
+            UserId = userId
+        };
+    }
+
+    public static string ComputeHash(string rawToken)
+    {
+        var bytes = Encoding.UTF8.GetBytes(rawToken);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hash);
+    }
 }
