@@ -62,11 +62,18 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
           ContextReportProvider(repository: context.read<ContextReportRepository>()),
       child: Material(
         type: MaterialType.transparency,
-        child: Consumer<ContextReportProvider>(
-          builder: (context, provider, _) {
-            final hasReport = provider.report != null;
-            final isLoading = provider.isLoading;
-            final comparisonCount = provider.comparisonIds.length;
+        child: Selector<ContextReportProvider, ({bool hasReport, bool isLoading, int comparisonCount, bool isComparisonMode})>(
+          selector: (_, p) => (
+            hasReport: p.report != null,
+            isLoading: p.isLoading,
+            comparisonCount: p.comparisonIds.length,
+            isComparisonMode: _isComparisonMode,
+          ),
+          builder: (context, data, _) {
+            final provider = context.read<ContextReportProvider>();
+            final hasReport = data.hasReport;
+            final isLoading = data.isLoading;
+            final comparisonCount = data.comparisonCount;
 
             // Report the FAB to the parent HomeScreen
             final Widget? fab = comparisonCount > 0 && !_isComparisonMode
