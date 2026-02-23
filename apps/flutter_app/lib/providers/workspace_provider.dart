@@ -11,8 +11,11 @@ class WorkspaceProvider extends ChangeNotifier {
   List<Workspace> _workspaces = [];
   List<Workspace> get workspaces => _workspaces;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  bool _isWorkspacesLoading = false;
+  bool get isWorkspacesLoading => _isWorkspacesLoading;
+
+  bool _isWorkspaceDetailLoading = false;
+  bool get isWorkspaceDetailLoading => _isWorkspaceDetailLoading;
 
   String? _error;
   String? get error => _error;
@@ -29,7 +32,7 @@ class WorkspaceProvider extends ChangeNotifier {
   WorkspaceProvider(this._repository);
 
   Future<void> fetchWorkspaces() async {
-    _isLoading = true;
+    _isWorkspacesLoading = true;
     _error = null;
     notifyListeners();
 
@@ -38,7 +41,7 @@ class WorkspaceProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
     } finally {
-      _isLoading = false;
+      _isWorkspacesLoading = false;
       notifyListeners();
     }
   }
@@ -46,7 +49,7 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<void> createWorkspace(String name, String? description) async {
     try {
       final newWorkspace = await _repository.createWorkspace(name, description);
-      _workspaces.insert(0, newWorkspace);
+      _workspaces = [newWorkspace, ..._workspaces];
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -54,26 +57,31 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> selectWorkspace(String id) async {
-    _isLoading = true;
+    _isWorkspaceDetailLoading = true;
     _error = null;
     notifyListeners();
     try {
-      _selectedWorkspace = await _repository.getWorkspace(id);
+      final workspaceFuture = _repository.getWorkspace(id);
+      final membersFuture = _repository.getWorkspaceMembers(id);
+      final listingsFuture = _repository.getWorkspaceListings(id);
+      final activityFuture = _repository.getWorkspaceActivity(id);
 
       final results = await Future.wait([
-        _repository.getWorkspaceMembers(id),
-        _repository.getWorkspaceListings(id),
-        _repository.getWorkspaceActivity(id),
+        workspaceFuture,
+        membersFuture,
+        listingsFuture,
+        activityFuture,
       ]);
 
-      _members = results[0] as List<WorkspaceMember>;
-      _savedListings = results[1] as List<SavedListing>;
-      _activityLogs = results[2] as List<ActivityLog>;
+      _selectedWorkspace = results[0] as Workspace;
+      _members = results[1] as List<WorkspaceMember>;
+      _savedListings = results[2] as List<SavedListing>;
+      _activityLogs = results[3] as List<ActivityLog>;
 
     } catch (e) {
       _error = e.toString();
     } finally {
-      _isLoading = false;
+      _isWorkspaceDetailLoading = false;
       notifyListeners();
     }
   }

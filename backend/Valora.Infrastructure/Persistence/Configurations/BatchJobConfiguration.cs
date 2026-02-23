@@ -14,6 +14,12 @@ public class BatchJobConfiguration : IEntityTypeConfiguration<BatchJob>
         builder.HasIndex(e => e.Status);
         // Optimizes sorting by creation date
         builder.HasIndex(e => e.CreatedAt);
+        // Optimizes filtering by type
+        builder.HasIndex(e => e.Type);
+        // Optimizes searching by target
+        builder.HasIndex(e => e.Target);
+        // Optimizes retrieving pending jobs sorted by creation date
+        builder.HasIndex(e => new { e.Status, e.CreatedAt });
 
         builder.Property(x => x.Target).IsRequired().HasMaxLength(255);
         builder.Property(x => x.Type).HasConversion<string>();

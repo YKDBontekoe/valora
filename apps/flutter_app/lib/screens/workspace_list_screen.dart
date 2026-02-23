@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
+import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import 'workspace_detail_screen.dart';
@@ -48,25 +49,26 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Workspace'),
       ),
-      body: Consumer<WorkspaceProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && provider.workspaces.isEmpty) {
+      body: Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
+        selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
+        builder: (context, data, child) {
+          if (data.isLoading && data.workspaces.isEmpty) {
             return const Center(
               child: ValoraLoadingIndicator(message: 'Loading workspaces...'),
             );
           }
-          if (provider.error != null && provider.workspaces.isEmpty) {
+          if (data.error != null && data.workspaces.isEmpty) {
             return Center(
               child: ValoraEmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'Failed to load',
                 subtitle: 'Could not load your workspaces. Please try again.',
                 actionLabel: 'Retry',
-                onAction: provider.fetchWorkspaces,
+                onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
               ),
             );
           }
-          if (provider.workspaces.isEmpty) {
+          if (data.workspaces.isEmpty) {
             return Center(
               child: ValoraEmptyState(
                 icon: Icons.workspaces_rounded,
@@ -80,11 +82,11 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
           }
           return ListView.separated(
             padding: const EdgeInsets.all(ValoraSpacing.md),
-            itemCount: provider.workspaces.length,
+            itemCount: data.workspaces.length,
             separatorBuilder: (_, _) =>
                 const SizedBox(height: ValoraSpacing.sm),
             itemBuilder: (context, index) {
-              final workspace = provider.workspaces[index];
+              final workspace = data.workspaces[index];
               return ValoraCard(
                 onTap: () {
                   Navigator.push(
