@@ -140,7 +140,7 @@ public class AuthService : IAuthService
         var token = await _tokenService.CreateJwtTokenAsync(user);
         var roles = await _identityService.GetUserRolesAsync(user);
 
-        var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
+        var refreshToken = RefreshToken.Create(user.Id, _timeProvider);
         await _tokenService.SaveRefreshTokenAsync(refreshToken);
 
         return new AuthResponseDto(

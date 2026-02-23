@@ -56,7 +56,6 @@ public class SecurityFixTests
             .ReturnsAsync((Application.Common.Models.Result.Success(), "userId"));
 
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(newUser)).ReturnsAsync("token");
-        _mockTokenService.Setup(x => x.GenerateRefreshToken(newUser.Id)).Returns(new RefreshToken { RawToken = "refresh" });
         _mockIdentityService.Setup(x => x.GetUserRolesAsync(newUser)).ReturnsAsync(new List<string>());
 
         // Act

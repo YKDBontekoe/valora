@@ -71,18 +71,16 @@ public class AuthServiceTests
     public async Task LoginAsync_Success_ReturnsTokens()
     {
         var user = new ApplicationUser { Id = "1", Email = "t@t.com" };
-        var refreshToken = new RefreshToken { RawToken = "refresh", UserId = "1" };
 
         _mockIdentityService.Setup(x => x.GetUserByEmailAsync("t@t.com")).ReturnsAsync(user);
         _mockIdentityService.Setup(x => x.CheckPasswordAsync("t@t.com", "p")).ReturnsAsync(true);
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("access_token");
-        _mockTokenService.Setup(x => x.GenerateRefreshToken(user.Id)).Returns(refreshToken);
 
         var result = await _authService.LoginAsync(new LoginDto("t@t.com", "p"));
 
         Assert.NotNull(result);
         Assert.Equal("access_token", result.Token);
-        Assert.Equal("refresh", result.RefreshToken);
+        Assert.NotNull(result.RefreshToken);
     }
 
     [Fact]
@@ -130,20 +128,18 @@ public class AuthServiceTests
             User = user,
             Expires = DateTime.UtcNow.AddMinutes(10)
         };
-        var newToken = new RefreshToken { RawToken = "new", UserId = "1" };
 
         _mockTokenService.Setup(x => x.GetRefreshTokenAsync("old")).ReturnsAsync(oldToken);
-        _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(newToken);
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("new_access");
 
         var result = await _authService.RefreshTokenAsync("old");
 
         Assert.NotNull(result);
         Assert.Equal("new_access", result.Token);
-        Assert.Equal("new", result.RefreshToken);
+        Assert.NotNull(result.RefreshToken);
 
         _mockTokenService.Verify(x => x.RevokeRefreshTokenAsync("old"), Times.Once);
-        _mockTokenService.Verify(x => x.SaveRefreshTokenAsync(newToken), Times.Once);
+        _mockTokenService.Verify(x => x.SaveRefreshTokenAsync(It.IsAny<RefreshToken>()), Times.Once);
     }
 
     [Fact]
@@ -152,14 +148,12 @@ public class AuthServiceTests
         var request = new ExternalLoginRequestDto("google", "token");
         var externalUser = new ExternalUserDto("google", "123", "test@gmail.com", "User");
         var user = new ApplicationUser { Id = "1", Email = "test@gmail.com" };
-        var refreshToken = new RefreshToken { RawToken = "refresh", UserId = "1" };
 
         _mockExternalAuthService.Setup(x => x.VerifyTokenAsync("google", "token"))
             .ReturnsAsync(externalUser);
         _mockIdentityService.Setup(x => x.GetUserByEmailAsync("test@gmail.com"))
             .ReturnsAsync(user);
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("access");
-        _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(refreshToken);
 
         var result = await _authService.ExternalLoginAsync(request);
 
@@ -173,7 +167,6 @@ public class AuthServiceTests
         var request = new ExternalLoginRequestDto("google", "token");
         var externalUser = new ExternalUserDto("google", "123", "new@gmail.com", "User");
         var user = new ApplicationUser { Id = "1", Email = "new@gmail.com" };
-        var refreshToken = new RefreshToken { RawToken = "refresh", UserId = "1" };
 
         _mockExternalAuthService.Setup(x => x.VerifyTokenAsync("google", "token"))
             .ReturnsAsync(externalUser);
@@ -185,7 +178,6 @@ public class AuthServiceTests
             .ReturnsAsync((Result.Success(), "1"));
 
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(user)).ReturnsAsync("access");
-        _mockTokenService.Setup(x => x.GenerateRefreshToken("1")).Returns(refreshToken);
 
         var result = await _authService.ExternalLoginAsync(request);
 

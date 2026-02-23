@@ -71,24 +71,6 @@ public class TokenService : ITokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public RefreshToken GenerateRefreshToken(string userId)
-    {
-        var randomNumber = new byte[64];
-        RandomNumberGenerator.Fill(randomNumber);
-
-        var rawToken = Convert.ToBase64String(randomNumber);
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-
-        return new RefreshToken
-        {
-            RawToken = rawToken,
-            TokenHash = HashRefreshToken(rawToken),
-            Expires = now.AddDays(30),
-            CreatedAt = now,
-            UserId = userId
-        };
-    }
-
     public async Task SaveRefreshTokenAsync(RefreshToken token)
     {
         if (string.IsNullOrWhiteSpace(token.TokenHash))
@@ -102,7 +84,9 @@ public class TokenService : ITokenService
 
     public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
     {
-        var tokenHash = HashRefreshToken(token);
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
+        var tokenHash = RefreshToken.ComputeHash(token);
         return await _context.RefreshTokens
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
@@ -110,7 +94,9 @@ public class TokenService : ITokenService
 
     public async Task<RefreshToken?> GetActiveRefreshTokenAsync(string token)
     {
-        var tokenHash = HashRefreshToken(token);
+        if (string.IsNullOrWhiteSpace(token)) return null;
+
+        var tokenHash = RefreshToken.ComputeHash(token);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         return await _context.RefreshTokens
@@ -123,7 +109,9 @@ public class TokenService : ITokenService
 
     public async Task RevokeRefreshTokenAsync(string token)
     {
-        var tokenHash = HashRefreshToken(token);
+        if (string.IsNullOrWhiteSpace(token)) return;
+
+        var tokenHash = RefreshToken.ComputeHash(token);
         var existingToken = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
         if (existingToken != null)
         {
@@ -148,12 +136,5 @@ public class TokenService : ITokenService
             }
             await _context.SaveChangesAsync();
         }
-    }
-
-    private static string HashRefreshToken(string token)
-    {
-        var bytes = Encoding.UTF8.GetBytes(token);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToBase64String(hash);
     }
 }
