@@ -15,13 +15,15 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly ILogger<AuthService> _logger;
     private readonly IExternalAuthService _externalAuthService;
+    private readonly TimeProvider _timeProvider;
 
-    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger, IExternalAuthService externalAuthService)
+    public AuthService(IIdentityService identityService, ITokenService tokenService, ILogger<AuthService> logger, IExternalAuthService externalAuthService, TimeProvider timeProvider)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _logger = logger;
         _externalAuthService = externalAuthService;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result> RegisterAsync(RegisterDto registerDto)
@@ -90,7 +92,7 @@ public class AuthService : IAuthService
         }
 
         // Check if expired
-        if (existingToken.Expires <= DateTime.UtcNow)
+        if (existingToken.Expires <= _timeProvider.GetUtcNow().UtcDateTime)
         {
             return null;
         }

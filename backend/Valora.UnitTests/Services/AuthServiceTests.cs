@@ -24,7 +24,7 @@ public class AuthServiceTests
         _mockTokenService = new Mock<ITokenService>();
         _mockLogger = new Mock<ILogger<AuthService>>();
         _mockExternalAuthService = new Mock<IExternalAuthService>();
-        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object, _mockExternalAuthService.Object);
+        _authService = new AuthService(_mockIdentityService.Object, _mockTokenService.Object, _mockLogger.Object, _mockExternalAuthService.Object, TimeProvider.System);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public class UserAiProfileConfiguration : IEntityTypeConfiguration<UserAiProfile
             .IsRequired()
             .HasMaxLength(450); // Standard Identity User ID length
 
-        builder.HasIndex(e => e.UserId);
+        builder.HasIndex(e => e.UserId).IsUnique();
 
         builder.Property(e => e.HouseholdProfile)
             .HasMaxLength(2000);
@@ -29,6 +29,7 @@ public class UserAiProfileConfiguration : IEntityTypeConfiguration<UserAiProfile
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
-            );
+            )
+            .HasColumnType("TEXT");
     }
 }

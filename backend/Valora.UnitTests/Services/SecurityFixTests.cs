@@ -31,7 +31,8 @@ public class SecurityFixTests
             _mockIdentityService.Object,
             _mockTokenService.Object,
             _mockLogger.Object,
-            _mockExternalAuthService.Object
+            _mockExternalAuthService.Object,
+            TimeProvider.System
         );
     }
 
@@ -41,25 +42,25 @@ public class SecurityFixTests
         // Arrange
         var request = new ExternalLoginRequestDto("Google", "token");
         var externalUser = new ExternalUserDto("Google", "123456", "test@example.com", "Test User");
+        var newUser = new ApplicationUser { Id = "userId", Email = externalUser.Email };
 
         _mockExternalAuthService.Setup(x => x.VerifyTokenAsync(request.Provider, request.IdToken))
             .ReturnsAsync(externalUser);
 
-        _mockIdentityService.Setup(x => x.GetUserByEmailAsync(externalUser.Email))
-            .ReturnsAsync((ApplicationUser?)null); // User does not exist
+        // Use SetupSequence to simulate user not found initially, then found after creation
+        _mockIdentityService.SetupSequence(x => x.GetUserByEmailAsync(externalUser.Email))
+            .ReturnsAsync((ApplicationUser?)null)
+            .ReturnsAsync(newUser);
 
         _mockIdentityService.Setup(x => x.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync((Application.Common.Models.Result.Success(), "userId"));
 
+        _mockTokenService.Setup(x => x.CreateJwtTokenAsync(newUser)).ReturnsAsync("token");
+        _mockTokenService.Setup(x => x.GenerateRefreshToken(newUser.Id)).Returns(new RefreshToken { RawToken = "refresh" });
+        _mockIdentityService.Setup(x => x.GetUserRolesAsync(newUser)).ReturnsAsync(new List<string>());
+
         // Act
-        try
-        {
-            await _authService.ExternalLoginAsync(request);
-        }
-        catch (Exception)
-        {
-            // Ignore subsequent errors like generating auth response failing due to null user
-        }
+        await _authService.ExternalLoginAsync(request);
 
         // Assert
         _mockIdentityService.Verify(x => x.CreateUserAsync(
