@@ -143,8 +143,7 @@ public class BatchJobServiceTests
 
         Assert.Equal(BatchJobStatus.Failed, job.Status);
         // SingleOrDefault throws InvalidOperationException when > 1 match
-        // The service catches Exception and sets Error = ex.Message
-        // InvalidOperationException usually has "Sequence contains more than one matching element" or similar
+        // The service catches Exception and sets a generic Error message
         Assert.NotNull(job.Error);
         _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }

@@ -237,7 +237,7 @@ public class BatchJobService : IBatchJobService
                 // Do not expose raw exception details to the public job status
                 job.Error = "Job failed due to an internal error.";
                 _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
-                AppendLog(job, $"Job failed: {ex.Message}");
+                AppendLog(job, "Job failed due to an internal error.");
             }
             else
             {
