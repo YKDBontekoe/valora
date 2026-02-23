@@ -23,7 +23,7 @@ public class BatchJobWorkerTests
         var serviceProviderMock = new Mock<IServiceProvider>();
         var serviceScopeMock = new Mock<IServiceScope>();
         var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-        var jobServiceMock = new Mock<IBatchJobService>();
+        var jobExecutorMock = new Mock<IBatchJobExecutor>();
         var loggerMock = new Mock<ILogger<BatchJobWorker>>();
 
         serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory)))
@@ -32,8 +32,8 @@ public class BatchJobWorkerTests
             .Returns(serviceScopeMock.Object);
         serviceScopeMock.Setup(x => x.ServiceProvider)
             .Returns(serviceProviderMock.Object);
-        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobService)))
-            .Returns(jobServiceMock.Object);
+        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobExecutor)))
+            .Returns(jobExecutorMock.Object);
 
         var worker = new TestBatchJobWorker(serviceProviderMock.Object, loggerMock.Object);
         var cts = new CancellationTokenSource();
@@ -47,7 +47,7 @@ public class BatchJobWorkerTests
         try { await task; } catch (OperationCanceledException) { }
 
         // Assert
-        jobServiceMock.Verify(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        jobExecutorMock.Verify(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class BatchJobWorkerTests
         var serviceProviderMock = new Mock<IServiceProvider>();
         var serviceScopeMock = new Mock<IServiceScope>();
         var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-        var jobServiceMock = new Mock<IBatchJobService>();
+        var jobExecutorMock = new Mock<IBatchJobExecutor>();
         var loggerMock = new Mock<ILogger<BatchJobWorker>>();
 
         serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory)))
@@ -66,10 +66,10 @@ public class BatchJobWorkerTests
             .Returns(serviceScopeMock.Object);
         serviceScopeMock.Setup(x => x.ServiceProvider)
             .Returns(serviceProviderMock.Object);
-        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobService)))
-            .Returns(jobServiceMock.Object);
+        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobExecutor)))
+            .Returns(jobExecutorMock.Object);
 
-        jobServiceMock.Setup(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()))
+        jobExecutorMock.Setup(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Worker Error"));
 
         var worker = new TestBatchJobWorker(serviceProviderMock.Object, loggerMock.Object);
@@ -100,7 +100,7 @@ public class BatchJobWorkerTests
         var serviceProviderMock = new Mock<IServiceProvider>();
         var serviceScopeMock = new Mock<IServiceScope>();
         var serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-        var jobServiceMock = new Mock<IBatchJobService>();
+        var jobExecutorMock = new Mock<IBatchJobExecutor>();
         var loggerMock = new Mock<ILogger<BatchJobWorker>>();
 
         serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory)))
@@ -109,10 +109,10 @@ public class BatchJobWorkerTests
             .Returns(serviceScopeMock.Object);
         serviceScopeMock.Setup(x => x.ServiceProvider)
             .Returns(serviceProviderMock.Object);
-        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobService)))
-            .Returns(jobServiceMock.Object);
+        serviceProviderMock.Setup(x => x.GetService(typeof(IBatchJobExecutor)))
+            .Returns(jobExecutorMock.Object);
 
-        jobServiceMock.Setup(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()))
+        jobExecutorMock.Setup(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Login failed for user 'ykdbonte'."));
 
         var worker = new TestBatchJobWorker(serviceProviderMock.Object, loggerMock.Object);
@@ -121,7 +121,7 @@ public class BatchJobWorkerTests
         await worker.PublicExecuteAsync(CancellationToken.None);
 
         // Assert
-        jobServiceMock.Verify(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()), Times.Once);
+        jobExecutorMock.Verify(x => x.ProcessNextJobAsync(It.IsAny<CancellationToken>()), Times.Once);
         loggerMock.Verify(
             x => x.Log(
                 LogLevel.Critical,

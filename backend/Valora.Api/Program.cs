@@ -1,24 +1,13 @@
 using Valora.Api.Background;
-using System.Security.Claims;
 using Sentry;
-using System.Text;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Valora.Api.Endpoints;
 using Valora.Api.Extensions;
-using Valora.Api.Middleware;
 using Valora.Application;
-using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.DTOs;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
 using Valora.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +16,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, Valora.Api.Services.CurrentUserService>();
 builder.Services.AddSingleton<Valora.Api.Services.IRequestMetricsService, Valora.Api.Services.RequestMetricsService>();
+
 // Configure Sentry
 // Design Decision: We use Sentry for error tracking but limit the volume of data sent.
 // - Information logs are kept as 'breadcrumbs' to provide context leading up to an error.
@@ -75,33 +65,8 @@ if (!string.IsNullOrEmpty(sentryDsn))
         }
     });
 }
-builder.Services.AddSwaggerGen(option =>
-{
-    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Valora API", Version = "v1" });
-    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        In = ParameterLocation.Header,
-        Description = "Please enter a valid token",
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        BearerFormat = "JWT",
-        Scheme = "Bearer"
-    });
-    option.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] { }
-        }
-    });
-});
+
+builder.Services.AddSwaggerConfig();
 
 builder.Services
     .AddApplication()
@@ -109,134 +74,13 @@ builder.Services
 
 builder.Services.AddHostedService<BatchJobWorker>();
 
-// Add Identity
-// We use AddIdentityCore instead of AddIdentity to avoid adding unnecessary UI pages (Razor Pages)
-// and cookie authentication services, as this is a pure API backend using JWTs.
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
-    {
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireUppercase = true;
-        options.Password.RequireNonAlphanumeric = true;
-        options.Password.RequiredLength = 12;
-    })
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ValoraDbContext>();
+builder.Services.AddIdentityAndAuth(builder.Configuration, builder.Environment);
 
-// Add Authentication
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        var secret = builder.Configuration["JWT_SECRET"]
-                     ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
-
-        if (!builder.Environment.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
-        {
-            throw new InvalidOperationException("Critical Security Risk: The application is running in a non-development environment with the default, insecure JWT_SECRET. You MUST override JWT_SECRET with a strong, random key in your environment variables.");
-        }
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JWT_ISSUER"],
-            ValidAudience = builder.Configuration["JWT_AUDIENCE"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                // logger.LogError(context.Exception, "Authentication failed");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                // logger.LogDebug("Token validated for: {User}", context.Principal?.Identity?.Name);
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                // logger.LogWarning("OnChallenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
-                return Task.CompletedTask;
-            }
-        };
-    });
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-});
-
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    var isTesting = builder.Environment.IsEnvironment("Testing");
-    var configStrict = builder.Configuration.GetValue<int?>("RateLimiting:StrictLimit");
-    var configFixed = builder.Configuration.GetValue<int?>("RateLimiting:FixedLimit");
-
-    // Validate configuration values. If invalid (<= 0), fallback to defaults.
-    var permitLimitStrict = (configStrict.HasValue && configStrict.Value > 0) ? configStrict.Value : (isTesting ? 1000 : 10);
-    var permitLimitFixed = (configFixed.HasValue && configFixed.Value > 0) ? configFixed.Value : (isTesting ? 1000 : 100);
-
-    // Policy: "strict"
-    // Used for expensive or sensitive endpoints like Login (brute-force prevention)
-    // and AI Report Generation (cost control).
-    options.AddPolicy("strict", context =>
-    {
-        if (context.User.IsInRole("Admin"))
-        {
-            return RateLimitPartition.GetNoLimiter("Admin");
-        }
-
-        var partitionKey = context.User.Identity?.IsAuthenticated == true
-            ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
-            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
-
-        return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = permitLimitStrict,
-                Window = TimeSpan.FromMinutes(1),
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 0
-            });
-    });
-
-    // Policy: "fixed"
-    // General purpose rate limiting for standard CRUD operations to prevent abuse.
-    options.AddPolicy("fixed", context =>
-    {
-        if (context.User.IsInRole("Admin"))
-        {
-            return RateLimitPartition.GetNoLimiter("Admin");
-        }
-
-        var partitionKey = context.User.Identity?.IsAuthenticated == true
-            ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
-            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
-
-        return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = permitLimitFixed,
-                Window = TimeSpan.FromMinutes(1),
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 2
-            });
-    });
-});
+builder.Services.AddRateLimitingConfig(builder.Configuration, builder.Environment);
 
 // Add CORS for Flutter
 builder.Services.AddCustomCors(builder.Configuration, builder.Environment);
+
 var app = builder.Build();
 
 app.UseCors();

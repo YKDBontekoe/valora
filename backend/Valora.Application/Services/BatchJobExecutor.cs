@@ -1,0 +1,128 @@
+using Microsoft.Extensions.Logging;
+using Valora.Application.Common.Interfaces;
+using Valora.Application.Services.BatchJobs;
+using Valora.Domain.Entities;
+
+namespace Valora.Application.Services;
+
+public class BatchJobExecutor : IBatchJobExecutor
+{
+    private readonly IBatchJobRepository _jobRepository;
+    private readonly IEnumerable<IBatchJobProcessor> _processors;
+    private readonly ILogger<BatchJobExecutor> _logger;
+
+    public BatchJobExecutor(
+        IBatchJobRepository jobRepository,
+        IEnumerable<IBatchJobProcessor> processors,
+        ILogger<BatchJobExecutor> logger)
+    {
+        _jobRepository = jobRepository;
+        _processors = processors;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Picks the next pending job from the queue and executes it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Concurrency:</strong> This method relies on <see cref="IBatchJobRepository.GetNextPendingJobAsync"/> to atomically
+    /// fetch and lock the next job (often using `SELECT ... FOR UPDATE SKIP LOCKED` in Postgres).
+    /// </para>
+    /// <para>
+    /// <strong>Lifecycle:</strong>
+    /// <list type="number">
+    /// <item>Fetch next 'Pending' job.</item>
+    /// <item>Mark as 'Processing' immediately.</item>
+    /// <item>Find appropriate <see cref="IBatchJobProcessor"/>.</item>
+    /// <item>Execute logic.</item>
+    /// <item>Mark as 'Completed' or 'Failed'.</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
+    {
+        var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
+        if (job == null) return;
+
+        await UpdateJobStatusAsync(job, BatchJobStatus.Processing, "Job started.", cancellationToken: cancellationToken);
+
+        try
+        {
+            await ExecuteProcessorAsync(job, cancellationToken);
+
+            // Only mark as completed if the processor didn't already set it to Failed/Cancelled
+            if (job.Status == BatchJobStatus.Processing)
+            {
+                await UpdateJobStatusAsync(job, BatchJobStatus.Completed, "Job completed successfully.", cancellationToken: cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Use CancellationToken.None to ensure the status update persists even if the job token was cancelled
+            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, "Job cancelled by user.", cancellationToken: CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, ex, cancellationToken);
+        }
+    }
+
+    private async Task ExecuteProcessorAsync(BatchJob job, CancellationToken cancellationToken)
+    {
+        var processor = _processors.SingleOrDefault(p => p.JobType == job.Type);
+        if (processor == null)
+        {
+            _logger.LogError("No processor found for job type {JobType}", job.Type);
+            throw new InvalidOperationException("System configuration error: processor missing for job type.");
+        }
+
+        await processor.ProcessAsync(job, cancellationToken);
+    }
+
+    private async Task UpdateJobStatusAsync(BatchJob job, BatchJobStatus newStatus, string? message = null, Exception? ex = null, CancellationToken cancellationToken = default)
+    {
+        job.Status = newStatus;
+
+        if (newStatus == BatchJobStatus.Processing)
+        {
+            job.StartedAt = DateTime.UtcNow;
+            AppendLog(job, message ?? "Job started.");
+        }
+        else if (newStatus == BatchJobStatus.Completed)
+        {
+            job.CompletedAt = DateTime.UtcNow;
+            job.Progress = 100;
+            AppendLog(job, message ?? "Job completed successfully.");
+        }
+        else if (newStatus == BatchJobStatus.Failed)
+        {
+            job.CompletedAt = DateTime.UtcNow;
+
+            if (ex != null)
+            {
+                // Do not expose raw exception details to the public job status
+                job.Error = "Job failed due to an internal error.";
+                _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
+                AppendLog(job, "Job failed due to an internal error.");
+            }
+            else
+            {
+                job.Error = message ?? "Job failed.";
+                _logger.LogInformation("Batch job {JobId} cancelled/failed: {Message}", job.Id, job.Error);
+                AppendLog(job, message ?? "Job failed.");
+            }
+        }
+
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+    }
+
+    private void AppendLog(BatchJob job, string message)
+    {
+        var entry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
+        if (string.IsNullOrEmpty(job.ExecutionLog))
+            job.ExecutionLog = entry;
+        else
+            job.ExecutionLog += Environment.NewLine + entry;
+    }
+}

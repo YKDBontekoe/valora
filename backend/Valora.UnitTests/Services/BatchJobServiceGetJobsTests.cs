@@ -12,13 +12,11 @@ public class BatchJobServiceGetJobsTests
 {
     private readonly Mock<IBatchJobRepository> _jobRepositoryMock = new();
     private readonly Mock<ILogger<BatchJobService>> _loggerMock = new();
-    private readonly List<IBatchJobProcessor> _processors = new();
 
     private BatchJobService CreateService()
     {
         return new BatchJobService(
             _jobRepositoryMock.Object,
-            _processors,
             _loggerMock.Object);
     }
 

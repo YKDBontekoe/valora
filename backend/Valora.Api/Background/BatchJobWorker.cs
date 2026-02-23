@@ -24,9 +24,9 @@ public class BatchJobWorker : BackgroundService
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var jobService = scope.ServiceProvider.GetRequiredService<IBatchJobService>();
+                var jobExecutor = scope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
 
-                await jobService.ProcessNextJobAsync(stoppingToken);
+                await jobExecutor.ProcessNextJobAsync(stoppingToken);
             }
             catch (Exception ex) when (IsDatabaseAuthenticationFailure(ex))
             {
