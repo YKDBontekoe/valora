@@ -9,11 +9,13 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 ---
 
 ## Table of Contents
+<!-- markdownlint-disable MD051 -->
 - [Quick Start](#quick-start-10-minutes)
 - [Architecture](#architecture)
 - [Key Concepts](#key-concepts)
 - [Project Structure](#project-structure)
 - [Documentation Index](#documentation-index)
+<!-- markdownlint-enable MD051 -->
 
 ---
 
