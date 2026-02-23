@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
@@ -45,6 +46,9 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
         onPressed: () => _showCreateDialog(context),
         backgroundColor: ValoraColors.primary,
         foregroundColor: Colors.white,
+        elevation: ValoraSpacing.elevationLg,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl)),
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Workspace'),
       ),
@@ -85,8 +89,11 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                 const SizedBox(height: ValoraSpacing.sm),
             itemBuilder: (context, index) {
               final workspace = provider.workspaces[index];
-              return ValoraCard(
-                onTap: () {
+              return KeyedSubtree(
+                key: ValueKey(workspace.id),
+                child: ValoraListItem(
+                  title: workspace.name,
+                  onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -98,82 +105,62 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                     ),
                   );
                 },
-                padding: const EdgeInsets.all(ValoraSpacing.md),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: ValoraColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          workspace.name.isNotEmpty
-                              ? workspace.name[0].toUpperCase()
-                              : 'W',
-                          style: ValoraTypography.titleLarge.copyWith(
-                            color: ValoraColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                leading: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: ValoraColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Text(
+                      workspace.name.isNotEmpty
+                          ? workspace.name[0].toUpperCase()
+                          : 'W',
+                      style: ValoraTypography.titleLarge.copyWith(
+                        color: ValoraColors.primary,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: ValoraSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            workspace.name,
-                            style: ValoraTypography.titleMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(Icons.people_alt_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? ValoraColors.neutral400
-                                      : ValoraColors.neutral500),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${workspace.memberCount} members',
-                                style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? ValoraColors.neutral400
-                                      : ValoraColors.neutral500,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Icon(Icons.bookmark_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? ValoraColors.neutral400
-                                      : ValoraColors.neutral500),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${workspace.savedListingCount} saved',
-                                style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? ValoraColors.neutral400
-                                      : ValoraColors.neutral500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded,
-                        color: isDark
-                            ? ValoraColors.neutral500
-                            : ValoraColors.neutral400),
-                  ],
+                  ),
                 ),
+                subtitleWidget: Row(
+                  children: [
+                    Icon(Icons.people_alt_rounded,
+                        size: 14,
+                        color: isDark
+                            ? ValoraColors.neutral400
+                            : ValoraColors.neutral500),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${workspace.memberCount} members',
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: isDark
+                            ? ValoraColors.neutral400
+                            : ValoraColors.neutral500,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(Icons.bookmark_rounded,
+                        size: 14,
+                        color: isDark
+                            ? ValoraColors.neutral400
+                            : ValoraColors.neutral500),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${workspace.savedListingCount} saved',
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: isDark
+                            ? ValoraColors.neutral400
+                            : ValoraColors.neutral500,
+                      ),
+                    ),
+                  ],
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: (50 * index).ms)
+                    .slideX(begin: 0.1, duration: 400.ms, curve: Curves.easeOut),
               );
             },
           );

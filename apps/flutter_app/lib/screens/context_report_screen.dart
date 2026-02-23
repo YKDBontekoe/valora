@@ -17,6 +17,7 @@ import '../widgets/report/comparison_view.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_animations.dart';
 import '../core/theme/valora_typography.dart';
+import '../core/theme/valora_spacing.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key, this.pdokService, this.onFabChanged});
@@ -147,14 +148,14 @@ class _SearchLayout extends StatelessWidget {
         // Minimal top spacing for status bar
         SliverToBoxAdapter(
           child: SizedBox(
-            height: MediaQuery.of(context).padding.top + 16,
+            height: MediaQuery.of(context).padding.top + ValoraSpacing.md,
           ),
         ),
 
         // Hero section
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -164,11 +165,7 @@ class _SearchLayout extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [ValoraColors.primary, ValoraColors.primaryLight],
-                          begin: Alignment.bottomLeft,
-                          end: Alignment.topRight,
-                        ),
+                        gradient: ValoraColors.primaryGradient,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -177,7 +174,7 @@ class _SearchLayout extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: ValoraSpacing.md),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -200,7 +197,7 @@ class _SearchLayout extends StatelessWidget {
                     ),
                   ],
                 ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.05),
-                const SizedBox(height: 32),
+                const SizedBox(height: ValoraSpacing.xxl),
 
                 // Search field
                 _SearchField(
@@ -209,7 +206,7 @@ class _SearchLayout extends StatelessWidget {
                   pdokService: pdokService,
                 ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: ValoraSpacing.md),
 
                 // Radius selector
                 _RadiusSelector(provider: provider)
@@ -217,7 +214,7 @@ class _SearchLayout extends StatelessWidget {
                     .fadeIn(duration: 400.ms, delay: 200.ms)
                     .slideY(begin: 0.1),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: ValoraSpacing.lg),
 
                 // Generate button
                 _GenerateButton(
@@ -227,7 +224,7 @@ class _SearchLayout extends StatelessWidget {
 
                 // Error state
                 if (provider.error != null) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: ValoraSpacing.lg),
                   ValoraEmptyState(
                     icon: Icons.error_outline_rounded,
                     title: 'Analysis Failed',
@@ -244,7 +241,7 @@ class _SearchLayout extends StatelessWidget {
         // Quick actions
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+            padding: const EdgeInsets.fromLTRB(ValoraSpacing.xl, ValoraSpacing.xxl, ValoraSpacing.xl, 0),
             child: _QuickActions(pdokService: pdokService, provider: provider, controller: inputController)
                 .animate()
                 .fadeIn(duration: 400.ms, delay: 350.ms),
@@ -309,7 +306,7 @@ class _ReportLayout extends StatelessWidget {
                   pdokService: pdokService,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: ValoraSpacing.sm),
               // Compare toggle
               if (provider.report != null)
                 _CompareButton(provider: provider),
@@ -324,7 +321,7 @@ class _ReportLayout extends StatelessWidget {
           )
         else if (provider.report != null)
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.md, vertical: ValoraSpacing.xs),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) => Padding(
@@ -387,7 +384,7 @@ class _ComparisonLayout extends StatelessWidget {
             icon: const Icon(Icons.delete_sweep_rounded),
             onPressed: onClear,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: ValoraSpacing.sm),
         ],
       ),
       body: const ComparisonView(),
@@ -590,7 +587,7 @@ class _RadiusSelector extends StatelessWidget {
                         ? ValoraColors.neutral400
                         : ValoraColors.neutral500,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: ValoraSpacing.sm),
                   Text(
                     'Analysis Radius',
                     style: ValoraTypography.labelLarge
@@ -610,7 +607,7 @@ class _RadiusSelector extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: ValoraSpacing.sm),
           Selector<ContextReportProvider, int>(
             selector: (_, p) => p.radiusMeters,
             builder: (context, radiusMeters, _) {
@@ -724,7 +721,7 @@ class _QuickActions extends StatelessWidget {
           size: ValoraButtonSize.small,
           onPressed: () => _pickLocation(context),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: ValoraSpacing.sm),
         ValoraButton(
           label: 'My Location',
           icon: Icons.gps_fixed_rounded,
@@ -777,87 +774,50 @@ class _HistorySection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: ValoraSpacing.sm),
               ...history.take(5).map((item) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: ValoraCard(
+                  child: ValoraListItem(
                     onTap: provider.isLoading
                         ? null
                         : () {
                             controller.text = item.query;
                             provider.generate(item.query);
                           },
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: ValoraColors.primary
-                                .withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.history_rounded,
-                            size: 16,
-                            color: ValoraColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.query,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: ValoraTypography.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatDate(item.timestamp),
-                                style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? ValoraColors.neutral500
-                                      : ValoraColors.neutral400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Compare toggle
-                        IconButton(
-                          tooltip: provider.isComparing(
-                                  item.query, provider.radiusMeters)
-                              ? 'Remove from Compare'
-                              : 'Add to Compare',
-                          icon: Icon(
-                            provider.isComparing(
-                                    item.query, provider.radiusMeters)
-                                ? Icons.playlist_add_check_rounded
-                                : Icons.playlist_add_rounded,
-                            size: 20,
-                            color: provider.isComparing(
-                                    item.query, provider.radiusMeters)
-                                ? ValoraColors.primary
-                                : ValoraColors.neutral400,
-                          ),
-                          onPressed: () => provider.toggleComparison(
-                              item.query, provider.radiusMeters),
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: isDark
-                              ? ValoraColors.neutral500
-                              : ValoraColors.neutral400,
-                        ),
-                      ],
+                    title: item.query,
+                    subtitle: _formatDate(item.timestamp),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: ValoraColors.primary.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.history_rounded,
+                        size: 16,
+                        color: ValoraColors.primary,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      tooltip: provider.isComparing(
+                              item.query, provider.radiusMeters)
+                          ? 'Remove from Compare'
+                          : 'Add to Compare',
+                      icon: Icon(
+                        provider.isComparing(item.query, provider.radiusMeters)
+                            ? Icons.playlist_add_check_rounded
+                            : Icons.playlist_add_rounded,
+                        size: 20,
+                        color: provider.isComparing(
+                                item.query, provider.radiusMeters)
+                            ? ValoraColors.primary
+                            : (isDark
+                                ? ValoraColors.neutral500
+                                : ValoraColors.neutral400),
+                      ),
+                      onPressed: () => provider.toggleComparison(
+                          item.query, provider.radiusMeters),
                     ),
                   ),
                 );
