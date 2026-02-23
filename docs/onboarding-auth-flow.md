@@ -14,7 +14,7 @@ sequenceDiagram
     participant Identity as IdentityService (Infrastructure)
     participant UserMgr as UserManager<ApplicationUser>
     participant Token as TokenGenerator
-    participant DB as PostgreSQL
+    participant DB as SQL Server
 
     Client->>API: POST /api/auth/login { email, password }
     API->>Service: LoginAsync(LoginDto)
@@ -36,16 +36,16 @@ sequenceDiagram
 
         Service->>Service: GenerateAuthResponseAsync(user)
         Service->>Token: GenerateAccessToken(user)
-        Token-->>Service: JWT (15 min)
+        Token-->>Service: JWT (15-60 min)
 
         Service->>Token: GenerateRefreshToken()
-        Token-->>Service: Refresh Token (7 days)
+        Token-->>Service: Refresh Token (30 days)
 
         Service->>Identity: SaveRefreshTokenAsync(userId, token)
         Identity->>DB: INSERT INTO "RefreshTokens" (...)
 
         Service-->>API: AuthResponseDto
-        API-->>Client: 200 OK { accessToken, refreshToken }
+        API-->>Client: 200 OK { Token, RefreshToken, Email, UserId, Roles }
     end
 ```
 
@@ -63,7 +63,7 @@ sequenceDiagram
 ### 3. Token Generation (`Valora.Application`)
 - Upon successful verification, the system generates two tokens:
   - **Access Token (JWT):** Short-lived (e.g., 15-60 minutes). Contains claims (UserId, Email, Roles) and is signed with the `JWT_SECRET`. Used for authorizing API requests.
-  - **Refresh Token:** Long-lived (e.g., 7 days). A random secure string stored in the database. Used to obtain a new Access Token when the old one expires.
+  - **Refresh Token:** Long-lived (default: 30 days). A random secure string stored in the database. Used to obtain a new Access Token when the old one expires.
 
 ### 4. Persistence
 - The **Refresh Token** is hashed (SHA-256) and stored in the `RefreshTokens` table linked to the user.
@@ -81,7 +81,7 @@ sequenceDiagram
     participant API as Valora.Api
     participant Service as AuthService
     participant Identity as IdentityService
-    participant DB as PostgreSQL
+    participant DB as SQL Server
 
     Client->>API: POST /api/auth/refresh { refreshToken }
     API->>Service: RefreshTokenAsync(token)
@@ -106,7 +106,7 @@ sequenceDiagram
         Identity->>DB: INSERT INTO "RefreshTokens" (...)
 
         Service-->>API: AuthResponseDto
-        API-->>Client: 200 OK { newAccess, newRefresh }
+        API-->>Client: 200 OK { Token, RefreshToken }
     end
 ```
 
