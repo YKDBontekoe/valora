@@ -271,6 +271,10 @@ class ApiClient {
         throw NotFoundException(
           (message ?? 'Resource not found') + traceSuffix,
         );
+      case 409:
+        throw ConflictException(
+          (message ?? 'Action could not be completed due to a conflict') + traceSuffix,
+        );
       case 429:
         throw ServerException(
           'Too many requests. Please try again later.$traceSuffix',

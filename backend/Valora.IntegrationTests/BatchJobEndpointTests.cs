@@ -171,7 +171,8 @@ public class BatchJobEndpointTests : BaseIntegrationTest
         var response = await Client.PostAsync($"/api/admin/jobs/{job.Id}/retry", null);
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        // Conflict is now returned because InvalidOperationException is mapped to 409
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
     [Fact]
@@ -198,6 +199,7 @@ public class BatchJobEndpointTests : BaseIntegrationTest
         var response = await Client.PostAsync($"/api/admin/jobs/{job.Id}/cancel", null);
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        // Conflict is now returned because InvalidOperationException is mapped to 409
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 }

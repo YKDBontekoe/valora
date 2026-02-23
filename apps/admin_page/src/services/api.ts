@@ -83,15 +83,18 @@ api.interceptors.response.use(
     }
 
     // Global Error Feedback
-    const message = error.response?.data?.detail
-      || error.response?.data?.title
-      || error.message
-      || 'An unexpected error occurred';
+    const responseMessage = error.response?.data?.detail || error.response?.data?.title;
+    const fallbackMessage = responseMessage || error.message || 'An unexpected error occurred';
 
     const isHealthEndpoint = originalRequest.url?.endsWith('/health');
 
     if (error.response?.status !== 401 && !isHealthEndpoint) {
-       showToast(message, 'error');
+       // Enhance user feedback for specific status codes
+       if (error.response?.status === 409) {
+           showToast(responseMessage || 'The action conflicts with the current state of the resource.', 'error');
+       } else {
+           showToast(fallbackMessage, 'error');
+       }
     }
 
     // Avoid logging full error object to prevent token leakage

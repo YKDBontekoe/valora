@@ -120,15 +120,8 @@ public static class AdminEndpoints
             IBatchJobService jobService,
             CancellationToken ct) =>
         {
-            try
-            {
-                var job = await jobService.GetJobDetailsAsync(id, ct);
-                return Results.Ok(job);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.Problem(detail: "Job not found.", statusCode: 404);
-            }
+            var job = await jobService.GetJobDetailsAsync(id, ct);
+            return Results.Ok(job);
         });
 
         group.MapPost("/jobs/{id}/retry", async (
@@ -136,19 +129,8 @@ public static class AdminEndpoints
             IBatchJobService jobService,
             CancellationToken ct) =>
         {
-            try
-            {
-                var job = await jobService.RetryJobAsync(id, ct);
-                return Results.Ok(job);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.Problem(detail: "Job not found.", statusCode: 404);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.Problem(detail: ex.Message, statusCode: 400);
-            }
+            var job = await jobService.RetryJobAsync(id, ct);
+            return Results.Ok(job);
         });
 
         group.MapPost("/jobs/{id}/cancel", async (
@@ -156,20 +138,8 @@ public static class AdminEndpoints
             IBatchJobService jobService,
             CancellationToken ct) =>
         {
-            try
-            {
-                var job = await jobService.CancelJobAsync(id, ct);
-                return Results.Ok(job);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.Problem(detail: "Job not found.", statusCode: 404);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.Problem(detail: ex.Message, statusCode: 400);
-            }
-
+            var job = await jobService.CancelJobAsync(id, ct);
+            return Results.Ok(job);
         });
     }
 }

@@ -56,11 +56,25 @@ public class ExceptionHandlingMiddleware
                 detail = "One or more validation errors occurred.";
                 errors = validationEx.Errors;
                 break;
+            case KeyNotFoundException:
             case NotFoundException:
                 statusCode = (int)HttpStatusCode.NotFound;
                 title = "Resource Not Found";
                 // Hide specific not found details in production to prevent enumeration/leakage
                 detail = _env.IsProduction() ? "The requested resource was not found." : exception.Message;
+                break;
+            case ObjectDisposedException:
+                // Explicitly catch ObjectDisposedException before InvalidOperationException
+                // to ensure it is treated as a 500 Server Error rather than a 409 Conflict.
+                statusCode = (int)HttpStatusCode.InternalServerError;
+                title = "Internal Server Error";
+                detail = _env.IsDevelopment() ? exception.Message : "An unexpected error occurred. Please try again later.";
+                break;
+            case InvalidOperationException:
+                statusCode = (int)HttpStatusCode.Conflict;
+                title = "Operation Conflict";
+                // Hide specific details in production to prevent leakage of internal state logic
+                detail = _env.IsProduction() ? "The operation failed due to a conflict with the current state of the resource." : exception.Message;
                 break;
             case UnauthorizedAccessException:
                 statusCode = (int)HttpStatusCode.Unauthorized;

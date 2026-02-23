@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
@@ -75,7 +76,7 @@ public class BatchJobService : IBatchJobService
     public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
-        if (job == null) throw new KeyNotFoundException($"Job with ID {id} not found.");
+        if (job == null) throw new NotFoundException($"Job with ID {id} not found.");
         return MapToDto(job);
     }
 
@@ -94,7 +95,7 @@ public class BatchJobService : IBatchJobService
     public async Task<BatchJobDto> RetryJobAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
-        if (job == null) throw new KeyNotFoundException($"Job with ID {id} not found.");
+        if (job == null) throw new NotFoundException($"Job with ID {id} not found.");
 
         if (job.Status != BatchJobStatus.Failed && job.Status != BatchJobStatus.Completed)
         {
@@ -131,7 +132,7 @@ public class BatchJobService : IBatchJobService
     public async Task<BatchJobDto> CancelJobAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken);
-        if (job == null) throw new KeyNotFoundException($"Job with ID {id} not found.");
+        if (job == null) throw new NotFoundException($"Job with ID {id} not found.");
 
         if (job.Status == BatchJobStatus.Completed || job.Status == BatchJobStatus.Failed)
         {

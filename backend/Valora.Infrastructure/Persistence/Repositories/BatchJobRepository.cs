@@ -99,6 +99,23 @@ public class BatchJobRepository : IBatchJobRepository
     /// </summary>
     public async Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default)
     {
+        // Check for InMemory provider (used in tests) which doesn't support ExecuteUpdateAsync
+        if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            var job = await _context.BatchJobs
+                .Where(j => j.Status == BatchJobStatus.Pending)
+                .OrderBy(j => j.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (job != null)
+            {
+                job.Status = BatchJobStatus.Processing;
+                job.StartedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            return job;
+        }
+
         // 1. Fetch the ID of a potential job to process.
         // We don't lock here; we just need a candidate.
         var candidateId = await _context.BatchJobs
