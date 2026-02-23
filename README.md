@@ -8,6 +8,15 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 ---
 
+## Table of Contents
+- [Quick Start](#quick-start-10-minutes)
+- [Architecture](#architecture)
+- [Key Concepts](#key-concepts)
+- [Project Structure](#project-structure)
+- [Documentation Index](#documentation-index)
+
+---
+
 ## 🚀 Quick Start (10 Minutes)
 
 Follow these steps to get the entire system running locally.
@@ -145,7 +154,7 @@ graph TD
     API -->|5. Response| User
 
     API -.->|Async Cache| RAM[(In-Memory Cache)]
-    API -.->|Persist (Optional)| DB[(PostgreSQL)]
+    API -.->|"Persist (Optional)"| DB[(PostgreSQL)]
 ```
 
 ### Key Components
@@ -188,6 +197,7 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 ## 📚 Documentation Index
 
 - **[Onboarding Guide](docs/onboarding.md)**: Detailed setup & troubleshooting.
+- **[User Guide](docs/user-guide.md)**: How to use the app to generate reports.
 - **[Developer Guide](docs/developer-guide.md)**: Coding standards & patterns.
 - **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
 - **[Data Flow: Reading (Reports)](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
