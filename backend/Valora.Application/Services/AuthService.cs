@@ -57,19 +57,7 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
 
-        var token = await _tokenService.CreateJwtTokenAsync(user);
-        var roles = await _identityService.GetUserRolesAsync(user);
-
-        var refreshToken = _tokenService.GenerateRefreshToken(user.Id);
-        await _tokenService.SaveRefreshTokenAsync(refreshToken);
-
-        return new AuthResponseDto(
-            token,
-            refreshToken.RawToken,
-            user.Email!,
-            user.Id,
-            roles
-        );
+        return await GenerateAuthResponseAsync(user);
     }
 
     private async Task<ApplicationUser?> ValidateUserAsync(string email, string password)
@@ -94,21 +82,10 @@ public class AuthService : IAuthService
         }
 
         // Generate new access token and lookup roles first
-        var newAccessToken = await _tokenService.CreateJwtTokenAsync(existingToken.User);
-        var roles = await _identityService.GetUserRolesAsync(existingToken.User);
-
         // If above operations succeed, then rotate refresh token
         await _tokenService.RevokeRefreshTokenAsync(refreshToken); // Revoke old token
-        var newRefreshToken = _tokenService.GenerateRefreshToken(existingToken.UserId);
-        await _tokenService.SaveRefreshTokenAsync(newRefreshToken); // Save new token
 
-        return new AuthResponseDto(
-            newAccessToken,
-            newRefreshToken.RawToken,
-            existingToken.User.Email!,
-            existingToken.User.Id,
-            roles
-        );
+        return await GenerateAuthResponseAsync(existingToken.User);
     }
 
     public async Task<AuthResponseDto?> ExternalLoginAsync(ExternalLoginRequestDto request)
@@ -131,6 +108,11 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User logged in via external provider {Provider}: {UserId}", request.Provider, user!.Id);
 
+        return await GenerateAuthResponseAsync(user);
+    }
+
+    private async Task<AuthResponseDto> GenerateAuthResponseAsync(ApplicationUser user)
+    {
         var token = await _tokenService.CreateJwtTokenAsync(user);
         var roles = await _identityService.GetUserRolesAsync(user);
 
