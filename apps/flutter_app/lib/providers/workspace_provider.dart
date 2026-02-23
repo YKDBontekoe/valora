@@ -11,8 +11,11 @@ class WorkspaceProvider extends ChangeNotifier {
   List<Workspace> _workspaces = [];
   List<Workspace> get workspaces => _workspaces;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  bool _isWorkspacesLoading = false;
+  bool get isWorkspacesLoading => _isWorkspacesLoading;
+
+  bool _isWorkspaceDetailLoading = false;
+  bool get isWorkspaceDetailLoading => _isWorkspaceDetailLoading;
 
   String? _error;
   String? get error => _error;
@@ -29,7 +32,7 @@ class WorkspaceProvider extends ChangeNotifier {
   WorkspaceProvider(this._repository);
 
   Future<void> fetchWorkspaces() async {
-    _isLoading = true;
+    _isWorkspacesLoading = true;
     _error = null;
     notifyListeners();
 
@@ -38,7 +41,7 @@ class WorkspaceProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
     } finally {
-      _isLoading = false;
+      _isWorkspacesLoading = false;
       notifyListeners();
     }
   }
@@ -54,7 +57,7 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> selectWorkspace(String id) async {
-    _isLoading = true;
+    _isWorkspaceDetailLoading = true;
     _error = null;
     notifyListeners();
     try {
@@ -73,7 +76,7 @@ class WorkspaceProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
     } finally {
-      _isLoading = false;
+      _isWorkspaceDetailLoading = false;
       notifyListeners();
     }
   }

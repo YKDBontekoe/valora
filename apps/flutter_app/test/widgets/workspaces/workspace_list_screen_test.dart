@@ -10,7 +10,10 @@ import 'package:valora_app/models/comment.dart';
 
 class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
   @override
-  bool get isLoading => false;
+  bool get isWorkspacesLoading => false;
+
+  @override
+  bool get isWorkspaceDetailLoading => false;
 
   @override
   String? get error => null;

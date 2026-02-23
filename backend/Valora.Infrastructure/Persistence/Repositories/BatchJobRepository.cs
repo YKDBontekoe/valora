@@ -69,6 +69,55 @@ public class BatchJobRepository : IBatchJobRepository
             .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
     }
 
+    public async Task<PaginatedList<BatchJobSummaryDto>> GetJobSummariesAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.BatchJobs.AsNoTracking();
+
+        if (status.HasValue)
+        {
+            query = query.Where(j => j.Status == status.Value);
+        }
+
+        if (type.HasValue)
+        {
+            query = query.Where(j => j.Type == type.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+            query = query.Where(j => j.Target.Contains(search));
+        }
+
+        query = sort switch
+        {
+            "createdAt_asc" => query.OrderBy(x => x.CreatedAt),
+            "createdAt_desc" => query.OrderByDescending(x => x.CreatedAt),
+            "status_asc" => query.OrderBy(x => x.Status),
+            "status_desc" => query.OrderByDescending(x => x.Status),
+            "type_asc" => query.OrderBy(x => x.Type),
+            "type_desc" => query.OrderByDescending(x => x.Type),
+            "target_asc" => query.OrderBy(x => x.Target),
+            "target_desc" => query.OrderByDescending(x => x.Target),
+            _ => query.OrderByDescending(x => x.CreatedAt)
+        };
+
+        return await query
+            .Select(job => new BatchJobSummaryDto(
+                job.Id,
+                job.Type.ToString(),
+                job.Status.ToString(),
+                job.Target,
+                job.Progress,
+                job.Error,
+                job.ResultSummary,
+                job.CreatedAt,
+                job.StartedAt,
+                job.CompletedAt
+            ))
+            .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
+    }
+
     /// <summary>
     /// Atomically claims the next pending job.
     /// Uses ExecuteUpdateAsync (EF Core 7+) to perform an atomic update on the database

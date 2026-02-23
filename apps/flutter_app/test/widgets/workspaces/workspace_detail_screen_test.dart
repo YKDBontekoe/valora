@@ -11,7 +11,10 @@ import 'package:valora_app/models/comment.dart';
 // Create a simple mock manually instead of using Mockito's generator for this quick test
 class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
   @override
-  bool get isLoading => false;
+  bool get isWorkspacesLoading => false;
+
+  @override
+  bool get isWorkspaceDetailLoading => false;
 
   @override
   String? get error => null;

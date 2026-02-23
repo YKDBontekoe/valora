@@ -36,7 +36,7 @@ void main() {
 
       expect(provider.workspaces.length, 1);
       expect(provider.workspaces.first.name, 'Test');
-      expect(provider.isLoading, false);
+      expect(provider.isWorkspacesLoading, false);
       expect(provider.error, null);
     });
 
@@ -47,7 +47,7 @@ void main() {
 
       expect(provider.workspaces.isEmpty, true);
       expect(provider.error, contains('Network error'));
-      expect(provider.isLoading, false);
+      expect(provider.isWorkspacesLoading, false);
     });
 
     test('createWorkspace adds new workspace', () async {
@@ -86,7 +86,7 @@ void main() {
       await provider.selectWorkspace('1');
 
       expect(provider.selectedWorkspace?.id, '1');
-      expect(provider.isLoading, false);
+      expect(provider.isWorkspaceDetailLoading, false);
     });
 
     test('inviteMember calls API and refreshes members', () async {
