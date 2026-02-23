@@ -78,8 +78,8 @@ public class BatchJobRepository : IBatchJobRepository
         return await query
             .Select(job => new BatchJobSummaryDto(
                 job.Id,
-                job.Type.ToString(),
-                job.Status.ToString(),
+                job.Type,
+                job.Status,
                 job.Target,
                 job.Progress,
                 job.Error,

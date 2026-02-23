@@ -150,8 +150,8 @@ public class BatchJobService : IBatchJobService
 
     private static BatchJobSummaryDto MapToSummaryDto(BatchJob job) => new(
         job.Id,
-        job.Type.ToString(),
-        job.Status.ToString(),
+        job.Type,
+        job.Status,
         job.Target,
         job.Progress,
         job.Error,

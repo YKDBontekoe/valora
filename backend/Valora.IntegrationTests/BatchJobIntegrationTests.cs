@@ -86,7 +86,7 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         Assert.NotNull(result);
         Assert.True(result.TotalCount >= 1);
         Assert.NotEmpty(result.Items);
-        Assert.All(result.Items, item => Assert.Equal("Completed", item.Status));
+        Assert.All(result.Items, item => Assert.Equal(BatchJobStatus.Completed, item.Status));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         Assert.NotNull(result);
         Assert.True(result.TotalCount >= 1);
         Assert.NotEmpty(result.Items);
-        Assert.All(result.Items, item => Assert.Equal("MapGeneration", item.Type));
+        Assert.All(result.Items, item => Assert.Equal(BatchJobType.MapGeneration, item.Type));
     }
 
     [Fact]
@@ -158,8 +158,8 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
         Assert.NotEmpty(result.Items);
         Assert.All(result.Items, item =>
         {
-            Assert.Equal("Completed", item.Status);
-            Assert.Equal("CityIngestion", item.Type);
+            Assert.Equal(BatchJobStatus.Completed, item.Status);
+            Assert.Equal(BatchJobType.CityIngestion, item.Type);
         });
     }
 

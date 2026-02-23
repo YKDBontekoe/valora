@@ -31,7 +31,7 @@ public class BatchJobServiceGetJobsTests
 
         var dtos = new List<BatchJobSummaryDto>
         {
-            new BatchJobSummaryDto(Guid.NewGuid(), "CityIngestion", "Completed", "Amsterdam", 100, null, null, DateTime.UtcNow, null, null)
+            new BatchJobSummaryDto(Guid.NewGuid(), BatchJobType.CityIngestion, BatchJobStatus.Completed, "Amsterdam", 100, null, null, DateTime.UtcNow, null, null)
         };
         var repoList = new PaginatedList<BatchJobSummaryDto>(dtos, 1, 1, 10);
 

@@ -61,17 +61,22 @@ class WorkspaceProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      _selectedWorkspace = await _repository.getWorkspace(id);
+      final workspaceFuture = _repository.getWorkspace(id);
+      final membersFuture = _repository.getWorkspaceMembers(id);
+      final listingsFuture = _repository.getWorkspaceListings(id);
+      final activityFuture = _repository.getWorkspaceActivity(id);
 
       final results = await Future.wait([
-        _repository.getWorkspaceMembers(id),
-        _repository.getWorkspaceListings(id),
-        _repository.getWorkspaceActivity(id),
+        workspaceFuture,
+        membersFuture,
+        listingsFuture,
+        activityFuture,
       ]);
 
-      _members = results[0] as List<WorkspaceMember>;
-      _savedListings = results[1] as List<SavedListing>;
-      _activityLogs = results[2] as List<ActivityLog>;
+      _selectedWorkspace = results[0] as Workspace;
+      _members = results[1] as List<WorkspaceMember>;
+      _savedListings = results[2] as List<SavedListing>;
+      _activityLogs = results[3] as List<ActivityLog>;
 
     } catch (e) {
       _error = e.toString();
