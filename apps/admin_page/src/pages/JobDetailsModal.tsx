@@ -5,7 +5,6 @@ import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
-import { AxiosError } from 'axios';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
