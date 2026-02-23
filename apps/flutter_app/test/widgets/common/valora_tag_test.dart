@@ -43,7 +43,9 @@ void main() {
       // Wait for initial animations
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(ValoraTag));
+      // Tap the text to ensure we hit a specific target inside the gesture detector
+      // avoiding hit test warnings on the outermost animated widget.
+      await tester.tap(find.text('Tap Me'));
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
@@ -62,14 +64,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(GestureDetector), findsNothing);
-      // MouseRegion is used internally by other widgets or might be implicitly present,
-      // but we specifically want to ensure our *interactive* MouseRegion (the one wrapping GestureDetector) is gone.
-      // The implementation removes the specific MouseRegion that wraps the GestureDetector.
-      // However, to be safe and specific, we can check that we don't have the gesture detector
-      // and that the widget tree structure is simpler.
-
-      // Let's verify that the ValoraTag child is directly the Container (or AnimatedContainer)
-      // and not wrapped in the interactive chain.
 
       final valoraTagFinder = find.byType(ValoraTag);
       final animatedContainerFinder = find.descendant(

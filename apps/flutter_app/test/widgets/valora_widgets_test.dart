@@ -32,7 +32,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(ValoraCard));
+      await tester.tap(find.text('Tap Me'));
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
@@ -185,7 +185,12 @@ void main() {
       expect(decoration.boxShadow, ValoraShadows.md); // Lifted
 
       // Now press down
-      await tester.startGesture(tester.getCenter(find.byType(ValoraCard)));
+      // Use getCenter of ValoraCard to ensure we target it,
+      // but interactions like 'startGesture' might also trigger the hit-test warning if looking up via finder.
+      // However, startGesture takes a point, not a finder. getCenter takes a finder.
+      // We'll target the SizedBox child if we can find it, or just ignore warning here as it's not a 'tap'.
+      // Actually, let's find the SizedBox inside.
+      await tester.startGesture(tester.getCenter(find.byType(SizedBox)));
       await tester.pumpAndSettle();
 
       container = tester.widget<AnimatedContainer>(cardFinder);
@@ -286,7 +291,9 @@ void main() {
 
       await tester.pump(); // Advance one frame
 
-      await tester.tap(find.byType(ValoraButton));
+      // Tap the loading indicator key to avoid hit test warning on the animated wrapper
+      await tester.tap(find.byKey(const ValueKey('loading')));
+
       // Pump enough time for the button press animation (scale) to complete
       // but do not settle (as spinner is infinite)
       await tester.pump(const Duration(milliseconds: 500));
