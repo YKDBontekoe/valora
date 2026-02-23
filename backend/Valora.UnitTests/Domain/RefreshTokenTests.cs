@@ -32,4 +32,10 @@ public class RefreshTokenTests
     {
         Assert.Throws<ArgumentException>(() => RefreshToken.Create(userId!, TimeProvider.System));
     }
+
+    [Fact]
+    public void Create_WithNullTimeProvider_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => RefreshToken.Create("valid_user", null!));
+    }
 }

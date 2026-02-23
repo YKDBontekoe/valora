@@ -23,6 +23,8 @@ public class RefreshToken : BaseEntity
             throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
         }
 
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
         var randomNumber = new byte[64];
         RandomNumberGenerator.Fill(randomNumber);
 
