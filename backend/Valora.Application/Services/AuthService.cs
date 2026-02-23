@@ -155,7 +155,7 @@ public class AuthService : IAuthService
     private static string GenerateRandomPassword()
     {
         // Generates a cryptographically strong password
-        // Requirements: 12 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
+        // Requirements: 16 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
         const string uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const string lowers = "abcdefghijklmnopqrstuvwxyz";
         const string digits = "0123456789";
@@ -163,34 +163,57 @@ public class AuthService : IAuthService
         const string allChars = uppers + lowers + digits + specials;
 
         var chars = new char[16];
-        var bytes = new byte[chars.Length];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
 
         // Ensure at least one of each required type
-        chars[0] = uppers[bytes[0] % uppers.Length];
-        chars[1] = lowers[bytes[1] % lowers.Length];
-        chars[2] = digits[bytes[2] % digits.Length];
-        chars[3] = specials[bytes[3] % specials.Length];
+        chars[0] = GetRandomChar(uppers);
+        chars[1] = GetRandomChar(lowers);
+        chars[2] = GetRandomChar(digits);
+        chars[3] = GetRandomChar(specials);
 
         // Fill the rest randomly
         for (int i = 4; i < chars.Length; i++)
         {
-            chars[i] = allChars[bytes[i] % allChars.Length];
+            chars[i] = GetRandomChar(allChars);
         }
 
         // Shuffle the result to avoid predictable pattern at start
         // Fisher-Yates shuffle
         for (int i = chars.Length - 1; i > 0; i--)
         {
-            // We can reuse bytes array for shuffle indices if we regenerate or just pick from it
-            // Let's just generate a new random index
-            var randByte = new byte[1];
-            System.Security.Cryptography.RandomNumberGenerator.Fill(randByte);
-            int j = randByte[0] % (i + 1);
-
+            // Random index from 0 to i (inclusive)
+            int j = GetRandomInt(i + 1);
             (chars[i], chars[j]) = (chars[j], chars[i]);
         }
 
         return new string(chars);
+    }
+
+    /// <summary>
+    /// Selects a random character from the given set using unbiased rejection sampling.
+    /// </summary>
+    private static char GetRandomChar(string charSet)
+    {
+        if (string.IsNullOrEmpty(charSet)) throw new ArgumentException("Character set cannot be empty", nameof(charSet));
+        return charSet[GetRandomInt(charSet.Length)];
+    }
+
+    /// <summary>
+    /// Generates a random integer between 0 (inclusive) and max (exclusive) using unbiased rejection sampling.
+    /// </summary>
+    private static int GetRandomInt(int max)
+    {
+        if (max <= 0) throw new ArgumentOutOfRangeException(nameof(max));
+
+        // Determine how many full sets of 'max' fit into the byte range [0, 255]
+        // This is the "fair" range. Any value >= this limit is rejected to avoid bias.
+        int limit = (256 / max) * max;
+
+        byte[] buffer = new byte[1];
+        do
+        {
+            System.Security.Cryptography.RandomNumberGenerator.Fill(buffer);
+        } while (buffer[0] >= limit);
+
+        return buffer[0] % max;
     }
 }
