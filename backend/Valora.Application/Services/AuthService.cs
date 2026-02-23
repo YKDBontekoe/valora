@@ -74,9 +74,28 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
     {
-        var existingToken = await _tokenService.GetActiveRefreshTokenAsync(refreshToken);
+        var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
 
-        if (existingToken == null || existingToken.User == null)
+        if (existingToken == null)
+        {
+            return null;
+        }
+
+        // Reuse Detection: If token is already revoked, it might be a theft attempt.
+        if (existingToken.Revoked != null)
+        {
+            _logger.LogWarning("Security Alert: Reuse of revoked refresh token detected for user {UserId}. Revoking all sessions.", existingToken.UserId);
+            await _tokenService.RevokeAllRefreshTokensAsync(existingToken.UserId);
+            return null;
+        }
+
+        // Check if expired
+        if (existingToken.Expires <= DateTime.UtcNow)
+        {
+            return null;
+        }
+
+        if (existingToken.User == null)
         {
             return null;
         }
@@ -133,8 +152,43 @@ public class AuthService : IAuthService
 
     private static string GenerateRandomPassword()
     {
-        // Generates a password satisfying the requirement:
-        // 8+ chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
-        return Guid.NewGuid().ToString("N") + "A1!";
+        // Generates a cryptographically strong password
+        // Requirements: 12 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
+        const string uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string lowers = "abcdefghijklmnopqrstuvwxyz";
+        const string digits = "0123456789";
+        const string specials = "!@#$%^&*()";
+        const string allChars = uppers + lowers + digits + specials;
+
+        var chars = new char[16];
+        var bytes = new byte[chars.Length];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+
+        // Ensure at least one of each required type
+        chars[0] = uppers[bytes[0] % uppers.Length];
+        chars[1] = lowers[bytes[1] % lowers.Length];
+        chars[2] = digits[bytes[2] % digits.Length];
+        chars[3] = specials[bytes[3] % specials.Length];
+
+        // Fill the rest randomly
+        for (int i = 4; i < chars.Length; i++)
+        {
+            chars[i] = allChars[bytes[i] % allChars.Length];
+        }
+
+        // Shuffle the result to avoid predictable pattern at start
+        // Fisher-Yates shuffle
+        for (int i = chars.Length - 1; i > 0; i--)
+        {
+            // We can reuse bytes array for shuffle indices if we regenerate or just pick from it
+            // Let's just generate a new random index
+            var randByte = new byte[1];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(randByte);
+            int j = randByte[0] % (i + 1);
+
+            (chars[i], chars[j]) = (chars[j], chars[i]);
+        }
+
+        return new string(chars);
     }
 }

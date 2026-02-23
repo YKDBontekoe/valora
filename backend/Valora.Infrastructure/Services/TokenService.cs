@@ -128,6 +128,23 @@ public class TokenService : ITokenService
         }
     }
 
+    public async Task RevokeAllRefreshTokensAsync(string userId)
+    {
+        var tokens = await _context.RefreshTokens
+            .Where(r => r.UserId == userId && r.Revoked == null)
+            .ToListAsync();
+
+        if (tokens.Any())
+        {
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            foreach (var token in tokens)
+            {
+                token.Revoked = now;
+            }
+            await _context.SaveChangesAsync();
+        }
+    }
+
     private static string HashRefreshToken(string token)
     {
         var bytes = Encoding.UTF8.GetBytes(token);

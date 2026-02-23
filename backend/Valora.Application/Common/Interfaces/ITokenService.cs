@@ -10,4 +10,5 @@ public interface ITokenService
     Task<Domain.Entities.RefreshToken?> GetRefreshTokenAsync(string token);
     Task<Domain.Entities.RefreshToken?> GetActiveRefreshTokenAsync(string token);
     Task RevokeRefreshTokenAsync(string token);
+    Task RevokeAllRefreshTokensAsync(string userId);
 }

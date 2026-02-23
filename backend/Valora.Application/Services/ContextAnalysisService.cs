@@ -93,13 +93,13 @@ public class ContextAnalysisService : IContextAnalysisService
         if (!string.IsNullOrWhiteSpace(profile.HouseholdProfile))
         {
             sb.AppendLine("Household Profile:");
-            sb.AppendLine(profile.HouseholdProfile);
+            sb.AppendLine(PromptSanitizer.Sanitize(profile.HouseholdProfile));
         }
 
         if (!string.IsNullOrWhiteSpace(profile.Preferences))
         {
             sb.AppendLine("Preferences:");
-            sb.AppendLine(profile.Preferences);
+            sb.AppendLine(PromptSanitizer.Sanitize(profile.Preferences));
         }
 
         if (profile.DisallowedSuggestions != null && profile.DisallowedSuggestions.Any())
@@ -107,7 +107,7 @@ public class ContextAnalysisService : IContextAnalysisService
             sb.AppendLine("Disallowed Suggestions (Do NOT suggest these):");
             foreach (var disallowed in profile.DisallowedSuggestions)
             {
-                sb.AppendLine($"- {disallowed}");
+                sb.AppendLine($"- {PromptSanitizer.Sanitize(disallowed)}");
             }
         }
 
