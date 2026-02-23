@@ -64,7 +64,8 @@ def run(playwright):
     # Wait for the page to load
     try:
         page.wait_for_selector("h1:has-text('Batch Jobs')", timeout=10000)
-    except:
+    except Exception as e:
+        print(f"Direct navigation failed, retrying via root. Error: {e}")
         # If direct navigation fails (e.g. client side routing issue on first load), go to root and navigate
         page.goto("http://localhost:5174/")
         page.click("a[href='/jobs']") # Assuming sidebar link

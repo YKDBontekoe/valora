@@ -95,7 +95,7 @@ public class BatchJobRepositoryTests
     }
 
     [Fact]
-    public async Task GetJobsAsync_ShouldSearchCaseInsensitive()
+    public async Task GetJobsAsync_ShouldSearchByPartialTarget()
     {
         using var context = new ValoraDbContext(_options);
         await SeedDatabase(context);
@@ -106,6 +106,8 @@ public class BatchJobRepositoryTests
         Assert.Equal(2, result.Items.Count); // Amsterdam, Rotterdam
         Assert.Contains(result.Items, j => j.Target == "Amsterdam");
         Assert.Contains(result.Items, j => j.Target == "Rotterdam");
+        // Note: True case-insensitive behavior depends on the database collation and cannot be fully
+        // validated with the InMemory provider. This test verifies that partial matching works as expected.
     }
 
     [Fact]
