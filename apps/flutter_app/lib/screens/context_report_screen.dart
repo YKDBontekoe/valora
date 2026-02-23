@@ -219,7 +219,7 @@ class _SearchLayout extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Radius selector
-                _RadiusSelector(provider: provider)
+                const _RadiusSelector()
                     .animate()
                     .fadeIn(duration: 400.ms, delay: 200.ms)
                     .slideY(begin: 0.1),
@@ -572,8 +572,7 @@ class _CompareButton extends StatelessWidget {
 
 /// Radius slider
 class _RadiusSelector extends StatelessWidget {
-  const _RadiusSelector({required this.provider});
-  final ContextReportProvider provider;
+  const _RadiusSelector();
 
   @override
   Widget build(BuildContext context) {
@@ -626,7 +625,7 @@ class _RadiusSelector extends StatelessWidget {
                 max: 5000,
                 divisions: 24,
                 value: radiusMeters.toDouble(),
-                onChanged: (value) => provider.setRadiusMeters(value.round()),
+                onChanged: (value) => context.read<ContextReportProvider>().setRadiusMeters(value.round()),
               );
             },
           ),
