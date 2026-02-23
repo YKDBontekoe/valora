@@ -103,7 +103,7 @@ public class BatchJobServiceTests
         await service.ProcessNextJobAsync();
 
         Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Equal("Processor Error", job.Error);
+        Assert.Equal("Job failed due to an internal error.", job.Error);
         _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
@@ -119,7 +119,7 @@ public class BatchJobServiceTests
         await service.ProcessNextJobAsync();
 
         Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Contains("System configuration error: processor missing", job.Error);
+        Assert.Equal("Job failed due to an internal error.", job.Error);
         _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 

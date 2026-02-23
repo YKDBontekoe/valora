@@ -83,9 +83,12 @@ public class AuthService : IAuthService
 
         // Generate new access token and lookup roles first
         // If above operations succeed, then rotate refresh token
-        await _tokenService.RevokeRefreshTokenAsync(refreshToken); // Revoke old token
+        var authResponse = await GenerateAuthResponseAsync(existingToken.User);
 
-        return await GenerateAuthResponseAsync(existingToken.User);
+        // Only revoke old token AFTER the new one is successfully generated and persisted
+        await _tokenService.RevokeRefreshTokenAsync(refreshToken);
+
+        return authResponse;
     }
 
     public async Task<AuthResponseDto?> ExternalLoginAsync(ExternalLoginRequestDto request)

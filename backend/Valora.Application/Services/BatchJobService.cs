@@ -192,7 +192,8 @@ public class BatchJobService : IBatchJobService
         }
         catch (OperationCanceledException)
         {
-            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, "Job cancelled by user.", cancellationToken: cancellationToken);
+            // Use CancellationToken.None to ensure the status update persists even if the job token was cancelled
+            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, "Job cancelled by user.", cancellationToken: CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -230,15 +231,17 @@ public class BatchJobService : IBatchJobService
         else if (newStatus == BatchJobStatus.Failed)
         {
             job.CompletedAt = DateTime.UtcNow;
-            job.Error = ex?.Message ?? message ?? "Job failed.";
 
             if (ex != null)
             {
+                // Do not expose raw exception details to the public job status
+                job.Error = "Job failed due to an internal error.";
                 _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
                 AppendLog(job, $"Job failed: {ex.Message}");
             }
             else
             {
+                job.Error = message ?? "Job failed.";
                 _logger.LogInformation("Batch job {JobId} cancelled/failed: {Message}", job.Id, job.Error);
                 AppendLog(job, message ?? "Job failed.");
             }
