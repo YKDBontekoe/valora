@@ -23,6 +23,7 @@ public class BatchJobRepository : IBatchJobRepository
     public async Task<List<BatchJob>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
         return await _context.BatchJobs
+            .AsNoTracking()
             .OrderByDescending(x => x.CreatedAt)
             .Take(limit)
             .ToListAsync(cancellationToken);
@@ -68,12 +69,48 @@ public class BatchJobRepository : IBatchJobRepository
             .ToPaginatedListAsync(pageIndex, pageSize, cancellationToken);
     }
 
+    /// <summary>
+    /// Atomically claims the next pending job.
+    /// Uses ExecuteUpdateAsync (EF Core 7+) to perform an atomic update on the database
+    /// without needing explicit transactions or locking hints, ensuring only one worker
+    /// successfully claims a specific job.
+    /// </summary>
     public async Task<BatchJob?> GetNextPendingJobAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.BatchJobs
+        // 1. Fetch the ID of a potential job to process.
+        // We don't lock here; we just need a candidate.
+        var candidateId = await _context.BatchJobs
             .Where(x => x.Status == BatchJobStatus.Pending)
             .OrderBy(x => x.CreatedAt)
+            .Select(x => x.Id)
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (candidateId == Guid.Empty)
+        {
+            return null;
+        }
+
+        // 2. Attempt to atomically claim this specific job.
+        // This update will only succeed (return 1) if the status is still Pending at the moment of execution.
+        var rowsAffected = await _context.BatchJobs
+            .Where(x => x.Id == candidateId && x.Status == BatchJobStatus.Pending)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(j => j.Status, BatchJobStatus.Processing)
+                .SetProperty(j => j.StartedAt, DateTime.UtcNow),
+                cancellationToken);
+
+        if (rowsAffected > 0)
+        {
+            // 3. If claimed successfully, return the full entity.
+            // We fetch it again to get the updated state (and all properties).
+            // Since we just claimed it, we are the owner.
+            return await _context.BatchJobs.FindAsync(new object[] { candidateId }, cancellationToken);
+        }
+
+        // 4. If rowsAffected == 0, another worker claimed it in between step 1 and 2.
+        // We return null to indicate "no job claimed" for this attempt.
+        // The worker loop will retry immediately or after a delay.
+        return null;
     }
 
     public async Task<BatchJob> AddAsync(BatchJob job, CancellationToken cancellationToken = default)
