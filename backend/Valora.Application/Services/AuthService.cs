@@ -76,6 +76,11 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
     {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return null;
+        }
+
         var existingToken = await ValidateRefreshTokenAsync(refreshToken);
         if (existingToken?.User == null)
         {

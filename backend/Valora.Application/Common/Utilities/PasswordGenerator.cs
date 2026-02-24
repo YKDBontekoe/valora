@@ -52,22 +52,10 @@ public static class PasswordGenerator
     }
 
     /// <summary>
-    /// Generates a random integer between 0 (inclusive) and max (exclusive) using unbiased rejection sampling.
+    /// Generates a random integer between 0 (inclusive) and max (exclusive).
     /// </summary>
     private static int GetRandomInt(int max)
     {
-        if (max <= 0) throw new ArgumentOutOfRangeException(nameof(max));
-
-        // Determine how many full sets of 'max' fit into the byte range [0, 255]
-        // This is the "fair" range. Any value >= this limit is rejected to avoid bias.
-        int limit = (256 / max) * max;
-
-        byte[] buffer = new byte[1];
-        do
-        {
-            RandomNumberGenerator.Fill(buffer);
-        } while (buffer[0] >= limit);
-
-        return buffer[0] % max;
+        return RandomNumberGenerator.GetInt32(max);
     }
 }
