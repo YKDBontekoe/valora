@@ -159,7 +159,26 @@ describe('useBatchJobsPolling', () => {
 
     // Now resolve the first fetch
     await act(async () => {
-        resolveFirst({ items: [{ id: 'old', status: 'Completed', type: 'CityIngestion', target: 'Test', progress: 100, createdAt: '', updatedAt: '' }], totalPages: 1 });
+        resolveFirst({
+            items: [{
+                id: 'old',
+                status: 'Completed',
+                type: 'CityIngestion',
+                target: 'Test',
+                progress: 100,
+                createdAt: '',
+                executionLog: '',
+                startedAt: '',
+                completedAt: '',
+                error: null,
+                resultSummary: ''
+            }],
+            totalPages: 1,
+            pageIndex: 1,
+            totalCount: 1,
+            hasNextPage: false,
+            hasPreviousPage: false
+        });
     });
 
     // Should still be 'new'

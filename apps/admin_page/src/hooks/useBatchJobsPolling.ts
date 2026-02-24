@@ -27,7 +27,7 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestRequestIdRef = useRef(0);
   const isFetchingRef = useRef(false);
   const optionsRef = useRef(options);
@@ -107,6 +107,7 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.page, options.pageSize, options.statusFilter, options.typeFilter, options.searchQuery, options.sortBy, fetchData]);
 
   // Visibility change handler
