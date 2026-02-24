@@ -74,6 +74,22 @@ public class AuthService : IAuthService
         return isValidPassword ? user : null;
     }
 
+    /// <summary>
+    /// Refreshes an access token using a valid refresh token.
+    /// Implements "Reuse Detection" to prevent token theft.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Security Mechanism: Reuse Detection</strong><br/>
+    /// When a refresh token is used, it is rotated (replaced with a new one). The old token is marked as revoked.
+    /// If an attacker manages to steal a refresh token and uses it <em>after</em> the legitimate user has already rotated it,
+    /// we detect this attempt (token is already revoked).
+    /// </para>
+    /// <para>
+    /// In response, we assume a breach and revoke <strong>ALL</strong> refresh tokens for that user, forcing a re-login on all devices.
+    /// This is compliant with OAuth 2.0 Best Current Practice.
+    /// </para>
+    /// </remarks>
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
     {
         var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
@@ -152,6 +168,21 @@ public class AuthService : IAuthService
         );
     }
 
+    /// <summary>
+    /// Generates a cryptographically strong random password for auto-created accounts.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Entropy Source:</strong> Uses <see cref="System.Security.Cryptography.RandomNumberGenerator"/> (CSPRNG)
+    /// to ensure the password cannot be predicted. We strictly avoid <c>System.Random</c>.
+    /// </para>
+    /// <para>
+    /// <strong>Algorithm:</strong>
+    /// 1. Guaranteed inclusion of at least one Uppercase, Lowercase, Digit, and Special character.
+    /// 2. Filling the remaining length with random characters from the full set.
+    /// 3. Fisher-Yates shuffle to randomize the positions of the guaranteed characters.
+    /// </para>
+    /// </remarks>
     private static string GenerateRandomPassword()
     {
         // Generates a cryptographically strong password

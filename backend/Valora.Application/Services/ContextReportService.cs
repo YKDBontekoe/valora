@@ -15,6 +15,33 @@ namespace Valora.Application.Services;
 /// <summary>
 /// Orchestrates the generation of context reports by aggregating data from multiple external sources.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Sequence Overview:</strong>
+/// </para>
+/// <code>
+/// mermaid
+/// sequenceDiagram
+///     participant API as Valora.Api
+///     participant Service as ContextReportService
+///     participant Resolver as PdokLocationResolver
+///     participant Providers as External Data Sources
+///
+///     API->>Service: BuildAsync(input)
+///     Service->>Resolver: Resolve Address
+///     Resolver-->>Service: Lat/Lon & Admin Codes
+///
+///     par Fan-Out
+///         Service->>Providers: Fetch CBS Stats
+///         Service->>Providers: Fetch OSM Amenities
+///         Service->>Providers: Fetch Air Quality
+///     end
+///
+///     Providers-->>Service: Raw Data
+///     Service->>Service: Normalize & Score (Fan-In)
+///     Service-->>API: ContextReportDto
+/// </code>
+/// </remarks>
 public sealed class ContextReportService : IContextReportService
 {
     private readonly ILocationResolver _locationResolver;
@@ -80,6 +107,8 @@ public sealed class ContextReportService : IContextReportService
         var normalizedRadius = Math.Clamp(request.RadiusMeters, ReportConstants.MinRadiusMeters, ReportConstants.MaxRadiusMeters);
 
         // 1. Resolve Location First
+        // We must resolve the address to coordinates first because all subsequent API calls (CBS, OSM)
+        // require lat/lon or neighborhood codes, not raw address strings.
         var location = await _locationResolver.ResolveAsync(request.Input, cancellationToken);
         if (location is null)
         {
@@ -87,6 +116,8 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 2. Check Report Cache using stable location key
+        // We use a high-precision coordinate key (5 decimals) instead of the input string.
+        // This ensures "Damrak 1" and "Damrak 1, Amsterdam" hit the same cache entry.
         var cacheKey = GetCacheKey(location, normalizedRadius);
 
         if (_cache.TryGetValue(cacheKey, out ContextReportDto? cached) && cached is not null)
@@ -95,6 +126,7 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 3. Fetch Data from Provider (Fan-Out)
+        // This call triggers the parallel execution of all external API clients.
         var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
         var warnings = new List<string>(sourceData.Warnings);
 

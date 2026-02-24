@@ -2,77 +2,60 @@
 
 **Valora is a public-context intelligence platform for residential locations in the Netherlands.**
 
-It helps users understand the "vibe" and statistics of a neighborhood by aggregating data from public sources (CBS, PDOK, OpenStreetMap, Luchtmeetnet) into a unified, explainable context report.
+It answers the question *"What is it like to live here?"* by aggregating data from public sources (CBS, PDOK, OpenStreetMap, Luchtmeetnet) into a unified, explainable context report.
 
 > **Valora is NOT a scraper.** It does not copy listing photos or descriptions. It enriches location data with public context.
 
 ---
 
-## Table of Contents
-<!-- markdownlint-disable MD051 -->
-- [Quick Start](#quick-start-10-minutes)
-- [Architecture](#architecture)
-- [Key Concepts](#key-concepts)
-- [Project Structure](#project-structure)
-- [Documentation Index](#documentation-index)
-<!-- markdownlint-enable MD051 -->
+## ⚡ Quick Start (10 Minutes)
 
----
-
-## 🚀 Quick Start (10 Minutes)
-
-Follow these steps to get the entire system running locally.
+Follow this checklist to get the entire system running locally.
 
 ### Prerequisites
-- **Docker Desktop** (for database)
-- **.NET 10.0 SDK** (for backend)
-- **Flutter SDK** (for mobile app)
-- **Node.js 18+** (for admin dashboard)
+- [ ] **Docker Desktop** (running)
+- [ ] **.NET 10.0 SDK**
+- [ ] **Flutter SDK**
+- [ ] **Node.js 18+**
 
 ### 1. Start Infrastructure
-Run the database container.
+Run the database container only.
 ```bash
-docker-compose -f docker/docker-compose.yml up -d
+docker-compose -f docker/docker-compose.yml up -d postgres
 ```
-*Troubleshooting:*
-- If `docker-compose` fails, ensure Docker Desktop is running.
-- Ensure port `5432` is not already in use by another Postgres instance.
+*Check:* Run `docker ps`. You should see `valora-db` running on port 5432.
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
 
-**Note:** The `.env` file is primarily used by Docker. When running locally via `dotnet run`, configuration is read from `appsettings.Development.json` or Environment Variables.
-
 ```bash
 cd backend
-# Option A: Set secrets via User Secrets (Recommended)
+# Set the JWT Secret (Required for Auth)
 dotnet user-secrets init --project Valora.Api
 dotnet user-secrets set "JWT_SECRET" "YourStrongSecretKeyHere_MustBeAtLeast32CharsLong!" --project Valora.Api
-
-# Option B: Set Environment Variable manually
-export JWT_SECRET="YourStrongSecretKeyHere_MustBeAtLeast32CharsLong!"
 
 # Run the API
 dotnet run --project Valora.Api
 ```
-*Verify: Open `http://localhost:5253/api/health` in your browser. You should see `{"status":"healthy", "timestamp": "..."}`.*
+*Check:* Open [http://localhost:5253/api/health](http://localhost:5253/api/health). You should see `{"status":"Healthy",...}`.
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
 
-> ⚠️ **CRITICAL**: The default `.env` points to the PRODUCTION API.
-> Change `API_URL` in `.env` to your local backend:
+```bash
+cd ../apps/flutter_app
+cp .env.example .env
+```
+> ⚠️ **CRITICAL**: Open `.env` and set `API_URL` to:
 > - Android Emulator: `http://10.0.2.2:5001/api`
 > - iOS Simulator / Desktop: `http://localhost:5001/api`
 
 ```bash
-cd ../apps/flutter_app
-cp .env.example .env
 flutter pub get
 flutter run
 ```
 
-### 4. Configure & Run Admin Dashboard
+### 4. Configure & Run Admin Dashboard (Optional)
 The web dashboard for managing users and system settings.
 
 ```bash
@@ -159,25 +142,20 @@ graph TD
     API -.->|"Persist (Optional)"| DB[(PostgreSQL)]
 ```
 
-### Key Components
-
-| Layer | Responsibility | Key Tech |
-|---|---|---|
-| **Valora.Domain** | Core business rules and entities. Zero dependencies. | C# |
-| **Valora.Application** | Use cases (e.g., `GetContextReport`). Orchestrates data flow. | MediatR |
-| **Valora.Infrastructure** | External integrations (Database, APIs). | EF Core, HttpClient |
-| **Valora.Api** | Entry point. Configuration, Auth, and HTTP handling. | ASP.NET Core Minimal APIs |
-| **Flutter App** | Cross-platform mobile client. | Flutter, Provider |
-
 ---
 
-## 💡 Key Concepts
+## 🔌 API Reference
 
-### 1. The "Fan-Out" Context Report
-When a user requests a report for an address, Valora does **not** look up a pre-existing record. It generates the report in real-time by querying multiple external sources in parallel.
+The API is built with ASP.NET Core Minimal APIs. Full reference is available in **[docs/api-reference.md](docs/api-reference.md)**.
 
-- **Why?** Data freshness and coverage. We don't need to scrape or store millions of records.
-- **How?** See `ContextReportService.cs`. It uses `Task.WhenAll` to fetch data from CBS, PDOK, and OSM simultaneously.
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/auth/register` | Create a new user account. |
+| `POST` | `/api/auth/login` | Login and receive JWT tokens. |
+| `POST` | `/api/context/report` | **Core:** Generate a report for an address (Fan-Out). |
+| `GET` | `/api/map/cities` | Get aggregated city scores for map visualization. |
+| `POST` | `/api/ai/chat` | Chat with the Valora AI assistant. |
+| `GET` | `/api/admin/stats` | (Admin) Get system usage statistics. |
 
 ---
 

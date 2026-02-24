@@ -67,8 +67,15 @@ public sealed class PdokLocationResolver : ILocationResolver
             return cached;
         }
 
-        // Query the "free" endpoint which allows for flexible/fuzzy input
-        // fq=type:adres restricts results to specific addresses, filtering out general place names
+        // Query the "free" endpoint which allows for flexible/fuzzy input.
+        // We use the 'free' endpoint instead of 'suggest' because we need the full document (coordinates)
+        // in a single hop, rather than a suggest->lookup two-step process.
+        //
+        // Parameters:
+        // - q: The fuzzy query string (e.g., "Damrak 1 Amsterdam")
+        // - fq=type:adres: Restricts results to specific addresses, filtering out general place names like "Damrak".
+        //   This ensures we resolve to a specific building with high-precision coordinates.
+        // - rows=1: We only care about the best match.
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
@@ -89,7 +96,10 @@ public sealed class PdokLocationResolver : ILocationResolver
                 docsElement.ValueKind != JsonValueKind.Array ||
                 docsElement.GetArrayLength() == 0)
             {
-                // Cache negative results to prevent repeated bad calls
+                // Cache Negative Results (Circuit Breaker Pattern):
+                // If PDOK returns no results for "InvalidAddress 123", we cache this failure.
+                // This prevents us from spamming the external API with repeated requests for known bad inputs,
+                // protecting both our system latency and the PDOK service.
                 _cache.Set(cacheKey, null as ResolvedLocationDto, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
                 return null;
             }

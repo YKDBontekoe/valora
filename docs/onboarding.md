@@ -4,7 +4,9 @@
 
 Get a local environment running, understand the architecture, and generate your first context report.
 
-## 1. Environment Setup (First 10 Minutes)
+## 1. Environment Setup
+
+> **Tip:** For a 10-minute quick start checklist, see the **[README](../README.md#quick-start-10-minutes)**. Use this guide for a more detailed walkthrough.
 
 Use this visual guide to understand the dependencies between the setup steps.
 
@@ -87,7 +89,15 @@ curl http://localhost:5001/api/health
 
 ## 3. Understanding the Architecture
 
-To understand how your request was processed, read the **[Data Flow Deep Dive](onboarding-data-flow.md)**.
+To truly understand how the system works, follow the data:
+
+### 📖 Reading Data (The Report Engine)
+When you request a report, the backend orchestrates a parallel "Fan-Out" query to multiple external APIs.
+**[Read the Data Flow Deep Dive (Report Generation)](onboarding-data-flow.md)**
+
+### 💾 Writing Data (Persistence & Auth)
+When you register or save a report, data flows through the Domain layer into PostgreSQL.
+**[Read the Persistence Flow Guide (Auth & Database)](onboarding-persistence-flow.md)**
 
 ### Product Mental Model
 - **Valora is not a scraper.** It does not copy listing photos or descriptions.
