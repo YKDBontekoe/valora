@@ -62,11 +62,18 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
           ContextReportProvider(repository: context.read<ContextReportRepository>()),
       child: Material(
         type: MaterialType.transparency,
-        child: Consumer<ContextReportProvider>(
-          builder: (context, provider, _) {
-            final hasReport = provider.report != null;
-            final isLoading = provider.isLoading;
-            final comparisonCount = provider.comparisonIds.length;
+        child: Selector<ContextReportProvider, ({bool hasReport, bool isLoading, int comparisonCount, bool isComparisonMode})>(
+          selector: (_, p) => (
+            hasReport: p.report != null,
+            isLoading: p.isLoading,
+            comparisonCount: p.comparisonIds.length,
+            isComparisonMode: _isComparisonMode,
+          ),
+          builder: (context, data, _) {
+            final provider = context.read<ContextReportProvider>();
+            final hasReport = data.hasReport;
+            final isLoading = data.isLoading;
+            final comparisonCount = data.comparisonCount;
 
             // Report the FAB to the parent HomeScreen
             final Widget? fab = comparisonCount > 0 && !_isComparisonMode
@@ -212,7 +219,7 @@ class _SearchLayout extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Radius selector
-                _RadiusSelector(provider: provider)
+                const _RadiusSelector()
                     .animate()
                     .fadeIn(duration: 400.ms, delay: 200.ms)
                     .slideY(begin: 0.1),
@@ -565,8 +572,7 @@ class _CompareButton extends StatelessWidget {
 
 /// Radius slider
 class _RadiusSelector extends StatelessWidget {
-  const _RadiusSelector({required this.provider});
-  final ContextReportProvider provider;
+  const _RadiusSelector();
 
   @override
   Widget build(BuildContext context) {
@@ -619,7 +625,7 @@ class _RadiusSelector extends StatelessWidget {
                 max: 5000,
                 divisions: 24,
                 value: radiusMeters.toDouble(),
-                onChanged: (value) => provider.setRadiusMeters(value.round()),
+                onChanged: (value) => context.read<ContextReportProvider>().setRadiusMeters(value.round()),
               );
             },
           ),
