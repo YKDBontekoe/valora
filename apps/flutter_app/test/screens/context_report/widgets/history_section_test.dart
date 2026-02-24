@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/screens/context_report/widgets/history_section.dart';
 import 'package:valora_app/models/search_history_item.dart';
-import 'package:valora_app/widgets/valora_widgets.dart';
 
 class MockContextReportProvider extends Mock implements ContextReportProvider {
   @override
