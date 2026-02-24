@@ -7,6 +7,12 @@ public interface IBatchJobRepository
 {
     Task<BatchJob?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<BatchJob>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a list of recent job summaries, projecting only necessary fields.
+    /// </summary>
+    Task<List<BatchJobSummaryDto>> GetRecentJobSummariesAsync(int limit = 10, CancellationToken cancellationToken = default);
+
     Task<PaginatedList<BatchJob>> GetJobsAsync(int pageIndex, int pageSize, BatchJobStatus? status = null, BatchJobType? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default);
 
     /// <summary>

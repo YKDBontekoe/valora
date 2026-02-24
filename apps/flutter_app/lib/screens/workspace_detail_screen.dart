@@ -84,14 +84,15 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
           ],
         ),
       ),
-      body: Consumer<WorkspaceProvider>(
-        builder: (context, provider, child) {
-          if (provider.isWorkspaceDetailLoading) {
+      body: Selector<WorkspaceProvider, ({bool isLoading, String? error})>(
+        selector: (_, p) => (isLoading: p.isWorkspaceDetailLoading, error: p.error),
+        builder: (context, data, child) {
+          if (data.isLoading) {
             return const Center(
               child: ValoraLoadingIndicator(message: 'Loading workspace...'),
             );
           }
-          if (provider.error != null) {
+          if (data.error != null) {
             return Center(
               child: ValoraEmptyState(
                 icon: Icons.error_outline_rounded,
@@ -99,166 +100,201 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                 subtitle: 'Could not load workspace details.',
                 actionLabel: 'Retry',
                 onAction: () =>
-                    provider.selectWorkspace(widget.workspaceId),
+                    context.read<WorkspaceProvider>().selectWorkspace(widget.workspaceId),
               ),
             );
           }
 
           return TabBarView(
             controller: _tabController,
-            children: [
-              _buildSavedListings(context, provider),
-              MemberManagementWidget(
-                members: provider.members,
-                canInvite: true,
-              ),
-              ActivityFeedWidget(activities: provider.activityLogs),
+            children: const [
+              _SavedListingsTab(),
+              _MembersTab(),
+              _ActivityTab(),
             ],
           );
         },
       ),
     );
   }
+}
 
-  Widget _buildSavedListings(
-      BuildContext context, WorkspaceProvider provider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+class _SavedListingsTab extends StatelessWidget {
+  const _SavedListingsTab();
 
-    if (provider.savedListings.isEmpty) {
-      return Center(
-        child: ValoraEmptyState(
-          icon: Icons.bookmark_add_rounded,
-          title: 'No saved listings',
-          subtitle:
-              'Properties you save to this workspace will appear here.',
-        ),
-      );
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.all(ValoraSpacing.md),
-      itemCount: provider.savedListings.length,
-      separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.sm),
-      itemBuilder: (context, index) {
-        final saved = provider.savedListings[index];
-        final listing = saved.listing;
-        return ValoraCard(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChangeNotifierProvider.value(
-                  value: context.read<WorkspaceProvider>(),
-                  child: SavedListingDetailScreen(savedListing: saved),
-                ),
-              ),
-            );
-          },
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<WorkspaceProvider>(
+      builder: (context, provider, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        if (provider.savedListings.isEmpty) {
+          return Center(
+            child: ValoraEmptyState(
+              icon: Icons.bookmark_add_rounded,
+              title: 'No saved listings',
+              subtitle: 'Properties you save to this workspace will appear here.',
+            ),
+          );
+        }
+        return ListView.separated(
           padding: const EdgeInsets.all(ValoraSpacing.md),
-          child: Row(
-            children: [
-              // Thumbnail
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: ValoraColors.primary.withValues(alpha: 0.08),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: listing?.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: listing!.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const ValoraShimmer(
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
-                        errorWidget: (context, url, error) => const Center(
-                          child: Icon(Icons.home_rounded,
-                              color: ValoraColors.primary, size: 28),
-                        ),
-                      )
-                    : const Center(
-                        child: Icon(Icons.home_rounded,
-                            color: ValoraColors.primary, size: 28),
-                      ),
-              ),
-              const SizedBox(width: ValoraSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      listing?.address ?? 'Unknown Address',
-                      style: ValoraTypography.titleSmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          itemCount: provider.savedListings.length,
+          separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.sm),
+          itemBuilder: (context, index) {
+            final saved = provider.savedListings[index];
+            final listing = saved.listing;
+            return ValoraCard(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: context.read<WorkspaceProvider>(),
+                      child: SavedListingDetailScreen(savedListing: saved),
                     ),
-                    if (listing?.city != null &&
-                        listing!.city!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        listing.city!,
-                        style: ValoraTypography.bodySmall.copyWith(
-                          color: isDark
-                              ? ValoraColors.neutral400
-                              : ValoraColors.neutral500,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.chat_bubble_outline_rounded,
-                            size: 14,
-                            color: isDark
-                                ? ValoraColors.neutral500
-                                : ValoraColors.neutral400),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${saved.commentCount} comments',
-                          style: ValoraTypography.labelSmall.copyWith(
-                            color: isDark
-                                ? ValoraColors.neutral500
-                                : ValoraColors.neutral400,
+                  ),
+                );
+              },
+              padding: const EdgeInsets.all(ValoraSpacing.md),
+              child: Row(
+                children: [
+                  // Thumbnail
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: ValoraColors.primary.withValues(alpha: 0.08),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: listing?.imageUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: listing!.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const ValoraShimmer(
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                            errorWidget: (context, url, error) => const Center(
+                              child: Icon(Icons.home_rounded,
+                                  color: ValoraColors.primary, size: 28),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(Icons.home_rounded,
+                                color: ValoraColors.primary, size: 28),
                           ),
+                  ),
+                  const SizedBox(width: ValoraSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          listing?.address ?? 'Unknown Address',
+                          style: ValoraTypography.titleSmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (saved.notes != null &&
-                            saved.notes!.isNotEmpty) ...[
-                          const SizedBox(width: 12),
-                          Icon(Icons.note_rounded,
-                              size: 14,
+                        if (listing?.city != null &&
+                            listing!.city!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            listing.city!,
+                            style: ValoraTypography.bodySmall.copyWith(
                               color: isDark
-                                  ? ValoraColors.neutral500
-                                  : ValoraColors.neutral400),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              saved.notes!,
+                                  ? ValoraColors.neutral400
+                                  : ValoraColors.neutral500,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(Icons.chat_bubble_outline_rounded,
+                                size: 14,
+                                color: isDark
+                                    ? ValoraColors.neutral500
+                                    : ValoraColors.neutral400),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${saved.commentCount} comments',
                               style: ValoraTypography.labelSmall.copyWith(
                                 color: isDark
                                     ? ValoraColors.neutral500
                                     : ValoraColors.neutral400,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                            if (saved.notes != null &&
+                                saved.notes!.isNotEmpty) ...[
+                              const SizedBox(width: 12),
+                              Icon(Icons.note_rounded,
+                                  size: 14,
+                                  color: isDark
+                                      ? ValoraColors.neutral500
+                                      : ValoraColors.neutral400),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  saved.notes!,
+                                  style: ValoraTypography.labelSmall.copyWith(
+                                    color: isDark
+                                        ? ValoraColors.neutral500
+                                        : ValoraColors.neutral400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      color: isDark
+                          ? ValoraColors.neutral500
+                          : ValoraColors.neutral400),
+                ],
               ),
-              Icon(Icons.chevron_right_rounded,
-                  color: isDark
-                      ? ValoraColors.neutral500
-                      : ValoraColors.neutral400),
-            ],
-          ),
+            );
+          },
         );
+      },
+    );
+  }
+}
+
+class _MembersTab extends StatelessWidget {
+  const _MembersTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<WorkspaceProvider, List<dynamic>>(
+      selector: (_, p) => p.members,
+      builder: (context, members, child) {
+        return MemberManagementWidget(
+          members: members.cast(),
+          canInvite: true,
+        );
+      },
+    );
+  }
+}
+
+class _ActivityTab extends StatelessWidget {
+  const _ActivityTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<WorkspaceProvider, List<dynamic>>(
+      selector: (_, p) => p.activityLogs,
+      builder: (context, logs, child) {
+        return ActivityFeedWidget(activities: logs.cast());
       },
     );
   }

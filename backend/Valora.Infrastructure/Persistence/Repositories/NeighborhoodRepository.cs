@@ -22,7 +22,7 @@ public class NeighborhoodRepository : INeighborhoodRepository
     public async Task<List<Neighborhood>> GetByCityAsync(string city, CancellationToken cancellationToken = default)
     {
         return await _context.Neighborhoods
-            .Where(x => x.City.ToLower() == city.ToLower())
+            .Where(x => x.City == city)
             .ToListAsync(cancellationToken);
     }
 

@@ -29,6 +29,27 @@ public class BatchJobRepository : IBatchJobRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<BatchJobSummaryDto>> GetRecentJobSummariesAsync(int limit = 10, CancellationToken cancellationToken = default)
+    {
+        return await _context.BatchJobs
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(limit)
+            .Select(job => new BatchJobSummaryDto(
+                job.Id,
+                job.Type,
+                job.Status,
+                job.Target,
+                job.Progress,
+                job.Error,
+                job.ResultSummary,
+                job.CreatedAt,
+                job.StartedAt,
+                job.CompletedAt
+            ))
+            .ToListAsync(cancellationToken);
+    }
+
     private IQueryable<BatchJob> ApplyJobFiltersAndSorting(IQueryable<BatchJob> query, BatchJobStatus? status, BatchJobType? type, string? search, string? sort)
     {
         query = query.AsNoTracking();
