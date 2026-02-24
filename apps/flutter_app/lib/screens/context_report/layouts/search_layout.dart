@@ -10,6 +10,7 @@ import '../widgets/radius_selector.dart';
 import '../widgets/generate_button.dart';
 import '../widgets/quick_actions.dart';
 import '../widgets/history_section.dart';
+import '../widgets/saved_searches_section.dart';
 
 class SearchLayout extends StatelessWidget {
   const SearchLayout({
@@ -133,6 +134,17 @@ class SearchLayout extends StatelessWidget {
             child: QuickActions(pdokService: pdokService, provider: provider, controller: inputController)
                 .animate()
                 .fadeIn(duration: 400.ms, delay: 350.ms),
+          ),
+        ),
+
+        // Saved Searches section
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 32),
+            child: SavedSearchesSection(
+              controller: inputController,
+              provider: provider,
+            ),
           ),
         ),
 

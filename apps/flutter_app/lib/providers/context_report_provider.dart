@@ -4,21 +4,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/context_report.dart';
 import '../models/search_history_item.dart';
+import '../models/saved_search.dart';
 import '../repositories/context_report_repository.dart';
+import '../repositories/saved_search_repository.dart';
 import '../services/search_history_service.dart';
+import '../services/saved_search_service.dart';
 
 class ContextReportProvider extends ChangeNotifier {
   ContextReportProvider({
     required ContextReportRepository repository,
     SearchHistoryService? historyService,
+    SavedSearchService? savedSearchService,
   }) : _repository = repository,
-       _historyService = historyService ?? SearchHistoryService() {
+       _historyService = historyService ?? SearchHistoryService(),
+       _savedSearchService = savedSearchService ?? SavedSearchService(LocalSavedSearchRepository()) {
     _loadHistory();
+    _loadSavedSearches();
     loadComparisonSet();
   }
 
   final ContextReportRepository _repository;
   final SearchHistoryService _historyService;
+  final SavedSearchService _savedSearchService;
 
   bool _isLoading = false;
   bool _isDisposed = false;
@@ -32,6 +39,8 @@ class ContextReportProvider extends ChangeNotifier {
   int _radiusMeters = 1000;
   List<SearchHistoryItem> _history = [];
   int _historyLoadSeq = 0;
+
+  List<SavedSearch> _savedSearches = [];
 
   // Persistent state for report children
   final Map<String, bool> _expansionStates = {};
@@ -62,6 +71,7 @@ class ContextReportProvider extends ChangeNotifier {
 
   int get radiusMeters => _radiusMeters;
   List<SearchHistoryItem> get history => List.unmodifiable(_history);
+  List<SavedSearch> get savedSearches => List.unmodifiable(_savedSearches);
 
   @override
   void dispose() {
@@ -208,6 +218,13 @@ class ContextReportProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _loadSavedSearches() async {
+    final searches = await _savedSearchService.getSavedSearches();
+    if (_isDisposed) return;
+    _savedSearches = searches;
+    notifyListeners();
+  }
+
   Future<void> generate(String input) async {
     if (_isLoading) return;
 
@@ -274,5 +291,27 @@ class ContextReportProvider extends ChangeNotifier {
   Future<void> removeFromHistory(String query) async {
     await _historyService.removeFromHistory(query);
     await _loadHistory();
+  }
+
+  // Saved Search methods
+  bool isSearchSaved(String query, int radius) {
+    return _savedSearches.any(
+      (s) => s.query.toLowerCase() == query.toLowerCase() && s.radiusMeters == radius,
+    );
+  }
+
+  Future<void> saveSearch(String query, int radius) async {
+    await _savedSearchService.saveSearch(query, radius);
+    await _loadSavedSearches();
+  }
+
+  Future<void> removeSavedSearch(String id) async {
+    await _savedSearchService.removeSearch(id);
+    await _loadSavedSearches();
+  }
+
+  Future<void> toggleSearchAlert(String id) async {
+    await _savedSearchService.toggleAlert(id);
+    await _loadSavedSearches();
   }
 }
