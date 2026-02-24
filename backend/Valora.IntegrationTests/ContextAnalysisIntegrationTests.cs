@@ -44,7 +44,13 @@ public class ContextAnalysisIntegrationTests : IAsyncLifetime
         _sut = _scope.ServiceProvider.GetRequiredService<IContextAnalysisService>();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        // Clean up users and profiles
+        // Clean up users and profiles - Order matters for FK constraints
+        _dbContext.ListingComments.RemoveRange(_dbContext.ListingComments);
+        _dbContext.SavedListings.RemoveRange(_dbContext.SavedListings);
+        _dbContext.ActivityLogs.RemoveRange(_dbContext.ActivityLogs);
+        _dbContext.WorkspaceMembers.RemoveRange(_dbContext.WorkspaceMembers);
+        _dbContext.Workspaces.RemoveRange(_dbContext.Workspaces);
+
         _dbContext.UserAiProfiles.RemoveRange(_dbContext.UserAiProfiles);
         _dbContext.Users.RemoveRange(_dbContext.Users);
         await _dbContext.SaveChangesAsync();

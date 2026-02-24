@@ -76,6 +76,11 @@ public class ExceptionHandlingMiddleware
                 // Hide specific details in production to prevent leakage of internal state logic
                 detail = _env.IsProduction() ? "The operation failed due to a conflict with the current state of the resource." : exception.Message;
                 break;
+            case ForbiddenAccessException:
+                statusCode = (int)HttpStatusCode.Forbidden;
+                title = "Forbidden";
+                detail = "You do not have permission to access this resource.";
+                break;
             case UnauthorizedAccessException:
                 statusCode = (int)HttpStatusCode.Unauthorized;
                 title = "Unauthorized";

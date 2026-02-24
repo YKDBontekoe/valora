@@ -35,9 +35,17 @@ public class MapInsightsIntegrationTests : IAsyncLifetime
         _scope = _fixture.Factory.Services.CreateScope();
         DbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        // Cleanup
+        // Cleanup - Order matters for FK constraints
+        DbContext.ListingComments.RemoveRange(DbContext.ListingComments);
+        DbContext.SavedListings.RemoveRange(DbContext.SavedListings);
+        DbContext.ActivityLogs.RemoveRange(DbContext.ActivityLogs);
+        DbContext.WorkspaceMembers.RemoveRange(DbContext.WorkspaceMembers);
+        DbContext.Workspaces.RemoveRange(DbContext.Workspaces);
+
         DbContext.Listings.RemoveRange(DbContext.Listings);
         DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
+        DbContext.Notifications.RemoveRange(DbContext.Notifications);
+
         if (DbContext.Users.Any())
         {
             DbContext.Users.RemoveRange(DbContext.Users);
