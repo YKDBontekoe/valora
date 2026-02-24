@@ -36,6 +36,7 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
   // Keep options ref up to date
   useEffect(() => {
     optionsRef.current = options;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.page, options.pageSize, options.statusFilter, options.typeFilter, options.searchQuery, options.sortBy]);
 
   const fetchData = useCallback(async (requestId: number) => {
@@ -72,7 +73,7 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
       if (healthData) {
         setHealth(healthData);
       }
-    } catch (err) {
+    } catch {
       if (requestId === latestRequestIdRef.current) {
          setError('An unexpected error occurred.');
       }
@@ -134,8 +135,6 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
   const refresh = useCallback(() => {
     const requestId = ++latestRequestIdRef.current;
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    // Do not set loading to true to keep UI stable during refresh, or set it if desired.
-    // Keeping it false to avoid flash of skeleton/loading state.
     fetchData(requestId);
   }, [fetchData]);
 

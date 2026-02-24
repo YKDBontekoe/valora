@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
 import { adminService } from '../services/api';
-import type { BatchJob } from '../types'; // Removed SystemHealth as it comes from hook
+// Removed unused BatchJob import
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
 import Skeleton from '../components/Skeleton';

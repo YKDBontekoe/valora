@@ -2,6 +2,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { useBatchJobsPolling } from './useBatchJobsPolling';
 import { adminService } from '../services/api';
+import type { PaginatedResponse, BatchJob } from '../types';
 
 vi.mock('../services/api', () => ({
   adminService: {
@@ -136,8 +137,8 @@ describe('useBatchJobsPolling', () => {
   it('ignores stale responses', async () => {
     vi.useRealTimers();
 
-    let resolveFirst: (val: any) => void = () => {};
-    const firstPromise = new Promise(resolve => { resolveFirst = resolve; });
+    let resolveFirst: (val: PaginatedResponse<BatchJob>) => void = () => {};
+    const firstPromise = new Promise<PaginatedResponse<BatchJob>>(resolve => { resolveFirst = resolve; });
     const secondPromise = Promise.resolve({ items: [{ id: 'new', status: 'Completed' }], totalPages: 1 });
 
     (adminService.getJobs as Mock)
@@ -158,7 +159,7 @@ describe('useBatchJobsPolling', () => {
 
     // Now resolve the first fetch
     await act(async () => {
-        resolveFirst({ items: [{ id: 'old', status: 'Completed' }], totalPages: 1 });
+        resolveFirst({ items: [{ id: 'old', status: 'Completed', type: 'CityIngestion', target: 'Test', progress: 100, createdAt: '', updatedAt: '' }], totalPages: 1 });
     });
 
     // Should still be 'new'
