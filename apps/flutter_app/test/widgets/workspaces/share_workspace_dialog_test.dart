@@ -86,7 +86,7 @@ void main() {
     await tester.enterText(textField, 'test@example.com');
     await tester.pump();
 
-    final inviteButton = find.text('Invite');
+    final inviteButton = find.text('Send Invite');
     await tester.tap(inviteButton);
 
     await tester.pump();

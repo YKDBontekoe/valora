@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
@@ -122,8 +121,6 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
 
   Widget _buildSavedListings(
       BuildContext context, WorkspaceProvider provider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (provider.savedListings.isEmpty) {
       return Center(
         child: ValoraEmptyState(
@@ -137,11 +134,19 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
     return ListView.separated(
       padding: const EdgeInsets.all(ValoraSpacing.md),
       itemCount: provider.savedListings.length,
-      separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.sm),
+      separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.md),
       itemBuilder: (context, index) {
         final saved = provider.savedListings[index];
         final listing = saved.listing;
-        return ValoraCard(
+
+        if (listing == null) {
+          return const SizedBox.shrink();
+        }
+
+        return ValoraListingCard(
+          listing: listing,
+          commentCount: saved.commentCount,
+          notes: saved.notes,
           onTap: () {
             Navigator.push(
               context,
@@ -153,111 +158,6 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
               ),
             );
           },
-          padding: const EdgeInsets.all(ValoraSpacing.md),
-          child: Row(
-            children: [
-              // Thumbnail
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: ValoraColors.primary.withValues(alpha: 0.08),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: listing?.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: listing!.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const ValoraShimmer(
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
-                        errorWidget: (context, url, error) => const Center(
-                          child: Icon(Icons.home_rounded,
-                              color: ValoraColors.primary, size: 28),
-                        ),
-                      )
-                    : const Center(
-                        child: Icon(Icons.home_rounded,
-                            color: ValoraColors.primary, size: 28),
-                      ),
-              ),
-              const SizedBox(width: ValoraSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      listing?.address ?? 'Unknown Address',
-                      style: ValoraTypography.titleSmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (listing?.city != null &&
-                        listing!.city!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        listing.city!,
-                        style: ValoraTypography.bodySmall.copyWith(
-                          color: isDark
-                              ? ValoraColors.neutral400
-                              : ValoraColors.neutral500,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.chat_bubble_outline_rounded,
-                            size: 14,
-                            color: isDark
-                                ? ValoraColors.neutral500
-                                : ValoraColors.neutral400),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${saved.commentCount} comments',
-                          style: ValoraTypography.labelSmall.copyWith(
-                            color: isDark
-                                ? ValoraColors.neutral500
-                                : ValoraColors.neutral400,
-                          ),
-                        ),
-                        if (saved.notes != null &&
-                            saved.notes!.isNotEmpty) ...[
-                          const SizedBox(width: 12),
-                          Icon(Icons.note_rounded,
-                              size: 14,
-                              color: isDark
-                                  ? ValoraColors.neutral500
-                                  : ValoraColors.neutral400),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              saved.notes!,
-                              style: ValoraTypography.labelSmall.copyWith(
-                                color: isDark
-                                    ? ValoraColors.neutral500
-                                    : ValoraColors.neutral400,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded,
-                  color: isDark
-                      ? ValoraColors.neutral500
-                      : ValoraColors.neutral400),
-            ],
-          ),
         );
       },
     );
