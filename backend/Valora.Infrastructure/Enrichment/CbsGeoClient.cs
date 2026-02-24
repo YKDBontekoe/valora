@@ -131,6 +131,11 @@ public sealed class CbsGeoClient : ICbsGeoClient
         string municipalityName,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(municipalityName))
+        {
+            return [];
+        }
+
         // Fix for XML Injection vulnerability: Escape the user input before embedding in XML
         var escapedMunicipalityName = System.Security.SecurityElement.Escape(municipalityName);
         var filter = $"<Filter><PropertyIsEqualTo matchCase=\"false\"><PropertyName>gemeentenaam</PropertyName><Literal>{escapedMunicipalityName}</Literal></PropertyIsEqualTo></Filter>";

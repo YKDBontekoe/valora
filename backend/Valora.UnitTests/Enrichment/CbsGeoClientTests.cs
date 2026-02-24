@@ -150,6 +150,37 @@ public class CbsGeoClientTests
     }
 
     [Fact]
+    public async Task GetNeighborhoodsByMunicipalityAsync_ReturnsEmpty_OnNullOrWhitespace()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result1 = await client.GetNeighborhoodsByMunicipalityAsync(null!);
+        var result2 = await client.GetNeighborhoodsByMunicipalityAsync("");
+        var result3 = await client.GetNeighborhoodsByMunicipalityAsync("   ");
+
+        Assert.Empty(result1);
+        Assert.Empty(result2);
+        Assert.Empty(result3);
+
+        // Ensure no requests were made
+        handlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Never(),
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>()
+        );
+    }
+
+    [Fact]
     public async Task GetNeighborhoodsByMunicipalityAsync_ReturnsNeighborhoodsOnSuccess()
     {
         var features = new[]
