@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logging/logging.dart';
 import '../models/saved_search.dart';
 
 abstract class SavedSearchRepository {
@@ -11,22 +12,35 @@ abstract class SavedSearchRepository {
 
 class LocalSavedSearchRepository implements SavedSearchRepository {
   static const String _key = 'saved_searches';
+  final _log = Logger('LocalSavedSearchRepository');
 
   @override
   Future<List<SavedSearch>> getSavedSearches() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? jsonString = prefs.getString(_key);
-    if (jsonString == null) {
-      return [];
-    }
-
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString(_key);
+      if (jsonString == null) {
+        return [];
+      }
+
       final List<dynamic> jsonList = json.decode(jsonString);
       return jsonList
           .map((e) => SavedSearch.fromJson(e as Map<String, dynamic>))
           .toList();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _log.severe('Failed to load saved searches. Clearing corrupt data.', e, stackTrace);
+      // Remediation: Clear corrupt data
+      await _clearStorage();
       return [];
+    }
+  }
+
+  Future<void> _clearStorage() async {
+    try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_key);
+    } catch (e, stackTrace) {
+        _log.severe('Failed to clear corrupt saved searches storage', e, stackTrace);
     }
   }
 
@@ -60,10 +74,14 @@ class LocalSavedSearchRepository implements SavedSearchRepository {
   }
 
   Future<void> _saveList(List<SavedSearch> searches) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      json.encode(searches.map((e) => e.toJson()).toList()),
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        json.encode(searches.map((e) => e.toJson()).toList()),
+      );
+    } catch (e, stackTrace) {
+      _log.severe('Failed to save searches', e, stackTrace);
+    }
   }
 }

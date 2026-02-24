@@ -41,6 +41,7 @@ class ContextReportProvider extends ChangeNotifier {
   int _historyLoadSeq = 0;
 
   List<SavedSearch> _savedSearches = [];
+  int _savedSearchLoadSeq = 0;
 
   // Persistent state for report children
   final Map<String, bool> _expansionStates = {};
@@ -219,8 +220,11 @@ class ContextReportProvider extends ChangeNotifier {
   }
 
   Future<void> _loadSavedSearches() async {
+    final int seq = ++_savedSearchLoadSeq;
     final searches = await _savedSearchService.getSavedSearches();
-    if (_isDisposed) return;
+
+    if (_isDisposed || seq != _savedSearchLoadSeq) return;
+
     _savedSearches = searches;
     notifyListeners();
   }

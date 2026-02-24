@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'package:uuid/uuid.dart';
 
 import '../models/saved_search.dart';
 import '../repositories/saved_search_repository.dart';
@@ -27,7 +27,7 @@ class SavedSearchService {
     }
 
     final newSearch = SavedSearch(
-      id: _generateId(),
+      id: const Uuid().v4(),
       query: query,
       radiusMeters: radiusMeters,
       createdAt: DateTime.now(),
@@ -50,11 +50,5 @@ class SavedSearchService {
       final updated = search.copyWith(isAlertEnabled: !search.isAlertEnabled);
       await _repository.updateSearch(updated);
     }
-  }
-
-  String _generateId() {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final random = Random().nextInt(10000);
-    return '$timestamp-$random';
   }
 }
