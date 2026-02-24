@@ -48,7 +48,8 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IBatchJobRepository, BatchJobRepository>();
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
-services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
+        services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
+        services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 
         // Services
         services.AddSingleton(TimeProvider.System);
@@ -59,7 +60,6 @@ services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
         services.AddScoped<IAiService, OpenRouterAiService>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
-        services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
         
