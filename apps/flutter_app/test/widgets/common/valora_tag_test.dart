@@ -45,11 +45,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final tagFinder = find.byType(ValoraTag);
-      await tester.ensureVisible(tagFinder);
-      await tester.pumpAndSettle();
-
-      await tester.tap(tagFinder);
+      // Ensure tap hits the widget center by finding the InkWell or the widget itself
+      // Use warnIfMissed: false to suppress hit test warnings if the widget is small or partially obscured
+      // But typically ensuring visible and tapping center works.
+      // The previous error was "derived an Offset ... that would not hit test".
+      // This often happens if the widget is too small or layout is weird in tests.
+      // Tapping by text is often safer.
+      await tester.tap(find.text('Tap Me'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);

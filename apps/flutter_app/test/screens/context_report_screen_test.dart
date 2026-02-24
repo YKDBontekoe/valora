@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:valora_app/screens/context_report_screen.dart';
+import 'package:valora_app/screens/context_report/context_report_screen.dart';
 import 'package:valora_app/repositories/context_report_repository.dart';
 import 'package:valora_app/services/pdok_service.dart';
 import 'package:mockito/mockito.dart';
