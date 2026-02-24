@@ -41,6 +41,13 @@ api.interceptors.response.use(
     if (!originalRequest) return Promise.reject(error);
 
     // Auth Retry (401)
+    // If retry fails with 401, clear storage and redirect
+    if (error.response?.status === 401 && originalRequest._isAuthRetry) {
+      clearAdminStorage();
+      window.location.href = "/login";
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._isAuthRetry) {
       originalRequest._isAuthRetry = true;
 

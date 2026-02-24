@@ -159,4 +159,39 @@ describe('API Service', () => {
       // Refresh called once
       expect(axios.post).toHaveBeenCalledTimes(1);
   });
+
+  it('clears storage and redirects if retry also fails with 401', async () => {
+    localStorage.setItem('admin_refresh_token', 'refresh-token');
+
+    const mockAdapter = vi.fn();
+
+    // 1. Initial request -> 401
+    mockAdapter.mockRejectedValueOnce({
+        response: { status: 401 },
+        config: { url: '/test', headers: {} }
+    });
+
+    // 2. Retry request -> 401 again (even after refresh)
+    mockAdapter.mockRejectedValueOnce({
+        response: { status: 401 },
+        config: { url: '/test', headers: { Authorization: 'Bearer new-token' }, _isAuthRetry: true }
+    });
+
+    api.defaults.adapter = mockAdapter;
+
+    // Mock successful refresh
+    vi.spyOn(axios, 'post').mockResolvedValue({
+        data: { token: 'new-token', refreshToken: 'new-refresh-token' }
+    });
+
+    try {
+        await api.get('/test');
+    } catch {
+        // Expected to fail
+    }
+
+    expect(localStorage.getItem('admin_token')).toBeNull();
+    expect(localStorage.getItem('admin_refresh_token')).toBeNull();
+    expect(window.location.href).toBe('/login');
+  });
 });
