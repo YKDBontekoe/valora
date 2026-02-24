@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
@@ -6,6 +7,7 @@ import '../core/theme/valora_spacing.dart';
 import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_error_state.dart';
 import 'workspace_detail_screen.dart';
 
 class WorkspaceListScreen extends StatefulWidget {
@@ -49,7 +51,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Workspace'),
       ),
-      body: Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
+      body: Selector<WorkspaceProvider, ({bool isLoading, Object? error, List<Workspace> workspaces})>(
         selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
         builder: (context, data, child) {
           if (data.isLoading && data.workspaces.isEmpty) {
@@ -59,12 +61,9 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
           }
           if (data.error != null && data.workspaces.isEmpty) {
             return Center(
-              child: ValoraEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Failed to load',
-                subtitle: 'Could not load your workspaces. Please try again.',
-                actionLabel: 'Retry',
-                onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
+              child: ValoraErrorState(
+                error: data.error!,
+                onRetry: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
               ),
             );
           }
@@ -187,49 +186,74 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
   void _showCreateDialog(BuildContext context) {
     final nameController = TextEditingController();
     final descController = TextEditingController();
+    bool isLoading = false;
+
     showDialog(
       context: context,
-      builder: (ctx) => ValoraDialog(
-        title: 'New Workspace',
-        actions: [
-          ValoraButton(
-            label: 'Cancel',
-            variant: ValoraButtonVariant.ghost,
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          ValoraButton(
-            label: 'Create',
-            variant: ValoraButtonVariant.primary,
-            onPressed: () {
-              if (nameController.text.trim().isNotEmpty) {
-                context.read<WorkspaceProvider>().createWorkspace(
-                      nameController.text.trim(),
-                      descController.text.trim().isEmpty
-                          ? null
-                          : descController.text.trim(),
-                    );
-                Navigator.pop(ctx);
-              }
-            },
-          ),
-        ],
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ValoraTextField(
-              controller: nameController,
-              hint: 'e.g. Amsterdam House Hunt',
-              label: 'Workspace Name',
-              prefixIcon: const Icon(Icons.workspaces_rounded, size: 20),
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => ValoraDialog(
+          title: 'New Workspace',
+          actions: [
+            ValoraButton(
+              label: 'Cancel',
+              variant: ValoraButtonVariant.ghost,
+              onPressed: isLoading ? null : () => Navigator.pop(ctx),
             ),
-            const SizedBox(height: ValoraSpacing.md),
-            ValoraTextField(
-              controller: descController,
-              hint: 'Optional description...',
-              label: 'Description',
-              prefixIcon: const Icon(Icons.description_rounded, size: 20),
+            ValoraButton(
+              label: 'Create',
+              variant: ValoraButtonVariant.primary,
+              isLoading: isLoading,
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (nameController.text.trim().isNotEmpty) {
+                        setState(() => isLoading = true);
+                        try {
+                          await context.read<WorkspaceProvider>().createWorkspace(
+                                nameController.text.trim(),
+                                descController.text.trim().isEmpty
+                                    ? null
+                                    : descController.text.trim(),
+                              );
+                          if (context.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                        } catch (e, stack) {
+                          developer.log('Failed to create workspace', error: e, stackTrace: stack);
+                          if (context.mounted) {
+                            setState(() => isLoading = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Failed to create workspace: ${e.toString().replaceAll('Exception: ', '')}'),
+                                backgroundColor: ValoraColors.error,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
             ),
           ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ValoraTextField(
+                controller: nameController,
+                hint: 'e.g. Amsterdam House Hunt',
+                label: 'Workspace Name',
+                prefixIcon: const Icon(Icons.workspaces_rounded, size: 20),
+              ),
+              const SizedBox(height: ValoraSpacing.md),
+              ValoraTextField(
+                controller: descController,
+                hint: 'Optional description...',
+                label: 'Description',
+                prefixIcon: const Icon(Icons.description_rounded, size: 20),
+              ),
+            ],
+          ),
         ),
       ),
     );

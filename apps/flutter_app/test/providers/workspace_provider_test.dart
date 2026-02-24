@@ -41,12 +41,14 @@ void main() {
     });
 
     test('fetchWorkspaces handles error', () async {
-      when(mockRepository.fetchWorkspaces()).thenThrow(Exception('Network error'));
+      final exception = Exception('Network error');
+      when(mockRepository.fetchWorkspaces()).thenThrow(exception);
 
       await provider.fetchWorkspaces();
 
       expect(provider.workspaces.isEmpty, true);
-      expect(provider.error, contains('Network error'));
+      expect(provider.error, isA<Exception>());
+      expect(provider.error.toString(), contains('Network error'));
       expect(provider.isWorkspacesLoading, false);
     });
 

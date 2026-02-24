@@ -6,6 +6,7 @@ import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_error_state.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
 import '../widgets/workspaces/member_management_widget.dart';
 import 'saved_listing_detail_screen.dart';
@@ -93,12 +94,9 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
           }
           if (provider.error != null) {
             return Center(
-              child: ValoraEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Something went wrong',
-                subtitle: 'Could not load workspace details.',
-                actionLabel: 'Retry',
-                onAction: () =>
+              child: ValoraErrorState(
+                error: provider.error!,
+                onRetry: () =>
                     provider.selectWorkspace(widget.workspaceId),
               ),
             );

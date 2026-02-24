@@ -1,9 +1,11 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/exceptions/app_exceptions.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 
@@ -84,11 +86,17 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
       // Navigation is handled by AuthWrapper via state change
-    } catch (e) {
+    } catch (e, stack) {
+      developer.log('Login failed', error: e, stackTrace: stack);
       if (mounted) {
+        String message = e.toString().replaceAll('Exception: ', '');
+        if (e is AppException) {
+          message = e.message;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(message),
             backgroundColor: ValoraColors.error,
           ),
         );

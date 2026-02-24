@@ -17,8 +17,8 @@ class WorkspaceProvider extends ChangeNotifier {
   bool _isWorkspaceDetailLoading = false;
   bool get isWorkspaceDetailLoading => _isWorkspaceDetailLoading;
 
-  String? _error;
-  String? get error => _error;
+  Object? _error;
+  Object? get error => _error;
 
   Workspace? _selectedWorkspace;
   Workspace? get selectedWorkspace => _selectedWorkspace;
@@ -39,7 +39,7 @@ class WorkspaceProvider extends ChangeNotifier {
     try {
       _workspaces = await _repository.fetchWorkspaces();
     } catch (e) {
-      _error = e.toString();
+      _error = e;
     } finally {
       _isWorkspacesLoading = false;
       notifyListeners();
@@ -79,7 +79,7 @@ class WorkspaceProvider extends ChangeNotifier {
       _activityLogs = results[3] as List<ActivityLog>;
 
     } catch (e) {
-      _error = e.toString();
+      _error = e;
     } finally {
       _isWorkspaceDetailLoading = false;
       notifyListeners();
