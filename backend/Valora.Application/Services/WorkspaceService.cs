@@ -1,20 +1,18 @@
-using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
-using Valora.Infrastructure.Persistence;
 
-namespace Valora.Infrastructure.Services;
+namespace Valora.Application.Services;
 
 public class WorkspaceService : IWorkspaceService
 {
-    private readonly ValoraDbContext _context;
+    private readonly IWorkspaceRepository _repository;
     private readonly IIdentityService _identityService;
 
-    public WorkspaceService(ValoraDbContext context, IIdentityService identityService)
+    public WorkspaceService(IWorkspaceRepository repository, IIdentityService identityService)
     {
-        _context = context;
+        _repository = repository;
         _identityService = identityService;
     }
 
@@ -36,35 +34,24 @@ public class WorkspaceService : IWorkspaceService
             }
         };
 
-        _context.Workspaces.Add(workspace);
+        await _repository.AddAsync(workspace, ct);
 
         await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceCreated, $"Workspace '{dto.Name}' created", ct);
 
-        await _context.SaveChangesAsync(ct);
+        await _repository.SaveChangesAsync(ct);
 
         return MapToDto(workspace);
     }
 
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default)
     {
-        var workspaces = await _context.Workspaces
-            .AsNoTracking()
-            .Include(w => w.Members)
-            .Include(w => w.SavedListings)
-            .Where(w => w.Members.Any(m => m.UserId == userId))
-            .OrderByDescending(w => w.CreatedAt)
-            .ToListAsync(ct);
-
+        var workspaces = await _repository.GetUserWorkspacesAsync(userId, ct);
         return workspaces.Select(MapToDto).ToList();
     }
 
     public async Task<WorkspaceDto> GetWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
-        var workspace = await _context.Workspaces
-            .AsNoTracking()
-            .Include(w => w.Members)
-            .Include(w => w.SavedListings)
-            .FirstOrDefaultAsync(w => w.Id == workspaceId, ct);
+        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
 
         if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
 
@@ -78,11 +65,7 @@ public class WorkspaceService : IWorkspaceService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var members = await _context.WorkspaceMembers
-            .AsNoTracking()
-            .Include(m => m.User)
-            .Where(m => m.WorkspaceId == workspaceId)
-            .ToListAsync(ct);
+        var members = await _repository.GetMembersAsync(workspaceId, ct);
 
         return members.Select(m => new WorkspaceMemberDto(
             m.Id,
@@ -99,10 +82,7 @@ public class WorkspaceService : IWorkspaceService
         var role = await GetUserRole(userId, workspaceId, ct);
         if (role != WorkspaceRole.Owner) throw new ForbiddenAccessException();
 
-        var existingMember = await _context.WorkspaceMembers
-            .FirstOrDefaultAsync(m => m.WorkspaceId == workspaceId &&
-                ((m.UserId != null && m.User!.Email == dto.Email) || m.InvitedEmail == dto.Email), ct);
-
+        var existingMember = await _repository.GetMemberByEmailAsync(workspaceId, dto.Email, ct);
         if (existingMember != null) return;
 
         var invitedUser = await _identityService.GetUserByEmailAsync(dto.Email);
@@ -116,9 +96,9 @@ public class WorkspaceService : IWorkspaceService
             JoinedAt = invitedUser != null ? DateTime.UtcNow : (DateTime?)null
         };
 
-        _context.WorkspaceMembers.Add(member);
+        await _repository.AddMemberAsync(member, ct);
         await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberInvited, $"Invited {dto.Email} as {dto.Role}", ct);
-        await _context.SaveChangesAsync(ct);
+        await _repository.SaveChangesAsync(ct);
     }
 
     public async Task RemoveMemberAsync(string userId, Guid workspaceId, Guid memberId, CancellationToken ct = default)
@@ -126,14 +106,14 @@ public class WorkspaceService : IWorkspaceService
         var currentUserRole = await GetUserRole(userId, workspaceId, ct);
         if (currentUserRole != WorkspaceRole.Owner) throw new ForbiddenAccessException();
 
-        var member = await _context.WorkspaceMembers.FindAsync(new object[] { memberId }, ct);
+        var member = await _repository.GetMemberAsync(memberId, ct);
         if (member == null || member.WorkspaceId != workspaceId) throw new NotFoundException(nameof(WorkspaceMember), memberId);
 
         if (member.UserId == userId) throw new InvalidOperationException("Cannot remove yourself.");
 
-        _context.WorkspaceMembers.Remove(member);
+        await _repository.RemoveMemberAsync(member, ct);
         await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, $"Removed member {(member.InvitedEmail ?? member.UserId)}", ct);
-        await _context.SaveChangesAsync(ct);
+        await _repository.SaveChangesAsync(ct);
     }
 
     public async Task<SavedListingDto> SaveListingAsync(string userId, Guid workspaceId, Guid listingId, string? notes, CancellationToken ct = default)
@@ -141,12 +121,10 @@ public class WorkspaceService : IWorkspaceService
         var role = await GetUserRole(userId, workspaceId, ct);
         if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
 
-        var existing = await _context.SavedListings
-            .FirstOrDefaultAsync(sl => sl.WorkspaceId == workspaceId && sl.ListingId == listingId, ct);
-
+        var existing = await _repository.GetSavedListingAsync(workspaceId, listingId, ct);
         if (existing != null) return MapToSavedListingDto(existing);
 
-        var listing = await _context.Listings.FindAsync(new object[] { listingId }, ct);
+        var listing = await _repository.GetListingAsync(listingId, ct);
         if (listing == null) throw new NotFoundException(nameof(Listing), listingId);
 
         var savedListing = new SavedListing
@@ -158,9 +136,10 @@ public class WorkspaceService : IWorkspaceService
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.SavedListings.Add(savedListing);
+        await _repository.AddSavedListingAsync(savedListing, ct);
         await LogActivityAsync(workspaceId, userId, ActivityLogType.ListingSaved, $"Saved listing {listing.Address}", ct);
-        await _context.SaveChangesAsync(ct);
+
+        await _repository.SaveChangesAsync(ct);
 
         return MapToSavedListingDto(savedListing, listing);
     }
@@ -169,13 +148,7 @@ public class WorkspaceService : IWorkspaceService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var savedListings = await _context.SavedListings
-            .AsNoTracking()
-            .Include(sl => sl.Listing)
-            .Include(sl => sl.Comments)
-            .Where(sl => sl.WorkspaceId == workspaceId)
-            .OrderByDescending(sl => sl.CreatedAt)
-            .ToListAsync(ct);
+        var savedListings = await _repository.GetSavedListingsAsync(workspaceId, ct);
 
         return savedListings.Select(sl => MapToSavedListingDto(sl)).ToList();
     }
@@ -185,23 +158,21 @@ public class WorkspaceService : IWorkspaceService
         var role = await GetUserRole(userId, workspaceId, ct);
         if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
 
-        var savedListing = await _context.SavedListings
-            .Include(sl => sl.Listing)
-            .FirstOrDefaultAsync(sl => sl.Id == savedListingId, ct);
+        var savedListing = await _repository.GetSavedListingByIdAsync(savedListingId, ct);
 
         if (savedListing == null || savedListing.WorkspaceId != workspaceId)
             throw new NotFoundException(nameof(SavedListing), savedListingId);
 
-        _context.SavedListings.Remove(savedListing);
+        await _repository.RemoveSavedListingAsync(savedListing, ct);
         await LogActivityAsync(workspaceId, userId, ActivityLogType.ListingRemoved, $"Removed listing {savedListing.Listing?.Address ?? "Unknown"}", ct);
-        await _context.SaveChangesAsync(ct);
+        await _repository.SaveChangesAsync(ct);
     }
 
     public async Task<CommentDto> AddCommentAsync(string userId, Guid workspaceId, Guid savedListingId, AddCommentDto dto, CancellationToken ct = default)
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var savedListing = await _context.SavedListings.FindAsync(new object[] { savedListingId }, ct);
+        var savedListing = await _repository.GetSavedListingByIdAsync(savedListingId, ct);
         if (savedListing == null || savedListing.WorkspaceId != workspaceId)
             throw new NotFoundException(nameof(SavedListing), savedListingId);
 
@@ -214,9 +185,10 @@ public class WorkspaceService : IWorkspaceService
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.ListingComments.Add(comment);
+        await _repository.AddCommentAsync(comment, ct);
         await LogActivityAsync(workspaceId, userId, ActivityLogType.CommentAdded, "Added a comment", ct);
-        await _context.SaveChangesAsync(ct);
+
+        await _repository.SaveChangesAsync(ct);
 
         return new CommentDto(
             comment.Id,
@@ -233,11 +205,7 @@ public class WorkspaceService : IWorkspaceService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var comments = await _context.ListingComments
-            .AsNoTracking()
-            .Where(c => c.SavedListingId == savedListingId)
-            .OrderBy(c => c.CreatedAt)
-            .ToListAsync(ct);
+        var comments = await _repository.GetCommentsAsync(savedListingId, ct);
 
         var dtos = comments.Select(c => new CommentDto(
             c.Id,
@@ -271,12 +239,7 @@ public class WorkspaceService : IWorkspaceService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var logs = await _context.ActivityLogs
-            .AsNoTracking()
-            .Where(a => a.WorkspaceId == workspaceId)
-            .OrderByDescending(a => a.CreatedAt)
-            .Take(50)
-            .ToListAsync(ct);
+        var logs = await _repository.GetActivityLogsAsync(workspaceId, ct);
 
         return logs.Select(a => new ActivityLogDto(
             a.Id,
@@ -291,18 +254,13 @@ public class WorkspaceService : IWorkspaceService
     // Helpers
     private async Task ValidateMemberAccess(string userId, Guid workspaceId, CancellationToken ct)
     {
-        var isMember = await _context.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == workspaceId && m.UserId == userId, ct);
+        var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
         if (!isMember) throw new ForbiddenAccessException();
     }
 
     private async Task<WorkspaceRole> GetUserRole(string userId, Guid workspaceId, CancellationToken ct)
     {
-        var member = await _context.WorkspaceMembers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.WorkspaceId == workspaceId && m.UserId == userId, ct);
-
-        if (member == null) throw new ForbiddenAccessException();
-        return member.Role;
+        return await _repository.GetUserRoleAsync(workspaceId, userId, ct);
     }
 
     private async Task LogActivityAsync(Guid workspaceId, string actorId, ActivityLogType type, string summary, CancellationToken ct)
@@ -315,7 +273,7 @@ public class WorkspaceService : IWorkspaceService
             Summary = summary,
             CreatedAt = DateTime.UtcNow
         };
-        _context.ActivityLogs.Add(log);
+        await _repository.LogActivityAsync(log, ct);
     }
 
     private async Task LogActivityAsync(Workspace workspace, string actorId, ActivityLogType type, string summary, CancellationToken ct)
@@ -328,7 +286,7 @@ public class WorkspaceService : IWorkspaceService
             Summary = summary,
             CreatedAt = DateTime.UtcNow
         };
-        _context.ActivityLogs.Add(log);
+        await _repository.LogActivityAsync(log, ct);
     }
 
     private static WorkspaceDto MapToDto(Workspace w)

@@ -10,7 +10,8 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
-using Valora.Infrastructure.Services;
+using Valora.Application.Services;
+using Valora.Infrastructure.Persistence.Repositories;
 using Xunit;
 
 namespace Valora.UnitTests.Services;
@@ -20,6 +21,7 @@ public class WorkspaceServiceTests
     private readonly ValoraDbContext _context;
     private readonly Mock<IIdentityService> _identityServiceMock;
     private readonly WorkspaceService _service;
+    private readonly WorkspaceRepository _repository;
 
     public WorkspaceServiceTests()
     {
@@ -29,7 +31,8 @@ public class WorkspaceServiceTests
 
         _context = new ValoraDbContext(options);
         _identityServiceMock = new Mock<IIdentityService>();
-        _service = new WorkspaceService(_context, _identityServiceMock.Object);
+        _repository = new WorkspaceRepository(_context);
+        _service = new WorkspaceService(_repository, _identityServiceMock.Object);
     }
 
     [Fact]
