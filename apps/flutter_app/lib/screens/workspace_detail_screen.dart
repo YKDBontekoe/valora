@@ -10,6 +10,8 @@ import '../widgets/workspaces/activity_feed_widget.dart';
 import '../widgets/workspaces/member_management_widget.dart';
 import 'saved_listing_detail_screen.dart';
 
+enum WorkspaceAction { edit, delete }
+
 class WorkspaceDetailScreen extends StatefulWidget {
   final String workspaceId;
 
@@ -57,6 +59,44 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
             ),
           ),
         ),
+        actions: [
+          Consumer<WorkspaceProvider>(
+            builder: (context, provider, _) {
+              if (provider.selectedWorkspace == null) return const SizedBox.shrink();
+              return PopupMenuButton<WorkspaceAction>(
+                onSelected: (action) {
+                  if (action == WorkspaceAction.edit) {
+                    _showEditDialog(context, provider);
+                  } else if (action == WorkspaceAction.delete) {
+                    _showDeleteConfirmation(context, provider);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: WorkspaceAction.edit,
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_rounded, size: 20),
+                        SizedBox(width: 12),
+                        Text('Edit Workspace'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: WorkspaceAction.delete,
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_rounded, size: 20, color: ValoraColors.error),
+                        SizedBox(width: 12),
+                        Text('Delete Workspace', style: TextStyle(color: ValoraColors.error)),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: ValoraColors.primary,
@@ -119,6 +159,99 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
       ),
     );
   }
+
+  void _showEditDialog(BuildContext context, WorkspaceProvider provider) {
+    final workspace = provider.selectedWorkspace;
+    if (workspace == null) return;
+
+    final nameController = TextEditingController(text: workspace.name);
+    final descController = TextEditingController(text: workspace.description);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => ValoraDialog(
+        title: 'Edit Workspace',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          ValoraButton(
+            label: 'Save',
+            variant: ValoraButtonVariant.primary,
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty) {
+                provider.updateWorkspace(
+                  workspace.id,
+                  nameController.text.trim(),
+                  descController.text.trim().isEmpty ? null : descController.text.trim(),
+                );
+                Navigator.pop(ctx);
+              }
+            },
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ValoraTextField(
+              controller: nameController,
+              label: 'Workspace Name',
+              prefixIcon: const Icon(Icons.workspaces_rounded, size: 20),
+            ),
+            const SizedBox(height: ValoraSpacing.md),
+            ValoraTextField(
+              controller: descController,
+              label: 'Description',
+              prefixIcon: const Icon(Icons.description_rounded, size: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WorkspaceProvider provider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ValoraDialog(
+        title: 'Delete Workspace?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          ValoraButton(
+            label: 'Delete',
+            variant: ValoraButtonVariant.primary, // Should be error variant if available, but consistent with pattern
+            // Ideally add a specific style for destructive actions
+            onPressed: () async {
+                Navigator.pop(ctx); // Close dialog first
+                try {
+                  await provider.deleteWorkspace(widget.workspaceId);
+                  if (context.mounted) {
+                    Navigator.pop(context); // Go back to list
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to delete workspace: $e')),
+                    );
+                  }
+                }
+            },
+          ),
+        ],
+        child: Text(
+          'Are you sure you want to delete this workspace? All saved listings, comments, and member associations will be permanently removed. This action cannot be undone.',
+          style: ValoraTypography.bodyMedium,
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildSavedListings(
       BuildContext context, WorkspaceProvider provider) {

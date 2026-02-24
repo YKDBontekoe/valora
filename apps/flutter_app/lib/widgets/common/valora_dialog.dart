@@ -53,18 +53,14 @@ class ValoraDialog extends StatelessWidget {
             ),
             if (actions.isNotEmpty) ...[
               const SizedBox(height: ValoraSpacing.lg),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: actions.map((action) {
-                  final index = actions.indexOf(action);
-                  if (index > 0) {
-                    return Padding(
-                      padding: const EdgeInsets.only(left: ValoraSpacing.sm),
-                      child: action,
-                    );
-                  }
-                  return action;
-                }).toList(),
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: ValoraSpacing.sm,
+                  runSpacing: ValoraSpacing.sm,
+                  children: actions,
+                ),
               ),
             ],
           ],

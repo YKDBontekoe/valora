@@ -56,6 +56,35 @@ class WorkspaceProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateWorkspace(String id, String name, String? description) async {
+    try {
+      final updatedWorkspace = await _repository.updateWorkspace(id, name, description);
+      _workspaces = _workspaces.map((w) => w.id == id ? updatedWorkspace : w).toList();
+      if (_selectedWorkspace?.id == id) {
+        _selectedWorkspace = updatedWorkspace;
+      }
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteWorkspace(String id) async {
+    try {
+      await _repository.deleteWorkspace(id);
+      _workspaces = _workspaces.where((w) => w.id != id).toList();
+      if (_selectedWorkspace?.id == id) {
+        _selectedWorkspace = null;
+        _members = [];
+        _savedListings = [];
+        _activityLogs = [];
+      }
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> selectWorkspace(String id) async {
     _isWorkspaceDetailLoading = true;
     _error = null;

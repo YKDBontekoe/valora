@@ -45,6 +45,41 @@ public class WorkspaceService : IWorkspaceService
         return MapToDto(workspace);
     }
 
+    public async Task<WorkspaceDto> UpdateWorkspaceAsync(string userId, Guid workspaceId, UpdateWorkspaceDto dto, CancellationToken ct = default)
+    {
+        var workspace = await _context.Workspaces
+            .Include(w => w.Members)
+            .Include(w => w.SavedListings)
+            .FirstOrDefaultAsync(w => w.Id == workspaceId, ct);
+
+        if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+
+        if (workspace.OwnerId != userId) throw new ForbiddenAccessException();
+
+        workspace.Name = dto.Name;
+        workspace.Description = dto.Description;
+
+        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceUpdated, $"Updated workspace details", ct);
+        await _context.SaveChangesAsync(ct);
+
+        return MapToDto(workspace);
+    }
+
+    public async Task DeleteWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
+    {
+        var workspace = await _context.Workspaces.FindAsync(new object[] { workspaceId }, ct);
+
+        if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+
+        if (workspace.OwnerId != userId) throw new ForbiddenAccessException();
+
+        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceDeleted, $"Workspace deleted: {workspace.Name} ({workspace.Id})", ct);
+        await _context.SaveChangesAsync(ct); // Save log first (if SetNull behavior is used, log will persist as orphaned)
+
+        _context.Workspaces.Remove(workspace);
+        await _context.SaveChangesAsync(ct);
+    }
+
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default)
     {
         var workspaces = await _context.Workspaces

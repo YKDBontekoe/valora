@@ -35,6 +35,25 @@ class WorkspaceRepository {
     );
   }
 
+  Future<Workspace> updateWorkspace(String id, String name, String? description) async {
+    final response = await _client.put(
+      '/api/workspaces/$id',
+      data: {
+        'name': name,
+        'description': description,
+      },
+    );
+    return _client.handleResponse(
+      response,
+      (body) => Workspace.fromJson(json.decode(body)),
+    );
+  }
+
+  Future<void> deleteWorkspace(String id) async {
+    final response = await _client.delete('/api/workspaces/$id');
+    await _client.handleResponse(response, (_) => null);
+  }
+
   Future<Workspace> getWorkspace(String id) async {
     final response = await _client.get('/api/workspaces/$id');
     return _client.handleResponse(

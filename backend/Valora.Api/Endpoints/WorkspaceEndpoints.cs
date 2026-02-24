@@ -16,6 +16,11 @@ public static class WorkspaceEndpoints
         group.MapPost("/", CreateWorkspace)
             .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<CreateWorkspaceDto>>();
 
+        group.MapPut("/{id}", UpdateWorkspace)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<UpdateWorkspaceDto>>();
+
+        group.MapDelete("/{id}", DeleteWorkspace);
+
         group.MapGet("/", GetUserWorkspaces);
         group.MapGet("/{id}", GetWorkspace);
 
@@ -51,6 +56,33 @@ public static class WorkspaceEndpoints
 
         var result = await service.CreateWorkspaceAsync(userId, dto, ct);
         return Results.Created($"/api/workspaces/{result.Id}", result);
+    }
+
+    private static async Task<IResult> UpdateWorkspace(
+        ClaimsPrincipal user,
+        Guid id,
+        [FromBody] UpdateWorkspaceDto dto,
+        IWorkspaceService service,
+        CancellationToken ct)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null) return Results.Unauthorized();
+
+        var result = await service.UpdateWorkspaceAsync(userId, id, dto, ct);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> DeleteWorkspace(
+        ClaimsPrincipal user,
+        Guid id,
+        IWorkspaceService service,
+        CancellationToken ct)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null) return Results.Unauthorized();
+
+        await service.DeleteWorkspaceAsync(userId, id, ct);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> GetUserWorkspaces(

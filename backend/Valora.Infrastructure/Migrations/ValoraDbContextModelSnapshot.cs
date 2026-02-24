@@ -186,7 +186,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("WorkspaceId")
+                    b.Property<Guid?>("WorkspaceId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -1113,8 +1113,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
                         .WithMany("ActivityLogs")
                         .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Actor");
 
