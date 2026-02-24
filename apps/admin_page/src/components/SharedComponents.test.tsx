@@ -65,7 +65,7 @@ describe('Shared Components', () => {
       const handleRetry = vi.fn();
       render(<ErrorState message="Failed" onRetry={handleRetry} />);
 
-      const button = screen.getByText('Try Again');
+      const button = screen.getByText('Retry Connection');
       expect(button).toBeInTheDocument();
       fireEvent.click(button);
       expect(handleRetry).toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe('Shared Components', () => {
 
     it('does not render retry button if onRetry is not provided', () => {
       render(<ErrorState message="Failed" />);
-      expect(screen.queryByText('Try Again')).not.toBeInTheDocument();
+      expect(screen.queryByText('Retry Connection')).not.toBeInTheDocument();
     });
   });
 });
