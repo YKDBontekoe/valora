@@ -37,8 +37,7 @@ public class BatchJobService : IBatchJobService
 
     public async Task<List<BatchJobSummaryDto>> GetRecentJobsAsync(int limit = 10, CancellationToken cancellationToken = default)
     {
-        var jobs = await _jobRepository.GetRecentJobsAsync(limit, cancellationToken);
-        return jobs.Select(MapToSummaryDto).ToList();
+        return await _jobRepository.GetRecentJobSummariesAsync(limit, cancellationToken);
     }
 
     public async Task<PaginatedList<BatchJobSummaryDto>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
