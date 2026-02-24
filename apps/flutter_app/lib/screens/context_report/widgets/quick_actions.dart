@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../widgets/valora_widgets.dart';
@@ -97,6 +98,7 @@ class QuickActions extends StatelessWidget {
         controller.text = address;
         provider.generate(address);
       } else {
+        developer.log('Reverse lookup failed for coordinates: ${position.latitude}, ${position.longitude}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Could not resolve an address for your location.'),
@@ -107,6 +109,7 @@ class QuickActions extends StatelessWidget {
         );
       }
     } on ValoraLocationServiceDisabledException catch (e) {
+      developer.log('Location service disabled', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -117,6 +120,7 @@ class QuickActions extends StatelessWidget {
         ),
       );
     } on ValoraPermissionDeniedException catch (e) {
+      developer.log('Location permission denied', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -127,6 +131,7 @@ class QuickActions extends StatelessWidget {
         ),
       );
     } on ValoraPermissionDeniedForeverException catch (e) {
+      developer.log('Location permission denied forever', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -136,7 +141,8 @@ class QuickActions extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log('Unexpected error in _useMyLocation', error: e, stackTrace: stackTrace);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
