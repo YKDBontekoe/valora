@@ -5,6 +5,8 @@ import { showToast } from './toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+let refreshPromise: Promise<string> | null = null;
+
 const api = axios.create({
   baseURL: API_URL,
 });
@@ -41,27 +43,43 @@ api.interceptors.response.use(
     // Auth Retry (401)
     if (error.response?.status === 401 && !originalRequest._isAuthRetry) {
       originalRequest._isAuthRetry = true;
-      const refreshToken = localStorage.getItem('admin_refresh_token');
-      if (refreshToken) {
-        try {
-          const response = await axios.post<AuthResponse>(`${API_URL}/auth/refresh`, {
-            refreshToken,
-          });
-          const { token, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem('admin_token', token);
-          localStorage.setItem('admin_refresh_token', newRefreshToken);
-          if (originalRequest.headers) {
-             originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
-          return api(originalRequest);
-        } catch {
+
+      if (!refreshPromise) {
+        const refreshToken = localStorage.getItem('admin_refresh_token');
+        if (!refreshToken) {
           clearAdminStorage();
           window.location.href = '/login';
           return Promise.reject(error);
         }
-      } else {
-        clearAdminStorage();
-        window.location.href = '/login';
+
+        refreshPromise = (async () => {
+          try {
+            const response = await axios.post<AuthResponse>(`${API_URL}/auth/refresh`, {
+              refreshToken,
+            });
+            const { token, refreshToken: newRefreshToken } = response.data;
+            localStorage.setItem('admin_token', token);
+            localStorage.setItem('admin_refresh_token', newRefreshToken);
+            return token;
+          } catch (refreshError) {
+            clearAdminStorage();
+            window.location.href = '/login';
+            throw refreshError;
+          } finally {
+            refreshPromise = null;
+          }
+        })();
+      }
+
+      try {
+        const newToken = await refreshPromise;
+        if (originalRequest.headers) {
+           originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+        return api(originalRequest);
+      } catch {
+        // If refresh fails, storage is already cleared and user redirected.
+        // We just reject this request.
         return Promise.reject(error);
       }
     }
