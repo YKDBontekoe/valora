@@ -89,6 +89,67 @@ public class CbsGeoClientTests
     }
 
     [Fact]
+    public async Task GetNeighborhoodsByMunicipalityAsync_EscapesSpecialCharacters()
+    {
+        var municipalityName = "Test < & >";
+        var features = new[]
+        {
+            new
+            {
+                type = "Feature",
+                properties = new { buurtcode = "BU1234", buurtnaam = "TestBuurt" }
+            }
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.Is<HttpRequestMessage>(req =>
+                  req.RequestUri != null &&
+                  // Verify that XML special characters are escaped (e.g., < becomes &lt;)
+                  // BEFORE being URL encoded.
+                  // If escaped: "Test <" -> "Test &lt;" -> URL Encoded -> "Test%20%26lt%3B"
+                  // Unescape -> "Test &lt;"
+                  // If NOT escaped: "Test <" -> "Test <" -> URL Encoded -> "Test%20%3C"
+                  // Unescape -> "Test <"
+                  Uri.UnescapeDataString(req.RequestUri.Query).Contains("&lt;") &&
+                  Uri.UnescapeDataString(req.RequestUri.Query).Contains("&gt;") &&
+                  Uri.UnescapeDataString(req.RequestUri.Query).Contains("&amp;")
+              ),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ReturnsAsync(new HttpResponseMessage()
+           {
+               StatusCode = HttpStatusCode.OK,
+               Content = new StringContent(jsonResponse, System.Text.Encoding.UTF8, "application/json"),
+           });
+
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        await client.GetNeighborhoodsByMunicipalityAsync(municipalityName);
+
+        // Verify the mock was called
+        handlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>()
+        );
+    }
+
+    [Fact]
     public async Task GetNeighborhoodsByMunicipalityAsync_ReturnsNeighborhoodsOnSuccess()
     {
         var features = new[]
