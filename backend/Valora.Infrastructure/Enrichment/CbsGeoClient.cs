@@ -42,6 +42,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
         MapOverlayMetric metric,
         CancellationToken cancellationToken = default)
     {
+        if (minLon > maxLon) { return []; }
         var cacheKey = $"cbs-geo:{minLat:F4}:{minLon:F4}:{maxLat:F4}:{maxLon:F4}:{metric}";
         if (_cache.TryGetValue(cacheKey, out List<MapOverlayDto>? cached))
         {

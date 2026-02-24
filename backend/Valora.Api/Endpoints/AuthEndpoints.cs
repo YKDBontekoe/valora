@@ -9,7 +9,7 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/auth").RequireRateLimiting("strict");
+        var group = app.MapGroup("/api/auth").RequireRateLimiting("auth");
 
         group.MapPost("/register", async (
             [FromBody] RegisterDto registerDto,

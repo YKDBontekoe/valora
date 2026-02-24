@@ -100,6 +100,15 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
           as bool);
 
   @override
+  _i2.MapMode get mapMode =>
+      (super.noSuchMethod(
+            Invocation.getter(#mapMode),
+            returnValue: _i2.MapMode.cities,
+            returnValueForMissingStub: _i2.MapMode.cities,
+          )
+          as _i2.MapMode);
+
+  @override
   bool get showAmenities =>
       (super.noSuchMethod(
             Invocation.getter(#showAmenities),
@@ -167,6 +176,24 @@ class MockInsightsProvider extends _i1.Mock implements _i2.InsightsProvider {
             returnValueForMissingStub: _i9.Future<void>.value(),
           )
           as _i9.Future<void>);
+
+  @override
+  void setMapMode(_i2.MapMode? mode) => super.noSuchMethod(
+    Invocation.method(#setMapMode, [mode]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void selectFeature(Object? feature) => super.noSuchMethod(
+    Invocation.method(#selectFeature, [feature]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void clearSelection() => super.noSuchMethod(
+    Invocation.method(#clearSelection, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i9.Future<void> fetchMapData({

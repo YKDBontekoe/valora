@@ -36,6 +36,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         GeoUtils.ValidateBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         return await _amenityClient.GetAmenitiesInBboxAsync(minLat, minLon, maxLat, maxLon, types, cancellationToken);
     }
 
@@ -48,6 +50,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         GeoUtils.ValidateBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         if (metric == MapOverlayMetric.PricePerSquareMeter)
         {
             return await CalculateAveragePriceOverlayAsync(minLat, minLon, maxLat, maxLon, cancellationToken);
@@ -66,6 +70,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         ValidateAggregatedBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         double cellSize = GetCellSize(zoom);
 
         // Fetch amenities directly from client to bypass strict validation if needed,
@@ -104,6 +110,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         ValidateAggregatedBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         double cellSize = GetCellSize(zoom);
 
         // Fetch detailed overlays
@@ -210,10 +218,12 @@ public class MapService : IMapService
         if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon))
             throw new ValidationException("Coordinates must be valid numbers.");
 
-        if (minLat >= maxLat || minLon >= maxLon)
+        if (minLat >= maxLat)
             throw new ValidationException("Invalid bounding box dimensions.");
 
-        if (maxLat - minLat > MaxAggregatedSpan || maxLon - minLon > MaxAggregatedSpan)
+        var lonSpan = maxLon >= minLon ? maxLon - minLon : 360 - (minLon - maxLon);
+
+        if (maxLat - minLat > MaxAggregatedSpan || lonSpan > MaxAggregatedSpan)
             throw new ValidationException($"Bounding box span too large for aggregated view. Max is {MaxAggregatedSpan}.");
     }
 }

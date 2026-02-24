@@ -233,13 +233,11 @@ public static class GeoUtils
             throw new ValidationException("minLat must be less than maxLat.");
         }
 
-        if (minLon >= maxLon)
-        {
-            throw new ValidationException("minLon must be less than maxLon.");
-        }
-
         // Limit bbox size to prevent heavy queries
-        if (maxLat - minLat > MaxSpan || maxLon - minLon > MaxSpan)
+        // Handle wrapped longitudes (crossing date line)
+        var lonSpan = maxLon >= minLon ? maxLon - minLon : 360 - (minLon - maxLon);
+
+        if (maxLat - minLat > MaxSpan || lonSpan > MaxSpan)
         {
             throw new ValidationException($"Bounding box span too large. Maximum allowed is {MaxSpan} degrees.");
         }
