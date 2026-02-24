@@ -31,6 +31,6 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.HasMany(w => w.ActivityLogs)
             .WithOne(al => al.Workspace)
             .HasForeignKey(al => al.WorkspaceId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
