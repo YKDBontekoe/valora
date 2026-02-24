@@ -44,7 +44,7 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
     try {
       const currentOptions = optionsRef.current;
 
-      const [jobsData, healthData] = await Promise.all([
+      const results = await Promise.allSettled([
         adminService.getJobs(
           currentOptions.page,
           currentOptions.pageSize,
@@ -52,8 +52,8 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
           currentOptions.typeFilter,
           currentOptions.searchQuery,
           currentOptions.sortBy
-        ).catch(() => null),
-        adminService.getHealth().catch(() => null)
+        ),
+        adminService.getHealth()
       ]);
 
       // Check for stale response
@@ -61,20 +61,29 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
         return;
       }
 
-      if (jobsData) {
+      const [jobsResult, healthResult] = results;
+
+      if (jobsResult.status === 'fulfilled') {
+        const jobsData = jobsResult.value;
         setJobs(jobsData.items);
         jobsRef.current = jobsData.items; // Update ref for immediate access
         setTotalPages(jobsData.totalPages);
         setError(null);
       } else {
+        console.error('Failed to fetch jobs:', jobsResult.reason);
         setError('Unable to load job history.');
       }
 
-      if (healthData) {
-        setHealth(healthData);
+      if (healthResult.status === 'fulfilled') {
+        setHealth(healthResult.value);
+      } else {
+        // Silent failure for health check is acceptable as per original design
+        console.warn('Failed to fetch system health:', healthResult.reason);
       }
-    } catch {
+    } catch (err) {
+        // This catch block might not be reached due to allSettled, but good for safety
       if (requestId === latestRequestIdRef.current) {
+         console.error('Unexpected polling error:', err);
          setError('An unexpected error occurred.');
       }
     } finally {
