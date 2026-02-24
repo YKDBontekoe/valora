@@ -64,14 +64,15 @@ public class AuthService : IAuthService
 
     private async Task<ApplicationUser?> VerifyCredentialsAsync(string email, string password)
     {
-        var user = await _identityService.GetUserByEmailAsync(email);
-        if (user == null)
+        // Check password first to prevent timing attacks.
+        // IdentityService.CheckPasswordAsync should handle non-existent users securely (e.g. dummy hash).
+        var isValidPassword = await _identityService.CheckPasswordAsync(email, password);
+        if (!isValidPassword)
         {
             return null;
         }
 
-        var isValidPassword = await _identityService.CheckPasswordAsync(email, password);
-        return isValidPassword ? user : null;
+        return await _identityService.GetUserByEmailAsync(email);
     }
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
