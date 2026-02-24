@@ -158,7 +158,14 @@ void main() {
 
     // Default sort is Newest First (Test Workspace is newer)
     final firstItemFinder = find.descendant(of: find.byType(ListView), matching: find.text('Test Workspace'));
+    final secondItemFinder = find.descendant(of: find.byType(ListView), matching: find.text('Alpha Workspace'));
     expect(firstItemFinder, findsOneWidget);
+    expect(secondItemFinder, findsOneWidget);
+
+    // Verify Test Workspace is above Alpha Workspace
+    final testYPos = tester.getTopLeft(firstItemFinder).dy;
+    final alphaYPos = tester.getTopLeft(secondItemFinder).dy;
+    expect(testYPos < alphaYPos, isTrue);
 
     // Change sort to Name (Alpha should be first)
     await tester.tap(find.byIcon(Icons.sort_rounded));
