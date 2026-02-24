@@ -22,6 +22,6 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
         builder.HasOne(a => a.Workspace)
             .WithMany(w => w.ActivityLogs)
             .HasForeignKey(a => a.WorkspaceId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

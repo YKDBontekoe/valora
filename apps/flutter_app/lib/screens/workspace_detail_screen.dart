@@ -9,6 +9,7 @@ import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
 import '../models/activity_log.dart';
 import '../models/workspace.dart';
+import '../models/saved_listing.dart';
 import '../widgets/workspaces/member_management_widget.dart';
 import 'saved_listing_detail_screen.dart';
 
@@ -126,11 +127,12 @@ class _SavedListingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<WorkspaceProvider>(
-      builder: (context, provider, child) {
+    return Selector<WorkspaceProvider, List<SavedListing>>(
+      selector: (_, p) => p.savedListings,
+      builder: (context, savedListings, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        if (provider.savedListings.isEmpty) {
+        if (savedListings.isEmpty) {
           return Center(
             child: ValoraEmptyState(
               icon: Icons.bookmark_add_rounded,
@@ -141,10 +143,10 @@ class _SavedListingsTab extends StatelessWidget {
         }
         return ListView.separated(
           padding: const EdgeInsets.all(ValoraSpacing.md),
-          itemCount: provider.savedListings.length,
+          itemCount: savedListings.length,
           separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.sm),
           itemBuilder: (context, index) {
-            final saved = provider.savedListings[index];
+            final saved = savedListings[index];
             final listing = saved.listing;
             return ValoraCard(
               onTap: () {
