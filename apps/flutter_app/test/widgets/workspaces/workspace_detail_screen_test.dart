@@ -82,8 +82,9 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
 
 void main() {
   testWidgets('WorkspaceDetailScreen renders correctly', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 3.0;
+    await tester.binding.setSurfaceSize(const Size(2400, 2400));
+    tester.view.physicalSize = const Size(2400, 2400);
+    tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -109,10 +110,13 @@ void main() {
 
   testWidgets('WorkspaceDetailScreen shows edit dialog and calls update', (WidgetTester tester) async {
     // Increase size to avoid RenderFlex overflows in dialogs
+    await tester.binding.setSurfaceSize(const Size(2400, 2400));
     tester.view.physicalSize = const Size(2400, 2400);
-    tester.view.devicePixelRatio = 3.0;
+    tester.view.devicePixelRatio = 1.0;
+    tester.platformDispatcher.textScaleFactorTestValue = 0.5;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
     final mockProvider = MockWorkspaceProvider();
 
@@ -153,8 +157,9 @@ void main() {
 
   testWidgets('WorkspaceDetailScreen shows delete confirmation and calls delete', (WidgetTester tester) async {
     // Increase size and reduce text scale to avoid RenderFlex overflows in dialogs
+    await tester.binding.setSurfaceSize(const Size(2400, 2400));
     tester.view.physicalSize = const Size(2400, 2400);
-    tester.view.devicePixelRatio = 3.0;
+    tester.view.devicePixelRatio = 1.0;
     tester.platformDispatcher.textScaleFactorTestValue = 0.5;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
