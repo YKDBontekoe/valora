@@ -1,6 +1,8 @@
 # Data Flow: From Request to Database (Persistence)
 
-This guide explains how Valora handles "Write" operations, using **User Registration** as the primary example. It walks through the flow from the API endpoint down to the database persistence.
+This guide explains how Valora handles "Write" operations, using **User Registration** as the primary example. It walks through the flow from the API endpoint (Presentation) down to the database persistence (Infrastructure).
+
+> **Context:** This flow corresponds to the "Write" path in our CQRS-lite architecture.
 
 ## High-Level Sequence
 
@@ -40,19 +42,19 @@ sequenceDiagram
 
 ## Detailed Steps
 
-### 1. Request Handling (`Valora.Api`)
+### 1. Presentation Layer (`Valora.Api`)
 - The endpoint `POST /api/auth/register` receives the request body.
 - It maps the JSON body to a `RegisterDto`.
 - It delegates the work to the `IAuthService` interface.
 
-### 2. Application Logic (`Valora.Application`)
+### 2. Application Layer (`Valora.Application`)
 - **Validation:** The service checks business rules (e.g., password matches confirmation).
 - **Identity Abstraction:** It calls `IIdentityService.CreateUserAsync`. The application layer does *not* depend directly on ASP.NET Core Identity.
 - **Security:**
   - Passwords are hashed automatically by `UserManager` (using PBKDF2/Argon2 by default).
   - **Error Handling:** If registration fails (e.g., email exists), the service logs the specific error for debugging but returns a generic result to the API layer to prevent User Enumeration attacks.
 
-### 3. Infrastructure & Persistence (`Valora.Infrastructure`)
+### 3. Infrastructure Layer (`Valora.Infrastructure`)
 - **Identity Service:** The `IdentityService` wraps `UserManager<ApplicationUser>`.
 - **EF Core Identity:** The `ValoraDbContext` inherits from `IdentityDbContext` to manage user tables (`AspNetUsers`, `AspNetRoles`, etc.).
 - **Transaction:** `UserManager` handles the database transaction implicitly.

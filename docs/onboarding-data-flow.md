@@ -2,6 +2,8 @@
 
 This guide explains how Valora processes a user request to generate a context report. It walks through the flow from the API endpoint down to the external data sources.
 
+> **Code Reference:** See `backend/Valora.Application/Services/ContextReportService.cs` for the implementation.
+
 ## High-Level Sequence
 
 The following diagram illustrates the lifecycle of a `POST /api/context/report` request.

@@ -2,6 +2,10 @@
 
 The Valora API is a RESTful service built with ASP.NET Core Minimal APIs. It provides endpoints for authentication, context report generation, map data, AI assistance, and administrative functions.
 
+> **Base URL:**
+> - Local: `http://localhost:5253/api`
+> - Production: `https://api.valora.nl/api`
+
 ## 🚀 High-Level Structure
 
 ```mermaid
@@ -21,6 +25,7 @@ graph LR
 ## 🔐 Authentication
 
 Authentication is handled via JWT (JSON Web Tokens).
+Most endpoints (except `login`, `register`, and `health`) require the `Authorization: Bearer <token>` header.
 
 ### Register
 `POST /api/auth/register`
