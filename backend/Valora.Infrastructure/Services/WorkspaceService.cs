@@ -47,7 +47,10 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<WorkspaceDto> UpdateWorkspaceAsync(string userId, Guid workspaceId, UpdateWorkspaceDto dto, CancellationToken ct = default)
     {
-        var workspace = await _context.Workspaces.FindAsync(new object[] { workspaceId }, ct);
+        var workspace = await _context.Workspaces
+            .Include(w => w.Members)
+            .Include(w => w.SavedListings)
+            .FirstOrDefaultAsync(w => w.Id == workspaceId, ct);
 
         if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
 
@@ -70,6 +73,7 @@ public class WorkspaceService : IWorkspaceService
 
         if (workspace.OwnerId != userId) throw new ForbiddenAccessException();
 
+        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceUpdated, "Workspace deleted", ct);
         _context.Workspaces.Remove(workspace);
         await _context.SaveChangesAsync(ct);
     }

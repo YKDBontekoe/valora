@@ -235,7 +235,11 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
                     Navigator.pop(context); // Go back to list
                   }
                 } catch (e) {
-                   // Error handling usually done via toast or snackbar globally or local state
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to delete workspace: $e')),
+                    );
+                  }
                 }
             },
           ),
