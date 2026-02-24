@@ -19,7 +19,7 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   String? get error => null;
 
   static final DateTime _fixedNow = DateTime(2024, 1, 1);
-  List<Workspace> _workspaces = [
+  final List<Workspace> _workspaces = [
     Workspace(
       id: '1',
       name: 'Test Workspace',
