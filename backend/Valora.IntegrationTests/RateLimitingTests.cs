@@ -104,4 +104,29 @@ public class RateLimitingTests : BaseIntegrationTest
         // Assert
         response.EnsureSuccessStatusCode();
     }
+
+    [Fact]
+    public async Task Auth_Is_RateLimited_Strictly()
+    {
+        using var client = Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "RateLimiting:AuthLimit", "20" }
+                });
+            });
+        }).CreateClient();
+
+        for (int i = 0; i < 20; i++)
+        {
+            var response = await client.PostAsJsonAsync("/api/auth/login", new LoginDto("test@example.com", "Password123!"));
+            // We expect 401 (Unauthorized) or 400 (Bad Request) but NOT 429
+            response.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+        }
+
+        var blockedResponse = await client.PostAsJsonAsync("/api/auth/login", new LoginDto("test@example.com", "Password123!"));
+        blockedResponse.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+    }
 }

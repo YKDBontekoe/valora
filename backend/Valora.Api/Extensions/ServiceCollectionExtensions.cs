@@ -222,12 +222,31 @@ public static class ServiceCollectionExtensions
             var configFixed = configuration.GetValue<int?>("RateLimiting:FixedLimit");
             var configStrictQueue = configuration.GetValue<int?>("RateLimiting:StrictQueueLimit");
             var configFixedQueue = configuration.GetValue<int?>("RateLimiting:FixedQueueLimit");
+            var configAuth = configuration.GetValue<int?>("RateLimiting:AuthLimit");
+            var permitLimitAuth = (configAuth.HasValue && configAuth.Value > 0) ? configAuth.Value : (isTesting ? 1000 : 20);
             var queueLimitStrict = (configStrictQueue.HasValue && configStrictQueue.Value >= 0) ? configStrictQueue.Value : 10;
             var queueLimitFixed = (configFixedQueue.HasValue && configFixedQueue.Value >= 0) ? configFixedQueue.Value : 20;
 
             // Validate configuration values. If invalid (<= 0), fallback to defaults.
             var permitLimitStrict = (configStrict.HasValue && configStrict.Value > 0) ? configStrict.Value : (isTesting ? 1000 : 1000);
             var permitLimitFixed = (configFixed.HasValue && configFixed.Value > 0) ? configFixed.Value : (isTesting ? 1000 : 10000);
+
+            // Policy: "auth"
+            options.AddPolicy("auth", context =>
+            {
+                var partitionKey = context.User.Identity?.IsAuthenticated == true
+                    ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
+                    : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+                return RateLimitPartition.GetFixedWindowLimiter(partitionKey,
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = permitLimitAuth,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+            });
 
             // Policy: "strict"
             options.AddPolicy("strict", context =>
