@@ -19,9 +19,9 @@ Follow this checklist to get the entire system running locally.
 - [ ] **Node.js 18+**
 
 ### 1. Start Infrastructure
-Run the database container.
+Run the database container only.
 ```bash
-docker-compose -f docker/docker-compose.yml up -d
+docker-compose -f docker/docker-compose.yml up -d postgres
 ```
 *Check:* Run `docker ps`. You should see `valora-db` running on port 5432.
 
@@ -37,7 +37,7 @@ dotnet user-secrets set "JWT_SECRET" "YourStrongSecretKeyHere_MustBeAtLeast32Cha
 # Run the API
 dotnet run --project Valora.Api
 ```
-*Check:* Open [http://localhost:5253/api/health](http://localhost:5253/api/health). You should see `{"status":"healthy",...}`.
+*Check:* Open [http://localhost:5253/api/health](http://localhost:5253/api/health). You should see `{"status":"Healthy",...}`.
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
