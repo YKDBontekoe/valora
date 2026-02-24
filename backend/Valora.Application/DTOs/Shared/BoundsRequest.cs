@@ -15,9 +15,5 @@ public record class BoundsRequest(
         {
             yield return new ValidationResult("MinLat must be less than MaxLat.", new[] { nameof(MinLat), nameof(MaxLat) });
         }
-        if (MinLon > MaxLon)
-        {
-            yield return new ValidationResult("MinLon must be less than MaxLon.", new[] { nameof(MinLon), nameof(MaxLon) });
-        }
     }
 }
