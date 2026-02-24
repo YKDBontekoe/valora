@@ -5,6 +5,7 @@ namespace Valora.Domain.Entities;
 public enum ActivityLogType
 {
     WorkspaceCreated,
+    WorkspaceUpdated,
     MemberInvited,
     MemberJoined,
     MemberRemoved,

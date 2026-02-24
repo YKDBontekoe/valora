@@ -53,6 +53,64 @@ public class WorkspaceServiceTests
     }
 
     [Fact]
+    public async Task UpdateWorkspaceAsync_ShouldUpdate_WhenOwner()
+    {
+        var userId = "owner";
+        var workspace = new Workspace { Name = "Old Name", Description = "Old Desc", OwnerId = userId };
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        var dto = new UpdateWorkspaceDto("New Name", "New Desc");
+        var result = await _service.UpdateWorkspaceAsync(userId, workspace.Id, dto);
+
+        Assert.Equal("New Name", result.Name);
+        Assert.Equal("New Desc", result.Description);
+
+        var dbWorkspace = await _context.Workspaces.FindAsync(workspace.Id);
+        Assert.Equal("New Name", dbWorkspace!.Name);
+        Assert.Equal("New Desc", dbWorkspace.Description);
+    }
+
+    [Fact]
+    public async Task UpdateWorkspaceAsync_ShouldThrowForbidden_WhenNotOwner()
+    {
+        var ownerId = "owner";
+        var userId = "user";
+        var workspace = new Workspace { Name = "Name", OwnerId = ownerId };
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        var dto = new UpdateWorkspaceDto("New Name", "New Desc");
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() => _service.UpdateWorkspaceAsync(userId, workspace.Id, dto));
+    }
+
+    [Fact]
+    public async Task DeleteWorkspaceAsync_ShouldDelete_WhenOwner()
+    {
+        var userId = "owner";
+        var workspace = new Workspace { Name = "Name", OwnerId = userId };
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        await _service.DeleteWorkspaceAsync(userId, workspace.Id);
+
+        var dbWorkspace = await _context.Workspaces.FindAsync(workspace.Id);
+        Assert.Null(dbWorkspace);
+    }
+
+    [Fact]
+    public async Task DeleteWorkspaceAsync_ShouldThrowForbidden_WhenNotOwner()
+    {
+        var ownerId = "owner";
+        var userId = "user";
+        var workspace = new Workspace { Name = "Name", OwnerId = ownerId };
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() => _service.DeleteWorkspaceAsync(userId, workspace.Id));
+    }
+
+    [Fact]
     public async Task GetUserWorkspacesAsync_ShouldReturnOnlyUserWorkspaces()
     {
         var userId = "user1";
