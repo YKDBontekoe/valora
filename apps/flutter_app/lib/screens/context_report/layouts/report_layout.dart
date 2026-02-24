@@ -5,6 +5,7 @@ import '../../../widgets/report/context_report_view.dart';
 import '../../../widgets/report/context_report_skeleton.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/compare_button.dart';
+import '../widgets/save_search_button.dart';
 
 class ReportLayout extends StatelessWidget {
   const ReportLayout({
@@ -44,10 +45,14 @@ class ReportLayout extends StatelessWidget {
                   pdokService: pdokService,
                 ),
               ),
-              const SizedBox(width: 8),
-              // Compare toggle
-              if (provider.report != null)
+              if (provider.report != null) ...[
+                const SizedBox(width: 8),
+                // Save Search Button
+                SaveSearchButton(provider: provider),
+                const SizedBox(width: 8),
+                // Compare toggle
                 CompareButton(provider: provider),
+              ],
             ],
           ),
         ),
