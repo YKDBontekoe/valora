@@ -30,6 +30,24 @@ public class SecurityTests
     }
 
     [Theory]
+    [InlineData("Valid City", true)]
+    [InlineData("City-Name", true)]
+    [InlineData("'s-Hertogenbosch", true)]
+    [InlineData("<script>alert(1)</script>", false)] // XML/HTML injection
+    [InlineData("City < 1", false)] // Contains <
+    [InlineData("City > 1", false)] // Contains >
+    public void BatchJobRequest_Target_Validation_ReturnsExpectedResult(string target, bool expectedValid)
+    {
+        var dto = new BatchJobRequest("CityIngestion", target);
+        var context = new ValidationContext(dto);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(dto, context, results, true);
+
+        Assert.Equal(expectedValid, isValid);
+    }
+
+    [Theory]
     [InlineData(null, false)] // Required
     [InlineData("", false)] // Required
     [InlineData("ab", false)] // Too short

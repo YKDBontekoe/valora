@@ -16,5 +16,7 @@ public record AdminStatsDto(
 
 public record BatchJobRequest(
     [property: Required] [property: EnumDataType(typeof(BatchJobType))] string Type,
-    [property: Required] [property: StringLength(255, MinimumLength = 2)] string Target
+    [property: Required] [property: StringLength(255, MinimumLength = 2)]
+    [property: RegularExpression(@"^[^<>]+$", ErrorMessage = "Target cannot contain HTML/XML tags.")]
+    string Target
 );

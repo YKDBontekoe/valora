@@ -131,7 +131,14 @@ public sealed class CbsGeoClient : ICbsGeoClient
         string municipalityName,
         CancellationToken cancellationToken = default)
     {
-        var filter = $"<Filter><PropertyIsEqualTo matchCase=\"false\"><PropertyName>gemeentenaam</PropertyName><Literal>{municipalityName}</Literal></PropertyIsEqualTo></Filter>";
+        if (string.IsNullOrWhiteSpace(municipalityName))
+        {
+            return [];
+        }
+
+        // Fix for XML Injection vulnerability: Escape the user input before embedding in XML
+        var escapedMunicipalityName = System.Security.SecurityElement.Escape(municipalityName);
+        var filter = $"<Filter><PropertyIsEqualTo matchCase=\"false\"><PropertyName>gemeentenaam</PropertyName><Literal>{escapedMunicipalityName}</Literal></PropertyIsEqualTo></Filter>";
         var encodedFilter = Uri.EscapeDataString(filter);
         var url = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&FILTER={encodedFilter}";
 
