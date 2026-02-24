@@ -16,18 +16,23 @@ class GenerateButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 56,
-      child: ValoraButton(
-        label: 'Generate Report',
-        isLoading: provider.isLoading,
-        onPressed: provider.isLoading || controller.text.isEmpty
-            ? null
-            : () {
-                FocusScope.of(context).unfocus();
-                provider.generate(controller.text);
-              },
-        variant: ValoraButtonVariant.primary,
-        isFullWidth: true,
-        size: ValoraButtonSize.large,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, _) {
+          return ValoraButton(
+            label: 'Generate Report',
+            isLoading: provider.isLoading,
+            onPressed: provider.isLoading || value.text.trim().isEmpty
+                ? null
+                : () {
+                    FocusScope.of(context).unfocus();
+                    provider.generate(controller.text);
+                  },
+            variant: ValoraButtonVariant.primary,
+            isFullWidth: true,
+            size: ValoraButtonSize.large,
+          );
+        },
       ),
     );
   }
