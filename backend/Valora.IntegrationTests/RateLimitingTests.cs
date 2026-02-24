@@ -30,6 +30,7 @@ public class RateLimitingTests : BaseIntegrationTest
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     { "RateLimiting:StrictLimit", "5" }
+                    , { "RateLimiting:StrictQueueLimit", "0" }
                 });
             });
         }).CreateClient();
@@ -57,7 +58,8 @@ public class RateLimitingTests : BaseIntegrationTest
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    { "RateLimiting:StrictLimit", "5" }
+                    { "RateLimiting:StrictLimit", "5" },
+                    { "RateLimiting:StrictQueueLimit", "0" }
                 });
             });
         }).CreateClient();
