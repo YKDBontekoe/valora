@@ -8,7 +8,7 @@ import 'package:valora_app/screens/context_report/widgets/saved_searches_section
 // Minimal mock provider using ChangeNotifier
 class MockContextReportProvider extends ChangeNotifier implements ContextReportProvider {
   List<SavedSearch> _savedSearches = [];
-  bool _isLoading = false;
+  final bool _isLoading = false; // Fixed: Made final to satisfy linter
 
   @override
   List<SavedSearch> get savedSearches => _savedSearches;
