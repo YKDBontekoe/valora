@@ -7,6 +7,8 @@ import '../core/theme/valora_spacing.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
+import '../models/activity_log.dart';
+import '../models/workspace.dart';
 import '../widgets/workspaces/member_management_widget.dart';
 import 'saved_listing_detail_screen.dart';
 
@@ -274,11 +276,11 @@ class _MembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<WorkspaceProvider, List<dynamic>>(
+    return Selector<WorkspaceProvider, List<WorkspaceMember>>(
       selector: (_, p) => p.members,
       builder: (context, members, child) {
         return MemberManagementWidget(
-          members: members.cast(),
+          members: members,
           canInvite: true,
         );
       },
@@ -291,10 +293,10 @@ class _ActivityTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<WorkspaceProvider, List<dynamic>>(
+    return Selector<WorkspaceProvider, List<ActivityLog>>(
       selector: (_, p) => p.activityLogs,
       builder: (context, logs, child) {
-        return ActivityFeedWidget(activities: logs.cast());
+        return ActivityFeedWidget(activities: logs);
       },
     );
   }
