@@ -41,10 +41,25 @@ public class BaseTestcontainersIntegrationTest : IAsyncLifetime
         DbContext.Listings.RemoveRange(DbContext.Listings);
         DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
 
+        // Identity Cleanup
+        DbContext.UserClaims.RemoveRange(DbContext.UserClaims);
+        DbContext.UserLogins.RemoveRange(DbContext.UserLogins);
+        DbContext.UserRoles.RemoveRange(DbContext.UserRoles);
+        DbContext.UserTokens.RemoveRange(DbContext.UserTokens);
+        DbContext.RoleClaims.RemoveRange(DbContext.RoleClaims);
+
+        // Remove UserAiProfiles before Users due to FK
+        DbContext.UserAiProfiles.RemoveRange(DbContext.UserAiProfiles);
+
+        // Remove Users before Roles (UserRoles already removed)
         if (DbContext.Users.Any())
         {
             DbContext.Users.RemoveRange(DbContext.Users);
         }
+
+        // Remove Roles
+        DbContext.Roles.RemoveRange(DbContext.Roles);
+
         await DbContext.SaveChangesAsync();
     }
 
