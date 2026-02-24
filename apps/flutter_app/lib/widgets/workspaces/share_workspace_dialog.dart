@@ -25,18 +25,44 @@ class _ShareWorkspaceDialogState extends State<ShareWorkspaceDialog> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) {
+    return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
+  }
+
   Future<void> _handleInvite() async {
-    if (_emailController.text.isEmpty) return;
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an email address'),
+          backgroundColor: ValoraColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email address'),
+          backgroundColor: ValoraColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
     try {
-      await context.read<WorkspaceProvider>().inviteMember(_emailController.text, _role);
+      await context.read<WorkspaceProvider>().inviteMember(email, _role);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
+        // Log the actual error internally if needed: print('Invite failed: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
+          const SnackBar(
+            content: Text('Failed to send invite. Please try again.'),
             backgroundColor: ValoraColors.error,
             behavior: SnackBarBehavior.floating,
           ),
