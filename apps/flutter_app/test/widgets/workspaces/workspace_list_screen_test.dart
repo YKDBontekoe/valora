@@ -18,8 +18,7 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   String? get error => null;
 
-  @override
-  List<Workspace> get workspaces => [
+  List<Workspace> _workspaces = [
     Workspace(
       id: '1',
       name: 'Test Workspace',
@@ -28,8 +27,20 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
       createdAt: DateTime.now(),
       memberCount: 1,
       savedListingCount: 0,
+    ),
+    Workspace(
+      id: '2',
+      name: 'Alpha Workspace',
+      description: 'A description',
+      ownerId: 'owner',
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      memberCount: 5,
+      savedListingCount: 2,
     )
   ];
+
+  @override
+  List<Workspace> get workspaces => _workspaces;
 
   @override
   Workspace? get selectedWorkspace => null;
@@ -102,5 +113,67 @@ void main() {
     expect(find.text('New Workspace'), findsNWidgets(2)); // FAB + Dialog title
     expect(find.text('Workspace Name'), findsOneWidget);
     expect(find.text('Create'), findsOneWidget);
+  });
+
+  testWidgets('WorkspaceListScreen filters list by search query', (WidgetTester tester) async {
+    final mockProvider = MockWorkspaceProvider();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<WorkspaceProvider>.value(
+          value: mockProvider,
+          child: const WorkspaceListScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Enable search
+    await tester.tap(find.byIcon(Icons.search_rounded));
+    await tester.pumpAndSettle();
+
+    // Enter query "Alpha"
+    await tester.enterText(find.byType(TextField), 'Alpha');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alpha Workspace'), findsOneWidget);
+    expect(find.text('Test Workspace'), findsNothing);
+  });
+
+  testWidgets('WorkspaceListScreen sorts list', (WidgetTester tester) async {
+    final mockProvider = MockWorkspaceProvider();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<WorkspaceProvider>.value(
+          value: mockProvider,
+          child: const WorkspaceListScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Default sort is Newest First (Test Workspace is newer)
+    final firstItemFinder = find.descendant(of: find.byType(ListView), matching: find.text('Test Workspace'));
+    expect(firstItemFinder, findsOneWidget);
+
+    // Change sort to Name (Alpha should be first)
+    await tester.tap(find.byIcon(Icons.sort_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Name (A-Z)'));
+    await tester.pumpAndSettle();
+
+    // Verify Alpha comes first (simplest way is to verify it exists, order verification in listview can be tricky but finders return in tree order)
+    // We can check the first item in the list
+    final listFinder = find.byType(ListView);
+    final firstCard = find.descendant(of: listFinder, matching: find.text('Alpha Workspace')).first;
+    expect(firstCard, findsOneWidget);
+
+    // To ensure order, we check their relative Y positions
+    final alphaY = tester.getTopLeft(find.text('Alpha Workspace')).dy;
+    final testY = tester.getTopLeft(find.text('Test Workspace')).dy;
+    expect(alphaY < testY, isTrue);
   });
 }
