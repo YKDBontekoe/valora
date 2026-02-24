@@ -210,10 +210,12 @@ public class MapService : IMapService
         if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon))
             throw new ValidationException("Coordinates must be valid numbers.");
 
-        if (minLat >= maxLat || minLon >= maxLon)
+        if (minLat >= maxLat)
             throw new ValidationException("Invalid bounding box dimensions.");
 
-        if (maxLat - minLat > MaxAggregatedSpan || maxLon - minLon > MaxAggregatedSpan)
+        var lonSpan = maxLon >= minLon ? maxLon - minLon : 360 - (minLon - maxLon);
+
+        if (maxLat - minLat > MaxAggregatedSpan || lonSpan > MaxAggregatedSpan)
             throw new ValidationException($"Bounding box span too large for aggregated view. Max is {MaxAggregatedSpan}.");
     }
 }
