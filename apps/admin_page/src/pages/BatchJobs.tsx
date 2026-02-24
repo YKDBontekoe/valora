@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Play, AlertCircle, Database, Sparkles, Info, ChevronLeft, ChevronRight, Globe, Layers, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
 import { adminService } from '../services/api';
-import type { BatchJob, SystemHealth } from '../types';
+// Removed unused BatchJob import
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
 import Skeleton from '../components/Skeleton';
 import JobDetailsModal from './JobDetailsModal';
 import DatasetStatusModal from './DatasetStatusModal';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import { useBatchJobsPolling } from '../hooks/useBatchJobsPolling';
 
 const listVariants = {
   visible: {
@@ -29,22 +30,34 @@ const rowVariants = {
 } as const;
 
 const BatchJobs: React.FC = () => {
-  const [jobs, setJobs] = useState<BatchJob[]>([]);
-  const [health, setHealth] = useState<SystemHealth | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isStarting, setIsStarting] = useState(false);
-  const [targetCity, setTargetCity] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
   // Pagination & Filtering
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const pageSize = 10;
+
+  // Use Custom Hook for Data & Polling
+  const {
+    jobs,
+    health,
+    loading,
+    error,
+    totalPages,
+    refresh
+  } = useBatchJobsPolling({
+    page,
+    pageSize,
+    statusFilter,
+    typeFilter,
+    searchQuery: debouncedSearch,
+    sortBy
+  });
+
+  const [isStarting, setIsStarting] = useState(false);
+  const [targetCity, setTargetCity] = useState('');
 
   // Modal State
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -94,38 +107,6 @@ const BatchJobs: React.FC = () => {
     setPage(1);
   };
 
-  const fetchJobs = useCallback(async () => {
-    try {
-      const data = await adminService.getJobs(page, pageSize, statusFilter, typeFilter, debouncedSearch, sortBy);
-      setJobs(data.items);
-      setTotalPages(data.totalPages);
-      setError(null);
-    } catch {
-      setError('Unable to load job history.');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, pageSize, statusFilter, typeFilter, debouncedSearch, sortBy]);
-
-  const fetchHealth = useCallback(async () => {
-    try {
-        const data = await adminService.getHealth();
-        setHealth(data);
-    } catch {
-        // Silent fail for header badge
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchJobs();
-    fetchHealth();
-    const interval = setInterval(() => {
-        fetchJobs();
-        fetchHealth();
-    }, 5000); // Live poll every 5s
-    return () => clearInterval(interval);
-  }, [fetchJobs, fetchHealth]);
-
   const handleStartJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetCity) return;
@@ -135,7 +116,7 @@ const BatchJobs: React.FC = () => {
       await adminService.startJob('CityIngestion', targetCity);
       showToast('Pipeline initiated successfully', 'success');
       setTargetCity('');
-      fetchJobs();
+      refresh();
     } catch {
       // Toast handled by api interceptor
     } finally {
@@ -154,7 +135,7 @@ const BatchJobs: React.FC = () => {
             try {
               await adminService.startJob('AllCitiesIngestion', 'Netherlands');
               showToast('Full dataset ingestion pipeline initiated', 'success');
-              fetchJobs();
+              refresh();
             } catch {
               showToast('Failed to start ingestion pipeline. Please try again.', 'error');
             } finally {
@@ -418,7 +399,7 @@ const BatchJobs: React.FC = () => {
                     <div className="flex flex-col items-center gap-6 text-error-500">
                         <AlertCircle size={48} className="opacity-20" />
                         <span className="font-black text-xl">{error}</span>
-                        <Button onClick={fetchJobs} variant="outline" size="sm" className="mt-4 border-error-200 text-error-700">Retry Pipeline Sync</Button>
+                        <Button onClick={refresh} variant="outline" size="sm" className="mt-4 border-error-200 text-error-700">Retry Pipeline Sync</Button>
                     </div>
                   </td>
                 </tr>
@@ -535,7 +516,7 @@ const BatchJobs: React.FC = () => {
         isOpen={isModalOpen}
         onClose={closeDetails}
         jobId={selectedJobId}
-        onJobUpdated={fetchJobs}
+        onJobUpdated={refresh}
       />
 
       <DatasetStatusModal
