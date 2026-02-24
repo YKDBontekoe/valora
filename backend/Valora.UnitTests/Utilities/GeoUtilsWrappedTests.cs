@@ -14,10 +14,10 @@ public class GeoUtilsWrappedTests
     }
 
     [Fact]
-    public void ValidateBoundingBox_ShouldPass_WhenWrappedWithLargeValues()
+    public void ValidateBoundingBox_ShouldThrow_WhenWrappedWithInvalidValues()
     {
-        // MinLon=359.9, MaxLon=0.1. Span is 0.2.
-        GeoUtils.ValidateBoundingBox(10, 359.9, 10.1, 0.1);
+        // 359.9 is outside -180..180
+        Assert.Throws<ValidationException>(() => GeoUtils.ValidateBoundingBox(10, 359.9, 10.1, 0.1));
     }
 
     [Fact]

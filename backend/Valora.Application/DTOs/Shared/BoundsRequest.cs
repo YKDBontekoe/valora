@@ -3,10 +3,10 @@ using System.ComponentModel.DataAnnotations;
 namespace Valora.Application.DTOs.Shared;
 
 public record class BoundsRequest(
-    double MinLat,
-    double MinLon,
-    double MaxLat,
-    double MaxLon
+    [property: Range(-90, 90)] double MinLat,
+    [property: Range(-180, 180)] double MinLon,
+    [property: Range(-90, 90)] double MaxLat,
+    [property: Range(-180, 180)] double MaxLon
 ) : IValidatableObject
 {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

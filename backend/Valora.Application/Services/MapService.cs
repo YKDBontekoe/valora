@@ -36,6 +36,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         GeoUtils.ValidateBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         return await _amenityClient.GetAmenitiesInBboxAsync(minLat, minLon, maxLat, maxLon, types, cancellationToken);
     }
 
@@ -48,6 +50,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         GeoUtils.ValidateBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         if (metric == MapOverlayMetric.PricePerSquareMeter)
         {
             return await CalculateAveragePriceOverlayAsync(minLat, minLon, maxLat, maxLon, cancellationToken);
@@ -66,6 +70,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         ValidateAggregatedBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         double cellSize = GetCellSize(zoom);
 
         // Fetch amenities directly from client to bypass strict validation if needed,
@@ -104,6 +110,8 @@ public class MapService : IMapService
         CancellationToken cancellationToken = default)
     {
         ValidateAggregatedBoundingBox(minLat, minLon, maxLat, maxLon);
+        if (minLon > maxLon) return [];
+
         double cellSize = GetCellSize(zoom);
 
         // Fetch detailed overlays
