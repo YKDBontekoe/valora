@@ -75,6 +75,9 @@ class WorkspaceProvider extends ChangeNotifier {
       _workspaces = _workspaces.where((w) => w.id != id).toList();
       if (_selectedWorkspace?.id == id) {
         _selectedWorkspace = null;
+        _members = [];
+        _savedListings = [];
+        _activityLogs = [];
       }
       notifyListeners();
     } catch (e) {

@@ -18,13 +18,14 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   String? get error => null;
 
+  static final DateTime _fixedNow = DateTime(2024, 1, 1);
   List<Workspace> _workspaces = [
     Workspace(
       id: '1',
       name: 'Test Workspace',
       description: 'Desc',
       ownerId: 'owner',
-      createdAt: DateTime.now(),
+      createdAt: _fixedNow,
       memberCount: 1,
       savedListingCount: 0,
     ),
@@ -33,7 +34,7 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
       name: 'Alpha Workspace',
       description: 'A description',
       ownerId: 'owner',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      createdAt: _fixedNow.subtract(const Duration(days: 1)),
       memberCount: 5,
       savedListingCount: 2,
     )

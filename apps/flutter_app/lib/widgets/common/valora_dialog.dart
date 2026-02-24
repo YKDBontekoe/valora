@@ -53,11 +53,14 @@ class ValoraDialog extends StatelessWidget {
             ),
             if (actions.isNotEmpty) ...[
               const SizedBox(height: ValoraSpacing.lg),
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: ValoraSpacing.sm,
-                runSpacing: ValoraSpacing.sm,
-                children: actions,
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: ValoraSpacing.sm,
+                  runSpacing: ValoraSpacing.sm,
+                  children: actions,
+                ),
               ),
             ],
           ],

@@ -73,7 +73,9 @@ public class WorkspaceService : IWorkspaceService
 
         if (workspace.OwnerId != userId) throw new ForbiddenAccessException();
 
-        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceUpdated, "Workspace deleted", ct);
+        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceDeleted, "Workspace deleted", ct);
+        await _context.SaveChangesAsync(ct); // Save log first (if SetNull behavior is used, log will persist as orphaned)
+
         _context.Workspaces.Remove(workspace);
         await _context.SaveChangesAsync(ct);
     }

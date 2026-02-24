@@ -84,6 +84,8 @@ void main() {
   testWidgets('WorkspaceDetailScreen renders correctly', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     final mockProvider = MockWorkspaceProvider();
 

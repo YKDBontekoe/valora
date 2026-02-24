@@ -6,6 +6,7 @@ public enum ActivityLogType
 {
     WorkspaceCreated,
     WorkspaceUpdated,
+    WorkspaceDeleted,
     MemberInvited,
     MemberJoined,
     MemberRemoved,
@@ -18,7 +19,7 @@ public enum ActivityLogType
 
 public class ActivityLog : BaseEntity
 {
-    public Guid WorkspaceId { get; set; }
+    public Guid? WorkspaceId { get; set; }
     public Workspace? Workspace { get; set; }
 
     // Who performed the action
