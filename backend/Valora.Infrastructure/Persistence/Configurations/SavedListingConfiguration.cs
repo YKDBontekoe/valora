@@ -29,5 +29,7 @@ public class SavedListingConfiguration : IEntityTypeConfiguration<SavedListing>
             .HasMaxLength(2000);
 
         builder.HasIndex(sl => new { sl.WorkspaceId, sl.ListingId }).IsUnique();
+
+        builder.HasIndex(sl => new { sl.WorkspaceId, sl.CreatedAt });
     }
 }
