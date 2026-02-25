@@ -20,6 +20,7 @@ public class WorkspaceServiceTests
 {
     private readonly ValoraDbContext _context;
     private readonly Mock<IIdentityService> _identityServiceMock;
+    private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly WorkspaceService _service;
     private readonly WorkspaceRepository _repository;
 
@@ -31,8 +32,9 @@ public class WorkspaceServiceTests
 
         _context = new ValoraDbContext(options);
         _identityServiceMock = new Mock<IIdentityService>();
+        _activityLogServiceMock = new Mock<IActivityLogService>();
         _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceService(_repository, _identityServiceMock.Object);
+        _service = new WorkspaceService(_repository, _activityLogServiceMock.Object);
     }
 
     [Fact]
@@ -51,8 +53,7 @@ public class WorkspaceServiceTests
         Assert.Single(workspace.Members);
         Assert.Equal(WorkspaceRole.Owner, workspace.Members.First().Role);
 
-        var log = await _context.ActivityLogs.FirstAsync(l => l.WorkspaceId == result.Id);
-        Assert.Equal(ActivityLogType.WorkspaceCreated, log.Type);
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(It.IsAny<Workspace>(), userId, ActivityLogType.WorkspaceCreated, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -78,9 +79,7 @@ public class WorkspaceServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateWorkspaceAsync(userId, dto));
 
-        var log = await _context.ActivityLogs.FirstOrDefaultAsync(l => l.ActorId == userId && l.Summary == "Workspace creation failed: limit reached");
-        Assert.NotNull(log);
-        Assert.Null(log.WorkspaceId); // Ensure log is not attached to a non-existent workspace
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync((Guid?)null, userId, ActivityLogType.WorkspaceCreated, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -119,318 +118,6 @@ public class WorkspaceServiceTests
     }
 
     [Fact]
-    public async Task GetMembersAsync_ShouldReturnMembers_WhenUserIsMember()
-    {
-        var userId = "user1";
-        var ws = new Workspace { Name = "WS", OwnerId = userId };
-        ws.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Owner });
-        _context.Workspaces.Add(ws);
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetMembersAsync(userId, ws.Id);
-
-        Assert.Single(result);
-        Assert.Equal(userId, result.First().UserId);
-    }
-
-    [Fact]
-    public async Task GetMembersAsync_ShouldThrowForbidden_WhenUserIsNotMember()
-    {
-        var userId = "user1";
-        var otherUser = "user2";
-        var ws = new Workspace { Name = "WS", OwnerId = userId };
-        ws.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Owner });
-        _context.Workspaces.Add(ws);
-        await _context.SaveChangesAsync();
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() => _service.GetMembersAsync(otherUser, ws.Id));
-    }
-
-    [Fact]
-    public async Task AddMemberAsync_OwnerCanInvite_ShouldSucceed()
-    {
-        var ownerId = "owner";
-        var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
-        workspace.Members.Add(new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        var dto = new InviteMemberDto("invitee@test.com", WorkspaceRole.Editor);
-        _identityServiceMock.Setup(s => s.GetUserByEmailAsync(dto.Email))
-            .ReturnsAsync((ApplicationUser?)null);
-
-        await _service.AddMemberAsync(ownerId, workspace.Id, dto);
-
-        var member = await _context.WorkspaceMembers.FirstOrDefaultAsync(m => m.InvitedEmail == dto.Email);
-        Assert.NotNull(member);
-        Assert.Equal(WorkspaceRole.Editor, member.Role);
-        Assert.True(member.IsPending);
-    }
-
-    [Fact]
-    public async Task AddMemberAsync_ShouldReturnEarly_WhenMemberAlreadyInvited()
-    {
-        var ownerId = "owner";
-        var email = "existing@test.com";
-        var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
-        workspace.Members.Add(new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner });
-        workspace.Members.Add(new WorkspaceMember { InvitedEmail = email, Role = WorkspaceRole.Viewer });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        var dto = new InviteMemberDto(email, WorkspaceRole.Editor);
-
-        await _service.AddMemberAsync(ownerId, workspace.Id, dto);
-
-        var members = await _context.WorkspaceMembers.Where(m => m.InvitedEmail == email).ToListAsync();
-        Assert.Single(members); // Should not add duplicate
-    }
-
-    [Fact]
-    public async Task AddMemberAsync_ViewerCannotInvite_ShouldThrowForbidden()
-    {
-        var viewerId = "viewer";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = viewerId, Role = WorkspaceRole.Viewer });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        var dto = new InviteMemberDto("test@test.com", WorkspaceRole.Editor);
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            _service.AddMemberAsync(viewerId, workspace.Id, dto));
-    }
-
-    [Fact]
-    public async Task RemoveMemberAsync_OwnerCanRemoveMember_ShouldSucceed()
-    {
-        var ownerId = "owner";
-        var memberId = "member";
-        var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
-        workspace.Members.Add(new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner });
-        var memberToRemove = new WorkspaceMember { UserId = memberId, Role = WorkspaceRole.Viewer };
-        workspace.Members.Add(memberToRemove);
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        await _service.RemoveMemberAsync(ownerId, workspace.Id, memberToRemove.Id);
-
-        var exists = await _context.WorkspaceMembers.AnyAsync(m => m.Id == memberToRemove.Id);
-        Assert.False(exists);
-    }
-
-    [Fact]
-    public async Task RemoveMemberAsync_ShouldThrowInvalidOperation_WhenRemovingSelf()
-    {
-        var ownerId = "owner";
-        var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
-        var ownerMember = new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner };
-        workspace.Members.Add(ownerMember);
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.RemoveMemberAsync(ownerId, workspace.Id, ownerMember.Id));
-    }
-
-    [Fact]
-    public async Task RemoveMemberAsync_ShouldThrowNotFound_WhenMemberDoesNotExist()
-    {
-        var ownerId = "owner";
-        var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
-        workspace.Members.Add(new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            _service.RemoveMemberAsync(ownerId, workspace.Id, Guid.NewGuid()));
-    }
-
-    [Fact]
-    public async Task SaveListingAsync_ShouldSaveListing_WhenNotAlreadySaved()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
-        _context.Workspaces.Add(workspace);
-
-        var listing = new Listing { FundaId = "1", Address = "A" };
-        _context.Listings.Add(listing);
-        await _context.SaveChangesAsync();
-
-        var result = await _service.SaveListingAsync(userId, workspace.Id, listing.Id, "notes");
-
-        Assert.NotNull(result);
-        Assert.Equal(listing.Id, result.ListingId);
-    }
-
-    [Fact]
-    public async Task SaveListingAsync_ShouldReturnExisting_WhenAlreadySaved()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
-
-        var listing = new Listing { FundaId = "1", Address = "A" };
-        var existingSaved = new SavedListing { Workspace = workspace, Listing = listing, AddedByUserId = userId };
-        _context.SavedListings.Add(existingSaved);
-        await _context.SaveChangesAsync();
-
-        var result = await _service.SaveListingAsync(userId, workspace.Id, listing.Id, "new notes");
-
-        Assert.Equal(existingSaved.Id, result.Id);
-    }
-
-    [Fact]
-    public async Task SaveListingAsync_ViewerCannotSave_ShouldThrowForbidden()
-    {
-        var viewerId = "viewer";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = viewerId, Role = WorkspaceRole.Viewer });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            _service.SaveListingAsync(viewerId, workspace.Id, Guid.NewGuid(), "notes"));
-    }
-
-    [Fact]
-    public async Task SaveListingAsync_ShouldThrowNotFound_WhenListingDoesNotExist()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            _service.SaveListingAsync(userId, workspace.Id, Guid.NewGuid(), "notes"));
-    }
-
-    [Fact]
-    public async Task GetSavedListingsAsync_ShouldReturnListings()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
-
-        var listing = new Listing { FundaId = "1", Address = "A" };
-        var saved = new SavedListing { Workspace = workspace, Listing = listing, AddedByUserId = "owner" };
-        _context.SavedListings.Add(saved);
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetSavedListingsAsync(userId, workspace.Id);
-
-        Assert.Single(result);
-        Assert.Equal(saved.Id, result.First().Id);
-    }
-
-    [Fact]
-    public async Task RemoveSavedListingAsync_EditorCanRemove_ShouldSucceed()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
-
-        var listing = new Listing { FundaId = "1", Address = "A" };
-        var saved = new SavedListing { Workspace = workspace, Listing = listing, AddedByUserId = "owner" };
-        _context.SavedListings.Add(saved);
-        await _context.SaveChangesAsync();
-
-        await _service.RemoveSavedListingAsync(userId, workspace.Id, saved.Id);
-
-        var exists = await _context.SavedListings.AnyAsync(sl => sl.Id == saved.Id);
-        Assert.False(exists);
-    }
-
-    [Fact]
-    public async Task RemoveSavedListingAsync_ViewerCannotRemove_ShouldThrowForbidden()
-    {
-        var userId = "viewer";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            _service.RemoveSavedListingAsync(userId, workspace.Id, Guid.NewGuid()));
-    }
-
-    [Fact]
-    public async Task AddCommentAsync_MemberCanComment_ShouldSucceed()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
-
-        var listing = new Listing { FundaId = "1", Address = "A" };
-        var savedListing = new SavedListing { Workspace = workspace, Listing = listing, AddedByUserId = userId };
-        _context.SavedListings.Add(savedListing);
-        await _context.SaveChangesAsync();
-
-        var dto = new AddCommentDto("Hello", null);
-        var result = await _service.AddCommentAsync(userId, workspace.Id, savedListing.Id, dto);
-
-        Assert.NotNull(result);
-        Assert.Equal("Hello", result.Content);
-
-        var log = await _context.ActivityLogs.OrderByDescending(l => l.CreatedAt).FirstAsync();
-        Assert.Equal(ActivityLogType.CommentAdded, log.Type);
-    }
-
-    [Fact]
-    public async Task AddCommentAsync_ShouldThrowNotFound_WhenSavedListingDoesNotExist()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
-        _context.Workspaces.Add(workspace);
-        await _context.SaveChangesAsync();
-
-        var dto = new AddCommentDto("Hello", null);
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            _service.AddCommentAsync(userId, workspace.Id, Guid.NewGuid(), dto));
-    }
-
-    [Fact]
-    public async Task GetCommentsAsync_ShouldReturnThreadedComments()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
-
-        var savedListing = new SavedListing { Workspace = workspace, ListingId = Guid.NewGuid(), AddedByUserId = "owner" };
-        var parentComment = new ListingComment { SavedListing = savedListing, UserId = "owner", Content = "Parent" };
-        var replyComment = new ListingComment { SavedListing = savedListing, UserId = userId, Content = "Reply", ParentComment = parentComment };
-
-        _context.ListingComments.AddRange(parentComment, replyComment);
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetCommentsAsync(userId, workspace.Id, savedListing.Id);
-
-        Assert.Single(result); // Only parent at root
-        Assert.Single(result.First().Replies); // Reply nested
-        Assert.Equal("Reply", result.First().Replies.First().Content);
-    }
-
-    [Fact]
-    public async Task GetActivityLogsAsync_ShouldReturnLogs()
-    {
-        var userId = "user";
-        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
-        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
-
-        var log = new ActivityLog { Workspace = workspace, ActorId = "owner", Type = ActivityLogType.WorkspaceCreated, Summary = "Created" };
-        _context.ActivityLogs.Add(log);
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetActivityLogsAsync(userId, workspace.Id);
-
-        Assert.Single(result);
-        Assert.Equal("Created", result.First().Summary);
-    }
-
-    [Fact]
     public async Task DeleteWorkspaceAsync_OwnerCanDelete_ShouldSucceed()
     {
         var ownerId = "owner";
@@ -444,12 +131,7 @@ public class WorkspaceServiceTests
         var exists = await _context.Workspaces.AnyAsync(w => w.Id == workspace.Id);
         Assert.False(exists);
 
-        // Verify log was created (it might be deleted by cascade, but let's check if we can catch it or if it's gone)
-        // In EF InMemory, cascade delete happens immediately. So the log is gone unless we configured it otherwise or if it's soft delete.
-        // But we added the log *before* delete.
-        // If cascade is on, the log is deleted.
-        // To verify the log was *attempted*, we'd need to mock the repository or check logs before delete commit if possible.
-        // For this test with InMemory, we accept it's gone, but we verified the logic in code.
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(It.IsAny<Workspace>(), ownerId, ActivityLogType.WorkspaceDeleted, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -168,6 +168,13 @@ public class WorkspaceRepository : IWorkspaceRepository
         return Task.FromResult(comment);
     }
 
+    public async Task<ListingComment?> GetCommentAsync(Guid commentId, CancellationToken ct = default)
+    {
+        return await _context.ListingComments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == commentId, ct);
+    }
+
     public async Task<List<ListingComment>> GetCommentsAsync(Guid savedListingId, CancellationToken ct = default)
     {
         return await _context.ListingComments
