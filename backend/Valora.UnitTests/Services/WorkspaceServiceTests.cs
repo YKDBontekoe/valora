@@ -77,6 +77,9 @@ public class WorkspaceServiceTests
         var dto = new CreateWorkspaceDto("Test Workspace", "Description");
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateWorkspaceAsync(userId, dto));
+
+        var log = await _context.ActivityLogs.FirstOrDefaultAsync(l => l.ActorId == userId && l.Summary == "Workspace creation failed: limit reached");
+        Assert.NotNull(log);
     }
 
     [Fact]

@@ -18,9 +18,11 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
-        var existingCount = await _repository.GetUserWorkspacesCountAsync(userId, ct);
+        var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
         if (existingCount >= 10)
         {
+            await LogActivityAsync(Guid.Empty, userId, ActivityLogType.WorkspaceCreated, "Workspace creation failed: limit reached", ct);
+            await _repository.SaveChangesAsync(ct);
             throw new InvalidOperationException("You have reached the maximum number of workspaces (10).");
         }
 

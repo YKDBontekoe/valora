@@ -33,7 +33,7 @@ public class WorkspaceRepository : IWorkspaceRepository
             .ToListAsync(ct);
     }
 
-    public async Task<int> GetUserWorkspacesCountAsync(string userId, CancellationToken ct = default)
+    public async Task<int> GetUserOwnedWorkspacesCountAsync(string userId, CancellationToken ct = default)
     {
         return await _context.Workspaces
             .AsNoTracking()

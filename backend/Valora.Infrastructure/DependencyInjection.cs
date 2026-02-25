@@ -138,14 +138,14 @@ public static class DependencyInjection
     {
         var secret = configuration["JWT_SECRET"];
 
-        if (string.IsNullOrEmpty(secret))
+        if (string.IsNullOrWhiteSpace(secret))
         {
-            throw new OptionsValidationException("JwtOptions", typeof(JwtOptions), new[] { "JWT_SECRET is not configured." });
+            throw new OptionsValidationException("JwtOptions", typeof(JwtOptions), new[] { "JWT_SECRET is not configured or is whitespace." });
         }
 
-        if (secret.Length < 32)
+        if (secret.Trim().Length < 32)
         {
-            throw new OptionsValidationException("JwtOptions", typeof(JwtOptions), new[] { "JWT_SECRET must be at least 32 characters long." });
+            throw new OptionsValidationException("JwtOptions", typeof(JwtOptions), new[] { "JWT_SECRET must be at least 32 characters long (trimmed)." });
         }
 
         options.Secret = secret;
