@@ -56,6 +56,16 @@ class WorkspaceProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteWorkspace(String id) async {
+    try {
+      await _repository.deleteWorkspace(id);
+      _workspaces = _workspaces.where((w) => w.id != id).toList();
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> selectWorkspace(String id) async {
     _isWorkspaceDetailLoading = true;
     _error = null;

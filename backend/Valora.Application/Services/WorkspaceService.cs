@@ -61,6 +61,18 @@ public class WorkspaceService : IWorkspaceService
         return MapToDto(workspace);
     }
 
+    public async Task DeleteWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
+    {
+        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
+        if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+
+        if (workspace.OwnerId != userId)
+            throw new ForbiddenAccessException();
+
+        await _repository.DeleteAsync(workspace, ct);
+        await _repository.SaveChangesAsync(ct);
+    }
+
     public async Task<List<WorkspaceMemberDto>> GetMembersAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
         await ValidateMemberAccess(userId, workspaceId, ct);

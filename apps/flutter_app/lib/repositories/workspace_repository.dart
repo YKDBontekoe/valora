@@ -43,6 +43,11 @@ class WorkspaceRepository {
     );
   }
 
+  Future<void> deleteWorkspace(String id) async {
+    final response = await _client.delete('/api/workspaces/$id');
+    await _client.handleResponse(response, (_) => null);
+  }
+
   Future<List<WorkspaceMember>> getWorkspaceMembers(String id) async {
     final response = await _client.get('/api/workspaces/$id/members');
     return _client.handleResponse(

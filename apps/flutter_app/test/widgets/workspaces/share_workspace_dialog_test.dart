@@ -47,6 +47,8 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   Future<void> createWorkspace(String name, String? description) async {}
   @override
+  Future<void> deleteWorkspace(String id) async {}
+  @override
   Future<void> selectWorkspace(String id) async {}
   @override
   Future<void> saveListing(String listingId, String? notes) async {}

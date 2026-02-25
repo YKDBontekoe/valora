@@ -18,6 +18,7 @@ public static class WorkspaceEndpoints
 
         group.MapGet("/", GetUserWorkspaces);
         group.MapGet("/{id}", GetWorkspace);
+        group.MapDelete("/{id}", DeleteWorkspace);
 
         group.MapGet("/{id}/members", GetMembers);
         group.MapPost("/{id}/members", InviteMember)
@@ -76,6 +77,19 @@ public static class WorkspaceEndpoints
 
         var result = await service.GetWorkspaceAsync(userId, id, ct);
         return Results.Ok(result);
+    }
+
+    private static async Task<IResult> DeleteWorkspace(
+        ClaimsPrincipal user,
+        Guid id,
+        IWorkspaceService service,
+        CancellationToken ct)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null) return Results.Unauthorized();
+
+        await service.DeleteWorkspaceAsync(userId, id, ct);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> GetMembers(
