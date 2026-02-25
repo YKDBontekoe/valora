@@ -56,6 +56,30 @@ public class WorkspaceServiceTests
     }
 
     [Fact]
+    public async Task CreateWorkspaceAsync_ShouldThrow_WhenLimitReached()
+    {
+        var userId = "user1";
+        for (int i = 0; i < 10; i++)
+        {
+            var ws = new Workspace
+            {
+                Name = $"WS{i}",
+                OwnerId = userId,
+                Members = new List<WorkspaceMember>
+                {
+                    new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Owner }
+                }
+            };
+            _context.Workspaces.Add(ws);
+        }
+        await _context.SaveChangesAsync();
+
+        var dto = new CreateWorkspaceDto("Test Workspace", "Description");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateWorkspaceAsync(userId, dto));
+    }
+
+    [Fact]
     public async Task GetUserWorkspacesAsync_ShouldReturnOnlyUserWorkspaces()
     {
         var userId = "user1";

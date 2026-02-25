@@ -18,6 +18,12 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
+        var existingCount = await _repository.GetUserWorkspacesCountAsync(userId, ct);
+        if (existingCount >= 10)
+        {
+            throw new InvalidOperationException("You have reached the maximum number of workspaces (10).");
+        }
+
         var workspace = new Workspace
         {
             Name = dto.Name,

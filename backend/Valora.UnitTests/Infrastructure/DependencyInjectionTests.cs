@@ -76,10 +76,11 @@ public class DependencyInjectionTests
     [Fact]
     public void AddInfrastructure_UsesJwtSecretFromConfiguration_WhenPresent()
     {
+        var secret = "my-secret-key-that-is-at-least-32-characters-long";
         var configData = new Dictionary<string, string?>
         {
             { "DATABASE_URL", "Host=localhost;Database=valora" },
-            { "JWT_SECRET", "my-secret-key" },
+            { "JWT_SECRET", secret },
             { "JWT_ISSUER", "valora" },
             { "JWT_AUDIENCE", "valora" }
         };
@@ -94,9 +95,33 @@ public class DependencyInjectionTests
 
         var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
 
-        Assert.Equal("my-secret-key", options.Secret);
+        Assert.Equal(secret, options.Secret);
         Assert.Equal("valora", options.Issuer);
         Assert.Equal("valora", options.Audience);
+    }
+
+    [Fact]
+    public void AddInfrastructure_Throws_WhenJwtSecretTooShort()
+    {
+        var configData = new Dictionary<string, string?>
+        {
+            { "DATABASE_URL", "Host=localhost;Database=valora" },
+            { "JWT_SECRET", "short-secret" },
+            { "JWT_ISSUER", "valora" },
+            { "JWT_AUDIENCE", "valora" }
+        };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configData)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddInfrastructure(configuration);
+        var provider = services.BuildServiceProvider();
+
+        var ex = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<JwtOptions>>().Value);
+
+        Assert.Contains("JWT_SECRET must be at least 32 characters long", ex.Message);
     }
 
     [Fact]
