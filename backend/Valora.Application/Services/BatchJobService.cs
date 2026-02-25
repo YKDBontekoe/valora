@@ -50,7 +50,7 @@ public class BatchJobService : IBatchJobService
 
     private static T? ParseEnum<T>(string? value, string errorMessagePrefix) where T : struct, Enum
     {
-        if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrWhiteSpace(value))
         {
             return null;
         }
