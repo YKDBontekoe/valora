@@ -21,7 +21,8 @@ public class WorkspaceService : IWorkspaceService
         var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
         if (existingCount >= 10)
         {
-            await LogActivityAsync(Guid.Empty, userId, ActivityLogType.WorkspaceCreated, "Workspace creation failed: limit reached", ct);
+            // Cast null to Guid? to resolve ambiguity
+            await LogActivityAsync((Guid?)null, userId, ActivityLogType.WorkspaceCreated, "Workspace creation failed: limit reached", ct);
             await _repository.SaveChangesAsync(ct);
             throw new InvalidOperationException("You have reached the maximum number of workspaces (10).");
         }
@@ -271,7 +272,7 @@ public class WorkspaceService : IWorkspaceService
         return await _repository.GetUserRoleAsync(workspaceId, userId, ct);
     }
 
-    private async Task LogActivityAsync(Guid workspaceId, string actorId, ActivityLogType type, string summary, CancellationToken ct)
+    private async Task LogActivityAsync(Guid? workspaceId, string actorId, ActivityLogType type, string summary, CancellationToken ct)
     {
         var log = new ActivityLog
         {

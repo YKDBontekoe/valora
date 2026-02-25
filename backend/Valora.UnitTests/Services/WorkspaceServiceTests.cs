@@ -80,6 +80,7 @@ public class WorkspaceServiceTests
 
         var log = await _context.ActivityLogs.FirstOrDefaultAsync(l => l.ActorId == userId && l.Summary == "Workspace creation failed: limit reached");
         Assert.NotNull(log);
+        Assert.Null(log.WorkspaceId); // Ensure log is not attached to a non-existent workspace
     }
 
     [Fact]

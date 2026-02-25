@@ -148,7 +148,7 @@ public static class DependencyInjection
             throw new OptionsValidationException("JwtOptions", typeof(JwtOptions), new[] { "JWT_SECRET must be at least 32 characters long (trimmed)." });
         }
 
-        options.Secret = secret;
+        options.Secret = secret.Trim();
         options.Issuer = configuration["JWT_ISSUER"];
         options.Audience = configuration["JWT_AUDIENCE"];
 

@@ -10,6 +10,22 @@ namespace Valora.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Pre-migration check: ensure no data exceeds 4000 chars before truncation
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT 1 FROM UserAiProfiles WHERE LEN(Preferences) > 4000)
+                BEGIN
+                    THROW 51000, 'Data migration failed: UserAiProfiles.Preferences contains values exceeding 4000 characters. Please trim data before applying migration.', 1;
+                END
+                IF EXISTS (SELECT 1 FROM UserAiProfiles WHERE LEN(HouseholdProfile) > 4000)
+                BEGIN
+                    THROW 51000, 'Data migration failed: UserAiProfiles.HouseholdProfile contains values exceeding 4000 characters. Please trim data before applying migration.', 1;
+                END
+                IF EXISTS (SELECT 1 FROM UserAiProfiles WHERE LEN(DisallowedSuggestions) > 4000)
+                BEGIN
+                    THROW 51000, 'Data migration failed: UserAiProfiles.DisallowedSuggestions contains values exceeding 4000 characters. Please trim data before applying migration.', 1;
+                END
+            ");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Preferences",
                 table: "UserAiProfiles",

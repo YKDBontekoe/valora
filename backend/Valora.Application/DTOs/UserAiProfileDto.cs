@@ -21,12 +21,18 @@ public class UserAiProfileDto : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        // JSON serialization overhead estimate (e.g. quotes, commas, brackets)
-        // Simple check: Sum of string lengths + overhead must be < 4000
-        // Or simpler: each string max 100 chars, 20 items = 2000 chars + overhead << 4000
+        if (DisallowedSuggestions == null) yield break;
 
         foreach (var suggestion in DisallowedSuggestions)
         {
+            if (suggestion == null)
+            {
+                 yield return new ValidationResult(
+                    "Disallowed suggestions cannot contain null values.",
+                    new[] { nameof(DisallowedSuggestions) });
+                 continue;
+            }
+
             if (suggestion.Length > 100)
             {
                 yield return new ValidationResult(
@@ -35,9 +41,8 @@ public class UserAiProfileDto : IValidatableObject
             }
         }
 
-        // Approximate JSON size check
-        var estimatedSize = 2 + (DisallowedSuggestions.Count > 0 ? DisallowedSuggestions.Sum(s => s.Length + 4) - 1 : 0);
-        if (estimatedSize > 4000)
+        var json = System.Text.Json.JsonSerializer.Serialize(DisallowedSuggestions);
+        if (json.Length > 4000)
         {
              yield return new ValidationResult(
                     "Total size of disallowed suggestions exceeds the limit.",
