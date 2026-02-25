@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
 import Button from './Button';
@@ -55,6 +55,7 @@ const ConfirmationDialog = ({
   isDestructive = false,
 }: ConfirmationDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const titleId = useId();
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
@@ -81,6 +82,9 @@ const ConfirmationDialog = ({
             initial="hidden"
             animate="visible"
             exit="exit"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-premium-xl overflow-hidden border border-white/20"
           >
             <div className="p-10">
@@ -94,6 +98,7 @@ const ConfirmationDialog = ({
                 <motion.button
                   variants={itemVariants}
                   onClick={() => !isSubmitting && onClose()}
+                  aria-label="Close dialog"
                   className="w-10 h-10 flex items-center justify-center text-brand-300 hover:text-brand-900 transition-all rounded-xl hover:bg-brand-50"
                   disabled={isSubmitting}
                 >
@@ -101,7 +106,7 @@ const ConfirmationDialog = ({
                 </motion.button>
               </div>
 
-              <motion.h3 variants={itemVariants} className="text-3xl font-black text-brand-900 tracking-tightest mb-4">
+              <motion.h3 id={titleId} variants={itemVariants} className="text-3xl font-black text-brand-900 tracking-tightest mb-4">
                 {title}
               </motion.h3>
               <motion.p variants={itemVariants} className="text-brand-500 font-bold leading-relaxed text-lg">

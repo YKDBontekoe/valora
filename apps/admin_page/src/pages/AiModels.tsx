@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useId } from 'react';
 import { aiService, type AiModelConfig, type AiModel } from '../services/api';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
@@ -34,6 +34,7 @@ const AiModels: React.FC = () => {
   const [editingConfig, setEditingConfig] = useState<AiModelConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [modelSort, setModelSort] = useState<SortOption>('name');
+  const modalTitleId = useId();
 
   useEffect(() => {
     loadData();
@@ -255,6 +256,9 @@ const AiModels: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={modalTitleId}
               className="relative w-full max-w-4xl bg-white rounded-[3.5rem] shadow-premium-xl overflow-hidden border border-white/20"
             >
               <div className="p-12 md:p-16">
@@ -269,7 +273,7 @@ const AiModels: React.FC = () => {
                       <Cpu size={48} />
                     </motion.div>
                     <div>
-                      <h2 className="text-4xl font-black text-brand-900 tracking-tightest">
+                      <h2 id={modalTitleId} className="text-4xl font-black text-brand-900 tracking-tightest">
                         {editingConfig.id ? 'Modify Policy' : 'Provision Policy'}
                       </h2>
                       <p className="text-brand-400 font-bold text-xl mt-1">Define orchestrator routing logic.</p>
@@ -277,6 +281,7 @@ const AiModels: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setEditingConfig(null)}
+                    aria-label="Close edit modal"
                     className="w-14 h-14 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300 cursor-pointer"
                   >
                     <X size={36} />
