@@ -37,7 +37,7 @@ public class WorkspaceListingService : IWorkspaceListingService
         };
 
         await _repository.AddSavedListingAsync(savedListing, ct);
-        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.ListingSaved, $"Saved listing {listing.Address}", ct);
+        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.ListingSaved, "Saved listing", ct); // Redacted PII
 
         await _repository.SaveChangesAsync(ct);
 
@@ -65,7 +65,7 @@ public class WorkspaceListingService : IWorkspaceListingService
             throw new NotFoundException(nameof(SavedListing), savedListingId);
 
         await _repository.RemoveSavedListingAsync(savedListing, ct);
-        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.ListingRemoved, $"Removed listing {savedListing.Listing?.Address ?? "Unknown"}", ct);
+        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.ListingRemoved, "Removed listing", ct); // Redacted PII
         await _repository.SaveChangesAsync(ct);
     }
 
@@ -77,6 +77,16 @@ public class WorkspaceListingService : IWorkspaceListingService
         var savedListing = await _repository.GetSavedListingByIdAsync(savedListingId, ct);
         if (savedListing == null || savedListing.WorkspaceId != workspaceId)
             throw new NotFoundException(nameof(SavedListing), savedListingId);
+
+        // Validate ParentId
+        if (dto.ParentId.HasValue)
+        {
+            var parent = await _repository.GetCommentAsync(dto.ParentId.Value, ct);
+            if (parent == null || parent.SavedListingId != savedListingId)
+            {
+                throw new NotFoundException(nameof(ListingComment), dto.ParentId.Value);
+            }
+        }
 
         var comment = new ListingComment
         {
@@ -107,6 +117,11 @@ public class WorkspaceListingService : IWorkspaceListingService
     {
         var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
         if (!isMember) throw new ForbiddenAccessException();
+
+        // Verify saved listing belongs to workspace
+        var savedListing = await _repository.GetSavedListingByIdAsync(savedListingId, ct);
+        if (savedListing == null || savedListing.WorkspaceId != workspaceId)
+             throw new NotFoundException(nameof(SavedListing), savedListingId);
 
         var comments = await _repository.GetCommentsAsync(savedListingId, ct);
 

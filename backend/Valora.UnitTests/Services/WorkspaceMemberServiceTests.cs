@@ -84,6 +84,9 @@ public class WorkspaceMemberServiceTests
         Assert.NotNull(member);
         Assert.Equal(WorkspaceRole.Editor, member.Role);
         Assert.True(member.IsPending);
+
+        // Verify redacted log
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(workspace.Id, ownerId, ActivityLogType.MemberInvited, "Invited member", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -136,6 +139,9 @@ public class WorkspaceMemberServiceTests
 
         var exists = await _context.WorkspaceMembers.AnyAsync(m => m.Id == memberToRemove.Id);
         Assert.False(exists);
+
+        // Verify redacted log
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(workspace.Id, ownerId, ActivityLogType.MemberRemoved, "Removed member", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -51,6 +51,8 @@ public class WorkspaceListingServiceTests
 
         Assert.NotNull(result);
         Assert.Equal(listing.Id, result.ListingId);
+
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(workspace.Id, userId, ActivityLogType.ListingSaved, "Saved listing", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -130,6 +132,8 @@ public class WorkspaceListingServiceTests
 
         var exists = await _context.SavedListings.AnyAsync(sl => sl.Id == saved.Id);
         Assert.False(exists);
+
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(workspace.Id, userId, ActivityLogType.ListingRemoved, "Removed listing", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -162,6 +166,8 @@ public class WorkspaceListingServiceTests
 
         Assert.NotNull(result);
         Assert.Equal("Hello", result.Content);
+
+        _activityLogServiceMock.Verify(a => a.LogActivityAsync(workspace.Id, userId, ActivityLogType.CommentAdded, "Added a comment", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -179,13 +185,66 @@ public class WorkspaceListingServiceTests
     }
 
     [Fact]
+    public async Task AddCommentAsync_ShouldThrow_WhenParentIdDoesNotExist()
+    {
+        var userId = "user";
+        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
+        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
+
+        var listing = new Listing { FundaId = "1", Address = "A" };
+        _context.Listings.Add(listing);
+        var savedListing = new SavedListing { Workspace = workspace, Listing = listing, AddedByUserId = "owner" };
+
+        _context.Workspaces.Add(workspace);
+        _context.SavedListings.Add(savedListing);
+        await _context.SaveChangesAsync();
+
+        var dto = new AddCommentDto("Reply", Guid.NewGuid()); // Non-existent parent
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            _service.AddCommentAsync(userId, workspace.Id, savedListing.Id, dto));
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_ShouldThrow_WhenParentIdBelongsToDifferentListing()
+    {
+        var userId = "user";
+        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
+        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
+
+        var listing1 = new Listing { FundaId = "1", Address = "A" };
+        var listing2 = new Listing { FundaId = "2", Address = "B" };
+        _context.Listings.AddRange(listing1, listing2);
+
+        var savedListing1 = new SavedListing { Workspace = workspace, Listing = listing1, AddedByUserId = "owner" };
+        var savedListing2 = new SavedListing { Workspace = workspace, Listing = listing2, AddedByUserId = "owner" };
+
+        var commentOnListing2 = new ListingComment { SavedListing = savedListing2, UserId = "owner", Content = "Comment 2" };
+
+        _context.Workspaces.Add(workspace);
+        _context.SavedListings.AddRange(savedListing1, savedListing2);
+        _context.ListingComments.Add(commentOnListing2);
+        await _context.SaveChangesAsync();
+
+        var dto = new AddCommentDto("Reply", commentOnListing2.Id); // Parent is on listing 2, we are adding to listing 1
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            _service.AddCommentAsync(userId, workspace.Id, savedListing1.Id, dto));
+    }
+
+    [Fact]
     public async Task GetCommentsAsync_ShouldReturnThreadedComments()
     {
         var userId = "user";
         var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
         workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
 
-        var savedListing = new SavedListing { Workspace = workspace, ListingId = Guid.NewGuid(), AddedByUserId = "owner" };
+        var listing = new Listing { FundaId = "1", Address = "A" };
+        _context.Listings.Add(listing);
+
+        var savedListing = new SavedListing { Workspace = workspace, Listing = listing, AddedByUserId = "owner" };
+        _context.SavedListings.Add(savedListing);
+
         var parentComment = new ListingComment { SavedListing = savedListing, UserId = "owner", Content = "Parent" };
         var replyComment = new ListingComment { SavedListing = savedListing, UserId = userId, Content = "Reply", ParentComment = parentComment };
 
@@ -197,5 +256,30 @@ public class WorkspaceListingServiceTests
         Assert.Single(result); // Only parent at root
         Assert.Single(result.First().Replies); // Reply nested
         Assert.Equal("Reply", result.First().Replies.First().Content);
+    }
+
+    [Fact]
+    public async Task GetCommentsAsync_ShouldThrow_WhenSavedListingDoesNotBelongToWorkspace()
+    {
+        var userId = "user";
+        var workspace1 = new Workspace { Name = "WS1", OwnerId = "owner" };
+        var workspace2 = new Workspace { Name = "WS2", OwnerId = "owner" };
+
+        workspace1.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
+        workspace2.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Viewer });
+
+        var listing = new Listing { FundaId = "1", Address = "A" };
+        _context.Listings.Add(listing);
+
+        var savedListingOnWS2 = new SavedListing { Workspace = workspace2, Listing = listing, AddedByUserId = "owner" };
+        var comment = new ListingComment { SavedListing = savedListingOnWS2, UserId = "owner", Content = "Secret" };
+
+        _context.Workspaces.AddRange(workspace1, workspace2);
+        _context.SavedListings.Add(savedListingOnWS2);
+        _context.ListingComments.Add(comment);
+        await _context.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            _service.GetCommentsAsync(userId, workspace1.Id, savedListingOnWS2.Id));
     }
 }

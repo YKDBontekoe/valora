@@ -58,7 +58,7 @@ public class WorkspaceMemberService : IWorkspaceMemberService
         };
 
         await _repository.AddMemberAsync(member, ct);
-        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.MemberInvited, $"Invited {dto.Email} as {dto.Role}", ct);
+        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.MemberInvited, "Invited member", ct); // Redacted PII
         await _repository.SaveChangesAsync(ct);
     }
 
@@ -73,7 +73,7 @@ public class WorkspaceMemberService : IWorkspaceMemberService
         if (member.UserId == userId) throw new InvalidOperationException("Cannot remove yourself.");
 
         await _repository.RemoveMemberAsync(member, ct);
-        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, $"Removed member {(member.InvitedEmail ?? member.UserId)}", ct);
+        await _activityLogService.LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, "Removed member", ct); // Redacted PII
         await _repository.SaveChangesAsync(ct);
     }
 }
