@@ -52,7 +52,7 @@ public class WorkspaceMemberService : IWorkspaceMemberService
         };
 
         await _repository.AddMemberAsync(member, ct);
-        await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberInvited, $"Invited {dto.Email} as {dto.Role}", ct);
+        await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberInvited, $"Invited a new member as {dto.Role}", ct);
         await _repository.SaveChangesAsync(ct);
     }
 
@@ -67,7 +67,7 @@ public class WorkspaceMemberService : IWorkspaceMemberService
         if (member.UserId == userId) throw new InvalidOperationException("Cannot remove yourself.");
 
         await _repository.RemoveMemberAsync(member, ct);
-        await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, $"Removed member {(member.InvitedEmail ?? member.UserId)}", ct);
+        await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, "Removed a member", ct);
         await _repository.SaveChangesAsync(ct);
     }
 

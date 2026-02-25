@@ -77,6 +77,10 @@ public class WorkspaceMemberServiceTests
         Assert.NotNull(member);
         Assert.Equal(WorkspaceRole.Editor, member.Role);
         Assert.True(member.IsPending);
+
+        var log = await _context.ActivityLogs.OrderByDescending(l => l.CreatedAt).FirstAsync();
+        Assert.Equal(ActivityLogType.MemberInvited, log.Type);
+        Assert.DoesNotContain(dto.Email, log.Summary);
     }
 
     [Fact]
@@ -129,6 +133,10 @@ public class WorkspaceMemberServiceTests
 
         var exists = await _context.WorkspaceMembers.AnyAsync(m => m.Id == memberToRemove.Id);
         Assert.False(exists);
+
+        var log = await _context.ActivityLogs.OrderByDescending(l => l.CreatedAt).FirstAsync();
+        Assert.Equal(ActivityLogType.MemberRemoved, log.Type);
+        Assert.Equal("Removed a member", log.Summary);
     }
 
     [Fact]
