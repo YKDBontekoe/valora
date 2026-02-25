@@ -16,6 +16,9 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   bool get isWorkspaceDetailLoading => false;
 
   @override
+  bool get isDeletingWorkspace => false;
+
+  @override
   String? get error => null;
 
   @override

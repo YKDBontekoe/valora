@@ -17,6 +17,9 @@ class WorkspaceProvider extends ChangeNotifier {
   bool _isWorkspaceDetailLoading = false;
   bool get isWorkspaceDetailLoading => _isWorkspaceDetailLoading;
 
+  bool _isDeletingWorkspace = false;
+  bool get isDeletingWorkspace => _isDeletingWorkspace;
+
   String? _error;
   String? get error => _error;
 
@@ -57,12 +60,19 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> deleteWorkspace(String id) async {
+    _isDeletingWorkspace = true;
+    _error = null;
+    notifyListeners();
+
     try {
       await _repository.deleteWorkspace(id);
       _workspaces = _workspaces.where((w) => w.id != id).toList();
-      notifyListeners();
     } catch (e) {
+      _error = e.toString();
       rethrow;
+    } finally {
+      _isDeletingWorkspace = false;
+      notifyListeners();
     }
   }
 
