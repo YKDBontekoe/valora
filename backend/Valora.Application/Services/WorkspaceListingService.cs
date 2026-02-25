@@ -74,6 +74,13 @@ public class WorkspaceListingService : IWorkspaceListingService
         if (savedListing == null || savedListing.WorkspaceId != workspaceId)
             throw new NotFoundException(nameof(SavedListing), savedListingId);
 
+        if (dto.ParentId.HasValue)
+        {
+            var parent = await _repository.GetCommentAsync(dto.ParentId.Value, ct);
+            if (parent == null || parent.SavedListingId != savedListingId)
+                throw new InvalidOperationException("Parent comment must belong to the same listing.");
+        }
+
         var comment = new ListingComment
         {
             SavedListingId = savedListingId,

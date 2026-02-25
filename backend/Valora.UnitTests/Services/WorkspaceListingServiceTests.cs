@@ -192,4 +192,31 @@ public class WorkspaceListingServiceTests
         Assert.Single(result.First().Replies); // Reply nested
         Assert.Equal("Reply", result.First().Replies.First().Content);
     }
+
+    [Fact]
+    public async Task AddCommentAsync_ShouldThrowInvalidOperation_WhenParentCommentBelongsToDifferentListing()
+    {
+        var userId = "user";
+        var workspace = new Workspace { Name = "WS", OwnerId = "owner" };
+        workspace.Members.Add(new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Editor });
+
+        var listing1 = new Listing { FundaId = "1", Address = "A" };
+        var savedListing1 = new SavedListing { Workspace = workspace, Listing = listing1, AddedByUserId = userId };
+
+        var listing2 = new Listing { FundaId = "2", Address = "B" };
+        var savedListing2 = new SavedListing { Workspace = workspace, Listing = listing2, AddedByUserId = userId };
+
+        _context.SavedListings.AddRange(savedListing1, savedListing2);
+
+        var parentComment = new ListingComment { SavedListing = savedListing1, UserId = "owner", Content = "Parent" };
+        _context.ListingComments.Add(parentComment);
+
+        await _context.SaveChangesAsync();
+
+        var dto = new AddCommentDto("Reply", parentComment.Id);
+
+        // Try to add a reply to listing2 using a parent from listing1
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.AddCommentAsync(userId, workspace.Id, savedListing2.Id, dto));
+    }
 }

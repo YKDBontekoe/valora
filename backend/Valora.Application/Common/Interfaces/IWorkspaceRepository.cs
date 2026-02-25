@@ -37,6 +37,7 @@ public interface IWorkspaceRepository
 
     // Comment Management
     Task<ListingComment> AddCommentAsync(ListingComment comment, CancellationToken ct = default);
+    Task<ListingComment?> GetCommentAsync(Guid commentId, CancellationToken ct = default);
     Task<List<ListingComment>> GetCommentsAsync(Guid savedListingId, CancellationToken ct = default);
 
     // Activity Logs
