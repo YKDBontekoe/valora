@@ -438,7 +438,7 @@ const BatchJobs: React.FC = () => {
                         <div className="flex flex-col gap-2.5">
                             <div className="w-full bg-brand-50 rounded-full h-2.5 min-w-[140px] overflow-hidden relative border border-brand-100/50">
                               <motion.div
-                                className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]'}`}
+                                className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-sm shadow-error-500/40' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-sm shadow-primary-500/30'}`}
                                 initial={{ width: 0 }}
                                 animate={{ width: `${job.progress}%` }}
                                 transition={{ duration: 1.2, ease: "circOut" }}

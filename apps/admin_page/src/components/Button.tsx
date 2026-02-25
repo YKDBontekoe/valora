@@ -42,8 +42,8 @@ const Button = ({
     <motion.button
       whileTap={{ scale: 0.97, y: 0 }}
       whileHover={{
-        y: -2,
-        transition: { type: 'spring', stiffness: 400, damping: 10 }
+        y: -3,
+        transition: { type: 'spring', stiffness: 400, damping: 25 }
       }}
       disabled={disabled || isLoading}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}

@@ -61,6 +61,8 @@
 
   --font-display: "Plus Jakarta Sans", sans-serif;
   --font-body: "Inter", sans-serif;
+
+  --tracking-tightest: -0.04em;
 }
 
 :root {
