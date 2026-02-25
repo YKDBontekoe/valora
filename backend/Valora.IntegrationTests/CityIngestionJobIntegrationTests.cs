@@ -13,14 +13,16 @@ using Xunit;
 namespace Valora.IntegrationTests;
 
 [Collection("TestcontainersDatabase")]
-public class CityIngestionJobIntegrationTests : BaseTestcontainersIntegrationTest
+public class CityIngestionJobIntegrationTests : IClassFixture<TestcontainersDatabaseFixture>
 {
+    private readonly TestcontainersDatabaseFixture _fixture;
     private readonly Mock<ICbsGeoClient> _mockGeoClient = new();
     private readonly Mock<ICbsNeighborhoodStatsClient> _mockStatsClient = new();
     private readonly Mock<ICbsCrimeStatsClient> _mockCrimeClient = new();
 
-    public CityIngestionJobIntegrationTests(TestcontainersDatabaseFixture fixture) : base(fixture)
+    public CityIngestionJobIntegrationTests(TestcontainersDatabaseFixture fixture)
     {
+        _fixture = fixture;
     }
 
     // Custom Factory to inject mocks
@@ -53,26 +55,65 @@ public class CityIngestionJobIntegrationTests : BaseTestcontainersIntegrationTes
 
     private string GetCurrentConnectionString()
     {
-        if (DbContext.Database.ProviderName != null && DbContext.Database.ProviderName.Contains("InMemory"))
+        // Use the connection string from the fixture's factory, or fallback if using InMemory.
+        // We need to inspect the fixture's factory to see what it's using.
+        // But we can't easily inspect the private fields of the fixture's factory.
+
+        // However, we can create a temporary scope from the fixture to check the DB provider.
+        // If the fixture failed to init Testcontainers, it uses "InMemory:TestcontainersFallback".
+        if (_fixture.Factory == null) return "InMemory:TestcontainersFallback";
+
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
+        if (context.Database.ProviderName != null && context.Database.ProviderName.Contains("InMemory"))
         {
-            return "InMemory:TestcontainersFallback";
+            return "InMemory:CityIngestionJobTest"; // Use a unique name for this test class to avoid collisions
         }
 
-        var connectionString = DbContext.Database.GetConnectionString();
-        // If null, we are likely using InMemory database with the fallback name from TestcontainersDatabaseFixture
-        return string.IsNullOrEmpty(connectionString) ? "InMemory:TestcontainersFallback" : connectionString;
+        var connectionString = context.Database.GetConnectionString();
+        return string.IsNullOrEmpty(connectionString) ? "InMemory:CityIngestionJobTest" : connectionString;
+    }
+
+    private async Task InitializeAsync(ValoraDbContext context)
+    {
+        // Manual cleanup since we are not using BaseTestcontainersIntegrationTest's DbContext
+        context.BatchJobs.RemoveRange(context.BatchJobs);
+        context.Neighborhoods.RemoveRange(context.Neighborhoods);
+        await context.SaveChangesAsync();
     }
 
     [Fact]
     public async Task ProcessNextJobAsync_ShouldIngestCityAndCompleteJob()
     {
         // Arrange
-        await InitializeAsync();
+        var connectionString = GetCurrentConnectionString();
+        await using var factory = new CityIngestionWebAppFactory(connectionString, this);
 
-        // 1. Setup Mocks
+        // 1. Setup Data using the Factory's Context
         var city = "TestCity";
         var neighborhoodCode = "NB01";
+        var jobId = Guid.NewGuid();
 
+        using (var setupScope = factory.Services.CreateScope())
+        {
+            var setupContext = setupScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            await InitializeAsync(setupContext);
+
+            var job = new BatchJob
+            {
+                Id = jobId,
+                Type = BatchJobType.CityIngestion,
+                Target = city,
+                Status = BatchJobStatus.Pending,
+                Progress = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            setupContext.BatchJobs.Add(job);
+            await setupContext.SaveChangesAsync();
+        }
+
+        // 2. Setup Mocks
         _mockGeoClient
             .Setup(x => x.GetNeighborhoodsByMunicipalityAsync(city, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<NeighborhoodGeometryDto>
@@ -92,55 +133,40 @@ public class CityIngestionJobIntegrationTests : BaseTestcontainersIntegrationTes
             .Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CrimeStatsDto(50, 10, 5, 20, 15, 2.0, DateTimeOffset.UtcNow));
 
-        // 2. Create Job in DB
-        var job = new BatchJob
-        {
-            Type = BatchJobType.CityIngestion,
-            Target = city,
-            Status = BatchJobStatus.Pending,
-            Progress = 0,
-            CreatedAt = DateTime.UtcNow
-        };
-        DbContext.BatchJobs.Add(job);
-        await DbContext.SaveChangesAsync();
-
-        // 3. Create Custom Factory Scope
-        var connectionString = GetCurrentConnectionString();
-
-        await using var factory = new CityIngestionWebAppFactory(connectionString, this);
-        using var scope = factory.Services.CreateScope();
-        var executor = scope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
-
         // Act
-        // ProcessNextJobAsync finds the next pending job and executes it.
-        // It uses its own DbContext from the scope.
-        await executor.ProcessNextJobAsync(CancellationToken.None);
+        using (var actScope = factory.Services.CreateScope())
+        {
+            var executor = actScope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
+            await executor.ProcessNextJobAsync(CancellationToken.None);
+        }
 
         // Assert
-        // Reload job from the test context (which shares the DB) to see updates
-        await DbContext.Entry(job).ReloadAsync();
+        using (var assertScope = factory.Services.CreateScope())
+        {
+            var assertContext = assertScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var job = await assertContext.BatchJobs.FindAsync(jobId);
 
-        Assert.Equal(BatchJobStatus.Completed, job.Status);
-        Assert.Equal(100, job.Progress);
-        Assert.NotNull(job.CompletedAt);
-        Assert.Contains("Processed 1 neighborhoods", job.ResultSummary);
-        Assert.Contains("Job completed successfully", job.ExecutionLog);
+            Assert.NotNull(job);
+            Assert.Equal(BatchJobStatus.Completed, job.Status);
+            Assert.Equal(100, job.Progress);
+            Assert.NotNull(job.CompletedAt);
+            Assert.Contains("Processed 1 neighborhoods", job.ResultSummary);
+            Assert.Contains("Job completed successfully", job.ExecutionLog);
 
-        // Verify Neighborhood Persistence
-        // Since we are using shared DB, we can query using DbContext
-        var neighborhood = await DbContext.Neighborhoods.FirstOrDefaultAsync(n => n.Code == neighborhoodCode);
-        Assert.NotNull(neighborhood);
-        Assert.Equal("Test Neighborhood", neighborhood.Name);
-        Assert.Equal(city, neighborhood.City);
-        Assert.Equal(52.0, neighborhood.Latitude);
-        Assert.Equal(4.0, neighborhood.Longitude);
-        Assert.Equal(300 * 1000, neighborhood.AverageWozValue); // 300k
-        Assert.Equal(2500, neighborhood.PopulationDensity);
-        Assert.Equal(50, neighborhood.CrimeRate);
+            // Verify Neighborhood Persistence
+            var neighborhood = await assertContext.Neighborhoods.FirstOrDefaultAsync(n => n.Code == neighborhoodCode);
+            Assert.NotNull(neighborhood);
+            Assert.Equal("Test Neighborhood", neighborhood.Name);
+            Assert.Equal(city, neighborhood.City);
+            Assert.Equal(52.0, neighborhood.Latitude);
+            Assert.Equal(4.0, neighborhood.Longitude);
+            Assert.Equal(300 * 1000, neighborhood.AverageWozValue); // 300k
+            Assert.Equal(2500, neighborhood.PopulationDensity);
+            Assert.Equal(50, neighborhood.CrimeRate);
+        }
 
         // Verify Mocks Called
         _mockGeoClient.Verify(x => x.GetNeighborhoodsByMunicipalityAsync(city, It.IsAny<CancellationToken>()), Times.Once);
-        // The processor makes calls for each neighborhood found.
         _mockStatsClient.Verify(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockCrimeClient.Verify(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -149,41 +175,53 @@ public class CityIngestionJobIntegrationTests : BaseTestcontainersIntegrationTes
     public async Task ProcessNextJobAsync_ShouldHandleProcessorFailure()
     {
         // Arrange
-        await InitializeAsync();
+        var connectionString = GetCurrentConnectionString();
+        await using var factory = new CityIngestionWebAppFactory(connectionString, this);
 
         var city = "FailCity";
+        var jobId = Guid.NewGuid();
+
+        using (var setupScope = factory.Services.CreateScope())
+        {
+            var setupContext = setupScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            await InitializeAsync(setupContext);
+
+            var job = new BatchJob
+            {
+                Id = jobId,
+                Type = BatchJobType.CityIngestion,
+                Target = city,
+                Status = BatchJobStatus.Pending,
+                Progress = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            setupContext.BatchJobs.Add(job);
+            await setupContext.SaveChangesAsync();
+        }
 
         // Mock failure
         _mockGeoClient
             .Setup(x => x.GetNeighborhoodsByMunicipalityAsync(city, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Geo API Down"));
 
-        var job = new BatchJob
-        {
-            Type = BatchJobType.CityIngestion,
-            Target = city,
-            Status = BatchJobStatus.Pending,
-            Progress = 0,
-            CreatedAt = DateTime.UtcNow
-        };
-        DbContext.BatchJobs.Add(job);
-        await DbContext.SaveChangesAsync();
-
-        var connectionString = GetCurrentConnectionString();
-        await using var factory = new CityIngestionWebAppFactory(connectionString, this);
-        using var scope = factory.Services.CreateScope();
-        var executor = scope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
-
         // Act
-        await executor.ProcessNextJobAsync(CancellationToken.None);
+        using (var actScope = factory.Services.CreateScope())
+        {
+            var executor = actScope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
+            await executor.ProcessNextJobAsync(CancellationToken.None);
+        }
 
         // Assert
-        await DbContext.Entry(job).ReloadAsync();
+        using (var assertScope = factory.Services.CreateScope())
+        {
+            var assertContext = assertScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var job = await assertContext.BatchJobs.FindAsync(jobId);
 
-        Assert.Equal(BatchJobStatus.Failed, job.Status);
-        // The executor catches the exception and logs it internally, setting a generic error message
-        Assert.Equal("Job failed due to an internal error.", job.Error);
-        Assert.NotNull(job.CompletedAt);
+            Assert.NotNull(job);
+            Assert.Equal(BatchJobStatus.Failed, job.Status);
+            Assert.Equal("Job failed due to an internal error.", job.Error);
+            Assert.NotNull(job.CompletedAt);
+        }
 
         // Verify Mocks
         _mockGeoClient.Verify(x => x.GetNeighborhoodsByMunicipalityAsync(city, It.IsAny<CancellationToken>()), Times.Once);
