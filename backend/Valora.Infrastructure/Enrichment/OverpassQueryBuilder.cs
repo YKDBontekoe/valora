@@ -5,6 +5,20 @@ namespace Valora.Infrastructure.Enrichment;
 
 internal static class OverpassQueryBuilder
 {
+    /// <summary>
+    /// Builds an Overpass QL query to find specific amenities around a point.
+    /// </summary>
+    /// <remarks>
+    /// <para><strong>Overpass QL Explanation:</strong></para>
+    /// <list type="bullet">
+    /// <item><c>[out:json]</c>: Request JSON output format.</item>
+    /// <item><c>[timeout:25]</c>: Server-side timeout in seconds. Essential for public servers.</item>
+    /// <item><c>nwr</c>: Search for Nodes, Ways, and Relations (all geometry types).</item>
+    /// <item><c>(around:{radius},{lat},{lon})</c>: Spatial filter for a circular area.</item>
+    /// <item><c>[key=value]</c>: Tag filter (e.g., finding schools).</item>
+    /// <item><c>out center tags;</c>: Output only the center coordinate (centroid) and tags. This minimizes payload size by not returning full geometry for large polygons (ways/relations).</item>
+    /// </list>
+    /// </remarks>
     public static string BuildAmenityQuery(double latitude, double longitude, int radiusMeters)
     {
         var lat = latitude.ToString(CultureInfo.InvariantCulture);
@@ -21,6 +35,15 @@ internal static class OverpassQueryBuilder
              + ");out center tags;";
     }
 
+    /// <summary>
+    /// Builds an Overpass QL query to find amenities within a rectangular bounding box (viewport).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Used for map visualization. Filters by specific amenity types to prevent returning too much data.
+    /// Uses <c>nwr(min_lat, min_lon, max_lat, max_lon)</c> for efficient bounding box queries.
+    /// </para>
+    /// </remarks>
     public static string BuildBboxQuery(double minLat, double minLon, double maxLat, double maxLon, List<string>? types)
     {
         var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";

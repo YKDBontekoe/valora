@@ -138,20 +138,40 @@ Get aggregated scores for major cities to display as markers or polygons.
 ### Map Amenities
 `GET /api/map/amenities`
 
-Get amenities within a bounding box.
+Get amenities within a bounding box as individual points.
 
 **Query Parameters:**
 - `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
 - `types`: Comma-separated list of amenity types (e.g., "school,park").
 
+### Amenity Clusters
+`GET /api/map/amenities/clusters`
+
+Get aggregated clusters of amenities for higher zoom levels.
+
+**Query Parameters:**
+- `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
+- `zoom`: Current map zoom level (Required).
+- `types`: Comma-separated list of amenity types.
+
 ### Map Overlays
 `GET /api/map/overlays`
 
-Get heat map data (e.g., price per m2) for a bounding box.
+Get heat map data (e.g., price per m2) for a bounding box as GeoJSON polygons.
 
 **Query Parameters:**
 - `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
 - `metric`: The metric to visualize. Allowed values: `PricePerSquareMeter`, `CrimeRate`, `PopulationDensity`, `AverageWoz`.
+
+### Overlay Tiles
+`GET /api/map/overlays/tiles`
+
+Get heat map data as simplified tiles for performant rendering at lower zoom levels.
+
+**Query Parameters:**
+- `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
+- `zoom`: Current map zoom level (Required).
+- `metric`: The metric to visualize (Required).
 
 ---
 

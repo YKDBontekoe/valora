@@ -68,7 +68,10 @@ public sealed class PdokLocationResolver : ILocationResolver
         }
 
         // Query the "free" endpoint which allows for flexible/fuzzy input
-        // fq=type:adres restricts results to specific addresses, filtering out general place names
+        // Why fq=type:adres?
+        // We only want exact addresses (e.g., "Damrak 1"). Without this filter, PDOK returns
+        // streets ("Damrak"), neighborhoods, or municipalities, which don't have a specific
+        // lat/lon point suitable for a context report.
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 
@@ -90,12 +93,17 @@ public sealed class PdokLocationResolver : ILocationResolver
                 docsElement.GetArrayLength() == 0)
             {
                 // Cache negative results to prevent repeated bad calls
+                // Why? User typos (e.g., "Damrak 99999") are common. Repeatedly querying PDOK for
+                // known invalid addresses wastes bandwidth and latency. We cache the "null" result.
                 _cache.Set(cacheKey, null as ResolvedLocationDto, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
                 return null;
             }
 
             var doc = docsElement[0];
-            // centroide_ll = WGS84 (Lat/Lon), centroide_rd = Rijksdriehoek (X/Y)
+            // Why two coordinate systems?
+            // 1. WGS84 (centroide_ll): Standard GPS Lat/Lon used for the mobile app, map display, and Overpass API.
+            // 2. Rijksdriehoek (centroide_rd): Dutch national grid (X/Y in meters). Used for accurate
+            //    distance calculations and querying CBS data (which often uses RD coordinates).
             var pointLl = GeoUtils.TryParseWktPoint(GetString(doc, "centroide_ll"));
             var pointRd = GeoUtils.TryParseWktPoint(GetString(doc, "centroide_rd"));
 

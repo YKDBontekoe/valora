@@ -177,7 +177,7 @@ graph TD
 When a user requests a report for an address, Valora does **not** look up a pre-existing record. It generates the report in real-time by querying multiple external sources in parallel.
 
 - **Why?** Data freshness and coverage. We don't need to scrape or store millions of records.
-- **How?** See `ContextReportService.cs`. It uses `Task.WhenAll` to fetch data from CBS, PDOK, and OSM simultaneously.
+- **How?** See `ContextReportService.cs` and `PdokLocationResolver.cs` for detailed inline documentation.
 
 ---
 
@@ -205,6 +205,8 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 - **[Data Flow: Reading (Reports)](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
 - **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**: User registration and data saving.
 - **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
+
+> **Tip:** Key complex methods (e.g., `OverpassQueryBuilder`, `PdokLocationResolver`) contain detailed inline XML documentation explaining the "Why" behind implementation decisions.
 
 ---
 

@@ -169,27 +169,49 @@ public class OverpassAmenityClientTests
     }
 
     [Fact]
-    public async Task GetAmenitiesAsync_WhenHttpFails_Throws()
+    public async Task GetAmenitiesAsync_WhenHttpFails_ReturnsNullAndLogsWarning()
     {
         // Arrange
         var handlerMock = CreateHandlerMock(HttpStatusCode.InternalServerError, "{}");
         var httpClient = new HttpClient(handlerMock.Object);
         var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAmenitiesAsync(_location, 1000));
+        // Act
+        var result = await client.GetAmenitiesAsync(_location, 1000);
+
+        // Assert
+        Assert.Null(result);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Overpass lookup failed with status")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task GetAmenitiesAsync_WhenResponseIsInvalid_Throws()
+    public async Task GetAmenitiesAsync_WhenResponseIsInvalid_ReturnsNullAndLogsError()
     {
         // Arrange
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, "{ invalid json }");
         var httpClient = new HttpClient(handlerMock.Object);
         var client = new OverpassAmenityClient(httpClient, _cache, _options, _loggerMock.Object);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<JsonException>(() => client.GetAmenitiesAsync(_location, 1000));
+        // Act
+        var result = await client.GetAmenitiesAsync(_location, 1000);
+
+        // Assert
+        Assert.Null(result);
+        _loggerMock.Verify(
+             x => x.Log(
+                 LogLevel.Error,
+                 It.IsAny<EventId>(),
+                 It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to fetch or process Overpass data")),
+                 It.IsAny<Exception>(),
+                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+             Times.Once);
     }
 
     [Fact]
