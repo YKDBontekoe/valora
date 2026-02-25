@@ -87,7 +87,10 @@ curl http://localhost:5001/api/health
 
 ## 3. Understanding the Architecture
 
-To understand how your request was processed, read the **[Data Flow Deep Dive](onboarding-data-flow.md)**.
+To understand how the system works under the hood, we have two deep-dive guides:
+
+1.  **[Data Flow: Reading (Reports)](onboarding-data-flow.md)**: Learn how the "Fan-Out" pattern aggregates data from CBS, PDOK, and OSM in real-time.
+2.  **[Data Flow: Writing (Persistence)](onboarding-persistence-flow.md)**: Learn how user data and reports are securely saved to the database.
 
 ### Product Mental Model
 - **Valora is not a scraper.** It does not copy listing photos or descriptions.

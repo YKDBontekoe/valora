@@ -77,10 +77,26 @@ public sealed class OverpassAmenityClient : IAmenityClient
         return results;
     }
 
+    /// <summary>
+    /// Executes a raw Overpass QL query and processes the result.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why POST with x-www-form-urlencoded?</strong><br/>
+    /// Overpass queries can be large and complex. While GET requests are supported, they are limited by URL length.
+    /// Using POST with the `data` parameter allows for arbitrarily complex queries without hitting length limits.
+    /// </para>
+    /// <para>
+    /// <strong>Resilience:</strong><br/>
+    /// This method wraps the HTTP call and JSON deserialization. It returns <c>default</c> (null) on failure
+    /// rather than throwing, allowing the caller (ContextReportService) to continue with partial data ("Fan-Out" resilience).
+    /// </para>
+    /// </remarks>
     private async Task<T?> FetchAndProcessAsync<T>(string query, Func<List<OverpassElement>, T> processor, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.OverpassBaseUrl.TrimEnd('/')}/api/interpreter")
         {
+            // The Overpass API expects the query in a form field named "data".
             Content = new StringContent($"data={Uri.EscapeDataString(query)}", Encoding.UTF8, "application/x-www-form-urlencoded")
         };
 
