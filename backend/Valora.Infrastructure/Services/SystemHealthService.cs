@@ -68,7 +68,7 @@ public class SystemHealthService : ISystemHealthService
                 Timestamp = DateTime.UtcNow
             };
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             throw;
         }
@@ -88,7 +88,7 @@ public class SystemHealthService : ISystemHealthService
                 FailedJobs = 0,
                 LastPipelineSuccess = null,
                 Timestamp = DateTime.UtcNow,
-                Error = "Critical system failure: " + ex.Message
+                Error = "Critical system failure"
             };
         }
     }
