@@ -4,11 +4,12 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
-import 'dart:ui' as _i9;
+import 'dart:ui' as _i10;
 
 import 'package:geolocator/geolocator.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:valora_app/models/context_report.dart' as _i7;
+import 'package:valora_app/models/saved_search.dart' as _i9;
 import 'package:valora_app/models/search_history_item.dart' as _i8;
 import 'package:valora_app/providers/context_report_provider.dart' as _i6;
 import 'package:valora_app/services/location_service.dart' as _i3;
@@ -129,6 +130,15 @@ class MockContextReportProvider extends _i1.Mock
             returnValueForMissingStub: <_i8.SearchHistoryItem>[],
           )
           as List<_i8.SearchHistoryItem>);
+
+  @override
+  List<_i9.SavedSearch> get savedSearches =>
+      (super.noSuchMethod(
+            Invocation.getter(#savedSearches),
+            returnValue: <_i9.SavedSearch>[],
+            returnValueForMissingStub: <_i9.SavedSearch>[],
+          )
+          as List<_i9.SavedSearch>);
 
   @override
   bool get hasListeners =>
@@ -303,13 +313,49 @@ class MockContextReportProvider extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  void addListener(_i9.VoidCallback? listener) => super.noSuchMethod(
+  bool isSearchSaved(String? query, int? radius) =>
+      (super.noSuchMethod(
+            Invocation.method(#isSearchSaved, [query, radius]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  _i4.Future<void> saveSearch(String? query, int? radius) =>
+      (super.noSuchMethod(
+            Invocation.method(#saveSearch, [query, radius]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> removeSavedSearch(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeSavedSearch, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> toggleSearchAlert(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#toggleSearchAlert, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  void addListener(_i10.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i9.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i10.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
