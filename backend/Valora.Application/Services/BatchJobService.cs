@@ -55,7 +55,7 @@ public class BatchJobService : IBatchJobService
             return null;
         }
 
-        if (Enum.TryParse<T>(value, true, out var result))
+        if (Enum.TryParse<T>(value, true, out var result) && Enum.IsDefined(typeof(T), result))
         {
             return result;
         }
