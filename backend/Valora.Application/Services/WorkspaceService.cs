@@ -61,6 +61,22 @@ public class WorkspaceService : IWorkspaceService
         return MapToDto(workspace);
     }
 
+    public async Task DeleteWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
+    {
+        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
+        if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+
+        if (workspace.OwnerId != userId)
+            throw new ForbiddenAccessException();
+
+        // Log audit trail for deletion - even if it cascades, having it in the log stream before commit is better than nothing.
+        // In a real system we'd log this to a non-cascade table or external audit service.
+        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceDeleted, $"Workspace '{workspace.Name}' deleted", ct);
+
+        await _repository.DeleteAsync(workspace, ct);
+        await _repository.SaveChangesAsync(ct);
+    }
+
     public async Task<List<WorkspaceMemberDto>> GetMembersAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
         await ValidateMemberAccess(userId, workspaceId, ct);

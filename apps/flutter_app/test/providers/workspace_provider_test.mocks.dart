@@ -78,6 +78,15 @@ class MockWorkspaceRepository extends _i1.Mock
           as _i4.Future<_i2.Workspace>);
 
   @override
+  _i4.Future<void> deleteWorkspace(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteWorkspace, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<List<_i2.WorkspaceMember>> getWorkspaceMembers(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceMembers, [id]),

@@ -17,6 +17,9 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   bool get isWorkspaceDetailLoading => false;
 
   @override
+  bool get isDeletingWorkspace => false;
+
+  @override
   String? get error => null;
 
   @override
@@ -52,6 +55,9 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
 
   @override
   Future<void> createWorkspace(String name, String? description) async {}
+
+  @override
+  Future<void> deleteWorkspace(String id) async {}
 
   @override
   Future<void> inviteMember(String email, WorkspaceRole role) async {}

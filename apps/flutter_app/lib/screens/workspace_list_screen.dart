@@ -8,6 +8,8 @@ import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import 'workspace_detail_screen.dart';
 
+enum SortOption { name, createdDate, memberCount }
+
 class WorkspaceListScreen extends StatefulWidget {
   const WorkspaceListScreen({super.key});
 
@@ -16,12 +18,46 @@ class WorkspaceListScreen extends StatefulWidget {
 }
 
 class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  SortOption _sortOption = SortOption.createdDate;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WorkspaceProvider>().fetchWorkspaces();
     });
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Workspace> _getFilteredAndSortedWorkspaces(List<Workspace> workspaces) {
+    var filtered = workspaces.where((w) {
+      return w.name.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    filtered.sort((a, b) {
+      switch (_sortOption) {
+        case SortOption.name:
+          return a.name.compareTo(b.name);
+        case SortOption.createdDate:
+          return b.createdAt.compareTo(a.createdAt);
+        case SortOption.memberCount:
+          return b.memberCount.compareTo(a.memberCount);
+      }
+    });
+
+    return filtered;
   }
 
   @override
@@ -40,6 +76,30 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          PopupMenuButton<SortOption>(
+            icon: Icon(Icons.sort_rounded, color: colorScheme.onSurface),
+            onSelected: (option) {
+              setState(() {
+                _sortOption = option;
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: SortOption.createdDate,
+                child: Text('Newest First'),
+              ),
+              const PopupMenuItem(
+                value: SortOption.name,
+                child: Text('Name (A-Z)'),
+              ),
+              const PopupMenuItem(
+                value: SortOption.memberCount,
+                child: Text('Member Count'),
+              ),
+            ],
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context),
@@ -48,48 +108,82 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Workspace'),
       ),
-      body: Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
-        selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
-        builder: (context, data, child) {
-          if (data.isLoading && data.workspaces.isEmpty) {
-            return const Center(
-              child: ValoraLoadingIndicator(message: 'Loading workspaces...'),
-            );
-          }
-          if (data.error != null && data.workspaces.isEmpty) {
-            return Center(
-              child: ValoraEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Failed to load',
-                subtitle: 'Could not load your workspaces. Please try again.',
-                actionLabel: 'Retry',
-                onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
-              ),
-            );
-          }
-          if (data.workspaces.isEmpty) {
-            return Center(
-              child: ValoraEmptyState(
-                icon: Icons.workspaces_rounded,
-                title: 'No workspaces yet',
-                subtitle:
-                    'Create a workspace to collaborate with family and friends on your property search.',
-                actionLabel: 'Create Workspace',
-                onAction: () => _showCreateDialog(context),
-              ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(ValoraSpacing.md),
-            itemCount: data.workspaces.length,
-            separatorBuilder: (_, _) =>
-                const SizedBox(height: ValoraSpacing.sm),
-            itemBuilder: (context, index) {
-              final workspace = data.workspaces[index];
-              return WorkspaceListItem(workspace: workspace);
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              ValoraSpacing.md,
+              ValoraSpacing.sm,
+              ValoraSpacing.md,
+              ValoraSpacing.sm,
+            ),
+            child: ValoraTextField(
+              controller: _searchController,
+              hint: 'Search workspaces...',
+              label: '', // No label needed for search bar usually
+              prefixIcon: const Icon(Icons.search_rounded),
+            ),
+          ),
+          Expanded(
+            child: Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
+              selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
+              builder: (context, data, child) {
+                if (data.isLoading && data.workspaces.isEmpty) {
+                  return const Center(
+                    child: ValoraLoadingIndicator(message: 'Loading workspaces...'),
+                  );
+                }
+                if (data.error != null && data.workspaces.isEmpty) {
+                  return Center(
+                    child: ValoraEmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Failed to load',
+                      subtitle: 'Could not load your workspaces. Please try again.',
+                      actionLabel: 'Retry',
+                      onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
+                    ),
+                  );
+                }
+
+                final displayList = _getFilteredAndSortedWorkspaces(data.workspaces);
+
+                if (displayList.isEmpty) {
+                  if (_searchQuery.isNotEmpty) {
+                    return Center(
+                      child: ValoraEmptyState(
+                        icon: Icons.search_off_rounded,
+                        title: 'No results',
+                        subtitle: 'No workspaces match your search.',
+                        actionLabel: 'Clear Search',
+                        onAction: () => _searchController.clear(),
+                      ),
+                    );
+                  }
+                  return Center(
+                    child: ValoraEmptyState(
+                      icon: Icons.workspaces_rounded,
+                      title: 'No workspaces yet',
+                      subtitle:
+                          'Create a workspace to collaborate with family and friends on your property search.',
+                      actionLabel: 'Create Workspace',
+                      onAction: () => _showCreateDialog(context),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.all(ValoraSpacing.md),
+                  itemCount: displayList.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: ValoraSpacing.sm),
+                  itemBuilder: (context, index) {
+                    final workspace = displayList[index];
+                    return WorkspaceListItem(workspace: workspace);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -234,9 +328,79 @@ class WorkspaceListItem extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded,
-              color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded,
+                color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400),
+            onSelected: (value) {
+              if (value == 'delete') {
+                _showDeleteConfirmation(context, workspace);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded,
+                        color: ValoraColors.error, size: 20),
+                    SizedBox(width: 8),
+                    Text('Delete', style: TextStyle(color: ValoraColors.error)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Workspace workspace) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ValoraDialog(
+        title: 'Delete Workspace?',
+        actions: [
+          ValoraButton(
+            label: 'Cancel',
+            variant: ValoraButtonVariant.ghost,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          Consumer<WorkspaceProvider>(
+            builder: (context, provider, _) {
+              return ValoraButton(
+                label: 'Delete',
+                variant: ValoraButtonVariant.primary,
+                isLoading: provider.isDeletingWorkspace,
+                onPressed: () async {
+                  try {
+                    await provider.deleteWorkspace(workspace.id);
+                    if (context.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Workspace deleted successfully'),
+                          backgroundColor: ValoraColors.success,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to delete workspace: $e'),
+                          backgroundColor: ValoraColors.error,
+                        ),
+                      );
+                    }
+                  }
+                },
+              );
+            },
+          ),
+        ],
+        child: Text(
+            'Are you sure you want to delete "${workspace.name}"? This action cannot be undone and all data including saved listings and comments will be lost.'),
       ),
     );
   }

@@ -218,5 +218,45 @@ void main() {
       expect(comments.length, 1);
       expect(comments.first.content, 'Hello');
     });
+
+    test('deleteWorkspace removes workspace from list on success', () async {
+      // Initial state
+      final ws1 = Workspace(id: '1', name: 'WS1', ownerId: 'u1', createdAt: DateTime.now(), memberCount: 1, savedListingCount: 0);
+      final ws2 = Workspace(id: '2', name: 'WS2', ownerId: 'u1', createdAt: DateTime.now(), memberCount: 1, savedListingCount: 0);
+
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1, ws2]);
+      await provider.fetchWorkspaces();
+      expect(provider.workspaces.length, 2);
+
+      // Delete logic
+      when(mockRepository.deleteWorkspace('1')).thenAnswer((_) async => {});
+
+      await provider.deleteWorkspace('1');
+
+      expect(provider.workspaces.length, 1);
+      expect(provider.workspaces.first.id, '2');
+      expect(provider.isDeletingWorkspace, false);
+      expect(provider.error, null);
+    });
+
+    test('deleteWorkspace sets error on failure', () async {
+       // Initial state
+      final ws1 = Workspace(id: '1', name: 'WS1', ownerId: 'u1', createdAt: DateTime.now(), memberCount: 1, savedListingCount: 0);
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1]);
+      await provider.fetchWorkspaces();
+
+      // Delete failure
+      when(mockRepository.deleteWorkspace('1')).thenThrow(Exception('Delete failed'));
+
+      try {
+        await provider.deleteWorkspace('1');
+      } catch (_) {
+        // Expected
+      }
+
+      expect(provider.workspaces.length, 1); // Not removed
+      expect(provider.isDeletingWorkspace, false);
+      expect(provider.error, contains('Delete failed'));
+    });
   });
 }
