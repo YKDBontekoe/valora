@@ -22,6 +22,7 @@ class ValoraTextField extends StatefulWidget {
     this.validator,
     this.inputFormatters,
     this.textInputAction,
+    this.autofillHints,
     this.maxLines = 1,
     this.autofocus = false,
     this.enabled = true,
@@ -41,6 +42,7 @@ class ValoraTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final List<TextInputFormatter>? inputFormatters;
   final TextInputAction? textInputAction;
+  final Iterable<String>? autofillHints;
   final int maxLines;
   final bool autofocus;
   final bool enabled;
@@ -170,6 +172,7 @@ class _ValoraTextFieldState extends State<ValoraTextField> {
             enabled: widget.enabled,
             inputFormatters: widget.inputFormatters,
             textInputAction: widget.textInputAction,
+            autofillHints: widget.autofillHints,
             style: ValoraTypography.bodyMedium.copyWith(
               color:
                   isDark ? ValoraColors.neutral50 : ValoraColors.neutral900,
