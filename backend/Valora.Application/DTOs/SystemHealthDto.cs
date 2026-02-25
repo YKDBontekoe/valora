@@ -2,6 +2,7 @@ namespace Valora.Application.DTOs;
 
 public class SystemHealthDto
 {
+    public bool IsHealthy => Status == "Healthy";
     public string Status { get; set; } = string.Empty;
     public bool Database { get; set; }
     public int ApiLatency { get; set; }

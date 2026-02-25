@@ -150,7 +150,7 @@ api.MapGet("/health", async (ISystemHealthService healthService, CancellationTok
 {
     var health = await healthService.GetHealthAsync(ct);
 
-    if (health.Database)
+    if (health.IsHealthy)
     {
         return Results.Ok(health);
     }

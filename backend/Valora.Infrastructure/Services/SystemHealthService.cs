@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
@@ -10,11 +11,13 @@ public class SystemHealthService : ISystemHealthService
 {
     private readonly ValoraDbContext _db;
     private readonly IRequestMetricsService _metricsService;
+    private readonly ILogger<SystemHealthService> _logger;
 
-    public SystemHealthService(ValoraDbContext db, IRequestMetricsService metricsService)
+    public SystemHealthService(ValoraDbContext db, IRequestMetricsService metricsService, ILogger<SystemHealthService> logger)
     {
         _db = db;
         _metricsService = metricsService;
+        _logger = logger;
     }
 
     public async Task<SystemHealthDto> GetHealthAsync(CancellationToken ct)
@@ -65,8 +68,13 @@ public class SystemHealthService : ISystemHealthService
                 Timestamp = DateTime.UtcNow
             };
         }
-        catch (Exception)
+        catch (OperationCanceledException)
         {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Health check failed");
             return new SystemHealthDto
             {
                 Status = "Unhealthy",
@@ -80,7 +88,7 @@ public class SystemHealthService : ISystemHealthService
                 FailedJobs = 0,
                 LastPipelineSuccess = null,
                 Timestamp = DateTime.UtcNow,
-                Error = "Critical system failure"
+                Error = "Critical system failure: " + ex.Message
             };
         }
     }
