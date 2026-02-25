@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Domain.Common;
 
 namespace Valora.Application.Services;
 
@@ -100,12 +101,12 @@ public sealed class ContextDataProvider : IContextDataProvider
 
         if (cbs is not null)
         {
-            sources.Add(new SourceAttributionDto("CBS StatLine 85618NED", "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto(DataSources.CbsStatLine, "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
         }
 
         if (crime is not null)
         {
-            sources.Add(new SourceAttributionDto("CBS StatLine 83765NED", "https://opendata.cbs.nl", "Publiek", crime.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto(DataSources.CbsCrimeStatLine, "https://opendata.cbs.nl", "Publiek", crime.RetrievedAtUtc));
         }
 
         if (amenities is not null)
@@ -115,7 +116,7 @@ public sealed class ContextDataProvider : IContextDataProvider
 
         if (air is not null)
         {
-            sources.Add(new SourceAttributionDto("Luchtmeetnet", "https://api.luchtmeetnet.nl", "Publiek", air.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto(DataSources.Luchtmeetnet, "https://api.luchtmeetnet.nl", "Publiek", air.RetrievedAtUtc));
         }
 
         return sources;
