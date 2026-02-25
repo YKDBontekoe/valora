@@ -32,5 +32,7 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
             .WithOne(al => al.Workspace)
             .HasForeignKey(al => al.WorkspaceId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(w => w.CreatedAt);
     }
 }
