@@ -56,6 +56,34 @@ public class WorkspaceServiceTests
     }
 
     [Fact]
+    public async Task CreateWorkspaceAsync_ShouldThrow_WhenLimitReached()
+    {
+        var userId = "user1";
+        for (int i = 0; i < 10; i++)
+        {
+            var ws = new Workspace
+            {
+                Name = $"WS{i}",
+                OwnerId = userId,
+                Members = new List<WorkspaceMember>
+                {
+                    new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Owner }
+                }
+            };
+            _context.Workspaces.Add(ws);
+        }
+        await _context.SaveChangesAsync();
+
+        var dto = new CreateWorkspaceDto("Test Workspace", "Description");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateWorkspaceAsync(userId, dto));
+
+        var log = await _context.ActivityLogs.FirstOrDefaultAsync(l => l.ActorId == userId && l.Summary == "Workspace creation failed: limit reached");
+        Assert.NotNull(log);
+        Assert.Null(log.WorkspaceId); // Ensure log is not attached to a non-existent workspace
+    }
+
+    [Fact]
     public async Task GetUserWorkspacesAsync_ShouldReturnOnlyUserWorkspaces()
     {
         var userId = "user1";

@@ -3,23 +3,26 @@ using System.ComponentModel.DataAnnotations;
 namespace Valora.Application.DTOs;
 
 public record LoginDto(
-    [property: Required] [property: EmailAddress] string Email,
-    [property: Required] string Password
+    [property: Required] [property: EmailAddress] [property: StringLength(100)] string Email,
+    [property: Required] [property: StringLength(100)] string Password
 );
 
 public record RegisterDto
 {
     [Required]
     [EmailAddress]
+    [StringLength(100)]
     public string Email { get; init; } = string.Empty;
 
     [Required]
     [MinLength(12)]
+    [StringLength(100)]
     [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{12,}$", ErrorMessage = "Password must be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")]
     public string Password { get; init; } = string.Empty;
 
     [Required]
     [Compare(nameof(Password))]
+    [StringLength(100)]
     public string ConfirmPassword { get; init; } = string.Empty;
 }
 
