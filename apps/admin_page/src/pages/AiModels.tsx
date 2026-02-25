@@ -248,8 +248,8 @@ const AiModels: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setEditingConfig(null)}
-              className="absolute inset-0 bg-brand-900/60 backdrop-blur-md"
+              onClick={() => !isSaving && setEditingConfig(null)}
+              className={`absolute inset-0 bg-brand-900/60 backdrop-blur-md ${isSaving ? 'cursor-wait' : 'cursor-pointer'}`}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
@@ -280,9 +280,10 @@ const AiModels: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => setEditingConfig(null)}
+                    onClick={() => !isSaving && setEditingConfig(null)}
                     aria-label="Close edit modal"
-                    className="w-14 h-14 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300 cursor-pointer"
+                    disabled={isSaving}
+                    className={`w-14 h-14 flex items-center justify-center text-brand-300 transition-all duration-300 rounded-2xl ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:text-brand-900 hover:bg-brand-50 cursor-pointer'}`}
                   >
                     <X size={36} />
                   </button>
@@ -400,8 +401,9 @@ const AiModels: React.FC = () => {
                   </div>
                   <div className="flex gap-5 w-full sm:w-auto">
                     <Button
-                      onClick={() => setEditingConfig(null)}
+                      onClick={() => !isSaving && setEditingConfig(null)}
                       variant="ghost"
+                      disabled={isSaving}
                       className="text-brand-400 font-black px-8"
                     >
                       Discard
