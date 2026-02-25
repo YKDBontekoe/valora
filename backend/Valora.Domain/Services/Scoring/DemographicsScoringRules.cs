@@ -1,6 +1,6 @@
-namespace Valora.Application.Enrichment.Scoring;
+namespace Valora.Domain.Services.Scoring;
 
-public static class DemographicsScorer
+public static class DemographicsScoringRules
 {
     private const string UrbanityZeerSterk = "zeer sterk stedelijk";
     private const string UrbanitySterk = "sterk stedelijk";

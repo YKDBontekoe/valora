@@ -82,15 +82,15 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var existingToken = await ValidateRefreshTokenAsync(refreshToken);
-        if (existingToken?.User == null)
+        var storedToken = await ValidateRefreshTokenAsync(refreshToken);
+        if (storedToken?.User == null)
         {
             return null;
         }
 
         // Generate new access token and lookup roles first
         // If above operations succeed, then rotate refresh token
-        var authResponse = await GenerateAuthResponseAsync(existingToken.User);
+        var authResponse = await GenerateAuthResponseAsync(storedToken.User);
 
         // Only revoke old token AFTER the new one is successfully generated and persisted
         await _tokenService.RevokeRefreshTokenAsync(refreshToken);
@@ -100,28 +100,28 @@ public class AuthService : IAuthService
 
     private async Task<RefreshToken?> ValidateRefreshTokenAsync(string refreshToken)
     {
-        var existingToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
+        var storedToken = await _tokenService.GetRefreshTokenAsync(refreshToken);
 
-        if (existingToken == null)
+        if (storedToken == null)
         {
             return null;
         }
 
         // Reuse Detection: If token is already revoked, it might be a theft attempt.
-        if (existingToken.Revoked != null)
+        if (storedToken.Revoked != null)
         {
-            _logger.LogWarning("Security Alert: Reuse of revoked refresh token detected for user {UserId}. Revoking all sessions.", existingToken.UserId);
-            await _tokenService.RevokeAllRefreshTokensAsync(existingToken.UserId);
+            _logger.LogWarning("Security Alert: Reuse of revoked refresh token detected for user {UserId}. Revoking all sessions.", storedToken.UserId);
+            await _tokenService.RevokeAllRefreshTokensAsync(storedToken.UserId);
             return null;
         }
 
         // Check if expired
-        if (existingToken.Expires <= _timeProvider.GetUtcNow().UtcDateTime)
+        if (storedToken.Expires <= _timeProvider.GetUtcNow().UtcDateTime)
         {
             return null;
         }
 
-        return existingToken;
+        return storedToken;
     }
 
     public async Task<AuthResponseDto?> ExternalLoginAsync(ExternalLoginRequestDto request)
