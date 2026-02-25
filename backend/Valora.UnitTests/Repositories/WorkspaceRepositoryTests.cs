@@ -4,7 +4,7 @@ using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Xunit;
 
-namespace Valora.UnitTests.Infrastructure.Persistence.Repositories;
+namespace Valora.UnitTests.Repositories;
 
 public class WorkspaceRepositoryTests
 {
