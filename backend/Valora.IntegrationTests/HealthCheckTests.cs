@@ -9,6 +9,7 @@ namespace Valora.IntegrationTests;
 
 public class HealthCheckResponse
 {
+    public bool IsHealthy { get; set; }
     public string? Status { get; set; }
     public bool Database { get; set; }
     public int ApiLatency { get; set; }
@@ -54,6 +55,7 @@ public class HealthCheckTests : BaseIntegrationTest
         var content = await response.Content.ReadFromJsonAsync<HealthCheckResponse>();
 
         Assert.NotNull(content);
+        Assert.True(content.IsHealthy);
         Assert.Equal("Healthy", content.Status);
         Assert.True(content.Database);
         Assert.Equal(2, content.ActiveJobs);

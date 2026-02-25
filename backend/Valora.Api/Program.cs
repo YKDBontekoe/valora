@@ -7,7 +7,6 @@ using Valora.Application;
 using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure;
 using Valora.Infrastructure.Persistence;
-using Valora.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +14,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, Valora.Api.Services.CurrentUserService>();
-builder.Services.AddSingleton<Valora.Api.Services.IRequestMetricsService, Valora.Api.Services.RequestMetricsService>();
 
 // Configure Sentry
 // Design Decision: We use Sentry for error tracking but limit the volume of data sent.
@@ -148,79 +146,16 @@ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
 /// <summary>
 /// Health check endpoint. Used by Docker Compose and load balancers.
 /// </summary>
-api.MapGet("/health", async (ValoraDbContext db, Valora.Api.Services.IRequestMetricsService metricsService, CancellationToken ct) =>
+api.MapGet("/health", async (ISystemHealthService healthService, CancellationToken ct) =>
 {
-    try
+    var health = await healthService.GetHealthAsync(ct);
+
+    if (health.IsHealthy)
     {
-        var canConnect = await db.Database.CanConnectAsync(ct);
-
-        int activeJobs = 0;
-        int queuedJobs = 0;
-        int failedJobs = 0;
-        DateTime? lastPipelineSuccess = null;
-
-        if (canConnect)
-        {
-            var jobStats = await db.BatchJobs
-                .GroupBy(j => j.Status)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
-
-            activeJobs = jobStats.TryGetValue(BatchJobStatus.Processing, out var processing) ? processing : 0;
-            queuedJobs = jobStats.TryGetValue(BatchJobStatus.Pending, out var pending) ? pending : 0;
-            failedJobs = jobStats.TryGetValue(BatchJobStatus.Failed, out var failed) ? failed : 0;
-
-            lastPipelineSuccess = await db.BatchJobs
-                .Where(j => j.Status == BatchJobStatus.Completed)
-                .OrderByDescending(j => j.CompletedAt)
-                .Select(j => j.CompletedAt)
-                .FirstOrDefaultAsync(ct);
-        }
-
-        var p50 = metricsService.GetPercentile(50);
-        var p95 = metricsService.GetPercentile(95);
-        var p99 = metricsService.GetPercentile(99);
-
-        var response = new
-        {
-            status = canConnect ? "Healthy" : "Unhealthy",
-            database = canConnect,
-            apiLatency = (int)p50,
-            apiLatencyP50 = (int)p50,
-            apiLatencyP95 = (int)p95,
-            apiLatencyP99 = (int)p99,
-            activeJobs = activeJobs,
-            queuedJobs = queuedJobs,
-            failedJobs = failedJobs,
-            lastPipelineSuccess = lastPipelineSuccess,
-            timestamp = DateTime.UtcNow
-        };
-
-        if (canConnect)
-        {
-            return Results.Ok(response);
-        }
-
-        return Results.Json(response, statusCode: 503);
+        return Results.Ok(health);
     }
-    catch (Exception)
-    {
-        return Results.Json(new
-        {
-            status = "Unhealthy",
-            database = false,
-            apiLatency = 0,
-            apiLatencyP50 = 0,
-            apiLatencyP95 = 0,
-            apiLatencyP99 = 0,
-            activeJobs = 0,
-            queuedJobs = 0,
-            failedJobs = 0,
-            lastPipelineSuccess = (DateTime?)null,
-            timestamp = DateTime.UtcNow,
-            error = "Critical system failure"
-        }, statusCode: 503);
-    }
+
+    return Results.Json(health, statusCode: 503);
 })
 .DisableRateLimiting();
 
