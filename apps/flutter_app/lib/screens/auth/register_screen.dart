@@ -4,6 +4,7 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/common/valora_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -138,12 +139,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      _buildLabel('Email', isDark),
-                      const SizedBox(height: 6),
-                      _buildTextField(
+                      ValoraTextField(
                         controller: _emailController,
+                        label: 'Email',
                         hint: 'hello@example.com',
-                        icon: Icons.email_outlined,
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          size: 20,
+                          color: isDark
+                              ? ValoraColors.neutral500
+                              : ValoraColors.neutral400,
+                        ),
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: const [AutofillHints.email],
                         validator: (value) {
@@ -155,16 +161,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                           return null;
                         },
-                        isDark: isDark,
                       ),
                       const SizedBox(height: 20),
-                      _buildLabel('Password', isDark),
-                      const SizedBox(height: 6),
-                      _buildTextField(
+                      ValoraTextField(
                         key: const Key('password_field'),
                         controller: _passwordController,
+                        label: 'Password',
                         hint: '••••••••',
-                        icon: Icons.lock_outline,
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          size: 20,
+                          color: isDark
+                              ? ValoraColors.neutral500
+                              : ValoraColors.neutral400,
+                        ),
                         obscureText: _obscurePassword,
                         keyboardType: TextInputType.visiblePassword,
                         autofillHints: const [AutofillHints.newPassword],
@@ -197,16 +207,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                           return null;
                         },
-                        isDark: isDark,
                       ),
                       const SizedBox(height: 20),
-                      _buildLabel('Confirm Password', isDark),
-                      const SizedBox(height: 6),
-                      _buildTextField(
+                      ValoraTextField(
                         key: const Key('confirm_password_field'),
                         controller: _confirmPasswordController,
+                        label: 'Confirm Password',
                         hint: '••••••••',
-                        icon: Icons.lock_outline,
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          size: 20,
+                          color: isDark
+                              ? ValoraColors.neutral500
+                              : ValoraColors.neutral400,
+                        ),
                         obscureText: _obscureConfirmPassword,
                         keyboardType: TextInputType.visiblePassword,
                         autofillHints: const [AutofillHints.newPassword],
@@ -242,7 +256,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                           return null;
                         },
-                        isDark: isDark,
                       ),
                       const SizedBox(height: 32),
                       SizedBox(
@@ -310,95 +323,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLabel(String text, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        text,
-        style: ValoraTypography.labelSmall.copyWith(
-          fontWeight: FontWeight.w600,
-          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    Key? key,
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    required bool isDark,
-    bool obscureText = false,
-    TextInputType? keyboardType,
-    Iterable<String>? autofillHints,
-    TextInputAction? textInputAction,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-    void Function(String)? onSubmitted,
-  }) {
-    return TextFormField(
-      key: key,
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      autofillHints: autofillHints,
-      textInputAction: textInputAction,
-      onFieldSubmitted: onSubmitted,
-      style: ValoraTypography.bodyMedium.copyWith(
-        color: isDark ? Colors.white : Colors.black87,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: isDark ? ValoraColors.neutral600 : ValoraColors.neutral400,
-        ),
-        filled: true,
-        fillColor: isDark ? ValoraColors.neutral800 : ValoraColors.neutral50,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 12),
-          child: Icon(
-            icon,
-            size: 20,
-            color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
-          ),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 48),
-        suffixIcon: suffixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: suffixIcon,
-              )
-            : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: ValoraColors.primary, width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: ValoraColors.error, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: ValoraColors.error, width: 1),
-        ),
-      ),
-      validator: validator,
     );
   }
 }

@@ -5,6 +5,8 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/common/valora_text_field.dart';
+import '../../widgets/auth/social_login_button.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -40,17 +42,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-    Future<void> _openSocialProvider(String provider) async {
+  Future<void> _openSocialProvider(String provider) async {
     if (provider.toLowerCase() == 'google') {
-       try {
-         await context.read<AuthProvider>().loginWithGoogle();
-       } catch (e) {
-         if (!mounted) return;
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Google Login failed: $e')),
-         );
-       }
-       return;
+      try {
+        await context.read<AuthProvider>().loginWithGoogle();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Login failed: $e')),
+        );
+      }
+      return;
     }
 
     final Uri uri = Uri.parse('https://valora.nl/auth/$provider');
@@ -63,7 +65,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
   }
-
 
   @override
   void dispose() {
@@ -145,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: ValoraColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.home_rounded,
                           size: 32,
                           color: ValoraColors.primary,
@@ -178,14 +179,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
 
                     // Email Field
-                    _buildLabel('Email Address'),
-                    const SizedBox(height: 6),
-                    _buildTextField(
+                    ValoraTextField(
                       controller: _emailController,
+                      label: 'Email Address',
                       hint: 'hello@example.com',
-                      icon: Icons.email_outlined,
+                      prefixIcon: Icon(
+                        Icons.email_outlined,
+                        size: 20,
+                        color: isDark
+                            ? ValoraColors.neutral500
+                            : ValoraColors.neutral400,
+                      ),
                       keyboardType: TextInputType.emailAddress,
-                      autofillHints: [AutofillHints.email],
+                      autofillHints: const [AutofillHints.email],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -195,7 +201,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                         return null;
                       },
-                      isDark: isDark,
                     ),
                     const SizedBox(height: 20),
 
@@ -203,7 +208,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildLabel('Password'),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Text(
+                            'Password',
+                            style: ValoraTypography.labelSmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? ValoraColors.neutral400
+                                  : ValoraColors.neutral500,
+                            ),
+                          ),
+                        ),
                         TextButton(
                           onPressed: _openForgotPassword,
                           style: TextButton.styleFrom(
@@ -223,13 +239,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    _buildTextField(
+                    const SizedBox(height: ValoraSpacing.xs),
+                    ValoraTextField(
                       controller: _passwordController,
                       hint: '••••••••',
-                      icon: Icons.lock_outline,
+                      prefixIcon: Icon(
+                        Icons.lock_outline,
+                        size: 20,
+                        color: isDark
+                            ? ValoraColors.neutral500
+                            : ValoraColors.neutral400,
+                      ),
                       obscureText: _obscurePassword,
-                      autofillHints: [AutofillHints.password],
+                      autofillHints: const [AutofillHints.password],
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -252,7 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                         return null;
                       },
-                      isDark: isDark,
                       onSubmitted: (_) => _submit(),
                     ),
                     const SizedBox(height: 32),
@@ -328,19 +349,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildSocialButton(
+                          child: SocialLoginButton(
                             label: 'Google',
-                            icon: Icons.g_mobiledata, // Placeholder
-                            isDark: isDark,
+                            icon: Icons.g_mobiledata,
                             onTap: () => _openSocialProvider('google'),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildSocialButton(
+                          child: SocialLoginButton(
                             label: 'Apple',
                             icon: Icons.apple,
-                            isDark: isDark,
                             onTap: () => _openSocialProvider('apple'),
                           ),
                         ),
@@ -392,124 +411,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        text,
-        style: ValoraTypography.labelSmall.copyWith(
-          fontWeight: FontWeight.w600,
-          color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-    List<String>? autofillHints,
-    String? Function(String?)? validator,
-    required bool isDark,
-    void Function(String)? onSubmitted,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      autofillHints: autofillHints,
-      style: ValoraTypography.bodyMedium.copyWith(
-        color: isDark ? Colors.white : Colors.black87,
-      ),
-      onFieldSubmitted: onSubmitted,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: isDark ? ValoraColors.neutral600 : ValoraColors.neutral400,
-        ),
-        filled: true,
-        fillColor: isDark ? ValoraColors.neutral800 : ValoraColors.neutral50,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 12),
-          child: Icon(
-            icon,
-            size: 20,
-            color: isDark ? ValoraColors.neutral500 : ValoraColors.neutral400,
-          ),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 48),
-        suffixIcon: suffixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: suffixIcon,
-              )
-            : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: ValoraColors.primary, width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: ValoraColors.error, width: 1),
-        ),
-      ),
-      validator: validator,
-    );
-  }
-
-  Widget _buildSocialButton({
-    required String label,
-    required IconData icon,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 54,
-        decoration: BoxDecoration(
-          color: isDark ? ValoraColors.neutral800 : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: isDark ? Colors.white : Colors.black87),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: ValoraTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-          ],
         ),
       ),
     );
