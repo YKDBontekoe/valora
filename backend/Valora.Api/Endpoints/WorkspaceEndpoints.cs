@@ -95,7 +95,7 @@ public static class WorkspaceEndpoints
     private static async Task<IResult> GetMembers(
         ClaimsPrincipal user,
         Guid id,
-        IWorkspaceService service,
+        IWorkspaceMemberService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -109,7 +109,7 @@ public static class WorkspaceEndpoints
         ClaimsPrincipal user,
         Guid id,
         [FromBody] InviteMemberDto dto,
-        IWorkspaceService service,
+        IWorkspaceMemberService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -123,7 +123,7 @@ public static class WorkspaceEndpoints
         ClaimsPrincipal user,
         Guid id,
         Guid memberId,
-        IWorkspaceService service,
+        IWorkspaceMemberService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -136,7 +136,7 @@ public static class WorkspaceEndpoints
     private static async Task<IResult> GetSavedListings(
         ClaimsPrincipal user,
         Guid id,
-        IWorkspaceService service,
+        IWorkspaceListingService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -150,7 +150,7 @@ public static class WorkspaceEndpoints
         ClaimsPrincipal user,
         Guid id,
         [FromBody] SaveListingDto request,
-        IWorkspaceService service,
+        IWorkspaceListingService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -164,7 +164,7 @@ public static class WorkspaceEndpoints
         ClaimsPrincipal user,
         Guid id,
         Guid savedListingId,
-        IWorkspaceService service,
+        IWorkspaceListingService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -178,7 +178,7 @@ public static class WorkspaceEndpoints
         ClaimsPrincipal user,
         Guid id,
         Guid savedListingId,
-        IWorkspaceService service,
+        IWorkspaceListingService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -193,7 +193,7 @@ public static class WorkspaceEndpoints
         Guid id,
         Guid savedListingId,
         [FromBody] AddCommentDto dto,
-        IWorkspaceService service,
+        IWorkspaceListingService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -206,7 +206,7 @@ public static class WorkspaceEndpoints
     private static async Task<IResult> GetActivityLogs(
         ClaimsPrincipal user,
         Guid id,
-        IWorkspaceService service,
+        IActivityLogService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
