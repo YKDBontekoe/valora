@@ -20,6 +20,8 @@ public static class DependencyInjection
         services.AddScoped<IBatchJobService, BatchJobService>();
         services.AddScoped<IBatchJobExecutor, BatchJobExecutor>();
         services.AddScoped<IWorkspaceService, WorkspaceService>();
+        services.AddScoped<IWorkspaceMemberService, WorkspaceMemberService>();
+        services.AddScoped<IWorkspaceListingService, WorkspaceListingService>();
 
         // Batch Job Processors
         services.AddScoped<IBatchJobProcessor, CityIngestionJobProcessor>();
