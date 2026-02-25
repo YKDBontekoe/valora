@@ -58,7 +58,7 @@ describe('AiModels Page', () => {
 
     fireEvent.click(screen.getByText('Modify'));
 
-    expect(screen.getByText('Edit Policy')).toBeInTheDocument();
+    expect(screen.getByText('Modify Policy')).toBeInTheDocument();
     expect(screen.getByDisplayValue('test-intent')).toBeDisabled();
 
     // Select should have the value 'test-model'

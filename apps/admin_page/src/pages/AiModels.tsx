@@ -254,36 +254,42 @@ const AiModels: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative w-full max-w-3xl bg-white rounded-[3rem] shadow-premium-xl overflow-hidden border border-white/20"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-4xl bg-white rounded-[3.5rem] shadow-premium-xl overflow-hidden border border-white/20"
             >
-              <div className="p-10 md:p-14">
-                <div className="flex items-center justify-between mb-12">
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-linear-to-br from-primary-500 to-primary-700 rounded-3xl shadow-xl shadow-primary-200/50 text-white flex items-center justify-center">
-                      <Cpu size={40} />
-                    </div>
+              <div className="p-12 md:p-16">
+                <div className="flex items-center justify-between mb-16">
+                  <div className="flex items-center gap-8">
+                    <motion.div
+                        initial={{ rotate: -10, scale: 0.9 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        transition={{ delay: 0.2, type: "spring" }}
+                        className="w-24 h-24 bg-linear-to-br from-primary-500 to-primary-700 rounded-[2rem] shadow-2xl shadow-primary-200/50 text-white flex items-center justify-center"
+                    >
+                      <Cpu size={48} />
+                    </motion.div>
                     <div>
-                      <h2 className="text-3xl font-black text-brand-900 tracking-tightest">
-                        {editingConfig.id ? 'Edit Policy' : 'Provision Policy'}
+                      <h2 className="text-4xl font-black text-brand-900 tracking-tightest">
+                        {editingConfig.id ? 'Modify Policy' : 'Provision Policy'}
                       </h2>
-                      <p className="text-brand-400 font-bold text-lg">Define orchestrator routing logic.</p>
+                      <p className="text-brand-400 font-bold text-xl mt-1">Define orchestrator routing logic.</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setEditingConfig(null)}
-                    className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300"
+                    className="w-14 h-14 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300 cursor-pointer"
                   >
-                    <X size={32} />
+                    <X size={36} />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-8">
+                  <div className="space-y-10">
                     <div>
-                      <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Intent Key</label>
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-[0.3em] mb-4 ml-1">Intent Key</label>
                       <input
                         type="text"
-                        className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
+                        className="w-full px-8 py-6 bg-brand-50/50 border border-brand-100 rounded-[1.5rem] focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50 placeholder:text-brand-200 shadow-inner"
                         value={editingConfig.intent}
                         onChange={(e) => setEditingConfig({ ...editingConfig, intent: e.target.value })}
                         disabled={!!editingConfig.id}
@@ -292,13 +298,13 @@ const AiModels: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] ml-1">Primary Provider</label>
+                      <div className="flex justify-between items-center mb-4">
+                        <label className="text-[10px] font-black text-brand-400 uppercase tracking-[0.3em] ml-1">Primary Provider</label>
                         <select
                           aria-label="Sort models"
                           value={modelSort}
                           onChange={(e) => setModelSort(e.target.value as SortOption)}
-                          className="bg-brand-50 border border-brand-100 rounded-lg text-[10px] font-black text-brand-400 px-2 py-1 outline-none focus:border-primary-500 uppercase tracking-widest"
+                          className="bg-white border border-brand-100 rounded-lg text-[10px] font-black text-brand-400 px-3 py-1.5 outline-none focus:border-primary-500 uppercase tracking-widest shadow-sm cursor-pointer"
                         >
                           <option value="name">Alpha</option>
                           <option value="price_asc">Price Asc</option>
@@ -307,7 +313,7 @@ const AiModels: React.FC = () => {
                       </div>
                       <select
                         aria-label="Primary Model"
-                        className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono appearance-none"
+                        className="w-full px-8 py-6 bg-brand-50/50 border border-brand-100 rounded-[1.5rem] focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono appearance-none shadow-inner cursor-pointer"
                         value={editingConfig.primaryModel}
                         onChange={(e) => setEditingConfig({ ...editingConfig, primaryModel: e.target.value })}
                       >
@@ -321,20 +327,20 @@ const AiModels: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-8">
+                  <div className="space-y-10">
                     <div>
-                      <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Fallback Stack</label>
-                      <div className="flex gap-3">
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-[0.3em] mb-4 ml-1">Fallback Stack</label>
+                      <div className="flex gap-4">
                         <input
                           type="text"
-                          className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono"
+                          className="w-full px-8 py-6 bg-brand-50/50 border border-brand-100 rounded-[1.5rem] focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono shadow-inner"
                           value={editingConfig.fallbackModels.join(', ')}
                           onChange={(e) => setEditingConfig({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
                           placeholder="node-a, node-b"
                         />
                          <select
                             aria-label="Add Fallback Model"
-                            className="w-1/3 px-4 py-5 bg-brand-50 border border-brand-100 rounded-2xl font-black text-brand-900 text-xs outline-none hover:bg-white transition-colors cursor-pointer"
+                            className="w-1/3 px-4 py-6 bg-white border border-brand-100 rounded-[1.5rem] font-black text-brand-900 text-xs outline-none hover:bg-brand-50 transition-colors cursor-pointer shadow-sm"
                             onChange={(e) => {
                                 if (e.target.value) {
                                     if (!editingConfig.fallbackModels.includes(e.target.value)) {
@@ -354,17 +360,19 @@ const AiModels: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Operational State</label>
+                      <label className="block text-[10px] font-black text-brand-400 uppercase tracking-[0.3em] mb-4 ml-1">Operational State</label>
                       <button
                         onClick={() => setEditingConfig({ ...editingConfig, isEnabled: !editingConfig.isEnabled })}
-                        className={`w-full flex items-center justify-between px-8 py-5 rounded-2xl border transition-all duration-500 ${
+                        className={`w-full flex items-center justify-between px-10 py-7 rounded-[1.5rem] border transition-all duration-500 cursor-pointer ${
                           editingConfig.isEnabled
                             ? 'bg-success-50 border-success-200 text-success-700 shadow-premium shadow-success-100/30'
                             : 'bg-brand-50 border-brand-100 text-brand-300'
                         }`}
                       >
-                        <span className="font-black uppercase tracking-widest">{editingConfig.isEnabled ? 'Active & Routing' : 'Deactivated'}</span>
-                        {editingConfig.isEnabled ? <Check size={24} /> : <X size={24} />}
+                        <span className="font-black uppercase tracking-widest text-lg">{editingConfig.isEnabled ? 'Active & Routing' : 'Deactivated'}</span>
+                        <div className={`p-2 rounded-full ${editingConfig.isEnabled ? 'bg-success-500 text-white shadow-lg shadow-success-500/50' : 'bg-brand-200 text-white'}`}>
+                            {editingConfig.isEnabled ? <Check size={24} /> : <X size={24} />}
+                        </div>
                       </button>
                     </div>
                   </div>
