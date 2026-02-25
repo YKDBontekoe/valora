@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
-using Valora.Api.Services;
+using Valora.Application.Common.Interfaces;
 
 namespace Valora.Api.Middleware;
 

@@ -54,6 +54,8 @@ public static class DependencyInjection
         // Services
         services.AddSingleton(TimeProvider.System);
         services.AddMemoryCache();
+        services.AddSingleton<IRequestMetricsService, RequestMetricsService>();
+        services.AddScoped<ISystemHealthService, SystemHealthService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiModelService, AiModelService>();

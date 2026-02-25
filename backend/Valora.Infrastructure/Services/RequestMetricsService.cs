@@ -1,13 +1,7 @@
-using System;
 using System.Collections.Concurrent;
+using Valora.Application.Common.Interfaces;
 
-namespace Valora.Api.Services;
-
-public interface IRequestMetricsService
-{
-    void RecordRequestDuration(long milliseconds);
-    double GetPercentile(double percentile);
-}
+namespace Valora.Infrastructure.Services;
 
 public class RequestMetricsService : IRequestMetricsService
 {
