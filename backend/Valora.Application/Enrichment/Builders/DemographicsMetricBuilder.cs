@@ -1,11 +1,11 @@
 using Valora.Application.DTOs;
-using Valora.Application.Enrichment.Scoring;
+using Valora.Domain.Common;
+using Valora.Domain.Services.Scoring;
 
 namespace Valora.Application.Enrichment.Builders;
 
 public static class DemographicsMetricBuilder
 {
-    private const string SourceCbs = "CBS StatLine 85618NED";
     private const string SourceValora = "Valora Composite";
 
     public static List<ContextMetricDto> Build(NeighborhoodStatsDto? cbs, List<string> warnings)
@@ -48,24 +48,24 @@ public static class DemographicsMetricBuilder
         }
         double? pFamily = CalculatePercent(familyHouseholdsCount, totalHouseholds);
 
-        var familyScore = DemographicsScorer.ScoreFamilyFriendly(pFamily, p0_14, cbs.AverageHouseholdSize);
-        var incomeScore = DemographicsScorer.ScoreIncome(cbs.AverageIncomePerInhabitant);
-        var educationScore = DemographicsScorer.ScoreEducation(cbs.EducationLow, cbs.EducationMedium, cbs.EducationHigh);
-        var urbanityScore = DemographicsScorer.ScoreUrbanity(cbs.Urbanity);
+        var familyScore = DemographicsScoringRules.ScoreFamilyFriendly(pFamily, p0_14, cbs.AverageHouseholdSize);
+        var incomeScore = DemographicsScoringRules.ScoreIncome(cbs.AverageIncomePerInhabitant);
+        var educationScore = DemographicsScoringRules.ScoreEducation(cbs.EducationLow, cbs.EducationMedium, cbs.EducationHigh);
+        var urbanityScore = DemographicsScoringRules.ScoreUrbanity(cbs.Urbanity);
 
         return
         [
-            new("age_0_14", "Age 0-14", p0_14, "%", null, SourceCbs),
-            new("age_15_24", "Age 15-24", p15_24, "%", null, SourceCbs),
-            new("age_25_44", "Age 25-44", p25_44, "%", null, SourceCbs),
-            new("age_45_64", "Age 45-64", p45_64, "%", null, SourceCbs),
-            new("age_65_plus", "Age 65+", p65Plus, "%", null, SourceCbs),
-            new("avg_household_size", "Avg Household Size", cbs.AverageHouseholdSize, "people", null, SourceCbs),
-            new("owner_occupied", "Owner-Occupied", cbs.PercentageOwnerOccupied, "%", null, SourceCbs),
-            new("single_households", "Single Households", pSingle, "%", null, SourceCbs),
-            new("income_per_inhabitant", "Avg Income per Inhabitant", cbs.AverageIncomePerInhabitant, "k€/year", incomeScore, SourceCbs),
-            new("education_high_share", "Higher Education Share", DemographicsScorer.ToPercent(cbs.EducationHigh, cbs.EducationLow, cbs.EducationMedium), "%", educationScore, SourceCbs),
-            new("urbanity_level", "Urbanity Level", DemographicsScorer.ParseUrbanityLevel(cbs.Urbanity), "level", urbanityScore, SourceCbs),
+            new("age_0_14", "Age 0-14", p0_14, "%", null, DataSources.CbsDemographics),
+            new("age_15_24", "Age 15-24", p15_24, "%", null, DataSources.CbsDemographics),
+            new("age_25_44", "Age 25-44", p25_44, "%", null, DataSources.CbsDemographics),
+            new("age_45_64", "Age 45-64", p45_64, "%", null, DataSources.CbsDemographics),
+            new("age_65_plus", "Age 65+", p65Plus, "%", null, DataSources.CbsDemographics),
+            new("avg_household_size", "Avg Household Size", cbs.AverageHouseholdSize, "people", null, DataSources.CbsDemographics),
+            new("owner_occupied", "Owner-Occupied", cbs.PercentageOwnerOccupied, "%", null, DataSources.CbsDemographics),
+            new("single_households", "Single Households", pSingle, "%", null, DataSources.CbsDemographics),
+            new("income_per_inhabitant", "Avg Income per Inhabitant", cbs.AverageIncomePerInhabitant, "k€/year", incomeScore, DataSources.CbsDemographics),
+            new("education_high_share", "Higher Education Share", DemographicsScoringRules.ToPercent(cbs.EducationHigh, cbs.EducationLow, cbs.EducationMedium), "%", educationScore, DataSources.CbsDemographics),
+            new("urbanity_level", "Urbanity Level", DemographicsScoringRules.ParseUrbanityLevel(cbs.Urbanity), "level", urbanityScore, DataSources.CbsDemographics),
             new("family_friendly", "Family-Friendly Score", familyScore, "score", familyScore, SourceValora)
         ];
     }

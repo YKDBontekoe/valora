@@ -1,13 +1,13 @@
-using Valora.Application.Enrichment.Scoring;
+using Valora.Domain.Services.Scoring;
 
 namespace Valora.UnitTests.Services;
 
-public class DemographicsScorerTests
+public class DemographicsScoringRulesTests
 {
     [Fact]
     public void ScoreFamilyFriendly_ReturnsNull_WhenAllInputsAreNull()
     {
-        var score = DemographicsScorer.ScoreFamilyFriendly(null, null, null);
+        var score = DemographicsScoringRules.ScoreFamilyFriendly(null, null, null);
         Assert.Null(score);
     }
 
@@ -21,14 +21,14 @@ public class DemographicsScorerTests
     [InlineData(20.0, 15.0, null, 50.0)] // Missing Size treated as neutral
     public void ScoreFamilyFriendly_CalculatesScoreCorrectly(double? pFamily, double? pChildren, double? avgSize, double expected)
     {
-        var score = DemographicsScorer.ScoreFamilyFriendly(pFamily, pChildren, avgSize);
+        var score = DemographicsScoringRules.ScoreFamilyFriendly(pFamily, pChildren, avgSize);
         Assert.Equal(expected, score);
     }
 
     [Fact]
     public void ScoreFamilyFriendly_ClampsTo100()
     {
-        var score = DemographicsScorer.ScoreFamilyFriendly(100.0, 100.0, 10.0);
+        var score = DemographicsScoringRules.ScoreFamilyFriendly(100.0, 100.0, 10.0);
         Assert.Equal(100.0, score);
     }
 
@@ -37,7 +37,7 @@ public class DemographicsScorerTests
     {
         // To get below 0: 50 + (0-20)*1.5 + (0-15)*2 + (1-2)*15
         // 50 - 30 - 30 - 15 = -25 -> should be 0
-        var score = DemographicsScorer.ScoreFamilyFriendly(0.0, 0.0, 1.0);
+        var score = DemographicsScoringRules.ScoreFamilyFriendly(0.0, 0.0, 1.0);
         Assert.Equal(0.0, score);
     }
 
@@ -49,7 +49,7 @@ public class DemographicsScorerTests
     [InlineData(40.0, 100.0)] // (40-18)*6.5 = 143 -> 100
     public void ScoreIncome_CalculatesCorrectly(double? income, double? expected)
     {
-        var score = DemographicsScorer.ScoreIncome(income);
+        var score = DemographicsScoringRules.ScoreIncome(income);
         Assert.Equal(expected, score);
     }
 
@@ -59,7 +59,7 @@ public class DemographicsScorerTests
     [InlineData(0, 0, 100, 100.0)] // Share = 100 * 1.4 = 140 -> 100
     public void ScoreEducation_CalculatesCorrectly(int? low, int? medium, int? high, double? expected)
     {
-        var score = DemographicsScorer.ScoreEducation(low, medium, high);
+        var score = DemographicsScoringRules.ScoreEducation(low, medium, high);
         if (expected.HasValue)
         {
             Assert.NotNull(score);
@@ -81,7 +81,7 @@ public class DemographicsScorerTests
     [InlineData(null, null)]
     public void ScoreUrbanity_CalculatesCorrectly(string? urbanity, double? expected)
     {
-        var score = DemographicsScorer.ScoreUrbanity(urbanity);
+        var score = DemographicsScoringRules.ScoreUrbanity(urbanity);
         Assert.Equal(expected, score);
     }
 
@@ -96,7 +96,7 @@ public class DemographicsScorerTests
     [InlineData("UNKNOWN", null)]
     public void ParseUrbanityLevel_ParsesCorrectly(string? input, double? expected)
     {
-        var result = DemographicsScorer.ParseUrbanityLevel(input);
+        var result = DemographicsScoringRules.ParseUrbanityLevel(input);
         Assert.Equal(expected, result);
     }
 
@@ -107,7 +107,7 @@ public class DemographicsScorerTests
     [InlineData(0, 0, 0, null)]
     public void ToPercent_CalculatesCorrectly(int? target, int? one, int? two, double? expected)
     {
-        var result = DemographicsScorer.ToPercent(target, one, two);
+        var result = DemographicsScoringRules.ToPercent(target, one, two);
         Assert.Equal(expected, result);
     }
 }

@@ -42,34 +42,26 @@ public class BatchJobService : IBatchJobService
 
     public async Task<PaginatedList<BatchJobSummaryDto>> GetJobsAsync(int pageIndex, int pageSize, string? status = null, string? type = null, string? search = null, string? sort = null, CancellationToken cancellationToken = default)
     {
-        BatchJobStatus? statusEnum = null;
-        if (!string.IsNullOrEmpty(status))
+        var statusValue = ParseEnum<BatchJobStatus>(status, "Invalid status");
+        var typeValue = ParseEnum<BatchJobType>(type, "Invalid job type");
+
+        return await _jobRepository.GetJobSummariesAsync(pageIndex, pageSize, statusValue, typeValue, search, sort, cancellationToken);
+    }
+
+    private static T? ParseEnum<T>(string? value, string errorMessagePrefix) where T : struct, Enum
+    {
+        if (string.IsNullOrEmpty(value))
         {
-            if (Enum.TryParse<BatchJobStatus>(status, true, out var parsedStatus))
-            {
-                statusEnum = parsedStatus;
-            }
-            else
-            {
-                 // Throwing ArgumentException for invalid input which will be mapped to 400 Bad Request by middleware
-                 throw new ArgumentException($"Invalid status: {status}");
-            }
+            return null;
         }
 
-        BatchJobType? typeEnum = null;
-        if (!string.IsNullOrEmpty(type))
+        if (Enum.TryParse<T>(value, true, out var result))
         {
-            if (Enum.TryParse<BatchJobType>(type, true, out var parsedType))
-            {
-                typeEnum = parsedType;
-            }
-            else
-            {
-                throw new ArgumentException($"Invalid job type: {type}");
-            }
+            return result;
         }
 
-        return await _jobRepository.GetJobSummariesAsync(pageIndex, pageSize, statusEnum, typeEnum, search, sort, cancellationToken);
+        // Throwing ArgumentException for invalid input which will be mapped to 400 Bad Request by middleware
+        throw new ArgumentException($"{errorMessagePrefix}: {value}");
     }
 
     public async Task<BatchJobDto> GetJobDetailsAsync(Guid id, CancellationToken cancellationToken = default)
