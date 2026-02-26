@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DatasetStatusModal from './DatasetStatusModal';
 import { adminService } from '../services/api';
+import type { DatasetStatus } from '../types';
+import type { Mock } from 'vitest';
 
 // Mock the adminService
 vi.mock('../services/api', () => ({
@@ -21,18 +23,18 @@ describe('DatasetStatusModal', () => {
   });
 
   it('renders loading state initially', async () => {
-    (adminService.getDatasetStatus as any).mockReturnValue(new Promise(() => {})); // Never resolves
+    (adminService.getDatasetStatus as Mock).mockReturnValue(new Promise(() => {})); // Never resolves
     render(<DatasetStatusModal isOpen={true} onClose={() => {}} />);
 
     expect(screen.getByText('Dataset Status')).toBeInTheDocument();
   });
 
   it('renders dataset items after loading', async () => {
-    const mockData = [
+    const mockData: DatasetStatus[] = [
       { city: 'Rotterdam', neighborhoodCount: 10, lastUpdated: new Date().toISOString() },
       { city: 'Amsterdam', neighborhoodCount: 20, lastUpdated: '2020-01-01T00:00:00Z' }, // Stale
     ];
-    (adminService.getDatasetStatus as any).mockResolvedValue(mockData);
+    (adminService.getDatasetStatus as Mock).mockResolvedValue(mockData);
 
     render(<DatasetStatusModal isOpen={true} onClose={() => {}} />);
 
@@ -46,7 +48,7 @@ describe('DatasetStatusModal', () => {
   });
 
   it('renders error state when API fails', async () => {
-    (adminService.getDatasetStatus as any).mockRejectedValue(new Error('API Error'));
+    (adminService.getDatasetStatus as Mock).mockRejectedValue(new Error('API Error'));
 
     render(<DatasetStatusModal isOpen={true} onClose={() => {}} />);
 
@@ -60,7 +62,7 @@ describe('DatasetStatusModal', () => {
   });
 
   it('calls onClose when X button is clicked', async () => {
-    (adminService.getDatasetStatus as any).mockResolvedValue([]);
+    (adminService.getDatasetStatus as Mock).mockResolvedValue([]);
     const handleClose = vi.fn();
     render(<DatasetStatusModal isOpen={true} onClose={handleClose} />);
 
