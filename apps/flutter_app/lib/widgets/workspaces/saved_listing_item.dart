@@ -97,7 +97,9 @@ class SavedListingItem extends StatelessWidget {
                             : ValoraColors.neutral400),
                     const SizedBox(width: 4),
                     Text(
-                      '${savedListing.commentCount} comments',
+                      savedListing.commentCount == 1
+                          ? '1 comment'
+                          : '${savedListing.commentCount} comments',
                       style: ValoraTypography.labelSmall.copyWith(
                         color: isDark
                             ? ValoraColors.neutral500
