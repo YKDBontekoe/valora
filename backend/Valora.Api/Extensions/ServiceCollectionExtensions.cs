@@ -164,6 +164,11 @@ public static class ServiceCollectionExtensions
                 var secret = configuration["JWT_SECRET"]
                              ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
 
+                if (secret.Length < 32)
+                {
+                    throw new InvalidOperationException("JWT_SECRET must be at least 32 characters long.");
+                }
+
                 if (!environment.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
                 {
                     throw new InvalidOperationException("Critical Security Risk: The application is running in a non-development environment with the default, insecure JWT_SECRET. You MUST override JWT_SECRET with a strong, random key in your environment variables.");
