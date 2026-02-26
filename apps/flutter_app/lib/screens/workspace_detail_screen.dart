@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
+import '../widgets/workspaces/saved_listing_item.dart';
 import '../models/activity_log.dart';
 import '../models/workspace.dart';
 import '../models/saved_listing.dart';
 import '../widgets/workspaces/member_management_widget.dart';
-import 'saved_listing_detail_screen.dart';
 
 class WorkspaceDetailScreen extends StatefulWidget {
   final String workspaceId;
@@ -130,8 +129,6 @@ class _SavedListingsTab extends StatelessWidget {
     return Selector<WorkspaceProvider, List<SavedListing>>(
       selector: (_, p) => p.savedListings,
       builder: (context, savedListings, child) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-
         if (savedListings.isEmpty) {
           return Center(
             child: ValoraEmptyState(
@@ -147,125 +144,7 @@ class _SavedListingsTab extends StatelessWidget {
           separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.sm),
           itemBuilder: (context, index) {
             final saved = savedListings[index];
-            final listing = saved.listing;
-            return ValoraCard(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: context.read<WorkspaceProvider>(),
-                      child: SavedListingDetailScreen(savedListing: saved),
-                    ),
-                  ),
-                );
-              },
-              padding: const EdgeInsets.all(ValoraSpacing.md),
-              child: Row(
-                children: [
-                  // Thumbnail
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: ValoraColors.primary.withValues(alpha: 0.08),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: listing?.imageUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: listing!.imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const ValoraShimmer(
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Icon(Icons.home_rounded,
-                                  color: ValoraColors.primary, size: 28),
-                            ),
-                          )
-                        : const Center(
-                            child: Icon(Icons.home_rounded,
-                                color: ValoraColors.primary, size: 28),
-                          ),
-                  ),
-                  const SizedBox(width: ValoraSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          listing?.address ?? 'Unknown Address',
-                          style: ValoraTypography.titleSmall.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (listing?.city != null &&
-                            listing!.city!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            listing.city!,
-                            style: ValoraTypography.bodySmall.copyWith(
-                              color: isDark
-                                  ? ValoraColors.neutral400
-                                  : ValoraColors.neutral500,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(Icons.chat_bubble_outline_rounded,
-                                size: 14,
-                                color: isDark
-                                    ? ValoraColors.neutral500
-                                    : ValoraColors.neutral400),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${saved.commentCount} comments',
-                              style: ValoraTypography.labelSmall.copyWith(
-                                color: isDark
-                                    ? ValoraColors.neutral500
-                                    : ValoraColors.neutral400,
-                              ),
-                            ),
-                            if (saved.notes != null &&
-                                saved.notes!.isNotEmpty) ...[
-                              const SizedBox(width: 12),
-                              Icon(Icons.note_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? ValoraColors.neutral500
-                                      : ValoraColors.neutral400),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  saved.notes!,
-                                  style: ValoraTypography.labelSmall.copyWith(
-                                    color: isDark
-                                        ? ValoraColors.neutral500
-                                        : ValoraColors.neutral400,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right_rounded,
-                      color: isDark
-                          ? ValoraColors.neutral500
-                          : ValoraColors.neutral400),
-                ],
-              ),
-            );
+            return SavedListingItem(savedListing: saved);
           },
         );
       },
