@@ -21,7 +21,7 @@ class FakeWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   List<Workspace> get workspaces => _workspaces;
 
-  bool _isDeletingWorkspace = false;
+  final bool _isDeletingWorkspace = false;
   @override
   bool get isDeletingWorkspace => _isDeletingWorkspace;
 
