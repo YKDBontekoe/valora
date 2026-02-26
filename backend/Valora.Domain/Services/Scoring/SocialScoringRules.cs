@@ -19,6 +19,22 @@ public static class SocialScoringRules
     /// Scores population density.
     /// Optimal density (~3500 people/km²) is preferred for access to amenities without overcrowding.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why 3500?</strong><br/>
+    /// Urban planning literature suggests that a density of ~30-40 dwellings per hectare (approx. 3500 people/km²)
+    /// is the "Goldilocks Zone" that supports frequent public transit and walkable local shops
+    /// while maintaining green space and privacy.
+    /// </para>
+    /// <para>
+    /// <strong>Heuristics:</strong>
+    /// <list type="bullet">
+    /// <item><strong>&lt; 500:</strong> Rural. High dependency on cars.</item>
+    /// <item><strong>~3500:</strong> Optimal. Walkable, vibrant.</item>
+    /// <item><strong>&gt; 7000:</strong> High Density. Risk of noise, heat islands, and lack of parking.</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
     public static double? ScoreDensity(int? density)
     {
         if (!density.HasValue) return null;

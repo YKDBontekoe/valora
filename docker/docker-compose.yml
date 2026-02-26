@@ -1,20 +1,21 @@
 services:
-  postgres:
-    image: postgres:18
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: valora-db
     environment:
-      POSTGRES_USER: valora
-      POSTGRES_PASSWORD: valora_dev
-      POSTGRES_DB: valora
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Valora_dev_password123!"
+      MSSQL_PID: "Express"
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - postgres_data_v18:/var/lib/postgresql
+      - mssql_data:/var/opt/mssql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U valora"]
-      interval: 5s
-      timeout: 5s
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Valora_dev_password123!' -Q 'SELECT 1' || exit 1"]
+      interval: 10s
       retries: 5
+      start_period: 10s
+      timeout: 3s
 
   backend:
     build:
@@ -26,7 +27,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=80
-      - DATABASE_URL=Host=postgres;Port=5432;Database=valora;Username=valora;Password=valora_dev
+      - DATABASE_URL=Server=sqlserver;Database=Valora;User Id=sa;Password=Valora_dev_password123!;TrustServerCertificate=True;
       - LOGGING__LOGLEVEL__DEFAULT=Information
       - LOGGING__LOGLEVEL__MICROSOFT_ASPNETCORE=Warning
       - ALLOWED_HOSTS=*
@@ -38,8 +39,8 @@ services:
       - ADMIN_EMAIL=admin@example.com
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-SecurePassword123!}
     depends_on:
-      postgres:
+      sqlserver:
         condition: service_healthy
 
 volumes:
-  postgres_data_v18:
+  mssql_data:

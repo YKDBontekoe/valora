@@ -13,8 +13,10 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 - [Quick Start](#quick-start-10-minutes)
 - [Architecture](#architecture)
 - [Key Concepts](#key-concepts)
+- [API Reference](#api-reference)
 - [Project Structure](#project-structure)
 - [Documentation Index](#documentation-index)
+- [Contributing](#contributing)
 <!-- markdownlint-enable MD051 -->
 
 ---
@@ -36,7 +38,7 @@ docker-compose -f docker/docker-compose.yml up -d
 ```
 *Troubleshooting:*
 - If `docker-compose` fails, ensure Docker Desktop is running.
-- Ensure port `5432` is not already in use by another Postgres instance.
+- Ensure port `1433` is not already in use by another SQL Server instance.
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
@@ -181,6 +183,17 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 
 ---
 
+## 📖 API Reference
+
+For detailed API documentation, including request/response examples and authentication details, please refer to the **[API Reference](docs/api-reference.md)**.
+
+Key endpoints:
+- `POST /api/context/report`: Generate a context report for an address.
+- `POST /api/auth/register`: Register a new user.
+- `POST /api/auth/login`: Authenticate and receive a JWT.
+
+---
+
 ## 📂 Project Structure
 
 ```
@@ -204,7 +217,20 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 - **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
 - **[Data Flow: Reading (Reports)](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
 - **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**: User registration and data saving.
+- **[Data Flow: Authentication](docs/onboarding-auth-flow.md)**: Login and token refresh flows.
 - **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Developer Guide](docs/developer-guide.md) for details on coding standards, testing requirements, and the pull request process.
+
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes (`git commit -m 'Add some amazing feature'`).
+4. Push to the branch (`git push origin feature/amazing-feature`).
+5. Open a Pull Request.
 
 ---
 
