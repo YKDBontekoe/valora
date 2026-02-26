@@ -91,7 +91,7 @@ Future<void> main() async {
           ),
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
           ProxyProvider<http.Client, AuthService>(
-            update: (_, client, __) => AuthService(client: client),
+            update: (_, client, previous) => AuthService(client: client),
           ),
           ChangeNotifierProxyProvider<AuthService, AuthProvider>(
             create: (context) =>

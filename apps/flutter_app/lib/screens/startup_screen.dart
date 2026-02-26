@@ -83,11 +83,16 @@ class _StartupScreenState extends State<StartupScreen>
       final authFuture = context.read<AuthProvider>().checkAuth();
       final minDurationFuture = Future.delayed(_minimumStartupDuration);
 
-      await Future.wait([
+      final futures = <Future<void>>[
         authFuture,
         minDurationFuture,
-        if (animationFuture != null) animationFuture,
-      ]);
+      ];
+
+      if (animationFuture != null) {
+        futures.add(animationFuture);
+      }
+
+      await Future.wait(futures);
 
       if (!mounted) return;
       _navigateToHome();
