@@ -108,50 +108,51 @@ void main() {
 
   group('MapUtils.getOverlayColor', () {
     test('returns correct colors for PricePerSquareMeter', () {
-      expect(MapUtils.getOverlayColor(6001, MapOverlayMetric.pricePerSquareMeter), Colors.red);
-      expect(MapUtils.getOverlayColor(4501, MapOverlayMetric.pricePerSquareMeter), Colors.orange);
-      expect(MapUtils.getOverlayColor(3001, MapOverlayMetric.pricePerSquareMeter), Colors.yellow);
-      expect(MapUtils.getOverlayColor(1000, MapOverlayMetric.pricePerSquareMeter), Colors.green);
+      expect(MapUtils.getOverlayColor(6001, MapOverlayMetric.pricePerSquareMeter), ValoraColors.scorePoor);
+      expect(MapUtils.getOverlayColor(4501, MapOverlayMetric.pricePerSquareMeter), ValoraColors.scoreAverage);
+      expect(MapUtils.getOverlayColor(3001, MapOverlayMetric.pricePerSquareMeter), ValoraColors.scoreGood);
+      expect(MapUtils.getOverlayColor(1000, MapOverlayMetric.pricePerSquareMeter), ValoraColors.scoreExcellent);
     });
 
     test('returns correct colors for CrimeRate (inverted)', () {
-      expect(MapUtils.getOverlayColor(101, MapOverlayMetric.crimeRate), Colors.red);
-      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.crimeRate), Colors.orange);
-      expect(MapUtils.getOverlayColor(21, MapOverlayMetric.crimeRate), Colors.yellow);
-      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.crimeRate), Colors.green);
+      expect(MapUtils.getOverlayColor(101, MapOverlayMetric.crimeRate), ValoraColors.scorePoor);
+      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.crimeRate), ValoraColors.scoreAverage);
+      expect(MapUtils.getOverlayColor(21, MapOverlayMetric.crimeRate), ValoraColors.scoreGood);
+      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.crimeRate), ValoraColors.scoreExcellent);
     });
 
     test('returns correct colors for default metrics (higher is better)', () {
       // Testing with PopulationDensity as a default case
-      expect(MapUtils.getOverlayColor(81, MapOverlayMetric.populationDensity), Colors.green);
-      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.populationDensity), Colors.orange);
-      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.populationDensity), Colors.red);
+      expect(MapUtils.getOverlayColor(81, MapOverlayMetric.populationDensity), ValoraColors.scoreExcellent);
+      expect(MapUtils.getOverlayColor(61, MapOverlayMetric.populationDensity), ValoraColors.scoreGood);
+      expect(MapUtils.getOverlayColor(41, MapOverlayMetric.populationDensity), ValoraColors.scoreAverage);
+      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.populationDensity), ValoraColors.scorePoor);
     });
   });
 
   group('MapUtils.getColorForScore', () {
     test('returns grey for null score', () {
-      expect(MapUtils.getColorForScore(null), Colors.grey);
+      expect(MapUtils.getColorForScore(null), ValoraColors.neutral400);
     });
 
     test('returns success for >= 80', () {
-      expect(MapUtils.getColorForScore(80), ValoraColors.success);
-      expect(MapUtils.getColorForScore(100), ValoraColors.success);
+      expect(MapUtils.getColorForScore(80), ValoraColors.scoreExcellent);
+      expect(MapUtils.getColorForScore(100), ValoraColors.scoreExcellent);
     });
 
     test('returns warning for >= 60', () {
-      expect(MapUtils.getColorForScore(60), ValoraColors.warning);
-      expect(MapUtils.getColorForScore(79), ValoraColors.warning);
+      expect(MapUtils.getColorForScore(60), ValoraColors.scoreGood);
+      expect(MapUtils.getColorForScore(79), ValoraColors.scoreGood);
     });
 
     test('returns orange for >= 40', () {
-      expect(MapUtils.getColorForScore(40), Colors.orange);
-      expect(MapUtils.getColorForScore(59), Colors.orange);
+      expect(MapUtils.getColorForScore(40), ValoraColors.scoreAverage);
+      expect(MapUtils.getColorForScore(59), ValoraColors.scoreAverage);
     });
 
     test('returns error for < 40', () {
-      expect(MapUtils.getColorForScore(39), ValoraColors.error);
-      expect(MapUtils.getColorForScore(0), ValoraColors.error);
+      expect(MapUtils.getColorForScore(39), ValoraColors.scorePoor);
+      expect(MapUtils.getColorForScore(0), ValoraColors.scorePoor);
     });
   });
 }

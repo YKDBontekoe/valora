@@ -51,14 +51,14 @@ class InsightsMap extends StatelessWidget {
           ),
       builder: (context, data, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final showOverlays = data.$1;
-        final showAmenities = data.$2;
-        final overlays = data.$3;
-        final overlayTiles = data.$4;
-        final amenities = data.$5;
-        final amenityClusters = data.$6;
-        final cities = data.$7;
-        final selectedFeature = data.$9;
+        final showOverlays = data.;
+        final showAmenities = data.;
+        final overlays = data.;
+        final overlayTiles = data.;
+        final amenities = data.;
+        final amenityClusters = data.;
+        final cities = data.;
+        final selectedFeature = data.;
 
         final provider = context.read<InsightsProvider>();
 
@@ -139,7 +139,7 @@ class InsightsMap extends StatelessWidget {
 
     return Polygon(
       points: points,
-      color: color.withValues(alpha: 0.26),
+      color: color.withValues(alpha: 0.20),
       borderColor: color,
       borderStrokeWidth: 1.5,
       label: overlay.displayValue,
@@ -163,9 +163,9 @@ class InsightsMap extends StatelessWidget {
 
     return Polygon(
       points: points,
-      color: color.withValues(alpha: 0.26),
-      borderColor: color.withValues(alpha: 0.1), // Faint border for tiles
-      borderStrokeWidth: 0.5,
+      color: color.withValues(alpha: 0.20),
+      borderColor: Colors.transparent, // Seamless heatmap look
+      borderStrokeWidth: 0.0,
       label: tile.displayValue,
     );
   }
@@ -173,8 +173,8 @@ class InsightsMap extends StatelessWidget {
   static Marker buildAmenityMarker(BuildContext context, MapAmenity amenity, bool isSelected, InsightsProvider provider) {
     return Marker(
       point: amenity.location,
-      width: isSelected ? 48 : 36,
-      height: isSelected ? 48 : 36,
+      width: isSelected ? 42 : 32,
+      height: isSelected ? 42 : 32,
       child: GestureDetector(
         onTap: () => provider.selectFeature(amenity),
         child: AnimatedContainer(
@@ -182,20 +182,20 @@ class InsightsMap extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
-            border: isSelected ? Border.all(color: ValoraColors.primary, width: 3) : null,
+            border: isSelected ? Border.all(color: ValoraColors.primary, width: 2) : null,
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                  ? ValoraColors.primary.withValues(alpha: 0.4)
-                  : Theme.of(context).shadowColor.withValues(alpha: 0.2),
-                blurRadius: isSelected ? 12 : 8,
+                  ? ValoraColors.primary.withValues(alpha: 0.3)
+                  : Theme.of(context).shadowColor.withValues(alpha: 0.15),
+                blurRadius: isSelected ? 8 : 4,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Icon(
             MapUtils.getAmenityIcon(amenity.type),
-            size: isSelected ? 24 : 18,
+            size: isSelected ? 20 : 16,
             color: ValoraColors.primary,
           ),
         ),
@@ -242,7 +242,7 @@ class InsightsMap extends StatelessWidget {
     InsightsProvider provider,
   ) {
     final color = MapUtils.getColorForScore(score);
-    final size = (city.count >= 120 ? 58.0 : city.count >= 60 ? 52.0 : 46.0) * (isSelected ? 1.2 : 1.0);
+    final size = isSelected ? 50.0 : 42.0;
 
     return Marker(
       point: city.location,
@@ -253,26 +253,19 @@ class InsightsMap extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: 0.95),
-                color.withValues(alpha: 0.72),
-              ],
-            ),
+            color: color.withValues(alpha: 0.9),
             shape: BoxShape.circle,
             border: Border.all(
               color: isSelected ? Colors.white : Theme.of(context).colorScheme.surface,
-              width: isSelected ? 4.0 : 2.2,
+              width: isSelected ? 3.0 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                  ? color.withValues(alpha: 0.5)
-                  : Theme.of(context).shadowColor.withValues(alpha: 0.2),
-                blurRadius: isSelected ? 16 : 12,
-                offset: const Offset(0, 4),
+                  ? color.withValues(alpha: 0.4)
+                  : Theme.of(context).shadowColor.withValues(alpha: 0.15),
+                blurRadius: isSelected ? 8 : 4,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
