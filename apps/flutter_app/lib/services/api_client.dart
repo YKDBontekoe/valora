@@ -252,14 +252,25 @@ class ApiClient {
       }
     }
 
-    developer.log(
-      'API Error: ${response.statusCode} - ${response.body}',
-      name: 'ApiClient',
-    );
-
     final String? message = _parseErrorMessage(response.body);
     final String? traceId = _parseTraceId(response.body);
     final String traceSuffix = traceId != null ? ' (Ref: $traceId)' : '';
+
+    developer.log(
+      'API Error: ${response.statusCode}$traceSuffix',
+      name: 'ApiClient',
+    );
+
+    // Report full details to CrashReportingService securely
+    CrashReportingService.captureException(
+      ServerException(message ?? 'API Error ${response.statusCode}'),
+      stackTrace: StackTrace.current,
+      context: {
+        'statusCode': response.statusCode,
+        'body': response.body,
+        'traceId': traceId,
+      },
+    );
 
     switch (response.statusCode) {
       case 400:
