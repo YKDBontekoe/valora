@@ -57,31 +57,32 @@ class MapUtils {
 
   static Color getOverlayColor(double value, MapOverlayMetric metric) {
     if (metric == MapOverlayMetric.pricePerSquareMeter) {
-      if (value > 6000) return Colors.red;
-      if (value > 4500) return Colors.orange;
-      if (value > 3000) return Colors.yellow;
-      return Colors.green;
+      if (value > 6000) return ValoraColors.scorePoor;
+      if (value > 4500) return ValoraColors.scoreAverage;
+      if (value > 3000) return ValoraColors.scoreGood;
+      return ValoraColors.scoreExcellent;
     }
 
     if (metric == MapOverlayMetric.crimeRate) {
       // For crime rate, higher is WORSE (invert scale)
-      if (value > 100) return Colors.red;
-      if (value > 50) return Colors.orange;
-      if (value > 20) return Colors.yellow;
-      return Colors.green;
+      if (value > 100) return ValoraColors.scorePoor;
+      if (value > 50) return ValoraColors.scoreAverage;
+      if (value > 20) return ValoraColors.scoreGood;
+      return ValoraColors.scoreExcellent;
     }
 
     // Default gradient (higher is better)
-    if (value > 80) return Colors.green;
-    if (value > 50) return Colors.orange;
-    return Colors.red;
+    if (value >= 80) return ValoraColors.scoreExcellent;
+    if (value >= 60) return ValoraColors.scoreGood;
+    if (value >= 40) return ValoraColors.scoreAverage;
+    return ValoraColors.scorePoor;
   }
 
   static Color getColorForScore(double? score) {
-    if (score == null) return Colors.grey;
-    if (score >= 80) return ValoraColors.success;
-    if (score >= 60) return ValoraColors.warning;
-    if (score >= 40) return Colors.orange;
-    return ValoraColors.error;
+    if (score == null) return ValoraColors.neutral400;
+    if (score >= 80) return ValoraColors.scoreExcellent;
+    if (score >= 60) return ValoraColors.scoreGood;
+    if (score >= 40) return ValoraColors.scoreAverage;
+    return ValoraColors.scorePoor;
   }
 }
