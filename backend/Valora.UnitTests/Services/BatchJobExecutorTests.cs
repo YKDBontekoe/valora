@@ -79,7 +79,7 @@ public class BatchJobExecutorTests
         await executor.ProcessNextJobAsync();
 
         // Verify state manager was called to fail the job
-        _stateManagerMock.Verify(x => x.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, exception, It.IsAny<CancellationToken>()), Times.Once);
+        _stateManagerMock.Verify(x => x.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, exception, CancellationToken.None), Times.Once);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class BatchJobExecutorTests
         await executor.ProcessNextJobAsync();
 
         // Verify state manager was called to fail the job with generic error (due to InvalidOperationException inside executor)
-        _stateManagerMock.Verify(x => x.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, It.IsAny<InvalidOperationException>(), It.IsAny<CancellationToken>()), Times.Once);
+        _stateManagerMock.Verify(x => x.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, It.IsAny<InvalidOperationException>(), CancellationToken.None), Times.Once);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class BatchJobExecutorTests
         await executor.ProcessNextJobAsync();
 
         // Verify state manager was called to fail the job
-        _stateManagerMock.Verify(x => x.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, It.IsAny<InvalidOperationException>(), It.IsAny<CancellationToken>()), Times.Once);
+        _stateManagerMock.Verify(x => x.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, It.IsAny<InvalidOperationException>(), CancellationToken.None), Times.Once);
     }
 
     [Fact]

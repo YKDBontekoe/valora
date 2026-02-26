@@ -73,7 +73,8 @@ public class BatchJobExecutor : IBatchJobExecutor
         }
         catch (Exception ex)
         {
-            await _stateManager.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, ex, cancellationToken);
+            // Use CancellationToken.None to ensure the failure status is persisted even if the job token was cancelled during shutdown
+            await _stateManager.UpdateJobStatusAsync(job, BatchJobStatus.Failed, null, ex, CancellationToken.None);
         }
     }
 
