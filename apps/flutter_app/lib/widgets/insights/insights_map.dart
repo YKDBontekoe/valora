@@ -51,14 +51,14 @@ class InsightsMap extends StatelessWidget {
           ),
       builder: (context, data, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final showOverlays = data.;
-        final showAmenities = data.;
-        final overlays = data.;
-        final overlayTiles = data.;
-        final amenities = data.;
-        final amenityClusters = data.;
-        final cities = data.;
-        final selectedFeature = data.;
+        final showOverlays = data.$1;
+        final showAmenities = data.$2;
+        final overlays = data.$3;
+        final overlayTiles = data.$4;
+        final amenities = data.$5;
+        final amenityClusters = data.$6;
+        final cities = data.$7;
+        final selectedFeature = data.$9;
 
         final provider = context.read<InsightsProvider>();
 
