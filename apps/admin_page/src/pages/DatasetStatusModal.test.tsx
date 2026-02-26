@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DatasetStatusModal from './DatasetStatusModal';
 import { adminService } from '../services/api';
 import type { DatasetStatus } from '../types';
-import type { Mock } from 'vitest';
 
 // Mock the adminService
 vi.mock('../services/api', () => ({
@@ -23,7 +22,7 @@ describe('DatasetStatusModal', () => {
   });
 
   it('renders loading state initially', async () => {
-    (adminService.getDatasetStatus as Mock).mockReturnValue(new Promise(() => {})); // Never resolves
+    vi.mocked(adminService.getDatasetStatus).mockReturnValue(new Promise(() => {})); // Never resolves
     render(<DatasetStatusModal isOpen={true} onClose={() => {}} />);
 
     expect(screen.getByText('Dataset Status')).toBeInTheDocument();
@@ -34,7 +33,7 @@ describe('DatasetStatusModal', () => {
       { city: 'Rotterdam', neighborhoodCount: 10, lastUpdated: new Date().toISOString() },
       { city: 'Amsterdam', neighborhoodCount: 20, lastUpdated: '2020-01-01T00:00:00Z' }, // Stale
     ];
-    (adminService.getDatasetStatus as Mock).mockResolvedValue(mockData);
+    vi.mocked(adminService.getDatasetStatus).mockResolvedValue(mockData);
 
     render(<DatasetStatusModal isOpen={true} onClose={() => {}} />);
 
@@ -48,7 +47,7 @@ describe('DatasetStatusModal', () => {
   });
 
   it('renders error state when API fails', async () => {
-    (adminService.getDatasetStatus as Mock).mockRejectedValue(new Error('API Error'));
+    vi.mocked(adminService.getDatasetStatus).mockRejectedValue(new Error('API Error'));
 
     render(<DatasetStatusModal isOpen={true} onClose={() => {}} />);
 
@@ -62,7 +61,7 @@ describe('DatasetStatusModal', () => {
   });
 
   it('calls onClose when X button is clicked', async () => {
-    (adminService.getDatasetStatus as Mock).mockResolvedValue([]);
+    vi.mocked(adminService.getDatasetStatus).mockResolvedValue([]);
     const handleClose = vi.fn();
     render(<DatasetStatusModal isOpen={true} onClose={handleClose} />);
 
