@@ -126,10 +126,9 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
               ),
             ),
           ),
-          Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
-            selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
-            builder: (context, data, child) {
-              if (data.isLoading && data.workspaces.isEmpty) {
+          Consumer<WorkspaceProvider>(
+            builder: (context, provider, child) {
+              if (provider.isWorkspacesLoading && provider.workspaces.isEmpty) {
                 return SliverPadding(
                   padding: const EdgeInsets.all(ValoraSpacing.md),
                   sliver: SliverList(
@@ -145,7 +144,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                   ),
                 );
               }
-              if (data.error != null && data.workspaces.isEmpty) {
+              if (provider.error != null && provider.workspaces.isEmpty) {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -160,7 +159,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                 );
               }
 
-              final displayList = _getFilteredAndSortedWorkspaces(data.workspaces);
+              final displayList = _getFilteredAndSortedWorkspaces(provider.workspaces);
 
               if (displayList.isEmpty) {
                 if (_searchQuery.isNotEmpty) {
