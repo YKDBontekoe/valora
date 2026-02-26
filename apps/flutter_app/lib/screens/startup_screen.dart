@@ -63,7 +63,8 @@ class _StartupScreenState extends State<StartupScreen>
           ),
         );
 
-    _startStartupSequence();
+    // Schedule startup sequence after the first frame to avoid build conflicts
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startStartupSequence());
   }
 
   Future<void> _startStartupSequence() async {
@@ -75,9 +76,6 @@ class _StartupScreenState extends State<StartupScreen>
         _controller.value = 1;
       }
 
-      // Allow initial build to complete before triggering auth check
-      // (which might notify listeners and cause rebuilds)
-      await Future.delayed(Duration.zero);
       if (!mounted) return;
 
       final authFuture = context.read<AuthProvider>().checkAuth();
