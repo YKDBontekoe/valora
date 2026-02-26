@@ -37,7 +37,8 @@ class MapLayerService {
     int zoomBucket,
     double zoom,
   ) async {
-    final String cacheKey = 'amenity_clusters:${bounds.cacheKey(zoomBucket)}';
+    // Include zoom in cache key to account for different clustering at different zoom levels
+    final String cacheKey = 'amenity_clusters:${bounds.cacheKey(zoomBucket)}:${zoom.toStringAsFixed(1)}';
     if (_amenityClustersCache.containsKey(cacheKey)) {
       return _amenityClustersCache[cacheKey]!;
     }
@@ -80,7 +81,8 @@ class MapLayerService {
     double zoom,
     String metric,
   ) async {
-    final String cacheKey = 'overlay_tiles:$metric:${bounds.cacheKey(zoomBucket)}';
+    // Include zoom in cache key to account for different tile sets at different zoom levels
+    final String cacheKey = 'overlay_tiles:$metric:${bounds.cacheKey(zoomBucket)}:${zoom.toStringAsFixed(1)}';
     if (_overlayTilesCache.containsKey(cacheKey)) {
       return _overlayTilesCache[cacheKey]!;
     }
