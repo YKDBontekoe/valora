@@ -4,9 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
+import '../../core/utils/error_message_utils.dart';
 import '../../providers/insights_provider.dart';
 import '../../widgets/valora_error_state.dart';
-import '../../widgets/valora_widgets.dart';
 import '../../widgets/insights/insights_header.dart';
 import '../../widgets/insights/insights_legend.dart';
 import '../../widgets/insights/insights_controls.dart';
@@ -174,7 +174,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Text(
-          error.toString(),
+          ErrorMessageUtils.getUserFriendlyMessage(error),
           style: const TextStyle(color: Colors.white, fontSize: 12.5),
           textAlign: TextAlign.center,
         ),
