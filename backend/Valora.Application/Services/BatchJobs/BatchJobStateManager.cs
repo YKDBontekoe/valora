@@ -66,7 +66,7 @@ public class BatchJobStateManager : IBatchJobStateManager
 
     private static void AppendLog(BatchJob job, string message, DateTime timestamp)
     {
-        var entry = $"[{timestamp:yyyy-MM-dd HH:mm:ss}] {message}";
+        var entry = $"[{timestamp:yyyy-MM-dd HH:mm:ss 'UTC'}] {message}";
         if (string.IsNullOrEmpty(job.ExecutionLog))
             job.ExecutionLog = entry;
         else
