@@ -13,6 +13,7 @@ public enum ActivityLogType
     CommentAdded,
     CommentReplied,
     RoleChanged,
+    WorkspaceUpdated,
     WorkspaceDeleted
 }
 

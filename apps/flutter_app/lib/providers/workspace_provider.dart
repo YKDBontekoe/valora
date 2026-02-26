@@ -59,6 +59,23 @@ class WorkspaceProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateWorkspace(String id, String name, String? description) async {
+    try {
+      final updatedWorkspace = await _repository.updateWorkspace(id, name, description);
+      final index = _workspaces.indexWhere((w) => w.id == id);
+      if (index != -1) {
+        _workspaces[index] = updatedWorkspace;
+        // Also update selected workspace if it matches
+        if (_selectedWorkspace?.id == id) {
+          _selectedWorkspace = updatedWorkspace;
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> deleteWorkspace(String id) async {
     _isDeletingWorkspace = true;
     _error = null;
@@ -111,6 +128,30 @@ class WorkspaceProvider extends ChangeNotifier {
     try {
       await _repository.inviteMember(_selectedWorkspace!.id, email, role.name);
       _members = await _repository.getWorkspaceMembers(_selectedWorkspace!.id);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> removeMember(String memberId) async {
+    if (_selectedWorkspace == null) return;
+    try {
+      await _repository.removeMember(_selectedWorkspace!.id, memberId);
+      _members = _members.where((m) => m.id != memberId).toList();
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> leaveWorkspace(String memberId) async {
+    if (_selectedWorkspace == null) return;
+    try {
+      await _repository.removeMember(_selectedWorkspace!.id, memberId);
+      // Remove workspace from local list
+      _workspaces = _workspaces.where((w) => w.id != _selectedWorkspace!.id).toList();
+      _selectedWorkspace = null;
       notifyListeners();
     } catch (e) {
       rethrow;

@@ -58,16 +58,33 @@ public class WorkspaceMemberService : IWorkspaceMemberService
 
     public async Task RemoveMemberAsync(string userId, Guid workspaceId, Guid memberId, CancellationToken ct = default)
     {
-        var currentUserRole = await GetUserRole(userId, workspaceId, ct);
-        if (currentUserRole != WorkspaceRole.Owner) throw new ForbiddenAccessException();
-
         var member = await _repository.GetMemberAsync(memberId, ct);
         if (member == null || member.WorkspaceId != workspaceId) throw new NotFoundException(nameof(WorkspaceMember), memberId);
 
-        if (member.UserId == userId) throw new InvalidOperationException("Cannot remove yourself.");
+        var isSelf = member.UserId == userId;
+
+        if (isSelf)
+        {
+            // Leaving workspace
+            if (member.Role == WorkspaceRole.Owner)
+            {
+                // Check if there are other owners
+                // For now, prevent owners from leaving. They must delete the workspace or transfer ownership.
+                throw new InvalidOperationException("Owners cannot leave the workspace. Delete the workspace instead.");
+            }
+        }
+        else
+        {
+            // Removing someone else
+            var currentUserRole = await GetUserRole(userId, workspaceId, ct);
+            if (currentUserRole != WorkspaceRole.Owner) throw new ForbiddenAccessException();
+        }
 
         await _repository.RemoveMemberAsync(member, ct);
-        await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, "Removed a member", ct);
+
+        var summary = isSelf ? "Left the workspace" : "Removed a member";
+        await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberRemoved, summary, ct);
+
         await _repository.SaveChangesAsync(ct);
     }
 

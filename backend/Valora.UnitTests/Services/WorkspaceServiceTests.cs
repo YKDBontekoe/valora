@@ -53,6 +53,66 @@ public class WorkspaceServiceTests
     }
 
     [Fact]
+    public async Task UpdateWorkspaceAsync_ShouldUpdateWorkspaceAndLogActivity()
+    {
+        var userId = "user1";
+        var workspace = new Workspace
+        {
+            Name = "Original Name",
+            Description = "Original Description",
+            OwnerId = userId,
+            Members = new List<WorkspaceMember> { new WorkspaceMember { UserId = userId, Role = WorkspaceRole.Owner } }
+        };
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        var dto = new UpdateWorkspaceDto("Updated Name", "Updated Description");
+
+        var result = await _service.UpdateWorkspaceAsync(userId, workspace.Id, dto);
+
+        Assert.NotNull(result);
+        Assert.Equal("Updated Name", result.Name);
+        Assert.Equal("Updated Description", result.Description);
+
+        var updatedWorkspace = await _context.Workspaces.FirstAsync(w => w.Id == workspace.Id);
+        Assert.Equal("Updated Name", updatedWorkspace.Name);
+        Assert.Equal("Updated Description", updatedWorkspace.Description);
+
+        var log = await _context.ActivityLogs.FirstAsync(l => l.WorkspaceId == workspace.Id && l.Type == ActivityLogType.WorkspaceUpdated);
+        Assert.Equal("Workspace updated: Updated Name", log.Summary);
+    }
+
+    [Fact]
+    public async Task UpdateWorkspaceAsync_ShouldThrowForbidden_WhenUserNotOwner()
+    {
+        var ownerId = "owner";
+        var otherId = "other";
+        var workspace = new Workspace
+        {
+            Name = "Original Name",
+            OwnerId = ownerId,
+            Members = new List<WorkspaceMember>
+            {
+                new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner },
+                new WorkspaceMember { UserId = otherId, Role = WorkspaceRole.Editor }
+            }
+        };
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        var dto = new UpdateWorkspaceDto("Updated Name", "Updated Description");
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() => _service.UpdateWorkspaceAsync(otherId, workspace.Id, dto));
+    }
+
+    [Fact]
+    public async Task UpdateWorkspaceAsync_ShouldThrowNotFound_WhenWorkspaceDoesNotExist()
+    {
+        var dto = new UpdateWorkspaceDto("Updated Name", "Updated Description");
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.UpdateWorkspaceAsync("user", Guid.NewGuid(), dto));
+    }
+
+    [Fact]
     public async Task CreateWorkspaceAsync_ShouldThrow_WhenLimitReached()
     {
         var userId = "user1";

@@ -1,12 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
 import 'package:valora_app/screens/workspace_detail_screen.dart';
 import 'package:valora_app/models/workspace.dart';
 import 'package:valora_app/models/saved_listing.dart';
 import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/models/comment.dart';
+
+class MockAuthProvider extends ChangeNotifier implements AuthProvider {
+  @override
+  String? get email => 'owner@example.com';
+
+  @override
+  bool get isAuthenticated => true;
+
+  @override
+  bool get isLoading => false;
+
+  @override
+  String? get token => 'token';
+
+  @override
+  Future<void> checkAuth() async {}
+  @override
+  Future<void> login(String email, String password) async {}
+  @override
+  Future<void> register(String email, String password, String confirmPassword) async {}
+  @override
+  Future<void> logout() async {}
+  @override
+  Future<String?> refreshSession() async => null;
+  @override
+  Future<void> loginWithGoogle() async {}
+}
 
 // Create a simple mock manually instead of using Mockito's generator for this quick test
 class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
@@ -63,6 +91,15 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   Future<void> inviteMember(String email, WorkspaceRole role) async {}
 
   @override
+  Future<void> removeMember(String memberId) async {}
+
+  @override
+  Future<void> leaveWorkspace(String memberId) async {}
+
+  @override
+  Future<void> updateWorkspace(String id, String name, String? description) async {}
+
+  @override
   Future<void> saveListing(String listingId, String? notes) async {}
 
   @override
@@ -75,11 +112,15 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
 void main() {
   testWidgets('WorkspaceDetailScreen renders correctly', (WidgetTester tester) async {
     final mockProvider = MockWorkspaceProvider();
+    final mockAuthProvider = MockAuthProvider();
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<WorkspaceProvider>.value(
-          value: mockProvider,
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<WorkspaceProvider>.value(value: mockProvider),
+            ChangeNotifierProvider<AuthProvider>.value(value: mockAuthProvider),
+          ],
           child: const WorkspaceDetailScreen(workspaceId: '1'),
         ),
       ),

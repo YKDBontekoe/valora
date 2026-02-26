@@ -46,6 +46,13 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   }
 
   @override
+  Future<void> removeMember(String memberId) async {}
+  @override
+  Future<void> leaveWorkspace(String memberId) async {}
+  @override
+  Future<void> updateWorkspace(String id, String name, String? description) async {}
+
+  @override
   Future<void> fetchWorkspaces() async {}
   @override
   Future<void> createWorkspace(String name, String? description) async {}
