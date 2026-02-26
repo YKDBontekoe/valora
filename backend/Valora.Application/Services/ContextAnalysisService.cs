@@ -96,12 +96,19 @@ public class ContextAnalysisService : IContextAnalysisService
             sb.AppendLine(PromptSanitizer.Sanitize(profile.Preferences));
         }
 
-        if (profile.DisallowedSuggestions?.Any() == true)
+        if (profile.DisallowedSuggestions != null)
         {
-            sb.AppendLine("Disallowed Suggestions (Do NOT suggest these):");
-            foreach (var disallowed in profile.DisallowedSuggestions)
+            var validDisallowed = profile.DisallowedSuggestions
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+
+            if (validDisallowed.Any())
             {
-                sb.AppendLine($"- {PromptSanitizer.Sanitize(disallowed)}");
+                sb.AppendLine("Disallowed Suggestions (Do NOT suggest these):");
+                foreach (var disallowed in validDisallowed)
+                {
+                    sb.AppendLine($"- {PromptSanitizer.Sanitize(disallowed)}");
+                }
             }
         }
 

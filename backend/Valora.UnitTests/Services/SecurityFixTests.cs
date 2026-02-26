@@ -119,11 +119,11 @@ public class SecurityFixTests
         };
 
         // Access private method via reflection
-        var method = typeof(ContextAnalysisService).GetMethod("AugmentSystemPrompt", BindingFlags.NonPublic | BindingFlags.Instance);
+        var method = typeof(ContextAnalysisService).GetMethod("ApplyProfilePreferences", BindingFlags.NonPublic | BindingFlags.Static);
         var basePrompt = "Base prompt.";
 
         // Act
-        var result = (string)method!.Invoke(service, new object[] { basePrompt, maliciousProfile })!;
+        var result = (string)method!.Invoke(null, new object[] { basePrompt, maliciousProfile })!;
 
         // Assert
         result.Should().Contain("&lt;script&gt;alert(&apos;xss&apos;)&lt;/script&gt;"); // Sanitized script
