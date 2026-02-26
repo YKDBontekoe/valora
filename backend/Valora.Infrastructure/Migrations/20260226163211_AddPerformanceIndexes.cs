@@ -10,19 +10,27 @@ namespace Valora.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Use ONLINE = ON to prevent table locking during index creation in SQL Server
-            // This allows the application to remain responsive during migration
-            migrationBuilder.Sql("CREATE INDEX [IX_Workspaces_CreatedAt] ON [Workspaces] ([CreatedAt]) WITH (ONLINE = ON)");
+            migrationBuilder.CreateIndex(
+                name: "IX_Workspaces_CreatedAt",
+                table: "Workspaces",
+                column: "CreatedAt");
 
-            migrationBuilder.Sql("CREATE INDEX [IX_SavedListings_WorkspaceId_CreatedAt] ON [SavedListings] ([WorkspaceId], [CreatedAt]) WITH (ONLINE = ON)");
+            migrationBuilder.CreateIndex(
+                name: "IX_SavedListings_WorkspaceId_CreatedAt",
+                table: "SavedListings",
+                columns: new[] { "WorkspaceId", "CreatedAt" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP INDEX [IX_Workspaces_CreatedAt] ON [Workspaces]");
+            migrationBuilder.DropIndex(
+                name: "IX_Workspaces_CreatedAt",
+                table: "Workspaces");
 
-            migrationBuilder.Sql("DROP INDEX [IX_SavedListings_WorkspaceId_CreatedAt] ON [SavedListings]");
+            migrationBuilder.DropIndex(
+                name: "IX_SavedListings_WorkspaceId_CreatedAt",
+                table: "SavedListings");
         }
     }
 }
