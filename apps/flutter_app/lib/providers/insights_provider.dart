@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../core/utils/map_bounds.dart';
 import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
 import '../repositories/map_repository.dart';
+import '../services/map_layer_service.dart';
 
 enum InsightMetric { composite, safety, social, amenities }
 
@@ -17,6 +19,7 @@ enum MapMode { cities, overlays, amenities }
 
 class InsightsProvider extends ChangeNotifier {
   MapRepository _repository;
+  MapLayerService _mapLayerService;
 
   // State
   List<MapCityInsight> _cityInsights = [];
@@ -35,17 +38,11 @@ class InsightsProvider extends ChangeNotifier {
   InsightMetric _selectedMetric = InsightMetric.composite;
   MapOverlayMetric _selectedOverlayMetric = MapOverlayMetric.pricePerSquareMeter;
 
-  // Caching
-  final Map<String, List<MapAmenity>> _amenitiesCache = {};
-  final Map<String, List<MapAmenityCluster>> _amenityClustersCache = {};
-  final Map<String, List<MapOverlay>> _overlaysCache = {};
-  final Map<String, List<MapOverlayTile>> _overlayTilesCache = {};
-
   // Coverage tracking
-  _MapBounds? _amenitiesCoverage;
-  _MapBounds? _amenityClustersCoverage;
-  _MapBounds? _overlaysCoverage;
-  _MapBounds? _overlayTilesCoverage;
+  MapBounds? _amenitiesCoverage;
+  MapBounds? _amenityClustersCoverage;
+  MapBounds? _overlaysCoverage;
+  MapBounds? _overlayTilesCoverage;
 
   int? _amenityClustersCoverageZoomBucket;
   int? _overlayTilesCoverageZoomBucket;
@@ -55,10 +52,11 @@ class InsightsProvider extends ChangeNotifier {
 
   static const double _prefetchPaddingFactor = 0.5;
 
-  InsightsProvider(this._repository);
+  InsightsProvider(this._repository) : _mapLayerService = MapLayerService(_repository);
 
   void update(MapRepository repository) {
     _repository = repository;
+    _mapLayerService = MapLayerService(repository);
   }
 
   // Getters
@@ -159,7 +157,7 @@ class InsightsProvider extends ChangeNotifier {
     required LatLngBounds bounds,
   }) async {
     _mapError = null;
-    final _MapBounds viewport = _MapBounds(
+    final MapBounds viewport = MapBounds(
       minLat: bounds.south,
       minLon: bounds.west,
       maxLat: bounds.north,
@@ -177,7 +175,7 @@ class InsightsProvider extends ChangeNotifier {
         // Fetch individual amenities
         _amenityClusters = []; // Clear clusters
         if (_amenitiesCoverage == null || !_amenitiesCoverage!.contains(viewport)) {
-          tasks.add(_fetchAmenitiesForViewport(viewport, zoomBucket));
+          tasks.add(_fetchAmenities(viewport, zoomBucket));
         }
       } else {
         // Fetch clusters
@@ -185,7 +183,7 @@ class InsightsProvider extends ChangeNotifier {
         if (_amenityClustersCoverage == null ||
             !_amenityClustersCoverage!.contains(viewport) ||
             _amenityClustersCoverageZoomBucket != zoomBucket) {
-          tasks.add(_fetchAmenityClustersForViewport(viewport, zoomBucket, zoom));
+          tasks.add(_fetchAmenityClusters(viewport, zoomBucket, zoom));
         }
       }
     }
@@ -200,7 +198,7 @@ class InsightsProvider extends ChangeNotifier {
         if (_overlaysCoverage == null ||
             !_overlaysCoverage!.contains(viewport) ||
             _overlaysCoverageMetric != metric) {
-          tasks.add(_fetchOverlaysForViewport(viewport, zoomBucket, metric));
+          tasks.add(_fetchOverlays(viewport, zoomBucket, metric));
         }
       } else {
         // Fetch overlay tiles (heatmap/grid)
@@ -209,7 +207,7 @@ class InsightsProvider extends ChangeNotifier {
             !_overlayTilesCoverage!.contains(viewport) ||
             _overlayTilesCoverageZoomBucket != zoomBucket ||
             _overlayTilesCoverageMetric != metric) {
-          tasks.add(_fetchOverlayTilesForViewport(viewport, zoomBucket, zoom, metric));
+          tasks.add(_fetchOverlayTiles(viewport, zoomBucket, zoom, metric));
         }
       }
     }
@@ -328,29 +326,13 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
-  Future<_LayerFetchResult> _fetchAmenitiesForViewport(
-    _MapBounds viewport,
+  Future<_LayerFetchResult> _fetchAmenities(
+    MapBounds viewport,
     int zoomBucket,
   ) async {
-    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'amenities:${bounds.cacheKey(zoomBucket)}';
-    final cached = _amenitiesCache[cacheKey];
-    if (cached != null) {
-      return _LayerFetchResult.amenities(
-        amenities: cached,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-      );
-    }
-
+    final MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
     try {
-      final result = await _repository.getMapAmenities(
-        minLat: bounds.minLat,
-        minLon: bounds.minLon,
-        maxLat: bounds.maxLat,
-        maxLon: bounds.maxLon,
-      );
-      _amenitiesCache[cacheKey] = result;
+      final result = await _mapLayerService.getAmenities(bounds, zoomBucket);
       return _LayerFetchResult.amenities(
         amenities: result,
         bounds: bounds,
@@ -361,31 +343,14 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
-  Future<_LayerFetchResult> _fetchAmenityClustersForViewport(
-    _MapBounds viewport,
+  Future<_LayerFetchResult> _fetchAmenityClusters(
+    MapBounds viewport,
     int zoomBucket,
     double zoom,
   ) async {
-    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'amenity_clusters:${bounds.cacheKey(zoomBucket)}';
-    final cached = _amenityClustersCache[cacheKey];
-    if (cached != null) {
-      return _LayerFetchResult.amenityClusters(
-        amenityClusters: cached,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-      );
-    }
-
+    final MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
     try {
-      final result = await _repository.getMapAmenityClusters(
-        minLat: bounds.minLat,
-        minLon: bounds.minLon,
-        maxLat: bounds.maxLat,
-        maxLon: bounds.maxLon,
-        zoom: zoom,
-      );
-      _amenityClustersCache[cacheKey] = result;
+      final result = await _mapLayerService.getAmenityClusters(bounds, zoomBucket, zoom);
       return _LayerFetchResult.amenityClusters(
         amenityClusters: result,
         bounds: bounds,
@@ -396,32 +361,14 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
-  Future<_LayerFetchResult> _fetchOverlaysForViewport(
-    _MapBounds viewport,
+  Future<_LayerFetchResult> _fetchOverlays(
+    MapBounds viewport,
     int zoomBucket,
     String metric,
   ) async {
-    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'overlays:$metric:${bounds.cacheKey(zoomBucket)}';
-    final cached = _overlaysCache[cacheKey];
-    if (cached != null) {
-      return _LayerFetchResult.overlays(
-        overlays: cached,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-        metric: metric,
-      );
-    }
-
+    final MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
     try {
-      final result = await _repository.getMapOverlays(
-        minLat: bounds.minLat,
-        minLon: bounds.minLon,
-        maxLat: bounds.maxLat,
-        maxLon: bounds.maxLon,
-        metric: metric,
-      );
-      _overlaysCache[cacheKey] = result;
+      final result = await _mapLayerService.getOverlays(bounds, zoomBucket, metric);
       return _LayerFetchResult.overlays(
         overlays: result,
         bounds: bounds,
@@ -433,34 +380,15 @@ class InsightsProvider extends ChangeNotifier {
     }
   }
 
-  Future<_LayerFetchResult> _fetchOverlayTilesForViewport(
-    _MapBounds viewport,
+  Future<_LayerFetchResult> _fetchOverlayTiles(
+    MapBounds viewport,
     int zoomBucket,
     double zoom,
     String metric,
   ) async {
-    final _MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
-    final String cacheKey = 'overlay_tiles:$metric:${bounds.cacheKey(zoomBucket)}';
-    final cached = _overlayTilesCache[cacheKey];
-    if (cached != null) {
-      return _LayerFetchResult.overlayTiles(
-        overlayTiles: cached,
-        bounds: bounds,
-        zoomBucket: zoomBucket,
-        metric: metric,
-      );
-    }
-
+    final MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
     try {
-      final result = await _repository.getMapOverlayTiles(
-        minLat: bounds.minLat,
-        minLon: bounds.minLon,
-        maxLat: bounds.maxLat,
-        maxLon: bounds.maxLon,
-        zoom: zoom,
-        metric: metric,
-      );
-      _overlayTilesCache[cacheKey] = result;
+      final result = await _mapLayerService.getOverlayTiles(bounds, zoomBucket, zoom, metric);
       return _LayerFetchResult.overlayTiles(
         overlayTiles: result,
         bounds: bounds,
@@ -471,46 +399,6 @@ class InsightsProvider extends ChangeNotifier {
       return _LayerFetchResult.error(_MapLayer.overlayTiles, e);
     }
   }
-}
-
-class _MapBounds {
-  const _MapBounds({
-    required this.minLat,
-    required this.minLon,
-    required this.maxLat,
-    required this.maxLon,
-  });
-
-  final double minLat;
-  final double minLon;
-  final double maxLat;
-  final double maxLon;
-
-  _MapBounds expand(double factor) {
-    final latSpan = maxLat - minLat;
-    final lonSpan = maxLon - minLon;
-    final latPadding = latSpan * factor;
-    final lonPadding = lonSpan * factor;
-    return _MapBounds(
-      minLat: minLat - latPadding,
-      minLon: minLon - lonPadding,
-      maxLat: maxLat + latPadding,
-      maxLon: maxLon + lonPadding,
-    );
-  }
-
-  bool contains(_MapBounds other) {
-    return other.minLat >= minLat &&
-        other.minLon >= minLon &&
-        other.maxLat <= maxLat &&
-        other.maxLon <= maxLon;
-  }
-
-  String cacheKey(int zoomBucket) {
-    return '$zoomBucket:${_round(minLat)}:${_round(minLon)}:${_round(maxLat)}:${_round(maxLon)}';
-  }
-
-  String _round(double value) => value.toStringAsFixed(3);
 }
 
 enum _MapLayer { amenities, overlays, amenityClusters, overlayTiles }
@@ -533,14 +421,14 @@ class _LayerFetchResult {
   final List<MapAmenityCluster>? amenityClusters;
   final List<MapOverlay>? overlays;
   final List<MapOverlayTile>? overlayTiles;
-  final _MapBounds? bounds;
+  final MapBounds? bounds;
   final int? zoomBucket;
   final String? metric;
   final Object? error;
 
   factory _LayerFetchResult.amenities({
     required List<MapAmenity> amenities,
-    required _MapBounds bounds,
+    required MapBounds bounds,
     required int zoomBucket,
   }) {
     return _LayerFetchResult._(
@@ -553,7 +441,7 @@ class _LayerFetchResult {
 
   factory _LayerFetchResult.amenityClusters({
     required List<MapAmenityCluster> amenityClusters,
-    required _MapBounds bounds,
+    required MapBounds bounds,
     required int zoomBucket,
   }) {
     return _LayerFetchResult._(
@@ -566,7 +454,7 @@ class _LayerFetchResult {
 
   factory _LayerFetchResult.overlays({
     required List<MapOverlay> overlays,
-    required _MapBounds bounds,
+    required MapBounds bounds,
     required int zoomBucket,
     required String metric,
   }) {
@@ -581,7 +469,7 @@ class _LayerFetchResult {
 
   factory _LayerFetchResult.overlayTiles({
     required List<MapOverlayTile> overlayTiles,
-    required _MapBounds bounds,
+    required MapBounds bounds,
     required int zoomBucket,
     required String metric,
   }) {
