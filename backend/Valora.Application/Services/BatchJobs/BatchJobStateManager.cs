@@ -24,46 +24,49 @@ public class BatchJobStateManager : IBatchJobStateManager
             job.Status = BatchJobStatus.Processing;
         }
 
-        job.StartedAt = DateTime.UtcNow;
-        AppendLog(job, "Job started.");
+        var now = DateTime.UtcNow;
+        job.StartedAt = now;
+        AppendLog(job, "Job started.", now);
         await _jobRepository.UpdateAsync(job, cancellationToken);
     }
 
     public async Task MarkJobCompletedAsync(BatchJob job, string? message = null, CancellationToken cancellationToken = default)
     {
+        var now = DateTime.UtcNow;
         job.Status = BatchJobStatus.Completed;
-        job.CompletedAt = DateTime.UtcNow;
+        job.CompletedAt = now;
         job.Progress = 100;
-        AppendLog(job, message ?? "Job completed successfully.");
+        AppendLog(job, message ?? "Job completed successfully.", now);
 
         await _jobRepository.UpdateAsync(job, cancellationToken);
     }
 
     public async Task MarkJobFailedAsync(BatchJob job, string? message = null, Exception? ex = null, CancellationToken cancellationToken = default)
     {
+        var now = DateTime.UtcNow;
         job.Status = BatchJobStatus.Failed;
-        job.CompletedAt = DateTime.UtcNow;
+        job.CompletedAt = now;
 
         if (ex != null)
         {
             // Do not expose raw exception details to the public job status
             job.Error = "Job failed due to an internal error.";
             _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
-            AppendLog(job, "Job failed due to an internal error.");
+            AppendLog(job, "Job failed due to an internal error.", now);
         }
         else
         {
             job.Error = message ?? "Job failed.";
             _logger.LogInformation("Batch job {JobId} cancelled/failed: {Message}", job.Id, job.Error);
-            AppendLog(job, message ?? "Job failed.");
+            AppendLog(job, message ?? "Job failed.", now);
         }
 
         await _jobRepository.UpdateAsync(job, cancellationToken);
     }
 
-    private static void AppendLog(BatchJob job, string message)
+    private static void AppendLog(BatchJob job, string message, DateTime timestamp)
     {
-        var entry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
+        var entry = $"[{timestamp:yyyy-MM-dd HH:mm:ss}] {message}";
         if (string.IsNullOrEmpty(job.ExecutionLog))
             job.ExecutionLog = entry;
         else
