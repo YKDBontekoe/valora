@@ -99,6 +99,7 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
                 </Button>
                 <button
                   onClick={onClose}
+                  aria-label="Close modal"
                   className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-xl transition-all"
                 >
                   <X size={24} />
