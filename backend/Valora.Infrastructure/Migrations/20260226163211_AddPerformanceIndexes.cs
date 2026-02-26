@@ -20,10 +20,9 @@ namespace Valora.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Drop indexes with ONLINE = ON as well to maintain availability during rollback
-            migrationBuilder.Sql("DROP INDEX [IX_Workspaces_CreatedAt] ON [Workspaces] WITH (ONLINE = ON)");
+            migrationBuilder.Sql("DROP INDEX [IX_Workspaces_CreatedAt] ON [Workspaces]");
 
-            migrationBuilder.Sql("DROP INDEX [IX_SavedListings_WorkspaceId_CreatedAt] ON [SavedListings] WITH (ONLINE = ON)");
+            migrationBuilder.Sql("DROP INDEX [IX_SavedListings_WorkspaceId_CreatedAt] ON [SavedListings]");
         }
     }
 }
