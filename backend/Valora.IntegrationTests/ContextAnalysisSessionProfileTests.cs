@@ -44,15 +44,39 @@ public class ContextAnalysisSessionProfileTests : IAsyncLifetime
         _sut = _scope.ServiceProvider.GetRequiredService<IContextAnalysisService>();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        // Clean up users and profiles - Order matters for FK constraints
+        // Clean up data - Order matters for FK constraints
+
+        // 1. Remove Dependent Entities (Foreign Keys pointing to Users/Workspaces/Listings)
         _dbContext.ListingComments.RemoveRange(_dbContext.ListingComments);
         _dbContext.SavedListings.RemoveRange(_dbContext.SavedListings);
         _dbContext.ActivityLogs.RemoveRange(_dbContext.ActivityLogs);
         _dbContext.WorkspaceMembers.RemoveRange(_dbContext.WorkspaceMembers);
         _dbContext.Workspaces.RemoveRange(_dbContext.Workspaces);
 
+        _dbContext.RefreshTokens.RemoveRange(_dbContext.RefreshTokens);
+        _dbContext.Notifications.RemoveRange(_dbContext.Notifications);
+        _dbContext.Listings.RemoveRange(_dbContext.Listings);
+        _dbContext.BatchJobs.RemoveRange(_dbContext.BatchJobs);
+
+        // 2. Identity Cleanup (Claims, Logins, Roles, Tokens)
+        _dbContext.UserClaims.RemoveRange(_dbContext.UserClaims);
+        _dbContext.UserLogins.RemoveRange(_dbContext.UserLogins);
+        _dbContext.UserRoles.RemoveRange(_dbContext.UserRoles);
+        _dbContext.UserTokens.RemoveRange(_dbContext.UserTokens);
+        _dbContext.RoleClaims.RemoveRange(_dbContext.RoleClaims);
+
+        // 3. Remove UserAiProfiles before Users due to FK
         _dbContext.UserAiProfiles.RemoveRange(_dbContext.UserAiProfiles);
-        _dbContext.Users.RemoveRange(_dbContext.Users);
+
+        // 4. Remove Users before Roles (UserRoles already removed)
+        if (_dbContext.Users.Any())
+        {
+            _dbContext.Users.RemoveRange(_dbContext.Users);
+        }
+
+        // 5. Remove Roles
+        _dbContext.Roles.RemoveRange(_dbContext.Roles);
+
         await _dbContext.SaveChangesAsync();
     }
 
