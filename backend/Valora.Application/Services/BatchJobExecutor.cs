@@ -51,8 +51,10 @@ public class BatchJobExecutor : IBatchJobExecutor
 
         // Job is already marked as Processing by the repository claim method.
         // We log it here for tracking.
+        // Note: AppendLog only mutates the job in-memory. We must explicitly call UpdateAsync to persist it,
+        // unlike UpdateJobStatusAsync which handles persistence internally.
         _stateManager.AppendLog(job, "Job started.");
-        await _jobRepository.UpdateAsync(job, cancellationToken); // Save log update
+        await _jobRepository.UpdateAsync(job, cancellationToken);
 
         try
         {
