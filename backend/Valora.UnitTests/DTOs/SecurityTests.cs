@@ -95,4 +95,43 @@ public class SecurityTests
 
         Assert.Equal(expectedValid, isValid);
     }
+
+    [Fact]
+    public void InviteMemberDto_Email_Validation_ReturnsTrue_ForValidEmail()
+    {
+        var dto = new InviteMemberDto("test@example.com", Valora.Domain.Entities.WorkspaceRole.Editor);
+        var context = new ValidationContext(dto);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(dto, context, results, true);
+
+        Assert.True(isValid);
+    }
+
+    [Fact]
+    public void InviteMemberDto_Email_Validation_ReturnsFalse_ForTooLongEmail()
+    {
+        // 255 chars
+        var longEmail = new string('a', 245) + "@email.com";
+        var dto = new InviteMemberDto(longEmail, Valora.Domain.Entities.WorkspaceRole.Editor);
+        var context = new ValidationContext(dto);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(dto, context, results, true);
+
+        Assert.False(isValid);
+        Assert.Contains(results, r => r.ErrorMessage!.Contains("maximum length of 254"));
+    }
+
+    [Fact]
+    public void InviteMemberDto_Email_Validation_ReturnsFalse_ForInvalidFormat()
+    {
+        var dto = new InviteMemberDto("invalid-email", Valora.Domain.Entities.WorkspaceRole.Editor);
+        var context = new ValidationContext(dto);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(dto, context, results, true);
+
+        Assert.False(isValid);
+    }
 }

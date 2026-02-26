@@ -26,6 +26,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
         _connectionString = connectionString;
         Environment.SetEnvironmentVariable("DATABASE_URL", connectionString);
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
+        // Eagerly set JWT_SECRET for tests to satisfy startup validation
+        Environment.SetEnvironmentVariable("JWT_SECRET", "TestSecretKeyForIntegrationTestingOnly123!");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
