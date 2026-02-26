@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
@@ -66,41 +67,6 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          'Workspaces',
-          style: ValoraTypography.headlineMedium.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          PopupMenuButton<SortOption>(
-            icon: Icon(Icons.sort_rounded, color: colorScheme.onSurface),
-            onSelected: (option) {
-              setState(() {
-                _sortOption = option;
-              });
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: SortOption.createdDate,
-                child: Text('Newest First'),
-              ),
-              const PopupMenuItem(
-                value: SortOption.name,
-                child: Text('Name (A-Z)'),
-              ),
-              const PopupMenuItem(
-                value: SortOption.memberCount,
-                child: Text('Member Count'),
-              ),
-            ],
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context),
         backgroundColor: ValoraColors.primary,
@@ -108,33 +74,81 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Workspace'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              ValoraSpacing.md,
-              ValoraSpacing.sm,
-              ValoraSpacing.md,
-              ValoraSpacing.sm,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
+            surfaceTintColor: Colors.transparent,
+            pinned: true,
+            title: Text(
+              'Workspaces',
+              style: ValoraTypography.headlineMedium.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            child: ValoraTextField(
-              controller: _searchController,
-              hint: 'Search workspaces...',
-              label: '', // No label needed for search bar usually
-              prefixIcon: const Icon(Icons.search_rounded),
+            actions: [
+              PopupMenuButton<SortOption>(
+                icon: Icon(Icons.sort_rounded, color: colorScheme.onSurface),
+                onSelected: (option) {
+                  setState(() {
+                    _sortOption = option;
+                  });
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: SortOption.createdDate,
+                    child: Text('Newest First'),
+                  ),
+                  const PopupMenuItem(
+                    value: SortOption.name,
+                    child: Text('Name (A-Z)'),
+                  ),
+                  const PopupMenuItem(
+                    value: SortOption.memberCount,
+                    child: Text('Member Count'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                ValoraSpacing.md,
+                ValoraSpacing.sm,
+                ValoraSpacing.md,
+                ValoraSpacing.sm,
+              ),
+              child: ValoraSearchField(
+                controller: _searchController,
+                hintText: 'Search workspaces...',
+              ),
             ),
           ),
-          Expanded(
-            child: Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
-              selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
-              builder: (context, data, child) {
-                if (data.isLoading && data.workspaces.isEmpty) {
-                  return const Center(
-                    child: ValoraLoadingIndicator(message: 'Loading workspaces...'),
-                  );
-                }
-                if (data.error != null && data.workspaces.isEmpty) {
-                  return Center(
+          Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
+            selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
+            builder: (context, data, child) {
+              if (data.isLoading && data.workspaces.isEmpty) {
+                return SliverPadding(
+                  padding: const EdgeInsets.all(ValoraSpacing.md),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index.isOdd) {
+                          return const SizedBox(height: ValoraSpacing.sm);
+                        }
+                        return const _WorkspaceListSkeleton();
+                      },
+                      childCount: 9, // 5 items + 4 separators
+                    ),
+                  ),
+                );
+              }
+              if (data.error != null && data.workspaces.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
                     child: ValoraEmptyState(
                       icon: Icons.error_outline_rounded,
                       title: 'Failed to load',
@@ -142,14 +156,17 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                       actionLabel: 'Retry',
                       onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
                     ),
-                  );
-                }
+                  ),
+                );
+              }
 
-                final displayList = _getFilteredAndSortedWorkspaces(data.workspaces);
+              final displayList = _getFilteredAndSortedWorkspaces(data.workspaces);
 
-                if (displayList.isEmpty) {
-                  if (_searchQuery.isNotEmpty) {
-                    return Center(
+              if (displayList.isEmpty) {
+                if (_searchQuery.isNotEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
                       child: ValoraEmptyState(
                         icon: Icons.search_off_rounded,
                         title: 'No results',
@@ -157,9 +174,12 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                         actionLabel: 'Clear Search',
                         onAction: () => _searchController.clear(),
                       ),
-                    );
-                  }
-                  return Center(
+                    ),
+                  );
+                }
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
                     child: ValoraEmptyState(
                       icon: Icons.workspaces_rounded,
                       title: 'No workspaces yet',
@@ -168,20 +188,28 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                       actionLabel: 'Create Workspace',
                       onAction: () => _showCreateDialog(context),
                     ),
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.all(ValoraSpacing.md),
-                  itemCount: displayList.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: ValoraSpacing.sm),
-                  itemBuilder: (context, index) {
-                    final workspace = displayList[index];
-                    return WorkspaceListItem(workspace: workspace);
-                  },
+                  ),
                 );
-              },
-            ),
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.all(ValoraSpacing.md),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index.isOdd) {
+                        return const SizedBox(height: ValoraSpacing.sm);
+                      }
+                      final workspace = displayList[index ~/ 2];
+                      return WorkspaceListItem(
+                        workspace: workspace,
+                        index: index ~/ 2,
+                      );
+                    },
+                    childCount: displayList.length * 2 - 1,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -242,8 +270,13 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
 
 class WorkspaceListItem extends StatelessWidget {
   final Workspace workspace;
+  final int index;
 
-  const WorkspaceListItem({super.key, required this.workspace});
+  const WorkspaceListItem({
+    super.key,
+    required this.workspace,
+    this.index = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -263,22 +296,10 @@ class WorkspaceListItem extends StatelessWidget {
       padding: const EdgeInsets.all(ValoraSpacing.md),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: ValoraColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Center(
-              child: Text(
+          ValoraAvatar(
+            initials:
                 workspace.name.isNotEmpty ? workspace.name[0].toUpperCase() : 'W',
-                style: ValoraTypography.titleLarge.copyWith(
-                  color: ValoraColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            size: ValoraAvatarSize.medium,
           ),
           const SizedBox(width: ValoraSpacing.md),
           Expanded(
@@ -352,7 +373,10 @@ class WorkspaceListItem extends StatelessWidget {
           ),
         ],
       ),
-    );
+    )
+        .animate(delay: (50 * index).ms)
+        .fadeIn(duration: 300.ms, curve: Curves.easeOut)
+        .slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut);
   }
 
   void _showDeleteConfirmation(BuildContext context, Workspace workspace) {
@@ -401,6 +425,39 @@ class WorkspaceListItem extends StatelessWidget {
         ],
         child: Text(
             'Are you sure you want to delete "${workspace.name}"? This action cannot be undone and all data including saved listings and comments will be lost.'),
+      ),
+    );
+  }
+}
+
+class _WorkspaceListSkeleton extends StatelessWidget {
+  const _WorkspaceListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValoraCard(
+      padding: const EdgeInsets.all(ValoraSpacing.md),
+      child: Row(
+        children: [
+          const ValoraShimmer(width: 48, height: 48, borderRadius: 14),
+          const SizedBox(width: ValoraSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ValoraShimmer(width: 140, height: 20, borderRadius: 4),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const ValoraShimmer(width: 80, height: 14, borderRadius: 4),
+                    const SizedBox(width: 12),
+                    const ValoraShimmer(width: 60, height: 14, borderRadius: 4),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
