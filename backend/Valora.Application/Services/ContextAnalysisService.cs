@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
@@ -40,7 +39,7 @@ public class ContextAnalysisService : IContextAnalysisService
     /// <returns>The AI's textual response.</returns>
     public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
-        var systemPrompt = await GetAugmentedSystemPromptAsync(ChatSystemPrompt, sessionProfile, cancellationToken);
+        var systemPrompt = await BuildSystemPromptAsync(ChatSystemPrompt, sessionProfile, cancellationToken);
         return await _aiService.ChatAsync(prompt, systemPrompt, intent ?? "chat", cancellationToken);
     }
 
@@ -54,37 +53,32 @@ public class ContextAnalysisService : IContextAnalysisService
     public async Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
         var prompt = BuildAnalysisPrompt(report);
-        var systemPrompt = await GetAugmentedSystemPromptAsync(AnalysisSystemPrompt, sessionProfile, cancellationToken);
+        var systemPrompt = await BuildSystemPromptAsync(AnalysisSystemPrompt, sessionProfile, cancellationToken);
 
         // "detailed_analysis" intent for report analysis
         return await _aiService.ChatAsync(prompt, systemPrompt, "detailed_analysis", cancellationToken);
     }
 
-    private async Task<string> GetAugmentedSystemPromptAsync(string basePrompt, UserAiProfileDto? sessionProfile, CancellationToken cancellationToken)
+    private async Task<string> BuildSystemPromptAsync(string baseSystemPrompt, UserAiProfileDto? sessionProfile, CancellationToken cancellationToken)
     {
-        var systemPrompt = basePrompt;
+        // 1. Determine which profile to use (session > stored > null)
+        UserAiProfileDto? profileToUse = sessionProfile;
 
-        // Use session profile if provided
-        if (sessionProfile != null)
+        if (profileToUse == null && !string.IsNullOrEmpty(_currentUserService.UserId))
         {
-            if (sessionProfile.IsEnabled)
-            {
-                systemPrompt = AugmentSystemPrompt(basePrompt, sessionProfile);
-            }
-        }
-        else if (!string.IsNullOrEmpty(_currentUserService.UserId))
-        {
-            var profile = await _profileService.GetProfileAsync(_currentUserService.UserId, cancellationToken);
-            if (profile != null && profile.IsEnabled)
-            {
-                systemPrompt = AugmentSystemPrompt(basePrompt, profile);
-            }
+            profileToUse = await _profileService.GetProfileAsync(_currentUserService.UserId, cancellationToken);
         }
 
-        return systemPrompt;
+        // 2. Apply profile if valid and enabled
+        if (profileToUse != null && profileToUse.IsEnabled)
+        {
+            return ApplyProfilePreferences(baseSystemPrompt, profileToUse);
+        }
+
+        return baseSystemPrompt;
     }
 
-    private string AugmentSystemPrompt(string baseSystemPrompt, UserAiProfileDto profile)
+    private static string ApplyProfilePreferences(string baseSystemPrompt, UserAiProfileDto profile)
     {
         var sb = new StringBuilder(baseSystemPrompt);
         sb.AppendLine();
@@ -102,12 +96,19 @@ public class ContextAnalysisService : IContextAnalysisService
             sb.AppendLine(PromptSanitizer.Sanitize(profile.Preferences));
         }
 
-        if (profile.DisallowedSuggestions != null && profile.DisallowedSuggestions.Any())
+        if (profile.DisallowedSuggestions != null)
         {
-            sb.AppendLine("Disallowed Suggestions (Do NOT suggest these):");
-            foreach (var disallowed in profile.DisallowedSuggestions)
+            var validDisallowed = profile.DisallowedSuggestions
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+
+            if (validDisallowed.Any())
             {
-                sb.AppendLine($"- {PromptSanitizer.Sanitize(disallowed)}");
+                sb.AppendLine("Disallowed Suggestions (Do NOT suggest these):");
+                foreach (var disallowed in validDisallowed)
+                {
+                    sb.AppendLine($"- {PromptSanitizer.Sanitize(disallowed)}");
+                }
             }
         }
 
@@ -133,5 +134,4 @@ public class ContextAnalysisService : IContextAnalysisService
 
         return sb.ToString();
     }
-
 }
