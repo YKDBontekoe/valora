@@ -1,19 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 import 'package:retry/retry.dart';
-
 import '../core/config/app_config.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'crash_reporting_service.dart';
 
+typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
 typedef ApiRunner = Future<R> Function<Q, R>(ComputeCallback<Q, R> callback, Q message, {String? debugLabel});
 
 class ApiClient {
+  static final _log = Logger('ApiClient');
   String? _authToken;
   final Future<String?> Function()? _refreshTokenCallback;
   final http.Client _client;
@@ -52,8 +51,9 @@ class ApiClient {
     Duration? timeout,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: queryParameters);
+    final stopwatch = Stopwatch()..start();
     try {
-      return await _requestWithRetry(
+      final response = await _requestWithRetry(
         () => _authenticatedRequest(
           (reqHeaders) {
             final mergedHeaders = {...reqHeaders, ...?headers};
@@ -84,7 +84,12 @@ class ApiClient {
           timeout: timeout,
         ),
       );
+      stopwatch.stop();
+      _log.info('Request: $method $uri - Status: ${response.statusCode} - Duration: ${stopwatch.elapsedMilliseconds}ms');
+      return response;
     } catch (e, stack) {
+      stopwatch.stop();
+      _log.warning('Request failed: $method $uri - Duration: ${stopwatch.elapsedMilliseconds}ms', e);
       throw _handleException(e, stack, uri);
     }
   }
@@ -160,7 +165,7 @@ class ApiClient {
     final redactedUri = uri?.replace(queryParameters: {}) ?? Uri();
     final urlString = redactedUri.toString().isEmpty ? 'unknown URL' : redactedUri.toString();
 
-    developer.log('Network Error: $error (URI: $urlString)', name: 'ApiClient');
+    _log.warning('Network Error: $error (URI: $urlString)');
 
     // Report non-business exceptions to Sentry
     CrashReportingService.captureException(
@@ -245,10 +250,7 @@ class ApiClient {
       return await _runner(parser, response.body);
     }
 
-    developer.log(
-      'API Error: ${response.statusCode} - ${response.body}',
-      name: 'ApiClient',
-    );
+    _log.warning('API Error: ${response.statusCode} - ${response.body}');
 
     final String? message = _parseErrorMessage(response.body);
     final String? traceId = _parseTraceId(response.body);
