@@ -8,6 +8,11 @@ public record CreateWorkspaceDto(
     [property: StringLength(500)] string? Description
 );
 
+public record UpdateWorkspaceDto(
+    [property: Required] [property: StringLength(100)] string Name,
+    [property: StringLength(500)] string? Description
+);
+
 public record WorkspaceDto(
     Guid Id,
     string Name,

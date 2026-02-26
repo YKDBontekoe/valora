@@ -50,6 +50,24 @@ public class WorkspaceService : IWorkspaceService
         return MapToDto(workspace);
     }
 
+    public async Task<WorkspaceDto> UpdateWorkspaceAsync(string userId, Guid workspaceId, UpdateWorkspaceDto dto, CancellationToken ct = default)
+    {
+        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
+        if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+
+        if (workspace.OwnerId != userId)
+            throw new ForbiddenAccessException();
+
+        workspace.Name = dto.Name;
+        workspace.Description = dto.Description;
+
+        await LogActivityAsync(workspace, userId, ActivityLogType.WorkspaceUpdated, $"Workspace updated: {dto.Name}", ct);
+
+        await _repository.SaveChangesAsync(ct);
+
+        return MapToDto(workspace);
+    }
+
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default)
     {
         var workspaces = await _repository.GetUserWorkspacesAsync(userId, ct);

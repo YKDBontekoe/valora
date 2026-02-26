@@ -140,7 +140,7 @@ public class WorkspaceMemberServiceTests
     }
 
     [Fact]
-    public async Task RemoveMemberAsync_ShouldThrowInvalidOperation_WhenRemovingSelf()
+    public async Task RemoveMemberAsync_ShouldThrowInvalidOperation_WhenOwnerRemovesSelf()
     {
         var ownerId = "owner";
         var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
@@ -149,8 +149,31 @@ public class WorkspaceMemberServiceTests
         _context.Workspaces.Add(workspace);
         await _context.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _service.RemoveMemberAsync(ownerId, workspace.Id, ownerMember.Id));
+        Assert.Contains("Owners cannot leave", ex.Message);
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_ShouldSucceed_WhenNonOwnerLeavesWorkspace()
+    {
+        var ownerId = "owner";
+        var viewerId = "viewer";
+        var workspace = new Workspace { Name = "WS", OwnerId = ownerId };
+        workspace.Members.Add(new WorkspaceMember { UserId = ownerId, Role = WorkspaceRole.Owner });
+        var viewerMember = new WorkspaceMember { UserId = viewerId, Role = WorkspaceRole.Viewer };
+        workspace.Members.Add(viewerMember);
+        _context.Workspaces.Add(workspace);
+        await _context.SaveChangesAsync();
+
+        await _service.RemoveMemberAsync(viewerId, workspace.Id, viewerMember.Id);
+
+        var exists = await _context.WorkspaceMembers.AnyAsync(m => m.Id == viewerMember.Id);
+        Assert.False(exists);
+
+        var log = await _context.ActivityLogs.OrderByDescending(l => l.CreatedAt).FirstAsync();
+        Assert.Equal(ActivityLogType.MemberRemoved, log.Type);
+        Assert.Equal("Left the workspace", log.Summary);
     }
 
     [Fact]
