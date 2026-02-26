@@ -242,7 +242,14 @@ class ApiClient {
 
   Future<T> handleResponse<T>(http.Response response, T Function(String body) parser) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return await _runner(parser, response.body);
+      try {
+        return await _runner(parser, response.body);
+      } catch (e) {
+        if (e is FormatException) {
+          throw JsonParsingException('Failed to process server response.');
+        }
+        rethrow;
+      }
     }
 
     developer.log(

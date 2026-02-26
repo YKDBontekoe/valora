@@ -5,6 +5,7 @@ import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
+import '../widgets/valora_error_state.dart';
 import '../widgets/valora_widgets.dart';
 import 'workspace_detail_screen.dart';
 
@@ -125,22 +126,19 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
             ),
           ),
           Expanded(
-            child: Selector<WorkspaceProvider, ({bool isLoading, String? error, List<Workspace> workspaces})>(
-              selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, error: provider.error, workspaces: provider.workspaces),
+            child: Selector<WorkspaceProvider, ({bool isLoading, Object? exception, List<Workspace> workspaces})>(
+              selector: (_, provider) => (isLoading: provider.isWorkspacesLoading, exception: provider.exception, workspaces: provider.workspaces),
               builder: (context, data, child) {
                 if (data.isLoading && data.workspaces.isEmpty) {
                   return const Center(
                     child: ValoraLoadingIndicator(message: 'Loading workspaces...'),
                   );
                 }
-                if (data.error != null && data.workspaces.isEmpty) {
+                if (data.exception != null && data.workspaces.isEmpty) {
                   return Center(
-                    child: ValoraEmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Failed to load',
-                      subtitle: 'Could not load your workspaces. Please try again.',
-                      actionLabel: 'Retry',
-                      onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
+                    child: ValoraErrorState(
+                      error: data.exception!,
+                      onRetry: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
                     ),
                   );
                 }
