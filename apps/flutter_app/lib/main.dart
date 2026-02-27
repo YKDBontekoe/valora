@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 import 'core/config/app_config.dart';
 import 'core/theme/valora_theme.dart';
@@ -84,16 +85,23 @@ Future<void> main() async {
     runApp(
       MultiProvider(
         providers: [
+          Provider<http.Client>(
+            create: (_) => http.Client(),
+            dispose: (_, client) => client.close(),
+          ),
           ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-          Provider<AuthService>(create: (_) => AuthService()),
+          ProxyProvider<http.Client, AuthService>(
+            update: (_, client, previous) => AuthService(client: client),
+          ),
           ChangeNotifierProxyProvider<AuthService, AuthProvider>(
             create: (context) =>
                 AuthProvider(authService: context.read<AuthService>()),
             update: (context, authService, previous) =>
                 previous ?? AuthProvider(authService: authService),
           ),
-          ProxyProvider2<AuthService, AuthProvider, ApiClient>(
-            update: (context, authService, authProvider, _) => ApiClient(
+          ProxyProvider2<http.Client, AuthProvider, ApiClient>(
+            update: (context, client, authProvider, _) => ApiClient(
+              client: client,
               authToken: authProvider.token,
               refreshTokenCallback: authProvider.refreshSession,
             ),

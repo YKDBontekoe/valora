@@ -39,7 +39,8 @@ class AuthProvider extends ChangeNotifier {
       } else {
         _isAuthenticated = false;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _log.warning('Auth check failed', e, stackTrace);
       _isAuthenticated = false;
       _token = null;
       _email = null;
@@ -140,8 +141,8 @@ class AuthProvider extends ChangeNotifier {
             payloadMap['unique_name'] ??
             payloadMap['sub'];
       }
-    } catch (e) {
-      _log.warning('Error parsing JWT for user: ${_email ?? "unknown"}', e);
+    } catch (e, stackTrace) {
+      _log.warning('Error parsing JWT for user: ${_email ?? "unknown"}', e, stackTrace);
     }
   }
 
@@ -189,8 +190,8 @@ class AuthProvider extends ChangeNotifier {
       } else {
         throw Exception("Failed to retrieve Google ID Token");
       }
-    } catch (e) {
-      _log.warning('Google login failed', e);
+    } catch (e, stackTrace) {
+      _log.warning('Google login failed', e, stackTrace);
       rethrow;
     } finally {
       _isLoading = false;

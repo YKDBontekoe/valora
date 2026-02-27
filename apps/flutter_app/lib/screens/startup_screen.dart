@@ -21,9 +21,7 @@ class _StartupScreenState extends State<StartupScreen>
   late Animation<double> _iconScaleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _textSlideAnimation;
-  late Future<void> _authCheckFuture;
   late bool _disableAnimations;
-  final Completer<void> _authCheckCompleter = Completer<void>();
 
   @override
   void initState() {
@@ -65,38 +63,42 @@ class _StartupScreenState extends State<StartupScreen>
           ),
         );
 
-    _authCheckFuture = _authCheckCompleter.future;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        await context.read<AuthProvider>().checkAuth();
-      } finally {
-        if (!_authCheckCompleter.isCompleted) {
-          _authCheckCompleter.complete();
-        }
-      }
-    });
-
-    _startAnimation();
+    // Schedule startup sequence after the first frame to avoid build conflicts
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startStartupSequence());
   }
 
-  Future<void> _startAnimation() async {
+  Future<void> _startStartupSequence() async {
     try {
-      final List<Future<void>> startupFutures = <Future<void>>[
-        _authCheckFuture,
-        Future<void>.delayed(_minimumStartupDuration),
-      ];
-
-      if (_disableAnimations) {
-        _controller.value = 1;
+      Future<void>? animationFuture;
+      if (!_disableAnimations) {
+        animationFuture = _controller.forward().orCancel;
       } else {
-        startupFutures.add(_controller.forward().orCancel);
+        _controller.value = 1;
       }
 
-      await Future.wait<void>(startupFutures);
+      if (!mounted) return;
+
+      final authFuture = context.read<AuthProvider>().checkAuth();
+      final minDurationFuture = Future.delayed(_minimumStartupDuration);
+
+      final futures = <Future<void>>[
+        authFuture,
+        minDurationFuture,
+      ];
+
+      if (animationFuture != null) {
+        futures.add(animationFuture);
+      }
+
+      await Future.wait(futures);
+
       if (!mounted) return;
       _navigateToHome();
     } on TickerCanceled {
       // Animation canceled because the widget was disposed.
+    } catch (e) {
+      // On any other error, try to proceed to home (which will redirect to login if auth failed)
+      if (mounted) _navigateToHome();
     }
   }
 

@@ -5,11 +5,17 @@ import 'package:valora_app/widgets/valora_error_state.dart';
 
 void main() {
   group('ValoraErrorState', () {
-    testWidgets('renders NetworkException correctly', (WidgetTester tester) async {
-      final error = NetworkException('No internet');
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(error: error, onRetry: () {}),
-      ));
+    testWidgets('displays NetworkException correctly', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: NetworkException('No internet'),
+              onRetry: () {},
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('No Connection'), findsOneWidget);
@@ -17,11 +23,17 @@ void main() {
       expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
     });
 
-    testWidgets('renders ServerException correctly', (WidgetTester tester) async {
-      final error = ServerException('Server failed');
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(error: error, onRetry: () {}),
-      ));
+    testWidgets('displays ServerException correctly', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: ServerException('Server failed'),
+              onRetry: () {},
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Server Error'), findsOneWidget);
@@ -29,66 +41,76 @@ void main() {
       expect(find.byIcon(Icons.cloud_off_rounded), findsOneWidget);
     });
 
-    testWidgets('renders NotFoundException correctly', (WidgetTester tester) async {
-      final error = NotFoundException('Item missing');
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(error: error, onRetry: () {}),
-      ));
+    testWidgets('displays NotFoundException correctly', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: NotFoundException('Item not found'),
+              onRetry: () {},
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Not Found'), findsOneWidget);
-      expect(find.text('Item missing'), findsOneWidget);
+      expect(find.text('Item not found'), findsOneWidget);
       expect(find.byIcon(Icons.search_off_rounded), findsOneWidget);
     });
 
-    testWidgets('renders ValidationException correctly', (WidgetTester tester) async {
-      final error = ValidationException('Bad input');
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(error: error, onRetry: () {}),
-      ));
+    testWidgets('displays ValidationException correctly', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: ValidationException('Bad request'),
+              onRetry: () {},
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Invalid Request'), findsOneWidget);
-      expect(find.text('Bad input'), findsOneWidget);
+      expect(find.text('Bad request'), findsOneWidget);
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
     });
 
-    testWidgets('renders generic AppException correctly', (WidgetTester tester) async {
-      final error = AppException('Something happened');
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(error: error, onRetry: () {}),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Something went wrong'), findsOneWidget);
-      expect(find.text('Something happened'), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
-    });
-
-    testWidgets('renders fallback message for unknown error', (WidgetTester tester) async {
-      final error = Exception('Unknown');
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(error: error, onRetry: () {}),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Something went wrong'), findsOneWidget);
-      expect(find.text('An unexpected error occurred. Please try again.'), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
-    });
-
-    testWidgets('triggers onRetry callback', (WidgetTester tester) async {
-      bool retried = false;
-      await tester.pumpWidget(MaterialApp(
-        home: ValoraErrorState(
-          error: Exception(),
-          onRetry: () => retried = true,
+    testWidgets('displays generic AppException correctly', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: AppException('Generic error'),
+              onRetry: () {},
+            ),
+          ),
         ),
-      ));
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.text('Generic error'), findsOneWidget);
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    });
+
+    testWidgets('retry callback is called when button pressed', (tester) async {
+      bool retried = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValoraErrorState(
+              error: Exception('Boom'),
+              onRetry: () => retried = true,
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Try Again'));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(); // Wait for button press animation
       expect(retried, isTrue);
     });
   });

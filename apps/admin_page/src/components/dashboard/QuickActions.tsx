@@ -91,7 +91,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                       x: 10,
                       backgroundColor: 'var(--color-brand-50)',
                       transition: { type: 'spring', stiffness: 400, damping: 25 }
-                    } as const}
+                    }}
                     whileTap={{ scale: 0.97 }}
                     onClick={action.onClick}
                     disabled={action.isLoading}

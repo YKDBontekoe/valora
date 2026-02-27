@@ -16,14 +16,7 @@ const Skeleton = ({
   const borderRadius = variant === 'circular' ? '9999px' : variant === 'text' ? '4px' : '12px';
 
   return (
-    <motion.div
-      initial={{ opacity: 0.5 }}
-      animate={{ opacity: [0.5, 0.8, 0.5] }}
-      transition={{
-        duration: 2,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }}
+    <div
       className={`relative overflow-hidden bg-brand-100 ${className}`}
       style={{
         width: width ?? '100%',
@@ -45,7 +38,7 @@ const Skeleton = ({
           background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)',
         }}
       />
-    </motion.div>
+    </div>
   );
 };
 

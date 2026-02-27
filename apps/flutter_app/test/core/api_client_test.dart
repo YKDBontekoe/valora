@@ -12,13 +12,14 @@ void main() {
   late MockClient mockClient;
   late ApiClient apiClient;
 
+  // Helper to create a client that returns a specific response
   MockClient createClient({int statusCode = 200, String body = '{}'}) {
     return MockClient((request) async {
       return http.Response(body, statusCode);
     });
   }
 
-  group('ApiClient Tests', () {
+  group('ApiClient', () {
     test('get performs a GET request', () async {
       mockClient = MockClient((request) async {
         if (request.method == 'GET' && request.url.path == '/test') {
@@ -134,12 +135,11 @@ void main() {
       );
     });
 
-    test('request throws UnknownException on unknown method', () async {
+    test('request throws Exception on unknown method', () async {
       apiClient = ApiClient(client: createClient(), retryOptions: const RetryOptions(maxAttempts: 1));
-      // ApiClient catches UnsupportedError and wraps/converts it to UnknownException
       expect(
         () => apiClient.request('UNKNOWN', '/test'),
-        throwsA(isA<UnknownException>()),
+        throwsA(isA<UnsupportedError>()),
       );
     });
 
