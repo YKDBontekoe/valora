@@ -18,7 +18,6 @@ const item = {
 const SystemHealth = () => {
   const [health, setHealth] = useState<SystemHealthType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isStale, setIsStale] = useState(false);
 
   const fetchHealth = async () => {
@@ -26,7 +25,6 @@ const SystemHealth = () => {
       setLoading(true);
       const data = await adminService.getHealth();
       setHealth(data);
-      setLastUpdated(new Date());
       setIsStale(false);
     } catch (error) {
       console.error('Failed to fetch system health:', error);
