@@ -32,8 +32,8 @@ class InsightsProvider extends ChangeNotifier {
   MapMode _mapMode = MapMode.cities;
   Object? _selectedFeature;
 
-  Object? _exception;
-  Object? _mapException;
+  String? _error;
+  String? _mapError;
 
   InsightMetric _selectedMetric = InsightMetric.composite;
   MapOverlayMetric _selectedOverlayMetric = MapOverlayMetric.pricePerSquareMeter;
@@ -74,10 +74,8 @@ class InsightsProvider extends ChangeNotifier {
   bool get showAmenities => _mapMode == MapMode.amenities;
   bool get showOverlays => _mapMode == MapMode.overlays;
 
-  String? get error => _exception?.toString();
-  String? get mapError => _mapException?.toString();
-  Object? get exception => _exception;
-  Object? get mapException => _mapException;
+  String? get error => _error;
+  String? get mapError => _mapError;
   InsightMetric get selectedMetric => _selectedMetric;
   MapOverlayMetric get selectedOverlayMetric => _selectedOverlayMetric;
 
@@ -87,14 +85,14 @@ class InsightsProvider extends ChangeNotifier {
     if (_cityInsights.isNotEmpty) return;
 
     _isLoading = true;
-    _exception = null;
+    _error = null;
     notifyListeners();
 
     try {
       _cityInsights = await _repository.getCityInsights();
     } catch (e) {
       debugPrint('Error loading city insights: $e');
-      _exception = e;
+      _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -158,7 +156,7 @@ class InsightsProvider extends ChangeNotifier {
     required double zoom,
     required LatLngBounds bounds,
   }) async {
-    _mapException = null;
+    _mapError = null;
     final MapBounds viewport = MapBounds(
       minLat: bounds.south,
       minLon: bounds.west,
@@ -222,7 +220,7 @@ class InsightsProvider extends ChangeNotifier {
     for (final result in results) {
       if (result.error != null) {
         debugPrint('Error fetching ${result.layer}: ${result.error}');
-        _mapException = result.error;
+        _mapError = result.error.toString();
         notifyListeners(); // Notify error
         continue;
       }

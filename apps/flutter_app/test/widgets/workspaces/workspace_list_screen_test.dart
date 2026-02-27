@@ -22,9 +22,6 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   String? get error => null;
 
   @override
-  Object? get exception => null;
-
-  @override
   List<Workspace> get workspaces => [
     Workspace(
       id: '1',

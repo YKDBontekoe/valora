@@ -13,8 +13,7 @@ public enum ActivityLogType
     CommentAdded,
     CommentReplied,
     RoleChanged,
-    WorkspaceDeleted,
-    UserDeleted
+    WorkspaceDeleted
 }
 
 public class ActivityLog : BaseEntity

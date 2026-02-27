@@ -44,7 +44,7 @@ const ConfirmationDialog = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !isSubmitting && onClose()}
-            className="absolute inset-0 bg-brand-900/40 backdrop-blur-2xl"
+            className="absolute inset-0 bg-brand-900/40 backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
