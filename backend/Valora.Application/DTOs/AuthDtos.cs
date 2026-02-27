@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Valora.Application.DTOs;
 
 public record LoginDto(
-    [property: Required] [property: EmailAddress] [property: StringLength(100)] string Email,
+    [property: Required] [property: EmailAddress] [property: StringLength(254)] string Email,
     [property: Required] [property: StringLength(100)] string Password
 );
 
@@ -11,7 +11,7 @@ public record RegisterDto
 {
     [Required]
     [EmailAddress]
-    [StringLength(100)]
+    [StringLength(254)]
     public string Email { get; init; } = string.Empty;
 
     [Required]

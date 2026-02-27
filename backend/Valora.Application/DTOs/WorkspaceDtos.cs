@@ -28,7 +28,7 @@ public record WorkspaceMemberDto(
 );
 
 public record InviteMemberDto(
-    [property: Required] [property: EmailAddress] string Email,
+    [property: Required] [property: EmailAddress] [property: StringLength(254)] string Email,
     [property: Required] WorkspaceRole Role
 );
 
