@@ -54,14 +54,7 @@ public class AiModelService : IAiModelService
 
         if (config == null)
         {
-            // If ID is not valid but we are updating, this is an exceptional case.
-            // However, typically the caller should ensure existence.
-            // For now, we'll try to find by Intent as a fallback or throw.
-            config = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == configDto.Intent, cancellationToken);
-            if (config == null)
-            {
-                throw new KeyNotFoundException($"AiModelConfig with Intent '{configDto.Intent}' not found.");
-            }
+            throw new KeyNotFoundException($"AiModelConfig with ID '{configDto.Id}' not found.");
         }
 
         // Update properties

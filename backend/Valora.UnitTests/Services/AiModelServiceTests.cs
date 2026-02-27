@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -173,6 +174,6 @@ public class AiModelServiceTests : IDisposable
 
         var configs = await _service.GetAllConfigsAsync();
 
-        Assert.Equal(2, ((List<AiModelConfigDto>)configs).Count);
+        Assert.Equal(2, configs.Count());
     }
 }

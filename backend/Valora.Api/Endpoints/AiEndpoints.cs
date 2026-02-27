@@ -115,12 +115,12 @@ public static class AiEndpoints
                     IsEnabled = dto.IsEnabled,
                     SafetySettings = dto.SafetySettings
                 };
-                await aiModelService.CreateConfigAsync(newConfig, ct);
+                var createdConfig = await aiModelService.CreateConfigAsync(newConfig, ct);
 
                 logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) CREATED AI config for intent {Intent}. Primary: {PrimaryModel}",
                     userEmail, userId, intent, dto.PrimaryModel);
 
-                return Results.Ok(newConfig);
+                return Results.Ok(createdConfig);
             }
             else
             {
