@@ -46,9 +46,7 @@ public class WorkspaceListingService : IWorkspaceListingService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var savedListings = await _repository.GetSavedListingsAsync(workspaceId, ct);
-
-        return savedListings.Select(sl => MapToSavedListingDto(sl)).ToList();
+        return await _repository.GetSavedListingDtosAsync(workspaceId, ct);
     }
 
     public async Task RemoveSavedListingAsync(string userId, Guid workspaceId, Guid savedListingId, CancellationToken ct = default)

@@ -26,5 +26,7 @@ public class WorkspaceMemberConfiguration : IEntityTypeConfiguration<WorkspaceMe
         builder.HasIndex(wm => new { wm.WorkspaceId, wm.InvitedEmail })
             .IsUnique()
             .HasFilter("\"InvitedEmail\" IS NOT NULL");
+
+        builder.HasIndex(wm => wm.UserId);
     }
 }

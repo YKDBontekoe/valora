@@ -1,3 +1,4 @@
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Common.Interfaces;
@@ -7,6 +8,7 @@ public interface IWorkspaceRepository
     // Workspace Management
     Task<Workspace> AddAsync(Workspace workspace, CancellationToken ct = default);
     Task<List<Workspace>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default);
+    Task<List<WorkspaceDto>> GetUserWorkspaceDtosAsync(string userId, CancellationToken ct = default);
     /// <summary>
     /// Returns the count of workspaces where the user is an owner.
     /// </summary>
@@ -29,6 +31,7 @@ public interface IWorkspaceRepository
     Task<SavedListing?> GetSavedListingAsync(Guid workspaceId, Guid listingId, CancellationToken ct = default);
     Task<SavedListing?> GetSavedListingByIdAsync(Guid savedListingId, CancellationToken ct = default);
     Task<List<SavedListing>> GetSavedListingsAsync(Guid workspaceId, CancellationToken ct = default);
+    Task<List<SavedListingDto>> GetSavedListingDtosAsync(Guid workspaceId, CancellationToken ct = default);
     Task<SavedListing> AddSavedListingAsync(SavedListing savedListing, CancellationToken ct = default);
     Task RemoveSavedListingAsync(SavedListing savedListing, CancellationToken ct = default);
 
