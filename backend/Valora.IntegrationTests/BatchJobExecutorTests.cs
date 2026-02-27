@@ -18,6 +18,14 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
     {
     }
 
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        Factory.CbsGeoClientMock.Reset();
+        Factory.CbsNeighborhoodStatsClientMock.Reset();
+        Factory.CbsCrimeStatsClientMock.Reset();
+    }
+
     [Fact]
     public async Task ProcessNextJobAsync_ShouldExecuteJob_WhenPendingJobExists()
     {
@@ -25,24 +33,7 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
         var testCity = "TestCity_Exec";
         var neighborhoodCode = "BU0001";
 
-        // 1. Create Pending Job
-        var job = new BatchJob
-        {
-            Type = BatchJobType.CityIngestion,
-            Target = testCity,
-            Status = BatchJobStatus.Pending,
-            Progress = 0,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        using (var scope = Factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            context.BatchJobs.Add(job);
-            await context.SaveChangesAsync();
-        }
-
-        // 2. Setup Mocks
+        // 1. Setup Mocks (Before inserting job to avoid race condition)
         var geoMock = Factory.CbsGeoClientMock;
         geoMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync(testCity, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<NeighborhoodGeometryDto>
@@ -86,6 +77,23 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
                 RetrievedAtUtc: DateTimeOffset.UtcNow
             ));
 
+        // 2. Create Pending Job
+        var job = new BatchJob
+        {
+            Type = BatchJobType.CityIngestion,
+            Target = testCity,
+            Status = BatchJobStatus.Pending,
+            Progress = 0,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            context.BatchJobs.Add(job);
+            await context.SaveChangesAsync();
+        }
+
         // Act
         using (var scope = Factory.Services.CreateScope())
         {
@@ -101,9 +109,11 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
             // 1. Verify Job Status
             var processedJob = await context.BatchJobs.FindAsync(job.Id);
             processedJob.ShouldNotBeNull();
+            // If the race condition happened, this will still be Completed.
             processedJob!.Status.ShouldBe(BatchJobStatus.Completed);
             processedJob.Progress.ShouldBe(100);
             processedJob.CompletedAt.ShouldNotBeNull();
+            processedJob.ExecutionLog.ShouldNotBeNull();
             processedJob.ExecutionLog.ShouldContain("Job completed successfully.");
 
             // 2. Verify Side Effects (Neighborhood Created)
@@ -122,6 +132,12 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
         // Arrange
         var testCity = "FailCity";
 
+        // 1. Setup Mock to Throw (Before inserting job)
+        var geoMock = Factory.CbsGeoClientMock;
+        geoMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync(testCity, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Simulated API Failure"));
+
+        // 2. Create Pending Job
         var job = new BatchJob
         {
             Type = BatchJobType.CityIngestion,
@@ -137,11 +153,6 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
             context.BatchJobs.Add(job);
             await context.SaveChangesAsync();
         }
-
-        // Setup Mock to Throw
-        var geoMock = Factory.CbsGeoClientMock;
-        geoMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync(testCity, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Simulated API Failure"));
 
         // Act
         using (var scope = Factory.Services.CreateScope())
@@ -160,6 +171,7 @@ public class BatchJobExecutorTests : BaseTestcontainersIntegrationTest
             failedJob.ShouldNotBeNull();
             failedJob!.Status.ShouldBe(BatchJobStatus.Failed);
             failedJob.Error.ShouldBe("Job failed due to an internal error."); // From BatchJobExecutor
+            failedJob.ExecutionLog.ShouldNotBeNull();
             failedJob.ExecutionLog.ShouldContain("Job failed due to an internal error.");
         }
     }
