@@ -24,7 +24,7 @@ public class AiEndpointsTests
     public async Task GetConfigs_ReturnsOk_WithConfigs()
     {
         // Arrange
-        var configs = new List<AiModelConfig> { new() { Intent = "test" } };
+        var configs = new List<AiModelConfigDto> { new() { Intent = "test" } };
         _mockAiModelService.Setup(x => x.GetAllConfigsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(configs);
 
@@ -39,7 +39,7 @@ public class AiEndpointsTests
         var result = await handler(_mockAiModelService.Object, CancellationToken.None);
 
         // Assert
-        var okResult = Assert.IsType<Ok<IEnumerable<AiModelConfig>>>(result);
+        var okResult = Assert.IsType<Ok<IEnumerable<AiModelConfigDto>>>(result);
         Assert.Single(okResult.Value!);
     }
 
@@ -63,27 +63,26 @@ public class AiEndpointsTests
     {
         // Arrange
         _mockAiModelService.Setup(x => x.GetConfigByIntentAsync("new", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AiModelConfig?)null);
+            .ReturnsAsync((AiModelConfigDto?)null);
 
         var dto = new UpdateAiModelConfigDto { Intent = "new", PrimaryModel = "model", IsEnabled = true };
+        var createdConfig = new AiModelConfigDto { Intent = "new", PrimaryModel = "model", IsEnabled = true };
 
+        _mockAiModelService.Setup(x => x.CreateConfigAsync(It.IsAny<UpdateAiModelConfigDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdConfig);
+
+        // Act
+        // This simulates the delegate logic in AiEndpoints.cs
         var handler = async (string intent, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
         {
             if (intent != d.Intent) return Results.BadRequest("Intent mismatch");
             var config = await service.GetConfigByIntentAsync(intent, ct);
+
+            AiModelConfigDto resultConfig;
             if (config == null)
             {
-                var newConfig = new AiModelConfig
-                {
-                    Intent = d.Intent,
-                    PrimaryModel = d.PrimaryModel,
-                    FallbackModels = d.FallbackModels,
-                    Description = d.Description,
-                    IsEnabled = d.IsEnabled,
-                    SafetySettings = d.SafetySettings
-                };
-                await service.CreateConfigAsync(newConfig, ct);
-                return Results.Ok(newConfig);
+                resultConfig = await service.CreateConfigAsync(d, ct);
+                return Results.Ok(resultConfig);
             }
             return Results.Problem();
         };
@@ -92,20 +91,24 @@ public class AiEndpointsTests
         var result = await handler("new", dto, _mockAiModelService.Object, CancellationToken.None);
 
         // Assert
-        var okResult = Assert.IsType<Ok<AiModelConfig>>(result);
+        var okResult = Assert.IsType<Ok<AiModelConfigDto>>(result);
         Assert.Equal("new", okResult.Value!.Intent);
-        _mockAiModelService.Verify(x => x.CreateConfigAsync(It.IsAny<AiModelConfig>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockAiModelService.Verify(x => x.CreateConfigAsync(It.IsAny<UpdateAiModelConfigDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task UpdateConfig_UpdatesExisting_WhenFound()
     {
         // Arrange
-        var existing = new AiModelConfig { Intent = "exist", PrimaryModel = "old" };
+        var existing = new AiModelConfigDto { Id = Guid.NewGuid(), Intent = "exist", PrimaryModel = "old" };
         _mockAiModelService.Setup(x => x.GetConfigByIntentAsync("exist", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var dto = new UpdateAiModelConfigDto { Intent = "exist", PrimaryModel = "new", IsEnabled = true };
+        var updatedConfig = new AiModelConfigDto { Id = existing.Id, Intent = "exist", PrimaryModel = "new", IsEnabled = true };
+
+        _mockAiModelService.Setup(x => x.UpdateConfigAsync(existing.Id, It.IsAny<UpdateAiModelConfigDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedConfig);
 
         var handler = async (string intent, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
         {
@@ -113,9 +116,8 @@ public class AiEndpointsTests
             var config = await service.GetConfigByIntentAsync(intent, ct);
             if (config != null)
             {
-                config.PrimaryModel = d.PrimaryModel;
-                await service.UpdateConfigAsync(config, ct);
-                return Results.Ok(config);
+                var result = await service.UpdateConfigAsync(config.Id, d, ct);
+                return Results.Ok(result);
             }
             return Results.NotFound();
         };
@@ -124,9 +126,9 @@ public class AiEndpointsTests
         var result = await handler("exist", dto, _mockAiModelService.Object, CancellationToken.None);
 
         // Assert
-        var okResult = Assert.IsType<Ok<AiModelConfig>>(result);
+        var okResult = Assert.IsType<Ok<AiModelConfigDto>>(result);
         Assert.Equal("new", okResult.Value!.PrimaryModel);
-        _mockAiModelService.Verify(x => x.UpdateConfigAsync(It.IsAny<AiModelConfig>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockAiModelService.Verify(x => x.UpdateConfigAsync(existing.Id, It.IsAny<UpdateAiModelConfigDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

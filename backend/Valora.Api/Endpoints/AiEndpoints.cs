@@ -3,7 +3,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
 
@@ -104,42 +103,27 @@ public static class AiEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var userEmail = user.FindFirstValue(ClaimTypes.Email);
 
-            var config = await aiModelService.GetConfigByIntentAsync(intent, ct);
-            if (config == null)
+            var existingConfig = await aiModelService.GetConfigByIntentAsync(intent, ct);
+            AiModelConfigDto resultConfig;
+
+            if (existingConfig == null)
             {
-                var newConfig = new AiModelConfig
-                {
-                    Intent = dto.Intent,
-                    PrimaryModel = dto.PrimaryModel,
-                    FallbackModels = dto.FallbackModels,
-                    Description = dto.Description,
-                    IsEnabled = dto.IsEnabled,
-                    SafetySettings = dto.SafetySettings
-                };
-                await aiModelService.CreateConfigAsync(newConfig, ct);
+                resultConfig = await aiModelService.CreateConfigAsync(dto, ct);
 
                 logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) CREATED AI config for intent {Intent}. Primary: {PrimaryModel}",
                     userEmail, userId, intent, dto.PrimaryModel);
-
-                return Results.Ok(newConfig);
             }
             else
             {
-                var oldPrimary = config.PrimaryModel;
+                var oldPrimary = existingConfig.PrimaryModel;
 
-                config.PrimaryModel = dto.PrimaryModel;
-                config.FallbackModels = dto.FallbackModels;
-                config.Description = dto.Description;
-                config.IsEnabled = dto.IsEnabled;
-                config.SafetySettings = dto.SafetySettings;
-
-                await aiModelService.UpdateConfigAsync(config, ct);
+                resultConfig = await aiModelService.UpdateConfigAsync(existingConfig.Id, dto, ct);
 
                 logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) UPDATED AI config for intent {Intent}. Primary: {OldModel} -> {NewModel}",
                     userEmail, userId, intent, oldPrimary, dto.PrimaryModel);
-
-                return Results.Ok(config);
             }
+
+            return Results.Ok(resultConfig);
         })
         .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<UpdateAiModelConfigDto>>();
     }
