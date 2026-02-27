@@ -80,4 +80,4 @@ Jobs run in their own Dependency Injection scope. This means they have their own
 
 ### Resilience
 - If the server crashes while a job is `Processing`, the job remains stuck in `Processing`.
-- **Note:** The `BatchJobService.RetryJobAsync` method allows admins to manually reset these stuck jobs to `Pending`.
+- **Note:** To fix a stuck job, an admin must first **Cancel** it (marking it as `Failed`) and then **Retry** it to reset it to `Pending`.

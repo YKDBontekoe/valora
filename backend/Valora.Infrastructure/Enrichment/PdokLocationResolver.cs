@@ -46,8 +46,8 @@ public sealed class PdokLocationResolver : ILocationResolver
     /// <list type="number">
     /// <item><strong>Normalization:</strong> Uses <see cref="UrlNormalizationUtils.NormalizeInput"/> to detect if the input is a listing URL (e.g., Funda). If so, it extracts the address slug. Otherwise, it treats it as a raw search string.</item>
     /// <item><strong>Cache Check:</strong> Checks in-memory cache to prevent redundant external API calls for popular locations.</item>
-    /// <item><strong>PDOK Query:</strong> Calls the <c>suggest</c> or <c>free</c> endpoint of the PDOK Locatieserver.
-    /// We use the <c>free</c> endpoint with <c>fq=type:adres</c> to ensure we only match specific addresses, not general city names or streets without numbers.</item>
+    /// <item><strong>PDOK Query:</strong> Calls the <c>free</c> endpoint of the PDOK Locatieserver.
+    /// We specifically use <c>fq=type:adres</c> to ensure we only match specific addresses, filtering out general city names or streets without numbers.</item>
     /// <item><strong>Coordinate Extraction:</strong> PDOK returns coordinates in both WGS84 (Lat/Lon) and RD New (Rijksdriehoek). We extract WGS84 for the mobile app and RD New for accurate distance calculations if needed later.</item>
     /// </list>
     /// </para>

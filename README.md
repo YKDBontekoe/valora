@@ -62,8 +62,10 @@ The Flutter app is the primary interface for users.
 
 > ⚠️ **CRITICAL**: The default `.env` points to the PRODUCTION API.
 > Change `API_URL` in `.env` to your local backend:
-> - Android Emulator: `http://10.0.2.2:5001/api`
-> - iOS Simulator / Desktop: `http://localhost:5001/api`
+> - Android Emulator: `http://10.0.2.2:5253/api`
+> - iOS Simulator / Desktop: `http://localhost:5253/api`
+>
+> *(Note: Use port `5001` if running backend via Docker)*
 
 ```bash
 cd ../apps/flutter_app
