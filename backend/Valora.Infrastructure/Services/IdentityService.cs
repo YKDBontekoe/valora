@@ -132,7 +132,8 @@ public class IdentityService : IIdentityService
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return Result.Failure(new[] { "User not found." });
 
-        // Manually clean up notifications because they don't have a navigation property/FK configured for cascade delete
+        // Manually clean up related entities because many are configured with NoAction delete behavior
+        // to prevent cycles or accidental data loss.
 
         // Transaction logic for Relational databases (Postgres)
         if (_context.Database.IsRelational())
@@ -140,12 +141,47 @@ public class IdentityService : IIdentityService
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // 1. Delete Owned Workspaces (Cascades to Members, SavedListings in workspace, etc.)
+                await _context.Workspaces
+                    .Where(w => w.OwnerId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 2. Delete Workspace Memberships (in other workspaces)
+                await _context.WorkspaceMembers
+                    .Where(wm => wm.UserId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 3. Delete Saved Listings (Added by user in other workspaces)
+                await _context.SavedListings
+                    .Where(sl => sl.AddedByUserId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 4. Delete Listing Comments
+                await _context.ListingComments
+                    .Where(c => c.UserId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 5. Delete Activity Logs (User as actor)
+                await _context.ActivityLogs
+                    .Where(l => l.ActorId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 6. Delete User AI Profiles
+                await _context.UserAiProfiles
+                    .Where(p => p.UserId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 7. Delete Refresh Tokens
+                await _context.RefreshTokens
+                    .Where(rt => rt.UserId == userId)
+                    .ExecuteDeleteAsync();
+
+                // 8. Delete Notifications
                 await _context.Notifications
                     .Where(n => n.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // RefreshTokens are configured with cascade delete, so they will be removed automatically
-
+                // 9. Delete User
                 var result = await _userManager.DeleteAsync(user);
 
                 if (result.Succeeded)
@@ -168,8 +204,32 @@ public class IdentityService : IIdentityService
         else
         {
             // Fallback for Non-Relational (InMemory Tests) - No Transaction support
+            // Note: InMemory provider doesn't support ExecuteDeleteAsync
+
+            var ownedWorkspaces = _context.Workspaces.Where(w => w.OwnerId == userId);
+            _context.Workspaces.RemoveRange(ownedWorkspaces);
+
+            var memberships = _context.WorkspaceMembers.Where(wm => wm.UserId == userId);
+            _context.WorkspaceMembers.RemoveRange(memberships);
+
+            var savedListings = _context.SavedListings.Where(sl => sl.AddedByUserId == userId);
+            _context.SavedListings.RemoveRange(savedListings);
+
+            var comments = _context.ListingComments.Where(c => c.UserId == userId);
+            _context.ListingComments.RemoveRange(comments);
+
+            var logs = _context.ActivityLogs.Where(l => l.ActorId == userId);
+            _context.ActivityLogs.RemoveRange(logs);
+
+            var profiles = _context.UserAiProfiles.Where(p => p.UserId == userId);
+            _context.UserAiProfiles.RemoveRange(profiles);
+
+            var tokens = _context.RefreshTokens.Where(rt => rt.UserId == userId);
+            _context.RefreshTokens.RemoveRange(tokens);
+
             var notifications = _context.Notifications.Where(n => n.UserId == userId);
             _context.Notifications.RemoveRange(notifications);
+
             await _context.SaveChangesAsync();
 
             var result = await _userManager.DeleteAsync(user);
