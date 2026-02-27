@@ -176,13 +176,33 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
         _dbContext.SavedListings.Add(savedListing);
 
         // 4. Listing Comment
+        // To test unlinking of replies without deleting them, we need a SavedListing NOT owned by the user.
+        var otherSavedListing = new SavedListing
+        {
+            WorkspaceId = otherWorkspace.Id,
+            ListingId = listing.Id,
+            AddedByUserId = otherUser.Id
+        };
+        _dbContext.SavedListings.Add(otherSavedListing);
+        await _dbContext.SaveChangesAsync();
+
         var comment = new ListingComment
         {
-            SavedListingId = savedListing.Id,
+            SavedListingId = otherSavedListing.Id,
             UserId = userId,
-            Content = "Test Comment"
+            Content = "Test Comment on Other's Listing"
         };
         _dbContext.ListingComments.Add(comment);
+
+        // 4b. Reply to the comment (by another user) - Threaded test case
+        var reply = new ListingComment
+        {
+            SavedListingId = otherSavedListing.Id,
+            UserId = otherUser.Id,
+            Content = "Reply to test comment",
+            ParentCommentId = comment.Id
+        };
+        _dbContext.ListingComments.Add(reply);
 
         // 5. Activity Log
         var log = new ActivityLog
@@ -223,6 +243,7 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
         Assert.NotNull(await _dbContext.WorkspaceMembers.FindAsync(membership.Id));
         Assert.NotNull(await _dbContext.SavedListings.FindAsync(savedListing.Id));
         Assert.NotNull(await _dbContext.ListingComments.FindAsync(comment.Id));
+        Assert.NotNull(await _dbContext.ListingComments.FindAsync(reply.Id));
         Assert.NotNull(await _dbContext.ActivityLogs.FindAsync(log.Id));
         Assert.NotNull(await _dbContext.UserAiProfiles.FindAsync(profile.Id));
         Assert.NotNull(await _dbContext.RefreshTokens.FindAsync(token.Id));
@@ -252,6 +273,33 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
 
         var deletedComment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(_dbContext.ListingComments, c => c.Id == comment.Id);
         Assert.Null(deletedComment);
+
+        // Verify threaded reply handling: The reply should still exist (if not deleted by workspace cascade)
+        // OR if workspace deletion cascaded to it. Wait, the saved listing is in the user's workspace.
+        // If we delete the user's workspace, the saved listing is deleted.
+        // SavedListing cascade deletes comments.
+        // So the reply (which is on that saved listing) should be deleted too by the database cascade (or simulated here).
+        // BUT, the test logic in DeleteUserAsync for InMemory manually removes ranges.
+        // For InMemory, we remove "ownedWorkspaces". That doesn't cascade automatically in InMemory unless we implement it.
+        // InMemory provider doesn't support Cascading Deletes.
+        // So `savedListings` removal in `DeleteUserAsync` only removes listings added by the user.
+        // The SavedListing was created by the user.
+        // The comment was on that listing.
+        // The reply was on that listing.
+        // If `DeleteUserAsync` deletes `savedListings` where `AddedByUserId == userId`, it removes the SavedListing.
+        // It does NOT remove the comments on that listing unless explicitly handled.
+        // We explicitly delete `comments` where `UserId == userId`.
+        // The reply is by `otherUser`. It won't be deleted by the explicit comment deletion step.
+        // However, we updated `DeleteUserAsync` to unlink `ParentCommentId`.
+        // So `reply.ParentCommentId` should be null.
+
+        // Verify threaded reply handling:
+        // The user's comment (parent) should be deleted.
+        // The reply (child) should still exist (as it's on a listing not deleted) but have ParentCommentId = null.
+
+        var remainingReply = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(_dbContext.ListingComments, c => c.Id == reply.Id);
+        Assert.NotNull(remainingReply);
+        Assert.Null(remainingReply.ParentCommentId);
 
         var deletedLog = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(_dbContext.ActivityLogs, l => l.Id == log.Id);
         Assert.Null(deletedLog);
