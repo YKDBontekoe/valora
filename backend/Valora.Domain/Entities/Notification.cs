@@ -1,5 +1,6 @@
 using System;
 using Valora.Domain.Common;
+using Valora.Domain.Enums;
 
 namespace Valora.Domain.Entities;
 
@@ -11,12 +12,4 @@ public class Notification : BaseEntity
     public bool IsRead { get; set; }
     public string? ActionUrl { get; set; }
     public NotificationType Type { get; set; }
-}
-
-public enum NotificationType
-{
-    Info,
-    PriceDrop,
-    NewListing,
-    System
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 
 namespace Valora.Application.Services;
 
@@ -58,13 +59,13 @@ public class BatchJobExecutor : IBatchJobExecutor
             // Only mark as completed if the processor didn't already set it to Failed/Cancelled
             if (job.Status == BatchJobStatus.Processing)
             {
-                await UpdateJobStatusAsync(job, BatchJobStatus.Completed, "Job completed successfully.", cancellationToken: cancellationToken);
+                await UpdateJobStatusAsync(job, BatchJobStatus.Completed, "Job completed successfully.", null, cancellationToken);
             }
         }
         catch (OperationCanceledException)
         {
             // Use CancellationToken.None to ensure the status update persists even if the job token was cancelled
-            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, "Job cancelled by user.", cancellationToken: CancellationToken.None);
+            await UpdateJobStatusAsync(job, BatchJobStatus.Failed, "Job cancelled by user.", null, CancellationToken.None);
         }
         catch (Exception ex)
         {

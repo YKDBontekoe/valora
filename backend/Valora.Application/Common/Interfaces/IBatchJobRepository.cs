@@ -1,5 +1,6 @@
 using Valora.Application.Common.Models;
 using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 
 namespace Valora.Application.Common.Interfaces;
 

@@ -1,21 +1,7 @@
 using Valora.Domain.Common;
+using Valora.Domain.Enums;
 
 namespace Valora.Domain.Entities;
-
-public enum BatchJobStatus
-{
-    Pending,
-    Processing,
-    Completed,
-    Failed
-}
-
-public enum BatchJobType
-{
-    CityIngestion,
-    MapGeneration,
-    AllCitiesIngestion
-}
 
 public class BatchJob : BaseEntity
 {

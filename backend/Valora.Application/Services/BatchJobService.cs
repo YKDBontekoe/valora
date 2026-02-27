@@ -4,6 +4,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 
 namespace Valora.Application.Services;
 

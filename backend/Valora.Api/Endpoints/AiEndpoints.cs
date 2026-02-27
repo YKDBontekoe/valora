@@ -3,7 +3,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
 
@@ -107,7 +106,7 @@ public static class AiEndpoints
             var config = await aiModelService.GetConfigByIntentAsync(intent, ct);
             if (config == null)
             {
-                var newConfig = new AiModelConfig
+                var newConfig = new AiModelConfigDto
                 {
                     Intent = dto.Intent,
                     PrimaryModel = dto.PrimaryModel,

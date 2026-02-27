@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 
 namespace Valora.Application.DTOs;
 
