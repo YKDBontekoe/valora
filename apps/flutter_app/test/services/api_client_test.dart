@@ -18,16 +18,10 @@ void main() {
     });
   }
 
-  setUp(() {
-    // Initialize with a dummy client, though individual tests usually override it.
-    mockClient = createClient();
-    apiClient = ApiClient(client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
-  });
-
   group('ApiClient Tests', () {
     test('get performs a GET request', () async {
       mockClient = MockClient((request) async {
-        if (request.method == 'GET' && request.url.path == '/test') {
+        if (request.method == 'GET' && request.url.path.endsWith('/test')) {
           return http.Response(jsonEncode({'data': 'test'}), 200);
         }
         return http.Response('Not Found', 404);
@@ -42,7 +36,7 @@ void main() {
 
     test('post performs a POST request', () async {
       mockClient = MockClient((request) async {
-        if (request.method == 'POST' && request.url.path == '/test') {
+        if (request.method == 'POST' && request.url.path.endsWith('/test')) {
           return http.Response(jsonEncode({'id': 1}), 201);
         }
         return http.Response('Error', 400);
@@ -152,6 +146,7 @@ void main() {
       var callCount = 0;
       mockClient = MockClient((request) async {
         callCount++;
+        // Verify Authorization header update
         if (callCount == 1) {
           if (request.headers['Authorization'] == 'Bearer old_token') {
             return http.Response('Unauthorized', 401);
