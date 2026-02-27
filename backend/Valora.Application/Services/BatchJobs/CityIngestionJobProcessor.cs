@@ -164,7 +164,20 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         }
 
         // Fetch stats (external calls still per item, but could be parallelized if API allows)
-        var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
+        var loc = new ResolvedLocationDto(
+            Query: string.Empty,
+            DisplayAddress: string.Empty,
+            Latitude: 0,
+            Longitude: 0,
+            RdX: null,
+            RdY: null,
+            MunicipalityCode: null,
+            MunicipalityName: null,
+            DistrictCode: null,
+            DistrictName: null,
+            NeighborhoodCode: geo.Code,
+            NeighborhoodName: null,
+            PostalCode: null);
 
         // Parallelize stats fetching
         var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
