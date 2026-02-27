@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart'; // Uses standard MockClient
+import 'package:http/testing.dart';
 import 'package:retry/retry.dart';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_client.dart';
@@ -12,13 +12,14 @@ void main() {
   late MockClient mockClient;
   late ApiClient apiClient;
 
+  // Helper to create a client that returns a specific response
   MockClient createClient({int statusCode = 200, String body = '{}'}) {
     return MockClient((request) async {
       return http.Response(body, statusCode);
     });
   }
 
-  group('ApiClient Tests', () {
+  group('ApiClient', () {
     test('get performs a GET request', () async {
       mockClient = MockClient((request) async {
         if (request.method == 'GET' && request.url.path == '/test') {
@@ -146,6 +147,7 @@ void main() {
       var callCount = 0;
       mockClient = MockClient((request) async {
         callCount++;
+        // Verify Authorization header update
         if (callCount == 1) {
           if (request.headers['Authorization'] == 'Bearer old_token') {
             return http.Response('Unauthorized', 401);
