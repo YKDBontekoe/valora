@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart'; // Uses standard MockClient
+import 'package:http/testing.dart';
 import 'package:retry/retry.dart';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/services/api_client.dart';
@@ -134,11 +134,12 @@ void main() {
       );
     });
 
-    test('request throws Exception on unknown method', () async {
+    test('request throws UnknownException on unknown method', () async {
       apiClient = ApiClient(client: createClient(), retryOptions: const RetryOptions(maxAttempts: 1));
+      // ApiClient catches UnsupportedError and wraps/converts it to UnknownException
       expect(
         () => apiClient.request('UNKNOWN', '/test'),
-        throwsA(isA<UnsupportedError>()),
+        throwsA(isA<UnknownException>()),
       );
     });
 
@@ -146,6 +147,7 @@ void main() {
       var callCount = 0;
       mockClient = MockClient((request) async {
         callCount++;
+        // Verify Authorization header update
         if (callCount == 1) {
           if (request.headers['Authorization'] == 'Bearer old_token') {
             return http.Response('Unauthorized', 401);
