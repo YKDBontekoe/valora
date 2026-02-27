@@ -26,10 +26,13 @@
   --shadow-premium: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-premium-lg: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
   --shadow-premium-xl: 0 20px 25px -5px rgb(0 0 0 / 0.03), 0 8px 10px -6px rgb(0 0 0 / 0.03);
+  --shadow-glow: 0 0 20px -5px rgba(139, 92, 246, 0.3);
 
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+  --radius-5xl: 2.5rem;
 
   --color-success-50: #f0fdf4;
   --color-success-100: #dcfce7;
@@ -61,6 +64,13 @@
 
   --font-display: "Plus Jakarta Sans", sans-serif;
   --font-body: "Inter", sans-serif;
+
+  --animate-shimmer: shimmer 2s infinite linear;
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 }
 
 :root {
@@ -105,8 +115,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -116,7 +126,8 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb {
   background: var(--color-brand-200);
   border-radius: 20px;
-  border: 2px solid var(--color-brand-50);
+  border: 3px solid var(--color-brand-50);
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -125,6 +136,34 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Better focus states */
 :focus-visible {
-  outline: 2px solid var(--color-primary-500);
-  outline-offset: 2px;
+  outline: none;
+  @apply ring-4 ring-primary-500/20 border-primary-500 transition-all duration-300;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20;
+}
+
+/* Subtle border animation for cards */
+.hover-border-gradient {
+  position: relative;
+  background-clip: padding-box;
+  border: 1px solid transparent;
+}
+
+.hover-border-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  margin: -1px;
+  border-radius: inherit;
+  background: linear-gradient(to bottom right, var(--color-primary-500), transparent, var(--color-info-500));
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.hover-border-gradient:hover::before {
+  opacity: 1;
 }

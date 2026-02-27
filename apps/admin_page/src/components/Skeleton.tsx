@@ -13,11 +13,11 @@ const Skeleton = ({
   height,
   variant = 'rectangular'
 }: SkeletonProps) => {
-  const borderRadius = variant === 'circular' ? '9999px' : variant === 'text' ? '4px' : '12px';
+  const borderRadius = variant === 'circular' ? '9999px' : variant === 'text' ? '6px' : '16px';
 
   return (
     <div
-      className={`relative overflow-hidden bg-brand-100 ${className}`}
+      className={`relative overflow-hidden bg-brand-100/80 border border-brand-200/20 ${className}`}
       style={{
         width: width ?? '100%',
         height: height ?? (variant === 'text' ? '1em' : '100%'),
@@ -30,12 +30,12 @@ const Skeleton = ({
           x: ['-100%', '100%']
         }}
         transition={{
-          duration: 1.5,
+          duration: 2,
           repeat: Infinity,
-          ease: "linear"
+          ease: "easeInOut"
         }}
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
         }}
       />
     </div>

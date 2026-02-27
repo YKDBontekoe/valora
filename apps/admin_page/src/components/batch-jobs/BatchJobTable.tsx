@@ -15,21 +15,21 @@ const listVariants = {
 };
 
 const rowVariants = {
-  hidden: { opacity: 0, x: -10 },
+  hidden: { opacity: 0, x: -15 },
   visible: {
     opacity: 1,
     x: 0,
     transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }
   },
-  exit: { opacity: 0, x: 10, transition: { duration: 0.2 } }
+  exit: { opacity: 0, x: 15, transition: { duration: 0.2 } }
 } as const;
 
 const getStatusBadge = (status: string) => {
-  const base = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5";
+  const base = "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border flex items-center gap-2 transition-all duration-300";
   switch (status) {
-    case 'Completed': return `${base} bg-success-50 text-success-700 border-success-200 shadow-sm shadow-success-100/50`;
-    case 'Failed': return `${base} bg-error-50 text-error-700 border-error-200 shadow-sm shadow-error-100/50`;
-    case 'Processing': return `${base} bg-primary-50 text-primary-700 border-primary-100 shadow-sm shadow-primary-100/50`;
+    case 'Completed': return `${base} bg-success-50 text-success-700 border-success-200 shadow-sm shadow-success-100/50 group-hover:bg-white`;
+    case 'Failed': return `${base} bg-error-50 text-error-700 border-error-200 shadow-sm shadow-error-100/50 group-hover:bg-white`;
+    case 'Processing': return `${base} bg-primary-50 text-primary-700 border-primary-100 shadow-sm shadow-primary-100/50 group-hover:bg-white`;
     default: return `${base} bg-brand-50 text-brand-700 border-brand-200`;
   }
 };
@@ -87,10 +87,10 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
     <>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-brand-100">
-          <thead>
-            <tr className="bg-brand-50/10">
+          <thead className="bg-brand-50/50">
+            <tr>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10"
                 onClick={() => toggleSort('type')}
                 onKeyDown={(e) => handleKeyDown(e, 'type')}
                 tabIndex={0}
@@ -107,7 +107,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 </div>
               </th>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10"
                 onClick={() => toggleSort('target')}
                 onKeyDown={(e) => handleKeyDown(e, 'target')}
                 tabIndex={0}
@@ -124,7 +124,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 </div>
               </th>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10"
                 onClick={() => toggleSort('status')}
                 onKeyDown={(e) => handleKeyDown(e, 'status')}
                 tabIndex={0}
@@ -140,10 +140,10 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                   </div>
                 </div>
               </th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Progress</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Context</th>
+              <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Progress</th>
+              <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Context</th>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10"
                 onClick={() => toggleSort('createdAt')}
                 onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
                 tabIndex={0}
@@ -159,7 +159,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                   </div>
                 </div>
               </th>
-              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
+              <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Action</th>
             </tr>
           </thead>
           <motion.tbody
@@ -171,31 +171,38 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
             {loading && jobs.length === 0 ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  <td className="px-10 py-6"><Skeleton variant="text" width="40%" /></td>
-                  <td className="px-10 py-6"><Skeleton variant="text" width="60%" /></td>
-                  <td className="px-10 py-6"><Skeleton variant="rectangular" width={80} height={24} className="rounded-lg" /></td>
-                  <td className="px-10 py-6"><Skeleton variant="rectangular" width="100%" height={8} className="rounded-full" /></td>
-                  <td className="px-10 py-6"><Skeleton variant="text" width="50%" /></td>
-                  <td className="px-10 py-6"><Skeleton variant="text" width="80%" /></td>
-                  <td className="px-10 py-6"></td>
+                  <td className="px-10 py-8"><Skeleton variant="text" width="40%" /></td>
+                  <td className="px-10 py-8"><Skeleton variant="text" width="60%" /></td>
+                  <td className="px-10 py-8"><Skeleton variant="rectangular" width={80} height={24} className="rounded-xl" /></td>
+                  <td className="px-10 py-8"><Skeleton variant="rectangular" width="100%" height={10} className="rounded-full" /></td>
+                  <td className="px-10 py-8"><Skeleton variant="text" width="50%" /></td>
+                  <td className="px-10 py-8"><Skeleton variant="text" width="80%" /></td>
+                  <td className="px-10 py-8"></td>
                 </tr>
               ))
             ) : error ? (
               <tr>
-                <td colSpan={7} className="px-10 py-20 text-center">
-                  <div className="flex flex-col items-center gap-6 text-error-500">
-                    <AlertCircle size={48} className="opacity-20" />
-                    <span className="font-black text-xl">{displayError}</span>
-                    <Button onClick={refresh} variant="outline" size="sm" className="mt-4 border-error-200 text-error-700">Retry Pipeline Sync</Button>
+                <td colSpan={7} className="px-10 py-32 text-center">
+                  <div className="flex flex-col items-center gap-8 text-error-500">
+                    <div className="p-10 bg-error-50 rounded-4xl border border-error-100 shadow-sm">
+                        <AlertCircle size={64} className="opacity-40" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="font-black text-2xl tracking-tight">Sync Failure</span>
+                        <p className="text-error-600/60 font-bold">{displayError}</p>
+                    </div>
+                    <Button onClick={refresh} variant="outline" size="sm" className="mt-2 border-error-200 text-error-700 bg-white">Retry Pipeline Sync</Button>
                   </div>
                 </td>
               </tr>
             ) : jobs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-10 py-24 text-center">
-                  <div className="flex flex-col items-center gap-4 text-brand-200">
-                    <Activity size={64} className="opacity-10 mb-2" />
-                    <span className="font-black text-xl uppercase tracking-widest">Empty Pipeline History</span>
+                <td colSpan={7} className="px-10 py-40 text-center">
+                  <div className="flex flex-col items-center gap-8 text-brand-100">
+                    <div className="p-10 bg-brand-50 rounded-4xl border border-brand-100 shadow-inner">
+                        <Activity size={80} className="opacity-20" />
+                    </div>
+                    <span className="font-black text-2xl uppercase tracking-[0.2em] text-brand-200">Idle Pipeline</span>
                   </div>
                 </td>
               </tr>
@@ -207,61 +214,66 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                     <motion.tr
                       key={job.id}
                       variants={rowVariants}
-                      whileHover={{ scale: 1.005, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
+                      whileHover={{ backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
                       className="group cursor-pointer relative"
                       onClick={() => openDetails(job.id)}
                     >
-                      <td className="px-10 py-6 whitespace-nowrap">
+                      <td className="px-10 py-8 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{job.type}</span>
-                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-0.5">ID: {job.id.slice(0, 8)}</span>
+                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-1">ID: {job.id.slice(0, 8)}</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 whitespace-nowrap text-sm font-black text-brand-600">{job.target}</td>
-                      <td className="px-10 py-6 whitespace-nowrap">
+                      <td className="px-10 py-8 whitespace-nowrap text-sm font-black text-brand-600">{job.target}</td>
+                      <td className="px-10 py-8 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <span className={getStatusBadge(job.status)}>{job.status}</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 whitespace-nowrap">
-                        <div className="flex flex-col gap-2.5">
-                          <div className="w-full bg-brand-50 rounded-full h-2.5 min-w-[140px] overflow-hidden relative border border-brand-100/50">
+                      <td className="px-10 py-8 whitespace-nowrap">
+                        <div className="flex flex-col gap-3">
+                          <div className="w-full bg-brand-50 rounded-full h-3 min-w-[160px] overflow-hidden relative border border-brand-100/50 shadow-inner">
                             <motion.div
-                              className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]'}`}
+                              className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_15px_rgba(124,58,237,0.3)]'}`}
                               initial={{ width: 0 }}
                               animate={{ width: `${clampedProgress}%` }}
-                              transition={{ duration: 1.2, ease: "circOut" }}
+                              transition={{ duration: 1.5, ease: "circOut" }}
                             >
                               {job.status === 'Processing' && (
                                 <motion.div
                                   className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent"
                                   animate={{ x: ['-100%', '200%'] }}
-                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
                                 />
                               )}
                             </motion.div>
                           </div>
-                          <span className="text-[10px] text-brand-400 font-black tracking-widest">{clampedProgress}% COMPLETE</span>
+                          <span className="text-[10px] text-brand-400 font-black tracking-[0.2em]">{clampedProgress}% COMPLETE</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 whitespace-nowrap">
-                        <div className="flex items-center gap-2 text-brand-500 text-sm font-bold max-w-[220px] truncate">
-                          {(job.error || job.resultSummary) && <Info size={14} className="text-brand-200 flex-shrink-0" />}
-                          {job.error ? 'Pipeline Fault (check logs)' : (job.resultSummary || 'No summary available')}
+                      <td className="px-10 py-8 whitespace-nowrap">
+                        <div className="flex items-center gap-3 text-brand-500 text-sm font-bold max-w-[240px] truncate">
+                          {(job.error || job.resultSummary) && <Info size={16} className="text-brand-200 flex-shrink-0" />}
+                          {job.error ? 'Pipeline Fault (check logs)' : (job.resultSummary || 'Waiting for output...')}
                         </div>
                       </td>
-                      <td className="px-10 py-6 whitespace-nowrap text-[11px] font-black text-brand-400">
+                      <td className="px-10 py-8 whitespace-nowrap text-[11px] font-black text-brand-400">
                         {new Date(job.createdAt).toLocaleString()}
                       </td>
-                      <td className="px-10 py-6 whitespace-nowrap text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
-                          onClick={(e) => { e.stopPropagation(); openDetails(job.id); }}
-                        >
-                          Details
-                        </Button>
+                      <td className="px-10 py-8 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-3">
+                            <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                                <ChevronRight size={18} className="text-brand-200" />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-brand-400 hover:text-primary-600 hover:bg-primary-50 px-4"
+                              onClick={(e) => { e.stopPropagation(); openDetails(job.id); }}
+                            >
+                              Details
+                            </Button>
+                        </div>
                       </td>
                     </motion.tr>
                   );
@@ -273,9 +285,9 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
       </div>
 
       {/* Pagination */}
-      <div className="px-10 py-8 border-t border-brand-100 bg-brand-50/10 flex items-center justify-between">
-        <div className="text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">
-          Sequence <span className="text-brand-900">{page}</span> <span className="mx-3 text-brand-200">/</span> <span className="text-brand-900">{safeTotalPages}</span>
+      <div className="px-10 py-8 border-t border-brand-100 bg-brand-50/20 flex items-center justify-between">
+        <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
+          Sequence <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{safeTotalPages}</span>
         </div>
         <div className="flex gap-4">
           <Button
@@ -283,8 +295,8 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
             size="sm"
             onClick={prevPage}
             disabled={page <= 1 || loading}
-            leftIcon={<ChevronLeft size={16} />}
-            className="font-black"
+            leftIcon={<ChevronLeft size={18} />}
+            className="font-black bg-white"
           >
             Previous
           </Button>
@@ -293,8 +305,8 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
             size="sm"
             onClick={nextPage}
             disabled={page >= safeTotalPages || loading}
-            rightIcon={<ChevronRight size={16} />}
-            className="font-black"
+            rightIcon={<ChevronRight size={18} />}
+            className="font-black bg-white"
           >
             Next
           </Button>
