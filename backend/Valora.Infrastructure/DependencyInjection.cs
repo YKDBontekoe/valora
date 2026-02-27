@@ -132,6 +132,13 @@ public static class DependencyInjection
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
         });
 
+        services.AddHttpClient("OpenRouter")
+        .AddStandardResilienceHandler(options => {
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.BackoffType = DelayBackoffType.Exponential;
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+        });
 
         return services;
     }

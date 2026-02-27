@@ -108,15 +108,28 @@ api.interceptors.response.use(
     }
 
     // Global Error Feedback
-    const responseMessage = error.response?.data?.detail || error.response?.data?.title;
-    const fallbackMessage = responseMessage || error.message || 'An unexpected error occurred';
+    const problemDetails = error.response?.data;
+    // Prefer 'detail' from ProblemDetails, then 'title', then generic fallback.
+    // Also check for validation errors in 'errors' dictionary
+    let displayMessage = problemDetails?.detail || problemDetails?.title;
+
+    if (problemDetails?.errors) {
+       const validationErrors = Object.values(problemDetails.errors).flat().join('\n');
+       if (validationErrors) displayMessage = validationErrors;
+    }
+
+    const fallbackMessage = displayMessage || error.message || 'An unexpected error occurred';
 
     const isHealthEndpoint = originalRequest.url?.endsWith('/health');
 
     if (error.response?.status !== 401 && !isHealthEndpoint) {
        // Enhance user feedback for specific status codes
        if (error.response?.status === 409) {
-           showToast(responseMessage || 'The action conflicts with the current state of the resource.', 'error');
+           showToast(displayMessage || 'The action conflicts with the current state of the resource.', 'error');
+       } else if (error.response?.status === 503) {
+           showToast('Service temporarily unavailable. Please try again later.', 'error');
+       } else if (error.response?.status === 429) {
+           showToast('Too many requests. Please slow down.', 'error');
        } else {
            showToast(fallbackMessage, 'error');
        }

@@ -113,10 +113,16 @@ public class ExceptionHandlingMiddleware
                 detail = exception.Message;
                 break;
             case HttpRequestException:
-            case SocketException:
                 statusCode = (int)HttpStatusCode.ServiceUnavailable;
                 title = "External Service Error";
                 detail = "An external dependency is currently unavailable. Please try again later.";
+                // In .NET Core, HttpRequestException might wrap other exceptions, ensure we don't leak details in production
+                if (_env.IsDevelopment()) detail += $" {exception.Message}";
+                break;
+            case SocketException:
+                statusCode = (int)HttpStatusCode.ServiceUnavailable;
+                title = "Network Error";
+                detail = "A network error occurred while communicating with an external service.";
                 break;
             case TimeoutException:
                 statusCode = (int)HttpStatusCode.GatewayTimeout;

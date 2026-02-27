@@ -27,8 +27,12 @@ public class ExternalAuthService : IExternalAuthService
             {
                 throw new ValidationException("Invalid Google token.");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not ValidationException)
             {
+                if (ex is HttpRequestException || ex.InnerException is HttpRequestException)
+                {
+                    throw new HttpRequestException("Google authentication service is unavailable.", ex);
+                }
                 throw new ValidationException($"Failed to verify Google token: {ex.Message}");
             }
         }

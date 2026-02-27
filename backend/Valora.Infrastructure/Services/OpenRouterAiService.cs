@@ -41,7 +41,7 @@ public class OpenRouterAiService : IAiService
 
     public async Task<IEnumerable<AiModelDto>> GetAvailableModelsAsync(CancellationToken cancellationToken = default)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = _httpClientFactory.CreateClient("OpenRouter");
 
         var uriBuilder = new UriBuilder(_endpoint);
         if (!uriBuilder.Path.EndsWith("/")) uriBuilder.Path += "/";
