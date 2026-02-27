@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, ArrowDown, AlertCircle, Activity, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from '../Button';
@@ -22,6 +22,16 @@ const rowVariants = {
   },
   exit: { opacity: 0, x: 10, transition: { duration: 0.2 } }
 } as const;
+
+const getStatusBadge = (status: string) => {
+  const base = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5";
+  switch (status) {
+    case 'Completed': return `${base} bg-success-50 text-success-700 border-success-200 shadow-sm shadow-success-100/50`;
+    case 'Failed': return `${base} bg-error-50 text-error-700 border-error-200 shadow-sm shadow-error-100/50`;
+    case 'Processing': return `${base} bg-primary-50 text-primary-700 border-primary-100 shadow-sm shadow-primary-100/50`;
+    default: return `${base} bg-brand-50 text-brand-700 border-brand-200`;
+  }
+};
 
 interface BatchJobTableProps {
   jobs: BatchJob[];
@@ -50,15 +60,13 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
   prevPage,
   nextPage,
 }) => {
-  const getStatusBadge = (status: string) => {
-    const base = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5";
-    switch (status) {
-      case 'Completed': return `${base} bg-success-50 text-success-700 border-success-200 shadow-sm shadow-success-100/50`;
-      case 'Failed': return `${base} bg-error-50 text-error-700 border-error-200 shadow-sm shadow-error-100/50`;
-      case 'Processing': return `${base} bg-primary-50 text-primary-700 border-primary-100 shadow-sm shadow-primary-100/50`;
-      default: return `${base} bg-brand-50 text-brand-700 border-brand-200`;
+  useEffect(() => {
+    if (error) {
+      console.error("BatchJobTable Error:", error);
     }
-  };
+  }, [error]);
+
+  const displayError = error ? "An error occurred while fetching jobs." : null;
 
   return (
     <>
@@ -142,7 +150,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 <td colSpan={7} className="px-10 py-20 text-center">
                   <div className="flex flex-col items-center gap-6 text-error-500">
                     <AlertCircle size={48} className="opacity-20" />
-                    <span className="font-black text-xl">{error}</span>
+                    <span className="font-black text-xl">{displayError}</span>
                     <Button onClick={refresh} variant="outline" size="sm" className="mt-4 border-error-200 text-error-700">Retry Pipeline Sync</Button>
                   </div>
                 </td>

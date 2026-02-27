@@ -48,7 +48,8 @@ describe('BatchJobs Page', () => {
     render(<BatchJobs />);
 
     await waitFor(() => {
-      expect(screen.getByText('Unable to load job history.')).toBeInTheDocument();
+      // Updated expectation to match the new generic error message
+      expect(screen.getByText('An error occurred while fetching jobs.')).toBeInTheDocument();
     });
   });
 
