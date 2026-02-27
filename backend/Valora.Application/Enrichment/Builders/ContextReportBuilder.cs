@@ -11,8 +11,27 @@ namespace Valora.Application.Enrichment.Builders;
 public static class ContextReportBuilder
 {
     /// <summary>
-    /// Builds the context report by normalizing metrics and computing scores.
+    /// Aggregates raw data into a scored report (The "Fan-In" phase).
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This method is responsible for the <strong>Fan-In</strong> phase of the architecture.
+    /// It takes the raw, disparate data structures returned by the parallel source tasks (CBS, Crime, Amenities, Air)
+    /// and normalizes them into a uniform <see cref="ContextMetricDto"/> format.
+    /// </para>
+    /// <para>
+    /// <strong>Core Responsibilities:</strong>
+    /// <list type="bullet">
+    /// <item><strong>Normalization:</strong> Converts raw numbers (e.g., "45 crimes per 1000") into user-friendly metrics.</item>
+    /// <item><strong>Scoring:</strong> Delegates to domain-specific builders (e.g., <see cref="SocialMetricBuilder"/>, <see cref="CrimeMetricBuilder"/>)
+    /// to calculate 0-100 scores based on heuristic curves defined in the Domain layer.</item>
+    /// <item><strong>Aggregation:</strong> Combines individual metric scores into Category Scores (Social, Safety, etc.) and a final Composite Score.</item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Pure Function:</strong> This method contains no I/O or side effects. It is a pure transformation pipeline, making it highly testable.
+    /// </para>
+    /// </remarks>
     /// <param name="location">The resolved location.</param>
     /// <param name="sourceData">The raw source data.</param>
     /// <param name="warnings">A list of warnings to populate.</param>

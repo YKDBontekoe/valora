@@ -12,8 +12,8 @@ This document captures the key architectural decisions (ADRs) that shape Valora'
 -   **Scalability:** Storing pre-computed reports for every address in the Netherlands is storage-intensive and difficult to keep consistent. "Fan-Out" allows us to compute only what is requested.
 
 **Trade-offs:**
--   **Latency:** The response time is bound by the slowest external API. We mitigate this with aggressive caching (24h) and timeouts.
--   **Complexity:** Parallel error handling (Fan-In) is more complex than a simple DB lookup.
+-   **Latency:** The response time is bound by the slowest external API. We mitigate this with **aggressive caching** (24h) and **timeouts**. The `ContextReportService` uses `Task.WhenAll` to ensure parallelism, but if one non-critical source fails or times out, the report is still returned with a `Warning` (Partial Failure Tolerance).
+-   **Complexity:** Parallel error handling (Fan-In) is more complex than a simple DB lookup. Developers must implement `TryGetSourceAsync` wrappers to prevent one failure from crashing the entire request.
 
 ## 2. Clean Architecture
 
@@ -42,6 +42,7 @@ This document captures the key architectural decisions (ADRs) that shape Valora'
 **Why:**
 -   **Decoupling:** `Valora.Application` should not depend on ASP.NET Core specific libraries. This keeps the core logic framework-agnostic.
 -   **Testing:** We can easily mock `IIdentityService` in unit tests, whereas mocking the concrete `UserManager<T>` class is notoriously difficult.
+-   **Flexibility:** While we currently use ASP.NET Core Identity with EF Core, this abstraction allows us to switch to an external identity provider (like Auth0 or Azure AD B2C) in the future by simply swapping the implementation in `Infrastructure`.
 
 ## 5. Batch Job Processing
 

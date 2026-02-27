@@ -86,7 +86,7 @@ npm run dev
 
 ## 🏗️ Architecture
 
-Valora follows **Clean Architecture** principles to ensure modularity and testability.
+Valora is built on two core pillars: **Clean Architecture** for code organization and the **Fan-Out/Fan-In Pattern** for data retrieval. This ensures the system is modular, testable, and respects data providers by avoiding scraping.
 
 ### System Context
 
@@ -192,18 +192,31 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 
 ## 📚 Documentation Index
 
-### Guides
-- **[Onboarding Guide](docs/onboarding.md)**: Detailed setup & troubleshooting.
-- **[User Guide](docs/user-guide.md)**: How to use the app to generate reports.
-- **[Developer Guide](docs/developer-guide.md)**: Coding standards & patterns.
-- **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
+### 📘 Onboarding & Guides
+*Start here to understand how to run and use Valora.*
+
+- **[Onboarding Guide](docs/onboarding.md)** (⭐ Recommended)
+    - Detailed, step-by-step setup instructions for Docker, Backend, and Frontend.
+    - Troubleshooting for common errors (Database, JWT, API URL).
+- **[User Guide](docs/user-guide.md)**: How to use the mobile app to generate reports.
 - **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
 
-### Architecture & Data Flow
-- **[Architecture Decisions](docs/architecture-decisions.md)**: The "Why" behind the design.
-- **[Data Flow: Reading (Fan-Out)](docs/onboarding-data-flow.md)**: How context reports are generated live.
-- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**: How user registration works.
-- **[Data Flow: Batch Jobs](docs/onboarding-batch-job-flow.md)**: How background tasks (like City Ingestion) are processed.
+### 🧩 Architecture & Data Flow
+*Understand the internal plumbing and design decisions.*
+
+- **[Architecture Decisions](docs/architecture-decisions.md)**: The "Why" behind Clean Architecture and Fan-Out.
+- **[Data Flow: Reading (Fan-Out)](docs/onboarding-data-flow.md)** (Includes Mermaid Diagram):
+    - Explains the API request lifecycle from Flutter -> API -> PDOK/CBS/OSM -> Report.
+- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**:
+    - Explains User Registration and database transactions.
+- **[Data Flow: Batch Jobs](docs/onboarding-batch-job-flow.md)**:
+    - Explains background processing (City Ingestion).
+
+### ⚙️ Developer Reference
+*Technical details for contributors.*
+
+- **[API Reference](docs/api-reference.md)**: Complete list of endpoints, request bodies, and authentication methods.
+- **[Developer Guide](docs/developer-guide.md)**: Coding standards, patterns, and testing protocols.
 
 ---
 
