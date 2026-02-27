@@ -140,7 +140,12 @@ public class AiModelServiceTests : IDisposable
             IsEnabled = true
         };
 
-        await _service.UpdateConfigAsync(configDto);
+        var result = await _service.UpdateConfigAsync(configDto);
+
+        Assert.NotNull(result);
+        Assert.Equal("updated-model", result.PrimaryModel);
+        Assert.Equal(config.Id, result.Id);
+        Assert.Equal("update-intent", result.Intent);
 
         var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == "update-intent");
         Assert.Equal("updated-model", dbConfig!.PrimaryModel);
