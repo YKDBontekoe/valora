@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Services;
@@ -99,7 +101,7 @@ public class AiModelServiceTests : IDisposable
     [Fact]
     public async Task CreateConfigAsync_AddsNewConfig()
     {
-        var config = new AiModelConfig
+        var dto = new UpdateAiModelConfigDto
         {
             Intent = "new-intent",
             PrimaryModel = "new-model",
@@ -107,7 +109,7 @@ public class AiModelServiceTests : IDisposable
             IsEnabled = true
         };
 
-        var result = await _service.CreateConfigAsync(config);
+        var result = await _service.CreateConfigAsync(dto);
 
         Assert.NotNull(result);
         Assert.Equal("new-intent", result.Intent);
@@ -129,8 +131,15 @@ public class AiModelServiceTests : IDisposable
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync();
 
-        config.PrimaryModel = "updated-model";
-        await _service.UpdateConfigAsync(config);
+        var dto = new UpdateAiModelConfigDto
+        {
+            Intent = "update-intent",
+            PrimaryModel = "updated-model",
+            FallbackModels = new List<string>(),
+            IsEnabled = true
+        };
+
+        await _service.UpdateConfigAsync(config.Id, dto);
 
         var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == "update-intent");
         Assert.Equal("updated-model", dbConfig!.PrimaryModel);
@@ -164,6 +173,6 @@ public class AiModelServiceTests : IDisposable
 
         var configs = await _service.GetAllConfigsAsync();
 
-        Assert.Equal(2, ((List<AiModelConfig>)configs).Count);
+        Assert.Equal(2, configs.Count());
     }
 }

@@ -1,14 +1,9 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace Valora.Domain.Entities;
 
 public class UserAiProfile
 {
-    [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    [Required]
     public string UserId { get; set; } = string.Empty;
 
     public string Preferences { get; set; } = string.Empty;
@@ -27,6 +22,5 @@ public class UserAiProfile
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    [ForeignKey(nameof(UserId))]
     public ApplicationUser? User { get; set; }
 }
