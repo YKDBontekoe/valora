@@ -4,8 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
+import '../../core/utils/error_message_utils.dart';
 import '../../providers/insights_provider.dart';
-import '../../widgets/valora_widgets.dart';
+import '../../widgets/valora_error_state.dart';
 import '../../widgets/insights/insights_header.dart';
 import '../../widgets/insights/insights_legend.dart';
 import '../../widgets/insights/insights_controls.dart';
@@ -66,8 +67,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Selector<InsightsProvider, (bool, bool, String?, MapMode)>(
-        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.error, p.mapMode),
+      body: Selector<InsightsProvider, (bool, bool, Object?, MapMode)>(
+        selector: (_, p) => (p.isLoading, p.cities.isEmpty, p.exception, p.mapMode),
         shouldRebuild: (prev, next) {
           // If map mode changed, trigger data fetch for current viewport
           if (prev.$4 != next.$4) {
@@ -79,19 +80,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
         builder: (context, state, child) {
           final isLoading = state.$1;
           final isEmpty = state.$2;
-          final error = state.$3;
+          final exception = state.$3;
 
           if (isLoading && isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (error != null && isEmpty) {
+          if (exception != null && isEmpty) {
             return Center(
-              child: ValoraEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Failed to load insights',
-                subtitle: 'An unexpected error occurred while loading data.',
-                actionLabel: 'Retry',
-                onAction: context.read<InsightsProvider>().loadInsights,
+              child: ValoraErrorState(
+                error: exception,
+                onRetry: context.read<InsightsProvider>().loadInsights,
               ),
             );
           }
@@ -143,15 +141,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         onZoomOut: () => _zoomMap(-0.7),
                         onMapChanged: _onMapChanged,
                       ),
-                      Selector<InsightsProvider, String?>(
-                        selector: (_, p) => p.mapError,
-                        builder: (context, mapError, _) {
-                          if (mapError == null) return const SizedBox.shrink();
+                      Selector<InsightsProvider, Object?>(
+                        selector: (_, p) => p.mapException,
+                        builder: (context, mapException, _) {
+                          if (mapException == null) return const SizedBox.shrink();
                           return Positioned(
                             bottom: 152,
                             left: 16,
                             right: 16,
-                            child: _buildMapError(mapError),
+                            child: _buildMapError(mapException),
                           );
                         },
                       ),
@@ -167,7 +165,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildMapError(String error) {
+  Widget _buildMapError(Object error) {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: ValoraColors.neutral800.withValues(alpha: 0.82),
@@ -176,7 +174,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Text(
-          error,
+          ErrorMessageUtils.getUserFriendlyMessage(error),
           style: const TextStyle(color: Colors.white, fontSize: 12.5),
           textAlign: TextAlign.center,
         ),
