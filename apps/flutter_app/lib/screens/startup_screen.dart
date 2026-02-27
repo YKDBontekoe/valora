@@ -26,7 +26,6 @@ class _StartupScreenState extends State<StartupScreen>
 
   bool _hasError = false;
   Object? _lastError;
-  final Completer<void> _authCheckCompleter = Completer<void>();
 
   @override
   void initState() {

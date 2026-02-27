@@ -29,11 +29,16 @@ public class ExternalAuthService : IExternalAuthService
             }
             catch (Exception ex) when (ex is not ValidationException)
             {
-                if (ex is HttpRequestException || ex.InnerException is HttpRequestException)
+                var baseEx = ex.GetBaseException();
+                if (baseEx is HttpRequestException ||
+                    baseEx is System.Net.Sockets.SocketException ||
+                    baseEx is TimeoutException ||
+                    baseEx is TaskCanceledException)
                 {
                     throw new HttpRequestException("Google authentication service is unavailable.", ex);
                 }
-                throw new ValidationException($"Failed to verify Google token: {ex.Message}");
+                // Do not leak ex.Message in ValidationException to prevent internal details exposure
+                throw new ValidationException("Failed to verify Google token.");
             }
         }
 
