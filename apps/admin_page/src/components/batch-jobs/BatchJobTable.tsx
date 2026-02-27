@@ -4,6 +4,7 @@ import { ArrowUp, ArrowDown, AlertCircle, Activity, Info, ChevronLeft, ChevronRi
 import Button from '../Button';
 import Skeleton from '../Skeleton';
 import type { BatchJob } from '../../types';
+import { logger } from '../../services/logger';
 
 const listVariants = {
   visible: {
@@ -62,11 +63,25 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
 }) => {
   useEffect(() => {
     if (error) {
-      console.error("BatchJobTable Error:", error);
+      logger.error("BatchJobTable Error:", error);
     }
   }, [error]);
 
   const displayError = error ? "An error occurred while fetching jobs." : null;
+  const safeTotalPages = Math.max(1, totalPages);
+
+  const getAriaSort = (field: string) => {
+    if (sortBy === `${field}_asc`) return 'ascending';
+    if (sortBy === `${field}_desc`) return 'descending';
+    return 'none';
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSort(field);
+    }
+  };
 
   return (
     <>
@@ -75,8 +90,13 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
           <thead>
             <tr className="bg-brand-50/10">
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
+                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                 onClick={() => toggleSort('type')}
+                onKeyDown={(e) => handleKeyDown(e, 'type')}
+                tabIndex={0}
+                role="button"
+                aria-sort={getAriaSort('type')}
+                aria-label="Sort by Definition"
               >
                 <div className="flex items-center gap-2">
                   Definition
@@ -87,8 +107,13 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 </div>
               </th>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
+                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                 onClick={() => toggleSort('target')}
+                onKeyDown={(e) => handleKeyDown(e, 'target')}
+                tabIndex={0}
+                role="button"
+                aria-sort={getAriaSort('target')}
+                aria-label="Sort by Target"
               >
                 <div className="flex items-center gap-2">
                   Target
@@ -99,8 +124,13 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 </div>
               </th>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
+                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                 onClick={() => toggleSort('status')}
+                onKeyDown={(e) => handleKeyDown(e, 'status')}
+                tabIndex={0}
+                role="button"
+                aria-sort={getAriaSort('status')}
+                aria-label="Sort by Status"
               >
                 <div className="flex items-center gap-2">
                   Status
@@ -113,8 +143,13 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
               <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Progress</th>
               <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Context</th>
               <th
-                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
+                className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest cursor-pointer group hover:bg-brand-100/30 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                 onClick={() => toggleSort('createdAt')}
+                onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
+                tabIndex={0}
+                role="button"
+                aria-sort={getAriaSort('createdAt')}
+                aria-label="Sort by Timestamp"
               >
                 <div className="flex items-center gap-2">
                   Timestamp
@@ -166,68 +201,71 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
               </tr>
             ) : (
               <AnimatePresence mode="popLayout">
-                {jobs.map((job) => (
-                  <motion.tr
-                    key={job.id}
-                    variants={rowVariants}
-                    whileHover={{ scale: 1.005, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
-                    className="group cursor-pointer relative"
-                    onClick={() => openDetails(job.id)}
-                  >
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{job.type}</span>
-                        <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-0.5">ID: {job.id.slice(0, 8)}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap text-sm font-black text-brand-600">{job.target}</td>
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <span className={getStatusBadge(job.status)}>{job.status}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <div className="flex flex-col gap-2.5">
-                        <div className="w-full bg-brand-50 rounded-full h-2.5 min-w-[140px] overflow-hidden relative border border-brand-100/50">
-                          <motion.div
-                            className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]'}`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${job.progress}%` }}
-                            transition={{ duration: 1.2, ease: "circOut" }}
-                          >
-                            {job.status === 'Processing' && (
-                              <motion.div
-                                className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent"
-                                animate={{ x: ['-100%', '200%'] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                              />
-                            )}
-                          </motion.div>
+                {jobs.map((job) => {
+                  const clampedProgress = Math.min(Math.max(job.progress || 0, 0), 100);
+                  return (
+                    <motion.tr
+                      key={job.id}
+                      variants={rowVariants}
+                      whileHover={{ scale: 1.005, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
+                      className="group cursor-pointer relative"
+                      onClick={() => openDetails(job.id)}
+                    >
+                      <td className="px-10 py-6 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{job.type}</span>
+                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-0.5">ID: {job.id.slice(0, 8)}</span>
                         </div>
-                        <span className="text-[10px] text-brand-400 font-black tracking-widest">{job.progress}% COMPLETE</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-brand-500 text-sm font-bold max-w-[220px] truncate">
-                        {(job.error || job.resultSummary) && <Info size={14} className="text-brand-200 flex-shrink-0" />}
-                        {job.error ? 'Pipeline Fault (check logs)' : (job.resultSummary || 'No summary available')}
-                      </div>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap text-[11px] font-black text-brand-400">
-                      {new Date(job.createdAt).toLocaleString()}
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
-                        onClick={(e) => { e.stopPropagation(); openDetails(job.id); }}
-                      >
-                        Details
-                      </Button>
-                    </td>
-                  </motion.tr>
-                ))}
+                      </td>
+                      <td className="px-10 py-6 whitespace-nowrap text-sm font-black text-brand-600">{job.target}</td>
+                      <td className="px-10 py-6 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <span className={getStatusBadge(job.status)}>{job.status}</span>
+                        </div>
+                      </td>
+                      <td className="px-10 py-6 whitespace-nowrap">
+                        <div className="flex flex-col gap-2.5">
+                          <div className="w-full bg-brand-50 rounded-full h-2.5 min-w-[140px] overflow-hidden relative border border-brand-100/50">
+                            <motion.div
+                              className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_10px_rgba(124,58,237,0.3)]'}`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${clampedProgress}%` }}
+                              transition={{ duration: 1.2, ease: "circOut" }}
+                            >
+                              {job.status === 'Processing' && (
+                                <motion.div
+                                  className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent"
+                                  animate={{ x: ['-100%', '200%'] }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                />
+                              )}
+                            </motion.div>
+                          </div>
+                          <span className="text-[10px] text-brand-400 font-black tracking-widest">{clampedProgress}% COMPLETE</span>
+                        </div>
+                      </td>
+                      <td className="px-10 py-6 whitespace-nowrap">
+                        <div className="flex items-center gap-2 text-brand-500 text-sm font-bold max-w-[220px] truncate">
+                          {(job.error || job.resultSummary) && <Info size={14} className="text-brand-200 flex-shrink-0" />}
+                          {job.error ? 'Pipeline Fault (check logs)' : (job.resultSummary || 'No summary available')}
+                        </div>
+                      </td>
+                      <td className="px-10 py-6 whitespace-nowrap text-[11px] font-black text-brand-400">
+                        {new Date(job.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-10 py-6 whitespace-nowrap text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
+                          onClick={(e) => { e.stopPropagation(); openDetails(job.id); }}
+                        >
+                          Details
+                        </Button>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
               </AnimatePresence>
             )}
           </motion.tbody>
@@ -237,14 +275,14 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
       {/* Pagination */}
       <div className="px-10 py-8 border-t border-brand-100 bg-brand-50/10 flex items-center justify-between">
         <div className="text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">
-          Sequence <span className="text-brand-900">{page}</span> <span className="mx-3 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+          Sequence <span className="text-brand-900">{page}</span> <span className="mx-3 text-brand-200">/</span> <span className="text-brand-900">{safeTotalPages}</span>
         </div>
         <div className="flex gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={prevPage}
-            disabled={page === 1 || loading}
+            disabled={page <= 1 || loading}
             leftIcon={<ChevronLeft size={16} />}
             className="font-black"
           >
@@ -254,7 +292,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
             variant="outline"
             size="sm"
             onClick={nextPage}
-            disabled={page === totalPages || loading}
+            disabled={page >= safeTotalPages || loading}
             rightIcon={<ChevronRight size={16} />}
             className="font-black"
           >
