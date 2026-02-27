@@ -177,13 +177,12 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch stats for neighborhood {NeighborhoodCode}", geo.Code);
-            // We choose to continue processing other items, or we can rethrow with context
-            // Given this is a batch job, failing one item might be acceptable, but let's rethrow with context as requested
+            // We choose to abort the batch on error and rethrow for upstream handling
             throw new ApplicationException($"Failed to fetch stats for neighborhood '{geo.Code}' in city '{city}': {ex.Message}", ex);
         }
 
-        var stats = await statsTask;
-        var crime = await crimeTask;
+        var stats = statsTask.Result;
+        var crime = crimeTask.Result;
 
         neighborhood.PopulationDensity = stats?.PopulationDensity;
         neighborhood.AverageWozValue = stats?.AverageWozValueKeur * 1000;
