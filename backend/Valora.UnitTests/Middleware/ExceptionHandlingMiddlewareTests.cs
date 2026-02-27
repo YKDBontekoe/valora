@@ -348,6 +348,11 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         Assert.Equal((int)HttpStatusCode.ServiceUnavailable, context.Response.StatusCode);
+
+        // Check body detail
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        Assert.Contains("External Service Error", body);
     }
 
     [Fact]

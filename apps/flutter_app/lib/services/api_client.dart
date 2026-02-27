@@ -173,13 +173,16 @@ class ApiClient {
     );
 
     if (error is SocketException) {
-      return NetworkException('No internet connection. Please check your settings.');
+      return NetworkException('No internet connection. Please check your network settings.');
     } else if (error is TimeoutException) {
       return NetworkException('Request timed out. Please check your connection or try again later.');
     } else if (error is http.ClientException) {
+      // Often wraps SocketException, so we provide a generic network message
       return NetworkException('Unable to reach the server. Please check your connection.');
     } else if (error is FormatException) {
-      return JsonParsingException('Failed to process server response.');
+      return JsonParsingException('Failed to process server response. Please try again later.');
+    } else if (error is HandshakeException) {
+        return NetworkException('Secure connection failed. Please check your network.');
     }
 
     return UnknownException('An unexpected error occurred. Please try again.');

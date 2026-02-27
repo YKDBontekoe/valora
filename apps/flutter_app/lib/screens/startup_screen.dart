@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'auth_wrapper.dart';
+import '../widgets/valora_error_state.dart';
 
 class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});
@@ -21,9 +22,10 @@ class _StartupScreenState extends State<StartupScreen>
   late Animation<double> _iconScaleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _textSlideAnimation;
-  late Future<void> _authCheckFuture;
   late bool _disableAnimations;
-  final Completer<void> _authCheckCompleter = Completer<void>();
+
+  bool _hasError = false;
+  Object? _lastError;
 
   @override
   void initState() {
@@ -65,38 +67,44 @@ class _StartupScreenState extends State<StartupScreen>
           ),
         );
 
-    _authCheckFuture = _authCheckCompleter.future;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        await context.read<AuthProvider>().checkAuth();
-      } finally {
-        if (!_authCheckCompleter.isCompleted) {
-          _authCheckCompleter.complete();
-        }
-      }
-    });
-
-    _startAnimation();
+    _initApp();
   }
 
-  Future<void> _startAnimation() async {
+  Future<void> _initApp() async {
+     // Start animation in parallel
+    if (_disableAnimations) {
+       _controller.value = 1;
+    } else {
+       _controller.forward();
+    }
+
     try {
-      final List<Future<void>> startupFutures = <Future<void>>[
-        _authCheckFuture,
-        Future<void>.delayed(_minimumStartupDuration),
-      ];
+      setState(() {
+        _hasError = false;
+        _lastError = null;
+      });
 
-      if (_disableAnimations) {
-        _controller.value = 1;
-      } else {
-        startupFutures.add(_controller.forward().orCancel);
-      }
+      // Ensure minimum splash duration
+      final minDurationFuture = Future<void>.delayed(_minimumStartupDuration);
 
-      await Future.wait<void>(startupFutures);
+      // Perform auth check
+      await context.read<AuthProvider>().checkAuth();
+
+      await minDurationFuture;
+
       if (!mounted) return;
       _navigateToHome();
-    } on TickerCanceled {
-      // Animation canceled because the widget was disposed.
+
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _hasError = true;
+        _lastError = e;
+      });
+      // Ensure animation completes so UI isn't stuck halfway
+      if (!_disableAnimations) {
+         await _controller.forward();
+      }
     }
   }
 
@@ -123,6 +131,21 @@ class _StartupScreenState extends State<StartupScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    if (_hasError) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: ValoraErrorState(
+              error: _lastError ?? Exception("Initialization failed"),
+              onRetry: _initApp
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
