@@ -18,6 +18,12 @@ void main() {
     });
   }
 
+  setUp(() {
+    // Initialize with a dummy client, though individual tests usually override it.
+    mockClient = createClient();
+    apiClient = ApiClient(client: mockClient, retryOptions: const RetryOptions(maxAttempts: 1));
+  });
+
   group('ApiClient Tests', () {
     test('get performs a GET request', () async {
       mockClient = MockClient((request) async {
@@ -136,7 +142,6 @@ void main() {
 
     test('request throws UnknownException on unknown method', () async {
       apiClient = ApiClient(client: createClient(), retryOptions: const RetryOptions(maxAttempts: 1));
-      // ApiClient catches UnsupportedError and wraps/converts it to UnknownException
       expect(
         () => apiClient.request('UNKNOWN', '/test'),
         throwsA(isA<UnknownException>()),
@@ -147,7 +152,6 @@ void main() {
       var callCount = 0;
       mockClient = MockClient((request) async {
         callCount++;
-        // Verify Authorization header update
         if (callCount == 1) {
           if (request.headers['Authorization'] == 'Bearer old_token') {
             return http.Response('Unauthorized', 401);
