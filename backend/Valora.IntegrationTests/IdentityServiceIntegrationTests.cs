@@ -175,6 +175,15 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
         };
         _dbContext.SavedListings.Add(savedListing);
 
+        // 3b. Saved Listing in OTHER workspace (Added by user)
+        var savedListingInOtherWorkspace = new SavedListing
+        {
+            WorkspaceId = otherWorkspace.Id,
+            ListingId = listing.Id,
+            AddedByUserId = userId
+        };
+        _dbContext.SavedListings.Add(savedListingInOtherWorkspace);
+
         // 4. Listing Comment
         // To test unlinking of replies without deleting them, we need a SavedListing NOT owned by the user.
         var otherSavedListing = new SavedListing
@@ -242,6 +251,7 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
         Assert.NotNull(await _dbContext.Workspaces.FindAsync(workspace.Id));
         Assert.NotNull(await _dbContext.WorkspaceMembers.FindAsync(membership.Id));
         Assert.NotNull(await _dbContext.SavedListings.FindAsync(savedListing.Id));
+        Assert.NotNull(await _dbContext.SavedListings.FindAsync(savedListingInOtherWorkspace.Id));
         Assert.NotNull(await _dbContext.ListingComments.FindAsync(comment.Id));
         Assert.NotNull(await _dbContext.ListingComments.FindAsync(reply.Id));
         Assert.NotNull(await _dbContext.ActivityLogs.FindAsync(log.Id));
@@ -270,6 +280,9 @@ public class IdentityServiceIntegrationTests : IAsyncLifetime
 
         var deletedSavedListing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(_dbContext.SavedListings, sl => sl.Id == savedListing.Id);
         Assert.Null(deletedSavedListing);
+
+        var deletedOtherSavedListing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(_dbContext.SavedListings, sl => sl.Id == savedListingInOtherWorkspace.Id);
+        Assert.Null(deletedOtherSavedListing);
 
         var deletedComment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(_dbContext.ListingComments, c => c.Id == comment.Id);
         Assert.Null(deletedComment);

@@ -286,8 +286,19 @@ public class IdentityService : IIdentityService
 
             await _context.SaveChangesAsync();
 
-            var result = await _userManager.DeleteAsync(user);
-            return ToApplicationResult(result);
+            try
+            {
+                var result = await _userManager.DeleteAsync(user);
+                return ToApplicationResult(result);
+            }
+            catch (Exception)
+            {
+                // In a real relational DB, the transaction would roll back the manual deletions above.
+                // In InMemory, we can't easily roll back. This catch block exists to ensure
+                // we don't leave the test in a confusing state without logging or rethrowing,
+                // but primarily to mirror the structure of the transactional block.
+                throw;
+            }
         }
     }
 
