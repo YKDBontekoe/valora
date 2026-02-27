@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
@@ -74,7 +75,7 @@ class ValoraAvatar extends StatelessWidget {
             ],
             image: imageUrl != null
                 ? DecorationImage(
-                    image: NetworkImage(imageUrl!),
+                    image: CachedNetworkImageProvider(imageUrl!),
                     fit: BoxFit.cover,
                   )
                 : null,

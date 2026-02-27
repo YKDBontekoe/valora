@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
@@ -64,10 +65,14 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          listing!.imageUrl!,
+                        CachedNetworkImage(
+                          imageUrl: listing!.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
+                          placeholder: (context, url) => const ValoraShimmer(
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                          errorWidget: (_, _, _) => Container(
                             color: ValoraColors.primary.withValues(alpha: 0.1),
                             child: const Center(
                               child: Icon(Icons.home_rounded,

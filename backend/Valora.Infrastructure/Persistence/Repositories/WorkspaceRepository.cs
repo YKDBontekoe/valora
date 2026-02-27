@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 
@@ -30,6 +31,24 @@ public class WorkspaceRepository : IWorkspaceRepository
             .Include(w => w.SavedListings)
             .Where(w => w.Members.Any(m => m.UserId == userId))
             .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<WorkspaceDto>> GetUserWorkspaceDtosAsync(string userId, CancellationToken ct = default)
+    {
+        return await _context.Workspaces
+            .AsNoTracking()
+            .Where(w => w.Members.Any(m => m.UserId == userId))
+            .OrderByDescending(w => w.CreatedAt)
+            .Select(w => new WorkspaceDto(
+                w.Id,
+                w.Name,
+                w.Description,
+                w.OwnerId,
+                w.CreatedAt,
+                w.Members.Count,
+                w.SavedListings.Count
+            ))
             .ToListAsync(ct);
     }
 
@@ -143,6 +162,32 @@ public class WorkspaceRepository : IWorkspaceRepository
             .ToListAsync(ct);
     }
 
+    public async Task<List<SavedListingDto>> GetSavedListingDtosAsync(Guid workspaceId, CancellationToken ct = default)
+    {
+        return await _context.SavedListings
+            .AsNoTracking()
+            .Where(sl => sl.WorkspaceId == workspaceId)
+            .OrderByDescending(sl => sl.CreatedAt)
+            .Select(sl => new SavedListingDto(
+                sl.Id,
+                sl.ListingId,
+                sl.Listing != null ? new ListingSummaryDto(
+                    sl.Listing.Id,
+                    sl.Listing.Address,
+                    sl.Listing.City,
+                    sl.Listing.Price,
+                    sl.Listing.ImageUrl,
+                    sl.Listing.Bedrooms,
+                    sl.Listing.LivingAreaM2
+                ) : null,
+                sl.AddedByUserId,
+                sl.Notes,
+                sl.CreatedAt,
+                sl.Comments.Count
+            ))
+            .ToListAsync(ct);
+    }
+
     public Task<SavedListing> AddSavedListingAsync(SavedListing savedListing, CancellationToken ct = default)
     {
         _context.SavedListings.Add(savedListing);
@@ -196,6 +241,24 @@ public class WorkspaceRepository : IWorkspaceRepository
             .Where(a => a.WorkspaceId == workspaceId)
             .OrderByDescending(a => a.CreatedAt)
             .Take(50)
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<ActivityLogDto>> GetActivityLogDtosAsync(Guid workspaceId, CancellationToken ct = default)
+    {
+        return await _context.ActivityLogs
+            .AsNoTracking()
+            .Where(a => a.WorkspaceId == workspaceId)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(50)
+            .Select(a => new ActivityLogDto(
+                a.Id,
+                a.ActorId,
+                a.Type.ToString(),
+                a.Summary,
+                a.CreatedAt,
+                a.Metadata
+            ))
             .ToListAsync(ct);
     }
 
