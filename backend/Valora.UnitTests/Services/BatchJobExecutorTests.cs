@@ -10,6 +10,7 @@ namespace Valora.UnitTests.Services;
 public class BatchJobExecutorTests
 {
     private readonly Mock<IBatchJobRepository> _jobRepositoryMock = new();
+    private readonly Mock<IBatchJobStateManager> _stateManagerMock = new();
     private readonly Mock<ILogger<BatchJobExecutor>> _loggerMock = new();
     private readonly Mock<IBatchJobProcessor> _cityIngestionProcessorMock = new();
     private readonly List<IBatchJobProcessor> _processors = new();
@@ -25,6 +26,7 @@ public class BatchJobExecutorTests
         return new BatchJobExecutor(
             _jobRepositoryMock.Object,
             _processors,
+            _stateManagerMock.Object,
             _loggerMock.Object);
     }
 
@@ -37,24 +39,23 @@ public class BatchJobExecutorTests
 
         await executor.ProcessNextJobAsync();
 
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<BatchJob>(), It.IsAny<CancellationToken>()), Times.Never);
+        _stateManagerMock.Verify(x => x.MarkJobStartedAsync(It.IsAny<BatchJob>(), It.IsAny<CancellationToken>()), Times.Never);
         _cityIngestionProcessorMock.Verify(x => x.ProcessAsync(It.IsAny<BatchJob>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task ProcessNextJobAsync_ShouldCallCorrectProcessor()
+    public async Task ProcessNextJobAsync_ShouldCallCorrectProcessor_AndMarkCompleted()
     {
         var executor = CreateExecutor();
-        // Updated test expectation: The job returned by GetNextPendingJobAsync is already Processing
         var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
         await executor.ProcessNextJobAsync();
 
+        _stateManagerMock.Verify(x => x.MarkJobStartedAsync(job, It.IsAny<CancellationToken>()), Times.Once);
         _cityIngestionProcessorMock.Verify(x => x.ProcessAsync(job, It.IsAny<CancellationToken>()), Times.Once);
-        Assert.Equal(BatchJobStatus.Completed, job.Status);
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _stateManagerMock.Verify(x => x.MarkJobCompletedAsync(job, "Job completed successfully.", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -65,30 +66,31 @@ public class BatchJobExecutorTests
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
+        var exception = new Exception("Processor Error");
         _cityIngestionProcessorMock.Setup(x => x.ProcessAsync(job, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Processor Error"));
+            .ThrowsAsync(exception);
 
         await executor.ProcessNextJobAsync();
 
-        Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Equal("Job failed due to an internal error.", job.Error);
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _stateManagerMock.Verify(x => x.MarkJobStartedAsync(job, It.IsAny<CancellationToken>()), Times.Once);
+        _stateManagerMock.Verify(x => x.MarkJobFailedAsync(job, null, exception, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task ProcessNextJobAsync_ShouldFail_WhenNoProcessorFound()
     {
         // Setup executor with empty processors list
-        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, new List<IBatchJobProcessor>(), _loggerMock.Object);
+        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, new List<IBatchJobProcessor>(), _stateManagerMock.Object, _loggerMock.Object);
         var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
         await executor.ProcessNextJobAsync();
 
-        Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Equal("Job failed due to an internal error.", job.Error);
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _stateManagerMock.Verify(x => x.MarkJobStartedAsync(job, It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify that MarkJobFailedAsync is called with an exception
+        _stateManagerMock.Verify(x => x.MarkJobFailedAsync(job, null, It.IsAny<InvalidOperationException>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -101,7 +103,7 @@ public class BatchJobExecutorTests
         processor2.Setup(x => x.JobType).Returns(BatchJobType.CityIngestion);
 
         var processors = new List<IBatchJobProcessor> { processor1.Object, processor2.Object };
-        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, processors, _loggerMock.Object);
+        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, processors, _stateManagerMock.Object, _loggerMock.Object);
 
         var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
@@ -109,11 +111,8 @@ public class BatchJobExecutorTests
 
         await executor.ProcessNextJobAsync();
 
-        Assert.Equal(BatchJobStatus.Failed, job.Status);
-        // SingleOrDefault throws InvalidOperationException when > 1 match
-        // The executor catches Exception and sets a generic Error message
-        Assert.NotNull(job.Error);
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+         // SingleOrDefault throws InvalidOperationException when > 1 match
+        _stateManagerMock.Verify(x => x.MarkJobFailedAsync(job, null, It.IsAny<InvalidOperationException>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -129,13 +128,11 @@ public class BatchJobExecutorTests
 
         await executor.ProcessNextJobAsync();
 
-        Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Equal("Job cancelled by user.", job.Error);
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _stateManagerMock.Verify(x => x.MarkJobFailedAsync(job, "Job cancelled by user.", null, CancellationToken.None), Times.Once);
     }
 
     [Fact]
-    public async Task ProcessNextJobAsync_ShouldNotOverwriteStatus_IfChangedByProcessor()
+    public async Task ProcessNextJobAsync_ShouldNotMarkCompleted_IfChangedByProcessor()
     {
         var executor = CreateExecutor();
         var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
@@ -145,17 +142,16 @@ public class BatchJobExecutorTests
         _cityIngestionProcessorMock.Setup(x => x.ProcessAsync(job, It.IsAny<CancellationToken>()))
             .Callback<BatchJob, CancellationToken>((j, ct) =>
             {
-                // Simulate processor marking job as Failed (or some other status) internally without throwing
+                // Simulate processor marking job as Failed (or some other status) internally
+                // Note: In real life, the processor would probably call StateManager too, or modify the object directly.
+                // Here we simulate the object modification.
                 j.Status = BatchJobStatus.Failed;
-                j.Error = "Custom error";
             })
             .Returns(Task.CompletedTask);
 
         await executor.ProcessNextJobAsync();
 
-        // Should REMAIN Failed, not be overwritten to Completed
-        Assert.Equal(BatchJobStatus.Failed, job.Status);
-        Assert.Equal("Custom error", job.Error);
-        _jobRepositoryMock.Verify(x => x.UpdateAsync(job, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        // Should NOT call MarkJobCompletedAsync because status is not Processing anymore
+        _stateManagerMock.Verify(x => x.MarkJobCompletedAsync(It.IsAny<BatchJob>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

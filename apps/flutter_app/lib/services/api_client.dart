@@ -242,17 +242,35 @@ class ApiClient {
 
   Future<T> handleResponse<T>(http.Response response, T Function(String body) parser) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return await _runner(parser, response.body);
+      try {
+        return await _runner(parser, response.body);
+      } catch (e) {
+        if (e is FormatException) {
+          throw JsonParsingException('Failed to process server response.');
+        }
+        rethrow;
+      }
     }
-
-    developer.log(
-      'API Error: ${response.statusCode} - ${response.body}',
-      name: 'ApiClient',
-    );
 
     final String? message = _parseErrorMessage(response.body);
     final String? traceId = _parseTraceId(response.body);
     final String traceSuffix = traceId != null ? ' (Ref: $traceId)' : '';
+
+    developer.log(
+      'API Error: ${response.statusCode}$traceSuffix',
+      name: 'ApiClient',
+    );
+
+    // Report full details to CrashReportingService securely
+    CrashReportingService.captureException(
+      ServerException(message ?? 'API Error ${response.statusCode}'),
+      stackTrace: StackTrace.current,
+      context: {
+        'statusCode': response.statusCode,
+        'body': response.body,
+        'traceId': traceId,
+      },
+    );
 
     switch (response.statusCode) {
       case 400:

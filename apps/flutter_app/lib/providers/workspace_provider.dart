@@ -20,8 +20,9 @@ class WorkspaceProvider extends ChangeNotifier {
   bool _isDeletingWorkspace = false;
   bool get isDeletingWorkspace => _isDeletingWorkspace;
 
-  String? _error;
-  String? get error => _error;
+  Object? _exception;
+  Object? get exception => _exception;
+  String? get error => _exception?.toString();
 
   Workspace? _selectedWorkspace;
   Workspace? get selectedWorkspace => _selectedWorkspace;
@@ -36,13 +37,13 @@ class WorkspaceProvider extends ChangeNotifier {
 
   Future<void> fetchWorkspaces() async {
     _isWorkspacesLoading = true;
-    _error = null;
+    _exception = null;
     notifyListeners();
 
     try {
       _workspaces = await _repository.fetchWorkspaces();
     } catch (e) {
-      _error = e.toString();
+      _exception = e;
     } finally {
       _isWorkspacesLoading = false;
       notifyListeners();
@@ -61,14 +62,14 @@ class WorkspaceProvider extends ChangeNotifier {
 
   Future<void> deleteWorkspace(String id) async {
     _isDeletingWorkspace = true;
-    _error = null;
+    _exception = null;
     notifyListeners();
 
     try {
       await _repository.deleteWorkspace(id);
       _workspaces = _workspaces.where((w) => w.id != id).toList();
     } catch (e) {
-      _error = e.toString();
+      _exception = e;
       rethrow;
     } finally {
       _isDeletingWorkspace = false;
@@ -78,7 +79,7 @@ class WorkspaceProvider extends ChangeNotifier {
 
   Future<void> selectWorkspace(String id) async {
     _isWorkspaceDetailLoading = true;
-    _error = null;
+    _exception = null;
     notifyListeners();
     try {
       final workspaceFuture = _repository.getWorkspace(id);
@@ -99,7 +100,7 @@ class WorkspaceProvider extends ChangeNotifier {
       _activityLogs = results[3] as List<ActivityLog>;
 
     } catch (e) {
-      _error = e.toString();
+      _exception = e;
     } finally {
       _isWorkspaceDetailLoading = false;
       notifyListeners();

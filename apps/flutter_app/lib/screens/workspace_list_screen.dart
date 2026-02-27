@@ -6,6 +6,7 @@ import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
+import '../widgets/valora_error_state.dart';
 import '../widgets/valora_widgets.dart';
 import 'workspace_detail_screen.dart';
 
@@ -126,85 +127,80 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
               ),
             ),
           ),
-          Consumer<WorkspaceProvider>(
-            builder: (context, provider, child) {
-              if (provider.isWorkspacesLoading && provider.workspaces.isEmpty) {
+          Selector<WorkspaceProvider, ({bool isLoading, Object? exception, List<Workspace> workspaces})>(
+            selector: (_, provider) => (
+              isLoading: provider.isWorkspacesLoading,
+              exception: provider.exception,
+              workspaces: provider.workspaces
+            ),
+            builder: (context, data, child) {
+              // 1. Loading State with Skeletons
+              if (data.isLoading && data.workspaces.isEmpty) {
                 return SliverPadding(
                   padding: const EdgeInsets.all(ValoraSpacing.md),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        if (index.isOdd) {
-                          return const SizedBox(height: ValoraSpacing.sm);
-                        }
+                        if (index.isOdd) return const SizedBox(height: ValoraSpacing.sm);
                         return const _WorkspaceListSkeleton();
                       },
-                      childCount: 9, // 5 items + 4 separators
+                      childCount: 9,
                     ),
                   ),
                 );
               }
-              if (provider.error != null && provider.workspaces.isEmpty) {
+
+              // 2. Error State
+              if (data.exception != null && data.workspaces.isEmpty) {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
-                    child: ValoraEmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Failed to load',
-                      subtitle: 'Could not load your workspaces. Please try again.',
-                      actionLabel: 'Retry',
-                      onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
+                    child: ValoraErrorState(
+                      error: data.exception!,
+                      onRetry: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
                     ),
                   ),
                 );
               }
 
-              final displayList = _getFilteredAndSortedWorkspaces(provider.workspaces);
+              final displayList = _getFilteredAndSortedWorkspaces(data.workspaces);
 
+              // 3. Empty States
               if (displayList.isEmpty) {
-                if (_searchQuery.isNotEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: ValoraEmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'No results',
-                        subtitle: 'No workspaces match your search.',
-                        actionLabel: 'Clear Search',
-                        onAction: () => _searchController.clear(),
-                      ),
-                    ),
-                  );
-                }
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: ValoraEmptyState(
-                      icon: Icons.workspaces_rounded,
-                      title: 'No workspaces yet',
-                      subtitle:
-                          'Create a workspace to collaborate with family and friends on your property search.',
-                      actionLabel: 'Create Workspace',
-                      onAction: () => _showCreateDialog(context),
+                      icon: _searchQuery.isNotEmpty 
+                          ? Icons.search_off_rounded 
+                          : Icons.workspaces_rounded,
+                      title: _searchQuery.isNotEmpty ? 'No results' : 'No workspaces yet',
+                      subtitle: _searchQuery.isNotEmpty
+                          ? 'No workspaces match your search.'
+                          : 'Create a workspace to collaborate with family and friends.',
+                      actionLabel: _searchQuery.isNotEmpty ? 'Clear Search' : 'Create Workspace',
+                      onAction: () => _searchQuery.isNotEmpty 
+                          ? _searchController.clear() 
+                          : _showCreateDialog(context),
                     ),
                   ),
                 );
               }
+
+              // 4. Content List
               return SliverPadding(
                 padding: const EdgeInsets.all(ValoraSpacing.md),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      if (index.isOdd) {
-                        return const SizedBox(height: ValoraSpacing.sm);
-                      }
+                      if (index.isOdd) return const SizedBox(height: ValoraSpacing.sm);
                       final workspace = displayList[index ~/ 2];
                       return WorkspaceListItem(
                         workspace: workspace,
                         index: index ~/ 2,
                       );
                     },
-                    childCount: displayList.length * 2 - 1,
+                    childCount: (displayList.length * 2 - 1).clamp(0, double.infinity).toInt(),
                   ),
                 ),
               );
@@ -423,7 +419,7 @@ class WorkspaceListItem extends StatelessWidget {
           ),
         ],
         child: Text(
-            'Are you sure you want to delete "${workspace.name}"? This action cannot be undone and all data including saved listings and comments will be lost.'),
+            'Are you sure you want to delete "${workspace.name}"? This action cannot be undone.'),
       ),
     );
   }
