@@ -32,6 +32,20 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
 
     public BatchJobType JobType => BatchJobType.CityIngestion;
 
+    /// <summary>
+    /// Executes the ingestion process for a specific city.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Strategy:</strong>
+    /// <list type="number">
+    /// <item>Fetch <em>all</em> neighborhood geometries for the city from PDOK.</item>
+    /// <item>Fetch <em>all</em> existing neighborhood entities from our DB for this city (optimization to avoid N+1 queries).</item>
+    /// <item>Iterate through the PDOK list, fetching stats from CBS for each neighborhood.</item>
+    /// <item>Upsert the entities in batches to keep memory usage low and provide incremental progress updates.</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
     public async Task ProcessAsync(BatchJob job, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing city ingestion for {City}", job.Target);
@@ -54,7 +68,10 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
             return;
         }
 
-        // Optimization: Pre-fetch all existing neighborhoods for this city to avoid N+1 reads
+        // Optimization: Pre-fetch all existing neighborhoods for this city to avoid N+1 reads.
+        // If we checked the DB inside the loop ("SELECT * FROM Neighborhood WHERE Code = 'x'"),
+        // processing 500 neighborhoods would result in 500 round-trips.
+        // Fetching them all at once reduces this to 1 query.
         var existingNeighborhoods = await _neighborhoodRepository.GetByCityAsync(job.Target, cancellationToken);
         var existingDict = existingNeighborhoods.ToDictionary(n => n.Code);
 

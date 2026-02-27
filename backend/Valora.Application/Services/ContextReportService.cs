@@ -43,26 +43,33 @@ public sealed class ContextReportService : IContextReportService
     /// <remarks>
     /// <para>
     /// <strong>Architecture Pattern: Fan-Out / Fan-In</strong><br/>
-    /// This method acts as the orchestrator for the "Fan-Out" pattern. It does NOT query databases sequentially.
-    /// Instead, it delegates the parallel fetching of data to <see cref="IContextDataProvider"/> (Fan-Out),
-    /// waits for all tasks to complete, and then aggregates the results (Fan-In) into a single report.
+    /// This method implements the core "Fan-Out" strategy that defines Valora's architecture.
+    /// Rather than querying a local database for pre-existing reports, it acts as a real-time aggregator.
     /// </para>
     /// <para>
-    /// <strong>Why Real-Time?</strong><br/>
-    /// We do not store pre-computed reports for every address in the Netherlands (too much data, stale too quickly).
-    /// Instead, we generate them on-demand and cache them aggressively.
+    /// <strong>The Data Flow:</strong>
+    /// <list type="number">
+    /// <item><strong>Resolve:</strong> Converts the input string (address or URL) into precise coordinates.</item>
+    /// <item><strong>Check Cache:</strong> Uses a 5-decimal precision key (~1.1m resolution) to check for recent reports.</item>
+    /// <item><strong>Fan-Out:</strong> If not cached, it delegates to <see cref="IContextDataProvider.GetSourceDataAsync"/>.
+    /// This provider fires multiple tasks in parallel (Task.WhenAll) to fetch data from CBS, PDOK, and OSM simultaneously.</item>
+    /// <item><strong>Fan-In:</strong> The results are normalized and scored by <see cref="ContextReportBuilder"/>.</item>
+    /// </list>
     /// </para>
     /// <para>
-    /// Key Decisions:
+    /// <strong>Key Design Decisions:</strong>
     /// <list type="bullet">
     /// <item>
-    /// <strong>Radius Clamping:</strong> The search radius is clamped between 200m and 5000m.
-    /// Values > 5km cause excessive load on the Overpass API (OSM) and result in timeouts.
+    /// <strong>No Scraping:</strong> We rely entirely on public APIs. This ensures legal compliance and data freshness.
     /// </item>
     /// <item>
-    /// <strong>High-Precision Caching:</strong> We resolve the location to coordinates first, then use
-    /// 5-decimal precision (~1 meter) for the cache key. This ensures "Damrak 1" and "Damrak 1, Amsterdam"
-    /// share the same expensive report generation.
+    /// <strong>Radius Clamping (200m - 5km):</strong> We strictly enforce these limits. A radius larger than 5km
+    /// triggers massive queries on OpenStreetMap (Overpass API), causing timeouts and memory spikes.
+    /// A radius smaller than 200m is statistically insignificant for neighborhood context.
+    /// </item>
+    /// <item>
+    /// <strong>Partial Failure Tolerance:</strong> If a secondary source (e.g., Luchtmeetnet) fails, we do NOT fail the request.
+    /// Instead, we return a valid report with a 'Warning' flag. This ensures the app remains usable even during partial outages.
     /// </item>
     /// </list>
     /// </para>

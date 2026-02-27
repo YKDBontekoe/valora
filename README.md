@@ -21,7 +21,7 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 ## 🚀 Quick Start (10 Minutes)
 
-Follow these steps to get the entire system running locally.
+Follow these steps to get the entire system running locally. For a detailed walkthrough, see the **[Onboarding Guide](docs/onboarding.md)**.
 
 ### Prerequisites
 - **Docker Desktop** (for database)
@@ -88,48 +88,42 @@ npm run dev
 
 Valora follows **Clean Architecture** principles to ensure modularity and testability.
 
-### System Overview
+### System Context
+
+The following diagram shows how Valora fits into the broader ecosystem.
 
 ```mermaid
-graph TD
-    subgraph "Clients"
-        Flutter[Flutter App]
-        Admin[Admin Dashboard]
-    end
+C4Container
+    title System Context Diagram
 
-    subgraph "Valora Backend"
-        API["API Layer (Valora.Api)"]
-        App["Application Layer (MediatR)"]
-        Domain["Domain Layer (Entities)"]
-        Infra[Infrastructure Layer]
-    end
+    Person(user, "Mobile User", "A user looking for neighborhood insights")
+    Person(admin, "Admin User", "Platform administrator")
 
-    subgraph "Persistence"
-        DB[(PostgreSQL)]
-        Cache[(Memory Cache)]
-    end
+    Container_Boundary(valora, "Valora Platform") {
+        Container(app, "Flutter App", "Dart/Flutter", "Provides the mobile interface for users")
+        Container(web, "Admin Dashboard", "React/Vite", "Provides management tools for admins")
+        Container(api, "Valora API", ".NET 10 Minimal API", "Aggregates data and serves reports")
+        ContainerDb(db, "Database", "PostgreSQL", "Stores users, logs, and cache")
+    }
 
-    subgraph "External Data Sources"
-        PDOK[PDOK Locatieserver]
-        CBS[CBS Open Data]
-        OSM[OpenStreetMap]
-        Air[Luchtmeetnet]
-    end
+    System_Ext(pdok, "PDOK Locatieserver", "Geocoding and Map WMS")
+    System_Ext(cbs, "CBS Open Data", "Demographics and Stats")
+    System_Ext(osm, "OpenStreetMap / Overpass", "Amenities and POIs")
+    System_Ext(lucht, "Luchtmeetnet", "Air Quality Data")
 
-    Flutter -->|HTTPS| API
-    Admin -->|HTTPS| API
+    Rel(user, app, "Uses")
+    Rel(admin, web, "Uses")
+    Rel(app, api, "HTTPS / JSON", "Requests reports")
+    Rel(web, api, "HTTPS / JSON", "Manages system")
+    Rel(api, db, "EF Core", "Persists data")
 
-    API --> App
-    App --> Domain
-    App --> Infra
-
-    Infra --> DB
-    Infra --> Cache
-    Infra --> PDOK
-    Infra --> CBS
-    Infra --> OSM
-    Infra --> Air
+    Rel(api, pdok, "HTTPS", "Geocoding")
+    Rel(api, cbs, "HTTPS", "Fetch Stats")
+    Rel(api, osm, "HTTPS", "Fetch Amenities")
+    Rel(api, lucht, "HTTPS", "Fetch Air Quality")
 ```
+
+For a deeper dive into *why* we built it this way, see **[Architecture Decisions](docs/architecture-decisions.md)**.
 
 ### The "Fan-Out" Aggregation Pattern
 When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results ("Fan-In") into a unified score.
@@ -198,13 +192,18 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 
 ## 📚 Documentation Index
 
+### Guides
 - **[Onboarding Guide](docs/onboarding.md)**: Detailed setup & troubleshooting.
 - **[User Guide](docs/user-guide.md)**: How to use the app to generate reports.
 - **[Developer Guide](docs/developer-guide.md)**: Coding standards & patterns.
 - **[API Reference](docs/api-reference.md)**: Endpoints & contracts.
-- **[Data Flow: Reading (Reports)](docs/onboarding-data-flow.md)**: Deep dive into the aggregation engine.
-- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**: User registration and data saving.
 - **[Admin App Guide](apps/admin_page/README.md)**: Setup and features for the admin dashboard.
+
+### Architecture & Data Flow
+- **[Architecture Decisions](docs/architecture-decisions.md)**: The "Why" behind the design.
+- **[Data Flow: Reading (Fan-Out)](docs/onboarding-data-flow.md)**: How context reports are generated live.
+- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**: How user registration works.
+- **[Data Flow: Batch Jobs](docs/onboarding-batch-job-flow.md)**: How background tasks (like City Ingestion) are processed.
 
 ---
 

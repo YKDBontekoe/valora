@@ -20,6 +20,16 @@ public class SystemHealthService : ISystemHealthService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Performs a comprehensive health check of the system.
+    /// </summary>
+    /// <returns>A DTO containing status of DB connectivity, job queues, and API latency.</returns>
+    /// <remarks>
+    /// <strong>Design Decision: No 500 Errors</strong><br/>
+    /// This method catches generic exceptions and returns an "Unhealthy" DTO instead of throwing.
+    /// This allows load balancers and monitoring tools (like UptimeRobot) to receive a valid JSON response
+    /// explaining <em>why</em> the system is down, rather than a generic "Internal Server Error".
+    /// </remarks>
     public async Task<SystemHealthDto> GetHealthAsync(CancellationToken ct)
     {
         try
