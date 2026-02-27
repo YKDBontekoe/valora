@@ -19,6 +19,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
     private readonly string _connectionString;
     public Mock<IAmenityClient> AmenityClientMock { get; } = new();
     public Mock<ICbsGeoClient> CbsGeoClientMock { get; } = new();
+    public Mock<ICbsNeighborhoodStatsClient> CbsNeighborhoodStatsClientMock { get; } = new();
+    public Mock<ICbsCrimeStatsClient> CbsCrimeStatsClientMock { get; } = new();
     public Mock<IGoogleTokenValidator> GoogleTokenValidatorMock { get; } = new();
 
     public IntegrationTestWebAppFactory(string connectionString)
@@ -102,6 +104,12 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<ICbsGeoClient>();
             services.AddSingleton<ICbsGeoClient>(CbsGeoClientMock.Object);
+
+            services.RemoveAll<ICbsNeighborhoodStatsClient>();
+            services.AddSingleton<ICbsNeighborhoodStatsClient>(CbsNeighborhoodStatsClientMock.Object);
+
+            services.RemoveAll<ICbsCrimeStatsClient>();
+            services.AddSingleton<ICbsCrimeStatsClient>(CbsCrimeStatsClientMock.Object);
 
             // Mock Google Validator
             services.RemoveAll<IGoogleTokenValidator>();
