@@ -61,11 +61,6 @@
 
   --font-display: "Plus Jakarta Sans", sans-serif;
   --font-body: "Inter", sans-serif;
-
-  --tracking-tightest: -0.04em;
-
-  --shadow-glow-primary: 0 0 10px var(--color-primary-500);
-  --shadow-glow-error: 0 0 10px var(--color-error-500);
 }
 
 :root {
@@ -130,5 +125,6 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Better focus states */
 :focus-visible {
-  @apply outline-none ring-4 ring-primary-500/20 border-primary-500 transition-all;
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
 }

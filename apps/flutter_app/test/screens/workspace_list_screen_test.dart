@@ -17,6 +17,10 @@ class FakeWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   String? get error => _error;
 
+  // Implements 'exception' for CI compatibility (ChangeNotifier/Provider interface drift),
+  // but removed @override to pass local analysis where it might not exist yet.
+  Object? get exception => null;
+
   List<Workspace> _workspaces = [];
   @override
   List<Workspace> get workspaces => _workspaces;
@@ -110,6 +114,19 @@ void main() {
     // Dispose the widget tree to cancel infinite animations (Shimmer)
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('Shows error state when error occurs', (WidgetTester tester) async {
+    fakeProvider.setLoading(false);
+    fakeProvider.setError('Failed to fetch data');
+    fakeProvider.setWorkspaces([]);
+
+    await tester.pumpWidget(createScreen());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Failed to load'), findsOneWidget);
+    expect(find.text('Could not load your workspaces. Please try again.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('Shows empty state when no workspaces', (WidgetTester tester) async {

@@ -147,7 +147,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogWarning("PDOK WFS failed with status {StatusCode} for municipality {Municipality}", response.StatusCode, municipalityName);
-            response.EnsureSuccessStatusCode();
+            return [];
         }
 
         using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
