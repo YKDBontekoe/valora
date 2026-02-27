@@ -28,18 +28,17 @@ internal static class OverpassResponseParser
             }
 
             var tags = GetTags(element);
-            var amenity = tags.GetValueOrDefault("amenity");
-            var shop = tags.GetValueOrDefault("shop");
-            var leisure = tags.GetValueOrDefault("leisure");
-            var highway = tags.GetValueOrDefault("highway");
-            var railway = tags.GetValueOrDefault("railway");
+            var category = CategorizeAmenity(tags);
 
-            if (amenity == "school") schoolCount++;
-            if (shop == "supermarket") supermarketCount++;
-            if (leisure == "park") parkCount++;
-            if (amenity is "hospital" or "clinic" or "doctors" or "pharmacy") healthcareCount++;
-            if (amenity == "charging_station") chargingStationCount++;
-            if (highway == "bus_stop" || railway == "station") transitCount++;
+            switch (category)
+            {
+                case "school": schoolCount++; break;
+                case "supermarket": supermarketCount++; break;
+                case "park": parkCount++; break;
+                case "healthcare": healthcareCount++; break;
+                case "charging_station": chargingStationCount++; break;
+                case "transit": transitCount++; break;
+            }
         }
 
         var populatedCategoryCount = new[] { schoolCount, supermarketCount, parkCount, healthcareCount, transitCount, chargingStationCount }.Count(c => c > 0);
@@ -76,6 +75,12 @@ internal static class OverpassResponseParser
 
     private static string GetAmenityType(Dictionary<string, string> tags)
     {
+        var category = CategorizeAmenity(tags);
+        return category != "unknown" ? category : "other";
+    }
+
+    private static string CategorizeAmenity(Dictionary<string, string> tags)
+    {
         if (tags.TryGetValue("amenity", out var a))
         {
             if (a == "school") return "school";
@@ -87,7 +92,7 @@ internal static class OverpassResponseParser
         if (tags.TryGetValue("highway", out var h) && h == "bus_stop") return "transit";
         if (tags.TryGetValue("railway", out var r) && r == "station") return "transit";
 
-        return "other";
+        return "unknown";
     }
 
     private static Dictionary<string, string> GetTags(OverpassElement element)

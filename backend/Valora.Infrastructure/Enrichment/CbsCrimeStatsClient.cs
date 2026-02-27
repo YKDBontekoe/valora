@@ -99,10 +99,10 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
 
             var row = values[0];
 
-            var residents = GetInt(row, "AantalInwoners_5");
-            var theft = GetInt(row, "TotaalDiefstalUitWoningSchuurED_106");
-            var vandalism = GetInt(row, "VernielingMisdrijfTegenOpenbareOrde_107");
-            var violent = GetInt(row, "GeweldsEnSeksueleMisdrijven_108");
+            var residents = row.GetIntSafe("AantalInwoners_5");
+            var theft = row.GetIntSafe("TotaalDiefstalUitWoningSchuurED_106");
+            var vandalism = row.GetIntSafe("VernielingMisdrijfTegenOpenbareOrde_107");
+            var violent = row.GetIntSafe("GeweldsEnSeksueleMisdrijven_108");
 
             var theftRate = ToRatePer1000(theft, residents);
             var vandalismRate = ToRatePer1000(vandalism, residents);
@@ -145,27 +145,6 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
         {
             yield return location.MunicipalityCode.Trim().PadRight(10);
         }
-    }
-
-    private static int? GetInt(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out var value))
-        {
-            return value;
-        }
-
-        if (property.ValueKind == JsonValueKind.String &&
-            int.TryParse(property.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
-        {
-            return parsed;
-        }
-
-        return null;
     }
 
     private static int? ToRatePer1000(int? count, int? residents)

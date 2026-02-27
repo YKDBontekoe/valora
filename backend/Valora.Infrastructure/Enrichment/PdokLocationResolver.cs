@@ -96,8 +96,8 @@ public sealed class PdokLocationResolver : ILocationResolver
 
             var doc = docsElement[0];
             // centroide_ll = WGS84 (Lat/Lon), centroide_rd = Rijksdriehoek (X/Y)
-            var pointLl = GeoUtils.TryParseWktPoint(GetString(doc, "centroide_ll"));
-            var pointRd = GeoUtils.TryParseWktPoint(GetString(doc, "centroide_rd"));
+            var pointLl = GeoUtils.TryParseWktPoint(doc.GetStringSafe("centroide_ll"));
+            var pointRd = GeoUtils.TryParseWktPoint(doc.GetStringSafe("centroide_rd"));
 
             if (pointLl is null)
             {
@@ -107,18 +107,18 @@ public sealed class PdokLocationResolver : ILocationResolver
 
             var result = new ResolvedLocationDto(
                 Query: input,
-                DisplayAddress: GetString(doc, "weergavenaam") ?? normalizedInput,
+                DisplayAddress: doc.GetStringSafe("weergavenaam") ?? normalizedInput,
                 Latitude: pointLl.Value.Y,
                 Longitude: pointLl.Value.X,
                 RdX: pointRd?.X,
                 RdY: pointRd?.Y,
-                MunicipalityCode: PrefixCode(GetString(doc, "gemeentecode"), "GM"),
-                MunicipalityName: GetString(doc, "gemeentenaam"),
-                DistrictCode: GetString(doc, "wijkcode"),
-                DistrictName: GetString(doc, "wijknaam"),
-                NeighborhoodCode: GetString(doc, "buurtcode"),
-                NeighborhoodName: GetString(doc, "buurtnaam"),
-                PostalCode: GetString(doc, "postcode"));
+                MunicipalityCode: PrefixCode(doc.GetStringSafe("gemeentecode"), "GM"),
+                MunicipalityName: doc.GetStringSafe("gemeentenaam"),
+                DistrictCode: doc.GetStringSafe("wijkcode"),
+                DistrictName: doc.GetStringSafe("wijknaam"),
+                NeighborhoodCode: doc.GetStringSafe("buurtcode"),
+                NeighborhoodName: doc.GetStringSafe("buurtnaam"),
+                PostalCode: doc.GetStringSafe("postcode"));
 
             _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
             return result;
@@ -132,21 +132,6 @@ public sealed class PdokLocationResolver : ILocationResolver
             _logger.LogError(ex, "PDOK resolve failed exceptionally for input '{InputHash}'", normalizedInput.GetHashCode());
             return null;
         }
-    }
-
-    private static string? GetString(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        return property.ValueKind switch
-        {
-            JsonValueKind.String => property.GetString(),
-            JsonValueKind.Number => property.ToString(),
-            _ => null
-        };
     }
 
     private static string? PrefixCode(string? code, string prefix)

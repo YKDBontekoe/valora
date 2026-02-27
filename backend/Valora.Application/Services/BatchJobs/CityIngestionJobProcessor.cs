@@ -97,53 +97,7 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
                 }
             }
 
-            Neighborhood neighborhood;
-            bool isNew = false;
-
-            if (existingDict.TryGetValue(geo.Code, out var existing))
-            {
-                neighborhood = existing;
-            }
-            else
-            {
-                neighborhood = new Neighborhood
-                {
-                    Code = geo.Code,
-                    Name = geo.Name,
-                    City = job.Target,
-                    Type = geo.Type,
-                    Latitude = geo.Latitude,
-                    Longitude = geo.Longitude
-                };
-                isNew = true;
-            }
-
-            // Fetch stats (external calls still per item, but could be parallelized if API allows)
-            var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
-
-            // Parallelize stats fetching
-            var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
-            var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
-
-            try
-            {
-                await Task.WhenAll(statsTask, crimeTask);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to fetch stats for neighborhood {NeighborhoodCode}", geo.Code);
-                // We choose to continue processing other items, or we can rethrow with context
-                // Given this is a batch job, failing one item might be acceptable, but let's rethrow with context as requested
-                throw new ApplicationException($"Failed to fetch stats for neighborhood '{geo.Code}' in city '{job.Target}': {ex.Message}", ex);
-            }
-
-            var stats = await statsTask;
-            var crime = await crimeTask;
-
-            neighborhood.PopulationDensity = stats?.PopulationDensity;
-            neighborhood.AverageWozValue = stats?.AverageWozValueKeur * 1000;
-            neighborhood.CrimeRate = crime?.TotalCrimesPer1000;
-            neighborhood.LastUpdated = DateTime.UtcNow;
+            var (neighborhood, isNew) = await EnrichNeighborhoodAsync(geo, job.Target, existingDict, cancellationToken);
 
             if (isNew) toAdd.Add(neighborhood);
             else toUpdate.Add(neighborhood);
@@ -180,6 +134,63 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
 
         AppendLog(job, $"Processed {total} neighborhoods.");
         job.ResultSummary = $"Processed {total} neighborhoods.";
+    }
+
+    private async Task<(Neighborhood Entity, bool IsNew)> EnrichNeighborhoodAsync(
+        NeighborhoodGeometryDto geo,
+        string city,
+        Dictionary<string, Neighborhood> existingDict,
+        CancellationToken cancellationToken)
+    {
+        Neighborhood neighborhood;
+        bool isNew = false;
+
+        if (existingDict.TryGetValue(geo.Code, out var existing))
+        {
+            neighborhood = existing;
+        }
+        else
+        {
+            neighborhood = new Neighborhood
+            {
+                Code = geo.Code,
+                Name = geo.Name,
+                City = city,
+                Type = geo.Type,
+                Latitude = geo.Latitude,
+                Longitude = geo.Longitude
+            };
+            isNew = true;
+        }
+
+        // Fetch stats (external calls still per item, but could be parallelized if API allows)
+        var loc = new ResolvedLocationDto("", "", 0, 0, null, null, null, null, null, null, geo.Code, null, null);
+
+        // Parallelize stats fetching
+        var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
+        var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
+
+        try
+        {
+            await Task.WhenAll(statsTask, crimeTask);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch stats for neighborhood {NeighborhoodCode}", geo.Code);
+            // We choose to continue processing other items, or we can rethrow with context
+            // Given this is a batch job, failing one item might be acceptable, but let's rethrow with context as requested
+            throw new ApplicationException($"Failed to fetch stats for neighborhood '{geo.Code}' in city '{city}': {ex.Message}", ex);
+        }
+
+        var stats = await statsTask;
+        var crime = await crimeTask;
+
+        neighborhood.PopulationDensity = stats?.PopulationDensity;
+        neighborhood.AverageWozValue = stats?.AverageWozValueKeur * 1000;
+        neighborhood.CrimeRate = crime?.TotalCrimesPer1000;
+        neighborhood.LastUpdated = DateTime.UtcNow;
+
+        return (neighborhood, isNew);
     }
 
     private void AppendLog(BatchJob job, string message)

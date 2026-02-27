@@ -56,22 +56,7 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             return cached;
         }
 
-        var escapedCode = Uri.EscapeDataString(regionCode);
-        var url =
-            $"{_options.CbsBaseUrl.TrimEnd('/')}/85618NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=" +
-            "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_34,GemiddeldeWOZWaardeVanWoningen_36,HuishoudensMetEenLaagInkomen_87," +
-            "Mannen_6,Vrouwen_7,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12," +
-            "Eenpersoonshuishoudens_30,HuishoudensZonderKinderen_31,HuishoudensMetKinderen_32,GemiddeldeHuishoudensgrootte_33," +
-            "MateVanStedelijkheid_125," +
-            "GemiddeldInkomenPerInkomensontvanger_80,GemiddeldInkomenPerInwoner_81," +
-            "BasisonderwijsVmboMbo1_70,HavoVwoMbo24_71,HboWo_72," +
-            // Phase 2: Housing
-            "Koopwoningen_41,HuurwoningenTotaal_42,InBezitWoningcorporatie_43,InBezitOverigeVerhuurders_44," +
-            "BouwjaarVoor2000_46,BouwjaarVanaf2000_47,PercentageMeergezinswoning_38," +
-            // Phase 2: Mobility
-            "PersonenautoSPerHuishouden_112,PersonenautoSNaarOppervlakte_113,PersonenautoSTotaal_109," +
-            // Phase 2: Proximity
-            "AfstandTotHuisartsenpraktijk_115,AfstandTotGroteSupermarkt_116,AfstandTotKinderdagverblijf_117,AfstandTotSchool_118,ScholenBinnen3Km_119";
+        var url = BuildCbsQueryUrl(regionCode);
 
         using var response = await _httpClient.GetAsync(url, cancellationToken);
 
@@ -105,10 +90,10 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
 
             var row = values[0];
 
-            var residents = GetInt(row, "AantalInwoners_5");
-            var density = GetInt(row, "Bevolkingsdichtheid_34");
-            var woz = GetDouble(row, "GemiddeldeWOZWaardeVanWoningen_36");
-            var lowIncome = GetDouble(row, "HuishoudensMetEenLaagInkomen_87");
+            var residents = row.GetIntSafe("AantalInwoners_5");
+            var density = row.GetIntSafe("Bevolkingsdichtheid_34");
+            var woz = row.GetDoubleSafe("GemiddeldeWOZWaardeVanWoningen_36");
+            var lowIncome = row.GetDoubleSafe("HuishoudensMetEenLaagInkomen_87");
 
             if (residents == null || density == null || woz == null || lowIncome == null)
             {
@@ -117,53 +102,72 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             }
 
             var result = new NeighborhoodStatsDto(
-                RegionCode: GetString(row, "WijkenEnBuurten")?.Trim() ?? regionCode.Trim(),
-                RegionType: GetString(row, "SoortRegio_2")?.Trim() ?? "Onbekend",
+                RegionCode: row.GetStringSafe("WijkenEnBuurten")?.Trim() ?? regionCode.Trim(),
+                RegionType: row.GetStringSafe("SoortRegio_2")?.Trim() ?? "Onbekend",
                 Residents: residents,
                 PopulationDensity: density,
                 AverageWozValueKeur: woz,
                 LowIncomeHouseholdsPercent: lowIncome,
                 // New Fields Sourcing
-                Men: GetInt(row, "Mannen_6"),
-                Women: GetInt(row, "Vrouwen_7"),
-                Age0To15: GetInt(row, "k_0Tot15Jaar_8"),
-                Age15To25: GetInt(row, "k_15Tot25Jaar_9"),
-                Age25To45: GetInt(row, "k_25Tot45Jaar_10"),
-                Age45To65: GetInt(row, "k_45Tot65Jaar_11"),
-                Age65Plus: GetInt(row, "k_65JaarOfOuder_12"),
-                SingleHouseholds: GetInt(row, "Eenpersoonshuishoudens_30"),
-                HouseholdsWithoutChildren: GetInt(row, "HuishoudensZonderKinderen_31"),
-                HouseholdsWithChildren: GetInt(row, "HuishoudensMetKinderen_32"),
-                AverageHouseholdSize: GetDouble(row, "GemiddeldeHuishoudensgrootte_33"),
-                Urbanity: GetString(row, "MateVanStedelijkheid_125"),
-                AverageIncomePerRecipient: GetDouble(row, "GemiddeldInkomenPerInkomensontvanger_80"),
-                AverageIncomePerInhabitant: GetDouble(row, "GemiddeldInkomenPerInwoner_81"),
-                EducationLow: GetInt(row, "BasisonderwijsVmboMbo1_70"),
-                EducationMedium: GetInt(row, "HavoVwoMbo24_71"),
-                EducationHigh: GetInt(row, "HboWo_72"),
+                Men: row.GetIntSafe("Mannen_6"),
+                Women: row.GetIntSafe("Vrouwen_7"),
+                Age0To15: row.GetIntSafe("k_0Tot15Jaar_8"),
+                Age15To25: row.GetIntSafe("k_15Tot25Jaar_9"),
+                Age25To45: row.GetIntSafe("k_25Tot45Jaar_10"),
+                Age45To65: row.GetIntSafe("k_45Tot65Jaar_11"),
+                Age65Plus: row.GetIntSafe("k_65JaarOfOuder_12"),
+                SingleHouseholds: row.GetIntSafe("Eenpersoonshuishoudens_30"),
+                HouseholdsWithoutChildren: row.GetIntSafe("HuishoudensZonderKinderen_31"),
+                HouseholdsWithChildren: row.GetIntSafe("HuishoudensMetKinderen_32"),
+                AverageHouseholdSize: row.GetDoubleSafe("GemiddeldeHuishoudensgrootte_33"),
+                Urbanity: row.GetStringSafe("MateVanStedelijkheid_125"),
+                AverageIncomePerRecipient: row.GetDoubleSafe("GemiddeldInkomenPerInkomensontvanger_80"),
+                AverageIncomePerInhabitant: row.GetDoubleSafe("GemiddeldInkomenPerInwoner_81"),
+                EducationLow: row.GetIntSafe("BasisonderwijsVmboMbo1_70"),
+                EducationMedium: row.GetIntSafe("HavoVwoMbo24_71"),
+                EducationHigh: row.GetIntSafe("HboWo_72"),
                 // Phase 2: Housing
-                PercentageOwnerOccupied: GetInt(row, "Koopwoningen_41"),
-                PercentageRental: GetInt(row, "HuurwoningenTotaal_42"),
-                PercentageSocialHousing: GetInt(row, "InBezitWoningcorporatie_43"),
-                PercentagePrivateRental: GetInt(row, "InBezitOverigeVerhuurders_44"),
-                PercentagePre2000: GetInt(row, "BouwjaarVoor2000_46"),
-                PercentagePost2000: GetInt(row, "BouwjaarVanaf2000_47"),
-                PercentageMultiFamily: GetInt(row, "PercentageMeergezinswoning_38"),
+                PercentageOwnerOccupied: row.GetIntSafe("Koopwoningen_41"),
+                PercentageRental: row.GetIntSafe("HuurwoningenTotaal_42"),
+                PercentageSocialHousing: row.GetIntSafe("InBezitWoningcorporatie_43"),
+                PercentagePrivateRental: row.GetIntSafe("InBezitOverigeVerhuurders_44"),
+                PercentagePre2000: row.GetIntSafe("BouwjaarVoor2000_46"),
+                PercentagePost2000: row.GetIntSafe("BouwjaarVanaf2000_47"),
+                PercentageMultiFamily: row.GetIntSafe("PercentageMeergezinswoning_38"),
                 // Phase 2: Mobility
-                CarsPerHousehold: GetDouble(row, "PersonenautoSPerHuishouden_112"),
-                CarDensity: GetInt(row, "PersonenautoSNaarOppervlakte_113"),
-                TotalCars: GetInt(row, "PersonenautoSTotaal_109"),
+                CarsPerHousehold: row.GetDoubleSafe("PersonenautoSPerHuishouden_112"),
+                CarDensity: row.GetIntSafe("PersonenautoSNaarOppervlakte_113"),
+                TotalCars: row.GetIntSafe("PersonenautoSTotaal_109"),
                 // Phase 2: Proximity
-                DistanceToGp: GetDouble(row, "AfstandTotHuisartsenpraktijk_115"),
-                DistanceToSupermarket: GetDouble(row, "AfstandTotGroteSupermarkt_116"),
-                DistanceToDaycare: GetDouble(row, "AfstandTotKinderdagverblijf_117"),
-                DistanceToSchool: GetDouble(row, "AfstandTotSchool_118"),
-                SchoolsWithin3km: GetDouble(row, "ScholenBinnen3Km_119"),
+                DistanceToGp: row.GetDoubleSafe("AfstandTotHuisartsenpraktijk_115"),
+                DistanceToSupermarket: row.GetDoubleSafe("AfstandTotGroteSupermarkt_116"),
+                DistanceToDaycare: row.GetDoubleSafe("AfstandTotKinderdagverblijf_117"),
+                DistanceToSchool: row.GetDoubleSafe("AfstandTotSchool_118"),
+                SchoolsWithin3km: row.GetDoubleSafe("ScholenBinnen3Km_119"),
                 RetrievedAtUtc: DateTimeOffset.UtcNow);
 
             _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
             return result;
         }
+    }
+
+    private string BuildCbsQueryUrl(string regionCode)
+    {
+        var escapedCode = Uri.EscapeDataString(regionCode);
+        return $"{_options.CbsBaseUrl.TrimEnd('/')}/85618NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=" +
+               "WijkenEnBuurten,SoortRegio_2,AantalInwoners_5,Bevolkingsdichtheid_34,GemiddeldeWOZWaardeVanWoningen_36,HuishoudensMetEenLaagInkomen_87," +
+               "Mannen_6,Vrouwen_7,k_0Tot15Jaar_8,k_15Tot25Jaar_9,k_25Tot45Jaar_10,k_45Tot65Jaar_11,k_65JaarOfOuder_12," +
+               "Eenpersoonshuishoudens_30,HuishoudensZonderKinderen_31,HuishoudensMetKinderen_32,GemiddeldeHuishoudensgrootte_33," +
+               "MateVanStedelijkheid_125," +
+               "GemiddeldInkomenPerInkomensontvanger_80,GemiddeldInkomenPerInwoner_81," +
+               "BasisonderwijsVmboMbo1_70,HavoVwoMbo24_71,HboWo_72," +
+               // Phase 2: Housing
+               "Koopwoningen_41,HuurwoningenTotaal_42,InBezitWoningcorporatie_43,InBezitOverigeVerhuurders_44," +
+               "BouwjaarVoor2000_46,BouwjaarVanaf2000_47,PercentageMeergezinswoning_38," +
+               // Phase 2: Mobility
+               "PersonenautoSPerHuishouden_112,PersonenautoSNaarOppervlakte_113,PersonenautoSTotaal_109," +
+               // Phase 2: Proximity
+               "AfstandTotHuisartsenpraktijk_115,AfstandTotGroteSupermarkt_116,AfstandTotKinderdagverblijf_117,AfstandTotSchool_118,ScholenBinnen3Km_119";
     }
 
     private static IEnumerable<string> BuildCandidates(ResolvedLocationDto location)
@@ -182,57 +186,5 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
         {
             yield return location.MunicipalityCode.Trim().PadRight(10);
         }
-    }
-
-    private static string? GetString(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
-        {
-            return null;
-        }
-
-        return property.GetString();
-    }
-
-    private static int? GetInt(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out var value))
-        {
-            return value;
-        }
-
-        if (property.ValueKind == JsonValueKind.String &&
-            int.TryParse(property.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
-        {
-            return parsed;
-        }
-
-        return null;
-    }
-
-    private static double? GetDouble(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        if (property.ValueKind == JsonValueKind.Number && property.TryGetDouble(out var value))
-        {
-            return value;
-        }
-
-        if (property.ValueKind == JsonValueKind.String &&
-            double.TryParse(property.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
-        {
-            return parsed;
-        }
-
-        return null;
     }
 }
