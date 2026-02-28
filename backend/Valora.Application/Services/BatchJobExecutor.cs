@@ -3,7 +3,6 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
-using Valora.Application.Common.Events;
 
 namespace Valora.Application.Services;
 
@@ -12,18 +11,15 @@ public class BatchJobExecutor : IBatchJobExecutor
     private readonly IBatchJobRepository _jobRepository;
     private readonly IEnumerable<IBatchJobProcessor> _processors;
     private readonly ILogger<BatchJobExecutor> _logger;
-    private readonly IEventDispatcher _eventDispatcher;
 
     public BatchJobExecutor(
         IBatchJobRepository jobRepository,
         IEnumerable<IBatchJobProcessor> processors,
-        ILogger<BatchJobExecutor> logger,
-        IEventDispatcher eventDispatcher)
+        ILogger<BatchJobExecutor> logger)
     {
         _jobRepository = jobRepository;
         _processors = processors;
         _logger = logger;
-        _eventDispatcher = eventDispatcher;
     }
 
     /// <summary>
@@ -124,15 +120,6 @@ public class BatchJobExecutor : IBatchJobExecutor
         }
 
         await _jobRepository.UpdateAsync(job, cancellationToken);
-
-        if (newStatus == BatchJobStatus.Completed)
-        {
-            await _eventDispatcher.DispatchAsync(new BatchJobCompletedEvent(job.Id, job.Type, job.Target), cancellationToken);
-        }
-        else if (newStatus == BatchJobStatus.Failed)
-        {
-            await _eventDispatcher.DispatchAsync(new BatchJobFailedEvent(job.Id, job.Type, job.Target, job.Error ?? "Unknown error"), cancellationToken);
-        }
     }
 
     private void AppendLog(BatchJob job, string message)

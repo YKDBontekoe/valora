@@ -65,12 +65,7 @@ public class NotificationService : INotificationService
         return true;
     }
 
-    public async Task<bool> ExistsAsync(string userId, string dedupeKey)
-    {
-        return await _repository.ExistsAsync(userId, dedupeKey);
-    }
-
-    public async Task CreateNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl = null, string? dedupeKey = null)
+    public async Task CreateNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl = null)
     {
         var safeUserId = userId.Truncate(ValidationConstants.Notification.UserIdMaxLength, out var userIdTruncated)
                          ?? throw new Valora.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]> { { "UserId", new[] { "UserId cannot be null." } } });
@@ -97,7 +92,6 @@ public class NotificationService : INotificationService
             Type = type,
             ActionUrl = safeActionUrl,
             IsRead = false,
-            DedupeKey = dedupeKey,
             CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
         };
 

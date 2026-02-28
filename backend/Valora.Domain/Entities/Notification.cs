@@ -12,5 +12,4 @@ public class Notification : BaseEntity
     public bool IsRead { get; set; }
     public string? ActionUrl { get; set; }
     public NotificationType Type { get; set; }
-    public string? DedupeKey { get; set; }
 }

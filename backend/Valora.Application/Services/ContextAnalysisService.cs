@@ -1,11 +1,9 @@
 using System.Text;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Common.Events;
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 using Valora.Application.Services.Utilities;
 using Valora.Domain.Services;
-using System;
 
 namespace Valora.Application.Services;
 
@@ -14,7 +12,6 @@ public class ContextAnalysisService : IContextAnalysisService
     private readonly IAiService _aiService;
     private readonly IUserAiProfileService _profileService;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IEventDispatcher _eventDispatcher;
 
     // Made public for testing
     public static readonly string ChatSystemPrompt =
@@ -25,12 +22,11 @@ public class ContextAnalysisService : IContextAnalysisService
     public static readonly string AnalysisSystemPrompt =
         "You are an expert real estate analyst helping a potential resident evaluate a neighborhood.";
 
-    public ContextAnalysisService(IAiService aiService, IUserAiProfileService profileService, ICurrentUserService currentUserService, IEventDispatcher eventDispatcher)
+    public ContextAnalysisService(IAiService aiService, IUserAiProfileService profileService, ICurrentUserService currentUserService)
     {
         _aiService = aiService;
         _profileService = profileService;
         _currentUserService = currentUserService;
-        _eventDispatcher = eventDispatcher;
     }
 
     /// <summary>
@@ -60,14 +56,7 @@ public class ContextAnalysisService : IContextAnalysisService
         var systemPrompt = await BuildSystemPromptAsync(AnalysisSystemPrompt, sessionProfile, cancellationToken);
 
         // "detailed_analysis" intent for report analysis
-        var result = await _aiService.ChatAsync(prompt, systemPrompt, "detailed_analysis", cancellationToken);
-
-        if (!string.IsNullOrEmpty(_currentUserService.UserId))
-        {
-            await _eventDispatcher.DispatchAsync(new AiAnalysisCompletedEvent(_currentUserService.UserId, report.Location.Query), cancellationToken);
-        }
-
-        return result;
+        return await _aiService.ChatAsync(prompt, systemPrompt, "detailed_analysis", cancellationToken);
     }
 
     private async Task<string> BuildSystemPromptAsync(string baseSystemPrompt, UserAiProfileDto? sessionProfile, CancellationToken cancellationToken)

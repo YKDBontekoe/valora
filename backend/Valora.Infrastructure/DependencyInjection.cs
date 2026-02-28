@@ -1,4 +1,3 @@
-using Valora.Application.Common.Events;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -51,18 +50,6 @@ public static class DependencyInjection
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
         services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
-
-        // Event Dispatcher and Handlers
-        services.AddScoped<IEventDispatcher, EventDispatcher>();
-
-        // Register Notification Event Handlers
-        services.AddScoped<IEventHandler<WorkspaceInviteAcceptedEvent>, NotificationEventHandlers>();
-        services.AddScoped<IEventHandler<CommentAddedEvent>, NotificationEventHandlers>();
-        services.AddScoped<IEventHandler<ReportSavedToWorkspaceEvent>, NotificationEventHandlers>();
-        services.AddScoped<IEventHandler<BatchJobCompletedEvent>, NotificationEventHandlers>();
-        services.AddScoped<IEventHandler<BatchJobFailedEvent>, NotificationEventHandlers>();
-        services.AddScoped<IEventHandler<AiAnalysisCompletedEvent>, NotificationEventHandlers>();
-
 
         // Services
         services.AddSingleton(TimeProvider.System);

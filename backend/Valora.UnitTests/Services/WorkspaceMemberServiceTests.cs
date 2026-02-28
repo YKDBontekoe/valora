@@ -13,7 +13,6 @@ namespace Valora.UnitTests.Services;
 
 public class WorkspaceMemberServiceTests
 {
-    private readonly Mock<IEventDispatcher> _eventDispatcherMock = new();
     private readonly ValoraDbContext _context;
     private readonly Mock<IIdentityService> _identityServiceMock;
     private readonly WorkspaceMemberService _service;
@@ -28,7 +27,7 @@ public class WorkspaceMemberServiceTests
         _context = new ValoraDbContext(options);
         _identityServiceMock = new Mock<IIdentityService>();
         _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceMemberService(_repository, _identityServiceMock.Object, _eventDispatcherMock.Object);
+        _service = new WorkspaceMemberService(_repository, _identityServiceMock.Object);
     }
 
     [Fact]

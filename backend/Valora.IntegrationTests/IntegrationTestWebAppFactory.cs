@@ -9,8 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Valora.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Common.Events;
-using Valora.Infrastructure.Services;
 using Moq;
 using Valora.Application.Common.Interfaces.External;
 
@@ -108,15 +106,6 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             // Mock Google Validator
             services.RemoveAll<IGoogleTokenValidator>();
             services.AddSingleton<IGoogleTokenValidator>(GoogleTokenValidatorMock.Object);
-
-            // Re-register event dispatchers just in case AddApplication wasn't called properly in some Test contexts
-            services.AddScoped<IEventDispatcher, EventDispatcher>();
-            services.AddScoped<IEventHandler<WorkspaceInviteAcceptedEvent>, NotificationEventHandlers>();
-            services.AddScoped<IEventHandler<CommentAddedEvent>, NotificationEventHandlers>();
-            services.AddScoped<IEventHandler<ReportSavedToWorkspaceEvent>, NotificationEventHandlers>();
-            services.AddScoped<IEventHandler<BatchJobCompletedEvent>, NotificationEventHandlers>();
-            services.AddScoped<IEventHandler<BatchJobFailedEvent>, NotificationEventHandlers>();
-            services.AddScoped<IEventHandler<AiAnalysisCompletedEvent>, NotificationEventHandlers>();
         });
     }
 }

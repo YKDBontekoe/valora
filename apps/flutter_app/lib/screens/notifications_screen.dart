@@ -8,8 +8,6 @@ import '../core/theme/valora_spacing.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
 import '../widgets/valora_widgets.dart';
-import '../screens/workspace_detail_screen.dart';
-import '../screens/context_report/context_report_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -340,46 +338,7 @@ class _NotificationCard extends StatelessWidget {
             provider.markAsRead(notification.id);
           }
           if (notification.actionUrl != null) {
-            final actionUrl = notification.actionUrl!;
-            if (actionUrl.startsWith('/workspaces/')) {
-              // Parse workspace ID and optional listing ID from URL
-              // Format: /workspaces/{id} or /workspaces/{id}/listings/{listingId}
-              final parts = actionUrl.split('/');
-              if (parts.length >= 3) {
-                final workspaceId = parts[2];
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WorkspaceDetailScreen(
-                      workspaceId: workspaceId,
-                    ),
-                  ),
-                );
-                return;
-              }
-            } else if (actionUrl.startsWith('/reports')) {
-              // Parse /reports?q={query}
-              final uri = Uri.parse(actionUrl);
-              final query = uri.queryParameters['q'];
-
-              if (query != null && query.isNotEmpty) {
-                 Navigator.push(
-                   context,
-                   MaterialPageRoute(
-                     builder: (context) => const ContextReportScreen(),
-                     // Ideally we would pass the query directly to the screen to auto-fetch,
-                     // but the current ContextReportScreen implementation uses a provider state
-                     // and doesn't take an initial query parameter.
-                     // We push the user to the report screen.
-                   ),
-                 );
-                 return;
-              }
-            }
-
-            // Fallback for non-internal URLs or unhandled paths
-            final uri = Uri.parse(actionUrl);
+            final uri = Uri.parse(notification.actionUrl!);
             if (await canLaunchUrl(uri)) {
               await launchUrl(uri);
             }

@@ -14,7 +14,6 @@ namespace Valora.UnitTests.Services;
 
 public class SecurityFixTests
 {
-    private readonly Mock<IEventDispatcher> _eventDispatcherMock = new();
     private readonly Mock<IIdentityService> _mockIdentityService;
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<ILogger<AuthService>> _mockLogger;
@@ -110,7 +109,7 @@ public class SecurityFixTests
         var profileService = new Mock<IUserAiProfileService>();
         var currentUserService = new Mock<ICurrentUserService>();
 
-        var service = new ContextAnalysisService(aiService.Object, profileService.Object, currentUserService.Object, _eventDispatcherMock.Object);
+        var service = new ContextAnalysisService(aiService.Object, profileService.Object, currentUserService.Object);
 
         var maliciousProfile = new UserAiProfileDto
         {

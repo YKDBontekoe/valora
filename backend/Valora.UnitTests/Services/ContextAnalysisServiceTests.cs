@@ -10,11 +10,10 @@ public class ContextAnalysisServiceTests
     private readonly Mock<IAiService> _aiServiceMock = new();
     private readonly Mock<IUserAiProfileService> _profileServiceMock = new();
     private readonly Mock<ICurrentUserService> _currentUserServiceMock = new();
-    private readonly Mock<IEventDispatcher> _eventDispatcherMock = new();
 
     private ContextAnalysisService CreateService()
     {
-        return new ContextAnalysisService(_aiServiceMock.Object, _profileServiceMock.Object, _currentUserServiceMock.Object, _eventDispatcherMock.Object);
+        return new ContextAnalysisService(_aiServiceMock.Object, _profileServiceMock.Object, _currentUserServiceMock.Object);
     }
 
     [Fact]

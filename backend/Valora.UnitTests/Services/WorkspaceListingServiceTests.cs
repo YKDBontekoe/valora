@@ -1,5 +1,3 @@
-using Moq;
-using Valora.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.DTOs;
@@ -13,7 +11,6 @@ namespace Valora.UnitTests.Services;
 
 public class WorkspaceListingServiceTests
 {
-    private readonly Mock<IEventDispatcher> _eventDispatcherMock = new();
     private readonly ValoraDbContext _context;
     private readonly WorkspaceListingService _service;
     private readonly WorkspaceRepository _repository;
@@ -26,7 +23,7 @@ public class WorkspaceListingServiceTests
 
         _context = new ValoraDbContext(options);
         _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceListingService(_repository, _eventDispatcherMock.Object);
+        _service = new WorkspaceListingService(_repository);
     }
 
     [Fact]

@@ -13,5 +13,4 @@ public interface INotificationRepository
     Task DeleteAsync(Notification notification, CancellationToken cancellationToken = default);
     Task MarkAllAsReadAsync(string userId, CancellationToken cancellationToken = default);
     Task<int> CountAsync(CancellationToken cancellationToken = default);
-    Task<bool> ExistsAsync(string userId, string dedupeKey, CancellationToken cancellationToken = default);
 }

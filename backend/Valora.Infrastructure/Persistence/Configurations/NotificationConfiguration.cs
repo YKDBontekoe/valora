@@ -21,7 +21,5 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.Property(e => e.Title).IsRequired().HasMaxLength(ValidationConstants.Notification.TitleMaxLength);
         builder.Property(e => e.Body).IsRequired().HasMaxLength(ValidationConstants.Notification.BodyMaxLength);
         builder.Property(e => e.ActionUrl).HasMaxLength(ValidationConstants.Notification.ActionUrlMaxLength);
-        builder.Property(e => e.DedupeKey).HasMaxLength(255);
-        builder.HasIndex(e => new { e.UserId, e.DedupeKey }).IsUnique().HasFilter("[DedupeKey] IS NOT NULL");
     }
 }

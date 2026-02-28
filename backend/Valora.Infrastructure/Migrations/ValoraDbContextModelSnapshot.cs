@@ -193,7 +193,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("ActorId");
 
-                    b.HasIndex("WorkspaceId", "CreatedAt");
+                    b.HasIndex("WorkspaceId");
 
                     b.ToTable("ActivityLogs");
                 });
@@ -241,10 +241,7 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("Intent")
                         .IsUnique();
 
-                    b.ToTable("AiModelConfigs", t =>
-                        {
-                            t.HasCheckConstraint("CK_AiModelConfig_Intent", "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'");
-                        });
+                    b.ToTable("AiModelConfigs");
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.ApplicationUser", b =>
@@ -260,8 +257,8 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(254)
-                        .HasColumnType("nvarchar(254)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -273,8 +270,8 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(254)
-                        .HasColumnType("nvarchar(254)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
@@ -795,10 +792,6 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DedupeKey")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
@@ -825,10 +818,6 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("IsRead");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "DedupeKey")
-                        .IsUnique()
-                        .HasFilter("[DedupeKey] IS NOT NULL");
 
                     b.HasIndex("UserId", "IsRead", "CreatedAt");
 
@@ -936,8 +925,6 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("AddedByUserId");
 
                     b.HasIndex("ListingId");
-
-                    b.HasIndex("WorkspaceId", "CreatedAt");
 
                     b.HasIndex("WorkspaceId", "ListingId")
                         .IsUnique();
