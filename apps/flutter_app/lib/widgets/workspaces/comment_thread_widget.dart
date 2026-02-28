@@ -228,15 +228,17 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
     if (_controller.text.isEmpty) return;
 
     setState(() => _isSubmitting = true);
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
       await context.read<WorkspaceProvider>().addComment(widget.savedListingId, _controller.text, _replyToId);
+      if (!mounted) return;
       _controller.clear();
       setState(() => _replyToId = null);
       widget.onRefresh?.call();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text('Failed to post comment: $e'),
             backgroundColor: ValoraColors.error,

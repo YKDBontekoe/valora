@@ -92,14 +92,17 @@ class _ShareWorkspaceDialogState extends State<ShareWorkspaceDialog> {
   }
 
   Future<void> _submit() async {
-    if (_emailController.text.isEmpty) return;
+    if (_isLoading) return;
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
 
     setState(() => _isLoading = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      await context.read<WorkspaceProvider>().inviteMember(_emailController.text, _role);
+      await context.read<WorkspaceProvider>().inviteMember(email, _role);
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Member invited successfully'),
             backgroundColor: ValoraColors.success,
@@ -108,7 +111,7 @@ class _ShareWorkspaceDialogState extends State<ShareWorkspaceDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text('Failed: $e'),
             backgroundColor: ValoraColors.error,

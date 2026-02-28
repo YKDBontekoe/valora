@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/models/workspace.dart';
 import 'package:valora_app/widgets/workspaces/member_management_widget.dart';
-import 'package:valora_app/widgets/workspaces/share_workspace_dialog.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 
 void main() {
@@ -48,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('shows invite button and opens dialog if canInvite is true', (tester) async {
+  testWidgets('shows invite button if canInvite is true', (tester) async {
     await tester.pumpWidget(createWidgetUnderTest(members: [], canInvite: true));
     await tester.pumpAndSettle();
 
