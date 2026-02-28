@@ -30,8 +30,9 @@ const UserRow = ({
     <motion.tr
       variants={rowVariants}
       exit={{ opacity: 0, scale: 0.98, x: 20 }}
+      whileHover={{ backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
       layout
-      className="hover:bg-brand-50/30 transition-all duration-300 group cursor-default relative overflow-hidden"
+      className="group cursor-default relative overflow-hidden transition-colors"
     >
       <td className="px-10 py-6 whitespace-nowrap">
         <div className="flex items-center gap-6">
@@ -65,18 +66,18 @@ const UserRow = ({
         <div className="flex items-center justify-end gap-4">
             {!isSelf && (
                 <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                    <ChevronRight size={18} className="text-brand-200" />
+                    <ChevronRight size={18} className="text-primary-300" />
                 </div>
             )}
             <motion.button
               whileHover={isSelf || loading ? {} : { scale: 1.1, rotate: 8 }}
               whileTap={isSelf || loading ? {} : { scale: 0.9, rotate: -8 }}
-              onClick={() => onDeleteClick(user)}
+              onClick={(e) => { e.stopPropagation(); onDeleteClick(user); }}
               disabled={isSelf || loading}
               className={`p-3 rounded-2xl transition-all duration-300 ${
                 isSelf || loading
                   ? 'text-brand-100 bg-transparent'
-                  : 'text-brand-300 hover:text-error-600 hover:bg-error-50 hover:shadow-premium shadow-error-100/50 border border-transparent hover:border-error-100 cursor-pointer'
+                  : 'text-brand-300 hover:text-error-600 hover:bg-white hover:shadow-premium shadow-error-100/50 border border-transparent hover:border-error-100 cursor-pointer'
               }`}
               title={isSelf ? 'Identity Protection Enabled' : loading ? 'Processing...' : 'Revoke Session Access'}
             >

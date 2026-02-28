@@ -214,14 +214,22 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                     <motion.tr
                       key={job.id}
                       variants={rowVariants}
-                      whileHover={{ backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
-                      className="group cursor-pointer relative"
+                      whileHover={{
+                        backgroundColor: 'var(--color-brand-50)',
+                        transition: { duration: 0.3 }
+                      }}
+                      className="group cursor-pointer relative transition-colors"
                       onClick={() => openDetails(job.id)}
                     >
                       <td className="px-10 py-8 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{job.type}</span>
-                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-1">ID: {job.id.slice(0, 8)}</span>
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-brand-100 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                             <Activity size={18} className="text-primary-500" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{job.type}</span>
+                            <span className="text-[10px] text-brand-300 font-black uppercase tracking-tighter mt-1">ID: {job.id.slice(0, 8)}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-10 py-8 whitespace-nowrap text-sm font-black text-brand-600">{job.target}</td>
@@ -261,14 +269,14 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                         {new Date(job.createdAt).toLocaleString()}
                       </td>
                       <td className="px-10 py-8 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-3">
+                        <div className="flex items-center justify-end gap-4">
                             <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                                <ChevronRight size={18} className="text-brand-200" />
+                                <ChevronRight size={18} className="text-primary-300" />
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-brand-400 hover:text-primary-600 hover:bg-primary-50 px-4"
+                              className="text-brand-400 hover:text-primary-700 hover:bg-primary-50 px-5 transition-all duration-300"
                               onClick={(e) => { e.stopPropagation(); openDetails(job.id); }}
                             >
                               Details
