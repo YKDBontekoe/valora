@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { User } from '../types';
-import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search, UserPlus, AlertCircle } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Loader2, Search, UserPlus, AlertCircle, X } from 'lucide-react';
 import { showToast } from '../services/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUsers } from '../hooks/useUsers';
@@ -64,59 +64,83 @@ const Users = () => {
           <div className="flex items-center gap-4 mb-4">
             <h1 className="text-5xl lg:text-6xl font-black text-brand-900 tracking-tightest">Users</h1>
             {loading && users.length > 0 && (
-              <Loader2 className="h-8 w-8 text-primary-600 animate-spin" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+              >
+                <Loader2 className="h-8 w-8 text-primary-600 animate-spin" />
+              </motion.div>
             )}
           </div>
           <p className="text-brand-400 font-bold text-lg">Manage administrative access and platform roles.</p>
         </div>
-        <Button variant="secondary" leftIcon={<UserPlus size={20} />} disabled className="px-8 py-4">
+        <Button variant="secondary" leftIcon={<UserPlus size={20} />} disabled className="px-8 py-4 shadow-glow">
             Provision New Admin
         </Button>
       </div>
 
       {/* Fetch Error Alert */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {fetchError && (
             <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="p-8 bg-error-50 border border-error-100 rounded-[2rem] text-error-700 font-black flex flex-col sm:flex-row items-center justify-between gap-6 shadow-premium shadow-error-100/20"
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                className="p-8 bg-error-50 border border-error-100 rounded-4xl text-error-700 font-black flex flex-col sm:flex-row items-center justify-between gap-6 shadow-premium shadow-error-100/20 relative overflow-hidden"
             >
-            <div className="flex items-center gap-4">
-                <div className="p-3 bg-white rounded-2xl shadow-sm text-error-600">
-                    <AlertCircle className="w-8 h-8" />
+                <div className="absolute top-0 right-0 p-4 opacity-10 text-error-500">
+                    <AlertCircle size={80} />
                 </div>
-                <div className="flex flex-col">
-                    <span className="text-sm uppercase tracking-widest text-error-500">Service Interruption</span>
-                    <span className="text-xl">{fetchError}</span>
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="p-4 bg-white rounded-2xl shadow-sm text-error-600 border border-error-100">
+                        <AlertCircle className="w-8 h-8" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-error-500 mb-1">Service Interruption</span>
+                        <span className="text-xl tracking-tight">{fetchError}</span>
+                    </div>
                 </div>
-            </div>
-            <Button onClick={refresh} variant="outline" size="sm" className="border-error-200 text-error-700 hover:bg-error-100 bg-white shadow-sm">
-                Restart Session Sync
-            </Button>
+                <Button onClick={refresh} variant="outline" size="sm" className="border-error-200 text-error-700 hover:bg-error-100 bg-white shadow-sm relative z-10 font-black">
+                    Restart Session Sync
+                </Button>
             </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="relative max-w-xl group">
-        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-brand-300 group-focus-within:text-primary-500 transition-all duration-300 group-focus-within:scale-110" />
-        <input
-            type="text"
-            placeholder="Search enterprise users by email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-14 pr-6 py-5 bg-white border border-brand-100 rounded-[1.5rem] focus:outline-none focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 transition-all shadow-premium hover:shadow-premium-lg font-black text-brand-900 placeholder:text-brand-200"
-        />
+      <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
+          <div className="relative w-full max-w-xl group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-brand-300 group-focus-within:text-primary-500 transition-all duration-300 group-focus-within:scale-110" />
+            <input
+                type="text"
+                placeholder="Search enterprise users by email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-14 pr-12 py-5 bg-white border border-brand-100 rounded-3xl focus:outline-none focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 transition-all shadow-premium hover:shadow-premium-lg font-black text-brand-900 placeholder:text-brand-200"
+            />
+            {searchQuery && (
+                <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 p-1 hover:bg-brand-50 rounded-full text-brand-300 hover:text-brand-600 transition-colors"
+                >
+                    <X size={18} />
+                </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 px-4 py-2 bg-brand-100/50 rounded-2xl border border-brand-200/50">
+              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Displaying</span>
+              <span className="text-xs font-black text-brand-900">{users.length} Records</span>
+          </div>
       </div>
 
-      <div className="bg-white shadow-premium rounded-[2.5rem] overflow-hidden border border-brand-100 relative">
+      <div className="bg-white shadow-premium rounded-5xl overflow-hidden border border-brand-100 relative">
         <div className={`overflow-x-auto transition-opacity duration-500 ${loading && users.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
           <table className="min-w-full divide-y divide-brand-100">
-            <thead className="bg-brand-50/30">
+            <thead className="bg-brand-50/50">
               <tr>
                 <th
-                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.2em] cursor-pointer group hover:bg-brand-100/30 transition-colors select-none"
+                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
                     onClick={() => toggleSort('email')}
                 >
                     <div className="flex items-center gap-2">
@@ -127,8 +151,8 @@ const Users = () => {
                         </div>
                     </div>
                 </th>
-                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.2em]">Authorized Roles</th>
-                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-[0.2em]">Management</th>
+                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Authorized Roles</th>
+                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Management</th>
               </tr>
             </thead>
             <motion.tbody
@@ -153,14 +177,22 @@ const Users = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     >
-                        <td colSpan={3} className="px-10 py-32 text-center">
-                            <div className="flex flex-col items-center gap-6">
-                                <div className="p-8 bg-brand-50 rounded-[2rem] text-brand-100">
-                                    <Search className="h-16 w-16" />
+                        <td colSpan={3} className="px-10 py-40 text-center">
+                            <div className="flex flex-col items-center gap-8">
+                                <div className="p-10 bg-brand-50 rounded-4xl text-brand-100 border border-brand-100 shadow-inner relative">
+                                    <Search className="h-20 w-20" />
+                                    <div className="absolute -bottom-2 -right-2 p-3 bg-white rounded-2xl shadow-premium text-brand-300 border border-brand-100">
+                                        <X size={24} />
+                                    </div>
                                 </div>
-                                <span className="text-brand-300 font-black text-xl uppercase tracking-widest">
-                                    {fetchError ? 'Sync Failed' : (searchQuery ? 'No results found' : 'No records exist')}
-                                </span>
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-brand-900 font-black text-2xl tracking-tight uppercase tracking-widest">
+                                        {fetchError ? 'Sync Failed' : (searchQuery ? 'No results found' : 'No records exist')}
+                                    </span>
+                                    <p className="text-brand-300 font-bold max-w-sm mx-auto">
+                                        We couldn't find any user matching your criteria. Try adjusting your search or filters.
+                                    </p>
+                                </div>
                             </div>
                         </td>
                     </motion.tr>
@@ -182,9 +214,9 @@ const Users = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 pb-8">
-        <div className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em]">
-          Record Group <span className="text-brand-900">{page}</span> <span className="mx-3 text-brand-100">/</span> <span className="text-brand-900">{totalPages}</span>
+      <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-3xl border border-brand-100/50">
+        <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
+          Record Group <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
         </div>
         <div className="flex gap-4">
           <Button
@@ -193,7 +225,7 @@ const Users = () => {
             onClick={prevPage}
             disabled={page === 1 || loading}
             leftIcon={<ChevronLeft size={18} />}
-            className="font-black"
+            className="font-black bg-white"
           >
             Prev
           </Button>
@@ -203,7 +235,7 @@ const Users = () => {
             onClick={nextPage}
             disabled={page === totalPages || loading}
             rightIcon={<ChevronRight size={18} />}
-            className="font-black"
+            className="font-black bg-white"
           >
             Next
           </Button>

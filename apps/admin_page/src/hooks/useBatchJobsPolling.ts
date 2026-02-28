@@ -36,8 +36,7 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
   // Keep options ref up to date
   useEffect(() => {
     optionsRef.current = options;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.page, options.pageSize, options.statusFilter, options.typeFilter, options.searchQuery, options.sortBy]);
+  }, [options]);
 
   const fetchData = useCallback(async (requestId: number) => {
     isFetchingRef.current = true;
@@ -116,7 +115,6 @@ export const useBatchJobsPolling = (options: UseBatchJobsPollingOptions): UseBat
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.page, options.pageSize, options.statusFilter, options.typeFilter, options.searchQuery, options.sortBy, fetchData]);
 
   // Visibility change handler

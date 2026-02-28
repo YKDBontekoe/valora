@@ -1,6 +1,7 @@
 import React from 'react';
-import { Database, Sparkles, Play, Layers, Globe } from 'lucide-react';
+import { Database, Sparkles, Play, Layers, Globe, AlertCircle } from 'lucide-react';
 import Button from '../Button';
+import { motion } from 'framer-motion';
 
 interface IngestionPanelProps {
   targetCity: string;
@@ -20,23 +21,32 @@ export const IngestionPanel: React.FC<IngestionPanelProps> = ({
   handleIngestAll,
 }) => {
   return (
-    <div className="bg-white p-10 rounded-[2.5rem] border border-brand-100 shadow-premium relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-10 text-brand-50 transition-transform duration-1000 group-hover:scale-125 group-hover:rotate-12 opacity-50">
-        <Database size={200} />
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-10 rounded-5xl border border-brand-100 shadow-premium relative overflow-hidden group"
+    >
+      <div className="absolute top-0 right-0 p-10 text-brand-50 transition-all duration-1000 group-hover:scale-125 group-hover:rotate-12 group-hover:text-primary-50/50 opacity-50">
+        <Database size={240} />
       </div>
       <div className="relative z-10">
-        <h2 className="text-2xl font-black text-brand-900 mb-8 flex items-center gap-3">
-          <Sparkles className="text-primary-500" size={24} />
-          Start Ingestion Pipeline
-        </h2>
-        <form onSubmit={handleStartJob} className="flex flex-col sm:flex-row gap-5">
+        <div className="flex items-center gap-4 mb-10">
+            <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center border border-primary-100/50 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                <Sparkles className="text-primary-500" size={24} />
+            </div>
+            <h2 className="text-3xl font-black text-brand-900 tracking-tight">
+              Ingestion Pipeline
+            </h2>
+        </div>
+
+        <form onSubmit={handleStartJob} className="flex flex-col sm:flex-row gap-6">
           <div className="flex-1 relative group/input">
             <input
               type="text"
-              placeholder="Target City (e.g. Rotterdam)"
+              placeholder="Target Municipality (e.g. Rotterdam)"
               value={targetCity}
               onChange={(e) => setTargetCity(e.target.value)}
-              className="w-full px-6 py-5 bg-brand-50/50 rounded-2xl border border-brand-100 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 placeholder:text-brand-300 placeholder:font-bold"
+              className="w-full px-8 py-5 bg-brand-50/50 rounded-2xl border border-brand-100 focus:ring-8 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 placeholder:text-brand-300 placeholder:font-bold shadow-sm"
               disabled={isStarting}
             />
           </div>
@@ -46,21 +56,21 @@ export const IngestionPanel: React.FC<IngestionPanelProps> = ({
             disabled={isStarting || !targetCity}
             isLoading={isStarting}
             leftIcon={!isStarting && <Play size={20} fill="currentColor" />}
-            className="px-10"
+            className="px-12 py-5 shadow-glow"
           >
-            Execute Pipeline
+            Execute Sync
           </Button>
         </form>
 
-        <div className="flex flex-col sm:flex-row items-center gap-6 mt-10 pt-8 border-t border-brand-100/50">
+        <div className="flex flex-col sm:flex-row items-center gap-8 mt-12 pt-10 border-t border-brand-100/50">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsDatasetModalOpen(true)}
             leftIcon={<Layers size={18} />}
-            className="text-brand-500 hover:bg-brand-50 font-black"
+            className="text-brand-500 hover:bg-brand-50 font-black px-6"
           >
-            View Dataset Status
+            Dataset Catalog
           </Button>
           <div className="hidden sm:block flex-1" />
           <Button
@@ -69,16 +79,19 @@ export const IngestionPanel: React.FC<IngestionPanelProps> = ({
             onClick={handleIngestAll}
             disabled={isStarting}
             leftIcon={<Globe size={18} />}
-            className="w-full sm:w-auto border-brand-200 text-brand-500 hover:bg-brand-50 font-black"
+            className="w-full sm:w-auto border-brand-200 text-brand-500 hover:bg-brand-50 font-black px-8"
           >
-            Ingest All Netherlands
+            Provision All Cities
           </Button>
         </div>
 
-        <p className="text-[10px] text-brand-300 mt-6 font-black uppercase tracking-[0.2em]">
-          Warning: Ingestion jobs are resource-intensive. Avoid overlapping same-city jobs.
-        </p>
+        <div className="flex items-center gap-3 mt-8 p-4 bg-warning-50/50 rounded-2xl border border-warning-100/50 w-fit">
+            <AlertCircle size={16} className="text-warning-600" />
+            <p className="text-[10px] text-warning-700 font-black uppercase tracking-[0.2em]">
+              Warning: Ingestion jobs are resource-intensive. Avoid overlapping same-city clusters.
+            </p>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

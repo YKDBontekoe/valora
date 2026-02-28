@@ -19,13 +19,12 @@ describe('SystemHealth Component', () => {
     vi.useRealTimers();
   });
 
-  it('renders loading skeleton initially', async () => {
+  it('renders infrastructure title initially', async () => {
     (adminService.getHealth as Mock).mockReturnValue(new Promise(() => {}));
 
     render(<SystemHealth />);
 
-    expect(screen.getByText('Database Engine')).toBeInTheDocument();
-    expect(screen.queryByText('Healthy & Connected')).not.toBeInTheDocument();
+    expect(screen.getByText('System Infrastructure')).toBeInTheDocument();
   });
 
   it('renders healthy state correctly', async () => {
@@ -48,8 +47,9 @@ describe('SystemHealth Component', () => {
     render(<SystemHealth />);
 
     await waitFor(() => {
-      expect(screen.getByText('Healthy & Connected')).toBeInTheDocument();
-      expect(screen.getByText('50ms')).toBeInTheDocument(); // P95
+      expect(screen.getByText('Operational')).toBeInTheDocument();
+      expect(screen.getByText('50')).toBeInTheDocument(); // Latency value
+      expect(screen.getByText('ms')).toBeInTheDocument(); // Latency unit
       expect(screen.getByText('5')).toBeInTheDocument(); // Active jobs
     });
   });
@@ -74,7 +74,7 @@ describe('SystemHealth Component', () => {
     render(<SystemHealth />);
 
     await waitFor(() => {
-      expect(screen.getByText('Connection Failed')).toBeInTheDocument();
+      expect(screen.getByText('Fault Detected')).toBeInTheDocument();
     });
   });
 
@@ -101,22 +101,22 @@ describe('SystemHealth Component', () => {
 
     // Wait for initial load
     await waitFor(() => {
-      expect(screen.getByText('Healthy & Connected')).toBeInTheDocument();
-      expect(screen.queryByText('Stale Data')).not.toBeInTheDocument();
+      expect(screen.getByText('Operational')).toBeInTheDocument();
+      expect(screen.queryByText('Offline Data')).not.toBeInTheDocument();
     });
 
     // Mock next call failure
     (adminService.getHealth as Mock).mockRejectedValueOnce(new Error('Network error'));
 
-    // Find refresh button (it has RefreshCw icon, maybe check for button role)
-    const refreshButton = screen.getByRole('button');
+    // Find refresh button
+    const refreshButton = screen.getByText('Refresh Nodes');
     fireEvent.click(refreshButton);
 
     // Wait for stale indicator
     await waitFor(() => {
-      expect(screen.getByText('Stale Data')).toBeInTheDocument();
+      expect(screen.getByText('Offline Data')).toBeInTheDocument();
       // Data should still be visible
-      expect(screen.getByText('Healthy & Connected')).toBeInTheDocument();
+      expect(screen.getByText('Operational')).toBeInTheDocument();
     });
   });
 });

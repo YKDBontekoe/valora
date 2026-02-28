@@ -21,12 +21,12 @@ const container = {
 };
 
 const item = {
-  hidden: { opacity: 0, y: 30, scale: 0.9 },
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
   show: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 24 }
+    transition: { type: 'spring' as const, stiffness: 260, damping: 20 }
   }
 } as const;
 
@@ -78,26 +78,27 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
             key={card.title}
             variants={item}
             whileHover={{
-              y: -10,
-              transition: { type: 'spring', stiffness: 400, damping: 12 }
+              y: -8,
+              transition: { type: 'spring', stiffness: 400, damping: 15 }
             }}
-            className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium hover:shadow-premium-xl rounded-[2.5rem] transition-all duration-500 border border-brand-100/50 group cursor-default relative`}
+            className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium hover:shadow-premium-xl rounded-5xl transition-all duration-500 border border-brand-100/50 group cursor-default relative hover-border-gradient`}
           >
-            {/* Accent line */}
-            <div className={`absolute top-0 left-0 w-full h-1 ${card.accent} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+            {/* Top Accent line */}
+            <div className={`absolute top-0 left-0 w-full h-1.5 ${card.accent} opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-100%] group-hover:translate-y-0`} />
 
-            <div className="p-10">
-              <div className="flex flex-col gap-6">
-                <div className={`w-16 h-16 ${card.bg} rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-lg group-hover:shadow-brand-200/50`}>
-                  <Icon className={`h-8 w-8 ${card.color}`} />
+            <div className="p-10 relative z-10">
+              <div className="flex flex-col gap-8">
+                <div className={`w-20 h-20 ${card.bg} rounded-3xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-brand-200/50 relative overflow-hidden`}>
+                  <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 bg-white transition-opacity duration-500`} />
+                  <Icon className={`h-10 w-10 ${card.color} relative z-10`} />
                 </div>
-                <div className="flex flex-col gap-1">
-                    <dt className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em]">{card.title}</dt>
-                    <dd className="text-5xl font-black text-brand-900 leading-none tracking-tighter flex items-baseline gap-2">
+                <div className="flex flex-col gap-2">
+                    <dt className="text-xs font-black text-brand-300 uppercase tracking-[0.25em]">{card.title}</dt>
+                    <dd className="text-6xl font-black text-brand-900 leading-none tracking-tightest flex items-baseline gap-2">
                       <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.3, duration: 0.8 }}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
                       >
                         {card.value.toLocaleString()}
                       </motion.span>
@@ -106,9 +107,9 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
               </div>
             </div>
 
-            {/* Subtle background pattern */}
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-brand-900 rotate-12 transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6">
-                <Icon size={120} />
+            {/* Subtly animated background pattern */}
+            <div className="absolute -right-8 -bottom-8 opacity-[0.04] text-brand-900 rotate-12 transition-all duration-1000 group-hover:scale-150 group-hover:-rotate-12 group-hover:opacity-[0.08]">
+                <Icon size={180} />
             </div>
           </motion.div>
         );
