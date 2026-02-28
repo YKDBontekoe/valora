@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging;
-using Moq;
 using Valora.Application.Common.Interfaces;
+using Moq;
+using Microsoft.Extensions.Logging;
 using Valora.Application.Services;
 using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
@@ -9,6 +9,7 @@ namespace Valora.UnitTests.Services;
 
 public class BatchJobExecutorTests
 {
+    private readonly Mock<IEventDispatcher> _eventDispatcherMock = new();
     private readonly Mock<IBatchJobRepository> _jobRepositoryMock = new();
     private readonly Mock<ILogger<BatchJobExecutor>> _loggerMock = new();
     private readonly Mock<IBatchJobProcessor> _cityIngestionProcessorMock = new();
@@ -25,7 +26,8 @@ public class BatchJobExecutorTests
         return new BatchJobExecutor(
             _jobRepositoryMock.Object,
             _processors,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _eventDispatcherMock.Object);
     }
 
     [Fact]
@@ -79,7 +81,7 @@ public class BatchJobExecutorTests
     public async Task ProcessNextJobAsync_ShouldFail_WhenNoProcessorFound()
     {
         // Setup executor with empty processors list
-        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, new List<IBatchJobProcessor>(), _loggerMock.Object);
+        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, new List<IBatchJobProcessor>(), _loggerMock.Object, _eventDispatcherMock.Object);
         var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
@@ -101,7 +103,7 @@ public class BatchJobExecutorTests
         processor2.Setup(x => x.JobType).Returns(BatchJobType.CityIngestion);
 
         var processors = new List<IBatchJobProcessor> { processor1.Object, processor2.Object };
-        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, processors, _loggerMock.Object);
+        var executor = new BatchJobExecutor(_jobRepositoryMock.Object, processors, _loggerMock.Object, _eventDispatcherMock.Object);
 
         var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
         _jobRepositoryMock.Setup(x => x.GetNextPendingJobAsync(It.IsAny<CancellationToken>()))

@@ -13,5 +13,6 @@ public interface INotificationService
     Task MarkAsReadAsync(Guid notificationId, string userId);
     Task MarkAllAsReadAsync(string userId);
     Task<bool> DeleteNotificationAsync(Guid notificationId, string userId);
-    Task CreateNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl = null);
+    Task CreateNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl = null, string? dedupeKey = null);
+    Task<bool> ExistsAsync(string userId, string dedupeKey);
 }
