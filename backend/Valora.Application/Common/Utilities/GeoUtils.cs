@@ -65,13 +65,13 @@ public static class GeoUtils
             return null;
         }
 
-        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ||
-            !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var longitude) ||
+            !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var latitude))
         {
             return null;
         }
 
-        return (x, y);
+        return (longitude, latitude);
     }
 
     public static bool IsPointInPolygon(double lat, double lon, JsonElement geoJson)
@@ -197,14 +197,14 @@ public static class GeoUtils
 
         for (int i = 0, j = count - 1; i < count; j = i++)
         {
-            double xi = ring[i].Lon;
-            double yi = ring[i].Lat;
-            double xj = ring[j].Lon;
-            double yj = ring[j].Lat;
+            double startLon = ring[i].Lon;
+            double startLat = ring[i].Lat;
+            double endLon = ring[j].Lon;
+            double endLat = ring[j].Lat;
 
-            bool intersect = ((yi > lat) != (yj > lat)) &&
-                             (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
+            bool doesIntersect = ((startLat > lat) != (endLat > lat)) &&
+                             (lon < (endLon - startLon) * (lat - startLat) / (endLat - startLat) + startLon);
+            if (doesIntersect) inside = !inside;
         }
 
         return inside;

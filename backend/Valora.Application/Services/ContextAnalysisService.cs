@@ -72,7 +72,6 @@ public class ContextAnalysisService : IContextAnalysisService
 
     private async Task<string> BuildSystemPromptAsync(string baseSystemPrompt, UserAiProfileDto? sessionProfile, CancellationToken cancellationToken)
     {
-        // 1. Determine which profile to use (session > stored > null)
         UserAiProfileDto? profileToUse = sessionProfile;
 
         if (profileToUse == null && !string.IsNullOrEmpty(_currentUserService.UserId))
@@ -80,7 +79,6 @@ public class ContextAnalysisService : IContextAnalysisService
             profileToUse = await _profileService.GetProfileAsync(_currentUserService.UserId, cancellationToken);
         }
 
-        // 2. Apply profile if valid and enabled
         if (profileToUse != null && profileToUse.IsEnabled)
         {
             return ApplyProfilePreferences(baseSystemPrompt, profileToUse);
