@@ -229,14 +229,14 @@ public sealed class CbsGeoClient : ICbsGeoClient
     {
         var cacheKey = "cbs-geo:municipalities";
 
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        var cacheTask = _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
             var url = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
             var emptyResult = new List<string>();
 
             try
             {
-                using var response = await _httpClient.GetAsync(url, cancellationToken);
+                using var response = await _httpClient.GetAsync(url, CancellationToken.None);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -245,8 +245,8 @@ public sealed class CbsGeoClient : ICbsGeoClient
                     return emptyResult;
                 }
 
-                using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-                using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+                using var content = await response.Content.ReadAsStreamAsync(CancellationToken.None);
+                using var document = await JsonDocument.ParseAsync(content, cancellationToken: CancellationToken.None);
 
                 if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
                 {
@@ -281,7 +281,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
                 return emptyResult;
             }
-        }) ?? [];
+        });
+
+        var result = await cacheTask.WaitAsync(cancellationToken);
+        return result ?? [];
     }
 
 }
