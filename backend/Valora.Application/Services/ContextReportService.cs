@@ -74,6 +74,10 @@ public sealed class ContextReportService : IContextReportService
     /// </list>
     /// </para>
     /// </remarks>
+    /// <param name="request">The request containing the input location and desired radius.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A fully populated <see cref="ContextReportDto"/> containing scores, metrics, and source attributions.</returns>
+    /// <exception cref="ValidationException">Thrown if input is missing or cannot be resolved to a Dutch address.</exception>
     public async Task<ContextReportDto> BuildAsync(ContextReportRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Input))

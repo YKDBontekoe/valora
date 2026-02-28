@@ -285,3 +285,34 @@ Get a list of recent background jobs.
 
 **Query Parameters:**
 - `limit`: Number of jobs to retrieve (default 10, max 100).
+
+---
+
+## 🏗️ Error Handling
+
+The API uses standard HTTP status codes.
+
+| Code | Meaning | Description |
+|---|---|---|
+| `200` | OK | Success. |
+| `201` | Created | Resource successfully created. |
+| `204` | No Content | Success, but no data to return. |
+| `400` | Bad Request | Validation failure or malformed input. |
+| `401` | Unauthorized | Missing or invalid JWT token. |
+| `403` | Forbidden | Valid token but insufficient permissions (e.g., Admin only). |
+| `404` | Not Found | Resource does not exist. |
+| `429` | Too Many Requests | Rate limit exceeded. |
+| `500` | Internal Server Error | Something went wrong on the server. |
+
+Errors are returned in the standard `ProblemDetails` format (RFC 7807).
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Validation Failed",
+  "status": 400,
+  "errors": {
+    "Email": ["The Email field is not a valid e-mail address."]
+  }
+}
+```

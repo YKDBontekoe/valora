@@ -42,16 +42,19 @@ public sealed class PdokLocationResolver : ILocationResolver
     /// into a structured location entity with coordinates and administrative hierarchy codes.
     /// </para>
     /// <para>
-    /// Process:
-    /// 1. Normalize input (extract address from URL if applicable).
-    /// 2. Check local memory cache.
-    /// 3. Query PDOK "free" endpoint (fuzzy search) filtered by <c>type:adres</c>.
-    /// 4. Parse response to extract WGS84 (GPS) and RD New (Rijksdriehoek) coordinates.
+    /// <strong>Process:</strong>
+    /// <list type="number">
+    /// <item><strong>Normalization:</strong> Uses <see cref="UrlNormalizationUtils.NormalizeInput"/> to detect if the input is a listing URL (e.g., Funda). If so, it extracts the address slug. Otherwise, it treats it as a raw search string.</item>
+    /// <item><strong>Cache Check:</strong> Checks in-memory cache to prevent redundant external API calls for popular locations.</item>
+    /// <item><strong>PDOK Query:</strong> Calls the <c>free</c> endpoint of the PDOK Locatieserver.
+    /// We specifically use <c>fq=type:adres</c> to ensure we only match specific addresses, filtering out general city names or streets without numbers.</item>
+    /// <item><strong>Coordinate Extraction:</strong> PDOK returns coordinates in both WGS84 (Lat/Lon) and RD New (Rijksdriehoek). We extract WGS84 for the mobile app and RD New for accurate distance calculations if needed later.</item>
+    /// </list>
     /// </para>
     /// </remarks>
     /// <param name="input">Raw user input (address string or URL).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A <see cref="ResolvedLocationDto"/> if found, otherwise <c>null</c>.</returns>
+    /// <returns>A <see cref="ResolvedLocationDto"/> if a matching address is found; otherwise <c>null</c>.</returns>
     public async Task<ResolvedLocationDto?> ResolveAsync(string input, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(input))

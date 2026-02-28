@@ -52,6 +52,8 @@ sequenceDiagram
     end
 ```
 
+> **Note:** The "Fan-In" phase happens purely in memory. No database is involved in the reading path for reports.
+
 ## Detailed Steps
 
 ### 1. Request Handling (`Valora.Api`)

@@ -80,4 +80,4 @@ Jobs run in their own Dependency Injection scope. This means they have their own
 
 ### Resilience
 - If the server crashes while a job is `Processing`, the job remains stuck in `Processing`.
-- *Future Improvement:* A mechanism to reset "stale" processing jobs to `Pending` after a timeout.
+- **Note:** To fix a stuck job, an admin must first **Cancel** it (marking it as `Failed`) and then **Retry** it to reset it to `Pending`.

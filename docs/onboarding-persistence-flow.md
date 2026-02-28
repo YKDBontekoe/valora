@@ -38,6 +38,8 @@ sequenceDiagram
     end
 ```
 
+> **Security Note:** Generic error messages are returned to the API client to prevent user enumeration attacks (e.g., verifying if an email already exists).
+
 ## Detailed Steps
 
 ### 1. Request Handling (`Valora.Api`)
