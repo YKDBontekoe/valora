@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
+import 'package:valora_app/models/ai_chat_message.dart';
+import 'package:valora_app/models/ai_conversation.dart';
+import 'dart:convert';
 import 'package:valora_app/services/ai_service.dart';
 import 'package:valora_app/services/auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -24,6 +27,37 @@ void main() {
     mockClient = MockClient();
     mockAuthService = MockAuthService();
     aiService = AiService(client: mockClient, authService: mockAuthService);
+  });
+
+  test('sendMessage handles history mapping correctly', () async {
+    when(mockClient.post(
+      any,
+      headers: anyNamed('headers'),
+      body: anyNamed('body'),
+    )).thenAnswer((_) async => http.Response('{"response": "ok", "conversationId": "c1"}', 200));
+
+    final date = DateTime.utc(2023);
+    final response = await aiService.sendMessage(
+      prompt: 'test',
+      history: [
+        AiChatMessage(role: 'user', content: 'hello', createdAtUtc: date),
+      ],
+      contextReport: {'key': 'value'},
+    );
+
+    expect(response['response'], 'ok');
+
+    final captured = verify(mockClient.post(
+      any,
+      headers: anyNamed('headers'),
+      body: captureAnyNamed('body'),
+    )).captured;
+
+    final Map<String, dynamic> body = json.decode(captured.first);
+    expect(body['history'], isNotNull);
+    expect(body['history'][0]['role'], 'user');
+    expect(body['history'][0]['createdAtUtc'], date.toIso8601String());
+    expect(body['contextReport'], isNotNull);
   });
 
   test('baseUrl falls back if not in env', () {

@@ -35,7 +35,6 @@ void main() {
   test('baseUrl falls back to AppConfig if no dot env', () {
     // If we instantiate with no arguments, it should initialize fine
     final service = AiService(authService: mockAuthService);
-    when(mockAuthService.getToken()).thenAnswer((_) async => null);
     // the implicit check is simply making sure it doesn't crash on instantiation
     expect(service, isNotNull);
   });
