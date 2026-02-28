@@ -60,6 +60,28 @@ public class WorkspaceRepository : IWorkspaceRepository
             .CountAsync(ct);
     }
 
+    public async Task<(WorkspaceDto? Dto, bool IsMember)> GetWorkspaceDtoAndMemberStatusAsync(Guid id, string userId, CancellationToken ct = default)
+    {
+        var result = await _context.Workspaces
+            .AsNoTracking()
+            .Where(w => w.Id == id)
+            .Select(w => new ValueTuple<WorkspaceDto, bool>(
+                new WorkspaceDto(
+                    w.Id,
+                    w.Name,
+                    w.Description,
+                    w.OwnerId,
+                    w.CreatedAt,
+                    w.Members.Count,
+                    w.SavedListings.Count
+                ),
+                w.Members.Any(m => m.UserId == userId)
+            ))
+            .FirstOrDefaultAsync(ct);
+
+        return result.Item1 == null ? (null, false) : (result.Item1, result.Item2);
+    }
+
     public async Task<Workspace?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _context.Workspaces

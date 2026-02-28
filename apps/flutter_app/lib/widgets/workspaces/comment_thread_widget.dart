@@ -30,6 +30,10 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
     super.dispose();
   }
 
+  void _handleReply(String id) {
+    setState(() => _replyToId = id);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -46,103 +50,15 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.md, vertical: ValoraSpacing.sm),
               itemCount: widget.comments.length,
-              itemBuilder: (context, index) => _buildComment(widget.comments[index]),
+              itemBuilder: (context, index) => CommentItemWidget(
+                key: ValueKey(widget.comments[index].id),
+                comment: widget.comments[index],
+                onReply: _handleReply,
+              ),
             ),
         ),
         _buildInput(),
       ],
-    );
-  }
-
-  Widget _buildComment(Comment comment, {int depth = 0}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        top: ValoraSpacing.sm,
-        bottom: ValoraSpacing.sm,
-        left: depth > 0 ? ValoraSpacing.xl : 0,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ValoraAvatar(
-                initials: comment.userId.isNotEmpty ? comment.userId[0].toUpperCase() : '?',
-                size: ValoraAvatarSize.small,
-              ),
-              const SizedBox(width: ValoraSpacing.sm),
-              Expanded(
-                child: ValoraCard(
-                  padding: const EdgeInsets.all(ValoraSpacing.md),
-                  backgroundColor: isDark
-                      ? ValoraColors.neutral800
-                      : (depth > 0 ? ValoraColors.neutral50 : ValoraColors.surfaceLight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            comment.userId, // Optionally map to user name
-                            style: ValoraTypography.titleSmall.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            DateFormat.yMMMd().add_jm().format(comment.createdAt),
-                            style: ValoraTypography.labelSmall.copyWith(
-                              color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: ValoraSpacing.xs),
-                      Text(
-                        comment.content,
-                        style: ValoraTypography.bodyMedium.copyWith(
-                          color: isDark ? ValoraColors.neutral200 : ValoraColors.neutral800,
-                        ),
-                      ),
-                      const SizedBox(height: ValoraSpacing.sm),
-                      InkWell(
-                        onTap: () => setState(() => _replyToId = comment.id),
-                        borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.reply_rounded,
-                                size: 16,
-                                color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Reply',
-                                style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (comment.replies.isNotEmpty)
-            ...comment.replies.map((r) => _buildComment(r, depth: depth + 1)),
-        ],
-      ),
     );
   }
 
@@ -258,5 +174,117 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+}
+
+
+class CommentItemWidget extends StatelessWidget {
+  final Comment comment;
+  final int depth;
+  final Function(String) onReply;
+
+  const CommentItemWidget({
+    super.key,
+    required this.comment,
+    this.depth = 0,
+    required this.onReply,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: ValoraSpacing.sm,
+        bottom: ValoraSpacing.sm,
+        left: depth > 0 ? ValoraSpacing.xl : 0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ValoraAvatar(
+                initials: comment.userId.isNotEmpty ? comment.userId[0].toUpperCase() : '?',
+                size: ValoraAvatarSize.small,
+              ),
+              const SizedBox(width: ValoraSpacing.sm),
+              Expanded(
+                child: ValoraCard(
+                  padding: const EdgeInsets.all(ValoraSpacing.md),
+                  backgroundColor: isDark
+                      ? ValoraColors.neutral800
+                      : (depth > 0 ? ValoraColors.neutral50 : ValoraColors.surfaceLight),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            comment.userId, // Optionally map to user name
+                            style: ValoraTypography.titleSmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            DateFormat.yMMMd().add_jm().format(comment.createdAt),
+                            style: ValoraTypography.labelSmall.copyWith(
+                              color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: ValoraSpacing.xs),
+                      Text(
+                        comment.content,
+                        style: ValoraTypography.bodyMedium.copyWith(
+                          color: isDark ? ValoraColors.neutral200 : ValoraColors.neutral800,
+                        ),
+                      ),
+                      const SizedBox(height: ValoraSpacing.sm),
+                      InkWell(
+                        onTap: () => onReply(comment.id),
+                        borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.reply_rounded,
+                                size: 16,
+                                color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Reply',
+                                style: ValoraTypography.labelSmall.copyWith(
+                                  color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (comment.replies.isNotEmpty)
+            ...comment.replies.map((r) => CommentItemWidget(
+                  key: ValueKey(r.id),
+                  comment: r,
+                  depth: depth + 1,
+                  onReply: onReply,
+                )),
+        ],
+      ),
+    );
   }
 }
