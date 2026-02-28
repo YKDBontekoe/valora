@@ -33,5 +33,8 @@ public class AiModelConfiguration : IEntityTypeConfiguration<AiModelConfig>
 
         builder.Property(c => c.SafetySettings)
             .HasMaxLength(2000); // Assuming JSON string for safety settings
+
+        // Enforce strict character limits on Intent to match DTO validation
+        builder.ToTable(t => t.HasCheckConstraint("CK_AiModelConfig_Intent", "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'"));
     }
 }
