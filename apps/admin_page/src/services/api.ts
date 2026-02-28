@@ -212,6 +212,8 @@ export interface AiModelConfig {
   safetySettings?: string;
 }
 
+export type SortOption = 'name' | 'price_asc' | 'price_desc';
+
 export interface UpdateAiModelConfigDto {
   intent: string;
   primaryModel: string;
