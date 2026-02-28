@@ -52,8 +52,7 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default)
     {
-        var workspaces = await _repository.GetUserWorkspacesAsync(userId, ct);
-        return workspaces.Select(MapToDto).ToList();
+        return await _repository.GetUserWorkspaceDtosAsync(userId, ct);
     }
 
     public async Task<WorkspaceDto> GetWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
@@ -88,16 +87,7 @@ public class WorkspaceService : IWorkspaceService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var logs = await _repository.GetActivityLogsAsync(workspaceId, ct);
-
-        return logs.Select(a => new ActivityLogDto(
-            a.Id,
-            a.ActorId,
-            a.Type.ToString(),
-            a.Summary,
-            a.CreatedAt,
-            a.Metadata
-        )).ToList();
+        return await _repository.GetActivityLogDtosAsync(workspaceId, ct);
     }
 
     // Helpers

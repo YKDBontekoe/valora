@@ -29,5 +29,8 @@ public class SavedListingConfiguration : IEntityTypeConfiguration<SavedListing>
             .HasMaxLength(2000);
 
         builder.HasIndex(sl => new { sl.WorkspaceId, sl.ListingId }).IsUnique();
+
+        // Optimize fetching all saved listings for a workspace (ordered by CreatedAt desc)
+        builder.HasIndex(sl => new { sl.WorkspaceId, sl.CreatedAt });
     }
 }

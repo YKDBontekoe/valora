@@ -1,3 +1,4 @@
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
 namespace Valora.Application.Common.Interfaces;
@@ -7,6 +8,10 @@ public interface IWorkspaceRepository
     // Workspace Management
     Task<Workspace> AddAsync(Workspace workspace, CancellationToken ct = default);
     Task<List<Workspace>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default);
+    /// <summary>
+    /// Gets projected DTOs for workspaces where the user is a member, ordered by creation date.
+    /// </summary>
+    Task<List<WorkspaceDto>> GetUserWorkspaceDtosAsync(string userId, CancellationToken ct = default);
     /// <summary>
     /// Returns the count of workspaces where the user is an owner.
     /// </summary>
@@ -29,6 +34,10 @@ public interface IWorkspaceRepository
     Task<SavedListing?> GetSavedListingAsync(Guid workspaceId, Guid listingId, CancellationToken ct = default);
     Task<SavedListing?> GetSavedListingByIdAsync(Guid savedListingId, CancellationToken ct = default);
     Task<List<SavedListing>> GetSavedListingsAsync(Guid workspaceId, CancellationToken ct = default);
+    /// <summary>
+    /// Gets projected DTOs for saved listings in a workspace.
+    /// </summary>
+    Task<List<SavedListingDto>> GetSavedListingDtosAsync(Guid workspaceId, CancellationToken ct = default);
     Task<SavedListing> AddSavedListingAsync(SavedListing savedListing, CancellationToken ct = default);
     Task RemoveSavedListingAsync(SavedListing savedListing, CancellationToken ct = default);
 
@@ -43,6 +52,10 @@ public interface IWorkspaceRepository
     // Activity Logs
     Task LogActivityAsync(ActivityLog log, CancellationToken ct = default);
     Task<List<ActivityLog>> GetActivityLogsAsync(Guid workspaceId, CancellationToken ct = default);
+    /// <summary>
+    /// Gets projected DTOs for activity logs in a workspace.
+    /// </summary>
+    Task<List<ActivityLogDto>> GetActivityLogDtosAsync(Guid workspaceId, CancellationToken ct = default);
 
     // Persistence
     Task SaveChangesAsync(CancellationToken ct = default);

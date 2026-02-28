@@ -23,5 +23,8 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
             .WithMany(w => w.ActivityLogs)
             .HasForeignKey(a => a.WorkspaceId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Optimize fetching recent activity logs for a workspace
+        builder.HasIndex(a => new { a.WorkspaceId, a.CreatedAt });
     }
 }

@@ -126,9 +126,15 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
               ),
             ),
           ),
-          Consumer<WorkspaceProvider>(
-            builder: (context, provider, child) {
-              if (provider.isWorkspacesLoading && provider.workspaces.isEmpty) {
+          Selector<WorkspaceProvider,
+              ({bool isLoading, String? error, List<Workspace> workspaces})>(
+            selector: (_, p) => (
+              isLoading: p.isWorkspacesLoading,
+              error: p.error,
+              workspaces: p.workspaces
+            ),
+            builder: (context, data, child) {
+              if (data.isLoading && data.workspaces.isEmpty) {
                 return SliverPadding(
                   padding: const EdgeInsets.all(ValoraSpacing.md),
                   sliver: SliverList(
@@ -144,7 +150,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                   ),
                 );
               }
-              if (provider.error != null && provider.workspaces.isEmpty) {
+              if (data.error != null && data.workspaces.isEmpty) {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -153,13 +159,14 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                       title: 'Failed to load',
                       subtitle: 'Could not load your workspaces. Please try again.',
                       actionLabel: 'Retry',
-                      onAction: () => context.read<WorkspaceProvider>().fetchWorkspaces(),
+                      onAction: () =>
+                          context.read<WorkspaceProvider>().fetchWorkspaces(),
                     ),
                   ),
                 );
               }
 
-              final displayList = _getFilteredAndSortedWorkspaces(provider.workspaces);
+              final displayList = _getFilteredAndSortedWorkspaces(data.workspaces);
 
               if (displayList.isEmpty) {
                 if (_searchQuery.isNotEmpty) {

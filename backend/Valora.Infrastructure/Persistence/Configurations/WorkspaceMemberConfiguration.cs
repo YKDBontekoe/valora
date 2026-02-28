@@ -26,5 +26,12 @@ public class WorkspaceMemberConfiguration : IEntityTypeConfiguration<WorkspaceMe
         builder.HasIndex(wm => new { wm.WorkspaceId, wm.InvitedEmail })
             .IsUnique()
             .HasFilter("\"InvitedEmail\" IS NOT NULL");
+
+        // Optimize finding workspaces for a user (used in GetUserWorkspacesAsync)
+        // Since the main query filters by UserId, an index on UserId is crucial.
+        // It's a FK so usually indexed by default, but we can make it explicit/compound if needed.
+        // The query is: .Where(w => w.Members.Any(m => m.UserId == userId))
+        // So we need to quickly find Member records by UserId.
+        builder.HasIndex(wm => wm.UserId);
     }
 }
