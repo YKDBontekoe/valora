@@ -282,8 +282,9 @@ const AiModels: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-8">
                     <div>
-                      <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Intent Key</label>
+                      <label htmlFor="intent-key" className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Intent Key</label>
                       <input
+                        id="intent-key"
                         type="text"
                         className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
                         value={editingConfig.intent}
@@ -391,6 +392,7 @@ const AiModels: React.FC = () => {
                 </div>
                 <div className="flex gap-5 w-full sm:w-auto">
                   <Button
+                      aria-label="Discard Changes"
                     onClick={() => setEditingConfig(null)}
                     variant="ghost"
                     className="text-brand-400 font-black px-8"

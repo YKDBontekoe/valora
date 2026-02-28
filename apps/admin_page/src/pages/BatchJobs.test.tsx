@@ -9,6 +9,7 @@ vi.mock('../services/api', () => ({
     getJobDetails: vi.fn(),
     retryJob: vi.fn(),
     cancelJob: vi.fn(),
+    startJob: vi.fn(),
     getHealth: vi.fn().mockResolvedValue({ status: 'Healthy' }),
   },
 }));
@@ -133,5 +134,160 @@ describe('BatchJobs Page', () => {
       await waitFor(() => {
           expect(adminService.retryJob).toHaveBeenCalledWith('2');
       });
+  });
+
+  it('opens details modal when clicking on a job row', async () => {
+    const mockJobs = [
+      {
+        id: '1',
+        type: 'CityIngestion',
+        status: 'Completed',
+        target: 'Amsterdam',
+        progress: 100,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    (adminService.getJobs as Mock).mockResolvedValue({ items: mockJobs, totalPages: 1 });
+    (adminService.getJobDetails as Mock).mockResolvedValue({
+        ...mockJobs[0],
+        executionLog: 'Logs...',
+    });
+
+    render(<BatchJobs />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Amsterdam')).toBeInTheDocument();
+    });
+
+    const row = screen.getByText('Amsterdam').closest('tr');
+    fireEvent.click(row!);
+
+    await waitFor(() => {
+        expect(screen.getByText('Pipeline Diagnostics')).toBeInTheDocument();
+    });
+  });
+
+  it('triggers full ingestion', async () => {
+    (adminService.getJobs as Mock).mockResolvedValue({ items: [], totalPages: 0 });
+    (adminService.startJob as Mock).mockResolvedValue({});
+
+    render(<BatchJobs />);
+
+    fireEvent.click(screen.getByText('Provision All Cities'));
+
+    expect(screen.getByText('Start Full Ingestion?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Start Ingestion'));
+
+    await waitFor(() => {
+        expect(adminService.startJob).toHaveBeenCalledWith('AllCitiesIngestion', 'Netherlands');
+    });
+  });
+
+  it('executes municipality sync', async () => {
+    (adminService.getJobs as Mock).mockResolvedValue({ items: [], totalPages: 0 });
+    (adminService.startJob as Mock).mockResolvedValue({});
+
+    render(<BatchJobs />);
+
+    const input = screen.getByPlaceholderText(/target municipality/i);
+    fireEvent.change(input, { target: { value: 'Utrecht' } });
+
+    const syncButton = screen.getByText('Execute Sync');
+    fireEvent.click(syncButton);
+
+    await waitFor(() => {
+        expect(adminService.startJob).toHaveBeenCalledWith('CityIngestion', 'Utrecht');
+    });
+  });
+
+  it('opens dataset catalog modal', async () => {
+    (adminService.getJobs as Mock).mockResolvedValue({ items: [], totalPages: 0 });
+    render(<BatchJobs />);
+
+    const catalogButton = screen.getByRole('button', { name: /dataset catalog/i });
+    fireEvent.click(catalogButton);
+
+    expect(screen.getByRole('heading', { name: /dataset catalog/i })).toBeInTheDocument();
+  });
+
+  it('handles search and filtering', async () => {
+    (adminService.getJobs as Mock).mockResolvedValue({ items: [], totalPages: 0 });
+
+    render(<BatchJobs />);
+
+    const searchInput = screen.getByPlaceholderText('Search by target...');
+    fireEvent.change(searchInput, { target: { value: 'test-city' } });
+
+    const statusSelect = screen.getByDisplayValue('All Statuses');
+    fireEvent.change(statusSelect, { target: { value: 'Failed' } });
+
+    const typeSelect = screen.getByDisplayValue('All Types');
+    fireEvent.change(typeSelect, { target: { value: 'CityIngestion' } });
+
+    await waitFor(() => {
+        // useBatchJobsPolling calls getJobs with individual arguments, not an object
+        expect(adminService.getJobs).toHaveBeenCalledWith(
+            1,
+            10,
+            'Failed',
+            'CityIngestion',
+            'test-city',
+            undefined
+        );
+    }, { timeout: 2000 }); // Account for debounce
+  });
+
+  it('handles sorting', async () => {
+    (adminService.getJobs as Mock).mockResolvedValue({ items: [], totalPages: 0 });
+
+    render(<BatchJobs />);
+
+    const typeHeader = screen.getByText('Definition');
+    fireEvent.click(typeHeader);
+
+    await waitFor(() => {
+        expect(adminService.getJobs).toHaveBeenCalledWith(
+            1,
+            10,
+            'All',
+            'All',
+            '',
+            'type_asc'
+        );
+    });
+
+    fireEvent.click(typeHeader);
+
+    await waitFor(() => {
+        expect(adminService.getJobs).toHaveBeenCalledWith(
+            1,
+            10,
+            'All',
+            'All',
+            '',
+            'type_desc'
+        );
+    });
+  });
+
+  it('handles keyboard sorting', async () => {
+    (adminService.getJobs as Mock).mockResolvedValue({ items: [], totalPages: 0 });
+
+    render(<BatchJobs />);
+
+    const typeHeader = screen.getByRole('button', { name: /sort by definition/i });
+    fireEvent.keyDown(typeHeader, { key: 'Enter' });
+
+    await waitFor(() => {
+        expect(adminService.getJobs).toHaveBeenCalledWith(
+            1,
+            10,
+            'All',
+            'All',
+            '',
+            'type_asc'
+        );
+    });
   });
 });
