@@ -40,6 +40,7 @@ public class BaseTestcontainersIntegrationTest : IAsyncLifetime
         DbContext.Notifications.RemoveRange(DbContext.Notifications);
         DbContext.Listings.RemoveRange(DbContext.Listings);
         DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
+        DbContext.AiModelConfigs.RemoveRange(DbContext.AiModelConfigs);
 
         // Identity Cleanup
         DbContext.UserClaims.RemoveRange(DbContext.UserClaims);
