@@ -82,8 +82,8 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         }
         catch (Exception ex)
         {
-             _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed for station {StationId}", station.Value.Id);
-             return null;
+            _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed for station {StationId}", station.Value.Id);
+            return null;
         }
     }
 
@@ -199,7 +199,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                 {
                     break;
                 }
-                
+
                 if (response?.Data is null || response.Data.Count == 0)
                 {
                     break;
@@ -225,7 +225,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         var encodedId = Uri.EscapeDataString(stationId);
         var url = $"{_options.LuchtmeetnetBaseUrl.TrimEnd('/')}/open_api/stations/{encodedId}";
 
-        try 
+        try
         {
             var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetStationDetailResponse>(url, cancellationToken);
             if (response?.Data?.Geometry?.Coordinates is null || response.Data.Geometry.Coordinates.Length < 2)
@@ -239,7 +239,7 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
 
             var result = (name, lat, lon);
             _cache.Set(cacheKey, result, TimeSpan.FromHours(48));
-            
+
             return result;
         }
         catch (Exception ex)

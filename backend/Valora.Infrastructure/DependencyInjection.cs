@@ -77,14 +77,15 @@ public static class DependencyInjection
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
-        
+
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
         services.AddHttpClient();
 
         services.AddHttpClient<ILocationResolver, PdokLocationResolver>()
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -92,7 +93,8 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient<ICbsNeighborhoodStatsClient, CbsNeighborhoodStatsClient>(client => { client.DefaultRequestVersion = HttpVersion.Version11; client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; })
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -100,7 +102,8 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient<IAmenityClient, OverpassAmenityClient>()
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -108,7 +111,8 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient<IAirQualityClient, LuchtmeetnetAirQualityClient>()
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -116,7 +120,8 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient<ICbsCrimeStatsClient, CbsCrimeStatsClient>(client => { client.DefaultRequestVersion = HttpVersion.Version11; client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; })
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -124,7 +129,8 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient<ICbsGeoClient, CbsGeoClient>()
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -138,7 +144,8 @@ public static class DependencyInjection
             UseCookies = true,
             AutomaticDecompression = DecompressionMethods.All
         })
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
@@ -146,7 +153,8 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient("OpenRouter")
-        .AddStandardResilienceHandler(options => {
+        .AddStandardResilienceHandler(options =>
+        {
             options.Retry.MaxRetryAttempts = 3;
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;

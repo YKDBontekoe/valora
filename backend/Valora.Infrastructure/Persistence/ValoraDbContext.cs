@@ -17,7 +17,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<BatchJob> BatchJobs => Set<BatchJob>();
     public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
     public DbSet<AiModelConfig> AiModelConfigs => Set<AiModelConfig>();
-public DbSet<UserAiProfile> UserAiProfiles => Set<UserAiProfile>();
+    public DbSet<UserAiProfile> UserAiProfiles => Set<UserAiProfile>();
 
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();

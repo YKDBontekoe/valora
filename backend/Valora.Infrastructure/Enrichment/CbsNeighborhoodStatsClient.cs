@@ -97,7 +97,7 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
 
             if (residents == null || density == null || woz == null || lowIncome == null)
             {
-                _logger.LogDebug("CBS 85618NED partial data for {RegionCode}: Residents={R}, Density={D}, WOZ={W}, LowIncome={L}", 
+                _logger.LogDebug("CBS 85618NED partial data for {RegionCode}: Residents={R}, Density={D}, WOZ={W}, LowIncome={L}",
                     regionCode.Trim(), residents, density, woz, lowIncome);
             }
 
