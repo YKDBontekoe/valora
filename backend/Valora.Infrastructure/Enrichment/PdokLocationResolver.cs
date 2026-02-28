@@ -70,8 +70,13 @@ public sealed class PdokLocationResolver : ILocationResolver
             return cached;
         }
 
-        // Query the "free" endpoint which allows for flexible/fuzzy input
-        // fq=type:adres restricts results to specific addresses, filtering out general place names
+        // Query the "free" endpoint which allows for flexible/fuzzy input.
+        // We explicitly use the `free` endpoint instead of the `suggest` endpoint
+        // because `free` returns complete locational data (like coordinates and municipality info)
+        // in a single API call. The `suggest` endpoint only returns a suggested ID,
+        // which would require a second 'lookup' request to get the actual coordinates,
+        // thereby doubling our external API latency during the critical Fan-Out report generation phase.
+        // Additionally, fq=type:adres restricts results to specific addresses, filtering out general place names.
         var encodedQ = WebUtility.UrlEncode(normalizedInput);
         var url = $"{_options.PdokBaseUrl.TrimEnd('/')}/bzk/locatieserver/search/v3_1/free?q={encodedQ}&fq=type:adres&rows=1";
 

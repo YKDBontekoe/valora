@@ -23,20 +23,23 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 Follow these steps to get the entire system running locally. For a detailed walkthrough, see the **[Onboarding Guide](docs/onboarding.md)**.
 
-### Prerequisites
-- **Docker Desktop** (for database)
-- **.NET 10.0 SDK** (for backend)
-- **Flutter SDK** (for mobile app)
-- **Node.js 18+** (for admin dashboard)
+### Prerequisites & Dependencies
+Before you start, ensure you have the following installed on your machine:
+- **Docker Desktop** (for spinning up the local PostgreSQL database)
+- **.NET 10.0 SDK** (for building and running the backend API)
+- **Flutter SDK** (for running the mobile app on an emulator/device)
+- **Node.js 18+ & npm** (for the web admin dashboard)
 
-### 1. Start Infrastructure
-Run the database container.
+### 1. Setup & Start Local Infrastructure
+First, you need to start the underlying database. Valora uses a PostgreSQL instance orchestrated via Docker Compose.
+
 ```bash
+# Start the database in the background
 docker-compose -f docker/docker-compose.yml up -d
 ```
 *Troubleshooting:*
-- If `docker-compose` fails, ensure Docker Desktop is running.
-- Ensure port `5432` is not already in use by another Postgres instance.
+- If `docker-compose` fails, ensure Docker Desktop is running and actively connected.
+- Ensure port `5432` is not already in use by a local Postgres instance (e.g., Homebrew's Postgres).
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
@@ -86,11 +89,14 @@ npm run dev
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture Overview
 
-Valora is built on two core pillars: **Clean Architecture** for code organization and the **Fan-Out/Fan-In Pattern** for data retrieval. This ensures the system is modular, testable, and respects data providers by avoiding scraping.
+Valora's architecture is specifically designed to act as an aggregation layer for public data, rather than a scraping pipeline. It is built on two primary structural pillars:
 
-### System Context
+1.  **Strict Clean Architecture**: The backend strictly segregates concerns. External integrations (EF Core, HTTP clients) live in `Infrastructure`, HTTP routing lives in `Api`, and pure business logic lives in `Domain` and `Application`.
+2.  **Fan-Out / Fan-In Fetching Pattern**: Instead of persisting millions of real estate listings, the system queries external providers in parallel only when a user requests a report.
+
+### System Context & Data Flow
 
 The following diagram shows how Valora fits into the broader ecosystem.
 
@@ -175,6 +181,66 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 - **Why?** Data freshness and coverage. We don't need to scrape or store millions of records.
 - **How?** See `ContextReportService.cs`. It uses `Task.WhenAll` to fetch data from CBS, PDOK, and OSM simultaneously.
 
+### 2. Batch Job Processing (City Ingestion)
+Background tasks, such as fetching all neighborhoods for a city from CBS, are handled using a robust background worker architecture. This decouples long-running tasks from API requests.
+
+- **Why?** To prevent API request timeouts and handle massive ingestion jobs reliably in the background without blocking the UI.
+- **How?** See `BatchJobExecutor.cs`. The `BatchJobWorker` continuously polls for pending jobs. Once grabbed, a `CityIngestionJobProcessor` fetches the neighborhoods from PDOK and fetches stats from CBS for each.
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin Dashboard
+    participant API as Valora.Api (AdminEndpoints)
+    participant Service as BatchJobService (Application)
+    participant DB as PostgreSQL
+    participant Worker as BatchJobWorker (HostedService)
+    participant Processor as CityIngestionJobProcessor
+    participant External as CBS / PDOK
+
+    Admin->>API: POST /api/admin/jobs { type: "CityIngestion", target: "Amsterdam" }
+    API->>Service: CreateJobAsync(...)
+    Service->>DB: INSERT INTO "BatchJobs" (Status: Pending)
+    Service-->>API: 201 Created (JobId)
+    API-->>Admin: Job Created
+
+    loop Every 10 Seconds
+        Worker->>DB: GetNextPendingJobAsync() (Atomic Lock)
+        alt No Job
+            Worker->>Worker: Sleep
+        else Found Job
+            DB-->>Worker: Job (Status: Processing)
+            Worker->>Processor: ProcessAsync(Job)
+
+            Processor->>External: Get Neighborhoods (PDOK)
+            External-->>Processor: List of Neighborhoods
+
+            loop For Each Neighborhood
+                Processor->>External: Get Stats (CBS)
+                Processor->>DB: UPSERT Neighborhood
+                Processor->>DB: Update Job Progress %
+            end
+
+            alt Success
+                Processor-->>Worker: Done
+                Worker->>DB: UPDATE "BatchJobs" (Status: Completed)
+            else Failure
+                Processor-->>Worker: Exception
+                Worker->>DB: UPDATE "BatchJobs" (Status: Failed)
+            end
+        end
+    end
+```
+
+## 📖 API Reference Summary
+
+The API provides core functionalities to access and manage Valora's context data. Below is a brief summary of key endpoints. For complete details, see the **[API Reference](docs/api-reference.md)**.
+
+- **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
+- **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
+- **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
+- **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
+- **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
+
 ---
 
 ## 📂 Project Structure
@@ -209,8 +275,10 @@ When a user requests a report for an address, Valora does **not** look up a pre-
 - **[Architecture Decisions](docs/architecture-decisions.md)**: The "Why" behind Clean Architecture and Fan-Out.
 - **[Data Flow: Reading (Fan-Out)](docs/onboarding-data-flow.md)** (Includes Mermaid Diagram):
     - Explains the API request lifecycle from Flutter -> API -> PDOK/CBS/OSM -> Report.
-- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)**:
-    - Explains User Registration and database transactions.
+- **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)** (Includes Mermaid Diagram):
+    - Walkthrough of the data flow from API request down to database persistence (e.g., User Registration).
+- **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-guide.md)** (Includes Mermaid Diagram):
+    - Comprehensive guide tracing the exact path a write request takes in Valora, passing through Clean Architecture to PostgreSQL.
 - **[Data Flow: Batch Jobs](docs/onboarding-batch-job-flow.md)**:
     - Explains background processing (City Ingestion).
 
