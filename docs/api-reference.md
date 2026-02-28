@@ -153,6 +153,20 @@ Get heat map data (e.g., price per m2) for a bounding box.
 - `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
 - `metric`: The metric to visualize. Allowed values: `PricePerSquareMeter`, `CrimeRate`, `PopulationDensity`, `AverageWoz`.
 
+### Map Overlay Tiles
+`GET /api/map/overlays/tiles`
+
+Get pre-computed rasterized overlay tiles for map visualization. Output is generated using a spatial prefilter to efficiently match raster points to polygon geometries.
+
+**Query Parameters:**
+- `minLat`, `minLon`, `maxLat`, `maxLon`: Bounding box coordinates (Required).
+- `zoom`: Map zoom level used to determine tile resolution.
+- `metric`: The metric to visualize.
+
+**Caching Behavior:**
+Responses are cached in-memory with a 10-minute TTL. The cache key is generated from the bounding box (normalized/rounded to 4 decimal places), zoom bucket, and metric:
+`{minLat}_{minLon}_{maxLat}_{maxLon}_{zoom}_{metric}`
+
 ---
 
 ## 🔔 Notifications

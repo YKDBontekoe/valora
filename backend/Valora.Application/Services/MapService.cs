@@ -2,6 +2,7 @@ using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs.Map;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Valora.Application.Services;
 
@@ -10,16 +11,19 @@ public class MapService : IMapService
     private readonly IMapRepository _repository;
     private readonly IAmenityClient _amenityClient;
     private readonly ICbsGeoClient _cbsGeoClient;
+    private readonly IMemoryCache _cache;
     private const double MaxAggregatedSpan = 2.0; // Larger span for aggregated views
 
     public MapService(
         IMapRepository repository,
         IAmenityClient amenityClient,
-        ICbsGeoClient cbsGeoClient)
+        ICbsGeoClient cbsGeoClient,
+        IMemoryCache cache)
     {
         _repository = repository;
         _amenityClient = amenityClient;
         _cbsGeoClient = cbsGeoClient;
+        _cache = cache;
     }
 
     public async Task<List<MapCityInsightDto>> GetCityInsightsAsync(CancellationToken cancellationToken = default)
@@ -100,7 +104,7 @@ public class MapService : IMapService
         return clusters;
     }
 
-    public async Task<List<MapOverlayTileDto>> GetMapOverlayTilesAsync(
+    public async Task<IReadOnlyList<MapOverlayTileDto>> GetMapOverlayTilesAsync(
         double minLat,
         double minLon,
         double maxLat,
@@ -114,6 +118,13 @@ public class MapService : IMapService
 
         double cellSize = GetCellSize(zoom);
 
+        var cacheKey = FormattableString.Invariant($"MapOverlayTiles_{Math.Round(minLat, 4)}_{Math.Round(minLon, 4)}_{Math.Round(maxLat, 4)}_{Math.Round(maxLon, 4)}_{zoom}_{metric}");
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<MapOverlayTileDto>? cachedTiles))
+        {
+            return cachedTiles!;
+        }
+
+
         // Fetch detailed overlays
         var overlays = await _cbsGeoClient.GetNeighborhoodOverlaysAsync(
             minLat - cellSize,
@@ -126,36 +137,71 @@ public class MapService : IMapService
         var tiles = new List<MapOverlayTileDto>();
 
         // Pre-parse geometries for performance
-        var parsedOverlays = overlays.Select(o => new
+        var parsedOverlays = overlays.Select(o =>
+            (Dto: o, Geometry: GeoUtils.ParseGeometry(o.GeoJson))
+        ).ToList();
+
+        // Build spatial index
+        double indexCellSize = cellSize * 5; // e.g., 5x tile size for the index grid
+        var spatialIndex = new Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>>();
+
+        foreach (var po in parsedOverlays)
         {
-            Dto = o,
-            Geometry = GeoUtils.ParseGeometry(o.GeoJson)
-        }).ToList();
+            int minX = (int)Math.Floor(po.Geometry.BBox.MinLon / indexCellSize);
+            int maxX = (int)Math.Floor(po.Geometry.BBox.MaxLon / indexCellSize);
+            int minY = (int)Math.Floor(po.Geometry.BBox.MinLat / indexCellSize);
+            int maxY = (int)Math.Floor(po.Geometry.BBox.MaxLat / indexCellSize);
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    var key = (x, y);
+                    if (!spatialIndex.TryGetValue(key, out var list))
+                    {
+                        list = new List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>();
+                        spatialIndex[key] = list;
+                    }
+                    list.Add(po);
+                }
+            }
+        }
 
         // Rasterize into grid
         // Iterate by half cell size to center the points
         for (double lat = minLat + cellSize / 2; lat < maxLat; lat += cellSize)
         {
+            int gridY = (int)Math.Floor(lat / indexCellSize);
+
             for (double lon = minLon + cellSize / 2; lon < maxLon; lon += cellSize)
             {
-                // Simple point-in-polygon check for the center of the tile
-                var overlay = parsedOverlays.FirstOrDefault(o =>
-                    GeoUtils.IsPointInPolygon(lat, lon, o.Geometry));
+                int gridX = (int)Math.Floor(lon / indexCellSize);
+                var key = (gridX, gridY);
 
-                if (overlay != null)
+                if (spatialIndex.TryGetValue(key, out var candidates))
                 {
-                    tiles.Add(new MapOverlayTileDto(
-                        lat,
-                        lon,
-                        cellSize,
-                        overlay.Dto.MetricValue,
-                        overlay.Dto.DisplayValue
-                    ));
+                    // Simple point-in-polygon check for the center of the tile on candidates only
+                    var overlayIndex = candidates.FindIndex(o =>
+                        GeoUtils.IsPointInPolygon(lat, lon, o.Geometry));
+
+                    if (overlayIndex >= 0)
+                    {
+                        var overlay = candidates[overlayIndex];
+                        tiles.Add(new MapOverlayTileDto(
+                            lat,
+                            lon,
+                            cellSize,
+                            overlay.Dto.MetricValue,
+                            overlay.Dto.DisplayValue
+                        ));
+                    }
                 }
             }
         }
 
-        return tiles;
+        var readOnlyTiles = tiles.ToArray();
+        _cache.Set(cacheKey, readOnlyTiles, TimeSpan.FromMinutes(10));
+        return readOnlyTiles;
     }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
