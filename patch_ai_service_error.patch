@@ -1,0 +1,10 @@
+--- apps/flutter_app/lib/services/ai_service.dart
++++ apps/flutter_app/lib/services/ai_service.dart
+@@ -93,3 +93,5 @@
+     } else {
+       final errorData = json.decode(response.body);
+-      throw Exception(errorData['detail'] ?? 'Failed to send message');
++      final traceId = errorData['trace_id'];
++      final traceStr = traceId != null ? ' (Trace ID: $traceId)' : '';
++      throw Exception('Failed to send message.$traceStr');
+     }

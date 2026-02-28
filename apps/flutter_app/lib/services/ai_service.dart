@@ -92,7 +92,9 @@ class AiService {
       return json.decode(response.body);
     } else {
       final errorData = json.decode(response.body);
-      throw Exception(errorData['detail'] ?? 'Failed to send message');
+      final traceId = errorData['trace_id'];
+      final traceStr = traceId != null ? ' (Trace ID: $traceId)' : '';
+      throw Exception('Failed to send message.$traceStr');
     }
   }
 }
