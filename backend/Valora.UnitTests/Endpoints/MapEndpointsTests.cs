@@ -119,6 +119,6 @@ public class MapEndpointsTests
 
         var result = await MapEndpoints.GetMapOverlayTilesHandler(bounds, 10, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
 
-        Assert.IsType<Ok<List<MapOverlayTileDto>>>(result);
+        Assert.IsType<Ok<IReadOnlyList<MapOverlayTileDto>>>(result);
     }
 }

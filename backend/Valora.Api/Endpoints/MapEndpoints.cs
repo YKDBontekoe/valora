@@ -90,7 +90,7 @@ public static class MapEndpoints
         CancellationToken ct)
     {
         var tiles = await mapService.GetMapOverlayTilesAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, zoom, metric, ct);
-        return Results.Ok(tiles);
+        return TypedResults.Ok(tiles);
     }
 
     private static List<string>? ParseTypes(string? types)
