@@ -114,7 +114,7 @@ const AiModels: React.FC = () => {
           })}
           variant="secondary"
           leftIcon={<Plus size={20} />}
-          className="px-8 py-4"
+          className="px-8 py-4 shadow-glow"
         >
           Provision New Policy
         </Button>
@@ -248,35 +248,37 @@ const AiModels: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setEditingConfig(null)}
-              className="absolute inset-0 bg-brand-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-900/40 backdrop-blur-md"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative w-full max-w-3xl bg-white rounded-[3rem] shadow-premium-xl overflow-hidden border border-white/20"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-3xl bg-white rounded-[2.5rem] shadow-premium-xl overflow-hidden border border-white/20 flex flex-col max-h-[90vh]"
             >
-              <div className="p-10 md:p-14">
-                <div className="flex items-center justify-between mb-12">
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-linear-to-br from-primary-500 to-primary-700 rounded-3xl shadow-xl shadow-primary-200/50 text-white flex items-center justify-center">
-                      <Cpu size={40} />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-black text-brand-900 tracking-tightest">
-                        {editingConfig.id ? 'Edit Policy' : 'Provision Policy'}
-                      </h2>
-                      <p className="text-brand-400 font-bold text-lg">Define orchestrator routing logic.</p>
-                    </div>
+              {/* Modal Header */}
+              <div className="px-10 py-8 border-b border-brand-100 flex items-center justify-between bg-brand-50/20">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-linear-to-br from-primary-500 to-primary-700 rounded-2xl shadow-xl shadow-primary-200/40 text-white flex items-center justify-center group-hover:rotate-3 transition-transform">
+                    <Cpu size={32} />
                   </div>
-                  <button
-                    onClick={() => setEditingConfig(null)}
-                    className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300"
-                  >
-                    <X size={32} />
-                  </button>
+                  <div>
+                    <h2 className="text-3xl font-black text-brand-900 tracking-tightest">
+                      {editingConfig.id ? 'Edit Policy' : 'Provision Policy'}
+                    </h2>
+                    <p className="text-brand-400 font-bold">Define orchestrator routing logic and compute nodes.</p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setEditingConfig(null)}
+                  className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300"
+                >
+                  <X size={28} />
+                </button>
+              </div>
 
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-8">
                     <div>
@@ -379,29 +381,30 @@ const AiModels: React.FC = () => {
                     placeholder="Provide context for this routing policy..."
                   />
                 </div>
+              </div>
 
-                <div className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-8">
-                  <div className="flex items-center gap-3 text-warning-600 bg-warning-50 px-5 py-2.5 rounded-full border border-warning-100/50">
-                    <AlertCircle size={20} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Immediate Propagation</span>
-                  </div>
-                  <div className="flex gap-5 w-full sm:w-auto">
-                    <Button
-                      onClick={() => setEditingConfig(null)}
-                      variant="ghost"
-                      className="text-brand-400 font-black px-8"
-                    >
-                      Discard
-                    </Button>
-                    <Button
-                      onClick={handleSave}
-                      isLoading={isSaving}
-                      leftIcon={<Save size={20} />}
-                      className="shadow-premium shadow-primary-200/50 px-10"
-                    >
-                      Commit Policy
-                    </Button>
-                  </div>
+              {/* Action Bar */}
+              <div className="px-10 py-8 border-t border-brand-100 bg-brand-50/20 flex flex-col sm:flex-row items-center justify-between gap-8">
+                <div className="flex items-center gap-3 text-warning-600 bg-warning-50 px-5 py-2.5 rounded-full border border-warning-100/50">
+                  <AlertCircle size={18} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Immediate Propagation</span>
+                </div>
+                <div className="flex gap-5 w-full sm:w-auto">
+                  <Button
+                    onClick={() => setEditingConfig(null)}
+                    variant="ghost"
+                    className="text-brand-400 font-black px-8"
+                  >
+                    Discard
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    isLoading={isSaving}
+                    leftIcon={<Save size={20} />}
+                    className="shadow-premium shadow-primary-200/50 px-10"
+                  >
+                    Commit Policy
+                  </Button>
                 </div>
               </div>
             </motion.div>

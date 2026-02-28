@@ -66,10 +66,33 @@ const Login = () => {
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-brand-50">
       {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-100/30 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary-200/20 blur-[120px]" />
-          <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-info-100/20 blur-[100px]" />
+      <div className="absolute inset-0 z-0 overflow-hidden">
+          <motion.div
+            animate={{
+                scale: [1, 1.2, 1],
+                x: [0, 50, 0],
+                y: [0, 30, 0]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-200/20 blur-[120px]"
+          />
+          <motion.div
+            animate={{
+                scale: [1, 1.3, 1],
+                x: [0, -40, 0],
+                y: [0, -60, 0]
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary-300/10 blur-[120px]"
+          />
+          <motion.div
+            animate={{
+                scale: [1, 1.1, 1],
+                opacity: [0.1, 0.2, 0.1]
+            }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-info-200/20 blur-[100px]"
+          />
       </div>
 
       <motion.div
@@ -119,7 +142,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@valora.com"
-                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-black text-brand-900 outline-none shadow-sm"
                   required
                 />
               </div>
@@ -137,7 +160,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-black text-brand-900 outline-none shadow-sm"
                   required
                 />
               </div>
