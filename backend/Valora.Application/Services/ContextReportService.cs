@@ -106,6 +106,12 @@ public sealed class ContextReportService : IContextReportService
         }
 
         // 3. Fetch Data from Provider (Fan-Out)
+        // This invokes `Task.WhenAll` under the hood to fetch data simultaneously
+        // from CBS, PDOK, Luchtmeetnet, and OSM.
+        // Why? Fan-Out is essential for aggregating reports in < 1 second.
+        // It enforces "partial failure tolerance": if one external source is down or slow,
+        // it fails gracefully and adds a `Warning` instead of returning a 500 error to the user,
+        // allowing the system to serve a degraded but useful report.
         var sourceData = await _contextDataProvider.GetSourceDataAsync(location, normalizedRadius, cancellationToken);
         var warnings = new List<string>(sourceData.Warnings);
 

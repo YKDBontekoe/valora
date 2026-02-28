@@ -48,6 +48,11 @@ public class BatchJobExecutor : IBatchJobExecutor
     public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
     {
         // Repository now handles the atomic claim (find + mark processing)
+        // using `CreatedAt` to enforce a Strict FIFO (First In, First Out) queue priority.
+        // Recovery logic: A job stuck in "Processing" (e.g., due to pod crash)
+        // must be manually cancelled to "Failed", and then retried.
+        // Retrying an old job overrides its `CreatedAt` with `DateTime.UtcNow`
+        // to properly requeue it at the end of the line.
         var job = await _jobRepository.GetNextPendingJobAsync(cancellationToken);
         if (job == null) return;
 
