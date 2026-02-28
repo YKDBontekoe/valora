@@ -1,104 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:valora_app/models/workspace.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
 import 'package:valora_app/widgets/workspaces/share_workspace_dialog.dart';
-import 'package:valora_app/models/workspace.dart';
-import 'package:valora_app/models/saved_listing.dart';
-import 'package:valora_app/models/activity_log.dart';
-import 'package:valora_app/models/comment.dart';
+import 'package:valora_app/widgets/valora_widgets.dart';
 
 class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
-  bool inviteCalled = false;
-
-  @override
-  bool get isWorkspacesLoading => false;
-  @override
-  bool get isWorkspaceDetailLoading => false;
-
-  @override
-  bool get isDeletingWorkspace => false;
-
-  @override
-  String? get error => null;
-  @override
-  List<Workspace> get workspaces => [];
-  @override
-  Workspace? get selectedWorkspace => Workspace(
-    id: '1',
-    name: 'WS',
-    ownerId: 'owner',
-    createdAt: DateTime.now(),
-    memberCount: 1,
-    savedListingCount: 0,
-  );
-  @override
-  List<SavedListing> get savedListings => [];
-  @override
-  List<WorkspaceMember> get members => [];
-  @override
-  List<ActivityLog> get activityLogs => [];
+  String? invitedEmail;
+  WorkspaceRole? invitedRole;
+  bool shouldThrow = false;
 
   @override
   Future<void> inviteMember(String email, WorkspaceRole role) async {
-    inviteCalled = true;
-    notifyListeners();
+    if (shouldThrow) throw Exception('API Error');
+    invitedEmail = email;
+    invitedRole = role;
   }
 
   @override
-  Future<void> fetchWorkspaces() async {}
-  @override
-  Future<void> createWorkspace(String name, String? description) async {}
-  @override
-  Future<void> deleteWorkspace(String id) async {}
-  @override
-  Future<void> selectWorkspace(String id) async {}
-  @override
-  Future<void> saveListing(String listingId, String? notes) async {}
-  @override
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {}
-  @override
-  Future<List<Comment>> fetchComments(String savedListingId) async => [];
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
-  testWidgets('ShareWorkspaceDialog submits invite', (WidgetTester tester) async {
-    final mockProvider = MockWorkspaceProvider();
+  late MockWorkspaceProvider mockProvider;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => ChangeNotifierProvider<WorkspaceProvider>.value(
-                  value: mockProvider,
-                  child: const ShareWorkspaceDialog(),
-                ),
-              ),
-              child: const Text('Open'),
-            ),
+  setUp(() {
+    mockProvider = MockWorkspaceProvider();
+  });
+
+  Widget createWidgetUnderTest() {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Builder(
+            builder: (BuildContext context) {
+              return ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return ChangeNotifierProvider<WorkspaceProvider>.value(
+                        value: mockProvider,
+                        child: const ShareWorkspaceDialog(),
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open Dialog'),
+              );
+            },
           ),
         ),
       ),
     );
+  }
 
-    await tester.tap(find.text('Open'));
+  testWidgets('renders dialog correctly', (tester) async {
+    await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
-    final textField = find.byType(TextField);
-    await tester.enterText(textField, 'test@example.com');
-    await tester.pump();
-
-    final inviteButton = find.text('Invite');
-    await tester.tap(inviteButton);
-
-    await tester.pump();
-    await tester.pump(Duration.zero);
-
-    expect(mockProvider.inviteCalled, true);
-
+    await tester.tap(find.text('Open Dialog'));
     await tester.pumpAndSettle();
+
+    expect(find.text('Invite Member'), findsOneWidget);
+    expect(find.byType(ValoraTextField), findsOneWidget);
+    expect(find.byType(DropdownButton<WorkspaceRole>), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Invite'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('successful invite shows snackbar and calls provider', (tester) async {
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open Dialog'));
+    await tester.pumpAndSettle();
+
+    final textField = find.byType(ValoraTextField);
+    await tester.enterText(textField, 'test@valora.com');
+    await tester.pumpAndSettle();
+
+    final inviteButton = find.widgetWithText(ValoraButton, 'Invite');
+    await tester.tap(inviteButton, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(mockProvider.invitedEmail, 'test@valora.com');
+    expect(mockProvider.invitedRole, WorkspaceRole.viewer);
+    expect(find.text('Member invited successfully'), findsOneWidget);
+  });
+
+  testWidgets('failed invite shows error snackbar', (tester) async {
+    mockProvider.shouldThrow = true;
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open Dialog'));
+    await tester.pumpAndSettle();
+
+    final textField = find.byType(ValoraTextField);
+    await tester.enterText(textField, 'test@valora.com');
+    await tester.pumpAndSettle();
+
+    final inviteButton = find.widgetWithText(ValoraButton, 'Invite');
+    await tester.tap(inviteButton, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Failed: Exception: API Error'), findsOneWidget);
+
+    // Dialog should stay open on failure
+    expect(find.byType(ShareWorkspaceDialog), findsOneWidget);
   });
 }
