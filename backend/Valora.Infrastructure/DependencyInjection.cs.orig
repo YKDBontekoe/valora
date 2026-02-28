@@ -51,7 +51,6 @@ public static class DependencyInjection
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
         services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
-        services.AddScoped<Valora.Application.Common.Interfaces.Listings.IListingRepository, Valora.Infrastructure.Persistence.Repositories.ListingRepository>();
 
         // Event Dispatcher and Handlers
         services.AddScoped<IEventDispatcher, EventDispatcher>();
@@ -78,7 +77,7 @@ public static class DependencyInjection
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
-        
+
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));
         services.Configure<ContextEnrichmentOptions>(options => BindContextEnrichmentOptions(options, configuration));
