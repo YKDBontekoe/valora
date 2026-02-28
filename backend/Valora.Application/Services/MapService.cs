@@ -178,7 +178,11 @@ public class MapService : IMapService
                 int gridX = (int)Math.Floor(lon / indexCellSize);
                 var key = (gridX, gridY);
 
-                FindOverlayForPoint(lat, lon, cellSize, key, spatialIndex, tiles);
+                var tile = FindOverlayForPoint(lat, lon, cellSize, key, spatialIndex);
+                if (tile != null)
+                {
+                    tiles.Add(tile);
+                }
             }
         }
 
@@ -187,13 +191,12 @@ public class MapService : IMapService
         return readOnlyTiles;
     }
 
-    private static void FindOverlayForPoint(
+    private static MapOverlayTileDto? FindOverlayForPoint(
         double lat,
         double lon,
         double cellSize,
         (int, int) key,
-        Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>> spatialIndex,
-        List<MapOverlayTileDto> tiles)
+        Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>> spatialIndex)
     {
         if (spatialIndex.TryGetValue(key, out var candidates))
         {
@@ -204,15 +207,16 @@ public class MapService : IMapService
             if (overlayIndex >= 0)
             {
                 var overlay = candidates[overlayIndex];
-                tiles.Add(new MapOverlayTileDto(
+                return new MapOverlayTileDto(
                     lat,
                     lon,
                     cellSize,
                     overlay.Dto.MetricValue,
                     overlay.Dto.DisplayValue
-                ));
+                );
             }
         }
+        return null;
     }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
