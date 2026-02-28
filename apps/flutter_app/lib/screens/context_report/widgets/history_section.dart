@@ -114,8 +114,23 @@ class HistorySection extends StatelessWidget {
                                 ? ValoraColors.primary
                                 : ValoraColors.neutral400,
                           ),
-                          onPressed: () => provider.toggleComparison(
-                              item.query, provider.radiusMeters),
+                          onPressed: () async {
+                            try {
+                              await provider.toggleComparison(
+                                  item.query, provider.radiusMeters);
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to add to compare: ${e.toString()}'),
+                                  backgroundColor: ValoraColors.error,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          },
                         ),
                         Icon(
                           Icons.chevron_right_rounded,

@@ -52,48 +52,62 @@ public sealed class CbsGeoClient : ICbsGeoClient
         var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
         var url = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
 
-        using var response = await _httpClient.GetAsync(url, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogWarning("PDOK WFS failed with status {StatusCode}", response.StatusCode);
-            response.EnsureSuccessStatusCode();
+            using var response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("PDOK WFS failed with status {StatusCode}", response.StatusCode);
+                return [];
+            }
+
+            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+
+            if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var results = new List<MapOverlayDto>();
+            foreach (var feature in features.EnumerateArray())
+            {
+                if (!feature.TryGetProperty("properties", out var props)) continue;
+
+                var neighborhoodCode = props.GetStringSafe("buurtcode");
+                if (string.IsNullOrEmpty(neighborhoodCode)) continue;
+
+                var neighborhoodName = props.GetStringSafe("buurtnaam") ?? "Unknown";
+
+                var (value, display) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
+
+                if (value.HasValue)
+                {
+                    results.Add(new MapOverlayDto(
+                        neighborhoodCode,
+                        neighborhoodName,
+                        metric.ToString(),
+                        value.Value,
+                        display,
+                        feature.Clone()));
+                }
+            }
+
+            _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
+            return results;
         }
-
-        using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-
-        if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+        catch (HttpRequestException ex)
         {
+            _logger.LogWarning(ex, "HTTP request to PDOK WFS failed.");
+            return [];
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response.");
             return [];
         }
 
-        var results = new List<MapOverlayDto>();
-        foreach (var feature in features.EnumerateArray())
-        {
-            if (!feature.TryGetProperty("properties", out var props)) continue;
-
-            var neighborhoodCode = props.GetStringSafe("buurtcode");
-            if (string.IsNullOrEmpty(neighborhoodCode)) continue;
-
-            var neighborhoodName = props.GetStringSafe("buurtnaam") ?? "Unknown";
-
-            var (value, display) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
-
-            if (value.HasValue)
-            {
-                results.Add(new MapOverlayDto(
-                    neighborhoodCode,
-                    neighborhoodName,
-                    metric.ToString(),
-                    value.Value,
-                    display,
-                    feature.Clone()));
-            }
-        }
-
-        _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
-        return results;
     }
 
     private async Task<(double? Value, string Display)> GetMetricValueAsync(string code, MapOverlayMetric metric, CancellationToken ct)
@@ -179,35 +193,48 @@ public sealed class CbsGeoClient : ICbsGeoClient
     {
         var url = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
 
-        using var response = await _httpClient.GetAsync(url, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogError("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
-            response.EnsureSuccessStatusCode(); // Throw exception on failure
+            using var response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
+                return [];
+            }
+
+            using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+
+            if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var results = new HashSet<string>();
+            foreach (var feature in features.EnumerateArray())
+            {
+                if (!feature.TryGetProperty("properties", out var props)) continue;
+
+                var name = props.GetStringSafe("gemeentenaam");
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    results.Add(name);
+                }
+            }
+
+            return results.OrderBy(x => x).ToList();
         }
-
-        using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-
-        if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+        catch (HttpRequestException ex)
         {
+            _logger.LogWarning(ex, "HTTP request to PDOK WFS failed for municipalities.");
             return [];
         }
-
-        var results = new HashSet<string>();
-        foreach (var feature in features.EnumerateArray())
+        catch (JsonException ex)
         {
-            if (!feature.TryGetProperty("properties", out var props)) continue;
-
-            var name = props.GetStringSafe("gemeentenaam");
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                results.Add(name);
-            }
+            _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipalities.");
+            return [];
         }
-
-        return results.OrderBy(x => x).ToList();
     }
 
 }

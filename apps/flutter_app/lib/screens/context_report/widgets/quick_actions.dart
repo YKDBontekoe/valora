@@ -40,23 +40,36 @@ class QuickActions extends StatelessWidget {
         ),
       );
 
-      final String? address =
-          await pdokService.reverseLookup(result.latitude, result.longitude);
+      try {
+        final String? address =
+            await pdokService.reverseLookup(result.latitude, result.longitude);
 
-      if (!context.mounted) return;
+        if (!context.mounted) return;
 
-      if (address != null) {
-        controller.text = address;
-        provider.generate(address);
-      } else {
+        if (address != null) {
+          controller.text = address;
+          provider.generate(address);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'Could not resolve an address. Try searching by text.'),
+              backgroundColor: ValoraColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } catch (e, stackTrace) {
+        developer.log('Unexpected error in _pickLocation', error: e, stackTrace: stackTrace);
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-                'Could not resolve an address. Try searching by text.'),
+            content: const Text('Could not determine location.'),
             backgroundColor: ValoraColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }

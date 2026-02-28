@@ -101,7 +101,15 @@ class ContextReportProvider extends ChangeNotifier {
       _saveComparisonSet();
 
       if (!_activeReports.containsKey(id)) {
-         await fetchReport(query, radius);
+        try {
+          await fetchReport(query, radius);
+        } catch (e) {
+          // If fetch fails, remove it from comparison and rethrow
+          _comparisonIds.remove(id);
+          notifyListeners();
+          _saveComparisonSet();
+          rethrow;
+        }
       }
     }
   }
@@ -119,7 +127,10 @@ class ContextReportProvider extends ChangeNotifier {
       _activeReports[id] = report;
       notifyListeners();
     } catch (e) {
-      // If fetch fails, ignore
+      if (_isDisposed) return;
+      // Throw the error so the caller can handle it,
+      // preventing silent failure for comparisons while avoiding unhandled crash.
+      throw e is AppException ? e : Exception('Failed to fetch report');
     }
   }
 
