@@ -57,14 +57,12 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<WorkspaceDto> GetWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
-        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
+        var result = await _repository.GetWorkspaceDtoAndMemberStatusAsync(workspaceId, userId, ct);
 
-        if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+        if (result.Dto == null) throw new NotFoundException(nameof(Workspace), workspaceId);
+        if (!result.IsMember) throw new ForbiddenAccessException();
 
-        if (!workspace.Members.Any(m => m.UserId == userId))
-            throw new ForbiddenAccessException();
-
-        return MapToDto(workspace);
+        return result.Dto;
     }
 
     public async Task DeleteWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)

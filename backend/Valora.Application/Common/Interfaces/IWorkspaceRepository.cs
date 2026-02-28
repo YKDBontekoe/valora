@@ -16,6 +16,7 @@ public interface IWorkspaceRepository
     /// Returns the count of workspaces where the user is an owner.
     /// </summary>
     Task<int> GetUserOwnedWorkspacesCountAsync(string userId, CancellationToken ct = default);
+    Task<(WorkspaceDto? Dto, bool IsMember)> GetWorkspaceDtoAndMemberStatusAsync(Guid id, string userId, CancellationToken ct = default);
     Task<Workspace?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Workspace?> GetByIdWithMembersAsync(Guid id, CancellationToken ct = default);
     Task UpdateAsync(Workspace workspace, CancellationToken ct = default);
