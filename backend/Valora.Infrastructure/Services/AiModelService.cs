@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 
@@ -25,29 +26,48 @@ public class AiModelService : IAiModelService
         _configuration = configuration;
     }
 
-    public async Task<AiModelConfig?> GetConfigByIntentAsync(string intent, CancellationToken cancellationToken = default)
+    public async Task<AiModelConfigDto?> GetConfigByIntentAsync(string intent, CancellationToken cancellationToken = default)
     {
-        return await _context.AiModelConfigs
+        var config = await _context.AiModelConfigs
             .FirstOrDefaultAsync(c => c.Intent == intent, cancellationToken);
+
+        return config == null ? null : MapToDto(config);
     }
 
-    public async Task<IEnumerable<AiModelConfig>> GetAllConfigsAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<AiModelConfigDto>> GetAllConfigsAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.AiModelConfigs.ToListAsync(cancellationToken);
+        var configs = await _context.AiModelConfigs.ToListAsync(cancellationToken);
+        return configs.Select(MapToDto).ToList();
     }
 
-    public async Task<AiModelConfig> CreateConfigAsync(AiModelConfig config, CancellationToken cancellationToken = default)
+    public async Task<AiModelConfigDto> CreateConfigAsync(AiModelConfigDto configDto, CancellationToken cancellationToken = default)
     {
+        var config = MapToEntity(configDto);
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync(cancellationToken);
-        return config;
+        return MapToDto(config);
     }
 
-    public async Task<AiModelConfig> UpdateConfigAsync(AiModelConfig config, CancellationToken cancellationToken = default)
+    public async Task<AiModelConfigDto> UpdateConfigAsync(AiModelConfigDto configDto, CancellationToken cancellationToken = default)
     {
+        var config = await _context.AiModelConfigs.FindAsync(new object[] { configDto.Id }, cancellationToken);
+
+        if (config == null)
+        {
+            throw new KeyNotFoundException($"AiModelConfig with ID '{configDto.Id}' not found.");
+        }
+
+        // Update properties
+        config.Intent = configDto.Intent;
+        config.PrimaryModel = configDto.PrimaryModel;
+        config.FallbackModels = configDto.FallbackModels;
+        config.Description = configDto.Description;
+        config.IsEnabled = configDto.IsEnabled;
+        config.SafetySettings = configDto.SafetySettings;
+
         _context.AiModelConfigs.Update(config);
         await _context.SaveChangesAsync(cancellationToken);
-        return config;
+        return MapToDto(config);
     }
 
     public async Task DeleteConfigAsync(Guid id, CancellationToken cancellationToken = default)
@@ -62,7 +82,8 @@ public class AiModelService : IAiModelService
 
     public async Task<(string PrimaryModel, List<string> FallbackModels)> GetModelsForIntentAsync(string intent, CancellationToken cancellationToken = default)
     {
-        var config = await GetConfigByIntentAsync(intent, cancellationToken);
+        var config = await _context.AiModelConfigs
+            .FirstOrDefaultAsync(c => c.Intent == intent, cancellationToken);
 
         if (config != null && config.IsEnabled)
         {
@@ -77,5 +98,33 @@ public class AiModelService : IAiModelService
 
         // Fallback for unknown intents
         return ("openai/gpt-4o-mini", new List<string>());
+    }
+
+    private static AiModelConfigDto MapToDto(AiModelConfig entity)
+    {
+        return new AiModelConfigDto
+        {
+            Id = entity.Id,
+            Intent = entity.Intent,
+            PrimaryModel = entity.PrimaryModel,
+            FallbackModels = entity.FallbackModels,
+            Description = entity.Description,
+            IsEnabled = entity.IsEnabled,
+            SafetySettings = entity.SafetySettings
+        };
+    }
+
+    private static AiModelConfig MapToEntity(AiModelConfigDto dto)
+    {
+        return new AiModelConfig
+        {
+            Id = dto.Id,
+            Intent = dto.Intent,
+            PrimaryModel = dto.PrimaryModel,
+            FallbackModels = dto.FallbackModels,
+            Description = dto.Description,
+            IsEnabled = dto.IsEnabled,
+            SafetySettings = dto.SafetySettings
+        };
     }
 }

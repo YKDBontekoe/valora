@@ -4,7 +4,7 @@ using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.DTOs.Shared;
-using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 
 namespace Valora.Api.Endpoints;
 

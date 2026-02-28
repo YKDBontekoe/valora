@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Domain.Entities;
 
 namespace Valora.Api.Endpoints;
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Valora.Application.DTOs;
-using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 
 namespace Valora.Application.Services;
 

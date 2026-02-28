@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 using Valora.Infrastructure.Persistence;
 
 namespace Valora.Infrastructure.Services;

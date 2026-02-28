@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 using Valora.Infrastructure.Persistence.Extensions;
 
 namespace Valora.Infrastructure.Persistence.Repositories;

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Services;
@@ -99,7 +101,7 @@ public class AiModelServiceTests : IDisposable
     [Fact]
     public async Task CreateConfigAsync_AddsNewConfig()
     {
-        var config = new AiModelConfig
+        var configDto = new AiModelConfigDto
         {
             Intent = "new-intent",
             PrimaryModel = "new-model",
@@ -107,7 +109,7 @@ public class AiModelServiceTests : IDisposable
             IsEnabled = true
         };
 
-        var result = await _service.CreateConfigAsync(config);
+        var result = await _service.CreateConfigAsync(configDto);
 
         Assert.NotNull(result);
         Assert.Equal("new-intent", result.Intent);
@@ -129,8 +131,21 @@ public class AiModelServiceTests : IDisposable
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync();
 
-        config.PrimaryModel = "updated-model";
-        await _service.UpdateConfigAsync(config);
+        var configDto = new AiModelConfigDto
+        {
+            Id = config.Id,
+            Intent = "update-intent",
+            PrimaryModel = "updated-model",
+            FallbackModels = new List<string>(),
+            IsEnabled = true
+        };
+
+        var result = await _service.UpdateConfigAsync(configDto);
+
+        Assert.NotNull(result);
+        Assert.Equal("updated-model", result.PrimaryModel);
+        Assert.Equal(config.Id, result.Id);
+        Assert.Equal("update-intent", result.Intent);
 
         var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == "update-intent");
         Assert.Equal("updated-model", dbConfig!.PrimaryModel);
@@ -164,6 +179,6 @@ public class AiModelServiceTests : IDisposable
 
         var configs = await _service.GetAllConfigsAsync();
 
-        Assert.Equal(2, ((List<AiModelConfig>)configs).Count);
+        Assert.Equal(2, configs.Count());
     }
 }
