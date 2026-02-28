@@ -1,0 +1,51 @@
+--- apps/flutter_app/test/services/ai_service_test.dart
++++ apps/flutter_app/test/services/ai_service_test.dart
+@@ -0,0 +1,50 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:http/http.dart' as http;
++import 'package:mockito/mockito.dart';
++import 'package:mockito/annotations.dart';
++import 'package:flutter_app/services/ai_service.dart';
++import 'package:flutter_app/services/auth_service.dart';
++
++@GenerateNiceMocks([MockSpec<http.Client>(), MockSpec<AuthService>()])
++import 'ai_service_test.mocks.dart';
++
++void main() {
++  late AiService aiService;
++  late MockClient mockClient;
++  late MockAuthService mockAuthService;
++
++  setUp(() {
++    mockClient = MockClient();
++    mockAuthService = MockAuthService();
++    when(mockAuthService.getToken()).thenAnswer((_) async => 'fake-token');
++    aiService = AiService(client: mockClient, authService: mockAuthService);
++  });
++
++  test('sendMessage sanitizes backend error details', () async {
++    when(mockClient.post(
++      any,
++      headers: anyNamed('headers'),
++      body: anyNamed('body'),
++    )).thenAnswer((_) async => http.Response('{"detail": "Secret DB error", "trace_id": "12345"}', 500));
++
++    expect(
++      () => aiService.sendMessage(prompt: 'test'),
++      throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Failed to send message. (Trace ID: 12345)'))),
++    );
++  });
++
++  test('sendMessage handles missing trace_id gracefully', () async {
++    when(mockClient.post(
++      any,
++      headers: anyNamed('headers'),
++      body: anyNamed('body'),
++    )).thenAnswer((_) async => http.Response('{"detail": "Secret DB error"}', 500));
++
++    expect(
++      () => aiService.sendMessage(prompt: 'test'),
++      throwsA(isA<Exception>().having((e) => e.toString(), 'message', isNot(contains('Trace ID:')))),
++    );
++  });
++}
