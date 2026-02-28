@@ -17,7 +17,7 @@ const container = {
 
 const rowVariants = {
   hidden: { opacity: 0, y: 10 },
-  visible: {
+  show: {
     opacity: 1,
     y: 0,
     transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }
@@ -62,7 +62,7 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit 
           </thead>
           <motion.tbody
             initial="hidden"
-            animate="visible"
+            animate="show"
             variants={container}
             className="divide-y divide-brand-100"
           >
@@ -89,7 +89,7 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit 
               <AnimatePresence mode="popLayout">
                 {configs.map((config) => (
                   <motion.tr
-                    key={config.id || (config as any)._clientId || config.intent}
+                    key={config.id || (config as AiModelConfig & { _clientId?: string })._clientId || config.intent}
                     variants={rowVariants}
                     whileHover={{ scale: 1.002, backgroundColor: 'var(--color-brand-50)' }}
                     className="group cursor-pointer relative"
