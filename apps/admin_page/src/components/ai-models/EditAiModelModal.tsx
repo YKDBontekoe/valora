@@ -39,6 +39,9 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 40 }}
         className="relative w-full max-w-3xl bg-white rounded-[3rem] shadow-premium-xl overflow-hidden border border-white/20"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
       >
         <div className="p-10 md:p-14">
           <div className="flex items-center justify-between mb-12">
@@ -47,7 +50,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 <Cpu size={40} />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-brand-900 tracking-tightest">
+                <h2 id="modal-title" className="text-3xl font-black text-brand-900 tracking-tightest">
                   {editingConfig.id ? 'Edit Policy' : 'Provision Policy'}
                 </h2>
                 <p className="text-brand-400 font-bold text-lg">Define orchestrator routing logic.</p>
@@ -55,9 +58,10 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label="Close modal"
               className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300"
             >
-              <X size={32} />
+              <X size={32} aria-hidden="true" />
             </button>
           </div>
 
