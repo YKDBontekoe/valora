@@ -10,6 +10,8 @@ import 'core/theme/valora_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/insights_provider.dart';
+import 'providers/ai_chat_provider.dart';
+import 'services/ai_service.dart';
 import 'screens/startup_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
@@ -119,6 +121,16 @@ Future<void> main() async {
             create: (context) => InsightsProvider(context.read<MapRepository>()),
             update: (context, repo, previous) =>
                 (previous ?? InsightsProvider(repo))..update(repo),
+          ),
+
+          ProxyProvider<ApiClient, AiService>(
+            update: (context, apiClient, _) => AiService(apiClient: apiClient),
+          ),
+
+          ChangeNotifierProxyProvider<AiService, AiChatProvider>(
+            create: (context) => AiChatProvider(context.read<AiService>()),
+            update: (context, service, previous) =>
+                (previous ?? AiChatProvider(service))..updateService(service),
           ),
         ],
         child: const ValoraApp(),
