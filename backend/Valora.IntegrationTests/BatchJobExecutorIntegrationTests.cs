@@ -34,7 +34,7 @@ public class BatchJobExecutorIntegrationTests : BaseTestcontainersIntegrationTes
 
         var mockEventDispatcher = new Mock<IEventDispatcher>();
 
-        var testFactory = Factory.WithWebHostBuilder(builder =>
+        using var testFactory = Factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
@@ -46,35 +46,48 @@ public class BatchJobExecutorIntegrationTests : BaseTestcontainersIntegrationTes
             });
         });
 
-        using var scope = testFactory.Services.CreateScope();
-        var executor = scope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+        var jobId = Guid.Empty;
 
-        var job = new BatchJob
+        // Arrange scope
+        using (var setupScope = testFactory.Services.CreateScope())
         {
-            Type = BatchJobType.CityIngestion,
-            Status = BatchJobStatus.Pending,
-            Target = "TestCity",
-            CreatedAt = DateTime.UtcNow
-        };
+            var dbContext = setupScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var job = new BatchJob
+            {
+                Type = BatchJobType.CityIngestion,
+                Status = BatchJobStatus.Pending,
+                Target = "TestCity",
+                CreatedAt = DateTime.UtcNow
+            };
 
-        dbContext.BatchJobs.Add(job);
-        await dbContext.SaveChangesAsync();
+            dbContext.BatchJobs.Add(job);
+            await dbContext.SaveChangesAsync();
+            jobId = job.Id;
+        }
 
-        // Act
-        await executor.ProcessNextJobAsync();
+        // Act scope
+        using (var actScope = testFactory.Services.CreateScope())
+        {
+            var executor = actScope.ServiceProvider.GetRequiredService<IBatchJobExecutor>();
+            await executor.ProcessNextJobAsync();
+        }
 
-        // Assert
-        var updatedJob = await dbContext.BatchJobs.FindAsync(job.Id);
-        updatedJob.ShouldNotBeNull();
-        updatedJob!.Status.ShouldBe(BatchJobStatus.Completed);
-        updatedJob.Progress.ShouldBe(100);
-        updatedJob.CompletedAt.ShouldNotBeNull();
+        // Assert scope
+        using (var assertScope = testFactory.Services.CreateScope())
+        {
+            var dbContext = assertScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var updatedJob = await dbContext.BatchJobs.FindAsync(jobId);
 
-        mockProcessor.Verify(p => p.ProcessAsync(It.Is<BatchJob>(j => j.Id == job.Id), It.IsAny<CancellationToken>()), Times.Once);
+            updatedJob.ShouldNotBeNull();
+            updatedJob!.Status.ShouldBe(BatchJobStatus.Completed);
+            updatedJob.Progress.ShouldBe(100);
+            updatedJob.CompletedAt.ShouldNotBeNull();
 
-        mockEventDispatcher.Verify(d => d.DispatchAsync(
-            It.Is<IDomainEvent>(e => e is BatchJobCompletedEvent && ((BatchJobCompletedEvent)e).JobId == job.Id),
-            It.IsAny<CancellationToken>()), Times.Once);
+            mockProcessor.Verify(p => p.ProcessAsync(It.Is<BatchJob>(j => j.Id == jobId), It.IsAny<CancellationToken>()), Times.Once);
+
+            mockEventDispatcher.Verify(d => d.DispatchAsync(
+                It.Is<IDomainEvent>(e => e is BatchJobCompletedEvent && ((BatchJobCompletedEvent)e).JobId == jobId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }
