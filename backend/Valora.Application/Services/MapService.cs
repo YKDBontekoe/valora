@@ -104,7 +104,7 @@ public class MapService : IMapService
         return clusters;
     }
 
-    public async Task<List<MapOverlayTileDto>> GetMapOverlayTilesAsync(
+    public async Task<IReadOnlyList<MapOverlayTileDto>> GetMapOverlayTilesAsync(
         double minLat,
         double minLon,
         double maxLat,
@@ -119,7 +119,7 @@ public class MapService : IMapService
         double cellSize = GetCellSize(zoom);
 
         var cacheKey = FormattableString.Invariant($"MapOverlayTiles_{Math.Round(minLat, 4)}_{Math.Round(minLon, 4)}_{Math.Round(maxLat, 4)}_{Math.Round(maxLon, 4)}_{zoom}_{metric}");
-        if (_cache.TryGetValue(cacheKey, out List<MapOverlayTileDto>? cachedTiles))
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<MapOverlayTileDto>? cachedTiles))
         {
             return cachedTiles!;
         }
@@ -199,8 +199,9 @@ public class MapService : IMapService
             }
         }
 
-        _cache.Set(cacheKey, tiles, TimeSpan.FromMinutes(10));
-        return tiles;
+        var readOnlyTiles = tiles.ToArray();
+        _cache.Set(cacheKey, readOnlyTiles, TimeSpan.FromMinutes(10));
+        return readOnlyTiles;
     }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(

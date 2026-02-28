@@ -31,7 +31,7 @@ public interface IMapService
         MapOverlayMetric metric,
         CancellationToken cancellationToken = default);
 
-    Task<List<MapOverlayTileDto>> GetMapOverlayTilesAsync(
+    Task<IReadOnlyList<MapOverlayTileDto>> GetMapOverlayTilesAsync(
         double minLat,
         double minLon,
         double maxLat,
