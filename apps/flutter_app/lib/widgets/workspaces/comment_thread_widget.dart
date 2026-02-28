@@ -54,6 +54,13 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
                 key: ValueKey(widget.comments[index].id),
                 comment: widget.comments[index],
                 onReply: _handleReply,
+                onViewMoreReplies: (id) {
+                  // TODO: Implement viewing deeper threads or expanding.
+                  // For now, this placeholder handles the callback structurally.
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Viewing more replies for comment $id is not yet implemented.')),
+                  );
+                },
               ),
             ),
         ),
@@ -184,12 +191,14 @@ class CommentItemWidget extends StatelessWidget {
   final Comment comment;
   final int depth;
   final Function(String) onReply;
+  final Function(String)? onViewMoreReplies;
 
   const CommentItemWidget({
     super.key,
     required this.comment,
     this.depth = 0,
     required this.onReply,
+    this.onViewMoreReplies,
   });
 
   @override
@@ -285,15 +294,23 @@ class CommentItemWidget extends StatelessWidget {
                     comment: r,
                     depth: depth + 1,
                     onReply: onReply,
+                    onViewMoreReplies: onViewMoreReplies,
                   ))
             else
               Padding(
                 padding: const EdgeInsets.only(top: ValoraSpacing.sm, left: ValoraSpacing.xl),
-                child: Text(
-                  '${comment.replies.length} more replies...',
-                  style: ValoraTypography.labelSmall.copyWith(
-                    color: isDark ? ValoraColors.primaryLight : ValoraColors.primary,
-                    fontWeight: FontWeight.w600,
+                child: InkWell(
+                  onTap: () => onViewMoreReplies?.call(comment.id),
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusSm),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Text(
+                      '${comment.replies.length} more ${comment.replies.length == 1 ? 'reply' : 'replies'}...',
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: isDark ? ValoraColors.primaryLight : ValoraColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ),
