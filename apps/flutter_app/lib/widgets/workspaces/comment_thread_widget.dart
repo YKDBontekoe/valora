@@ -179,6 +179,8 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
 
 
 class CommentItemWidget extends StatelessWidget {
+  static const int maxCommentDepth = 3;
+
   final Comment comment;
   final int depth;
   final Function(String) onReply;
@@ -277,12 +279,24 @@ class CommentItemWidget extends StatelessWidget {
             ],
           ),
           if (comment.replies.isNotEmpty)
-            ...comment.replies.map((r) => CommentItemWidget(
-                  key: ValueKey(r.id),
-                  comment: r,
-                  depth: depth + 1,
-                  onReply: onReply,
-                )),
+            if (depth < maxCommentDepth)
+              ...comment.replies.map((r) => CommentItemWidget(
+                    key: ValueKey(r.id),
+                    comment: r,
+                    depth: depth + 1,
+                    onReply: onReply,
+                  ))
+            else
+              Padding(
+                padding: const EdgeInsets.only(top: ValoraSpacing.sm, left: ValoraSpacing.xl),
+                child: Text(
+                  '${comment.replies.length} more replies...',
+                  style: ValoraTypography.labelSmall.copyWith(
+                    color: isDark ? ValoraColors.primaryLight : ValoraColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
         ],
       ),
     );
