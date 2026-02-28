@@ -38,7 +38,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         };
 
         await _repository.AddSavedPropertyAsync(savedProperty, ct);
-        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.ListingSaved, $"Saved property {property.Address}", ct); // Keep event type for compatibility or rename later
+        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.PropertySaved, $"Saved property {property.Address}", ct);
 
         await _repository.SaveChangesAsync(ct);
         await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.ReportSavedToWorkspaceEvent(workspaceId, propertyId, userId), ct);
@@ -52,17 +52,15 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
 
         // Check if property exists by Address/BAG ID
-        // For simplicity in this refactor, we'll assume we search by coordinates or a unique key
-        // In a real scenario, you'd have a GetPropertyByAddressAsync
-        // Let's assume for now we use the unique BagId if available or address.
-        
-        // This is a placeholder for the actual "Upsert" logic
-        var property = await _repository.GetPropertyAsync(Guid.Empty, ct); // Replace with real lookup
+        // The ContextReportDto doesn't currently expose BagId, so we use Address as a fallback or if we can extract it.
+        // For now, let's try Address.
+        var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
         
         if (property == null) {
             property = new Property {
                 Address = report.Location.DisplayAddress,
                 City = report.Location.MunicipalityName,
+                PostalCode = report.Location.PostalCode,
                 Latitude = report.Location.Latitude,
                 Longitude = report.Location.Longitude,
                 ContextCompositeScore = report.CompositeScore,
@@ -71,7 +69,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
                 ContextAmenitiesScore = report.CategoryScores.TryGetValue("Amenities", out var amenities) ? amenities : null,
                 ContextEnvironmentScore = report.CategoryScores.TryGetValue("Environment", out var environment) ? environment : null,
             };
-            // In a real implementation, you'd save the property first
+            await _repository.AddPropertyAsync(property, ct);
         }
 
         return await SavePropertyAsync(userId, workspaceId, property.Id, notes, ct);
@@ -95,7 +93,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
             throw new NotFoundException(nameof(SavedProperty), savedPropertyId);
 
         await _repository.RemoveSavedPropertyAsync(savedProperty, ct);
-        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.ListingRemoved, $"Removed property {savedProperty.Property?.Address ?? "Unknown"}", ct);
+        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.PropertyRemoved, $"Removed property {savedProperty.Property?.Address ?? "Unknown"}", ct);
         await _repository.SaveChangesAsync(ct);
     }
 

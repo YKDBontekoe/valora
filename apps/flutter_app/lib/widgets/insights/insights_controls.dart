@@ -81,8 +81,8 @@ class InsightsControls extends StatelessWidget {
         boxShadow: isDark ? ValoraShadows.smDark : ValoraShadows.sm,
       ),
       child: SizedBox(
-        width: 42,
-        height: 42,
+        width: 48,
+        height: 48,
         child: IconButton(
           key: key,
           onPressed: onPressed,
@@ -129,42 +129,48 @@ class _OverlayMetricPicker extends StatelessWidget {
           ),
           ...MapOverlayMetric.values.map((m) {
             final isSelected = m == selected;
-            return GestureDetector(
-              onTap: () => onChanged(m),
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? ValoraColors.primary.withValues(alpha: 0.15)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _getOverlayIcon(m),
-                      size: 12,
-                      color: isSelected
-                          ? ValoraColors.primary
-                          : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _getOverlayLabel(m),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected
-                              ? ValoraColors.primary
-                              : (isDark ? ValoraColors.neutral300 : ValoraColors.neutral700),
+            return Semantics(
+              button: true,
+              enabled: true,
+              selected: isSelected,
+              label: _getOverlayLabel(m),
+              child: GestureDetector(
+                onTap: () => onChanged(m),
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ValoraColors.primary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getOverlayIcon(m),
+                        size: 12,
+                        color: isSelected
+                            ? ValoraColors.primary
+                            : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _getOverlayLabel(m),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? ValoraColors.primary
+                                : (isDark ? ValoraColors.neutral300 : ValoraColors.neutral700),
+                          ),
                         ),
                       ),
-                    ),
-                    if (isSelected)
-                      const Icon(Icons.check_rounded, size: 12, color: ValoraColors.primary),
-                  ],
+                      if (isSelected)
+                        const Icon(Icons.check_rounded, size: 12, color: ValoraColors.primary),
+                    ],
+                  ),
                 ),
               ),
             );

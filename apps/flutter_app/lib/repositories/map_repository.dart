@@ -60,8 +60,8 @@ class MapRepository {
       (body) => body,
     );
     final result = await compute(_parseCityInsights, body);
-    _cachedCityInsights = result;
-    return result;
+    _cachedCityInsights = List.unmodifiable(result);
+    return _cachedCityInsights!;
   }
 
   /// Invalidates the session cache so the next [getCityInsights] call fetches fresh data.

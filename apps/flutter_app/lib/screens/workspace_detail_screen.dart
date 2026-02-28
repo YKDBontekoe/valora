@@ -4,6 +4,8 @@ import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../providers/workspace_provider.dart';
+import '../providers/context_report_provider.dart';
+import '../screens/context_report/context_report_screen.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
 import '../models/activity_log.dart';
@@ -148,7 +150,15 @@ class _SavedPropertiesTab extends StatelessWidget {
             final property = saved.property;
             return ValoraCard(
               onTap: () {
-                // Navigate to property detail (Context Report view)
+                if (property != null) {
+                  context.read<ContextReportProvider>().selectReport(property.address);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ContextReportScreen(),
+                    ),
+                  );
+                }
               },
               padding: const EdgeInsets.all(ValoraSpacing.md),
               child: Row(
@@ -189,7 +199,7 @@ class _SavedPropertiesTab extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  '${property!.compositeScore!.toStringAsFixed(0)}',
+                                  property!.compositeScore!.toStringAsFixed(0),
                                   style: ValoraTypography.labelSmall.copyWith(
                                     color: ValoraColors.primary,
                                     fontWeight: FontWeight.bold,

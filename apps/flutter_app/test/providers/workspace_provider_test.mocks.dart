@@ -8,7 +8,7 @@ import 'dart:async' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:valora_app/models/activity_log.dart' as _i6;
 import 'package:valora_app/models/comment.dart' as _i7;
-import 'package:valora_app/models/saved_listing.dart' as _i5;
+import 'package:valora_app/models/saved_property.dart' as _i5;
 import 'package:valora_app/models/workspace.dart' as _i2;
 import 'package:valora_app/repositories/workspace_repository.dart' as _i3;
 
@@ -97,14 +97,14 @@ class MockWorkspaceRepository extends _i1.Mock
           as _i4.Future<List<_i2.WorkspaceMember>>);
 
   @override
-  _i4.Future<List<_i5.SavedListing>> getWorkspaceListings(String? id) =>
+  _i4.Future<List<_i5.SavedProperty>> getWorkspaceProperties(String? id) =>
       (super.noSuchMethod(
-            Invocation.method(#getWorkspaceListings, [id]),
-            returnValue: _i4.Future<List<_i5.SavedListing>>.value(
-              <_i5.SavedListing>[],
+            Invocation.method(#getWorkspaceProperties, [id]),
+            returnValue: _i4.Future<List<_i5.SavedProperty>>.value(
+              <_i5.SavedProperty>[],
             ),
           )
-          as _i4.Future<List<_i5.SavedListing>>);
+          as _i4.Future<List<_i5.SavedProperty>>);
 
   @override
   _i4.Future<List<_i6.ActivityLog>> getWorkspaceActivity(String? id) =>
@@ -130,13 +130,13 @@ class MockWorkspaceRepository extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> saveListing(
+  _i4.Future<void> saveProperty(
     String? workspaceId,
-    String? listingId,
+    String? propertyId,
     String? notes,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#saveListing, [workspaceId, listingId, notes]),
+            Invocation.method(#saveProperty, [workspaceId, propertyId, notes]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
@@ -145,14 +145,14 @@ class MockWorkspaceRepository extends _i1.Mock
   @override
   _i4.Future<void> addComment(
     String? workspaceId,
-    String? listingId,
+    String? savedPropertyId,
     String? content,
     String? parentId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#addComment, [
               workspaceId,
-              listingId,
+              savedPropertyId,
               content,
               parentId,
             ]),
@@ -164,10 +164,10 @@ class MockWorkspaceRepository extends _i1.Mock
   @override
   _i4.Future<List<_i7.Comment>> fetchComments(
     String? workspaceId,
-    String? listingId,
+    String? savedPropertyId,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchComments, [workspaceId, listingId]),
+            Invocation.method(#fetchComments, [workspaceId, savedPropertyId]),
             returnValue: _i4.Future<List<_i7.Comment>>.value(<_i7.Comment>[]),
           )
           as _i4.Future<List<_i7.Comment>>);

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/valora_colors.dart';
 import '../../../providers/context_report_provider.dart';
 import '../../../providers/workspace_provider.dart';
-import '../../../widgets/valora_widgets.dart';
 
 class SaveToWorkspaceButton extends StatelessWidget {
   final ContextReportProvider provider;
@@ -50,7 +49,7 @@ class SaveToWorkspaceButton extends StatelessWidget {
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize: MinAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -75,26 +74,27 @@ class SaveToWorkspaceButton extends StatelessWidget {
                   return ListView.separated(
                     shrinkWrap: true,
                     itemCount: wp.workspaces.length,
-                    separatorBuilder: (_, __) => const Divider(),
+                    separatorBuilder: (context, index) => const Divider(),
                     itemBuilder: (context, index) {
                       final ws = wp.workspaces[index];
                       return ListTile(
                         leading: const Icon(Icons.workspaces_rounded, color: ValoraColors.primary),
                         title: Text(ws.name),
                         onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
                           Navigator.pop(context);
                           try {
                             // We need a backend endpoint that accepts ContextReportDto + WorkspaceId
                             // For now, we'll use the ID of the property if we had one, 
                             // but in Phase 2 we'll use SaveContextReportAsync
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(content: Text('Saving to ${ws.name}...'))
                             );
                             
                             // Implementation detail: The provider would call the repo
                             // which calls the NEW POST /api/workspaces/{id}/properties/from-report
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(content: Text('Error: $e'))
                             );
                           }

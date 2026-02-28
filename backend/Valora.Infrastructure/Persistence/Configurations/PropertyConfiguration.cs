@@ -23,10 +23,10 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
         builder.HasIndex(e => e.Longitude);
         builder.HasIndex(e => new { e.Latitude, e.Longitude });
 
-        builder.Property(e => e.Address).IsRequired().HasMaxLength(ValidationConstants.Listing.AddressMaxLength);
-        builder.Property(e => e.BagId).HasMaxLength(50);
-        builder.Property(e => e.City).HasMaxLength(ValidationConstants.Listing.CityMaxLength);
-        builder.Property(e => e.PostalCode).HasMaxLength(ValidationConstants.Listing.PostalCodeMaxLength);
+        builder.Property(e => e.Address).IsRequired().HasMaxLength(ValidationConstants.Property.AddressMaxLength);
+        builder.Property(e => e.BagId).HasMaxLength(ValidationConstants.Property.BagIdMaxLength);
+        builder.Property(e => e.City).HasMaxLength(ValidationConstants.Property.CityMaxLength);
+        builder.Property(e => e.PostalCode).HasMaxLength(ValidationConstants.Property.PostalCodeMaxLength);
 
         builder.Property(e => e.ContextReport)
             .HasConversion(

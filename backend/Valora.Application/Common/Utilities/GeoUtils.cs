@@ -6,7 +6,7 @@ namespace Valora.Application.Common.Utilities;
 
 public static class GeoUtils
 {
-    private const double MaxSpan = 0.5;
+    private const double MaxSpan = 1.0;
 
     public class ParsedGeometry
     {

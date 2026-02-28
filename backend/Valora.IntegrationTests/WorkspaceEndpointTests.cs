@@ -49,10 +49,12 @@ public class WorkspaceEndpointTests : BaseIntegrationTest
     {
         await AuthenticateAsync();
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Member Test", ""));
+        createResponse.EnsureSuccessStatusCode();
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
 
         var inviteDto = new InviteMemberDto("newmember@test.com", WorkspaceRole.Editor);
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/members", inviteDto);
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/members", inviteDto);
 
         response.EnsureSuccessStatusCode();
     }
@@ -78,13 +80,16 @@ public class WorkspaceEndpointTests : BaseIntegrationTest
         }
 
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Property Test", ""));
+        createResponse.EnsureSuccessStatusCode();
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
 
         var saveRequest = new { PropertyId = propertyId, Notes = "Test Note" };
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", saveRequest);
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/properties", saveRequest);
 
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<SavedPropertyDto>();
-        Assert.Equal("Test Note", result!.Notes);
+        Assert.NotNull(result);
+        Assert.Equal("Test Note", result.Notes);
     }
 }

@@ -22,6 +22,10 @@ public static class MapEndpoints
             .RequireAuthorization()
             .WithName("GetCityInsights");
 
+        group.MapGet("/city-insights", GetCityInsightsHandler)
+            .RequireAuthorization()
+            .WithName("GetCityInsightsAlias");
+
         group.MapGet("/amenities", GetMapAmenitiesHandler)
             .RequireAuthorization()
             .WithName("GetMapAmenities")
@@ -61,11 +65,19 @@ public static class MapEndpoints
         [AsParameters] BoundsRequest bounds,
         [FromQuery] string? types,
         IMapService mapService,
+        HttpContext httpContext,
         CancellationToken ct)
     {
         var typeList = ParseTypes(types);
         var amenities = await mapService.GetMapAmenitiesAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, typeList, ct);
-        return Results.Ok(amenities);
+        
+        httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
+        {
+            Public = true,
+            MaxAge = TimeSpan.FromMinutes(10)
+        }.ToString();
+
+        return TypedResults.Ok(amenities);
     }
 
     public static async Task<IResult> GetMapAmenityClustersHandler(
@@ -73,21 +85,37 @@ public static class MapEndpoints
         [FromQuery] double zoom,
         [FromQuery] string? types,
         IMapService mapService,
+        HttpContext httpContext,
         CancellationToken ct)
     {
         var typeList = ParseTypes(types);
         var clusters = await mapService.GetMapAmenityClustersAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, zoom, typeList, ct);
-        return Results.Ok(clusters);
+        
+        httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
+        {
+            Public = true,
+            MaxAge = TimeSpan.FromMinutes(10)
+        }.ToString();
+
+        return TypedResults.Ok(clusters);
     }
 
     public static async Task<IResult> GetMapOverlaysHandler(
         [AsParameters] BoundsRequest bounds,
         [FromQuery] MapOverlayMetric metric,
         IMapService mapService,
+        HttpContext httpContext,
         CancellationToken ct)
     {
         var overlays = await mapService.GetMapOverlaysAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, metric, ct);
-        return Results.Ok(overlays);
+        
+        httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
+        {
+            Public = true,
+            MaxAge = TimeSpan.FromMinutes(10)
+        }.ToString();
+
+        return TypedResults.Ok(overlays);
     }
 
     public static async Task<IResult> GetMapOverlayTilesHandler(
@@ -99,14 +127,16 @@ public static class MapEndpoints
         CancellationToken ct)
     {
         var tiles = await mapService.GetMapOverlayTilesAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, zoom, metric, ct);
-        httpContext.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+
+        // Cache for 10 minutes
+        httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
         {
-            Private = true,
-            MaxAge = TimeSpan.FromMinutes(5),
-        };
+            Public = true,
+            MaxAge = TimeSpan.FromMinutes(10)
+        }.ToString();
+
         return TypedResults.Ok(tiles);
     }
-
     private static List<string>? ParseTypes(string? types)
     {
         return types?.Split(',', StringSplitOptions.RemoveEmptyEntries)

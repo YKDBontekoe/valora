@@ -37,14 +37,24 @@ class MockMapRepository extends _i1.Mock implements _i2.MapRepository {
   }
 
   @override
-  _i3.Future<List<_i4.MapCityInsight>> getCityInsights() =>
+  _i3.Future<List<_i4.MapCityInsight>> getCityInsights({
+    bool? forceRefresh = false,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#getCityInsights, []),
+            Invocation.method(#getCityInsights, [], {
+              #forceRefresh: forceRefresh,
+            }),
             returnValue: _i3.Future<List<_i4.MapCityInsight>>.value(
               <_i4.MapCityInsight>[],
             ),
           )
           as _i3.Future<List<_i4.MapCityInsight>>);
+
+  @override
+  void invalidateCityInsightsCache() => super.noSuchMethod(
+    Invocation.method(#invalidateCityInsightsCache, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i3.Future<List<_i5.MapAmenity>> getMapAmenities({

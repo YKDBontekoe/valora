@@ -142,8 +142,8 @@ public class MapService : IMapService
         // A 1cm pan no longer busts the cache — only crossing a cell boundary does.
         var snappedMinLat = SnapToGrid(minLat, cellSize);
         var snappedMinLon = SnapToGrid(minLon, cellSize);
-        var snappedMaxLat = SnapToGrid(maxLat, cellSize);
-        var snappedMaxLon = SnapToGrid(maxLon, cellSize);
+        var snappedMaxLat = SnapToGridCeil(maxLat, cellSize);
+        var snappedMaxLon = SnapToGridCeil(maxLon, cellSize);
         int zoomBucket = (int)Math.Floor(zoom);
 
         var cacheKey = FormattableString.Invariant(
@@ -156,7 +156,7 @@ public class MapService : IMapService
         }
 
         // Fetch detailed overlays (expand by one cell to avoid edge clipping)
-        var overlays = await _cbsGeoClient.GetNeighborhoodOverlaysAsync(
+        var overlays = await GetMapOverlaysAsync(
             snappedMinLat - cellSize,
             snappedMinLon - cellSize,
             snappedMaxLat + cellSize,
@@ -223,6 +223,10 @@ public class MapService : IMapService
     /// <summary>Snaps a coordinate to the nearest grid boundary at the given cell size.</summary>
     private static double SnapToGrid(double value, double cellSize) =>
         Math.Floor(value / cellSize) * cellSize;
+
+    /// <summary>Snaps a coordinate to the next grid boundary at the given cell size.</summary>
+    private static double SnapToGridCeil(double value, double cellSize) =>
+        Math.Ceiling(value / cellSize) * cellSize;
 
     private static MapOverlayTileDto? FindOverlayForPoint(
         double lat,

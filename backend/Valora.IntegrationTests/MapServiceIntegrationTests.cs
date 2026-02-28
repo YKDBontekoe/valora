@@ -17,6 +17,7 @@ public class MapServiceIntegrationTests : BaseIntegrationTest
     public async Task GetCityInsights_ShouldReturnSeededData()
     {
         // Arrange
+        await AuthenticateAsync();
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
@@ -28,7 +29,9 @@ public class MapServiceIntegrationTests : BaseIntegrationTest
         var result = await Client.GetFromJsonAsync<List<Valora.Application.DTOs.Map.MapCityInsightDto>>("/api/map/city-insights");
 
         // Assert
-        Assert.NotEmpty(result!);
-        Assert.Contains(result, x => x.City == "Amsterdam");
+        Assert.NotNull(result);
+        var nonNullResult = result!;
+        Assert.NotEmpty(nonNullResult);
+        Assert.Contains(nonNullResult, x => x.City == "Amsterdam");
     }
 }

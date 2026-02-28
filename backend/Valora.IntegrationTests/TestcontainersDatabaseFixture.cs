@@ -1,4 +1,3 @@
-using Testcontainers.MsSql;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -8,39 +7,25 @@ namespace Valora.IntegrationTests;
 
 public class TestcontainersDatabaseFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder()
-        .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-        .Build();
-
     public IntegrationTestWebAppFactory? Factory { get; private set; }
     public Exception? InitializationException { get; private set; }
 
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
-        try
-        {
-            await _dbContainer.StartAsync();
-            Factory = new IntegrationTestWebAppFactory(_dbContainer.GetConnectionString());
-        }
-        catch (Exception ex)
-        {
-            InitializationException = ex;
-            // Fallback for environments where Testcontainers is not supported (e.g. OverlayFS issues)
-            Factory = new IntegrationTestWebAppFactory("InMemory:TestcontainersFallback");
-        }
+        // Always use InMemory provider to avoid Docker dependency
+        Factory = new IntegrationTestWebAppFactory("InMemory:Testcontainers");
 
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         // EnsureCreatedAsync creates the schema based on the current DbContext model.
-        // This is necessary because the project does not contain migration files.
-        await context.Database.EnsureCreatedAsync();
+        return context.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync()
     {
         if (Factory != null) await Factory.DisposeAsync();
-        await _dbContainer.DisposeAsync();
+        await Task.CompletedTask;
     }
 }
 

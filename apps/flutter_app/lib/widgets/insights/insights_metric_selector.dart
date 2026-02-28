@@ -18,7 +18,7 @@ class InsightsMetricSelector extends StatelessWidget {
         builder: (context, selectedMetric, _) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Container(
-            height: 44,
+            height: 48,
             decoration: BoxDecoration(
               color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
               borderRadius: BorderRadius.circular(14),
@@ -31,45 +31,55 @@ class InsightsMetricSelector extends StatelessWidget {
                 children: InsightMetric.values.map((metric) {
                   final isSelected = selectedMetric == metric;
                   return Expanded(
-                    child: GestureDetector(
-                      onTap: () => context.read<InsightsProvider>().setMetric(metric),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        curve: Curves.easeInOut,
-                        decoration: BoxDecoration(
-                          color: isSelected ? ValoraColors.primary : Colors.transparent,
+                    child: Semantics(
+                      button: true,
+                      enabled: true,
+                      selected: isSelected,
+                      label: _getMetricLabel(metric),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => context.read<InsightsProvider>().setMetric(metric),
                           borderRadius: BorderRadius.circular(10),
-                          boxShadow: isSelected ? [
-                            BoxShadow(
-                              color: ValoraColors.primary.withValues(alpha: 0.30),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeInOut,
+                            decoration: BoxDecoration(
+                              color: isSelected ? ValoraColors.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: ValoraColors.primary.withValues(alpha: 0.30),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ] : null,
                             ),
-                          ] : null,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _getMetricIcon(metric),
-                              size: 13,
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _getMetricIcon(metric),
+                                  size: 13,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+                                ),
+                                const SizedBox(width: 4),
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 220),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+                                  ),
+                                  child: Text(_getMetricLabel(metric)),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 4),
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 220),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                color: isSelected
-                                    ? Colors.white
-                                    : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
-                              ),
-                              child: Text(_getMetricLabel(metric)),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),

@@ -26,6 +26,8 @@ class MapLayerService {
   final Map<String, Future<List<MapOverlay>>>         _overlaysInflight = {};
   final Map<String, Future<List<MapOverlayTile>>>     _overlayTilesInflight = {};
 
+  int _epoch = 0;
+
   static const int    _maxEntries      = 64;
   static const Duration _amenitiesTtl     = Duration(minutes: 3);
   static const Duration _overlaysTtl      = Duration(minutes: 10);
@@ -41,6 +43,7 @@ class MapLayerService {
     final hit = _amenitiesCache.get(key);
     if (hit != null) return hit;
 
+    final requestEpoch = _epoch;
     return _amenitiesInflight.putIfAbsent(key, () async {
       try {
         final result = await _repository.getMapAmenities(
@@ -49,7 +52,9 @@ class MapLayerService {
           maxLat: bounds.maxLat,
           maxLon: bounds.maxLon,
         );
-        _amenitiesCache.put(key, result);
+        if (_epoch == requestEpoch) {
+          _amenitiesCache.put(key, result);
+        }
         return result;
       } finally {
         _amenitiesInflight.remove(key);
@@ -66,6 +71,7 @@ class MapLayerService {
     final hit = _amenityClustersCache.get(key);
     if (hit != null) return hit;
 
+    final requestEpoch = _epoch;
     return _amenityClustersInflight.putIfAbsent(key, () async {
       try {
         final result = await _repository.getMapAmenityClusters(
@@ -75,7 +81,9 @@ class MapLayerService {
           maxLon: bounds.maxLon,
           zoom: zoom,
         );
-        _amenityClustersCache.put(key, result);
+        if (_epoch == requestEpoch) {
+          _amenityClustersCache.put(key, result);
+        }
         return result;
       } finally {
         _amenityClustersInflight.remove(key);
@@ -92,6 +100,7 @@ class MapLayerService {
     final hit = _overlaysCache.get(key);
     if (hit != null) return hit;
 
+    final requestEpoch = _epoch;
     return _overlaysInflight.putIfAbsent(key, () async {
       try {
         final result = await _repository.getMapOverlays(
@@ -101,7 +110,9 @@ class MapLayerService {
           maxLon: bounds.maxLon,
           metric: metric,
         );
-        _overlaysCache.put(key, result);
+        if (_epoch == requestEpoch) {
+          _overlaysCache.put(key, result);
+        }
         return result;
       } finally {
         _overlaysInflight.remove(key);
@@ -119,6 +130,7 @@ class MapLayerService {
     final hit = _overlayTilesCache.get(key);
     if (hit != null) return hit;
 
+    final requestEpoch = _epoch;
     return _overlayTilesInflight.putIfAbsent(key, () async {
       try {
         final result = await _repository.getMapOverlayTiles(
@@ -129,7 +141,9 @@ class MapLayerService {
           zoom: zoom,
           metric: metric,
         );
-        _overlayTilesCache.put(key, result);
+        if (_epoch == requestEpoch) {
+          _overlayTilesCache.put(key, result);
+        }
         return result;
       } finally {
         _overlayTilesInflight.remove(key);
@@ -139,10 +153,15 @@ class MapLayerService {
 
   /// Removes all cached data (useful when auth changes or user logs out).
   void clearAll() {
+    _epoch++;
     _amenitiesCache.clear();
     _amenityClustersCache.clear();
     _overlaysCache.clear();
     _overlayTilesCache.clear();
+    _amenitiesInflight.clear();
+    _amenityClustersInflight.clear();
+    _overlaysInflight.clear();
+    _overlayTilesInflight.clear();
   }
 }
 

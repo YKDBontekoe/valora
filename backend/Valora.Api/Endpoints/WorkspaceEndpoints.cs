@@ -27,9 +27,11 @@ public static class WorkspaceEndpoints
 
         group.MapDelete("/{id}/members/{memberId}", RemoveMember);
 
-        group.MapGet("/{id}/properties", GetSavedProperties);
         group.MapPost("/{id}/properties", SaveProperty)
             .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<SavePropertyDto>>();
+
+        group.MapPost("/{id}/properties/from-report", SavePropertyFromReport)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<SavePropertyFromReportDto>>();
 
         group.MapDelete("/{id}/properties/{savedPropertyId}", RemoveSavedProperty);
 
@@ -158,6 +160,20 @@ public static class WorkspaceEndpoints
         if (userId == null) return Results.Unauthorized();
 
         var result = await service.SavePropertyAsync(userId, id, request.PropertyId, request.Notes, ct);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> SavePropertyFromReport(
+        ClaimsPrincipal user,
+        Guid id,
+        [FromBody] SavePropertyFromReportDto request,
+        IWorkspacePropertyService service,
+        CancellationToken ct)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null) return Results.Unauthorized();
+
+        var result = await service.SaveContextReportAsync(userId, id, request.Report, request.Notes, ct);
         return Results.Ok(result);
     }
 

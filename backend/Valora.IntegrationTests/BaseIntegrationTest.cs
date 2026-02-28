@@ -70,7 +70,8 @@ public class BaseIntegrationTest : IAsyncLifetime
         using var scope = Factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = await userManager.FindByEmailAsync(email);
-        return user!.Id;
+        if (user == null) throw new InvalidOperationException($"User with email {email} not found after registration/login.");
+        return user.Id;
     }
 
     protected async Task AuthenticateAsAdminAsync()

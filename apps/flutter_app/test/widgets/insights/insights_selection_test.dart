@@ -15,7 +15,7 @@ import 'package:latlong2/latlong.dart';
 
 class FakeMapRepository extends Fake implements MapRepository {
   @override
-  Future<List<MapCityInsight>> getCityInsights() async => [];
+  Future<List<MapCityInsight>> getCityInsights({bool forceRefresh = false}) async => [];
 
   @override
   Future<List<MapAmenity>> getMapAmenities({required double minLat, required double minLon, required double maxLat, required double maxLon, List<String>? types}) async => [];

@@ -36,7 +36,7 @@ class InsightsProvider extends ChangeNotifier {
   String? _mapError;
 
   InsightMetric _selectedMetric = InsightMetric.composite;
-  MapOverlayMetric _selectedOverlayMetric = MapOverlayMetric.pricePerSquareMeter;
+  MapOverlayMetric _selectedOverlayMetric = MapOverlayMetric.crimeRate;
 
   // Coverage tracking
   MapBounds? _amenitiesCoverage;

@@ -1,5 +1,6 @@
 using Moq;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Extensions;
 using Valora.Application.Services;
 using Valora.Domain.Entities;
 using Xunit;
@@ -41,5 +42,8 @@ public class WorkspacePropertyServiceTests
         Assert.NotNull(result);
         Assert.Equal(propertyId, result.PropertyId);
         _repoMock.Verify(r => r.AddSavedPropertyAsync(It.IsAny<SavedProperty>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.LogActivityAsync(It.Is<ActivityLog>(l => l.Type == ActivityLogType.PropertySaved && l.WorkspaceId == wsId && l.ActorId == userId), It.IsAny<CancellationToken>()), Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _eventMock.Verify(e => e.DispatchAsync(It.IsAny<Valora.Application.Common.Events.ReportSavedToWorkspaceEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

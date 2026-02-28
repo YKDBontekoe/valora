@@ -19,7 +19,14 @@ public class NotificationPipelineTests : BaseIntegrationTest
     public async Task SaveProperty_ShouldGenerateNotification()
     {
         // Arrange
-        await AuthenticateAsync("user1@test.com");
+        var user1Id = await AuthenticateAsync("user1@test.com");
+        
+        // Create a second user who will receive the notification
+        var user2Email = "user2@test.com";
+        var user2Password = "Password123!";
+        var user2Response = await Client.PostAsJsonAsync("/api/auth/register", new { Email = user2Email, Password = user2Password, ConfirmPassword = user2Password });
+        user2Response.EnsureSuccessStatusCode();
+        
         Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
@@ -31,18 +38,35 @@ public class NotificationPipelineTests : BaseIntegrationTest
         }
 
         var wsResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS1", ""));
+        wsResponse.EnsureSuccessStatusCode();
         var ws = await wsResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(ws);
 
-        // Act
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{ws!.Id}/properties", new SavePropertyDto(propertyId, ""));
+        // Add user2 to the workspace
+        var inviteResponse = await Client.PostAsJsonAsync($"/api/workspaces/{ws.Id}/members", new InviteMemberDto(user2Email, WorkspaceRole.Editor));
+        inviteResponse.EnsureSuccessStatusCode();
+
+        // Act - User 1 saves a property
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{ws.Id}/properties", new SavePropertyDto(propertyId, ""));
 
         // Assert
         response.EnsureSuccessStatusCode();
         
-        // Wait for background events
-        await Task.Delay(500);
+        // Switch to User 2 to check notifications
+        await AuthenticateAsync(user2Email, user2Password);
 
-        var notifications = await Client.GetFromJsonAsync<PaginatedResponse<NotificationDto>>("/api/notifications");
-        Assert.NotEmpty(notifications!.Items);
+        // Poll for notification
+        List<NotificationDto>? notifications = null;
+        for (int i = 0; i < 10; i++)
+        {
+            notifications = await Client.GetFromJsonAsync<List<NotificationDto>>("/api/notifications");
+            if (notifications != null && notifications.Any(n => n.Title.Contains("Report Saved")))
+                break;
+            await Task.Delay(200);
+        }
+
+        Assert.NotNull(notifications);
+        Assert.NotEmpty(notifications);
+        Assert.Contains(notifications, n => n.Title.Contains("Report Saved"));
     }
 }

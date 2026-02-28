@@ -10,6 +10,8 @@ public enum ActivityLogType
     MemberRemoved,
     ListingSaved,
     ListingRemoved,
+    PropertySaved,
+    PropertyRemoved,
     CommentAdded,
     CommentReplied,
     RoleChanged,

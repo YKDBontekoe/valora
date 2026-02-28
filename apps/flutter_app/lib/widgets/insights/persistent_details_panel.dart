@@ -64,7 +64,7 @@ class _PanelCard extends StatelessWidget {
           Positioned(
             top: 10,
             right: 10,
-            child: _CloseButton(),
+            child: const _CloseButton(),
           ),
         ],
       ),
@@ -73,6 +73,8 @@ class _PanelCard extends StatelessWidget {
 }
 
 class _CloseButton extends StatelessWidget {
+  const _CloseButton();
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -134,10 +136,13 @@ class _CityDetailsContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Big score ring
-              _ScoreRing(
-                score: city.compositeScore,
-                color: compositeColor,
-                size: 58,
+              Semantics(
+                label: 'Overall score ${city.compositeScore?.round() ?? "unavailable"} out of 100',
+                child: _ScoreRing(
+                  score: city.compositeScore,
+                  color: compositeColor,
+                  size: 58,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(

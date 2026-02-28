@@ -34,6 +34,8 @@ public class MapEndpointsTests
         // Assert
         var okResult = Assert.IsType<Ok<List<MapCityInsightDto>>>(result);
         Assert.Single(okResult.Value!);
+        Assert.Contains("public", httpContext.Response.Headers.CacheControl.ToString());
+        Assert.Contains("max-age=300", httpContext.Response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -51,7 +53,8 @@ public class MapEndpointsTests
             .ReturnsAsync(amenities);
 
         // Act
-        var result = await MapEndpoints.GetMapAmenitiesHandler(bounds, " school , park ", _mapServiceMock.Object, CancellationToken.None);
+        var httpContext = new DefaultHttpContext();
+        var result = await MapEndpoints.GetMapAmenitiesHandler(bounds, " school , park ", _mapServiceMock.Object, httpContext, CancellationToken.None);
 
         // Assert
         var okResult = Assert.IsType<Ok<List<MapAmenityDto>>>(result);
@@ -60,6 +63,7 @@ public class MapEndpointsTests
         Assert.Equal(2, capturedTypes.Count);
         Assert.Contains("school", capturedTypes);
         Assert.Contains("park", capturedTypes);
+        Assert.Contains("public", httpContext.Response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -71,7 +75,8 @@ public class MapEndpointsTests
             It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapAmenityDto>());
 
-        var result = await MapEndpoints.GetMapAmenitiesHandler(bounds, null, _mapServiceMock.Object, CancellationToken.None);
+        var httpContext = new DefaultHttpContext();
+        var result = await MapEndpoints.GetMapAmenitiesHandler(bounds, null, _mapServiceMock.Object, httpContext, CancellationToken.None);
 
         Assert.IsType<Ok<List<MapAmenityDto>>>(result);
     }
@@ -85,9 +90,11 @@ public class MapEndpointsTests
             It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapAmenityClusterDto>());
 
-        var result = await MapEndpoints.GetMapAmenityClustersHandler(bounds, 10, null, _mapServiceMock.Object, CancellationToken.None);
+        var httpContext = new DefaultHttpContext();
+        var result = await MapEndpoints.GetMapAmenityClustersHandler(bounds, 10, null, _mapServiceMock.Object, httpContext, CancellationToken.None);
 
         Assert.IsType<Ok<List<MapAmenityClusterDto>>>(result);
+        Assert.Contains("public", httpContext.Response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -102,11 +109,13 @@ public class MapEndpointsTests
             .ReturnsAsync(overlays);
 
         // Act
-        var result = await MapEndpoints.GetMapOverlaysHandler(bounds, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
+        var httpContext = new DefaultHttpContext();
+        var result = await MapEndpoints.GetMapOverlaysHandler(bounds, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, httpContext, CancellationToken.None);
 
         // Assert
         var okResult = Assert.IsType<Ok<List<MapOverlayDto>>>(result);
         Assert.Single(okResult.Value!);
+        Assert.Contains("public", httpContext.Response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -121,6 +130,8 @@ public class MapEndpointsTests
         var httpContext = new DefaultHttpContext();
         var result = await MapEndpoints.GetMapOverlayTilesHandler(bounds, 10, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, httpContext, CancellationToken.None);
 
-        Assert.IsType<Ok<IReadOnlyList<MapOverlayTileDto>>>(result);
+        var okResult = Assert.IsType<Ok<IReadOnlyList<MapOverlayTileDto>>>(result);
+        Assert.Contains("public", httpContext.Response.Headers.CacheControl.ToString());
+        Assert.Contains("max-age=600", httpContext.Response.Headers.CacheControl.ToString());
     }
 }

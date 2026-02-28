@@ -16,8 +16,17 @@ public class MapInsightsIntegrationTests : BaseIntegrationTest
     public async Task GetCityInsights_ShouldReflectWeightedAverages()
     {
         // Arrange
+        await AuthenticateAsync();
+        
+        // Clear cache
         using (var scope = Factory.Services.CreateScope())
         {
+            var cache = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>();
+            if (cache is Microsoft.Extensions.Caching.Memory.MemoryCache mc)
+            {
+                mc.Clear();
+            }
+            
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
             db.Properties.AddRange(
                 new Property { BagId = "I1", Address = "A1", City = "Utrecht", Latitude = 52.09, Longitude = 5.12, ContextCompositeScore = 100 },
@@ -30,7 +39,9 @@ public class MapInsightsIntegrationTests : BaseIntegrationTest
         var result = await Client.GetFromJsonAsync<List<Valora.Application.DTOs.Map.MapCityInsightDto>>("/api/map/city-insights");
 
         // Assert
-        var utrecht = result!.First(x => x.City == "Utrecht");
+        Assert.NotNull(result);
+        var utrecht = result.FirstOrDefault(x => x.City == "Utrecht");
+        Assert.NotNull(utrecht);
         Assert.Equal(75, utrecht.CompositeScore);
         Assert.Equal(2, utrecht.Count);
     }

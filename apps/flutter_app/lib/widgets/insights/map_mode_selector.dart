@@ -13,7 +13,7 @@ class MapModeSelector extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 42,
+      height: 48,
       margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
@@ -37,48 +37,54 @@ class MapModeSelector extends StatelessWidget {
     final (label, icon) = _getModeInfo(value);
 
     return Expanded(
-      child: GestureDetector(
-        onTap: () => context.read<InsightsProvider>().setMapMode(value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: isSelected ? ValoraColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: ValoraColors.primary.withValues(alpha: 0.30),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 13,
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
-              ),
-              const SizedBox(width: 5),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+      child: Semantics(
+        button: true,
+        enabled: true,
+        selected: isSelected,
+        label: label,
+        child: GestureDetector(
+          onTap: () => context.read<InsightsProvider>().setMapMode(value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              color: isSelected ? ValoraColors.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(9),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: ValoraColors.primary.withValues(alpha: 0.30),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 13,
                   color: isSelected
                       ? Colors.white
                       : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
                 ),
-                child: Text(label),
-              ),
-            ],
+                const SizedBox(width: 5),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? ValoraColors.neutral400 : ValoraColors.neutral500),
+                  ),
+                  child: Text(label),
+                ),
+              ],
+            ),
           ),
         ),
       ),

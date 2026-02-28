@@ -18,14 +18,17 @@ class SavedProperty {
   });
 
   factory SavedProperty.fromJson(Map<String, dynamic> json) {
+    if (json['id'] == null || json['propertyId'] == null || json['addedByUserId'] == null) {
+      throw const FormatException('Missing required fields in SavedProperty JSON');
+    }
     return SavedProperty(
-      id: json['id'],
-      propertyId: json['propertyId'],
+      id: json['id'] as String,
+      propertyId: json['propertyId'] as String,
       property: json['property'] != null ? PropertySummary.fromJson(json['property']) : null,
-      addedByUserId: json['addedByUserId'],
-      notes: json['notes'],
-      addedAt: DateTime.parse(json['addedAt']),
-      commentCount: json['commentCount'],
+      addedByUserId: json['addedByUserId'] as String,
+      notes: json['notes'] as String?,
+      addedAt: json['addedAt'] != null ? DateTime.parse(json['addedAt'] as String) : DateTime.now(),
+      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -48,11 +51,14 @@ class PropertySummary {
   });
 
   factory PropertySummary.fromJson(Map<String, dynamic> json) {
+    if (json['id'] == null || json['address'] == null) {
+      throw const FormatException('Missing required fields in PropertySummary JSON');
+    }
     return PropertySummary(
-      id: json['id'],
-      address: json['address'],
-      city: json['city'],
-      livingAreaM2: json['livingAreaM2'],
+      id: json['id'] as String,
+      address: json['address'] as String,
+      city: json['city'] as String?,
+      livingAreaM2: (json['livingAreaM2'] as num?)?.toInt(),
       safetyScore: json['safetyScore'] != null ? (json['safetyScore'] as num).toDouble() : null,
       compositeScore: json['compositeScore'] != null ? (json['compositeScore'] as num).toDouble() : null,
     );

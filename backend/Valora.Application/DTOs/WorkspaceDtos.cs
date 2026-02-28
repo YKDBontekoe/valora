@@ -37,6 +37,11 @@ public record SavePropertyDto(
     [property: StringLength(2000)] string? Notes
 );
 
+public record SavePropertyFromReportDto(
+    [property: Required] ContextReportDto Report,
+    [property: StringLength(2000)] string? Notes
+);
+
 public record SavedPropertyDto(
     Guid Id,
     Guid PropertyId,

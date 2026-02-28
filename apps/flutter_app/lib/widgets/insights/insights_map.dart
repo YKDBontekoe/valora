@@ -246,7 +246,7 @@ class InsightsMap extends StatelessWidget {
     InsightsProvider provider,
   ) {
     final color = MapUtils.getColorForScore(score);
-    // Scale: large city (120+ listings) = biggest, small = smallest
+    // Scale: large city (120+ properties) = biggest, small = smallest
     final baseSize = city.count >= 120 ? 58.0 : city.count >= 60 ? 52.0 : 46.0;
     final size = baseSize * (isSelected ? 1.18 : 1.0);
     final ringSize = size + (isSelected ? 16.0 : 0.0);

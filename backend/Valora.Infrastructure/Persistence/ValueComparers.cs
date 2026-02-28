@@ -20,9 +20,9 @@ public static class ValueComparers
         c => c!.ToDictionary(entry => entry.Key, entry => entry.Value));
 
     public static readonly ValueComparer<Dictionary<string, List<string>>> DictionaryListComparer = new(
-        (c1, c2) => c1!.Count == c2!.Count && c1.All(kv => c2.ContainsKey(kv.Key) && kv.Value.SequenceEqual(c2[kv.Key])),
-        c => c!.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value.Aggregate(0, (aa, vv) => HashCode.Combine(aa, vv.GetHashCode())))),
-        c => c!.ToDictionary(entry => entry.Key, entry => entry.Value.ToList()));
+        (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.Count == c2.Count && c1.All(kv => c2.ContainsKey(kv.Key) && (kv.Value == null && c2[kv.Key] == null || (kv.Value != null && c2[kv.Key] != null && kv.Value.SequenceEqual(c2[kv.Key]))))),
+        c => c == null ? 0 : c.OrderBy(kv => kv.Key).Aggregate(0, (a, v) => HashCode.Combine(a, v.Key.GetHashCode(), v.Value == null ? 0 : v.Value.Aggregate(0, (aa, vv) => HashCode.Combine(aa, vv == null ? 0 : vv.GetHashCode())))),
+        c => c == null ? new Dictionary<string, List<string>>() : c.ToDictionary(entry => entry.Key, entry => entry.Value == null ? new List<string>() : entry.Value.ToList()));
 
     public static readonly ValueComparer<List<DateTime>> DateListComparer = new(
         (c1, c2) => c1!.SequenceEqual(c2!),

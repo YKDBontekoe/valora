@@ -163,6 +163,7 @@ public class WorkspaceRepository : IWorkspaceRepository
     public async Task<SavedProperty?> GetSavedPropertyAsync(Guid workspaceId, Guid propertyId, CancellationToken ct = default)
     {
         return await _context.SavedProperties
+            .Include(sp => sp.Property)
             .FirstOrDefaultAsync(sp => sp.WorkspaceId == workspaceId && sp.PropertyId == propertyId, ct);
     }
 
@@ -225,6 +226,18 @@ public class WorkspaceRepository : IWorkspaceRepository
     public async Task<Property?> GetPropertyAsync(Guid propertyId, CancellationToken ct = default)
     {
         return await _context.Properties.FindAsync(new object[] { propertyId }, ct);
+    }
+
+    public async Task<Property?> GetPropertyByBagIdAsync(string bagId, CancellationToken ct = default)
+    {
+        return await _context.Properties.FirstOrDefaultAsync(p => p.BagId == bagId, ct);
+    }
+
+    public async Task<Property> AddPropertyAsync(Property property, CancellationToken ct = default)
+    {
+        _context.Properties.Add(property);
+        await _context.SaveChangesAsync(ct);
+        return property;
     }
 
     // Comment Management
