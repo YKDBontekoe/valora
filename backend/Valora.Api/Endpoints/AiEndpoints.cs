@@ -12,7 +12,7 @@ public static class AiEndpoints
     {
         var group = app.MapGroup("/api/ai")
             .RequireAuthorization()
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting(Valora.Api.Constants.RateLimitPolicies.Strict);
 
         group.MapPost("/chat", async (
             [FromBody] AiChatRequest request,

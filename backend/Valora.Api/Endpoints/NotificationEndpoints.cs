@@ -11,7 +11,7 @@ public static class NotificationEndpoints
     {
         var group = app.MapGroup("/api/notifications")
             .RequireAuthorization()
-            .RequireRateLimiting("fixed");
+            .RequireRateLimiting(Valora.Api.Constants.RateLimitPolicies.Fixed);
 
         group.MapGet("/", async (
             INotificationService service,

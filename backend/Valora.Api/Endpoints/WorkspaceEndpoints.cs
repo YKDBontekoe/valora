@@ -11,7 +11,7 @@ public static class WorkspaceEndpoints
     {
         var group = routes.MapGroup("/api/workspaces")
             .RequireAuthorization()
-            .RequireRateLimiting("fixed")
+            .RequireRateLimiting(Valora.Api.Constants.RateLimitPolicies.Fixed)
             .WithTags("Workspaces");
 
         group.MapPost("/", CreateWorkspace)

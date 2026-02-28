@@ -9,7 +9,7 @@ public static class ContextReportEndpoints
     {
         var group = app.MapGroup("/api/context/report")
             .RequireAuthorization()
-            .RequireRateLimiting("strict")
+            .RequireRateLimiting(Valora.Api.Constants.RateLimitPolicies.Strict)
             .WithTags("Context Report");
 
         group.MapPost("", async (

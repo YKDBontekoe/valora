@@ -14,7 +14,7 @@ public static class AdminEndpoints
     {
         var group = app.MapGroup("/api/admin")
             .RequireAuthorization("Admin")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting(Valora.Api.Constants.RateLimitPolicies.Strict);
 
         group.MapGet("/users", async (
             IAdminService adminService,
