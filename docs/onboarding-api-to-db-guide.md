@@ -12,7 +12,7 @@ The following Mermaid diagram maps out the complete "Write" lifecycle for `POST 
 sequenceDiagram
     participant Client as Client App (Flutter/Web)
     participant API as Valora.Api (Endpoints)
-    participant App as Valora.Application (Command Handler)
+    participant App as Valora.Application (Service)
     participant Domain as Valora.Domain (Entity)
     participant Repo as Valora.Infrastructure (Repository)
     participant DB as PostgreSQL
@@ -23,21 +23,22 @@ sequenceDiagram
     API->>API: Validate Request (ValidationFilter)
 
     %% Delegate to Application Layer
-    API->>App: Handle CreateWorkspaceCommand
+    API->>App: IWorkspaceService.CreateWorkspaceAsync
 
     %% Business Logic
-    App->>Domain: Create Workspace Entity
+    App->>Domain: Create Workspace Entity (Public Setters)
     Domain-->>App: Workspace Instance
 
     %% Persistence Call
     App->>Repo: AddAsync(Workspace)
+    App->>Repo: SaveChangesAsync()
 
     %% Database Transaction
     Repo->>DB: INSERT INTO "Workspaces"
     DB-->>Repo: Acknowledge Insert
 
     %% Completion
-    Repo-->>App: Return Updated Entity (with ID)
+    Repo-->>App: Completed
     App-->>API: Map to WorkspaceDto
     API-->>Client: 201 Created (WorkspaceDto)
 ```
@@ -45,31 +46,30 @@ sequenceDiagram
 ## Step-by-Step Breakdown
 
 ### 1. The Request Arrives (API Layer)
-* **Location:** `Valora.Api/Endpoints/...`
-* The request is received by a Minimal API endpoint. Before the core logic is hit, it passes through the `ValidationFilter`.
-* The `ValidationFilter` enforces DataAnnotations (like string lengths) and checks for XSS strings. If validation fails, it returns a `400 Bad Request` with standard RFC 7807 `ProblemDetails`.
+* **Location:** `Valora.Api/Endpoints/WorkspaceEndpoints.cs`
+* The request is received by a Minimal API endpoint (`MapPost("/")`). Before the core logic is hit, it passes through the `ValidationFilter`.
+* The `ValidationFilter` enforces DataAnnotations and checks for XSS strings. If validation fails, it returns a `400 Bad Request`.
+* The endpoint extracts the DTO and invokes `IWorkspaceService.CreateWorkspaceAsync`.
 
-### 2. Orchestration (Application Layer)
-* **Location:** `Valora.Application/UseCases/...`
-* The API endpoint extracts the DTO (Data Transfer Object) and maps it to a command (e.g., `CreateWorkspaceCommand`).
-* The application layer handler is invoked. This layer is responsible for the "Use Case". It does not implement business rules directly but orchestrates the domain models and repositories.
+### 2. Service Logic (Application Layer)
+* **Location:** `Valora.Application/Services/WorkspaceService.cs`
+* The application layer service performs necessary business checks (e.g., verifying the user hasn't exceeded the 10-workspace limit).
+* The service instantiates a new `Workspace` entity.
 
-### 3. Business Logic (Domain Layer)
-* **Location:** `Valora.Domain/Entities/...`
-* The Application layer instantiates a Domain Entity. In Valora, entities are rich objects. We use private setters and constructors to ensure an entity can only be created in a valid state.
-* If a business rule is violated (e.g., trying to create a workspace with an invalid name), the domain model throws a `DomainException`.
+### 3. Domain Entity (Domain Layer)
+* **Location:** `Valora.Domain/Entities/Workspace.cs` & `Valora.Domain/Common/BaseEntity.cs`
+* The `Workspace` entity is initialized using public setters (e.g., `Name`, `Description`, `OwnerId`, `Members`).
+* The base properties like `Id` (GUID) and `CreatedAt` (UTC Now) are automatically assigned default values within the `BaseEntity` constructor.
 
 ### 4. Database Persistence (Infrastructure Layer)
-* **Location:** `Valora.Infrastructure/Persistence/Repositories/...`
-* The Application layer passes the new entity to the appropriate Repository interface (e.g., `IWorkspaceRepository`).
-* The Infrastructure layer's implementation of this repository takes the entity, attaches it to the `ValoraDbContext`, and calls `SaveChangesAsync()`.
-* Entity Framework Core translates the state changes into an SQL `INSERT` statement and executes it against PostgreSQL.
+* **Location:** `Valora.Infrastructure/Persistence/Repositories/WorkspaceRepository.cs`
+* The Application layer calls `_repository.AddAsync(workspace)` to track the entity, and then explicitly calls `_repository.SaveChangesAsync()`.
+* Entity Framework Core translates the tracked entity state into an SQL `INSERT` statement and executes it against PostgreSQL.
 
 ### 5. Returning the Response
-* Once `SaveChangesAsync` is complete, the repository returns control to the Application layer.
-* The entity now has its database-generated ID (and audit timestamps like `CreatedAt`).
-* The Application layer maps the Domain Entity back into a DTO. Remember: **Never return Domain Entities directly from the API.**
-* The API layer serializes the DTO to JSON and sends a `201 Created` response to the client.
+* Once `SaveChangesAsync` is complete, the repository returns control to the Application service.
+* The Application layer maps the saved Entity into a `WorkspaceDto` to avoid leaking domain objects.
+* The API layer returns a `201 Created` response to the client.
 
 ## Summary
 
