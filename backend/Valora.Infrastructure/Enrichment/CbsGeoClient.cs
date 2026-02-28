@@ -59,7 +59,9 @@ public sealed class CbsGeoClient : ICbsGeoClient
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("PDOK WFS failed with status {StatusCode}", response.StatusCode);
-                return [];
+                var emptyResult = new List<MapOverlayDto>();
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+                return emptyResult;
             }
 
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -67,7 +69,9 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
             if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
             {
-                return [];
+                var emptyResult = new List<MapOverlayDto>();
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+                return emptyResult;
             }
 
             var results = new List<MapOverlayDto>();
@@ -100,12 +104,16 @@ public sealed class CbsGeoClient : ICbsGeoClient
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "HTTP request to PDOK WFS failed.");
-            return [];
+            var emptyResult = new List<MapOverlayDto>();
+            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+            return emptyResult;
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response.");
-            return [];
+            var emptyResult = new List<MapOverlayDto>();
+            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+            return emptyResult;
         }
 
     }
@@ -192,6 +200,12 @@ public sealed class CbsGeoClient : ICbsGeoClient
     public async Task<List<string>> GetAllMunicipalitiesAsync(CancellationToken cancellationToken = default)
     {
         var url = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
+        var cacheKey = "cbs-geo:municipalities";
+
+        if (_cache.TryGetValue(cacheKey, out List<string>? cached))
+        {
+            return cached!;
+        }
 
         try
         {
@@ -200,7 +214,9 @@ public sealed class CbsGeoClient : ICbsGeoClient
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
-                return [];
+                var emptyResult = new List<string>();
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+                return emptyResult;
             }
 
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -208,7 +224,9 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
             if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
             {
-                return [];
+                var emptyResult = new List<string>();
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+                return emptyResult;
             }
 
             var results = new HashSet<string>();
@@ -223,17 +241,23 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 }
             }
 
-            return results.OrderBy(x => x).ToList();
+            var sortedResults = results.OrderBy(x => x).ToList();
+            _cache.Set(cacheKey, sortedResults, TimeSpan.FromHours(24));
+            return sortedResults;
         }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "HTTP request to PDOK WFS failed for municipalities.");
-            return [];
+            var emptyResult = new List<string>();
+            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+            return emptyResult;
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipalities.");
-            return [];
+            var emptyResult = new List<string>();
+            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+            return emptyResult;
         }
     }
 
