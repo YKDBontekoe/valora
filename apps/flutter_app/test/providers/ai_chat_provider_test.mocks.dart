@@ -90,4 +90,10 @@ class MockAiService extends _i1.Mock implements _i2.AiService {
             ),
           )
           as _i3.Future<Map<String, dynamic>>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
 }

@@ -123,17 +123,14 @@ Future<void> main() async {
                 (previous ?? InsightsProvider(repo))..update(repo),
           ),
 
-          ProxyProvider<AuthService, AiService>(
-
-            update: (context, authService, _) => AiService(authService: authService),
-
+          ProxyProvider<ApiClient, AiService>(
+            update: (context, apiClient, _) => AiService(apiClient: apiClient),
           ),
 
           ChangeNotifierProxyProvider<AiService, AiChatProvider>(
-
             create: (context) => AiChatProvider(context.read<AiService>()),
-
-            update: (context, service, previous) => previous ?? AiChatProvider(service),
+            update: (context, service, previous) =>
+                (previous ?? AiChatProvider(service))..updateService(service),
           ),
         ],
         child: const ValoraApp(),

@@ -20,7 +20,7 @@ void main() {
 
   test('loadHistory updates state correctly', () async {
     final conversations = [
-      AiConversation(id: '1', title: 'Test 1', updatedAtUtc: DateTime.now()),
+      AiConversation(id: '1', title: 'Test 1', updatedAtUtc: DateTime.now().toUtc()),
     ];
     when(mockAiService.getHistory()).thenAnswer((_) async => conversations);
 
@@ -59,7 +59,7 @@ void main() {
   });
 
   test('deleteConversation updates list and clears active if matching', () async {
-    final conv = AiConversation(id: '1', title: 'Test', updatedAtUtc: DateTime.now());
+    final conv = AiConversation(id: '1', title: 'Test', updatedAtUtc: DateTime.now().toUtc());
     when(mockAiService.getHistory()).thenAnswer((_) async => [conv]);
     await provider.loadHistory();
 
@@ -108,17 +108,24 @@ void main() {
   test('sendMessage handles failure and retry', () async {
     when(mockAiService.sendMessage(
       prompt: anyNamed('prompt'),
+      conversationId: anyNamed('conversationId'),
+      history: anyNamed('history'),
+      contextReport: anyNamed('contextReport'),
     )).thenThrow(Exception('Send Error'));
 
     await provider.sendMessage('Hello');
 
-    expect(provider.activeMessages, isEmpty);
+    expect(provider.activeMessages.length, equals(1));
+    expect(provider.activeMessages[0].content, equals('Hello'));
     expect(provider.error, contains('Send Error'));
     expect(provider.lastFailedPrompt, equals('Hello'));
 
     // Setup success for retry
     when(mockAiService.sendMessage(
       prompt: anyNamed('prompt'),
+      conversationId: anyNamed('conversationId'),
+      history: anyNamed('history'),
+      contextReport: anyNamed('contextReport'),
     )).thenAnswer((_) async => {'response': 'Success', 'conversationId': '1'});
 
     provider.retryLastMessage();
@@ -127,6 +134,7 @@ void main() {
 
     expect(provider.activeMessages.length, equals(2));
     expect(provider.activeMessages[1].content, equals('Success'));
+    expect(provider.error, isNull);
   });
 
   test('startNewConversation resets state', () {

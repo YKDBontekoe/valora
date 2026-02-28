@@ -1,9 +1,0 @@
-Plan:
-1. Extend `AiChatRequest` to include: `ConversationId` (string/Guid), `History` (List of previous messages), `ContextReportId` (or attach full `ContextReportDto` - wait, the prompt says "optional attached `ContextReportDto` reference/id", but `ContextReportDto` itself is quite large. Let's add `ContextReport` of type `ContextReportDto?`). Actually, let's add `ContextReport` and `History` (as `List<AiChatMessageDto>`).
-2. Update `IAiService` to accept `List<AiChatMessageDto> history` instead of just a string prompt, or update `ChatAsync` to take `history`. Wait, `IAiService.ChatAsync` currently takes `string prompt`. We can add an overload or modify it to take a list of messages. Let's add an overload `Task<string> ChatAsync(IEnumerable<AiChatMessageDto> messages, string? systemPrompt, string intent, CancellationToken cancellationToken)`.
-3. Update `OpenRouterAiService` to implement this new overload. It uses `ClientModel` and `OpenAI` libraries. `messages` will be mapped to `UserChatMessage` and `AssistantChatMessage`.
-4. Update `IContextAnalysisService` and `ContextAnalysisService` to support history and `ContextReport`. If a `ContextReport` is provided, its XML representation should be appended to the system prompt or injected as context.
-5. Create a persistence entity `AiConversation` and `AiConversationMessage` in `Valora.Domain.Entities`, plus configure EF Core mapping in `Valora.Infrastructure.Persistence.Configurations`.
-6. Create `IAiConversationRepository` and `AiConversationRepository`.
-7. Add endpoints in `AiEndpoints` to get conversation history and clear it. Wait, the prompt says: "Add conversation persistence abstractions (new entity/repository) for continuity and auditability. Add endpoint(s) in `backend/Valora.Api/Endpoints/AiEndpoints.cs` for conversation history retrieval and clearing."
-8. Update frontend Flutter app.

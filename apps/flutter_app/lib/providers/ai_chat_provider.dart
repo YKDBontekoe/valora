@@ -4,9 +4,13 @@ import '../models/ai_conversation.dart';
 import '../services/ai_service.dart';
 
 class AiChatProvider with ChangeNotifier {
-  final AiService _aiService;
+  AiService _aiService;
 
   AiChatProvider(this._aiService);
+
+  void updateService(AiService service) {
+    _aiService = service;
+  }
 
   List<AiConversation> _conversations = [];
   List<AiConversation> get conversations => _conversations;
@@ -99,26 +103,36 @@ class AiChatProvider with ChangeNotifier {
     _lastFailedPrompt = null;
     _isSending = true;
 
-    // Optimistically add user message
-    final userMessage = AiChatMessage(
-      role: 'user',
-      content: prompt,
-      createdAtUtc: DateTime.now().toUtc(),
-    );
-    _activeMessages.add(userMessage);
+    // Optimistically add user message if not already present (e.g. from retry)
+    final existingIndex = _activeMessages.isEmpty 
+        ? -1 
+        : _activeMessages.indexWhere((m) => m.role == 'user' && m.content == prompt && m == _activeMessages.last);
+    
+    if (existingIndex == -1) {
+      final userMessage = AiChatMessage(
+        role: 'user',
+        content: prompt,
+        createdAtUtc: DateTime.now().toUtc(),
+      );
+      _activeMessages.add(userMessage);
+    }
+    
     notifyListeners();
 
     try {
       final response = await _aiService.sendMessage(
         conversationId: _activeConversationId,
         prompt: prompt,
-        history: _activeConversationId == null ? null : _activeMessages.where((m) => m != userMessage).toList(),
+        // Send previous messages as history
+        history: _activeMessages.length > 1 
+            ? _activeMessages.take(_activeMessages.length - 1).toList() 
+            : null,
         contextReport: _currentContextReport,
       );
 
       final assistantMessage = AiChatMessage(
         role: 'assistant',
-        content: response['response'],
+        content: response['response'] ?? '',
         createdAtUtc: DateTime.now().toUtc(),
       );
 
@@ -126,14 +140,12 @@ class AiChatProvider with ChangeNotifier {
 
       if (_activeConversationId == null && response['conversationId'] != null) {
         _activeConversationId = response['conversationId'];
-        // Refresh history to include the new conversation
         loadHistory();
       }
     } catch (e) {
       _error = e.toString();
       _lastFailedPrompt = prompt;
-      // Remove the optimistically added user message on failure so they can retry
-      _activeMessages.removeLast();
+      // We keep the message in _activeMessages so UI can show error state on it
     } finally {
       _isSending = false;
       notifyListeners();
@@ -142,7 +154,8 @@ class AiChatProvider with ChangeNotifier {
 
   void retryLastMessage() {
     if (_lastFailedPrompt != null) {
-      sendMessage(_lastFailedPrompt!);
+      final prompt = _lastFailedPrompt!;
+      sendMessage(prompt);
     }
   }
 }

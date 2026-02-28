@@ -75,23 +75,37 @@ class _AiChatScreenState extends State<AiChatScreen> {
                         controller: _scrollController,
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
+                          final isLast = index == messages.length - 1;
+                          final isError = isLast && provider.error != null;
                           return AiChatMessageBubble(
                             message: messages[index],
+                            isError: isError,
+                            onRetry: isError ? () {
+                              provider.retryLastMessage();
+                              Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+                            } : null,
                           );
                         },
                       ),
                     ),
                     if (provider.error != null)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            provider.retryLastMessage();
-                            Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
-                          },
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100, foregroundColor: Colors.red.shade900),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        color: theme.colorScheme.errorContainer,
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, color: theme.colorScheme.error),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                provider.error!,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                   ],
