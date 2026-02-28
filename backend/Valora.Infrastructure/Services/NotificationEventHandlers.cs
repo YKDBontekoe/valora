@@ -34,24 +34,17 @@ public class NotificationEventHandlers :
         _logger = logger;
     }
 
-    private async Task CreateIdempotentNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl)
+    private async Task CreateIdempotentNotificationAsync(string userId, string title, string body, NotificationType type, string? actionUrl, string dedupeKey)
     {
-        var existingNotifications = await _notificationService.GetUserNotificationsAsync(userId, limit: 100);
-
-        // Check if an identical notification already exists to ensure idempotency and retry-safe behavior
-        var isDuplicate = existingNotifications.Any(n =>
-            n.Title == title &&
-            n.Body == body &&
-            n.Type == type &&
-            n.ActionUrl == actionUrl);
+        var isDuplicate = await _notificationService.ExistsAsync(userId, dedupeKey);
 
         if (!isDuplicate)
         {
-            await _notificationService.CreateNotificationAsync(userId, title, body, type, actionUrl);
+            await _notificationService.CreateNotificationAsync(userId, title, body, type, actionUrl, dedupeKey);
         }
         else
         {
-            _logger.LogInformation("Skipped duplicate notification creation for user {UserId}: {Title}", userId, title);
+            _logger.LogInformation("Skipped duplicate notification creation for user {UserId}: {Title} with key {DedupeKey}", userId, title, dedupeKey);
         }
     }
 
@@ -62,7 +55,8 @@ public class NotificationEventHandlers :
             "Invite Accepted",
             $"{domainEvent.AcceptedByEmail} accepted your invite to workspace '{domainEvent.WorkspaceName}'.",
             NotificationType.Info,
-            $"/workspaces/{domainEvent.WorkspaceId}");
+            $"/workspaces/{domainEvent.WorkspaceId}",
+            $"inviteAccepted:{domainEvent.WorkspaceId}:{domainEvent.AcceptedByUserId}");
     }
 
 
@@ -82,7 +76,8 @@ public class NotificationEventHandlers :
                     "New Comment",
                     $"A new comment was added to a listing in '{workspace?.Name ?? "your workspace"}'.",
                     NotificationType.Info,
-                    $"/workspaces/{domainEvent.WorkspaceId}/listings/{domainEvent.SavedListingId}");
+                    $"/workspaces/{domainEvent.WorkspaceId}/listings/{domainEvent.SavedListingId}",
+                    $"comment:{domainEvent.WorkspaceId}:{domainEvent.SavedListingId}:{domainEvent.CommentId}");
             }
         }
     }
@@ -101,7 +96,8 @@ public class NotificationEventHandlers :
                      "Report Saved",
                      $"A new report was saved to workspace '{workspace?.Name ?? "your workspace"}'.",
                      NotificationType.Info,
-                     $"/workspaces/{domainEvent.WorkspaceId}/listings");
+                     $"/workspaces/{domainEvent.WorkspaceId}/listings",
+                     $"reportSaved:{domainEvent.WorkspaceId}:{domainEvent.ListingId}");
              }
          }
     }
@@ -125,6 +121,7 @@ public class NotificationEventHandlers :
             "Analysis Ready",
             "Your AI neighborhood analysis is ready to view.",
             NotificationType.System,
-            $"/reports?q={Uri.EscapeDataString(domainEvent.Query)}");
+            $"/reports?q={Uri.EscapeDataString(domainEvent.Query)}",
+            $"analysis:{domainEvent.UserId}:{domainEvent.Query.GetHashCode()}");
     }
 }

@@ -80,6 +80,11 @@ public class NotificationRepository : INotificationRepository
         return await _context.Notifications.CountAsync(cancellationToken);
     }
 
+    public async Task<bool> ExistsAsync(string userId, string dedupeKey, CancellationToken cancellationToken = default)
+    {
+        return await _context.Notifications.AnyAsync(n => n.UserId == userId && n.DedupeKey == dedupeKey, cancellationToken);
+    }
+
     public async Task MarkAllAsReadAsync(string userId, CancellationToken cancellationToken = default)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
