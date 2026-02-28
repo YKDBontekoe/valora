@@ -146,37 +146,37 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    // --- Saved Listings ---
+    // --- Saved Properties ---
 
     [Fact]
-    public async Task SaveListing_ShouldSucceed_WhenValid()
+    public async Task SaveProperty_ShouldSucceed_WhenValid()
     {
         // Arrange
         var ownerEmail = "owner5@test.com";
         await AuthenticateAsync(ownerEmail);
 
-        // Create Listing
-        Guid listingId;
+        // Create Property
+        Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "101", Address = "Valid Listing St 1" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "101", Address = "Valid Property St 1" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
-        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Save Listing Test", ""));
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Save Property Test", ""));
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
-        var saveDto = new SaveListingDto(listingId, "My notes");
+        var saveDto = new SavePropertyDto(propertyId, "My notes");
 
         // Act
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", saveDto);
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", saveDto);
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<SavedListingDto>();
+        var result = await response.Content.ReadFromJsonAsync<SavedPropertyDto>();
         Assert.NotNull(result);
         Assert.Equal("My notes", result.Notes);
 
@@ -184,38 +184,38 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var saved = await db.SavedListings.FirstOrDefaultAsync(sl => sl.WorkspaceId == workspace.Id && sl.ListingId == listingId);
+            var saved = await db.SavedProperties.FirstOrDefaultAsync(sl => sl.WorkspaceId == workspace.Id && sl.PropertyId == propertyId);
             Assert.NotNull(saved);
         }
     }
 
     [Fact]
-    public async Task SaveListing_ShouldBeIdempotent()
+    public async Task SaveProperty_ShouldBeIdempotent()
     {
         // Arrange
         var ownerEmail = "owner6@test.com";
         await AuthenticateAsync(ownerEmail);
 
-        Guid listingId;
+        Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "102", Address = "Idempotent St 1" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "102", Address = "Idempotent St 1" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Idempotent Test", ""));
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
-        var saveDto = new SaveListingDto(listingId, "Note 1");
+        var saveDto = new SavePropertyDto(propertyId, "Note 1");
 
         // Act 1
-        await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", saveDto);
+        await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", saveDto);
 
         // Act 2 (Repeat)
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", saveDto);
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", saveDto);
 
         // Assert
         response.EnsureSuccessStatusCode();
@@ -224,37 +224,37 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var count = await db.SavedListings.CountAsync(sl => sl.WorkspaceId == workspace.Id && sl.ListingId == listingId);
+            var count = await db.SavedProperties.CountAsync(sl => sl.WorkspaceId == workspace.Id && sl.PropertyId == propertyId);
             Assert.Equal(1, count);
         }
     }
 
     [Fact]
-    public async Task RemoveSavedListing_ShouldSucceed_WhenOwner()
+    public async Task RemoveSavedProperty_ShouldSucceed_WhenOwner()
     {
         // Arrange
         var ownerEmail = "owner7@test.com";
         await AuthenticateAsync(ownerEmail);
 
-        Guid listingId;
+        Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "103", Address = "Remove St 1" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "103", Address = "Remove St 1" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
-        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Remove Listing Test", ""));
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Remove Property Test", ""));
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
         // Save first
-        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", new SaveListingDto(listingId, ""));
-        var savedListing = await saveResponse.Content.ReadFromJsonAsync<SavedListingDto>();
+        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", new SavePropertyDto(propertyId, ""));
+        var savedProperty = await saveResponse.Content.ReadFromJsonAsync<SavedPropertyDto>();
 
         // Act
-        var response = await Client.DeleteAsync($"/api/workspaces/{workspace!.Id}/listings/{savedListing!.Id}");
+        var response = await Client.DeleteAsync($"/api/workspaces/{workspace!.Id}/properties/{savedProperty!.Id}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -263,34 +263,34 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var exists = await db.SavedListings.AnyAsync(sl => sl.Id == savedListing.Id);
+            var exists = await db.SavedProperties.AnyAsync(sl => sl.Id == savedProperty.Id);
             Assert.False(exists);
         }
     }
 
     [Fact]
-    public async Task RemoveSavedListing_ShouldFail_WhenViewer()
+    public async Task RemoveSavedProperty_ShouldFail_WhenViewer()
     {
         // Arrange
         var ownerEmail = "owner8@test.com";
         await AuthenticateAsync(ownerEmail);
 
-        Guid listingId;
+        Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "104", Address = "Viewer Fail St 1" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "104", Address = "Viewer Fail St 1" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
-        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Viewer Listing Test", ""));
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Viewer Property Test", ""));
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
-        // Save listing as owner
-        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", new SaveListingDto(listingId, ""));
-        var savedListing = await saveResponse.Content.ReadFromJsonAsync<SavedListingDto>();
+        // Save property as owner
+        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", new SavePropertyDto(propertyId, ""));
+        var savedProperty = await saveResponse.Content.ReadFromJsonAsync<SavedPropertyDto>();
 
         // Create Viewer user
         var viewerEmail = "viewer@test.com";
@@ -312,7 +312,7 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         }
 
         // Act
-        var response = await Client.DeleteAsync($"/api/workspaces/{workspace!.Id}/listings/{savedListing!.Id}");
+        var response = await Client.DeleteAsync($"/api/workspaces/{workspace!.Id}/properties/{savedProperty!.Id}");
 
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -327,26 +327,26 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         var ownerEmail = "owner9@test.com";
         await AuthenticateAsync(ownerEmail);
 
-        Guid listingId;
+        Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "105", Address = "Comment St 1" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "105", Address = "Comment St 1" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Comment Test", ""));
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
-        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", new SaveListingDto(listingId, ""));
-        var savedListing = await saveResponse.Content.ReadFromJsonAsync<SavedListingDto>();
+        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", new SavePropertyDto(propertyId, ""));
+        var savedProperty = await saveResponse.Content.ReadFromJsonAsync<SavedPropertyDto>();
 
         var commentDto = new AddCommentDto("This is a comment", null);
 
         // Act
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings/{savedListing!.Id}/comments", commentDto);
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties/{savedProperty!.Id}/comments", commentDto);
 
         // Assert
         response.EnsureSuccessStatusCode();
@@ -357,7 +357,7 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var comment = await db.ListingComments.FirstOrDefaultAsync(c => c.SavedListingId == savedListing.Id);
+            var comment = await db.PropertyComments.FirstOrDefaultAsync(c => c.SavedPropertyId == savedProperty.Id);
             Assert.NotNull(comment);
             Assert.Equal("This is a comment", comment.Content);
         }
@@ -370,21 +370,21 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         var ownerEmail = "owner10@test.com";
         await AuthenticateAsync(ownerEmail);
 
-        Guid listingId;
+        Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "106", Address = "Threaded St 1" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "106", Address = "Threaded St 1" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Thread Test", ""));
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
-        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", new SaveListingDto(listingId, ""));
-        var savedListing = await saveResponse.Content.ReadFromJsonAsync<SavedListingDto>();
+        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", new SavePropertyDto(propertyId, ""));
+        var savedProperty = await saveResponse.Content.ReadFromJsonAsync<SavedPropertyDto>();
 
         // Add parent comment via DB directly
         Guid parentId;
@@ -392,32 +392,32 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
             var user = await db.Users.FirstAsync(u => u.Email == ownerEmail);
-            var parent = new ListingComment
+            var parent = new PropertyComment
             {
-                SavedListingId = savedListing!.Id,
+                SavedPropertyId = savedProperty!.Id,
                 UserId = user.Id,
                 Content = "Parent",
                 CreatedAt = DateTime.UtcNow.AddMinutes(-10)
             };
-            db.ListingComments.Add(parent);
+            db.PropertyComments.Add(parent);
             await db.SaveChangesAsync();
             parentId = parent.Id;
 
             // Add child comment
-            var child = new ListingComment
+            var child = new PropertyComment
             {
-                SavedListingId = savedListing.Id,
+                SavedPropertyId = savedProperty.Id,
                 UserId = user.Id,
                 Content = "Child",
                 ParentCommentId = parentId,
                 CreatedAt = DateTime.UtcNow
             };
-            db.ListingComments.Add(child);
+            db.PropertyComments.Add(child);
             await db.SaveChangesAsync();
         }
 
         // Act
-        var response = await Client.GetAsync($"/api/workspaces/{workspace!.Id}/listings/{savedListing!.Id}/comments");
+        var response = await Client.GetAsync($"/api/workspaces/{workspace!.Id}/properties/{savedProperty!.Id}/comments");
 
         // Assert
         response.EnsureSuccessStatusCode();

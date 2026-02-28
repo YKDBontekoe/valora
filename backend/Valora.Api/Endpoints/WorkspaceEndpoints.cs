@@ -27,14 +27,14 @@ public static class WorkspaceEndpoints
 
         group.MapDelete("/{id}/members/{memberId}", RemoveMember);
 
-        group.MapGet("/{id}/listings", GetSavedListings);
-        group.MapPost("/{id}/listings", SaveListing)
-            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<SaveListingDto>>();
+        group.MapGet("/{id}/properties", GetSavedProperties);
+        group.MapPost("/{id}/properties", SaveProperty)
+            .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<SavePropertyDto>>();
 
-        group.MapDelete("/{id}/listings/{savedListingId}", RemoveSavedListing);
+        group.MapDelete("/{id}/properties/{savedPropertyId}", RemoveSavedProperty);
 
-        group.MapGet("/{id}/listings/{savedListingId}/comments", GetComments);
-        group.MapPost("/{id}/listings/{savedListingId}/comments", AddComment)
+        group.MapGet("/{id}/properties/{savedPropertyId}/comments", GetComments);
+        group.MapPost("/{id}/properties/{savedPropertyId}/comments", AddComment)
             .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AddCommentDto>>();
 
         group.MapGet("/{id}/activity", GetActivityLogs);
@@ -134,73 +134,73 @@ public static class WorkspaceEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> GetSavedListings(
+    private static async Task<IResult> GetSavedProperties(
         ClaimsPrincipal user,
         Guid id,
-        IWorkspaceListingService service,
+        IWorkspacePropertyService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Results.Unauthorized();
 
-        var result = await service.GetSavedListingsAsync(userId, id, ct);
+        var result = await service.GetSavedPropertiesAsync(userId, id, ct);
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> SaveListing(
+    private static async Task<IResult> SaveProperty(
         ClaimsPrincipal user,
         Guid id,
-        [FromBody] SaveListingDto request,
-        IWorkspaceListingService service,
+        [FromBody] SavePropertyDto request,
+        IWorkspacePropertyService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Results.Unauthorized();
 
-        var result = await service.SaveListingAsync(userId, id, request.ListingId, request.Notes, ct);
+        var result = await service.SavePropertyAsync(userId, id, request.PropertyId, request.Notes, ct);
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> RemoveSavedListing(
+    private static async Task<IResult> RemoveSavedProperty(
         ClaimsPrincipal user,
         Guid id,
-        Guid savedListingId,
-        IWorkspaceListingService service,
+        Guid savedPropertyId,
+        IWorkspacePropertyService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Results.Unauthorized();
 
-        await service.RemoveSavedListingAsync(userId, id, savedListingId, ct);
+        await service.RemoveSavedPropertyAsync(userId, id, savedPropertyId, ct);
         return Results.NoContent();
     }
 
     private static async Task<IResult> GetComments(
         ClaimsPrincipal user,
         Guid id,
-        Guid savedListingId,
-        IWorkspaceListingService service,
+        Guid savedPropertyId,
+        IWorkspacePropertyService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Results.Unauthorized();
 
-        var result = await service.GetCommentsAsync(userId, id, savedListingId, ct);
+        var result = await service.GetCommentsAsync(userId, id, savedPropertyId, ct);
         return Results.Ok(result);
     }
 
     private static async Task<IResult> AddComment(
         ClaimsPrincipal user,
         Guid id,
-        Guid savedListingId,
+        Guid savedPropertyId,
         [FromBody] AddCommentDto dto,
-        IWorkspaceListingService service,
+        IWorkspacePropertyService service,
         CancellationToken ct)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Results.Unauthorized();
 
-        var result = await service.AddCommentAsync(userId, id, savedListingId, dto, ct);
+        var result = await service.AddCommentAsync(userId, id, savedPropertyId, dto, ct);
         return Results.Ok(result);
     }
 

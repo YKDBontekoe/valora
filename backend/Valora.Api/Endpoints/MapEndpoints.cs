@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Net.Http.Headers;
 using Valora.Api.Filters;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
@@ -44,9 +45,15 @@ public static class MapEndpoints
         return group;
     }
 
-    public static async Task<IResult> GetCityInsightsHandler(IMapService mapService, CancellationToken ct)
+    public static async Task<IResult> GetCityInsightsHandler(IMapService mapService, HttpContext httpContext, CancellationToken ct)
     {
         var insights = await mapService.GetCityInsightsAsync(ct);
+        // City insights change at most every 30 min (batch job cadence); allow brief client-side caching.
+        httpContext.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+        {
+            Public = true,
+            MaxAge = TimeSpan.FromMinutes(5),
+        };
         return Results.Ok(insights);
     }
 
@@ -88,9 +95,15 @@ public static class MapEndpoints
         [FromQuery] double zoom,
         [FromQuery] MapOverlayMetric metric,
         IMapService mapService,
+        HttpContext httpContext,
         CancellationToken ct)
     {
         var tiles = await mapService.GetMapOverlayTilesAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, zoom, metric, ct);
+        httpContext.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+        {
+            Private = true,
+            MaxAge = TimeSpan.FromMinutes(5),
+        };
         return TypedResults.Ok(tiles);
     }
 

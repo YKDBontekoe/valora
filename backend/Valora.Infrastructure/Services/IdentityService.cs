@@ -141,7 +141,7 @@ public class IdentityService : IIdentityService
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Delete Owned Workspaces (Cascades to Members, SavedListings in workspace, etc.)
+                // 1. Delete Owned Workspaces (Cascades to Members, SavedProperties in workspace, etc.)
                 await _context.Workspaces
                     .Where(w => w.OwnerId == userId)
                     .ExecuteDeleteAsync();
@@ -151,25 +151,25 @@ public class IdentityService : IIdentityService
                     .Where(wm => wm.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 3. Delete Saved Listings (Added by user in other workspaces)
-                await _context.SavedListings
+                // 3. Delete Saved Properties (Added by user in other workspaces)
+                await _context.SavedProperties
                     .Where(sl => sl.AddedByUserId == userId)
                     .ExecuteDeleteAsync();
 
                 // 4. Handle Threaded Comments & Delete Comments
                 // 4a. Unlink replies to comments authored by this user to avoid FK violation (ParentCommentId)
                 // Since this is a self-referencing relationship with NoAction.
-                var userCommentIds = _context.ListingComments
+                var userCommentIds = _context.PropertyComments
                     .Where(c => c.UserId == userId)
                     .Select(c => c.Id);
 
                 // Set ParentCommentId to null for any comment whose parent is in the user's comment list
-                await _context.ListingComments
+                await _context.PropertyComments
                     .Where(c => c.ParentCommentId != null && userCommentIds.Contains(c.ParentCommentId.Value))
                     .ExecuteUpdateAsync(s => s.SetProperty(c => c.ParentCommentId, (Guid?)null));
 
                 // 4b. Delete the comments
-                await _context.ListingComments
+                await _context.PropertyComments
                     .Where(c => c.UserId == userId)
                     .ExecuteDeleteAsync();
 
@@ -192,33 +192,6 @@ public class IdentityService : IIdentityService
                 await _context.Notifications
                     .Where(n => n.UserId == userId)
                     .ExecuteDeleteAsync();
-
-                // 9. Audit Log (UserDeleted)
-                // We create a new log entry for the deletion action.
-                // Since we are inside a transaction, we can add this directly.
-                // Note: The actor is effectively "System" or the Admin triggering this.
-                // However, the current signature doesn't pass the actor ID.
-                // We will create a log with the deleted user as the actor for historical record (last act).
-                // Or better, we just log it as a system event if we don't have an actor.
-                // Given the constraints, we will log it with the deleted user's ID to keep a trace in the logs table
-                // BUT we just deleted all logs for this actor in step 5.
-                // So this log would be the ONLY log left for this user ID? No, because we delete the user at step 10.
-                // If we delete the user, the ActorId FK (if enforced) might fail if it's not nullable?
-                // ActivityLog.ActorId is configured `OnDelete(DeleteBehavior.NoAction)`.
-                // If we delete the user, this log will remain but point to a non-existent user?
-                // That depends on database constraints. If FK exists, it will fail.
-                // Let's check ActivityLogConfiguration.
-                // builder.HasOne(a => a.Actor).WithMany().HasForeignKey(a => a.ActorId).OnDelete(DeleteBehavior.NoAction);
-                // This means we CANNOT delete the user if an ActivityLog exists pointing to them.
-                // So we CANNOT add a log here if we intend to delete the user in step 10.
-                // The requirements say "User deletion lacks audit log".
-                // This implies we should log it *somewhere else* or the requirement assumes soft delete?
-                // Or maybe the audit log should use a different ActorId (like the Admin's ID).
-                // Since we don't have Admin ID here, we can't properly link it.
-                // Best effort: Log to ILogger (already done in AdminService).
-                // For the database, we are strictly cleaning up. Creating a record that prevents deletion is counter-productive.
-                // I will skip adding a DB ActivityLog for now as it contradicts the cleanup goal and schema constraints.
-                // The ILogger in AdminService provides the audit trail.
 
                 // 10. Delete User
                 var result = await _userManager.DeleteAsync(user);
@@ -251,16 +224,16 @@ public class IdentityService : IIdentityService
             var memberships = _context.WorkspaceMembers.Where(wm => wm.UserId == userId);
             _context.WorkspaceMembers.RemoveRange(memberships);
 
-            var savedListings = _context.SavedListings.Where(sl => sl.AddedByUserId == userId);
-            _context.SavedListings.RemoveRange(savedListings);
+            var savedProperties = _context.SavedProperties.Where(sl => sl.AddedByUserId == userId);
+            _context.SavedProperties.RemoveRange(savedProperties);
 
             // Handle Threaded Comments (InMemory)
-            var userCommentIds = _context.ListingComments
+            var userCommentIds = _context.PropertyComments
                 .Where(c => c.UserId == userId)
                 .Select(c => c.Id)
                 .ToList();
 
-            var childComments = _context.ListingComments
+            var childComments = _context.PropertyComments
                 .Where(c => c.ParentCommentId != null && userCommentIds.Contains(c.ParentCommentId.Value))
                 .ToList();
 
@@ -269,8 +242,8 @@ public class IdentityService : IIdentityService
                 child.ParentCommentId = null;
             }
 
-            var comments = _context.ListingComments.Where(c => c.UserId == userId);
-            _context.ListingComments.RemoveRange(comments);
+            var comments = _context.PropertyComments.Where(c => c.UserId == userId);
+            _context.PropertyComments.RemoveRange(comments);
 
             var logs = _context.ActivityLogs.Where(l => l.ActorId == userId);
             _context.ActivityLogs.RemoveRange(logs);

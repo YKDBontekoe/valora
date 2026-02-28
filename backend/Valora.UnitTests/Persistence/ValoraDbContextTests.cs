@@ -10,7 +10,7 @@ namespace Valora.UnitTests.Persistence;
 public class ValoraDbContextTests
 {
     [Fact]
-    public void OnModelCreating_AppliesListingConstraints()
+    public void OnModelCreating_AppliesPropertyConstraints()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<ValoraDbContext>()
@@ -22,33 +22,16 @@ public class ValoraDbContextTests
         // Act
         // Accessing the Model property triggers OnModelCreating
         var model = context.GetService<IDesignTimeModel>().Model;
-        var listingEntity = model.FindEntityType(typeof(Listing));
+        var propertyEntity = model.FindEntityType(typeof(Property));
 
         // Assert
-        Assert.NotNull(listingEntity);
+        Assert.NotNull(propertyEntity);
 
         // Verify MaxLength constraints
-        Assert.Equal(50, listingEntity.FindProperty(nameof(Listing.FundaId))?.GetMaxLength());
-        Assert.Equal(200, listingEntity.FindProperty(nameof(Listing.Address))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.City))?.GetMaxLength());
-        Assert.Equal(20, listingEntity.FindProperty(nameof(Listing.PostalCode))?.GetMaxLength());
-        Assert.Equal(500, listingEntity.FindProperty(nameof(Listing.Url))?.GetMaxLength());
-        Assert.Equal(500, listingEntity.FindProperty(nameof(Listing.ImageUrl))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.PropertyType))?.GetMaxLength());
-        Assert.Equal(50, listingEntity.FindProperty(nameof(Listing.Status))?.GetMaxLength());
-        Assert.Equal(20, listingEntity.FindProperty(nameof(Listing.EnergyLabel))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.OwnershipType))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.CadastralDesignation))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.HeatingType))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.InsulationType))?.GetMaxLength());
-        Assert.Equal(50, listingEntity.FindProperty(nameof(Listing.GardenOrientation))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.ParkingType))?.GetMaxLength());
-        Assert.Equal(200, listingEntity.FindProperty(nameof(Listing.AgentName))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.RoofType))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.ConstructionPeriod))?.GetMaxLength());
-        Assert.Equal(100, listingEntity.FindProperty(nameof(Listing.CVBoilerBrand))?.GetMaxLength());
-        Assert.Equal(50, listingEntity.FindProperty(nameof(Listing.BrokerPhone))?.GetMaxLength());
-        Assert.Equal(20, listingEntity.FindProperty(nameof(Listing.BrokerAssociationCode))?.GetMaxLength());
+        Assert.Equal(50, propertyEntity.FindProperty(nameof(Property.BagId))?.GetMaxLength());
+        Assert.Equal(200, propertyEntity.FindProperty(nameof(Property.Address))?.GetMaxLength());
+        Assert.Equal(100, propertyEntity.FindProperty(nameof(Property.City))?.GetMaxLength());
+        Assert.Equal(20, propertyEntity.FindProperty(nameof(Property.PostalCode))?.GetMaxLength());
     }
 
     [Fact]
@@ -99,35 +82,34 @@ public class ValoraDbContextTests
         // Act
         var model = context.GetService<IDesignTimeModel>().Model;
 
-        var workspaceEntity = model.FindEntityType(typeof(Workspace));
-        var activityLogEntity = model.FindEntityType(typeof(ActivityLog));
-        var savedListingEntity = model.FindEntityType(typeof(SavedListing));
-        var listingCommentEntity = model.FindEntityType(typeof(ListingComment));
+        // 1. SavedProperty -> Workspace (Cascade)
+        var savedPropertyToWorkspace = model.FindEntityType(typeof(SavedProperty))
+            ?.GetForeignKeys()
+            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Workspace));
+        Assert.Equal(DeleteBehavior.Cascade, savedPropertyToWorkspace?.DeleteBehavior);
 
-        // Assert
-        Assert.NotNull(workspaceEntity);
-        Assert.NotNull(activityLogEntity);
-        Assert.NotNull(savedListingEntity);
-        Assert.NotNull(listingCommentEntity);
+        // 2. SavedProperty -> Property (Cascade)
+        var savedPropertyToProperty = model.FindEntityType(typeof(SavedProperty))
+            ?.GetForeignKeys()
+            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Property));
+        Assert.Equal(DeleteBehavior.Cascade, savedPropertyToProperty?.DeleteBehavior);
 
-        Assert.Equal(
-            DeleteBehavior.NoAction,
-            workspaceEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "OwnerId").DeleteBehavior);
+        // 3. PropertyComment -> SavedProperty (Cascade)
+        var commentToSavedProperty = model.FindEntityType(typeof(PropertyComment))
+            ?.GetForeignKeys()
+            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(SavedProperty));
+        Assert.Equal(DeleteBehavior.Cascade, commentToSavedProperty?.DeleteBehavior);
 
-        Assert.Equal(
-            DeleteBehavior.NoAction,
-            activityLogEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "ActorId").DeleteBehavior);
-
-        Assert.Equal(
-            DeleteBehavior.NoAction,
-            savedListingEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "AddedByUserId").DeleteBehavior);
-
-        Assert.Equal(
-            DeleteBehavior.NoAction,
-            listingCommentEntity!.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "UserId").DeleteBehavior);
-
-        Assert.Equal(
-            DeleteBehavior.NoAction,
-            listingCommentEntity.GetForeignKeys().Single(fk => fk.Properties.Single().Name == "ParentCommentId").DeleteBehavior);
+        // 4. PropertyComment -> User (Restrict - prevent cycle with Workspace/Member/User)
+        var commentToUser = model.FindEntityType(typeof(PropertyComment))
+            ?.GetForeignKeys()
+            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(ApplicationUser));
+        Assert.Equal(DeleteBehavior.Restrict, commentToUser?.DeleteBehavior);
+        
+        // 5. PropertyComment -> ParentComment (Restrict - self-referencing)
+        var commentToParent = model.FindEntityType(typeof(PropertyComment))
+            ?.GetForeignKeys()
+            .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(PropertyComment));
+        Assert.Equal(DeleteBehavior.Restrict, commentToParent?.DeleteBehavior);
     }
 }

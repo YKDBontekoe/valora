@@ -15,7 +15,7 @@ public class MapRepository : IMapRepository
 
     public async Task<List<MapCityInsightDto>> GetCityInsightsAsync(CancellationToken cancellationToken = default)
     {
-        var query = _context.Listings
+        var query = _context.Properties
             .Where(x => x.City != null && x.Latitude.HasValue && x.Longitude.HasValue)
             .GroupBy(x => x.City!)
             .Select(g => new MapCityInsightDto(
@@ -35,11 +35,8 @@ public class MapRepository : IMapRepository
     public async Task<List<ListingPriceData>> GetListingsPriceDataAsync(
         double minLat, double minLon, double maxLat, double maxLon, CancellationToken cancellationToken = default)
     {
-        return await _context.Listings
-            .Where(l => l.Latitude >= minLat && l.Latitude <= maxLat &&
-                        l.Longitude >= minLon && l.Longitude <= maxLon &&
-                        l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2 > 0)
-            .Select(l => new ListingPriceData(l.Price, l.LivingAreaM2, l.Latitude, l.Longitude))
-            .ToListAsync(cancellationToken);
+        // Price data is currently not available without Funda integration.
+        // Returning empty list to prevent crashes.
+        return await Task.FromResult(new List<ListingPriceData>());
     }
 }

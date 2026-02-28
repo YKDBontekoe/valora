@@ -2,10 +2,10 @@ using Valora.Domain.Common;
 
 namespace Valora.Domain.Entities;
 
-public class ListingComment : BaseEntity
+public class PropertyComment : BaseEntity
 {
-    public Guid SavedListingId { get; set; }
-    public SavedListing? SavedListing { get; set; }
+    public Guid SavedPropertyId { get; set; }
+    public SavedProperty? SavedProperty { get; set; }
 
     // The user who wrote the comment
     public required string UserId { get; set; }
@@ -15,8 +15,8 @@ public class ListingComment : BaseEntity
 
     // Threading
     public Guid? ParentCommentId { get; set; }
-    public ListingComment? ParentComment { get; set; }
-    public ICollection<ListingComment> Replies { get; set; } = new List<ListingComment>();
+    public PropertyComment? ParentComment { get; set; }
+    public ICollection<PropertyComment> Replies { get; set; } = new List<PropertyComment>();
 
     public Dictionary<string, List<string>> Reactions { get; set; } = new Dictionary<string, List<string>>();
 }

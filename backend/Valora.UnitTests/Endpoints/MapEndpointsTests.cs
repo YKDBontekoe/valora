@@ -28,7 +28,8 @@ public class MapEndpointsTests
             .ReturnsAsync(insights);
 
         // Act
-        var result = await MapEndpoints.GetCityInsightsHandler(_mapServiceMock.Object, CancellationToken.None);
+        var httpContext = new DefaultHttpContext();
+        var result = await MapEndpoints.GetCityInsightsHandler(_mapServiceMock.Object, httpContext, CancellationToken.None);
 
         // Assert
         var okResult = Assert.IsType<Ok<List<MapCityInsightDto>>>(result);
@@ -117,7 +118,8 @@ public class MapEndpointsTests
             It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MapOverlayTileDto>());
 
-        var result = await MapEndpoints.GetMapOverlayTilesHandler(bounds, 10, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, CancellationToken.None);
+        var httpContext = new DefaultHttpContext();
+        var result = await MapEndpoints.GetMapOverlayTilesHandler(bounds, 10, MapOverlayMetric.PopulationDensity, _mapServiceMock.Object, httpContext, CancellationToken.None);
 
         Assert.IsType<Ok<IReadOnlyList<MapOverlayTileDto>>>(result);
     }

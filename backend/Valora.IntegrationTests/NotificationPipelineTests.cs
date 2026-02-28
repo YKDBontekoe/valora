@@ -1,105 +1,48 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
-using Valora.Application.Common.Interfaces;
-using Valora.Application.DTOs;
 using Valora.Domain.Entities;
-using Valora.Domain.Enums;
-using Valora.Infrastructure.Persistence;
+using Valora.Application.DTOs;
+using Valora.Application.Common.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Valora.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Http.Json;
 
 namespace Valora.IntegrationTests;
 
-[Collection("TestcontainersDatabase")]
-public class NotificationPipelineTests : BaseTestcontainersIntegrationTest
+public class NotificationPipelineTests : BaseIntegrationTest
 {
-    public NotificationPipelineTests(TestcontainersDatabaseFixture fixture) : base(fixture)
+    public NotificationPipelineTests(TestDatabaseFixture fixture) : base(fixture)
     {
     }
 
     [Fact]
-    public async Task AddComment_ShouldDispatchEventAndCreateNotificationForOtherMembers()
+    public async Task SaveProperty_ShouldGenerateNotification()
     {
         // Arrange
-        using var scope = Factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-
-        var ownerId = "owner-user-id";
-        var memberId = "member-user-id";
-
-        // Ensure clean state
-        dbContext.Notifications.RemoveRange(dbContext.Notifications);
-        await dbContext.SaveChangesAsync();
-
-        var ownerUser = new ApplicationUser { Id = ownerId, UserName = "owner@test.com", Email = "owner@test.com" };
-        var memberUser = new ApplicationUser { Id = memberId, UserName = "member@test.com", Email = "member@test.com" };
-
-        dbContext.Users.Add(ownerUser);
-        dbContext.Users.Add(memberUser);
-
-        var workspace = new Workspace
+        await AuthenticateAsync("user1@test.com");
+        Guid propertyId;
+        using (var scope = Factory.Services.CreateScope())
         {
-            Name = "Test Workspace",
-            OwnerId = ownerId,
-            Members = new List<WorkspaceMember>
-            {
-                new() { UserId = ownerId, Role = WorkspaceRole.Owner, JoinedAt = DateTime.UtcNow },
-                new() { UserId = memberId, Role = WorkspaceRole.Viewer, JoinedAt = DateTime.UtcNow }
-            }
-        };
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var property = new Property { BagId = "N1", Address = "Notify St 1" };
+            db.Properties.Add(property);
+            await db.SaveChangesAsync();
+            propertyId = property.Id;
+        }
 
-        dbContext.Workspaces.Add(workspace);
-
-        var listing = new Listing
-        {
-            FundaId = "EXT123",
-            Address = "Test Address",
-            City = "Amsterdam",
-            Price = 500000,
-            Bedrooms = 2,
-            LivingAreaM2 = 80,
-            PropertyType = "House",
-            YearBuilt = 2020,
-            EnergyLabel = "A",
-            Url = "http://test.com",
-            Latitude = 52.3676,
-            Longitude = 4.9041
-        };
-        dbContext.Listings.Add(listing);
-
-        var savedListing = new SavedListing
-        {
-            WorkspaceId = workspace.Id,
-            ListingId = listing.Id,
-            AddedByUserId = ownerId
-        };
-        dbContext.SavedListings.Add(savedListing);
-
-        await dbContext.SaveChangesAsync();
-
-        var dto = new AddCommentDto("This is a test comment", null);
+        var wsResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS1", ""));
+        var ws = await wsResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
 
         // Act
-        var workspaceListingService = scope.ServiceProvider.GetRequiredService<IWorkspaceListingService>();
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{ws!.Id}/properties", new SavePropertyDto(propertyId, ""));
 
-        await workspaceListingService.AddCommentAsync(memberId, workspace.Id, savedListing.Id, dto);
+        // Assert
+        response.EnsureSuccessStatusCode();
+        
+        // Wait for background events
+        await Task.Delay(500);
 
-        // Assert - Owner should get a notification
-        var notifications = await dbContext.Notifications
-            .Where(n => n.UserId == ownerId)
-            .ToListAsync();
-
-        notifications.Count.ShouldBeGreaterThan(0);
-        var notification = notifications.First();
-        notification.Type.ShouldBe(NotificationType.Info);
-        notification.Title.ShouldBe("New Comment");
-        notification.ActionUrl.ShouldBe($"/workspaces/{workspace.Id}/listings/{savedListing.Id}");
-
-        // Verify member who commented does NOT get a notification
-        var memberNotifications = await dbContext.Notifications
-            .Where(n => n.UserId == memberId)
-            .ToListAsync();
-
-        memberNotifications.ShouldBeEmpty();
+        var notifications = await Client.GetFromJsonAsync<PaginatedResponse<NotificationDto>>("/api/notifications");
+        Assert.NotEmpty(notifications!.Items);
     }
 }

@@ -206,17 +206,21 @@ class InsightsMap extends StatelessWidget {
   static Marker buildClusterMarker(BuildContext context, MapAmenityCluster cluster) {
     return Marker(
       point: LatLng(cluster.latitude, cluster.longitude),
-      width: 40,
-      height: 40,
+      width: 42,
+      height: 42,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: ValoraColors.primary,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [ValoraColors.primaryLight, ValoraColors.primary],
+          ),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: ValoraColors.primary.withValues(alpha: 0.4),
-              blurRadius: 8,
-              offset: Offset(0, 2),
+              color: ValoraColors.primary.withValues(alpha: 0.45),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -225,7 +229,7 @@ class InsightsMap extends StatelessWidget {
             cluster.count.toString(),
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w800,
               fontSize: 14,
             ),
           ),
@@ -242,50 +246,75 @@ class InsightsMap extends StatelessWidget {
     InsightsProvider provider,
   ) {
     final color = MapUtils.getColorForScore(score);
-    final size = (city.count >= 120 ? 58.0 : city.count >= 60 ? 52.0 : 46.0) * (isSelected ? 1.2 : 1.0);
+    // Scale: large city (120+ listings) = biggest, small = smallest
+    final baseSize = city.count >= 120 ? 58.0 : city.count >= 60 ? 52.0 : 46.0;
+    final size = baseSize * (isSelected ? 1.18 : 1.0);
+    final ringSize = size + (isSelected ? 16.0 : 0.0);
 
     return Marker(
       point: city.location,
-      width: size,
-      height: size,
+      width: ringSize,
+      height: ringSize,
       child: GestureDetector(
         onTap: () => provider.selectFeature(city),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: 0.95),
-                color.withValues(alpha: 0.72),
-              ],
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected ? Colors.white : Theme.of(context).colorScheme.surface,
-              width: isSelected ? 4.0 : 2.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                  ? color.withValues(alpha: 0.5)
-                  : Theme.of(context).shadowColor.withValues(alpha: 0.2),
-                blurRadius: isSelected ? 16 : 12,
-                offset: const Offset(0, 4),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Pulse ring when selected
+            if (isSelected)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutQuint,
+                width: ringSize,
+                height: ringSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: color.withValues(alpha: 0.35),
+                    width: 3,
+                  ),
+                ),
               ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              score != null ? score.round().toString() : '-',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: isSelected ? 16 : 14,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutBack,
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color,
+                    color.withValues(alpha: 0.75),
+                  ],
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.55),
+                  width: isSelected ? 3.5 : 2.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: isSelected ? 0.55 : 0.28),
+                    blurRadius: isSelected ? 20 : 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  score != null ? score.round().toString() : '–',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: isSelected ? 16 : 13.5,
+                    height: 1,
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

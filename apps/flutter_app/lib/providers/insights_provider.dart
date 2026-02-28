@@ -50,7 +50,8 @@ class InsightsProvider extends ChangeNotifier {
   String? _overlaysCoverageMetric;
   String? _overlayTilesCoverageMetric;
 
-  static const double _prefetchPaddingFactor = 0.5;
+  static const double _prefetchPaddingFactor = 0.25;        // viewport pan look-ahead
+  static const double _overlayPrefetchFactor  = 0.15;        // smaller for overlays — server caps span at 2°
 
   InsightsProvider(this._repository) : _mapLayerService = MapLayerService(_repository);
 
@@ -366,7 +367,8 @@ class InsightsProvider extends ChangeNotifier {
     int zoomBucket,
     String metric,
   ) async {
-    final MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
+    // Use a smaller padding for overlays — server caps bounding-box span at 2°.
+    final MapBounds bounds = viewport.expand(_overlayPrefetchFactor);
     try {
       final result = await _mapLayerService.getOverlays(bounds, zoomBucket, metric);
       return _LayerFetchResult.overlays(
@@ -386,7 +388,8 @@ class InsightsProvider extends ChangeNotifier {
     double zoom,
     String metric,
   ) async {
-    final MapBounds bounds = viewport.expand(_prefetchPaddingFactor);
+    // Use a smaller padding for overlay tiles — server caps bounding-box span at 2°.
+    final MapBounds bounds = viewport.expand(_overlayPrefetchFactor);
     try {
       final result = await _mapLayerService.getOverlayTiles(bounds, zoomBucket, zoom, metric);
       return _LayerFetchResult.overlayTiles(

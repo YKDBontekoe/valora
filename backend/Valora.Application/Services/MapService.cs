@@ -3,6 +3,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs.Map;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Valora.Application.Services;
 
@@ -12,23 +13,42 @@ public class MapService : IMapService
     private readonly IAmenityClient _amenityClient;
     private readonly ICbsGeoClient _cbsGeoClient;
     private readonly IMemoryCache _cache;
-    private const double MaxAggregatedSpan = 2.0; // Larger span for aggregated views
+    private readonly ILogger<MapService> _logger;
+
+    private const double MaxAggregatedSpan = 2.0;
+
+    // Cache durations
+    private static readonly TimeSpan CityInsightsCacheDuration    = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan PriceOverlayCacheDuration    = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan OverlayTilesCacheDuration    = TimeSpan.FromMinutes(10);
 
     public MapService(
         IMapRepository repository,
         IAmenityClient amenityClient,
         ICbsGeoClient cbsGeoClient,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ILogger<MapService> logger)
     {
         _repository = repository;
         _amenityClient = amenityClient;
         _cbsGeoClient = cbsGeoClient;
         _cache = cache;
+        _logger = logger;
     }
 
     public async Task<List<MapCityInsightDto>> GetCityInsightsAsync(CancellationToken cancellationToken = default)
     {
-        return await _repository.GetCityInsightsAsync(cancellationToken);
+        const string cacheKey = "CityInsights";
+        if (_cache.TryGetValue(cacheKey, out List<MapCityInsightDto>? cached) && cached is not null)
+        {
+            _logger.LogDebug("Cache hit for {CacheKey}", cacheKey);
+            return cached;
+        }
+
+        _logger.LogDebug("Cache miss for {CacheKey}, fetching from DB", cacheKey);
+        var result = await _repository.GetCityInsightsAsync(cancellationToken);
+        _cache.Set(cacheKey, result, CityInsightsCacheDuration);
+        return result;
     }
 
     public async Task<List<MapAmenityDto>> GetMapAmenitiesAsync(
@@ -118,19 +138,29 @@ public class MapService : IMapService
 
         double cellSize = GetCellSize(zoom);
 
-        var cacheKey = FormattableString.Invariant($"MapOverlayTiles_{Math.Round(minLat, 4)}_{Math.Round(minLon, 4)}_{Math.Round(maxLat, 4)}_{Math.Round(maxLon, 4)}_{zoom}_{metric}");
-        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<MapOverlayTileDto>? cachedTiles))
+        // Snap coordinates to cell-size grid to maximise cache hit rate.
+        // A 1cm pan no longer busts the cache — only crossing a cell boundary does.
+        var snappedMinLat = SnapToGrid(minLat, cellSize);
+        var snappedMinLon = SnapToGrid(minLon, cellSize);
+        var snappedMaxLat = SnapToGrid(maxLat, cellSize);
+        var snappedMaxLon = SnapToGrid(maxLon, cellSize);
+        int zoomBucket = (int)Math.Floor(zoom);
+
+        var cacheKey = FormattableString.Invariant(
+            $"MapOverlayTiles_{snappedMinLat}_{snappedMinLon}_{snappedMaxLat}_{snappedMaxLon}_{zoomBucket}_{metric}");
+
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<MapOverlayTileDto>? cachedTiles) && cachedTiles is not null)
         {
-            return cachedTiles!;
+            _logger.LogDebug("Cache hit for overlay tiles, key={CacheKey}", cacheKey);
+            return cachedTiles;
         }
 
-
-        // Fetch detailed overlays
+        // Fetch detailed overlays (expand by one cell to avoid edge clipping)
         var overlays = await _cbsGeoClient.GetNeighborhoodOverlaysAsync(
-            minLat - cellSize,
-            minLon - cellSize,
-            maxLat + cellSize,
-            maxLon + cellSize,
+            snappedMinLat - cellSize,
+            snappedMinLon - cellSize,
+            snappedMaxLat + cellSize,
+            snappedMaxLon + cellSize,
             metric,
             cancellationToken);
 
@@ -142,7 +172,7 @@ public class MapService : IMapService
         ).ToList();
 
         // Build spatial index
-        double indexCellSize = cellSize * 5; // e.g., 5x tile size for the index grid
+        double indexCellSize = cellSize * 5;
         var spatialIndex = new Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>>();
 
         foreach (var parsedOverlay in parsedOverlays)
@@ -167,13 +197,12 @@ public class MapService : IMapService
             }
         }
 
-        // Rasterize into grid
-        // Iterate by half cell size to center the points
-        for (double lat = minLat + cellSize / 2; lat < maxLat; lat += cellSize)
+        // Rasterize: iterate by cellSize, center each tile
+        for (double lat = snappedMinLat + cellSize / 2; lat < snappedMaxLat; lat += cellSize)
         {
             int gridY = (int)Math.Floor(lat / indexCellSize);
 
-            for (double lon = minLon + cellSize / 2; lon < maxLon; lon += cellSize)
+            for (double lon = snappedMinLon + cellSize / 2; lon < snappedMaxLon; lon += cellSize)
             {
                 int gridX = (int)Math.Floor(lon / indexCellSize);
                 var key = (gridX, gridY);
@@ -187,9 +216,13 @@ public class MapService : IMapService
         }
 
         var readOnlyTiles = tiles.ToArray();
-        _cache.Set(cacheKey, readOnlyTiles, TimeSpan.FromMinutes(10));
+        _cache.Set(cacheKey, readOnlyTiles, OverlayTilesCacheDuration);
         return readOnlyTiles;
     }
+
+    /// <summary>Snaps a coordinate to the nearest grid boundary at the given cell size.</summary>
+    private static double SnapToGrid(double value, double cellSize) =>
+        Math.Floor(value / cellSize) * cellSize;
 
     private static MapOverlayTileDto? FindOverlayForPoint(
         double lat,
@@ -222,6 +255,16 @@ public class MapService : IMapService
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
         double minLat, double minLon, double maxLat, double maxLon, CancellationToken ct)
     {
+        // Round bounds to 2 decimal places (~1km grid) for a sensible cache granularity
+        var cacheKey = FormattableString.Invariant(
+            $"PriceOverlay_{Math.Round(minLat, 2)}_{Math.Round(minLon, 2)}_{Math.Round(maxLat, 2)}_{Math.Round(maxLon, 2)}");
+
+        if (_cache.TryGetValue(cacheKey, out List<MapOverlayDto>? cached) && cached is not null)
+        {
+            _logger.LogDebug("Cache hit for price overlay, key={CacheKey}", cacheKey);
+            return cached;
+        }
+
         var overlaysTask = _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity, ct);
         var listingDataTask = _repository.GetListingsPriceDataAsync(minLat, minLon, maxLat, maxLon, ct);
 
@@ -230,7 +273,7 @@ public class MapService : IMapService
         var overlays = await overlaysTask;
         var listingData = await listingDataTask;
 
-        return overlays.Select(overlay =>
+        var result = overlays.Select(overlay =>
         {
             var geometry = GeoUtils.ParseGeometry(overlay.GeoJson);
             var neighborhoodListings = listingData.Where(l =>
@@ -249,6 +292,9 @@ public class MapService : IMapService
                 DisplayValue = displayValue
             };
         }).ToList();
+
+        _cache.Set(cacheKey, result, PriceOverlayCacheDuration);
+        return result;
     }
 
     private static double? CalculateAveragePrice(IEnumerable<ListingPriceData> listings)
