@@ -1,0 +1,10 @@
+--- backend/Valora.Application/DependencyInjection.cs
++++ backend/Valora.Application/DependencyInjection.cs
+@@ -23,6 +23,7 @@
+         services.AddScoped<IWorkspaceService, WorkspaceService>();
+         services.AddScoped<IWorkspaceMemberService, WorkspaceMemberService>();
+         services.AddScoped<IWorkspaceListingService, WorkspaceListingService>();
++        services.AddScoped<Valora.Application.Common.Interfaces.Listings.IListingService, Valora.Application.Services.Listings.ListingService>();
+
+         // Batch Job Processors
+         services.AddScoped<IBatchJobProcessor, CityIngestionJobProcessor>();

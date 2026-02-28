@@ -1,0 +1,10 @@
+--- backend/Valora.Infrastructure/DependencyInjection.cs
++++ backend/Valora.Infrastructure/DependencyInjection.cs
+@@ -53,6 +53,7 @@
+         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
+         services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
+         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
++        services.AddScoped<Valora.Application.Common.Interfaces.Listings.IListingRepository, Valora.Infrastructure.Persistence.Repositories.ListingRepository>();
+
+         // Events
+         services.AddScoped<IEventDispatcher, EventDispatcher>();

@@ -1,0 +1,11 @@
+--- backend/Valora.Api/Program.cs
++++ backend/Valora.Api/Program.cs
+@@ -107,6 +107,7 @@
+ app.MapAdminEndpoints();
+ app.MapUserProfileEndpoints();
+ app.MapWorkspaceEndpoints();
+ app.MapContextReportEndpoints();
++app.MapListingEndpoints();
+
+ // API Endpoints
+ var api = app.MapGroup("/api").RequireRateLimiting("fixed");
