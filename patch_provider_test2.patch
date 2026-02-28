@@ -1,0 +1,22 @@
+--- apps/flutter_app/test/providers/ai_chat_provider_test.dart
++++ apps/flutter_app/test/providers/ai_chat_provider_test.dart
+@@ -1,4 +1,5 @@
+ import 'package:flutter_test/flutter_test.dart';
++import 'dart:async';
+ import 'package:mockito/mockito.dart';
+ import 'package:mockito/annotations.dart';
+ import 'package:valora_app/models/ai_chat_message.dart';
+@@ -95,6 +96,13 @@
+   test('sendMessage returns early if empty', () async {
+     await provider.sendMessage('   ');
+     expect(provider.isSending, isFalse);
++    verifyNever(mockAiService.sendMessage(prompt: anyNamed('prompt')));
++
++    final completer = Completer<Map<String, dynamic>>();
++    when(mockAiService.sendMessage(prompt: anyNamed('prompt'))).thenAnswer((_) => completer.future);
++    provider.sendMessage('valid');
++    provider.sendMessage('concurrent');
++    verify(mockAiService.sendMessage(prompt: 'valid')).called(1);
+   });
+
+   test('setContextReport updates currentContextReport', () {

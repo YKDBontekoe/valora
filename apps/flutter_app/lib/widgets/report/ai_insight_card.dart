@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../models/context_report.dart';
 import '../../providers/context_report_provider.dart';
+import '../../providers/ai_chat_provider.dart';
+import '../../screens/ai_chat/ai_chat_screen.dart';
 import '../common/valora_button.dart';
 import '../common/valora_card.dart';
 import '../common/valora_shimmer.dart';
@@ -45,6 +47,19 @@ class AiInsightCard extends StatelessWidget {
             _MarkdownText(
               key: const Key('ai-summary-text'),
               text: summary,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ValoraButton(
+                label: 'Ask about this report',
+                icon: Icons.chat,
+                variant: ValoraButtonVariant.secondary,
+                onPressed: () {
+                  context.read<AiChatProvider>().setContextReport(report.toJson());
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AiChatScreen()));
+                },
+              ),
             ),
           ],
         ),
