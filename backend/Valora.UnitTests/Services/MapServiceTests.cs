@@ -5,6 +5,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs.Map;
 using Valora.Application.Services;
 using Xunit;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Valora.UnitTests.Services;
 
@@ -13,6 +14,7 @@ public class MapServiceTests
     private readonly Mock<IMapRepository> _repositoryMock;
     private readonly Mock<IAmenityClient> _amenityClientMock;
     private readonly Mock<ICbsGeoClient> _cbsGeoClientMock;
+    private readonly IMemoryCache _memoryCache;
     private readonly IMapService _mapService;
 
     public MapServiceTests()
@@ -20,8 +22,9 @@ public class MapServiceTests
         _repositoryMock = new Mock<IMapRepository>();
         _amenityClientMock = new Mock<IAmenityClient>();
         _cbsGeoClientMock = new Mock<ICbsGeoClient>();
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
 
-        _mapService = new MapService(_repositoryMock.Object, _amenityClientMock.Object, _cbsGeoClientMock.Object);
+        _mapService = new MapService(_repositoryMock.Object, _amenityClientMock.Object, _cbsGeoClientMock.Object, _memoryCache);
     }
 
     [Fact]
@@ -322,5 +325,94 @@ public class MapServiceTests
         Assert.Single(result);
         Assert.Equal(0, result[0].MetricValue);
         Assert.Equal("No listing data", result[0].DisplayValue);
+    }
+
+    [Fact]
+    public async Task GetMapOverlayTilesAsync_ShouldCacheResults()
+    {
+        var geoJson = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0000, 52.0000 },
+                new[] { 5.0100, 52.0000 },
+                new[] { 5.0100, 52.0100 },
+                new[] { 5.0000, 52.0100 },
+                new[] { 5.0000, 52.0000 }
+            }}
+        });
+
+        var dummyOverlays = new List<MapOverlayDto> {
+            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", geoJson)
+        };
+
+        _cbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyOverlays);
+
+        double minLat = 52.0000, minLon = 5.0000;
+        double maxLat = 52.0150, maxLon = 5.0150;
+        double zoom = 13;
+
+        // First call
+        var result1 = await _mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, MapOverlayMetric.PopulationDensity);
+
+        // Second call
+        var result2 = await _mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, MapOverlayMetric.PopulationDensity);
+
+        Assert.NotEmpty(result1);
+        Assert.Equal(result1.Count, result2.Count);
+
+        // Verify client was only called once
+        _cbsGeoClientMock.Verify(x => x.GetNeighborhoodOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMapOverlayTilesAsync_SpatialIndex_ShouldOnlyQueryCandidatePolygons()
+    {
+        // Polygon 1: 5.000 to 5.010
+        var geoJson1 = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0000, 52.0000 },
+                new[] { 5.0100, 52.0000 },
+                new[] { 5.0100, 52.0100 },
+                new[] { 5.0000, 52.0100 },
+                new[] { 5.0000, 52.0000 }
+            }}
+        });
+
+        // Polygon 2: 5.050 to 5.060 (far away)
+        var geoJson2 = JsonSerializer.SerializeToElement(new {
+            type = "Polygon",
+            coordinates = new[] { new[] {
+                new[] { 5.0500, 52.0500 },
+                new[] { 5.0600, 52.0500 },
+                new[] { 5.0600, 52.0600 },
+                new[] { 5.0500, 52.0600 },
+                new[] { 5.0500, 52.0500 }
+            }}
+        });
+
+        var dummyOverlays = new List<MapOverlayDto> {
+            new MapOverlayDto("BU01", "B1", "Pop", 100, "100", geoJson1),
+            new MapOverlayDto("BU02", "B2", "Pop", 200, "200", geoJson2)
+        };
+
+        _cbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            It.IsAny<MapOverlayMetric>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dummyOverlays);
+
+        double minLat = 52.0000, minLon = 5.0000;
+        double maxLat = 52.0150, maxLon = 5.0150; // Querying over Polygon 1 only
+        double zoom = 13;
+
+        var result = await _mapService.GetMapOverlayTilesAsync(minLat, minLon, maxLat, maxLon, zoom, MapOverlayMetric.PopulationDensity);
+
+        Assert.NotEmpty(result);
+        Assert.All(result, tile => Assert.Equal(100, tile.Value)); // Only polygon 1 should be matched
     }
 }

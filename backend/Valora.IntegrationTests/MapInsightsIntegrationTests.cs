@@ -318,4 +318,61 @@ public class MapInsightsIntegrationTests : IAsyncLifetime
         Assert.Contains("5", overlay.DisplayValue);
         Assert.Contains("000", overlay.DisplayValue);
     }
+
+    [Fact]
+    public async Task GetPriceOverlayTiles_CalculatesRasterGridCorrectly()
+    {
+        // Arrange
+        var minLat = 52.000;
+        var minLon = 4.000;
+        var maxLat = 52.010;
+        var maxLon = 4.010;
+
+        await AuthenticateAsync();
+
+        // Mock Geo Client to return a dummy overlay
+        var geoJson = JsonSerializer.SerializeToElement(new
+        {
+            type = "Polygon",
+            coordinates = new[] {
+                new[] {
+                    new[] { minLon, minLat },
+                    new[] { maxLon, minLat },
+                    new[] { maxLon, maxLat },
+                    new[] { minLon, maxLat },
+                    new[] { minLon, minLat }
+                }
+            }
+        });
+
+        var dummyOverlay = new MapOverlayDto(
+            Id: "BU002",
+            Name: "Test Neighborhood Tiles",
+            MetricName: "PopulationDensity",
+            MetricValue: 100, // Placeholder
+            DisplayValue: "100 pop",
+            GeoJson: geoJson);
+
+        _fixture.Factory!.CbsGeoClientMock.Setup(x => x.GetNeighborhoodOverlaysAsync(
+            It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
+            MapOverlayMetric.PopulationDensity, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MapOverlayDto> { dummyOverlay });
+
+        // Act
+        var url = FormattableString.Invariant($"/api/map/overlays/tiles?minLat={minLat}&minLon={minLon}&maxLat={maxLat}&maxLon={maxLon}&zoom=13&metric=PopulationDensity");
+        var response = await Client.GetAsync(url);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<List<MapOverlayTileDto>>();
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+
+        var overlayTile = result.First();
+        Assert.Equal(100, overlayTile.Value);
+        Assert.Equal(0.005, overlayTile.Size);
+        Assert.Equal("100 pop", overlayTile.DisplayValue);
+        Assert.InRange(overlayTile.Latitude, minLat, maxLat);
+        Assert.InRange(overlayTile.Longitude, minLon, maxLon);
+    }
 }
