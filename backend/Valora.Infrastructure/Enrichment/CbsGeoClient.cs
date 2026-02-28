@@ -213,7 +213,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
+                _logger.LogWarning("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
                 var emptyResult = new List<string>();
                 _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
                 return emptyResult;

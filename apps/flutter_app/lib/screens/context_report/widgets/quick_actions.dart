@@ -7,6 +7,7 @@ import '../../../core/theme/valora_colors.dart';
 import '../../../services/pdok_service.dart';
 import '../../../services/location_service.dart';
 import '../../../providers/context_report_provider.dart';
+import '../../../services/crash_reporting_service.dart';
 
 class QuickActions extends StatelessWidget {
   const QuickActions({
@@ -115,7 +116,16 @@ class QuickActions extends StatelessWidget {
           controller.text = address;
           provider.generate(address);
         } else {
-          developer.log('Reverse lookup failed for coordinates: ${position.latitude}, ${position.longitude}');
+          final traceId = DateTime.now().millisecondsSinceEpoch.toString();
+          developer.log('Reverse lookup failed for user location - traceId=$traceId');
+          CrashReportingService.captureException(
+            Exception('Reverse lookup failed'),
+            context: {
+              'latitude': position.latitude,
+              'longitude': position.longitude,
+              'traceId': traceId,
+            },
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Could not resolve an address for your location.'),
