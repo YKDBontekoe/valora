@@ -14,6 +14,7 @@ public static class MapEndpoints
     public static RouteGroupBuilder MapMapEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api/map")
+            .RequireRateLimiting(Valora.Api.Constants.RateLimitPolicies.Strict)
             .WithTags("Map");
 
         group.MapGet("/cities", GetCityInsightsHandler)

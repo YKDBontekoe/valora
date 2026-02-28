@@ -232,7 +232,7 @@ public static class ServiceCollectionExtensions
             var permitLimitFixed = (configFixed.HasValue && configFixed.Value > 0) ? configFixed.Value : (isTesting ? 1000 : 10000);
 
             // Policy: "auth"
-            options.AddPolicy("auth", context =>
+            options.AddPolicy(Valora.Api.Constants.RateLimitPolicies.Auth, context =>
             {
                 var partitionKey = context.User.Identity?.IsAuthenticated == true
                     ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
@@ -249,7 +249,7 @@ public static class ServiceCollectionExtensions
             });
 
             // Policy: "strict"
-            options.AddPolicy("strict", context =>
+            options.AddPolicy(Valora.Api.Constants.RateLimitPolicies.Strict, context =>
             {
                 if (context.User.IsInRole("Admin"))
                 {
@@ -271,7 +271,7 @@ public static class ServiceCollectionExtensions
             });
 
             // Policy: "fixed"
-            options.AddPolicy("fixed", context =>
+            options.AddPolicy(Valora.Api.Constants.RateLimitPolicies.Fixed, context =>
             {
                 if (context.User.IsInRole("Admin"))
                 {
