@@ -26,9 +26,6 @@ class AiChatProvider with ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  String? _lastFailedPrompt;
-  String? get lastFailedPrompt => _lastFailedPrompt;
-
   Map<String, dynamic>? _currentContextReport;
 
   void setContextReport(Map<String, dynamic>? report) {
@@ -39,7 +36,6 @@ class AiChatProvider with ChangeNotifier {
   Future<void> loadHistory() async {
     _isLoadingHistory = true;
     _error = null;
-    _lastFailedPrompt = null;
     notifyListeners();
 
     try {
@@ -56,7 +52,6 @@ class AiChatProvider with ChangeNotifier {
     _activeConversationId = conversationId;
     _activeMessages = [];
     _error = null;
-    _lastFailedPrompt = null;
     notifyListeners();
 
     try {
@@ -73,7 +68,6 @@ class AiChatProvider with ChangeNotifier {
     _activeMessages = [];
     _currentContextReport = null;
     _error = null;
-    _lastFailedPrompt = null;
     notifyListeners();
   }
 
@@ -96,7 +90,6 @@ class AiChatProvider with ChangeNotifier {
     if (prompt.trim().isEmpty) return;
 
     _error = null;
-    _lastFailedPrompt = null;
     _isSending = true;
 
     // Optimistically add user message
@@ -131,7 +124,6 @@ class AiChatProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      _lastFailedPrompt = prompt;
       // Remove the optimistically added user message on failure so they can retry
       _activeMessages.removeLast();
     } finally {
@@ -140,9 +132,7 @@ class AiChatProvider with ChangeNotifier {
     }
   }
 
-  void retryLastMessage() {
-    if (_lastFailedPrompt != null) {
-      sendMessage(_lastFailedPrompt!);
-    }
+  void retryLastMessage(String prompt) {
+    sendMessage(prompt);
   }
 }

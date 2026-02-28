@@ -3,10 +3,14 @@ import '../../models/ai_chat_message.dart';
 
 class AiChatMessageBubble extends StatelessWidget {
   final AiChatMessage message;
+  final VoidCallback? onRetry;
+  final bool isError;
 
   const AiChatMessageBubble({
     super.key,
     required this.message,
+    this.onRetry,
+    this.isError = false,
   });
 
   @override
@@ -29,6 +33,9 @@ class AiChatMessageBubble extends StatelessWidget {
             bottomLeft: isUser ? const Radius.circular(16) : Radius.zero,
             bottomRight: isUser ? Radius.zero : const Radius.circular(16),
           ),
+          border: isError
+              ? Border.all(color: theme.colorScheme.error, width: 2)
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,6 +49,26 @@ class AiChatMessageBubble extends StatelessWidget {
                     : theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (isError && onRetry != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: InkWell(
+                  onTap: onRetry,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh, size: 16, color: theme.colorScheme.error),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Tap to retry',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),

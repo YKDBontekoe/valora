@@ -1,0 +1,51 @@
+--- apps/flutter_app/lib/screens/ai_chat/ai_chat_screen.dart
++++ apps/flutter_app/lib/screens/ai_chat/ai_chat_screen.dart
+@@ -62,21 +62,35 @@
+                   return const Center(
+                     child: Text('How can I help you today?'),
+                   );
+                 }
+
+-                return ListView.builder(
+-                  controller: _scrollController,
+-                  itemCount: messages.length,
+-                  itemBuilder: (context, index) {
+-                    final message = messages[index];
+-                    final isLastError = index == messages.length - 1 && provider.error != null;
+-
+-                    return AiChatMessageBubble(
+-                      message: message,
+-                      isError: isLastError,
+-                      onRetry: isLastError ? () => provider.retryLastMessage(message.content) : null,
+-                    );
+-                  },
++                return Column(
++                  children: [
++                    Expanded(
++                      child: ListView.builder(
++                        controller: _scrollController,
++                        itemCount: messages.length,
++                        itemBuilder: (context, index) {
++                          return AiChatMessageBubble(
++                            message: messages[index],
++                          );
++                        },
++                      ),
++                    ),
++                    if (provider.error != null)
++                      Padding(
++                        padding: const EdgeInsets.all(8.0),
++                        child: ElevatedButton.icon(
++                          onPressed: () {
++                            provider.retryLastMessage();
++                            Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
++                          },
++                          icon: const Icon(Icons.refresh),
++                          label: const Text('Retry'),
++                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100, foregroundColor: Colors.red.shade900),
++                        ),
++                      ),
++                  ],
+                 );
+               },
+             ),

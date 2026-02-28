@@ -1,0 +1,64 @@
+--- apps/flutter_app/lib/providers/ai_chat_provider.dart
++++ apps/flutter_app/lib/providers/ai_chat_provider.dart
+@@ -19,6 +19,9 @@
+
+   String? _error;
+   String? get error => _error;
++
++  String? _lastFailedPrompt;
++  String? get lastFailedPrompt => _lastFailedPrompt;
+
+   Map<String, dynamic>? _currentContextReport;
+
+@@ -34,6 +37,7 @@
+   Future<void> loadHistory() async {
+     _isLoadingHistory = true;
+     _error = null;
++    _lastFailedPrompt = null;
+     notifyListeners();
+
+     try {
+@@ -50,6 +54,7 @@
+     _activeConversationId = conversationId;
+     _activeMessages = [];
+     _error = null;
++    _lastFailedPrompt = null;
+     notifyListeners();
+
+     try {
+@@ -65,6 +70,7 @@
+     _activeMessages = [];
+     _currentContextReport = null;
+     _error = null;
++    _lastFailedPrompt = null;
+     notifyListeners();
+   }
+
+@@ -87,6 +93,7 @@
+     if (prompt.trim().isEmpty) return;
+
+     _error = null;
++    _lastFailedPrompt = null;
+     _isSending = true;
+
+     // Optimistically add user message
+@@ -120,6 +127,7 @@
+       }
+     } catch (e) {
+       _error = e.toString();
++      _lastFailedPrompt = prompt;
+       // Remove the optimistically added user message on failure so they can retry
+       _activeMessages.removeLast();
+     } finally {
+@@ -128,7 +136,9 @@
+     }
+   }
+
+-  void retryLastMessage(String prompt) {
+-    sendMessage(prompt);
++  void retryLastMessage() {
++    if (_lastFailedPrompt != null) {
++      sendMessage(_lastFailedPrompt!);
++    }
+   }
+ }

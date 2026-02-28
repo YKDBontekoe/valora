@@ -75,7 +75,7 @@ class AiService {
     Map<String, dynamic>? contextReport,
   }) async {
     final body = {
-      'conversationId': conversationId,
+      if (conversationId != null) 'conversationId': conversationId,
       'prompt': prompt,
       'intent': intent,
       'history': history?.map((msg) => msg.toJson()).toList(),
