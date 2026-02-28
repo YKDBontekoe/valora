@@ -25,6 +25,12 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
   bool _isSubmitting = false;
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
@@ -225,13 +231,15 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
   }
 
   Future<void> _submit() async {
-    if (_controller.text.isEmpty) return;
+    if (_isSubmitting) return;
+    final content = _controller.text.trim();
+    if (content.isEmpty) return;
 
     setState(() => _isSubmitting = true);
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await context.read<WorkspaceProvider>().addComment(widget.savedListingId, _controller.text, _replyToId);
+      await context.read<WorkspaceProvider>().addComment(widget.savedListingId, content, _replyToId);
       if (!mounted) return;
       _controller.clear();
       setState(() => _replyToId = null);

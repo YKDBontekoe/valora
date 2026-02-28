@@ -16,6 +16,11 @@ void main() {
     );
   }
 
+  Future<void> pumpEmptyWidget(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('renders empty state when members list is empty', (tester) async {
     await tester.pumpWidget(createWidgetUnderTest(members: []));
     await tester.pumpAndSettle();
@@ -23,8 +28,7 @@ void main() {
     expect(find.byType(ValoraEmptyState), findsOneWidget);
     expect(find.text('No members yet'), findsOneWidget);
 
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await pumpEmptyWidget(tester);
   });
 
   testWidgets('renders list of members', (tester) async {
@@ -43,8 +47,7 @@ void main() {
     expect(find.text('VIEWER'), findsOneWidget);
     expect(find.text('Pending'), findsOneWidget);
 
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await pumpEmptyWidget(tester);
   });
 
   testWidgets('shows invite button if canInvite is true', (tester) async {
@@ -57,8 +60,7 @@ void main() {
     // Dialog tap logic removed since ShareWorkspaceDialog has a Provider dependency.
     // Testing provider injection in a widget test is beyond the scope of a simple visual test
 
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await pumpEmptyWidget(tester);
   });
 
   testWidgets('does not show invite button if canInvite is false', (tester) async {
@@ -67,7 +69,6 @@ void main() {
 
     expect(find.widgetWithText(ValoraButton, 'Invite Member'), findsNothing);
 
-    await tester.pumpWidget(const SizedBox());
-    await tester.pumpAndSettle();
+    await pumpEmptyWidget(tester);
   });
 }
