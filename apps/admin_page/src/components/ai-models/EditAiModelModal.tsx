@@ -2,9 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, X, Check, AlertCircle, Save } from 'lucide-react';
 import Button from '../Button';
-import type { AiModelConfig, AiModel } from '../../services/api';
-
-type SortOption = 'name' | 'price_asc' | 'price_desc';
+import type { AiModelConfig, AiModel, SortOption } from '../../services/api';
 
 interface EditAiModelModalProps {
   editingConfig: AiModelConfig;

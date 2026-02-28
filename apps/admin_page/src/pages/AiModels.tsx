@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { aiService, type AiModelConfig, type AiModel } from '../services/api';
+import { aiService, type AiModelConfig, type AiModel, type SortOption } from '../services/api';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
 import { Plus } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import AiModelsTable from '../components/ai-models/AiModelsTable';
 import EditAiModelModal from '../components/ai-models/EditAiModelModal';
-
-type SortOption = 'name' | 'price_asc' | 'price_desc';
 
 const AiModels: React.FC = () => {
   const [configs, setConfigs] = useState<AiModelConfig[]>([]);
@@ -92,8 +90,9 @@ const AiModels: React.FC = () => {
             fallbackModels: [],
             description: '',
             isEnabled: true,
-            safetySettings: ''
-          })}
+            safetySettings: '',
+            _clientId: Date.now().toString()
+          } as AiModelConfig & { _clientId?: string })}
           variant="secondary"
           leftIcon={<Plus size={20} />}
           className="px-8 py-4"
