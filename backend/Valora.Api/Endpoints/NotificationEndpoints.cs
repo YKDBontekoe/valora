@@ -10,7 +10,8 @@ public static class NotificationEndpoints
     public static void MapNotificationEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/notifications")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting("fixed");
 
         group.MapGet("/", async (
             INotificationService service,
