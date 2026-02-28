@@ -7,6 +7,7 @@ import '../../../core/theme/valora_colors.dart';
 import '../../../services/pdok_service.dart';
 import '../../../services/location_service.dart';
 import '../../../providers/context_report_provider.dart';
+import '../../../services/crash_reporting_service.dart';
 
 class QuickActions extends StatelessWidget {
   const QuickActions({
@@ -40,23 +41,38 @@ class QuickActions extends StatelessWidget {
         ),
       );
 
-      final String? address =
-          await pdokService.reverseLookup(result.latitude, result.longitude);
+      try {
+        final String? address =
+            await pdokService.reverseLookup(result.latitude, result.longitude);
 
-      if (!context.mounted) return;
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-      if (address != null) {
-        controller.text = address;
-        provider.generate(address);
-      } else {
+        if (address != null) {
+          controller.text = address;
+          provider.generate(address);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'Could not resolve an address. Try searching by text.'),
+              backgroundColor: ValoraColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } catch (e, stackTrace) {
+        developer.log('Unexpected error in _pickLocation', error: e, stackTrace: stackTrace);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-                'Could not resolve an address. Try searching by text.'),
+            content: const Text('Could not determine location.'),
             backgroundColor: ValoraColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -87,21 +103,45 @@ class QuickActions extends StatelessWidget {
         ),
       );
 
-      final address = await pdokService.reverseLookup(
-        position.latitude,
-        position.longitude,
-      );
+      try {
+        final address = await pdokService.reverseLookup(
+          position.latitude,
+          position.longitude,
+        );
 
-      if (!context.mounted) return;
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-      if (address != null) {
-        controller.text = address;
-        provider.generate(address);
-      } else {
-        developer.log('Reverse lookup failed for coordinates: ${position.latitude}, ${position.longitude}');
+        if (address != null) {
+          controller.text = address;
+          provider.generate(address);
+        } else {
+          final traceId = DateTime.now().millisecondsSinceEpoch.toString();
+          developer.log('Reverse lookup failed for user location - traceId=$traceId');
+          CrashReportingService.captureException(
+            Exception('Reverse lookup failed'),
+            context: {
+              'latitude': position.latitude,
+              'longitude': position.longitude,
+              'traceId': traceId,
+            },
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Could not resolve an address for your location.'),
+              backgroundColor: ValoraColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } catch (e, stackTrace) {
+        developer.log('Unexpected error in _useMyLocation reverseLookup', error: e, stackTrace: stackTrace);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Could not resolve an address for your location.'),
+            content: const Text('Could not determine location.'),
             backgroundColor: ValoraColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -111,6 +151,7 @@ class QuickActions extends StatelessWidget {
     } on ValoraLocationServiceDisabledException catch (e) {
       developer.log('Location service disabled', error: e);
       if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
@@ -122,6 +163,7 @@ class QuickActions extends StatelessWidget {
     } on ValoraPermissionDeniedException catch (e) {
       developer.log('Location permission denied', error: e);
       if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
@@ -133,6 +175,7 @@ class QuickActions extends StatelessWidget {
     } on ValoraPermissionDeniedForeverException catch (e) {
       developer.log('Location permission denied forever', error: e);
       if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
@@ -144,6 +187,7 @@ class QuickActions extends StatelessWidget {
     } catch (e, stackTrace) {
       developer.log('Unexpected error in _useMyLocation', error: e, stackTrace: stackTrace);
       if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Could not determine location.'),
