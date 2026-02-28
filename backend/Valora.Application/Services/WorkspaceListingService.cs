@@ -2,6 +2,7 @@ using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
+using Valora.Application.Common.Extensions;
 
 namespace Valora.Application.Services;
 
@@ -37,7 +38,7 @@ public class WorkspaceListingService : IWorkspaceListingService
         };
 
         await _repository.AddSavedListingAsync(savedListing, ct);
-        await LogActivityAsync(workspaceId, userId, ActivityLogType.ListingSaved, $"Saved listing {listing.Address}", ct);
+        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.ListingSaved, $"Saved listing {listing.Address}", ct);
 
         await _repository.SaveChangesAsync(ct);
         await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.ReportSavedToWorkspaceEvent(workspaceId, listingId, userId), ct);
@@ -63,7 +64,7 @@ public class WorkspaceListingService : IWorkspaceListingService
             throw new NotFoundException(nameof(SavedListing), savedListingId);
 
         await _repository.RemoveSavedListingAsync(savedListing, ct);
-        await LogActivityAsync(workspaceId, userId, ActivityLogType.ListingRemoved, $"Removed listing {savedListing.Listing?.Address ?? "Unknown"}", ct);
+        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.ListingRemoved, $"Removed listing {savedListing.Listing?.Address ?? "Unknown"}", ct);
         await _repository.SaveChangesAsync(ct);
     }
 
@@ -92,7 +93,7 @@ public class WorkspaceListingService : IWorkspaceListingService
         };
 
         await _repository.AddCommentAsync(comment, ct);
-        await LogActivityAsync(workspaceId, userId, ActivityLogType.CommentAdded, "Added a comment", ct);
+        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.CommentAdded, "Added a comment", ct);
 
         await _repository.SaveChangesAsync(ct);
         await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.CommentAddedEvent(workspaceId, savedListingId, comment.Id, userId, comment.Content, comment.ParentCommentId), ct);
@@ -152,19 +153,6 @@ public class WorkspaceListingService : IWorkspaceListingService
     private async Task<WorkspaceRole> GetUserRole(string userId, Guid workspaceId, CancellationToken ct)
     {
         return await _repository.GetUserRoleAsync(workspaceId, userId, ct);
-    }
-
-    private async Task LogActivityAsync(Guid? workspaceId, string actorId, ActivityLogType type, string summary, CancellationToken ct)
-    {
-        var log = new ActivityLog
-        {
-            WorkspaceId = workspaceId,
-            ActorId = actorId,
-            Type = type,
-            Summary = summary,
-            CreatedAt = DateTime.UtcNow
-        };
-        await _repository.LogActivityAsync(log, ct);
     }
 
     private SavedListingDto MapToSavedListingDto(SavedListing sl, Listing? l = null)

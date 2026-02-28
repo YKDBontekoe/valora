@@ -88,14 +88,14 @@ public class MapService : IMapService
                 Lat: Math.Floor(a.Latitude / cellSize),
                 Lon: Math.Floor(a.Longitude / cellSize)
             ))
-            .Select(g =>
+            .Select(groupedAmenities =>
             {
-                var count = g.Count();
-                var lat = (g.Key.Lat * cellSize) + (cellSize / 2);
-                var lon = (g.Key.Lon * cellSize) + (cellSize / 2);
+                var count = groupedAmenities.Count();
+                var lat = (groupedAmenities.Key.Lat * cellSize) + (cellSize / 2);
+                var lon = (groupedAmenities.Key.Lon * cellSize) + (cellSize / 2);
 
-                var typeCounts = g.GroupBy(a => a.Type)
-                    .ToDictionary(tg => tg.Key, tg => tg.Count());
+                var typeCounts = groupedAmenities.GroupBy(a => a.Type)
+                    .ToDictionary(typeGroup => typeGroup.Key, typeGroup => typeGroup.Count());
 
                 return new MapAmenityClusterDto(lat, lon, count, typeCounts);
             })
@@ -137,20 +137,20 @@ public class MapService : IMapService
         var tiles = new List<MapOverlayTileDto>();
 
         // Pre-parse geometries for performance
-        var parsedOverlays = overlays.Select(o =>
-            (Dto: o, Geometry: GeoUtils.ParseGeometry(o.GeoJson))
+        var parsedOverlays = overlays.Select(overlay =>
+            (Dto: overlay, Geometry: GeoUtils.ParseGeometry(overlay.GeoJson))
         ).ToList();
 
         // Build spatial index
         double indexCellSize = cellSize * 5; // e.g., 5x tile size for the index grid
         var spatialIndex = new Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>>();
 
-        foreach (var po in parsedOverlays)
+        foreach (var parsedOverlay in parsedOverlays)
         {
-            int minX = (int)Math.Floor(po.Geometry.BBox.MinLon / indexCellSize);
-            int maxX = (int)Math.Floor(po.Geometry.BBox.MaxLon / indexCellSize);
-            int minY = (int)Math.Floor(po.Geometry.BBox.MinLat / indexCellSize);
-            int maxY = (int)Math.Floor(po.Geometry.BBox.MaxLat / indexCellSize);
+            int minX = (int)Math.Floor(parsedOverlay.Geometry.BBox.MinLon / indexCellSize);
+            int maxX = (int)Math.Floor(parsedOverlay.Geometry.BBox.MaxLon / indexCellSize);
+            int minY = (int)Math.Floor(parsedOverlay.Geometry.BBox.MinLat / indexCellSize);
+            int maxY = (int)Math.Floor(parsedOverlay.Geometry.BBox.MaxLat / indexCellSize);
 
             for (int y = minY; y <= maxY; y++)
             {
@@ -162,7 +162,7 @@ public class MapService : IMapService
                         list = new List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>();
                         spatialIndex[key] = list;
                     }
-                    list.Add(po);
+                    list.Add(parsedOverlay);
                 }
             }
         }
@@ -178,30 +178,41 @@ public class MapService : IMapService
                 int gridX = (int)Math.Floor(lon / indexCellSize);
                 var key = (gridX, gridY);
 
-                if (spatialIndex.TryGetValue(key, out var candidates))
-                {
-                    // Simple point-in-polygon check for the center of the tile on candidates only
-                    var overlayIndex = candidates.FindIndex(o =>
-                        GeoUtils.IsPointInPolygon(lat, lon, o.Geometry));
-
-                    if (overlayIndex >= 0)
-                    {
-                        var overlay = candidates[overlayIndex];
-                        tiles.Add(new MapOverlayTileDto(
-                            lat,
-                            lon,
-                            cellSize,
-                            overlay.Dto.MetricValue,
-                            overlay.Dto.DisplayValue
-                        ));
-                    }
-                }
+                FindOverlayForPoint(lat, lon, cellSize, key, spatialIndex, tiles);
             }
         }
 
         var readOnlyTiles = tiles.ToArray();
         _cache.Set(cacheKey, readOnlyTiles, TimeSpan.FromMinutes(10));
         return readOnlyTiles;
+    }
+
+    private static void FindOverlayForPoint(
+        double lat,
+        double lon,
+        double cellSize,
+        (int, int) key,
+        Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>> spatialIndex,
+        List<MapOverlayTileDto> tiles)
+    {
+        if (spatialIndex.TryGetValue(key, out var candidates))
+        {
+            // Simple point-in-polygon check for the center of the tile on candidates only
+            var overlayIndex = candidates.FindIndex(o =>
+                GeoUtils.IsPointInPolygon(lat, lon, o.Geometry));
+
+            if (overlayIndex >= 0)
+            {
+                var overlay = candidates[overlayIndex];
+                tiles.Add(new MapOverlayTileDto(
+                    lat,
+                    lon,
+                    cellSize,
+                    overlay.Dto.MetricValue,
+                    overlay.Dto.DisplayValue
+                ));
+            }
+        }
     }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(

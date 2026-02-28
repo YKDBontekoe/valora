@@ -88,8 +88,6 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Generate new access token and lookup roles first
-        // If above operations succeed, then rotate refresh token
         var authResponse = await GenerateAuthResponseAsync(storedToken.User);
 
         // Only revoke old token AFTER the new one is successfully generated and persisted
@@ -115,7 +113,6 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Check if expired
         if (storedToken.Expires <= _timeProvider.GetUtcNow().UtcDateTime)
         {
             return null;
