@@ -11,7 +11,7 @@ import '../models/activity_log.dart';
 import '../models/workspace.dart';
 import '../models/saved_listing.dart';
 import '../widgets/workspaces/member_management_widget.dart';
-import 'saved_listing_detail_screen.dart';
+import 'property_wrapper_screen.dart';
 
 class WorkspaceDetailScreen extends StatefulWidget {
   final String workspaceId;
@@ -155,7 +155,7 @@ class _SavedListingsTab extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => ChangeNotifierProvider.value(
                       value: context.read<WorkspaceProvider>(),
-                      child: SavedListingDetailScreen(savedListing: saved),
+                      child: PropertyWrapperScreen(listingId: listing!.id),
                     ),
                   ),
                 );
