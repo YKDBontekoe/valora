@@ -52,11 +52,17 @@ class NotificationItem extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    _formatTime(notification.createdAt),
-                    style: ValoraTypography.labelSmall.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
+                  Row(
+                    children: [
+                      _buildCategoryBadge(context),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTime(notification.createdAt),
+                        style: ValoraTypography.labelSmall.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -71,6 +77,48 @@ class NotificationItem extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildCategoryBadge(BuildContext context) {
+    final String label;
+    final Color color;
+
+    switch (notification.type) {
+      case NotificationType.priceDrop:
+        label = 'Price Drop';
+        color = ValoraColors.success;
+        break;
+      case NotificationType.newListing:
+        label = 'New Listing';
+        color = ValoraColors.primary;
+        break;
+      case NotificationType.system:
+        label = 'System';
+        color = ValoraColors.neutral500;
+        break;
+      case NotificationType.info:
+        label = 'Info';
+        color = ValoraColors.info;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        label,
+        style: ValoraTypography.labelSmall.copyWith(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

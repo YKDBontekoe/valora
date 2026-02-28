@@ -316,3 +316,16 @@ Errors are returned in the standard `ProblemDetails` format (RFC 7807).
   }
 }
 ```
+
+## Event Catalog (Domain Events)
+
+The following events are dispatched within the application layer using `IEventDispatcher` and handled in the infrastructure layer (e.g., `NotificationEventHandlers`).
+
+| Event | Dispatched By | Handled By | Action |
+| --- | --- | --- | --- |
+| `WorkspaceInviteAcceptedEvent` | `WorkspaceMemberService` | `NotificationEventHandlers` | Sends Info notification to inviter |
+| `CommentAddedEvent` | `WorkspaceListingService` | `NotificationEventHandlers` | Sends Info notification to all other workspace members |
+| `ReportSavedToWorkspaceEvent` | `WorkspaceListingService` | `NotificationEventHandlers` | Sends Info notification to all other workspace members |
+| `BatchJobCompletedEvent` | `BatchJobExecutor` | `NotificationEventHandlers` | Logs completion for sysadmin |
+| `BatchJobFailedEvent` | `BatchJobExecutor` | `NotificationEventHandlers` | Logs failure and error message |
+| `AiAnalysisCompletedEvent` | `ContextAnalysisService` | `NotificationEventHandlers` | Sends System notification to requesting user |

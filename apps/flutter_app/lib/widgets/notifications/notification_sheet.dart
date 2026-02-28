@@ -6,6 +6,8 @@ import '../../core/theme/valora_typography.dart';
 import '../../services/notification_service.dart';
 import '../valora_widgets.dart';
 import 'notification_item.dart';
+import '../../screens/workspace_detail_screen.dart';
+import '../../screens/context_report/context_report_screen.dart';
 
 class NotificationSheet extends StatefulWidget {
   const NotificationSheet({super.key});
@@ -199,7 +201,39 @@ class _NotificationSheetState extends State<NotificationSheet> {
                               service.markAsRead(notification.id);
                             }
                             if (notification.actionUrl != null) {
-                              final uri = Uri.parse(notification.actionUrl!);
+                              final actionUrl = notification.actionUrl!;
+                              if (actionUrl.startsWith('/workspaces/')) {
+                                final parts = actionUrl.split('/');
+                                if (parts.length >= 3) {
+                                  final workspaceId = parts[2];
+                                  Navigator.pop(context); // Close sheet
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => WorkspaceDetailScreen(
+                                        workspaceId: workspaceId,
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              } else if (actionUrl.startsWith('/reports')) {
+                                final uri = Uri.parse(actionUrl);
+                                final query = uri.queryParameters['q'];
+
+                                if (query != null && query.isNotEmpty) {
+                                  Navigator.pop(context); // Close sheet
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ContextReportScreen(),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              final uri = Uri.parse(actionUrl);
                               if (await canLaunchUrl(uri)) {
                                 await launchUrl(uri);
                               }

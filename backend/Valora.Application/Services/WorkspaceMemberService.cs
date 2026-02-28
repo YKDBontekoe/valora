@@ -9,11 +9,13 @@ public class WorkspaceMemberService : IWorkspaceMemberService
 {
     private readonly IWorkspaceRepository _repository;
     private readonly IIdentityService _identityService;
+    private readonly IEventDispatcher _eventDispatcher;
 
-    public WorkspaceMemberService(IWorkspaceRepository repository, IIdentityService identityService)
+    public WorkspaceMemberService(IWorkspaceRepository repository, IIdentityService identityService, IEventDispatcher eventDispatcher)
     {
         _repository = repository;
         _identityService = identityService;
+        _eventDispatcher = eventDispatcher;
     }
 
     public async Task<List<WorkspaceMemberDto>> GetMembersAsync(string userId, Guid workspaceId, CancellationToken ct = default)
@@ -54,6 +56,12 @@ public class WorkspaceMemberService : IWorkspaceMemberService
         await _repository.AddMemberAsync(member, ct);
         await LogActivityAsync(workspaceId, userId, ActivityLogType.MemberInvited, $"Invited a new member as {dto.Role}", ct);
         await _repository.SaveChangesAsync(ct);
+
+        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
+        if (workspace != null && invitedUser != null && member.JoinedAt != null)
+        {
+            await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.WorkspaceInviteAcceptedEvent(workspaceId, workspace.Name, userId, member.UserId!, dto.Email), ct);
+        }
     }
 
     public async Task RemoveMemberAsync(string userId, Guid workspaceId, Guid memberId, CancellationToken ct = default)

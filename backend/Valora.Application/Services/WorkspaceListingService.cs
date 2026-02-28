@@ -8,10 +8,12 @@ namespace Valora.Application.Services;
 public class WorkspaceListingService : IWorkspaceListingService
 {
     private readonly IWorkspaceRepository _repository;
+    private readonly IEventDispatcher _eventDispatcher;
 
-    public WorkspaceListingService(IWorkspaceRepository repository)
+    public WorkspaceListingService(IWorkspaceRepository repository, IEventDispatcher eventDispatcher)
     {
         _repository = repository;
+        _eventDispatcher = eventDispatcher;
     }
 
     public async Task<SavedListingDto> SaveListingAsync(string userId, Guid workspaceId, Guid listingId, string? notes, CancellationToken ct = default)
@@ -38,6 +40,7 @@ public class WorkspaceListingService : IWorkspaceListingService
         await LogActivityAsync(workspaceId, userId, ActivityLogType.ListingSaved, $"Saved listing {listing.Address}", ct);
 
         await _repository.SaveChangesAsync(ct);
+        await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.ReportSavedToWorkspaceEvent(workspaceId, listingId, userId), ct);
 
         return MapToSavedListingDto(savedListing, listing);
     }
@@ -92,6 +95,7 @@ public class WorkspaceListingService : IWorkspaceListingService
         await LogActivityAsync(workspaceId, userId, ActivityLogType.CommentAdded, "Added a comment", ct);
 
         await _repository.SaveChangesAsync(ct);
+        await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.CommentAddedEvent(workspaceId, savedListingId, comment.Id, userId, comment.Content, comment.ParentCommentId), ct);
 
         return new CommentDto(
             comment.Id,
