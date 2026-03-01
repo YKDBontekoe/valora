@@ -25,13 +25,13 @@ public class BaseIntegrationTest : IAsyncLifetime
 
     public virtual async Task InitializeAsync()
     {
-        // Simple cleanup of Listings table before each test
+        // Simple cleanup of Properties table before each test
         // In a real scenario, Respawn is better, but this avoids adding a package dependency now.
 
         DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
         DbContext.Notifications.RemoveRange(DbContext.Notifications);
-        // Explicitly clear Listings to prevent state leakage between tests
-        DbContext.Listings.RemoveRange(DbContext.Listings);
+        // Explicitly clear Properties to prevent state leakage between tests
+        DbContext.Properties.RemoveRange(DbContext.Properties);
 
         // Clear BatchJobs to prevent state leakage between tests (e.g. BatchJobLifecycleTests)
         DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
@@ -43,7 +43,7 @@ public class BaseIntegrationTest : IAsyncLifetime
         await DbContext.SaveChangesAsync();
     }
 
-    protected async Task AuthenticateAsync(string email = "test@example.com", string password = "Password123!")
+    protected async Task<string> AuthenticateAsync(string email = "test@example.com", string password = "Password123!")
     {
         var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new
         {
@@ -66,6 +66,12 @@ public class BaseIntegrationTest : IAsyncLifetime
             throw new InvalidOperationException("Failed to extract auth token from login response");
         }
         Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
+
+        using var scope = Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null) throw new InvalidOperationException($"User with email {email} not found after registration/login.");
+        return user.Id;
     }
 
     protected async Task AuthenticateAsAdminAsync()

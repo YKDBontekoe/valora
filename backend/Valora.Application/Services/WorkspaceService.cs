@@ -104,7 +104,7 @@ public class WorkspaceService : IWorkspaceService
             w.OwnerId,
             w.CreatedAt,
             w.Members.Count,
-            w.SavedListings.Count
+            w.SavedProperties.Count
         );
     }
 }

@@ -82,7 +82,9 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             // Add DbContext
             if (_connectionString.StartsWith("InMemory"))
             {
-                var dbName = _connectionString.Contains(":") ? _connectionString.Split(':')[1] : "ValoraIntegrationTestDb";
+                var dbName = _connectionString.Contains(":") 
+                    ? _connectionString.Split(':')[1] 
+                    : $"ValoraIntegrationTestDb_{Guid.NewGuid()}";
                 services.AddDbContext<ValoraDbContext>(options =>
                     options.UseInMemoryDatabase(dbName)
                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));

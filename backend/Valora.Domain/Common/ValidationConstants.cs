@@ -27,6 +27,14 @@ public static class ValidationConstants
         public const int FundaIdMaxLength = 50;
     }
 
+    public static class Property
+    {
+        public const int AddressMaxLength = 200;
+        public const int CityMaxLength = 100;
+        public const int PostalCodeMaxLength = 20;
+        public const int BagIdMaxLength = 50;
+    }
+
     public static class Notification
     {
         public const int UserIdMaxLength = 450;

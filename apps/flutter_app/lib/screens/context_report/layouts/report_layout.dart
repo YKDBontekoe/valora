@@ -6,6 +6,7 @@ import '../../../widgets/report/context_report_skeleton.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/compare_button.dart';
 import '../widgets/save_search_button.dart';
+import '../widgets/save_to_workspace_button.dart';
 
 class ReportLayout extends StatelessWidget {
   const ReportLayout({
@@ -49,6 +50,9 @@ class ReportLayout extends StatelessWidget {
                 const SizedBox(width: 8),
                 // Save Search Button
                 SaveSearchButton(provider: provider),
+                const SizedBox(width: 8),
+                // Save to Workspace Button
+                SaveToWorkspaceButton(provider: provider),
                 const SizedBox(width: 8),
                 // Compare toggle
                 CompareButton(provider: provider),

@@ -4,7 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
 import 'package:valora_app/repositories/workspace_repository.dart';
 import 'package:valora_app/models/workspace.dart';
-import 'package:valora_app/models/saved_listing.dart';
+import 'package:valora_app/models/saved_property.dart';
 import 'package:valora_app/models/comment.dart';
 
 @GenerateMocks([WorkspaceRepository])
@@ -80,7 +80,7 @@ void main() {
         )
       );
       when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
 
       await provider.selectWorkspace('1');
@@ -102,7 +102,7 @@ void main() {
         )
       );
       when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
 
       await provider.selectWorkspace('1');
@@ -126,7 +126,7 @@ void main() {
       expect(provider.members.first.email, 'test@example.com');
     });
 
-    test('saveListing calls API and refreshes listings', () async {
+    test('saveProperty calls API and refreshes listings', () async {
       // Setup selected workspace
       when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
         Workspace(
@@ -139,27 +139,27 @@ void main() {
         )
       );
       when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
       await provider.selectWorkspace('1');
 
       // Setup save call
-      when(mockRepository.saveListing(any, any, any)).thenAnswer((_) async {});
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => [
-        SavedListing(
+      when(mockRepository.saveProperty(any, any, any)).thenAnswer((_) async {});
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => [
+        SavedProperty(
           id: 'sl1',
-          listingId: 'l1',
+          propertyId: 'l1',
           addedByUserId: 'u1',
           addedAt: DateTime.now(),
           commentCount: 0,
-          listing: ListingSummary(id: 'l1', address: '123 St')
+          property: PropertySummary(id: 'l1', address: '123 St')
         )
       ]);
 
-      await provider.saveListing('l1', 'notes');
+      await provider.saveProperty('l1', 'notes');
 
-      expect(provider.savedListings.length, 1);
-      expect(provider.savedListings.first.listingId, 'l1');
+      expect(provider.savedProperties.length, 1);
+      expect(provider.savedProperties.first.propertyId, 'l1');
     });
 
     test('addComment calls API', () async {
@@ -175,7 +175,7 @@ void main() {
         )
       );
       when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
       await provider.selectWorkspace('1');
 
@@ -199,7 +199,7 @@ void main() {
         )
       );
       when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
-      when(mockRepository.getWorkspaceListings('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
       await provider.selectWorkspace('1');
 

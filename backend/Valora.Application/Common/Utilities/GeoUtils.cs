@@ -6,7 +6,7 @@ namespace Valora.Application.Common.Utilities;
 
 public static class GeoUtils
 {
-    private const double MaxSpan = 0.5;
+    private const double MaxSpan = 1.0;
 
     public class ParsedGeometry
     {
@@ -239,7 +239,7 @@ public static class GeoUtils
 
         if (maxLat - minLat > MaxSpan || lonSpan > MaxSpan)
         {
-            throw new ValidationException($"Bounding box span too large. Maximum allowed is {MaxSpan} degrees.");
+            throw new ValidationException(string.Create(CultureInfo.InvariantCulture, $"Bounding box span too large. Maximum allowed is {MaxSpan} degrees."));
         }
     }
 }

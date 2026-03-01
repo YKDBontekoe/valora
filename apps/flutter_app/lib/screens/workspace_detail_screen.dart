@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
 import '../providers/workspace_provider.dart';
+import '../providers/context_report_provider.dart';
+import '../screens/context_report/context_report_screen.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
 import '../models/activity_log.dart';
 import '../models/workspace.dart';
-import '../models/saved_listing.dart';
+import '../models/saved_property.dart';
 import '../widgets/workspaces/member_management_widget.dart';
-import 'saved_listing_detail_screen.dart';
 
 class WorkspaceDetailScreen extends StatefulWidget {
   final String workspaceId;
@@ -111,7 +111,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
           return TabBarView(
             controller: _tabController,
             children: const [
-              _SavedListingsTab(),
+              _SavedPropertiesTab(),
               _MembersTab(),
               _ActivityTab(),
             ],
@@ -122,73 +122,58 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
   }
 }
 
-class _SavedListingsTab extends StatelessWidget {
-  const _SavedListingsTab();
+class _SavedPropertiesTab extends StatelessWidget {
+  const _SavedPropertiesTab();
 
   @override
   Widget build(BuildContext context) {
-    return Selector<WorkspaceProvider, List<SavedListing>>(
-      selector: (_, p) => p.savedListings,
-      builder: (context, savedListings, child) {
+    return Selector<WorkspaceProvider, List<SavedProperty>>(
+      selector: (_, p) => p.savedProperties,
+      builder: (context, savedProperties, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        if (savedListings.isEmpty) {
+        if (savedProperties.isEmpty) {
           return Center(
             child: ValoraEmptyState(
               icon: Icons.bookmark_add_rounded,
-              title: 'No saved listings',
-              subtitle: 'Properties you save to this workspace will appear here.',
+              title: 'No saved properties',
+              subtitle: 'Reports you save to this workspace will appear here.',
             ),
           );
         }
         return ListView.separated(
           padding: const EdgeInsets.all(ValoraSpacing.md),
-          itemCount: savedListings.length,
+          itemCount: savedProperties.length,
           separatorBuilder: (_, _) => const SizedBox(height: ValoraSpacing.sm),
           itemBuilder: (context, index) {
-            final saved = savedListings[index];
-            final listing = saved.listing;
+            final saved = savedProperties[index];
+            final property = saved.property;
             return ValoraCard(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider.value(
-                      value: context.read<WorkspaceProvider>(),
-                      child: SavedListingDetailScreen(savedListing: saved),
+                if (property != null) {
+                  context.read<ContextReportProvider>().selectReport(property.address);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ContextReportScreen(),
                     ),
-                  ),
-                );
+                  );
+                }
               },
               padding: const EdgeInsets.all(ValoraSpacing.md),
               child: Row(
                 children: [
-                  // Thumbnail
+                  // Icon instead of Funda image
                   Container(
-                    width: 64,
-                    height: 64,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: ValoraColors.primary.withValues(alpha: 0.08),
+                      color: ValoraColors.primary.withValues(alpha: 0.1),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: listing?.imageUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: listing!.imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const ValoraShimmer(
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Icon(Icons.home_rounded,
-                                  color: ValoraColors.primary, size: 28),
-                            ),
-                          )
-                        : const Center(
-                            child: Icon(Icons.home_rounded,
-                                color: ValoraColors.primary, size: 28),
-                          ),
+                    child: const Center(
+                      child: Icon(Icons.location_on_rounded, color: ValoraColors.primary),
+                    ),
                   ),
                   const SizedBox(width: ValoraSpacing.md),
                   Expanded(
@@ -196,28 +181,33 @@ class _SavedListingsTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          listing?.address ?? 'Unknown Address',
+                          property?.address ?? 'Unknown Address',
                           style: ValoraTypography.titleSmall.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (listing?.city != null &&
-                            listing!.city!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            listing.city!,
-                            style: ValoraTypography.bodySmall.copyWith(
-                              color: isDark
-                                  ? ValoraColors.neutral400
-                                  : ValoraColors.neutral500,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
+                            if (property?.compositeScore != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: ValoraColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  property!.compositeScore!.toStringAsFixed(0),
+                                  style: ValoraTypography.labelSmall.copyWith(
+                                    color: ValoraColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             Icon(Icons.chat_bubble_outline_rounded,
                                 size: 14,
                                 color: isDark
@@ -225,35 +215,13 @@ class _SavedListingsTab extends StatelessWidget {
                                     : ValoraColors.neutral400),
                             const SizedBox(width: 4),
                             Text(
-                              '${saved.commentCount} comments',
+                              '${saved.commentCount}',
                               style: ValoraTypography.labelSmall.copyWith(
                                 color: isDark
                                     ? ValoraColors.neutral500
                                     : ValoraColors.neutral400,
                               ),
                             ),
-                            if (saved.notes != null &&
-                                saved.notes!.isNotEmpty) ...[
-                              const SizedBox(width: 12),
-                              Icon(Icons.note_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? ValoraColors.neutral500
-                                      : ValoraColors.neutral400),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  saved.notes!,
-                                  style: ValoraTypography.labelSmall.copyWith(
-                                    color: isDark
-                                        ? ValoraColors.neutral500
-                                        : ValoraColors.neutral400,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ],

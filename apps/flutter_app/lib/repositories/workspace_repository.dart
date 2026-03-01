@@ -1,6 +1,6 @@
 import 'dart:convert';
 import '../models/workspace.dart';
-import '../models/saved_listing.dart';
+import '../models/saved_property.dart';
 import '../models/comment.dart';
 import '../models/activity_log.dart';
 import '../services/api_client.dart';
@@ -59,13 +59,13 @@ class WorkspaceRepository {
     );
   }
 
-  Future<List<SavedListing>> getWorkspaceListings(String id) async {
-    final response = await _client.get('/api/workspaces/$id/listings');
+  Future<List<SavedProperty>> getWorkspaceProperties(String id) async {
+    final response = await _client.get('/api/workspaces/$id/properties');
     return _client.handleResponse(
       response,
       (body) {
         final List<dynamic> jsonList = json.decode(body);
-        return jsonList.map((e) => SavedListing.fromJson(e)).toList();
+        return jsonList.map((e) => SavedProperty.fromJson(e)).toList();
       },
     );
   }
@@ -92,20 +92,20 @@ class WorkspaceRepository {
     await _client.handleResponse(response, (_) => null);
   }
 
-  Future<void> saveListing(String workspaceId, String listingId, String? notes) async {
+  Future<void> saveProperty(String workspaceId, String propertyId, String? notes) async {
     final response = await _client.post(
-      '/api/workspaces/$workspaceId/listings',
+      '/api/workspaces/$workspaceId/properties',
       data: {
-        'listingId': listingId,
+        'propertyId': propertyId,
         'notes': notes,
       },
     );
     await _client.handleResponse(response, (_) => null);
   }
 
-  Future<void> addComment(String workspaceId, String listingId, String content, String? parentId) async {
+  Future<void> addComment(String workspaceId, String savedPropertyId, String content, String? parentId) async {
     final response = await _client.post(
-      '/api/workspaces/$workspaceId/listings/$listingId/comments',
+      '/api/workspaces/$workspaceId/properties/$savedPropertyId/comments',
       data: {
         'content': content,
         'parentId': parentId,
@@ -114,9 +114,9 @@ class WorkspaceRepository {
     await _client.handleResponse(response, (_) => null);
   }
 
-  Future<List<Comment>> fetchComments(String workspaceId, String listingId) async {
+  Future<List<Comment>> fetchComments(String workspaceId, String savedPropertyId) async {
     final response = await _client.get(
-      '/api/workspaces/$workspaceId/listings/$listingId/comments',
+      '/api/workspaces/$workspaceId/properties/$savedPropertyId/comments',
     );
     return _client.handleResponse(
       response,

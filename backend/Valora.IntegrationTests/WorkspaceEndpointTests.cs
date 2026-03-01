@@ -49,42 +49,47 @@ public class WorkspaceEndpointTests : BaseIntegrationTest
     {
         await AuthenticateAsync();
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Member Test", ""));
+        createResponse.EnsureSuccessStatusCode();
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
 
         var inviteDto = new InviteMemberDto("newmember@test.com", WorkspaceRole.Editor);
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/members", inviteDto);
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/members", inviteDto);
 
         response.EnsureSuccessStatusCode();
     }
 
     [Fact]
-    public async Task SaveListing_ReturnsOk_WhenValid()
+    public async Task SaveProperty_ReturnsOk_WhenValid()
     {
         // Use unique email to avoid conflicts with other tests
-        var userId = "savelisting@test.com";
+        var userId = "saveproperty@test.com";
         // AuthenticateAsync creates the user if not exists
         await AuthenticateAsync(userId, "Password123!");
 
-        // Setup Listing directly in DB
-        Guid listingId;
+        // Setup Property directly in DB
+        Guid propertyId;
         // Using a fresh scope to ensure DB write is committed and visible
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            var listing = new Listing { FundaId = "999", Address = "Test Address" };
-            db.Listings.Add(listing);
+            var property = new Property { BagId = "999", Address = "Test Address" };
+            db.Properties.Add(property);
             await db.SaveChangesAsync();
-            listingId = listing.Id;
+            propertyId = property.Id;
         }
 
-        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Listing Test", ""));
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Property Test", ""));
+        createResponse.EnsureSuccessStatusCode();
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
 
-        var saveRequest = new { ListingId = listingId, Notes = "Test Note" };
-        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/listings", saveRequest);
+        var saveRequest = new { PropertyId = propertyId, Notes = "Test Note" };
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/properties", saveRequest);
 
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<SavedListingDto>();
-        Assert.Equal("Test Note", result!.Notes);
+        var result = await response.Content.ReadFromJsonAsync<SavedPropertyDto>();
+        Assert.NotNull(result);
+        Assert.Equal("Test Note", result.Notes);
     }
 }

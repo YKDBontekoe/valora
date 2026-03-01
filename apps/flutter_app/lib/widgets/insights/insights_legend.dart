@@ -14,32 +14,90 @@ class InsightsLegend extends StatelessWidget {
       builder: (context, metric, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Positioned(
-          left: 16,
-          bottom: 24,
+          left: 12,
+          bottom: 20,
           child: Container(
             key: const Key('insights_map_legend'),
-            width: 168,
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            width: 200,
+            padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
             decoration: BoxDecoration(
               color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200),
               boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${_getMetricLabel(metric)} score',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Icon(
+                      _getMetricIcon(metric),
+                      size: 12,
+                      color: isDark ? ValoraColors.neutral400 : ValoraColors.neutral500,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${_getMetricLabel(metric)} score',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        color: isDark ? ValoraColors.neutral300 : ValoraColors.neutral600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Gradient bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Container(
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          ValoraColors.error,
+                          Colors.orange,
+                          ValoraColors.warning,
+                          ValoraColors.success,
+                        ],
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(height: 6),
+                // Min/Max labels
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '0',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: ValoraColors.error,
+                      ),
+                    ),
+                    Text(
+                      '100',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: ValoraColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Divider(
+                  height: 1,
+                  color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+                ),
                 const SizedBox(height: 8),
-                _buildLegendRow(context, '80+', ValoraColors.success),
-                _buildLegendRow(context, '60-79', ValoraColors.warning),
-                _buildLegendRow(context, '40-59', Colors.orange),
-                _buildLegendRow(context, '<40', ValoraColors.error),
+                _buildLegendRow(context, '80+  Excellent', ValoraColors.success),
+                _buildLegendRow(context, '60–79  Good', ValoraColors.warning),
+                _buildLegendRow(context, '40–59  Fair', Colors.orange),
+                _buildLegendRow(context, '<40   Poor', ValoraColors.error),
               ],
             ),
           ),
@@ -50,19 +108,19 @@ class InsightsLegend extends StatelessWidget {
 
   Widget _buildLegendRow(BuildContext context, String label, Color color) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
           Container(
-            width: 9,
-            height: 9,
+            width: 8,
+            height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 7),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: Theme.of(context).textTheme.bodySmall?.color,
               fontWeight: FontWeight.w500,
             ),
@@ -70,6 +128,19 @@ class InsightsLegend extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getMetricIcon(InsightMetric metric) {
+    switch (metric) {
+      case InsightMetric.composite:
+        return Icons.auto_awesome_rounded;
+      case InsightMetric.safety:
+        return Icons.shield_rounded;
+      case InsightMetric.social:
+        return Icons.people_rounded;
+      case InsightMetric.amenities:
+        return Icons.storefront_rounded;
+    }
   }
 
   String _getMetricLabel(InsightMetric metric) {

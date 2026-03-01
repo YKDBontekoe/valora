@@ -85,7 +85,7 @@ public class NotFoundExceptionTests
     [Fact]
     public void NameKeyConstructor_FormatsMessage()
     {
-        var name = "Listing";
+        var name = "Property";
         var key = 123;
         var ex = new NotFoundException(name, key);
 

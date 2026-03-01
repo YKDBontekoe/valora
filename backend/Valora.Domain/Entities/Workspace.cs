@@ -12,6 +12,6 @@ public class Workspace : BaseEntity
 
     // Navigation properties
     public ICollection<WorkspaceMember> Members { get; set; } = new List<WorkspaceMember>();
-    public ICollection<SavedListing> SavedListings { get; set; } = new List<SavedListing>();
+    public ICollection<SavedProperty> SavedProperties { get; set; } = new List<SavedProperty>();
     public ICollection<ActivityLog> ActivityLogs { get; set; } = new List<ActivityLog>();
 }

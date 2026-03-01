@@ -130,6 +130,7 @@ public class MapEndpointIntegrationTests : BaseIntegrationTest
         var response = await Client.GetAsync("/api/map/overlays/tiles?minLat=52.0&minLon=4.0&maxLat=52.5&maxLon=4.5&zoom=10&metric=PopulationDensity");
 
         response.EnsureSuccessStatusCode();
+
         var result = await response.Content.ReadFromJsonAsync<List<MapOverlayTileDto>>();
         Assert.NotNull(result);
     }

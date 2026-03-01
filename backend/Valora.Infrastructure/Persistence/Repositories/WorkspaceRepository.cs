@@ -28,7 +28,7 @@ public class WorkspaceRepository : IWorkspaceRepository
         return await _context.Workspaces
             .AsNoTracking()
             .Include(w => w.Members)
-            .Include(w => w.SavedListings)
+            .Include(w => w.SavedProperties)
             .Where(w => w.Members.Any(m => m.UserId == userId))
             .OrderByDescending(w => w.CreatedAt)
             .ToListAsync(ct);
@@ -47,7 +47,7 @@ public class WorkspaceRepository : IWorkspaceRepository
                 w.OwnerId,
                 w.CreatedAt,
                 w.Members.Count,
-                w.SavedListings.Count
+                w.SavedProperties.Count
             ))
             .ToListAsync(ct);
     }
@@ -73,7 +73,7 @@ public class WorkspaceRepository : IWorkspaceRepository
                     w.OwnerId,
                     w.CreatedAt,
                     w.Members.Count,
-                    w.SavedListings.Count
+                    w.SavedProperties.Count
                 ),
                 w.Members.Any(m => m.UserId == userId)
             ))
@@ -86,7 +86,7 @@ public class WorkspaceRepository : IWorkspaceRepository
     {
         return await _context.Workspaces
             .Include(w => w.Members)
-            .Include(w => w.SavedListings)
+            .Include(w => w.SavedProperties)
             .FirstOrDefaultAsync(w => w.Id == id, ct);
     }
 
@@ -159,92 +159,104 @@ public class WorkspaceRepository : IWorkspaceRepository
         return member.Role;
     }
 
-    // Saved Listings Management
-    public async Task<SavedListing?> GetSavedListingAsync(Guid workspaceId, Guid listingId, CancellationToken ct = default)
+    // Saved Properties Management
+    public async Task<SavedProperty?> GetSavedPropertyAsync(Guid workspaceId, Guid propertyId, CancellationToken ct = default)
     {
-        return await _context.SavedListings
-            .FirstOrDefaultAsync(sl => sl.WorkspaceId == workspaceId && sl.ListingId == listingId, ct);
+        return await _context.SavedProperties
+            .Include(sp => sp.Property)
+            .FirstOrDefaultAsync(sp => sp.WorkspaceId == workspaceId && sp.PropertyId == propertyId, ct);
     }
 
-    public async Task<SavedListing?> GetSavedListingByIdAsync(Guid savedListingId, CancellationToken ct = default)
+    public async Task<SavedProperty?> GetSavedPropertyByIdAsync(Guid savedPropertyId, CancellationToken ct = default)
     {
-        return await _context.SavedListings
-            .Include(sl => sl.Listing)
-            .FirstOrDefaultAsync(sl => sl.Id == savedListingId, ct);
+        return await _context.SavedProperties
+            .Include(sp => sp.Property)
+            .FirstOrDefaultAsync(sp => sp.Id == savedPropertyId, ct);
     }
 
-    public async Task<List<SavedListing>> GetSavedListingsAsync(Guid workspaceId, CancellationToken ct = default)
+    public async Task<List<SavedProperty>> GetSavedPropertiesAsync(Guid workspaceId, CancellationToken ct = default)
     {
-        return await _context.SavedListings
+        return await _context.SavedProperties
             .AsNoTracking()
-            .Include(sl => sl.Listing)
-            .Include(sl => sl.Comments)
-            .Where(sl => sl.WorkspaceId == workspaceId)
-            .OrderByDescending(sl => sl.CreatedAt)
+            .Include(sp => sp.Property)
+            .Include(sp => sp.Comments)
+            .Where(sp => sp.WorkspaceId == workspaceId)
+            .OrderByDescending(sp => sp.CreatedAt)
             .ToListAsync(ct);
     }
 
-    public async Task<List<SavedListingDto>> GetSavedListingDtosAsync(Guid workspaceId, CancellationToken ct = default)
+    public async Task<List<SavedPropertyDto>> GetSavedPropertyDtosAsync(Guid workspaceId, CancellationToken ct = default)
     {
-        return await _context.SavedListings
+        return await _context.SavedProperties
             .AsNoTracking()
-            .Where(sl => sl.WorkspaceId == workspaceId)
-            .OrderByDescending(sl => sl.CreatedAt)
-            .Select(sl => new SavedListingDto(
-                sl.Id,
-                sl.ListingId,
-                sl.Listing != null ? new ListingSummaryDto(
-                    sl.Listing.Id,
-                    sl.Listing.Address,
-                    sl.Listing.City,
-                    sl.Listing.Price,
-                    sl.Listing.ImageUrl,
-                    sl.Listing.Bedrooms,
-                    sl.Listing.LivingAreaM2
+            .Where(sp => sp.WorkspaceId == workspaceId)
+            .OrderByDescending(sp => sp.CreatedAt)
+            .Select(sp => new SavedPropertyDto(
+                sp.Id,
+                sp.PropertyId,
+                sp.Property != null ? new PropertySummaryDto(
+                    sp.Property.Id,
+                    sp.Property.Address,
+                    sp.Property.City,
+                    sp.Property.LivingAreaM2,
+                    sp.Property.ContextSafetyScore,
+                    sp.Property.ContextCompositeScore
                 ) : null,
-                sl.AddedByUserId,
-                sl.Notes,
-                sl.CreatedAt,
-                sl.Comments.Count
+                sp.AddedByUserId,
+                sp.Notes,
+                sp.CreatedAt,
+                sp.Comments.Count
             ))
             .ToListAsync(ct);
     }
 
-    public Task<SavedListing> AddSavedListingAsync(SavedListing savedListing, CancellationToken ct = default)
+    public Task<SavedProperty> AddSavedPropertyAsync(SavedProperty savedProperty, CancellationToken ct = default)
     {
-        _context.SavedListings.Add(savedListing);
-        return Task.FromResult(savedListing);
+        _context.SavedProperties.Add(savedProperty);
+        return Task.FromResult(savedProperty);
     }
 
-    public Task RemoveSavedListingAsync(SavedListing savedListing, CancellationToken ct = default)
+    public Task RemoveSavedPropertyAsync(SavedProperty savedProperty, CancellationToken ct = default)
     {
-        _context.SavedListings.Remove(savedListing);
+        _context.SavedProperties.Remove(savedProperty);
         return Task.CompletedTask;
     }
 
-    // Listing Queries
-    public async Task<Listing?> GetListingAsync(Guid listingId, CancellationToken ct = default)
+    // Property Queries
+    public async Task<Property?> GetPropertyAsync(Guid propertyId, CancellationToken ct = default)
     {
-        return await _context.Listings.FindAsync(new object[] { listingId }, ct);
+        return await _context.Properties.FindAsync(new object[] { propertyId }, ct);
+    }
+
+    public async Task<Property?> GetPropertyByBagIdAsync(string bagId, CancellationToken ct = default)
+    {
+        return await _context.Properties.FirstOrDefaultAsync(p => p.BagId == bagId, ct);
+    }
+
+    public async Task<Property> AddPropertyAsync(Property property, CancellationToken ct = default)
+    {
+        _context.Properties.Add(property);
+        await _context.SaveChangesAsync(ct);
+        return property;
     }
 
     // Comment Management
-    public Task<ListingComment> AddCommentAsync(ListingComment comment, CancellationToken ct = default)
+    public Task<PropertyComment> AddCommentAsync(PropertyComment comment, CancellationToken ct = default)
     {
-        _context.ListingComments.Add(comment);
+        _context.PropertyComments.Add(comment);
         return Task.FromResult(comment);
     }
 
-    public async Task<ListingComment?> GetCommentAsync(Guid commentId, CancellationToken ct = default)
+    public async Task<PropertyComment?> GetCommentAsync(Guid commentId, CancellationToken ct = default)
     {
-        return await _context.ListingComments.FindAsync(new object[] { commentId }, ct);
+        return await _context.PropertyComments.FindAsync(new object[] { commentId }, ct);
     }
 
-    public async Task<List<ListingComment>> GetCommentsAsync(Guid savedListingId, CancellationToken ct = default)
+    public async Task<List<PropertyComment>> GetCommentsAsync(Guid savedPropertyId, CancellationToken ct = default)
     {
-        return await _context.ListingComments
+        return await _context.PropertyComments
             .AsNoTracking()
-            .Where(c => c.SavedListingId == savedListingId)
+            .Where(c => c.SavedPropertyId == savedPropertyId)
             .OrderBy(c => c.CreatedAt)
             .ToListAsync(ct);
     }

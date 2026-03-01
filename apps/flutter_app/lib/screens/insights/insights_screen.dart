@@ -82,7 +82,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           final error = state.$3;
 
           if (isLoading && isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: ValoraColors.primary));
           }
           if (error != null && isEmpty) {
             return Center(
@@ -132,7 +132,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                       const InsightsHeader(),
                       const InsightsMetricSelector(),
                       const Positioned(
-                        top: 140,
+                        top: 148,
                         left: 0,
                         right: 0,
                         child: MapModeSelector(),

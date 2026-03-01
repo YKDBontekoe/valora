@@ -15,7 +15,7 @@ import 'package:latlong2/latlong.dart';
 
 class FakeMapRepository extends Fake implements MapRepository {
   @override
-  Future<List<MapCityInsight>> getCityInsights() async => [];
+  Future<List<MapCityInsight>> getCityInsights({bool forceRefresh = false}) async => [];
 
   @override
   Future<List<MapAmenity>> getMapAmenities({required double minLat, required double minLon, required double maxLat, required double maxLon, List<String>? types}) async => [];
@@ -89,7 +89,9 @@ void main() {
 
     // Should be visible
     expect(find.text('Test City'), findsOneWidget);
-    expect(find.text('Composite Score'), findsOneWidget);
+    expect(find.text('Safety'), findsOneWidget);
+    expect(find.text('Social'), findsOneWidget);
+    expect(find.text('Amenities'), findsOneWidget);
 
     // Close via provider directly to avoid off-screen tap issues in test environment due to animation
     provider.clearSelection();

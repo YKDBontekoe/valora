@@ -114,6 +114,30 @@ class ContextReportProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> selectReport(String query, {int? radius}) async {
+    final effectiveRadius = radius ?? _radiusMeters;
+    final id = _getReportId(query, effectiveRadius);
+    
+    if (_currentReportId == id) return;
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      if (!_activeReports.containsKey(id)) {
+        await fetchReport(query, effectiveRadius);
+      }
+      _currentReportId = id;
+      _expansionStates.clear();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchReport(String query, int radius) async {
     final id = _getReportId(query, radius);
     if (_activeReports.containsKey(id)) return;

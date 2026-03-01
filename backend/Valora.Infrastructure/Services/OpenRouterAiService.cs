@@ -75,9 +75,9 @@ public class OpenRouterAiService : IAiService
                 if (item.TryGetProperty("pricing", out var pricing))
                 {
                     if (pricing.TryGetProperty("prompt", out var p))
-                        decimal.TryParse(p.GetString(), out promptPrice);
+                        decimal.TryParse(p.GetString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out promptPrice);
                     if (pricing.TryGetProperty("completion", out var c))
-                        decimal.TryParse(c.GetString(), out completionPrice);
+                        decimal.TryParse(c.GetString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out completionPrice);
                 }
 
                 models.Add(new AiModelDto(id, name, description, contextLength, promptPrice, completionPrice));

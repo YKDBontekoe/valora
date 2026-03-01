@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/workspace.dart';
-import 'package:valora_app/models/saved_listing.dart';
+import 'package:valora_app/models/saved_property.dart';
 import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
 import 'package:valora_app/screens/workspace_detail_screen.dart';
@@ -24,7 +24,7 @@ class MockWorkspaceProvider extends Mock implements WorkspaceProvider {
     createdAt: DateTime.now(),
   );
   @override
-  List<SavedListing> get savedListings => [];
+  List<SavedProperty> get savedProperties => [];
   @override
   List<WorkspaceMember> get members => [];
   @override
@@ -63,6 +63,6 @@ void main() {
     await tester.pumpWidget(createScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('No saved listings'), findsOneWidget);
+    expect(find.text('No saved properties'), findsOneWidget);
   });
 }

@@ -15,7 +15,7 @@ public record WorkspaceDto(
     string OwnerId,
     DateTime CreatedAt,
     int MemberCount,
-    int SavedListingCount
+    int SavedPropertyCount
 );
 
 public record WorkspaceMemberDto(
@@ -32,29 +32,33 @@ public record InviteMemberDto(
     [property: Required] WorkspaceRole Role
 );
 
-public record SaveListingDto(
-    [property: Required] Guid ListingId,
+public record SavePropertyDto(
+    [property: Required] Guid PropertyId,
     [property: StringLength(2000)] string? Notes
 );
 
-public record SavedListingDto(
+public record SavePropertyFromReportDto(
+    [property: Required] ContextReportDto Report,
+    [property: StringLength(2000)] string? Notes
+);
+
+public record SavedPropertyDto(
     Guid Id,
-    Guid ListingId,
-    ListingSummaryDto? Listing,
+    Guid PropertyId,
+    PropertySummaryDto? Property,
     string AddedByUserId,
     string? Notes,
     DateTime AddedAt,
     int CommentCount
 );
 
-public record ListingSummaryDto(
+public record PropertySummaryDto(
     Guid Id,
     string Address,
     string? City,
-    decimal? Price,
-    string? ImageUrl,
-    int? Bedrooms,
-    int? LivingAreaM2
+    int? LivingAreaM2,
+    double? SafetyScore,
+    double? CompositeScore
 );
 
 public record CommentDto(

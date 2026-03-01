@@ -46,16 +46,16 @@ public class ContextAnalysisSessionProfileTests : IAsyncLifetime
 
         // Clean up data - Order matters for FK constraints
 
-        // 1. Remove Dependent Entities (Foreign Keys pointing to Users/Workspaces/Listings)
-        _dbContext.ListingComments.RemoveRange(_dbContext.ListingComments);
-        _dbContext.SavedListings.RemoveRange(_dbContext.SavedListings);
+        // 1. Remove Dependent Entities (Foreign Keys pointing to Users/Workspaces/Properties)
+        _dbContext.PropertyComments.RemoveRange(_dbContext.PropertyComments);
+        _dbContext.SavedProperties.RemoveRange(_dbContext.SavedProperties);
         _dbContext.ActivityLogs.RemoveRange(_dbContext.ActivityLogs);
         _dbContext.WorkspaceMembers.RemoveRange(_dbContext.WorkspaceMembers);
         _dbContext.Workspaces.RemoveRange(_dbContext.Workspaces);
 
         _dbContext.RefreshTokens.RemoveRange(_dbContext.RefreshTokens);
         _dbContext.Notifications.RemoveRange(_dbContext.Notifications);
-        _dbContext.Listings.RemoveRange(_dbContext.Listings);
+        _dbContext.Properties.RemoveRange(_dbContext.Properties);
         _dbContext.BatchJobs.RemoveRange(_dbContext.BatchJobs);
 
         // 2. Identity Cleanup (Claims, Logins, Roles, Tokens)

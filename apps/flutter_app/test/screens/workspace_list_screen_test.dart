@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/workspace.dart';
-import 'package:valora_app/models/saved_listing.dart';
+import 'package:valora_app/models/saved_property.dart';
 import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/models/comment.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
@@ -37,7 +37,7 @@ class FakeWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   @override
   List<WorkspaceMember> get members => [];
   @override
-  List<SavedListing> get savedListings => [];
+  List<SavedProperty> get savedProperties => [];
   @override
   List<ActivityLog> get activityLogs => [];
 
@@ -72,13 +72,13 @@ class FakeWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   Future<void> inviteMember(String email, WorkspaceRole role) async {}
 
   @override
-  Future<void> saveListing(String listingId, String? notes) async {}
+  Future<void> saveProperty(String propertyId, String? notes) async {}
 
   @override
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {}
+  Future<void> addComment(String savedPropertyId, String content, String? parentId) async {}
 
   @override
-  Future<List<Comment>> fetchComments(String savedListingId) async => [];
+  Future<List<Comment>> fetchComments(String savedPropertyId) async => [];
 }
 
 void main() {

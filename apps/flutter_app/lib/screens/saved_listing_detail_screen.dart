@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
-import '../models/saved_listing.dart';
+import '../models/saved_property.dart';
 import '../models/comment.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/comment_thread_widget.dart';
 
 class SavedListingDetailScreen extends StatefulWidget {
-  final SavedListing savedListing;
+  final SavedProperty savedListing;
 
   const SavedListingDetailScreen({super.key, required this.savedListing});
 
@@ -39,7 +38,7 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final listing = widget.savedListing.listing;
+    final listing = widget.savedListing.property;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -49,7 +48,7 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
         slivers: [
           // Hero image / App bar
           SliverAppBar(
-            expandedHeight: listing?.imageUrl != null ? 240 : 0,
+            expandedHeight: 0,
             pinned: true,
             backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
             surfaceTintColor: Colors.transparent,
@@ -60,43 +59,7 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                 color: colorScheme.onSurface,
               ),
             ),
-            flexibleSpace: listing?.imageUrl != null
-                ? FlexibleSpaceBar(
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CachedNetworkImage(
-                          imageUrl: listing!.imageUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const ValoraShimmer(
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                          errorWidget: (_, _, _) => Container(
-                            color: ValoraColors.primary.withValues(alpha: 0.1),
-                            child: const Center(
-                              child: Icon(Icons.home_rounded,
-                                  size: 64, color: ValoraColors.primary),
-                            ),
-                          ),
-                        ),
-                        // Gradient overlay for readability
-                        const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black26,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : null,
+            flexibleSpace: null,
           ),
 
           // Property info card
@@ -136,31 +99,15 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                         ],
                       ),
                     ],
-                    if (listing?.price != null) ...[
-                      const SizedBox(height: ValoraSpacing.md),
-                      ValoraPrice(
-                        price: listing!.price!,
-                      ),
-                    ],
-                    if (listing?.bedrooms != null ||
-                        listing?.livingAreaM2 != null) ...[
+                    if (listing?.livingAreaM2 != null) ...[
                       const SizedBox(height: ValoraSpacing.md),
                       Row(
                         children: [
-                          if (listing?.bedrooms != null) ...[
-                            _InfoChip(
-                              icon: Icons.bed_rounded,
-                              label: '${listing!.bedrooms} bedrooms',
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: ValoraSpacing.sm),
-                          ],
-                          if (listing?.livingAreaM2 != null)
-                            _InfoChip(
-                              icon: Icons.square_foot_rounded,
-                              label: '${listing!.livingAreaM2} m²',
-                              isDark: isDark,
-                            ),
+                          _InfoChip(
+                            icon: Icons.square_foot_rounded,
+                            label: '${listing!.livingAreaM2} m²',
+                            isDark: isDark,
+                          ),
                         ],
                       ),
                     ],

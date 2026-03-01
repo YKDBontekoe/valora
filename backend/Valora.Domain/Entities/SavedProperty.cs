@@ -2,15 +2,15 @@ using Valora.Domain.Common;
 
 namespace Valora.Domain.Entities;
 
-public class SavedListing : BaseEntity
+public class SavedProperty : BaseEntity
 {
     // The Workspace it belongs to
     public Guid WorkspaceId { get; set; }
     public Workspace? Workspace { get; set; }
 
-    // The Listing being saved
-    public Guid ListingId { get; set; }
-    public Listing? Listing { get; set; }
+    // The Property being saved
+    public Guid PropertyId { get; set; }
+    public Property? Property { get; set; }
 
     // Who added it
     public required string AddedByUserId { get; set; }
@@ -20,5 +20,5 @@ public class SavedListing : BaseEntity
     public string? Notes { get; set; }
 
     // Comments
-    public ICollection<ListingComment> Comments { get; set; } = new List<ListingComment>();
+    public ICollection<PropertyComment> Comments { get; set; } = new List<PropertyComment>();
 }

@@ -30,15 +30,15 @@ public class BaseTestcontainersIntegrationTest : IAsyncLifetime
     public virtual async Task InitializeAsync()
     {
         // Simple cleanup before each test - Order matters for FK constraints
-        DbContext.ListingComments.RemoveRange(DbContext.ListingComments);
-        DbContext.SavedListings.RemoveRange(DbContext.SavedListings);
+        DbContext.PropertyComments.RemoveRange(DbContext.PropertyComments);
+        DbContext.SavedProperties.RemoveRange(DbContext.SavedProperties);
         DbContext.ActivityLogs.RemoveRange(DbContext.ActivityLogs);
         DbContext.WorkspaceMembers.RemoveRange(DbContext.WorkspaceMembers);
         DbContext.Workspaces.RemoveRange(DbContext.Workspaces);
 
         DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
         DbContext.Notifications.RemoveRange(DbContext.Notifications);
-        DbContext.Listings.RemoveRange(DbContext.Listings);
+        DbContext.Properties.RemoveRange(DbContext.Properties);
         DbContext.BatchJobs.RemoveRange(DbContext.BatchJobs);
         DbContext.AiModelConfigs.RemoveRange(DbContext.AiModelConfigs);
 

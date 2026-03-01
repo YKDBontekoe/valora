@@ -70,7 +70,10 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
 
-builder.Services.AddHostedService<BatchJobWorker>();
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddHostedService<BatchJobWorker>();
+}
 
 builder.Services.AddIdentityAndAuth(builder.Configuration, builder.Environment);
 

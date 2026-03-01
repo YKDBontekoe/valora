@@ -12,7 +12,7 @@ class MockWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider 
   bool shouldThrow = false;
 
   @override
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {
+  Future<void> addComment(String savedPropertyId, String content, String? parentId) async {
     if (shouldThrow) throw Exception('API Error');
     addedCommentContent = content;
     addedCommentReplyToId = parentId;

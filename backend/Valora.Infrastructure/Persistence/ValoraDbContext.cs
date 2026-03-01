@@ -10,8 +10,7 @@ public class ValoraDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
-    public DbSet<Listing> Listings => Set<Listing>();
-    public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
+    public DbSet<Property> Properties => Set<Property>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<BatchJob> BatchJobs => Set<BatchJob>();
@@ -21,8 +20,8 @@ public DbSet<UserAiProfile> UserAiProfiles => Set<UserAiProfile>();
 
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
-    public DbSet<SavedListing> SavedListings => Set<SavedListing>();
-    public DbSet<ListingComment> ListingComments => Set<ListingComment>();
+    public DbSet<SavedProperty> SavedProperties => Set<SavedProperty>();
+    public DbSet<PropertyComment> PropertyComments => Set<PropertyComment>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

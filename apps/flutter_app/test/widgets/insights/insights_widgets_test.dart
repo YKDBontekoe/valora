@@ -70,7 +70,7 @@ void main() {
       await tester.pumpWidget(createWidget(const InsightsHeader()));
 
       expect(find.text('Area Insights'), findsOneWidget);
-      expect(find.text('2 cities'), findsOneWidget);
+      expect(find.textContaining('2 cities'), findsOneWidget);
       expect(find.byIcon(Icons.insights_rounded), findsOneWidget);
     });
   });
@@ -91,10 +91,10 @@ void main() {
     testWidgets('displays legend rows', (WidgetTester tester) async {
       when(mockProvider.selectedMetric).thenReturn(InsightMetric.composite);
       await tester.pumpWidget(createWidget(const InsightsLegend()));
-      expect(find.text('80+'), findsOneWidget);
-      expect(find.text('60-79'), findsOneWidget);
-      expect(find.text('40-59'), findsOneWidget);
-      expect(find.text('<40'), findsOneWidget);
+      expect(find.textContaining('80+'), findsOneWidget);
+      expect(find.textContaining('60–79'), findsOneWidget);
+      expect(find.textContaining('40–59'), findsOneWidget);
+      expect(find.textContaining('<40'), findsOneWidget);
     });
   });
 
@@ -161,7 +161,7 @@ void main() {
         onMapChanged: () {},
       )));
 
-      expect(find.byType(DropdownButton<MapOverlayMetric>), findsOneWidget);
+      expect(find.text('Overlay'), findsOneWidget);
       expect(find.text('Price/m²'), findsOneWidget);
     });
   });

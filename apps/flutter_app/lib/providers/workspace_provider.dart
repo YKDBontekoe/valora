@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/workspace.dart';
-import '../models/saved_listing.dart';
+import '../models/saved_property.dart';
 import '../models/comment.dart';
 import '../models/activity_log.dart';
 import '../repositories/workspace_repository.dart';
@@ -27,8 +27,8 @@ class WorkspaceProvider extends ChangeNotifier {
   Workspace? get selectedWorkspace => _selectedWorkspace;
   List<WorkspaceMember> _members = [];
   List<WorkspaceMember> get members => _members;
-  List<SavedListing> _savedListings = [];
-  List<SavedListing> get savedListings => _savedListings;
+  List<SavedProperty> _savedProperties = [];
+  List<SavedProperty> get savedProperties => _savedProperties;
   List<ActivityLog> _activityLogs = [];
   List<ActivityLog> get activityLogs => _activityLogs;
 
@@ -83,19 +83,19 @@ class WorkspaceProvider extends ChangeNotifier {
     try {
       final workspaceFuture = _repository.getWorkspace(id);
       final membersFuture = _repository.getWorkspaceMembers(id);
-      final listingsFuture = _repository.getWorkspaceListings(id);
+      final propertiesFuture = _repository.getWorkspaceProperties(id);
       final activityFuture = _repository.getWorkspaceActivity(id);
 
       final results = await Future.wait([
         workspaceFuture,
         membersFuture,
-        listingsFuture,
+        propertiesFuture,
         activityFuture,
       ]);
 
       _selectedWorkspace = results[0] as Workspace;
       _members = results[1] as List<WorkspaceMember>;
-      _savedListings = results[2] as List<SavedListing>;
+      _savedProperties = results[2] as List<SavedProperty>;
       _activityLogs = results[3] as List<ActivityLog>;
 
     } catch (e) {
@@ -117,31 +117,31 @@ class WorkspaceProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> saveListing(String listingId, String? notes) async {
+  Future<void> saveProperty(String propertyId, String? notes) async {
     if (_selectedWorkspace == null) return;
     try {
-      await _repository.saveListing(_selectedWorkspace!.id, listingId, notes);
-      _savedListings = await _repository.getWorkspaceListings(_selectedWorkspace!.id);
+      await _repository.saveProperty(_selectedWorkspace!.id, propertyId, notes);
+      _savedProperties = await _repository.getWorkspaceProperties(_selectedWorkspace!.id);
       notifyListeners();
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<void> addComment(String savedListingId, String content, String? parentId) async {
+  Future<void> addComment(String savedPropertyId, String content, String? parentId) async {
      if (_selectedWorkspace == null) return;
      try {
-       await _repository.addComment(_selectedWorkspace!.id, savedListingId, content, parentId);
+       await _repository.addComment(_selectedWorkspace!.id, savedPropertyId, content, parentId);
        notifyListeners();
      } catch (e) {
        rethrow;
      }
   }
 
-  Future<List<Comment>> fetchComments(String savedListingId) async {
+  Future<List<Comment>> fetchComments(String savedPropertyId) async {
     if (_selectedWorkspace == null) return [];
     try {
-      return await _repository.fetchComments(_selectedWorkspace!.id, savedListingId);
+      return await _repository.fetchComments(_selectedWorkspace!.id, savedPropertyId);
     } catch (e) {
       rethrow;
     }
