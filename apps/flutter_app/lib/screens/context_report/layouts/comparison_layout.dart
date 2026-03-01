@@ -56,7 +56,7 @@ class ComparisonLayout extends StatelessWidget {
                 ),
               );
 
-              if (confirmed == true) {
+              if (confirmed == true && context.mounted) {
                 onClear();
                 onBack();
               }

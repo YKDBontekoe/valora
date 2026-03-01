@@ -168,10 +168,15 @@ class ComparisonView extends StatelessWidget {
                    child: Text(category, style: ValoraTypography.labelSmall.copyWith(fontWeight: FontWeight.bold)),
                  ),
                  ...reports.map((report) {
-                   final score = report.categoryScores[category] ?? 0;
+                   final score = report.categoryScores[category];
                    return Padding(
                      padding: const EdgeInsets.symmetric(vertical: 12),
-                     child: Center(child: Text(score.toStringAsFixed(1), style: ValoraTypography.bodyMedium)),
+                     child: Center(
+                       child: Text(
+                         score != null ? score.toStringAsFixed(1) : '—',
+                         style: ValoraTypography.bodyMedium,
+                       ),
+                     ),
                    );
                  }),
                ]
