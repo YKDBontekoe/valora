@@ -27,9 +27,9 @@ Object.defineProperty(window, 'localStorage', {
 
 // Mock IntersectionObserver
 class IntersectionObserverMock {
-  root = null;
+  root: Document | Element | null = null;
   rootMargin = "";
-  thresholds = [];
+  thresholds: number[] = [];
 
   private callback: IntersectionObserverCallback;
   private observedElements: Set<Element> = new Set();
