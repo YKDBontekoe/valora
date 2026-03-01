@@ -237,7 +237,7 @@ public class IdentityService : IIdentityService
                 .Where(c => c.ParentCommentId != null && userCommentIds.Contains(c.ParentCommentId.Value))
                 .ToList();
 
-            foreach(var child in childComments)
+            foreach (var child in childComments)
             {
                 child.ParentCommentId = null;
             }

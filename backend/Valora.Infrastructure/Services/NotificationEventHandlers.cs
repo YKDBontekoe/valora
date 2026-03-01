@@ -84,22 +84,22 @@ public class NotificationEventHandlers :
 
     public async Task HandleAsync(ReportSavedToWorkspaceEvent domainEvent, CancellationToken cancellationToken)
     {
-         var members = await _workspaceRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
-         var workspace = await _workspaceRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
+        var members = await _workspaceRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
+        var workspace = await _workspaceRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
 
-         foreach (var member in members)
-         {
-             if (member.UserId != domainEvent.UserId && member.UserId != null)
-             {
-                 await CreateIdempotentNotificationAsync(
-                     member.UserId,
-                     "Report Saved",
-                     $"A new report was saved to workspace '{workspace?.Name ?? "your workspace"}'.",
-                     NotificationType.Info,
-                     $"/workspaces/{domainEvent.WorkspaceId}/listings",
-                     $"reportSaved:{domainEvent.WorkspaceId}:{domainEvent.ListingId}");
-             }
-         }
+        foreach (var member in members)
+        {
+            if (member.UserId != domainEvent.UserId && member.UserId != null)
+            {
+                await CreateIdempotentNotificationAsync(
+                    member.UserId,
+                    "Report Saved",
+                    $"A new report was saved to workspace '{workspace?.Name ?? "your workspace"}'.",
+                    NotificationType.Info,
+                    $"/workspaces/{domainEvent.WorkspaceId}/listings",
+                    $"reportSaved:{domainEvent.WorkspaceId}:{domainEvent.ListingId}");
+            }
+        }
     }
 
     public async Task HandleAsync(BatchJobCompletedEvent domainEvent, CancellationToken cancellationToken)

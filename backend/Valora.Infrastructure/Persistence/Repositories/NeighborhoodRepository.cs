@@ -67,8 +67,8 @@ public class NeighborhoodRepository : INeighborhoodRepository
             neighborhood.UpdatedAt = now;
             if (_context.Entry(neighborhood).State == EntityState.Detached)
             {
-                 _context.Neighborhoods.Attach(neighborhood);
-                 _context.Entry(neighborhood).State = EntityState.Modified;
+                _context.Neighborhoods.Attach(neighborhood);
+                _context.Entry(neighborhood).State = EntityState.Modified;
             }
         }
     }

@@ -132,11 +132,11 @@ public class OpenRouterAiService : IAiService
 
         if (lastException is ClientResultException clientEx)
         {
-             if (clientEx.Status == 429 || clientEx.Status >= 500)
-             {
-                 throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
-             }
-             throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
+            if (clientEx.Status == 429 || clientEx.Status >= 500)
+            {
+                throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
+            }
+            throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
         }
 
         throw lastException ?? new Exception("All models failed.");
@@ -202,8 +202,8 @@ public class OpenRouterAiService : IAiService
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                 _logger.LogWarning(ex, "ArgumentOutOfRangeException in AI SDK. Treating as failure.");
-                 throw new Exception("AI SDK error", ex);
+                _logger.LogWarning(ex, "ArgumentOutOfRangeException in AI SDK. Treating as failure.");
+                throw new Exception("AI SDK error", ex);
             }
         }
 

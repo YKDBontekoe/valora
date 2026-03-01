@@ -41,11 +41,11 @@ public class WozValuationService : IWozValuationService
             // WOZ-waardeloket requires a session cookie which is set on the main page
             var homeRequest = new HttpRequestMessage(HttpMethod.Get, "https://www.wozwaardeloket.nl/");
             AddWozHeaders(homeRequest);
-            
+
             using var homeResponse = await _httpClient.SendAsync(homeRequest, cancellationToken);
             if (!homeResponse.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Failed to initialize WOZ session. Status: {Status}, Reason: {Reason}", 
+                _logger.LogWarning("Failed to initialize WOZ session. Status: {Status}, Reason: {Reason}",
                     homeResponse.StatusCode, homeResponse.ReasonPhrase);
             }
 
@@ -62,7 +62,7 @@ public class WozValuationService : IWozValuationService
                 // Format: "{City} {Street} {Number}" seems more reliable than "{Street} {Number} {City}"
                 var query = $"{city} {street} {number}{suffix}".Trim();
                 var suggestUrl = $"https://api.kadaster.nl/lvwoz/wozwaardeloket-api/v1/suggest?q={Uri.EscapeDataString(query)}";
-                
+
                 var suggestRequest = new HttpRequestMessage(HttpMethod.Get, suggestUrl);
                 AddWozHeaders(suggestRequest);
 
@@ -94,7 +94,7 @@ public class WozValuationService : IWozValuationService
             detailsResponse.EnsureSuccessStatusCode();
 
             var detailsResult = await detailsResponse.Content.ReadFromJsonAsync<WozValuationResponse>(cancellationToken: cancellationToken);
-            
+
             // Get the latest valuation
             var latestValuation = detailsResult?.WozWaarden
                 ?.OrderByDescending(w => w.Peildatum)
