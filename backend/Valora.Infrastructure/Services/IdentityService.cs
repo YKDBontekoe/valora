@@ -35,9 +35,9 @@ public class IdentityService : IIdentityService
             Email = email
         };
 
-        var result = await _userManager.CreateAsync(user, password);
+        var userCreationResult = await _userManager.CreateAsync(user, password);
 
-        return (ToApplicationResult(result), user.Id);
+        return (ToApplicationResult(userCreationResult), user.Id);
     }
 
     public async Task<bool> CheckPasswordAsync(string email, string password)
@@ -64,10 +64,10 @@ public class IdentityService : IIdentityService
     {
         if (!await _roleManager.RoleExistsAsync(roleName))
         {
-            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
-            if (!result.Succeeded)
+            var roleCreationResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
+            if (!roleCreationResult.Succeeded)
             {
-                throw new Exception($"Failed to create role '{roleName}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                throw new Exception($"Failed to create role '{roleName}': {string.Join(", ", roleCreationResult.Errors.Select(e => e.Description))}");
             }
         }
     }
@@ -79,8 +79,8 @@ public class IdentityService : IIdentityService
 
         if (!await _userManager.IsInRoleAsync(user, roleName))
         {
-            var result = await _userManager.AddToRoleAsync(user, roleName);
-            return ToApplicationResult(result);
+            var roleAssignmentResult = await _userManager.AddToRoleAsync(user, roleName);
+            return ToApplicationResult(roleAssignmentResult);
         }
 
         return Result.Success();
@@ -110,13 +110,13 @@ public class IdentityService : IIdentityService
             _ => query.OrderBy(u => u.Email) // Default sort
         };
 
-        var count = await query.CountAsync();
-        var items = await query
+        var totalUsers = await query.CountAsync();
+        var usersPage = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        return new PaginatedList<ApplicationUser>(items, count, pageNumber, pageSize);
+        return new PaginatedList<ApplicationUser>(usersPage, totalUsers, pageNumber, pageSize);
     }
 
     private static string EscapeLikePattern(string pattern)
@@ -135,68 +135,54 @@ public class IdentityService : IIdentityService
         // Manually clean up related entities because many are configured with NoAction delete behavior
         // to prevent cycles or accidental data loss.
 
-        // Transaction logic for Relational databases (Postgres)
         if (_context.Database.IsRelational())
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Delete Owned Workspaces (Cascades to Members, SavedProperties in workspace, etc.)
                 await _context.Workspaces
                     .Where(w => w.OwnerId == userId)
                     .ExecuteDeleteAsync();
 
-                // 2. Delete Workspace Memberships (in other workspaces)
                 await _context.WorkspaceMembers
                     .Where(wm => wm.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 3. Delete Saved Properties (Added by user in other workspaces)
                 await _context.SavedProperties
                     .Where(sl => sl.AddedByUserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 4. Handle Threaded Comments & Delete Comments
-                // 4a. Unlink replies to comments authored by this user to avoid FK violation (ParentCommentId)
-                // Since this is a self-referencing relationship with NoAction.
                 var userCommentIds = _context.PropertyComments
                     .Where(c => c.UserId == userId)
                     .Select(c => c.Id);
 
-                // Set ParentCommentId to null for any comment whose parent is in the user's comment list
                 await _context.PropertyComments
                     .Where(c => c.ParentCommentId != null && userCommentIds.Contains(c.ParentCommentId.Value))
                     .ExecuteUpdateAsync(s => s.SetProperty(c => c.ParentCommentId, (Guid?)null));
 
-                // 4b. Delete the comments
                 await _context.PropertyComments
                     .Where(c => c.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 5. Delete Activity Logs (User as actor)
                 await _context.ActivityLogs
                     .Where(l => l.ActorId == userId)
                     .ExecuteDeleteAsync();
 
-                // 6. Delete User AI Profiles
                 await _context.UserAiProfiles
                     .Where(p => p.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 7. Delete Refresh Tokens
                 await _context.RefreshTokens
                     .Where(rt => rt.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 8. Delete Notifications
                 await _context.Notifications
                     .Where(n => n.UserId == userId)
                     .ExecuteDeleteAsync();
 
-                // 10. Delete User
-                var result = await _userManager.DeleteAsync(user);
+                var deleteResult = await _userManager.DeleteAsync(user);
 
-                if (result.Succeeded)
+                if (deleteResult.Succeeded)
                 {
                     await transaction.CommitAsync();
                 }
@@ -205,7 +191,7 @@ public class IdentityService : IIdentityService
                     await transaction.RollbackAsync();
                 }
 
-                return ToApplicationResult(result);
+                return ToApplicationResult(deleteResult);
             }
             catch
             {
@@ -215,9 +201,6 @@ public class IdentityService : IIdentityService
         }
         else
         {
-            // Fallback for Non-Relational (InMemory Tests) - No Transaction support
-            // Note: InMemory provider doesn't support ExecuteDeleteAsync
-
             var ownedWorkspaces = _context.Workspaces.Where(w => w.OwnerId == userId);
             _context.Workspaces.RemoveRange(ownedWorkspaces);
 
@@ -227,7 +210,6 @@ public class IdentityService : IIdentityService
             var savedProperties = _context.SavedProperties.Where(sl => sl.AddedByUserId == userId);
             _context.SavedProperties.RemoveRange(savedProperties);
 
-            // Handle Threaded Comments (InMemory)
             var userCommentIds = _context.PropertyComments
                 .Where(c => c.UserId == userId)
                 .Select(c => c.Id)
@@ -261,15 +243,11 @@ public class IdentityService : IIdentityService
 
             try
             {
-                var result = await _userManager.DeleteAsync(user);
-                return ToApplicationResult(result);
+                var deleteResult = await _userManager.DeleteAsync(user);
+                return ToApplicationResult(deleteResult);
             }
             catch (Exception)
             {
-                // In a real relational DB, the transaction would roll back the manual deletions above.
-                // In InMemory, we can't easily roll back. This catch block exists to ensure
-                // we don't leave the test in a confusing state without logging or rethrowing,
-                // but primarily to mirror the structure of the transactional block.
                 throw;
             }
         }

@@ -1,0 +1,10 @@
+--- backend/Valora.IntegrationTests/MapServiceIntegrationTests.cs
++++ backend/Valora.IntegrationTests/MapServiceIntegrationTests.cs
+@@ -21,7 +21,6 @@
+         using (var scope = Factory.Services.CreateScope())
+         {
+             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+-            db.Properties.RemoveRange(db.Properties.ToList());
+             db.Properties.Add(new Property { BagId = "M1", Address = "A1", City = "Amsterdam", Latitude = 52.3, Longitude = 4.9, ContextCompositeScore = 80 });
+             await db.SaveChangesAsync();
+         }

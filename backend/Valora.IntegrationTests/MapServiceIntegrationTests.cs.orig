@@ -2,7 +2,6 @@ using Valora.Domain.Entities;
 using Valora.Application.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Infrastructure.Persistence;
-using Microsoft.Extensions.Caching.Memory;
 using Xunit;
 using System.Net.Http.Json;
 
@@ -25,8 +24,6 @@ public class MapServiceIntegrationTests : BaseIntegrationTest
             db.Properties.Add(new Property { BagId = "M1", Address = "A1", City = "Amsterdam", Latitude = 52.3, Longitude = 4.9, ContextCompositeScore = 80 });
             await db.SaveChangesAsync();
         }
-        using var scope2 = Factory.Services.CreateScope();
-        scope2.ServiceProvider.GetRequiredService<IMemoryCache>().Remove("CityInsights");
 
         // Act
         var result = await Client.GetFromJsonAsync<List<Valora.Application.DTOs.Map.MapCityInsightDto>>("/api/map/city-insights");

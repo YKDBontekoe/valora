@@ -39,16 +39,16 @@ public class MapService : IMapService
     public async Task<List<MapCityInsightDto>> GetCityInsightsAsync(CancellationToken cancellationToken = default)
     {
         const string cacheKey = "CityInsights";
-        if (_cache.TryGetValue(cacheKey, out List<MapCityInsightDto>? cached) && cached is not null)
+        if (_cache.TryGetValue(cacheKey, out List<MapCityInsightDto>? cachedCityInsights) && cachedCityInsights is not null)
         {
             _logger.LogDebug("Cache hit for {CacheKey}", cacheKey);
-            return cached;
+            return cachedCityInsights;
         }
 
         _logger.LogDebug("Cache miss for {CacheKey}, fetching from DB", cacheKey);
-        var result = await _repository.GetCityInsightsAsync(cancellationToken);
-        _cache.Set(cacheKey, result, CityInsightsCacheDuration);
-        return result;
+        var cityInsights = await _repository.GetCityInsightsAsync(cancellationToken);
+        _cache.Set(cacheKey, cityInsights, CityInsightsCacheDuration);
+        return cityInsights;
     }
 
     public async Task<List<MapAmenityDto>> GetMapAmenitiesAsync(
@@ -104,9 +104,9 @@ public class MapService : IMapService
         var amenities = await _amenityClient.GetAmenitiesInBboxAsync(minLat, minLon, maxLat, maxLon, types, cancellationToken);
 
         var clusters = amenities
-            .GroupBy(a => (
-                Lat: Math.Floor(a.Latitude / cellSize),
-                Lon: Math.Floor(a.Longitude / cellSize)
+            .GroupBy(amenity => (
+                Lat: Math.Floor(amenity.Latitude / cellSize),
+                Lon: Math.Floor(amenity.Longitude / cellSize)
             ))
             .Select(groupedAmenities =>
             {
@@ -114,7 +114,7 @@ public class MapService : IMapService
                 var lat = (groupedAmenities.Key.Lat * cellSize) + (cellSize / 2);
                 var lon = (groupedAmenities.Key.Lon * cellSize) + (cellSize / 2);
 
-                var typeCounts = groupedAmenities.GroupBy(a => a.Type)
+                var typeCounts = groupedAmenities.GroupBy(amenity => amenity.Type)
                     .ToDictionary(typeGroup => typeGroup.Key, typeGroup => typeGroup.Count());
 
                 return new MapAmenityClusterDto(lat, lon, count, typeCounts);
@@ -263,10 +263,10 @@ public class MapService : IMapService
         var cacheKey = FormattableString.Invariant(
             $"PriceOverlay_{Math.Round(minLat, 2)}_{Math.Round(minLon, 2)}_{Math.Round(maxLat, 2)}_{Math.Round(maxLon, 2)}");
 
-        if (_cache.TryGetValue(cacheKey, out List<MapOverlayDto>? cached) && cached is not null)
+        if (_cache.TryGetValue(cacheKey, out List<MapOverlayDto>? cachedOverlays) && cachedOverlays is not null)
         {
             _logger.LogDebug("Cache hit for price overlay, key={CacheKey}", cacheKey);
-            return cached;
+            return cachedOverlays;
         }
 
         var overlaysTask = _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, MapOverlayMetric.PopulationDensity, ct);
@@ -277,7 +277,7 @@ public class MapService : IMapService
         var overlays = await overlaysTask;
         var listingData = await listingDataTask;
 
-        var result = overlays.Select(overlay =>
+        var overlayResults = overlays.Select(overlay =>
         {
             var geometry = GeoUtils.ParseGeometry(overlay.GeoJson);
             var neighborhoodListings = listingData.Where(l =>
@@ -297,8 +297,8 @@ public class MapService : IMapService
             };
         }).ToList();
 
-        _cache.Set(cacheKey, result, PriceOverlayCacheDuration);
-        return result;
+        _cache.Set(cacheKey, overlayResults, PriceOverlayCacheDuration);
+        return overlayResults;
     }
 
     private static double? CalculateAveragePrice(IEnumerable<ListingPriceData> listings)
