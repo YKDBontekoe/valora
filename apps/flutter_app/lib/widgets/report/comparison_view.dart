@@ -126,17 +126,24 @@ class ComparisonView extends StatelessWidget {
       categories.addAll(r.categoryScores.keys);
     }
 
-    return Table(
-      border: TableBorder(
-        horizontalInside: BorderSide(
-          color: ValoraColors.neutral200,
-          width: 0.5
-        )
-      ),
-      columnWidths: const {
-        0: FixedColumnWidth(100), // Label
-      },
-      children: [
+    final Map<int, TableColumnWidth> colWidths = {
+      0: const FixedColumnWidth(100), // Label
+    };
+    for (int i = 0; i < reports.length; i++) {
+      colWidths[i + 1] = const FixedColumnWidth(120);
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Table(
+        border: TableBorder(
+          horizontalInside: BorderSide(
+            color: ValoraColors.neutral200,
+            width: 0.5
+          )
+        ),
+        columnWidths: colWidths,
+        children: [
         // Header row
         TableRow(
           children: [
@@ -153,24 +160,25 @@ class ComparisonView extends StatelessWidget {
              )),
           ]
         ),
-        ...categories.map((category) {
-           return TableRow(
-             children: [
-               Padding(
-                 padding: const EdgeInsets.symmetric(vertical: 12),
-                 child: Text(category, style: ValoraTypography.labelSmall.copyWith(fontWeight: FontWeight.bold)),
-               ),
-               ...reports.map((report) {
-                 final score = report.categoryScores[category] ?? 0;
-                 return Padding(
+          ...categories.map((category) {
+             return TableRow(
+               children: [
+                 Padding(
                    padding: const EdgeInsets.symmetric(vertical: 12),
-                   child: Center(child: Text(score.toStringAsFixed(1), style: ValoraTypography.bodyMedium)),
-                 );
-               }),
-             ]
-           );
-        }),
-      ],
+                   child: Text(category, style: ValoraTypography.labelSmall.copyWith(fontWeight: FontWeight.bold)),
+                 ),
+                 ...reports.map((report) {
+                   final score = report.categoryScores[category] ?? 0;
+                   return Padding(
+                     padding: const EdgeInsets.symmetric(vertical: 12),
+                     child: Center(child: Text(score.toStringAsFixed(1), style: ValoraTypography.bodyMedium)),
+                   );
+                 }),
+               ]
+             );
+          }),
+        ],
+      ),
     );
   }
 }

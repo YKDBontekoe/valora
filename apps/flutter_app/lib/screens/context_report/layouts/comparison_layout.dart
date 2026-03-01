@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/report/comparison_view.dart';
+import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
 
 class ComparisonLayout extends StatelessWidget {
@@ -34,7 +35,32 @@ class ComparisonLayout extends StatelessWidget {
           IconButton(
             tooltip: 'Clear all',
             icon: const Icon(Icons.delete_sweep_rounded),
-            onPressed: onClear,
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => ValoraDialog(
+                  title: 'Clear Comparison?',
+                  actions: [
+                    ValoraButton(
+                      label: 'Cancel',
+                      variant: ValoraButtonVariant.ghost,
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
+                    ValoraButton(
+                      label: 'Clear All',
+                      variant: ValoraButtonVariant.primary,
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ],
+                  child: const Text('Are you sure you want to clear all reports from comparison?'),
+                ),
+              );
+
+              if (confirmed == true) {
+                onClear();
+                onBack();
+              }
+            },
           ),
           const SizedBox(width: 8),
         ],
