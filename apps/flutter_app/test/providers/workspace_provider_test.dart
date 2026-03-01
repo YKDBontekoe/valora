@@ -20,24 +20,44 @@ void main() {
   });
 
   group('WorkspaceProvider', () {
-    test('fetchWorkspaces populates list on success', () async {
-      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [
-        Workspace(
-          id: '1',
-          name: 'Test',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      ]);
+    test('fetchWorkspaces populates list on success and implements caching', () async {
+      final ws1 = Workspace(
+        id: '1',
+        name: 'Test',
+        ownerId: 'user1',
+        createdAt: DateTime.now(),
+        memberCount: 1,
+        savedListingCount: 0,
+      );
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1]);
 
+      // First fetch
       await provider.fetchWorkspaces();
 
       expect(provider.workspaces.length, 1);
       expect(provider.workspaces.first.name, 'Test');
       expect(provider.isWorkspacesLoading, false);
       expect(provider.error, null);
+
+      // Second fetch (should use caching logic)
+      final ws2 = Workspace(
+        id: '2',
+        name: 'Test 2',
+        ownerId: 'user1',
+        createdAt: DateTime.now(),
+        memberCount: 1,
+        savedListingCount: 0,
+      );
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1, ws2]);
+
+      final future = provider.fetchWorkspaces();
+      // Should remain false because we already have data
+      expect(provider.isWorkspacesLoading, false);
+
+      await future;
+
+      expect(provider.workspaces.length, 2);
+      expect(provider.isWorkspacesLoading, false);
     });
 
     test('fetchWorkspaces handles error', () async {
@@ -68,7 +88,7 @@ void main() {
       expect(provider.workspaces.first.id, '2');
     });
 
-    test('selectWorkspace fetches details', () async {
+    test('selectWorkspace fetches details and implements caching', () async {
       when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
         Workspace(
           id: '1',
@@ -83,7 +103,18 @@ void main() {
       when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
 
+      // First select
       await provider.selectWorkspace('1');
+
+      expect(provider.selectedWorkspace?.id, '1');
+      expect(provider.isWorkspaceDetailLoading, false);
+
+      // Second select of the SAME workspace
+      final future = provider.selectWorkspace('1');
+      // Should remain false because it's already selected
+      expect(provider.isWorkspaceDetailLoading, false);
+
+      await future;
 
       expect(provider.selectedWorkspace?.id, '1');
       expect(provider.isWorkspaceDetailLoading, false);
