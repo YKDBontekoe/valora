@@ -23,7 +23,7 @@ public class GeoUtilsWrappedTests
     [Fact]
     public void ValidateBoundingBox_ShouldThrow_WhenSpanTooLarge_CrossingDateLine()
     {
-        // MinLon=179, MaxLon=-179. Span is 2 degrees. Max is 0.5.
-        Assert.Throws<ValidationException>(() => GeoUtils.ValidateBoundingBox(10, 179, 10.1, -179));
+        // MinLon=176, MaxLon=-176. Span is 8 degrees. Max is 5.0.
+        Assert.Throws<ValidationException>(() => GeoUtils.ValidateBoundingBox(10, 176, 10.1, -176));
     }
 }

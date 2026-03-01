@@ -129,13 +129,32 @@ class _InsightsScreenState extends State<InsightsScreen> {
                           child: const SizedBox.expand(),
                         ),
                       ),
-                      const InsightsHeader(),
-                      const InsightsMetricSelector(),
-                      const Positioned(
-                        top: 148,
+                      Positioned(
+                        top: 0,
                         left: 0,
                         right: 0,
-                        child: MapModeSelector(),
+                        child: Selector<InsightsProvider, MapMode>(
+                          selector: (_, p) => p.mapMode,
+                          builder: (context, mode, _) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const SizedBox(height: 12),
+                                  const InsightsHeader(),
+                                  const SizedBox(height: 12),
+                                  const MapModeSelector(),
+                                  if (mode == MapMode.cities) ...[
+                                    const SizedBox(height: 12),
+                                    const InsightsMetricSelector(),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
                       const InsightsLegend(),
                       InsightsControls(

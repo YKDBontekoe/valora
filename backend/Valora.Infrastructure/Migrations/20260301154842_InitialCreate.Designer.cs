@@ -12,8 +12,8 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    [Migration("20260224165400_MakeActivityLogWorkspaceIdNullable")]
-    partial class MakeActivityLogWorkspaceIdNullable
+    [Migration("20260301154842_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -196,7 +196,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("ActorId");
 
-                    b.HasIndex("WorkspaceId");
+                    b.HasIndex("WorkspaceId", "CreatedAt");
 
                     b.ToTable("ActivityLogs");
                 });
@@ -244,7 +244,10 @@ namespace Valora.Infrastructure.Migrations
                     b.HasIndex("Intent")
                         .IsUnique();
 
-                    b.ToTable("AiModelConfigs");
+                    b.ToTable("AiModelConfigs", t =>
+                        {
+                            t.HasCheckConstraint("CK_AiModelConfig_Intent", "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'");
+                        });
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.ApplicationUser", b =>
@@ -260,8 +263,8 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -273,8 +276,8 @@ namespace Valora.Infrastructure.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
@@ -375,348 +378,6 @@ namespace Valora.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.Listing", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("AgentName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("BalconyM2")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Bathrooms")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Bedrooms")
-                        .HasColumnType("int");
-
-                    b.Property<string>("BrochureUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BrokerAssociationCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("BrokerLogoUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("BrokerOfficeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("BrokerPhone")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("CVBoilerBrand")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("CVBoilerYear")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CadastralDesignation")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ConstructionPeriod")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<double?>("ContextAmenitiesScore")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ContextCompositeScore")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ContextEnvironmentScore")
-                        .HasColumnType("float");
-
-                    b.Property<string>("ContextReport")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("ContextSafetyScore")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ContextSocialScore")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnergyLabel")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int?>("ExternalStorageM2")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Features")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool?>("FiberAvailable")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("FloorPlanUrls")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FundaId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("GardenM2")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GardenOrientation")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("HasGarage")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("HeatingType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ImageUrls")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("InsulationType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsSoldOrRented")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Labels")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("LastFundaFetchUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime?>("ListedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("LivingAreaM2")
-                        .HasColumnType("int");
-
-                    b.Property<double?>("Longitude")
-                        .HasColumnType("float");
-
-                    b.Property<decimal?>("NeighborhoodAvgPriceM2")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("NeighborhoodPopulation")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("NumberOfFloors")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OpenHouseDates")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OwnershipType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ParkingType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("PlotAreaM2")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal?>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("PropertyType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("PublicationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RoofType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("SaveCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Url")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal?>("VVEContribution")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("VideoUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ViewCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("VirtualTourUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("VolumeM3")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("YearBuilt")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Address");
-
-                    b.HasIndex("Bedrooms");
-
-                    b.HasIndex("City");
-
-                    b.HasIndex("ContextCompositeScore");
-
-                    b.HasIndex("ContextSafetyScore");
-
-                    b.HasIndex("FundaId")
-                        .IsUnique();
-
-                    b.HasIndex("IsSoldOrRented");
-
-                    b.HasIndex("LastFundaFetchUtc");
-
-                    b.HasIndex("Latitude");
-
-                    b.HasIndex("ListedDate");
-
-                    b.HasIndex("LivingAreaM2");
-
-                    b.HasIndex("Longitude");
-
-                    b.HasIndex("PostalCode");
-
-                    b.HasIndex("Price");
-
-                    b.HasIndex("PropertyType");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("City", "Bedrooms");
-
-                    b.HasIndex("City", "ContextCompositeScore");
-
-                    b.HasIndex("City", "ContextSafetyScore");
-
-                    b.HasIndex("City", "LastFundaFetchUtc");
-
-                    b.HasIndex("City", "LivingAreaM2");
-
-                    b.HasIndex("City", "Price");
-
-                    b.HasIndex("Latitude", "Longitude");
-
-                    b.HasIndex("City", "LastFundaFetchUtc", "Price");
-
-                    b.ToTable("Listings", t =>
-                        {
-                            t.HasCheckConstraint("CK_Listing_Bedrooms", "[Bedrooms] >= 0");
-
-                            t.HasCheckConstraint("CK_Listing_ContextAmenitiesScore", "[ContextAmenitiesScore] >= 0 AND [ContextAmenitiesScore] <= 100");
-
-                            t.HasCheckConstraint("CK_Listing_ContextCompositeScore", "[ContextCompositeScore] >= 0 AND [ContextCompositeScore] <= 100");
-
-                            t.HasCheckConstraint("CK_Listing_ContextEnvironmentScore", "[ContextEnvironmentScore] >= 0 AND [ContextEnvironmentScore] <= 100");
-
-                            t.HasCheckConstraint("CK_Listing_ContextSafetyScore", "[ContextSafetyScore] >= 0 AND [ContextSafetyScore] <= 100");
-
-                            t.HasCheckConstraint("CK_Listing_ContextSocialScore", "[ContextSocialScore] >= 0 AND [ContextSocialScore] <= 100");
-
-                            t.HasCheckConstraint("CK_Listing_LivingAreaM2", "[LivingAreaM2] > 0");
-
-                            t.HasCheckConstraint("CK_Listing_Price", "[Price] > 0");
-                        });
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.ListingComment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ParentCommentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Reactions")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("SavedListingId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentCommentId");
-
-                    b.HasIndex("SavedListingId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ListingComments");
-                });
-
             modelBuilder.Entity("Valora.Domain.Entities.Neighborhood", b =>
                 {
                     b.Property<Guid>("Id")
@@ -795,6 +456,10 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DedupeKey")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
@@ -822,42 +487,151 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("UserId", "DedupeKey")
+                        .IsUnique()
+                        .HasFilter("[DedupeKey] IS NOT NULL");
+
                     b.HasIndex("UserId", "IsRead", "CreatedAt");
 
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.PriceHistory", b =>
+            modelBuilder.Entity("Valora.Domain.Entities.Property", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("BagId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<double?>("ContextAmenitiesScore")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("ContextCompositeScore")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("ContextEnvironmentScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ContextReport")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("ContextSafetyScore")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("ContextSocialScore")
+                        .HasColumnType("float");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("ListingId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int?>("LivingAreaM2")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("RecordedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("SaveCount")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("YearBuilt")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("BagId")
+                        .IsUnique()
+                        .HasFilter("[BagId] IS NOT NULL");
 
-                    b.HasIndex("RecordedAt");
+                    b.HasIndex("City");
 
-                    b.ToTable("PriceHistories", t =>
+                    b.HasIndex("ContextCompositeScore");
+
+                    b.HasIndex("ContextSafetyScore");
+
+                    b.HasIndex("Latitude");
+
+                    b.HasIndex("Longitude");
+
+                    b.HasIndex("PostalCode");
+
+                    b.HasIndex("Latitude", "Longitude");
+
+                    b.ToTable("Properties", t =>
                         {
-                            t.HasCheckConstraint("CK_PriceHistory_Price", "[Price] > 0");
+                            t.HasCheckConstraint("CK_Property_ContextAmenitiesScore", "[ContextAmenitiesScore] >= 0 AND [ContextAmenitiesScore] <= 100");
+
+                            t.HasCheckConstraint("CK_Property_ContextCompositeScore", "[ContextCompositeScore] >= 0 AND [ContextCompositeScore] <= 100");
+
+                            t.HasCheckConstraint("CK_Property_ContextEnvironmentScore", "[ContextEnvironmentScore] >= 0 AND [ContextEnvironmentScore] <= 100");
+
+                            t.HasCheckConstraint("CK_Property_ContextSafetyScore", "[ContextSafetyScore] >= 0 AND [ContextSafetyScore] <= 100");
+
+                            t.HasCheckConstraint("CK_Property_ContextSocialScore", "[ContextSocialScore] >= 0 AND [ContextSocialScore] <= 100");
                         });
+                });
+
+            modelBuilder.Entity("Valora.Domain.Entities.PropertyComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reactions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SavedPropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("SavedPropertyId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PropertyComments");
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.RefreshToken", b =>
@@ -897,7 +671,7 @@ namespace Valora.Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.SavedListing", b =>
+            modelBuilder.Entity("Valora.Domain.Entities.SavedProperty", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -910,12 +684,12 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("ListingId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -927,12 +701,12 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasIndex("AddedByUserId");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("PropertyId");
 
-                    b.HasIndex("WorkspaceId", "ListingId")
+                    b.HasIndex("WorkspaceId", "PropertyId")
                         .IsUnique();
 
-                    b.ToTable("SavedListings");
+                    b.ToTable("SavedProperties");
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.UserAiProfile", b =>
@@ -946,11 +720,13 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("DisallowedSuggestions")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<string>("HouseholdProfile")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
@@ -960,7 +736,8 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Property<string>("Preferences")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1118,48 +895,37 @@ namespace Valora.Infrastructure.Migrations
                     b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
                         .WithMany("ActivityLogs")
                         .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Actor");
 
                     b.Navigation("Workspace");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.ListingComment", b =>
+            modelBuilder.Entity("Valora.Domain.Entities.PropertyComment", b =>
                 {
-                    b.HasOne("Valora.Domain.Entities.ListingComment", "ParentComment")
+                    b.HasOne("Valora.Domain.Entities.PropertyComment", "ParentComment")
                         .WithMany("Replies")
                         .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Valora.Domain.Entities.SavedListing", "SavedListing")
+                    b.HasOne("Valora.Domain.Entities.SavedProperty", "SavedProperty")
                         .WithMany("Comments")
-                        .HasForeignKey("SavedListingId")
+                        .HasForeignKey("SavedPropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Valora.Domain.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ParentComment");
 
-                    b.Navigation("SavedListing");
+                    b.Navigation("SavedProperty");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.PriceHistory", b =>
-                {
-                    b.HasOne("Valora.Domain.Entities.Listing", "Listing")
-                        .WithMany("PriceHistory")
-                        .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Listing");
                 });
 
             modelBuilder.Entity("Valora.Domain.Entities.RefreshToken", b =>
@@ -1173,29 +939,29 @@ namespace Valora.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.SavedListing", b =>
+            modelBuilder.Entity("Valora.Domain.Entities.SavedProperty", b =>
                 {
                     b.HasOne("Valora.Domain.Entities.ApplicationUser", "AddedByUser")
                         .WithMany()
                         .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Valora.Domain.Entities.Listing", "Listing")
+                    b.HasOne("Valora.Domain.Entities.Property", "Property")
                         .WithMany()
-                        .HasForeignKey("ListingId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Valora.Domain.Entities.Workspace", "Workspace")
-                        .WithMany("SavedListings")
+                        .WithMany("SavedProperties")
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AddedByUser");
 
-                    b.Navigation("Listing");
+                    b.Navigation("Property");
 
                     b.Navigation("Workspace");
                 });
@@ -1243,17 +1009,12 @@ namespace Valora.Infrastructure.Migrations
                     b.Navigation("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.Listing", b =>
-                {
-                    b.Navigation("PriceHistory");
-                });
-
-            modelBuilder.Entity("Valora.Domain.Entities.ListingComment", b =>
+            modelBuilder.Entity("Valora.Domain.Entities.PropertyComment", b =>
                 {
                     b.Navigation("Replies");
                 });
 
-            modelBuilder.Entity("Valora.Domain.Entities.SavedListing", b =>
+            modelBuilder.Entity("Valora.Domain.Entities.SavedProperty", b =>
                 {
                     b.Navigation("Comments");
                 });
@@ -1264,7 +1025,7 @@ namespace Valora.Infrastructure.Migrations
 
                     b.Navigation("Members");
 
-                    b.Navigation("SavedListings");
+                    b.Navigation("SavedProperties");
                 });
 #pragma warning restore 612, 618
         }

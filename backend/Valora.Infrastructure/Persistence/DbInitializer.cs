@@ -27,6 +27,21 @@ public static class DbInitializer
                 await dbContext.Database.MigrateAsync();
             }
 
+            // Cleanup any manually injected users with invalid PBKDF2 hashes so they can be re-seeded properly.
+            var invalidUsers = await dbContext.Users
+                .Where(u => u.PasswordHash != null && !u.PasswordHash.StartsWith("AQAAAA"))
+                .ToListAsync();
+
+            if (invalidUsers.Any())
+            {
+                var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+                foreach (var invalidUser in invalidUsers)
+                {
+                    logger.LogWarning("Deleting manually injected user {Email} due to invalid password format.", invalidUser.Email);
+                    await identityService.DeleteUserAsync(invalidUser.Id);
+                }
+            }
+
             // Seed Admin User
             var adminEmail = configuration["ADMIN_EMAIL"];
             var adminPassword = configuration["ADMIN_PASSWORD"];

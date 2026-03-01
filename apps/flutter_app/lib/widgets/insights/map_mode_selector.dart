@@ -14,7 +14,6 @@ class MapModeSelector extends StatelessWidget {
 
     return Container(
       height: 48,
-      margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,
         borderRadius: BorderRadius.circular(13),

@@ -28,6 +28,13 @@ public class BaseIntegrationTest : IAsyncLifetime
         // Simple cleanup of Properties table before each test
         // In a real scenario, Respawn is better, but this avoids adding a package dependency now.
 
+        // Clear InMemoryCache to prevent endpoints like map insights from bleeding across tests
+        var cache = _scope.ServiceProvider.GetService<Microsoft.Extensions.Caching.Memory.IMemoryCache>();
+        if (cache is Microsoft.Extensions.Caching.Memory.MemoryCache memCache)
+        {
+            memCache.Clear();
+        }
+
         DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
         DbContext.Notifications.RemoveRange(DbContext.Notifications);
         // Explicitly clear Properties to prevent state leakage between tests

@@ -9,13 +9,9 @@ class InsightsMetricSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      top: 90,
-      left: 12,
-      right: 12,
-      child: Selector<InsightsProvider, InsightMetric>(
-        selector: (_, p) => p.selectedMetric,
-        builder: (context, selectedMetric, _) {
+    return Selector<InsightsProvider, InsightMetric>(
+      selector: (_, p) => p.selectedMetric,
+      builder: (context, selectedMetric, _) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Container(
             height: 48,
@@ -89,8 +85,7 @@ class InsightsMetricSelector extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
+      );
   }
 
   IconData _getMetricIcon(InsightMetric metric) {
