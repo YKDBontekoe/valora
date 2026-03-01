@@ -87,7 +87,8 @@ class NotificationCard extends StatelessWidget {
               }
             } else if (actionUrl.startsWith('/reports')) {
               // Parse /reports?q={query}
-              final uri = Uri.parse(actionUrl);
+              final uri = Uri.tryParse(actionUrl);
+              if (uri == null) return;
               final query = uri.queryParameters['q'];
 
               if (query != null && query.isNotEmpty) {
@@ -106,8 +107,8 @@ class NotificationCard extends StatelessWidget {
             }
 
             // Fallback for non-internal URLs or unhandled paths
-            final uri = Uri.parse(actionUrl);
-            if (await canLaunchUrl(uri)) {
+            final uri = Uri.tryParse(actionUrl);
+            if (uri != null && await canLaunchUrl(uri)) {
               await launchUrl(uri);
             }
           }
