@@ -49,19 +49,17 @@ public sealed class CbsGeoClient : ICbsGeoClient
             return cached!;
         }
 
-        var bbox = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
-        var url = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&bbox={bbox},urn:ogc:def:crs:EPSG::4326";
+        var boundingBoxQuery = $"{minLat.ToString(CultureInfo.InvariantCulture)},{minLon.ToString(CultureInfo.InvariantCulture)},{maxLat.ToString(CultureInfo.InvariantCulture)},{maxLon.ToString(CultureInfo.InvariantCulture)}";
+        var requestUrl = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&bbox={boundingBoxQuery},urn:ogc:def:crs:EPSG::4326";
 
         try
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("PDOK WFS failed with status {StatusCode}", response.StatusCode);
-                var emptyResult = new List<MapOverlayDto>();
-                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-                return emptyResult;
+                return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
             }
 
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -69,9 +67,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
             if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
             {
-                var emptyResult = new List<MapOverlayDto>();
-                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-                return emptyResult;
+                return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
             }
 
             var results = new List<MapOverlayDto>();
@@ -84,16 +80,16 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
                 var neighborhoodName = props.GetStringSafe("buurtnaam") ?? "Unknown";
 
-                var (value, display) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
+                var (metricValue, metricDisplayValue) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
 
-                if (value.HasValue)
+                if (metricValue.HasValue)
                 {
                     results.Add(new MapOverlayDto(
                         neighborhoodCode,
                         neighborhoodName,
                         metric.ToString(),
-                        value.Value,
-                        display,
+                        metricValue.Value,
+                        metricDisplayValue,
                         feature.Clone()));
                 }
             }
@@ -104,18 +100,21 @@ public sealed class CbsGeoClient : ICbsGeoClient
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "HTTP request to PDOK WFS failed.");
-            var emptyResult = new List<MapOverlayDto>();
-            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-            return emptyResult;
+            return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response.");
-            var emptyResult = new List<MapOverlayDto>();
-            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-            return emptyResult;
+            return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
         }
 
+    }
+
+    private List<T> HandleEmptyResultAndCache<T>(string cacheKey)
+    {
+        var emptyResult = new List<T>();
+        _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+        return emptyResult;
     }
 
     private async Task<(double? Value, string Display)> GetMetricValueAsync(string code, MapOverlayMetric metric, CancellationToken ct)
@@ -158,17 +157,15 @@ public sealed class CbsGeoClient : ICbsGeoClient
         }
 
         var encodedFilter = BuildMunicipalityFilter(municipalityName);
-        var url = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&FILTER={encodedFilter}";
+        var requestUrl = $"https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:buurten&outputFormat=json&srsName=EPSG:4326&FILTER={encodedFilter}";
 
         try
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("PDOK WFS failed with status {StatusCode} for municipality {Municipality}", response.StatusCode, municipalityName);
-                var emptyResult = new List<NeighborhoodGeometryDto>();
-                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-                return emptyResult;
+                return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
             }
 
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -176,9 +173,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
             if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
             {
-                var emptyResult = new List<NeighborhoodGeometryDto>();
-                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-                return emptyResult;
+                return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
             }
 
             var results = new List<NeighborhoodGeometryDto>();
@@ -204,16 +199,12 @@ public sealed class CbsGeoClient : ICbsGeoClient
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "HTTP request to PDOK WFS failed for municipality {Municipality}.", municipalityName);
-            var emptyResult = new List<NeighborhoodGeometryDto>();
-            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-            return emptyResult;
+            return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipality {Municipality}.", municipalityName);
-            var emptyResult = new List<NeighborhoodGeometryDto>();
-            _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
-            return emptyResult;
+            return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
         }
     }
 
@@ -231,12 +222,12 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
         var cacheTask = _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var url = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
+            var requestUrl = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
             var emptyResult = new List<string>();
 
             try
             {
-                using var response = await _httpClient.GetAsync(url, CancellationToken.None);
+                using var response = await _httpClient.GetAsync(requestUrl, CancellationToken.None);
 
                 if (!response.IsSuccessStatusCode)
                 {

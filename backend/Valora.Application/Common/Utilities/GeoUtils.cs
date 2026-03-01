@@ -195,16 +195,22 @@ public static class GeoUtils
         bool inside = false;
         int count = ring.Count;
 
-        for (int i = 0, j = count - 1; i < count; j = i++)
+        for (int i = 0, previousPointIndex = count - 1; i < count; previousPointIndex = i++)
         {
             double startLon = ring[i].Lon;
             double startLat = ring[i].Lat;
-            double endLon = ring[j].Lon;
-            double endLat = ring[j].Lat;
+            double endLon = ring[previousPointIndex].Lon;
+            double endLat = ring[previousPointIndex].Lat;
 
-            bool doesIntersect = ((startLat > lat) != (endLat > lat)) &&
-                             (lon < (endLon - startLon) * (lat - startLat) / (endLat - startLat) + startLon);
-            if (doesIntersect) inside = !inside;
+            bool isPointBetweenLatitudes = (startLat > lat) != (endLat > lat);
+            bool isPointToTheLeftOfSegment = lon < (endLon - startLon) * (lat - startLat) / (endLat - startLat) + startLon;
+
+            bool doesIntersect = isPointBetweenLatitudes && isPointToTheLeftOfSegment;
+
+            if (doesIntersect)
+            {
+                inside = !inside;
+            }
         }
 
         return inside;

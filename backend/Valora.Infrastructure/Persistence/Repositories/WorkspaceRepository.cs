@@ -16,7 +16,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         _context = context;
     }
 
-    // Workspace Management
     public Task<Workspace> AddAsync(Workspace workspace, CancellationToken ct = default)
     {
         _context.Workspaces.Add(workspace);
@@ -109,7 +108,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         return Task.CompletedTask;
     }
 
-    // Member Management
     public async Task<List<WorkspaceMember>> GetMembersAsync(Guid workspaceId, CancellationToken ct = default)
     {
         return await _context.WorkspaceMembers
@@ -159,7 +157,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         return member.Role;
     }
 
-    // Saved Properties Management
     public async Task<SavedProperty?> GetSavedPropertyAsync(Guid workspaceId, Guid propertyId, CancellationToken ct = default)
     {
         return await _context.SavedProperties
@@ -222,7 +219,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         return Task.CompletedTask;
     }
 
-    // Property Queries
     public async Task<Property?> GetPropertyAsync(Guid propertyId, CancellationToken ct = default)
     {
         return await _context.Properties.FindAsync(new object[] { propertyId }, ct);
@@ -240,7 +236,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         return property;
     }
 
-    // Comment Management
     public Task<PropertyComment> AddCommentAsync(PropertyComment comment, CancellationToken ct = default)
     {
         _context.PropertyComments.Add(comment);
@@ -261,7 +256,6 @@ public class WorkspaceRepository : IWorkspaceRepository
             .ToListAsync(ct);
     }
 
-    // Activity Logs
     public Task LogActivityAsync(ActivityLog log, CancellationToken ct = default)
     {
         _context.ActivityLogs.Add(log);
