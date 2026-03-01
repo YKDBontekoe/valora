@@ -30,10 +30,51 @@ class IntersectionObserverMock {
   root = null;
   rootMargin = "";
   thresholds = [];
-  disconnect = vi.fn();
-  observe = vi.fn();
-  takeRecords = vi.fn();
-  unobserve = vi.fn();
+
+  private callback: IntersectionObserverCallback;
+  private observedElements: Set<Element> = new Set();
+
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    this.callback = callback;
+    if (options) {
+      this.root = options.root ?? null;
+      this.rootMargin = options.rootMargin ?? "";
+      this.thresholds = Array.isArray(options.threshold)
+        ? options.threshold
+        : [options.threshold ?? 0];
+    }
+  }
+
+  disconnect = vi.fn(() => {
+    this.observedElements.clear();
+  });
+
+  observe = vi.fn((element: Element) => {
+    this.observedElements.add(element);
+    // IntersectionObserver callbacks are usually async
+    queueMicrotask(() => {
+      if (!this.observedElements.has(element)) return;
+
+      this.callback(
+        [{
+          target: element,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          boundingClientRect: element.getBoundingClientRect(),
+          intersectionRect: element.getBoundingClientRect(),
+          rootBounds: null,
+          time: Date.now(),
+        } as unknown as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver
+      );
+    });
+  });
+
+  takeRecords = vi.fn(() => []);
+
+  unobserve = vi.fn((element: Element) => {
+    this.observedElements.delete(element);
+  });
 }
 
 Object.defineProperty(window, 'IntersectionObserver', {
