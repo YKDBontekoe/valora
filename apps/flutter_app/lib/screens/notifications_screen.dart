@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
@@ -8,8 +7,6 @@ import '../core/theme/valora_spacing.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
 import '../widgets/valora_widgets.dart';
-import '../screens/workspace_detail_screen.dart';
-import '../screens/context_report/context_report_screen.dart';
 import '../widgets/notifications/notification_card.dart';
 
 class NotificationsScreen extends StatefulWidget {

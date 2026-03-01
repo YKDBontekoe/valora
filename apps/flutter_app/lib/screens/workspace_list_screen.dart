@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
@@ -7,7 +6,6 @@ import '../core/theme/valora_spacing.dart';
 import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
-import 'workspace_detail_screen.dart';
 import '../widgets/workspaces/workspace_list_item.dart';
 
 enum SortOption { name, createdDate, memberCount }
