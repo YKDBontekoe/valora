@@ -194,12 +194,14 @@ public static class DependencyInjection
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options =>
-            {
-                var secret = configuration["JWT_SECRET"]
-                             ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
+                        .AddJwtBearer();
 
-                if (!environment.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>, IHostEnvironment>((options, jwtOpts, env) =>
+            {
+                var secret = jwtOpts.Value.Secret;
+
+                if (!env.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
                 {
                     throw new InvalidOperationException("Critical Security Risk: The application is running in a non-development environment with the default, insecure JWT_SECRET. You MUST override JWT_SECRET with a strong, random key in your environment variables.");
                 }
@@ -210,8 +212,8 @@ public static class DependencyInjection
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["JWT_ISSUER"],
-                    ValidAudience = configuration["JWT_AUDIENCE"],
+                    ValidIssuer = jwtOpts.Value.Issuer,
+                    ValidAudience = jwtOpts.Value.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
                 };
 
