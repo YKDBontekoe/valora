@@ -89,7 +89,9 @@ void main() {
 
     // Should be visible
     expect(find.text('Test City'), findsOneWidget);
-    expect(find.text('Composite Score'), findsOneWidget);
+    expect(find.text('Safety'), findsOneWidget);
+    expect(find.text('Social'), findsOneWidget);
+    expect(find.text('Amenities'), findsOneWidget);
 
     // Close via provider directly to avoid off-screen tap issues in test environment due to animation
     provider.clearSelection();

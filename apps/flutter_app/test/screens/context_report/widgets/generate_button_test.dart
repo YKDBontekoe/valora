@@ -46,7 +46,7 @@ void main() {
     expect(buttonFinder, findsOneWidget);
 
     // Tap it (should do nothing as it's disabled)
-    await tester.tap(buttonFinder);
+    await tester.tap(buttonFinder, warnIfMissed: false);
     await tester.pumpAndSettle(); // Allow tap animations to settle
     verifyNever(mockProvider.generate(any));
 
@@ -56,7 +56,7 @@ void main() {
     await tester.pumpAndSettle(); // Rebuild and settle animations
 
     // Tap again
-    await tester.tap(buttonFinder);
+    await tester.tap(buttonFinder, warnIfMissed: false);
     await tester.pumpAndSettle(); // Allow tap animations to settle
 
     // EXPECTATION: generate() should be called once with "Amsterdam"

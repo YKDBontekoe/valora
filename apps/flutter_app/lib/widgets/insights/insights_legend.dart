@@ -18,7 +18,7 @@ class InsightsLegend extends StatelessWidget {
           bottom: 20,
           child: Container(
             key: const Key('insights_map_legend'),
-            width: 160,
+            width: 200,
             padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
             decoration: BoxDecoration(
               color: isDark ? ValoraColors.glassBlackStrong : ValoraColors.glassWhiteStrong,

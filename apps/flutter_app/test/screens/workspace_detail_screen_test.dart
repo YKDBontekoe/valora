@@ -63,6 +63,6 @@ void main() {
     await tester.pumpWidget(createScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('No saved listings'), findsOneWidget);
+    expect(find.text('No saved properties'), findsOneWidget);
   });
 }
