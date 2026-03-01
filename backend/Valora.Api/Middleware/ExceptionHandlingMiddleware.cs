@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 
 using Sentry;
@@ -92,12 +91,12 @@ public class ExceptionHandlingMiddleware
                 title = "Request Cancelled";
                 detail = "The request was cancelled by the client.";
                 break;
-            case DbUpdateConcurrencyException:
+            case Exception e when e.GetType().Name == "DbUpdateConcurrencyException":
                 statusCode = (int)HttpStatusCode.Conflict;
                 title = "Concurrency Conflict";
                 detail = "The resource has been modified by another user.";
                 break;
-            case DbUpdateException dbEx:
+            case Exception e when e.GetType().Name == "DbUpdateException":
                 statusCode = (int)HttpStatusCode.Conflict;
                 title = "Database Conflict";
                 detail = "A database constraint violation occurred.";

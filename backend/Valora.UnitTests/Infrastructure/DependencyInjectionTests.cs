@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,7 @@ public class DependencyInjectionTests
             .Build();
 
         var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, new Moq.Mock<IHostEnvironment>().Object);
         var provider = services.BuildServiceProvider();
 
         var options = provider.GetRequiredService<IOptions<ContextEnrichmentOptions>>().Value;
@@ -62,7 +63,7 @@ public class DependencyInjectionTests
 
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, new Moq.Mock<IHostEnvironment>().Object);
 
         var provider = services.BuildServiceProvider();
 
@@ -90,7 +91,7 @@ public class DependencyInjectionTests
             .Build();
 
         var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, new Moq.Mock<IHostEnvironment>().Object);
         var provider = services.BuildServiceProvider();
 
         var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
@@ -116,7 +117,7 @@ public class DependencyInjectionTests
             .Build();
 
         var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, new Moq.Mock<IHostEnvironment>().Object);
         var provider = services.BuildServiceProvider();
 
         var ex = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<JwtOptions>>().Value);
@@ -139,7 +140,7 @@ public class DependencyInjectionTests
             .Build();
 
         var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, new Moq.Mock<IHostEnvironment>().Object);
         var provider = services.BuildServiceProvider();
 
         // When requesting IOptions<JwtOptions>, the configuration delegate runs and should throw
