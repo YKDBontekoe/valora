@@ -107,3 +107,8 @@ docker/data/
 .env.*
 !.env.example
 test_output.txt
+
+# Patch files
+*.diff
+*.patch
+*.orig
