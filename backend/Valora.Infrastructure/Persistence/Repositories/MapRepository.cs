@@ -23,7 +23,7 @@ public class MapRepository : IMapRepository
                 g.Count(),
                 g.Average(x => x.Latitude!.Value),
                 g.Average(x => x.Longitude!.Value),
-                g.Average(x => x.ContextCompositeScore),
+                g.Average(x => x.ContextCompositeScore ?? 0),
                 g.Average(x => x.ContextSafetyScore),
                 g.Average(x => x.ContextSocialScore),
                 g.Average(x => x.ContextAmenitiesScore)

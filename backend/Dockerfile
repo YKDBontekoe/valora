@@ -17,7 +17,7 @@ COPY . .
 
 # Build and publish the application
 WORKDIR /src/Valora.Api
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false /p:PublishReadyToRun=true -r linux-musl-x64
 
 # Use the official ASP.NET Core runtime image (Alpine based for size optimization)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final

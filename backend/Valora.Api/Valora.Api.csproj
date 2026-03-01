@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
