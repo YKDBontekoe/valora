@@ -20,24 +20,85 @@ void main() {
   });
 
   group('WorkspaceProvider', () {
-    test('fetchWorkspaces populates list on success', () async {
-      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [
-        Workspace(
-          id: '1',
-          name: 'Test',
-          ownerId: 'user1',
-          createdAt: DateTime.now(),
-          memberCount: 1,
-          savedListingCount: 0,
-        )
-      ]);
+    test('fetchWorkspaces populates list on success and implements caching', () async {
+      final ws1 = Workspace(
+        id: '1',
+        name: 'Test',
+        ownerId: 'user1',
+        createdAt: DateTime.now(),
+        memberCount: 1,
+        savedListingCount: 0,
+      );
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1]);
 
+      // First fetch
       await provider.fetchWorkspaces();
 
       expect(provider.workspaces.length, 1);
       expect(provider.workspaces.first.name, 'Test');
       expect(provider.isWorkspacesLoading, false);
       expect(provider.error, null);
+
+      // Second fetch (should use caching logic)
+      final ws2 = Workspace(
+        id: '2',
+        name: 'Test 2',
+        ownerId: 'user1',
+        createdAt: DateTime.now(),
+        memberCount: 1,
+        savedListingCount: 0,
+      );
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1, ws2]);
+
+      final future = provider.fetchWorkspaces();
+      // Should remain false because we already have data
+      expect(provider.isWorkspacesLoading, false);
+
+      await future;
+
+      expect(provider.workspaces.length, 2);
+      expect(provider.isWorkspacesLoading, false);
+    });
+
+    test('fetchWorkspaces caching hides error on background refresh failure', () async {
+      final ws1 = Workspace(
+        id: '1',
+        name: 'Test',
+        ownerId: 'user1',
+        createdAt: DateTime.now(),
+        memberCount: 1,
+        savedListingCount: 0,
+      );
+
+      // Setup initial data
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => [ws1]);
+      await provider.fetchWorkspaces();
+      expect(provider.workspaces.length, 1);
+      expect(provider.error, null);
+
+      // Second fetch fails
+      when(mockRepository.fetchWorkspaces()).thenThrow(Exception('Network error'));
+      await provider.fetchWorkspaces();
+
+      // Error should remain null because we already have workspaces to show
+      expect(provider.error, null);
+      expect(provider.workspaces.length, 1); // Old data retained
+    });
+
+    test('fetchWorkspaces shows loading if error was previously set', () async {
+      // Setup error state
+      when(mockRepository.fetchWorkspaces()).thenThrow(Exception('Network error'));
+      await provider.fetchWorkspaces();
+      expect(provider.error, contains('Network error'));
+
+      // Next fetch should show loading and clear error
+      when(mockRepository.fetchWorkspaces()).thenAnswer((_) async => []);
+      final future = provider.fetchWorkspaces();
+      expect(provider.isWorkspacesLoading, true); // Loading is true because error was set
+      expect(provider.error, null); // Error cleared immediately
+
+      await future;
+      expect(provider.isWorkspacesLoading, false);
     });
 
     test('fetchWorkspaces handles error', () async {
@@ -68,7 +129,7 @@ void main() {
       expect(provider.workspaces.first.id, '2');
     });
 
-    test('selectWorkspace fetches details', () async {
+    test('selectWorkspace fetches details and implements caching', () async {
       when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
         Workspace(
           id: '1',
@@ -83,10 +144,67 @@ void main() {
       when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
       when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
 
+      // First select
       await provider.selectWorkspace('1');
 
       expect(provider.selectedWorkspace?.id, '1');
       expect(provider.isWorkspaceDetailLoading, false);
+
+      // Second select of the SAME workspace
+      final future = provider.selectWorkspace('1');
+      // Should remain false because it's already selected
+      expect(provider.isWorkspaceDetailLoading, false);
+
+      await future;
+
+      expect(provider.selectedWorkspace?.id, '1');
+      expect(provider.isWorkspaceDetailLoading, false);
+    });
+
+    test('selectWorkspace caching hides error on background refresh failure', () async {
+      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
+        Workspace(id: '1', name: 'WS', ownerId: 'user1', createdAt: DateTime.now(), memberCount: 1, savedListingCount: 0)
+      );
+      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+
+      // First select succeeds
+      await provider.selectWorkspace('1');
+      expect(provider.error, null);
+
+      // Second select of same workspace fails
+      when(mockRepository.getWorkspace('1')).thenThrow(Exception('Network Error'));
+
+      await provider.selectWorkspace('1');
+
+      // Error should remain null because we already had data
+      expect(provider.error, null);
+      expect(provider.selectedWorkspace?.id, '1'); // Keeps old data
+    });
+
+    test('selectWorkspace clears error and sets loading when retrying after error', () async {
+      // First select fails
+      when(mockRepository.getWorkspace('1')).thenThrow(Exception('Network Error'));
+      await provider.selectWorkspace('1');
+      expect(provider.error, contains('Network Error'));
+      expect(provider.selectedWorkspace, null);
+
+      // Retry select (should show loading and clear error)
+      when(mockRepository.getWorkspace('1')).thenAnswer((_) async =>
+        Workspace(id: '1', name: 'WS', ownerId: 'user1', createdAt: DateTime.now(), memberCount: 1, savedListingCount: 0)
+      );
+      when(mockRepository.getWorkspaceMembers('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceProperties('1')).thenAnswer((_) async => []);
+      when(mockRepository.getWorkspaceActivity('1')).thenAnswer((_) async => []);
+
+      final future = provider.selectWorkspace('1');
+      expect(provider.isWorkspaceDetailLoading, true); // Loading true due to previous error
+      expect(provider.error, null); // Error cleared immediately
+
+      await future;
+      expect(provider.isWorkspaceDetailLoading, false);
+      expect(provider.selectedWorkspace?.id, '1');
     });
 
     test('inviteMember calls API and refreshes members', () async {
