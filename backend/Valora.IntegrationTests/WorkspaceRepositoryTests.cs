@@ -26,8 +26,12 @@ public class WorkspaceRepositoryTests
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         var workspaceId = Guid.NewGuid();
-        var ownerId = "test-owner-id";
+        var ownerId = Guid.NewGuid().ToString();
+        var user = new ApplicationUser { Id = ownerId, UserName = $"owner-{ownerId}", Email = $"owner-{ownerId}@test.com" };
         var workspace = new Workspace { Id = workspaceId, Name = "Test Add Workspace", OwnerId = ownerId };
+
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
 
         // Act
         await repository.AddAsync(workspace);
@@ -48,15 +52,20 @@ public class WorkspaceRepositoryTests
         var repository = scope.ServiceProvider.GetRequiredService<IWorkspaceRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        var userId = "test-user-ws-id";
+        var userId = Guid.NewGuid().ToString();
+        var otherUserId = Guid.NewGuid().ToString();
+        var user = new ApplicationUser { Id = userId, UserName = $"user-{userId}", Email = $"user-{userId}@test.com" };
+        var otherUser = new ApplicationUser { Id = otherUserId, UserName = $"other-{otherUserId}", Email = $"other-{otherUserId}@test.com" };
+
         var workspace1 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 1", OwnerId = userId };
         var workspace2 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 2", OwnerId = userId };
-        var workspace3 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 3", OwnerId = "other-user" };
+        var workspace3 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 3", OwnerId = otherUserId };
 
         var member1 = new WorkspaceMember { WorkspaceId = workspace1.Id, UserId = userId, Role = WorkspaceRole.Owner };
         var member2 = new WorkspaceMember { WorkspaceId = workspace2.Id, UserId = userId, Role = WorkspaceRole.Viewer };
-        var member3 = new WorkspaceMember { WorkspaceId = workspace3.Id, UserId = "other-user", Role = WorkspaceRole.Owner };
+        var member3 = new WorkspaceMember { WorkspaceId = workspace3.Id, UserId = otherUserId, Role = WorkspaceRole.Owner };
 
+        context.Users.AddRange(user, otherUser);
         context.Workspaces.AddRange(workspace1, workspace2, workspace3);
         context.WorkspaceMembers.AddRange(member1, member2, member3);
         await context.SaveChangesAsync();
@@ -80,10 +89,14 @@ public class WorkspaceRepositoryTests
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         var workspaceId = Guid.NewGuid();
-        var userId = "status-user-id";
-        var workspace = new Workspace { Id = workspaceId, Name = "Status Workspace", OwnerId = "owner-id" };
+        var userId = Guid.NewGuid().ToString();
+        var ownerId = Guid.NewGuid().ToString();
+        var user = new ApplicationUser { Id = userId, UserName = $"status-{userId}", Email = $"status-{userId}@test.com" };
+        var owner = new ApplicationUser { Id = ownerId, UserName = $"owner-{ownerId}", Email = $"owner-{ownerId}@test.com" };
+        var workspace = new Workspace { Id = workspaceId, Name = "Status Workspace", OwnerId = ownerId };
         var member = new WorkspaceMember { WorkspaceId = workspaceId, UserId = userId, Role = WorkspaceRole.Viewer };
 
+        context.Users.AddRange(user, owner);
         context.Workspaces.Add(workspace);
         context.WorkspaceMembers.Add(member);
         await context.SaveChangesAsync();
@@ -113,9 +126,13 @@ public class WorkspaceRepositoryTests
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         var workspaceId = Guid.NewGuid();
-        var userId = "new-member-id";
-        var workspace = new Workspace { Id = workspaceId, Name = "Member Add Workspace", OwnerId = "owner-id" };
+        var userId = Guid.NewGuid().ToString();
+        var ownerId = Guid.NewGuid().ToString();
+        var user = new ApplicationUser { Id = userId, UserName = $"new-member-{userId}", Email = $"new-{userId}@test.com" };
+        var owner = new ApplicationUser { Id = ownerId, UserName = $"owner-{ownerId}", Email = $"owner-{ownerId}@test.com" };
+        var workspace = new Workspace { Id = workspaceId, Name = "Member Add Workspace", OwnerId = ownerId };
 
+        context.Users.AddRange(user, owner);
         context.Workspaces.Add(workspace);
         await context.SaveChangesAsync();
 
@@ -140,7 +157,12 @@ public class WorkspaceRepositoryTests
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
         var workspaceId = Guid.NewGuid();
-        var workspace = new Workspace { Id = workspaceId, Name = "Saved Props Workspace", OwnerId = "owner-id" };
+        var ownerId = Guid.NewGuid().ToString();
+        var owner = new ApplicationUser { Id = ownerId, UserName = $"owner-{ownerId}", Email = $"owner-{ownerId}@test.com" };
+        var addedByUserId = Guid.NewGuid().ToString();
+        var addedByUser = new ApplicationUser { Id = addedByUserId, UserName = $"user-{addedByUserId}", Email = $"user-{addedByUserId}@test.com" };
+
+        var workspace = new Workspace { Id = workspaceId, Name = "Saved Props Workspace", OwnerId = ownerId };
 
         var propertyId1 = Guid.NewGuid();
         var propertyId2 = Guid.NewGuid();
@@ -151,12 +173,13 @@ public class WorkspaceRepositoryTests
         var property3 = new Property { Id = propertyId3, BagId = "BAG_3", Address = "Address 3", City = "City", Latitude = 3, Longitude = 3 };
 
         var otherWorkspaceId = Guid.NewGuid();
-        var otherWorkspace = new Workspace { Id = otherWorkspaceId, Name = "Other Workspace", OwnerId = "owner-id" };
+        var otherWorkspace = new Workspace { Id = otherWorkspaceId, Name = "Other Workspace", OwnerId = ownerId };
 
-        var savedProp1 = new SavedProperty { Id = Guid.NewGuid(), WorkspaceId = workspaceId, PropertyId = propertyId1, AddedByUserId = "user", CreatedAt = DateTime.UtcNow };
-        var savedProp2 = new SavedProperty { Id = Guid.NewGuid(), WorkspaceId = workspaceId, PropertyId = propertyId2, AddedByUserId = "user", CreatedAt = DateTime.UtcNow.AddMinutes(-10) };
-        var savedProp3 = new SavedProperty { Id = Guid.NewGuid(), WorkspaceId = otherWorkspaceId, PropertyId = propertyId3, AddedByUserId = "user" }; // Different workspace
+        var savedProp1 = new SavedProperty { Id = Guid.NewGuid(), WorkspaceId = workspaceId, PropertyId = propertyId1, AddedByUserId = addedByUserId, CreatedAt = DateTime.UtcNow };
+        var savedProp2 = new SavedProperty { Id = Guid.NewGuid(), WorkspaceId = workspaceId, PropertyId = propertyId2, AddedByUserId = addedByUserId, CreatedAt = DateTime.UtcNow.AddMinutes(-10) };
+        var savedProp3 = new SavedProperty { Id = Guid.NewGuid(), WorkspaceId = otherWorkspaceId, PropertyId = propertyId3, AddedByUserId = addedByUserId }; // Different workspace
 
+        context.Users.AddRange(owner, addedByUser);
         context.Workspaces.Add(workspace);
         context.Workspaces.Add(otherWorkspace);
         context.Properties.AddRange(property1, property2, property3);
