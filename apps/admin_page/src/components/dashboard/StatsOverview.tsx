@@ -78,8 +78,9 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
             key={card.title}
             variants={item}
             whileHover={{
-              y: -8,
-              transition: { type: 'spring', stiffness: 400, damping: 15 }
+              y: -10,
+              scale: 1.02,
+              transition: { type: 'spring', stiffness: 260, damping: 20 }
             }}
             className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium hover:shadow-premium-xl rounded-5xl transition-all duration-500 border border-brand-100/50 group cursor-default relative hover-border-gradient`}
           >

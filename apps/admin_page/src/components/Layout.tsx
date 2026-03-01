@@ -48,7 +48,7 @@ const Layout = () => {
   return (
     <div className="flex h-screen bg-brand-50 w-full overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-72 bg-white/70 backdrop-blur-2xl border-r border-brand-100 flex flex-col shadow-premium z-20 relative">
+      <aside className="w-72 glass-premium border-r border-brand-100 flex flex-col z-20 relative">
         <div className="p-10">
           <Link to="/" className="flex items-center space-x-4 group">
             <motion.div
@@ -79,6 +79,7 @@ const Layout = () => {
                     return (
                       <motion.div
                         key={item.name}
+                        whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
                         className="relative"
                       >
@@ -94,7 +95,7 @@ const Layout = () => {
                             <motion.div
                               layoutId="nav-glow"
                               className="absolute inset-0 bg-primary-50 border border-primary-100/50 rounded-2xl shadow-premium z-0"
-                              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                              transition={{ type: "spring", stiffness: 260, damping: 20 }}
                             />
                           )}
 

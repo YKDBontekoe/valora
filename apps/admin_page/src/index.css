@@ -145,6 +145,14 @@ h1, h2, h3, h4, h5, h6 {
   @apply bg-white/70 backdrop-blur-xl border border-white/20;
 }
 
+.glass-premium {
+  @apply bg-white/40 backdrop-blur-2xl border border-white/20 shadow-premium;
+}
+
+.shadow-glow-primary {
+  box-shadow: 0 0 20px -5px var(--color-primary-500);
+}
+
 /* Subtle border animation for cards */
 .hover-border-gradient {
   position: relative;

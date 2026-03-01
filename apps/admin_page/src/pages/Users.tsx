@@ -109,14 +109,14 @@ const Users = () => {
       </AnimatePresence>
 
       <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
-          <div className="relative w-full max-w-xl group">
+          <div className="relative w-full max-w-xl group shadow-premium rounded-3xl">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-brand-300 group-focus-within:text-primary-500 transition-all duration-300 group-focus-within:scale-110" />
             <input
                 type="text"
                 placeholder="Search enterprise users by email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-12 py-5 bg-white border border-brand-100 rounded-3xl focus:outline-none focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 transition-all shadow-premium hover:shadow-premium-lg font-black text-brand-900 placeholder:text-brand-200"
+                className="w-full pl-14 pr-12 py-5 bg-white border border-brand-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all shadow-premium hover:shadow-premium-lg font-black text-brand-900 placeholder:text-brand-200"
             />
             {searchQuery && (
                 <button
@@ -134,7 +134,7 @@ const Users = () => {
           </div>
       </div>
 
-      <div className="bg-white shadow-premium rounded-5xl overflow-hidden border border-brand-100 relative">
+      <div className="bg-white shadow-premium-xl rounded-5xl overflow-hidden border border-brand-100 relative">
         <div className={`overflow-x-auto transition-opacity duration-500 ${loading && users.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
           <table className="min-w-full divide-y divide-brand-100">
             <thead className="bg-brand-50/50">

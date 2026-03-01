@@ -214,7 +214,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                     <motion.tr
                       key={job.id}
                       variants={rowVariants}
-                      whileHover={{ backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
+                      whileHover={{ x: 4, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.2 } }}
                       className="group cursor-pointer relative"
                       onClick={() => openDetails(job.id)}
                     >
@@ -237,7 +237,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                               className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-[0_0_15px_rgba(124,58,237,0.3)]'}`}
                               initial={{ width: 0 }}
                               animate={{ width: `${clampedProgress}%` }}
-                              transition={{ duration: 1.5, ease: "circOut" }}
+                              transition={{ duration: 1.2, ease: "circOut" }}
                             >
                               {job.status === 'Processing' && (
                                 <motion.div
