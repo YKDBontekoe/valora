@@ -35,12 +35,17 @@ class WorkspaceProvider extends ChangeNotifier {
   WorkspaceProvider(this._repository);
 
   Future<void> fetchWorkspaces() async {
-    _isWorkspacesLoading = true;
-    _error = null;
-    notifyListeners();
+    // Implement frontend caching: don't show full loading state if we already have data
+    if (_workspaces.isEmpty) {
+      _isWorkspacesLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
     try {
-      _workspaces = await _repository.fetchWorkspaces();
+      final fetchedWorkspaces = await _repository.fetchWorkspaces();
+      _workspaces = fetchedWorkspaces;
+      _error = null; // Clear any previous errors on success
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -77,9 +82,13 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> selectWorkspace(String id) async {
-    _isWorkspaceDetailLoading = true;
-    _error = null;
-    notifyListeners();
+    // Implement frontend caching: if already selected, don't show full loading
+    if (_selectedWorkspace?.id != id) {
+      _isWorkspaceDetailLoading = true;
+      _error = null;
+      notifyListeners();
+    }
+
     try {
       final workspaceFuture = _repository.getWorkspace(id);
       final membersFuture = _repository.getWorkspaceMembers(id);
@@ -97,6 +106,7 @@ class WorkspaceProvider extends ChangeNotifier {
       _members = results[1] as List<WorkspaceMember>;
       _savedProperties = results[2] as List<SavedProperty>;
       _activityLogs = results[3] as List<ActivityLog>;
+      _error = null;
 
     } catch (e) {
       _error = e.toString();
