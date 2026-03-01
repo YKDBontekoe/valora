@@ -18,11 +18,19 @@ using System.Net;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
 
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Valora.Domain.Entities;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 namespace Valora.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         // Ensure Logging is available for infrastructure services even in non-web contexts
         services.AddLogging();
@@ -158,6 +166,83 @@ public static class DependencyInjection
             options.Retry.Delay = TimeSpan.FromSeconds(2);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+        });
+
+        services.AddIdentityAndAuth(configuration, environment);
+
+        return services;
+    }
+
+
+    private static IServiceCollection AddIdentityAndAuth(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
+    {
+        // Add Identity
+        services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequiredLength = 12;
+            })
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<ValoraDbContext>();
+
+        // Add Authentication
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                        .AddJwtBearer();
+
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>, IHostEnvironment>((options, jwtOpts, env) =>
+            {
+                var secret = jwtOpts.Value.Secret;
+
+                if (!env.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
+                {
+                    throw new InvalidOperationException("Critical Security Risk: The application is running in a non-development environment with the default, insecure JWT_SECRET. You MUST override JWT_SECRET with a strong, random key in your environment variables.");
+                }
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtOpts.Value.Issuer,
+                    ValidAudience = jwtOpts.Value.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogError(context.Exception, "Authentication failed.");
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogDebug("Token validated for user: {User}", context.Principal?.Identity?.Name);
+                        return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogWarning("Authentication challenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
+                        return Task.CompletedTask;
+                    }
+                };
+            });
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
         });
 
         return services;

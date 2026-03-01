@@ -1,6 +1,5 @@
 using Valora.Api.Background;
 using Sentry;
-using Microsoft.EntityFrameworkCore;
 using Valora.Api.Endpoints;
 using Valora.Api.Extensions;
 using Valora.Application;
@@ -68,14 +67,12 @@ builder.Services.AddSwaggerConfig();
 
 builder.Services
     .AddApplication()
-    .AddInfrastructure(builder.Configuration);
+    .AddInfrastructure(builder.Configuration, builder.Environment);
 
 if (!builder.Environment.IsEnvironment("Testing"))
 {
     builder.Services.AddHostedService<BatchJobWorker>();
 }
-
-builder.Services.AddIdentityAndAuth(builder.Configuration, builder.Environment);
 
 builder.Services.AddRateLimitingConfig(builder.Configuration, builder.Environment);
 

@@ -6,12 +6,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
-using Valora.Infrastructure.Persistence;
-using Valora.Domain.Entities;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.AspNetCore.Identity;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -126,77 +120,6 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddIdentityAndAuth(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
-    {
-        // Add Identity
-        services.AddIdentityCore<ApplicationUser>(options =>
-            {
-                options.Password.RequireDigit = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequiredLength = 12;
-            })
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<ValoraDbContext>();
-
-        // Add Authentication
-        services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                var secret = configuration["JWT_SECRET"]
-                             ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
-
-                if (!environment.IsDevelopment() && secret == "DevelopmentOnlySecret_DoNotUseInProd_ChangeMe!")
-                {
-                    throw new InvalidOperationException("Critical Security Risk: The application is running in a non-development environment with the default, insecure JWT_SECRET. You MUST override JWT_SECRET with a strong, random key in your environment variables.");
-                }
-
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["JWT_ISSUER"],
-                    ValidAudience = configuration["JWT_AUDIENCE"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnAuthenticationFailed = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
-                        logger.LogError(context.Exception, "Authentication failed.");
-                        return Task.CompletedTask;
-                    },
-                    OnTokenValidated = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
-                        logger.LogDebug("Token validated for user: {User}", context.Principal?.Identity?.Name);
-                        return Task.CompletedTask;
-                    },
-                    OnChallenge = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
-                        logger.LogWarning("Authentication challenge: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
-                        return Task.CompletedTask;
-                    }
-                };
-            });
-
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-        });
-
-        return services;
-    }
 
     public static IServiceCollection AddRateLimitingConfig(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
