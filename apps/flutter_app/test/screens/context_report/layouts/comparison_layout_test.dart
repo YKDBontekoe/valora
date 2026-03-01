@@ -25,15 +25,15 @@ void main() {
     when(mockRepo.getContextReport(any, radiusMeters: anyNamed('radiusMeters')))
         .thenAnswer((_) async => report);
 
-    bool backCalled = false;
-    bool clearCalled = false;
+    int backCallCount = 0;
+    int clearCallCount = 0;
 
     await tester.pumpWidget(MaterialApp(
       home: ChangeNotifierProvider<ContextReportProvider>.value(
         value: provider,
         child: ComparisonLayout(
-          onBack: () => backCalled = true,
-          onClear: () => clearCalled = true,
+          onBack: () => backCallCount++,
+          onClear: () => clearCallCount++,
         ),
       ),
     ));
@@ -54,8 +54,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ValoraDialog), findsNothing);
-    expect(clearCalled, isFalse);
-    expect(backCalled, isFalse);
+    expect(clearCallCount, equals(0));
+    expect(backCallCount, equals(0));
 
     // Tap clear button again
     await tester.tap(find.byIcon(Icons.delete_sweep_rounded));
@@ -66,7 +66,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ValoraDialog), findsNothing);
-    expect(clearCalled, isTrue);
-    expect(backCalled, isTrue);
+    expect(clearCallCount, equals(1));
+    expect(backCallCount, equals(1));
   });
 }
