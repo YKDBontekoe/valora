@@ -36,18 +36,22 @@ class WorkspaceProvider extends ChangeNotifier {
 
   Future<void> fetchWorkspaces() async {
     // Implement frontend caching: don't show full loading state if we already have data
-    if (_workspaces.isEmpty) {
+    if (_workspaces.isEmpty || _error != null) {
       _isWorkspacesLoading = true;
-      _error = null;
-      notifyListeners();
     }
+
+    // Always clear error when starting a new fetch
+    _error = null;
+    notifyListeners();
 
     try {
       final fetchedWorkspaces = await _repository.fetchWorkspaces();
       _workspaces = fetchedWorkspaces;
-      _error = null; // Clear any previous errors on success
     } catch (e) {
-      _error = e.toString();
+      // Only show full-screen error if we don't have cached data to display
+      if (_workspaces.isEmpty) {
+        _error = e.toString();
+      }
     } finally {
       _isWorkspacesLoading = false;
       notifyListeners();
@@ -83,11 +87,13 @@ class WorkspaceProvider extends ChangeNotifier {
 
   Future<void> selectWorkspace(String id) async {
     // Implement frontend caching: if already selected, don't show full loading
-    if (_selectedWorkspace?.id != id) {
+    if (_selectedWorkspace?.id != id || _error != null) {
       _isWorkspaceDetailLoading = true;
-      _error = null;
-      notifyListeners();
     }
+
+    // Always clear error when starting a new fetch
+    _error = null;
+    notifyListeners();
 
     try {
       final workspaceFuture = _repository.getWorkspace(id);
@@ -106,10 +112,11 @@ class WorkspaceProvider extends ChangeNotifier {
       _members = results[1] as List<WorkspaceMember>;
       _savedProperties = results[2] as List<SavedProperty>;
       _activityLogs = results[3] as List<ActivityLog>;
-      _error = null;
-
     } catch (e) {
-      _error = e.toString();
+      // Only show full-screen error if we don't have cached data to display
+      if (_selectedWorkspace?.id != id) {
+        _error = e.toString();
+      }
     } finally {
       _isWorkspaceDetailLoading = false;
       notifyListeners();
