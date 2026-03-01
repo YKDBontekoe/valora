@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > apps/admin_page/src/components/dashboard/ApiLatencyCard.tsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity } from 'lucide-react';
 import Skeleton from '../Skeleton';
@@ -51,3 +52,4 @@ const ApiLatencyCard = ({ health, loading, isStale }: ApiLatencyCardProps) => {
 };
 
 export default ApiLatencyCard;
+INNER_EOF
