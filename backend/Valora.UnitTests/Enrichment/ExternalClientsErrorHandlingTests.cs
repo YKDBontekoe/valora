@@ -12,7 +12,7 @@ namespace Valora.UnitTests.Enrichment;
 public class ExternalClientsErrorHandlingTests
 {
     [Fact]
-    public async Task OverpassClient_OnHttpFailure_ThrowsAndLogsWarning()
+    public async Task OverpassClient_OnHttpFailure_ReturnsNullAndLogsWarning()
     {
         var logger = new Mock<ILogger<OverpassAmenityClient>>();
         var client = new OverpassAmenityClient(
@@ -21,12 +21,13 @@ public class ExternalClientsErrorHandlingTests
             Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
             logger.Object);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAmenitiesAsync(CreateLocation(), 1000));
+        var result = await client.GetAmenitiesAsync(CreateLocation(), 1000);
+        Assert.Null(result);
         VerifyWarningLogged(logger);
     }
 
     [Fact]
-    public async Task CbsClient_OnHttpFailure_ThrowsAndLogsWarning()
+    public async Task CbsClient_OnHttpFailure_ReturnsNullAndLogsWarning()
     {
         var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
         var client = new CbsNeighborhoodStatsClient(
@@ -35,7 +36,8 @@ public class ExternalClientsErrorHandlingTests
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetStatsAsync(CreateLocation()));
+        var result = await client.GetStatsAsync(CreateLocation());
+        Assert.Null(result);
         VerifyWarningLogged(logger);
     }
 

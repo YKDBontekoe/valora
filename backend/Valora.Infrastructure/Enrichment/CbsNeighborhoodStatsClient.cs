@@ -58,23 +58,33 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
 
         var url = BuildCbsQueryUrl(regionCode);
 
-        using var response = await _httpClient.GetAsync(url, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("CBS lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
-            response.EnsureSuccessStatusCode();
-        }
-
         JsonDocument document;
         try
         {
+            using var response = await _httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("CBS lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
+                response.EnsureSuccessStatusCode();
+            }
+
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
             document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "CBS lookup network error for region {RegionCode}", regionCode.Trim());
+            return null;
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "CBS lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "CBS lookup failed for region {RegionCode}", regionCode.Trim());
             return null;
         }
 
