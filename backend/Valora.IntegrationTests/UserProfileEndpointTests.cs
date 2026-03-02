@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Valora.IntegrationTests;
 
+[Collection("TestcontainersDatabase")]
 public class UserProfileEndpointTests : BaseTestcontainersIntegrationTest
 {
     public UserProfileEndpointTests(TestcontainersDatabaseFixture fixture) : base(fixture)
