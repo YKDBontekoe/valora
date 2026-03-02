@@ -10,7 +10,7 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 ## Table of Contents
 <!-- markdownlint-disable MD051 -->
-- [Quick Start](#quick-start-10-minutes)
+- [Setup Instructions (Quick Start)](#setup-instructions-quick-start)
 - [Architecture](#architecture)
 - [Key Concepts](#key-concepts)
 - [Project Structure](#project-structure)
@@ -19,7 +19,7 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 ---
 
-## 🚀 Quick Start (10 Minutes)
+## 🚀 Setup Instructions (Quick Start)
 
 Follow these steps to get the entire system running locally. For a detailed walkthrough, see the **[Onboarding Guide](docs/onboarding.md)**.
 
@@ -231,7 +231,7 @@ sequenceDiagram
     end
 ```
 
-## 📖 API Reference Summary
+## 📖 API Reference
 
 The API provides core functionalities to access and manage Valora's context data. Below is a brief summary of key endpoints. For complete details, see the **[API Reference](docs/api-reference.md)**.
 
@@ -281,6 +281,8 @@ The API provides core functionalities to access and manage Valora's context data
     - Comprehensive guide tracing the exact path a write request takes in Valora, passing through Clean Architecture to PostgreSQL.
 - **[Data Flow: Batch Jobs](docs/onboarding-batch-job-flow.md)**:
     - Explains background processing (City Ingestion).
+- **[Data Flow: AI Chat](docs/onboarding-ai-chat-flow.md)**:
+    - Traces the request path for the AI Chat feature, including profile resolution and prompt construction.
 
 ### ⚙️ Developer Reference
 *Technical details for contributors.*

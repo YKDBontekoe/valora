@@ -38,6 +38,13 @@ public class ContextAnalysisService : IContextAnalysisService
     /// </summary>
     /// <param name="prompt">The user's question or statement.</param>
     /// <param name="intent">An optional intent string (e.g., "chat", "search") to guide the AI model.</param>
+    /// <remarks>
+    /// <para>
+    /// <strong>System Prompt Injection:</strong> To personalize AI responses, this method fetches the user's
+    /// saved AI preferences (e.g., Household Type, Disallowed Suggestions) using <see cref="IUserAiProfileService"/>.
+    /// The preferences are appended to the base system prompt before the final query is dispatched to the LLM.
+    /// </para>
+    /// </remarks>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <param name="sessionProfile">Optional user profile override for this specific request.</param>
     /// <returns>The AI's textual response.</returns>
@@ -53,6 +60,13 @@ public class ContextAnalysisService : IContextAnalysisService
     /// <param name="report">The context report data to analyze.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <param name="sessionProfile">Optional user profile override.</param>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why XML serialization?</strong> The model receives the <see cref="ContextReportDto"/> serialized into XML tags.
+    /// This allows the LLM to clearly distinguish between the structural report data ("data") and user instructions ("prompt"),
+    /// preventing prompt-injection attacks from malicious neighborhood names or descriptions that might have slipped into the report.
+    /// </para>
+    /// </remarks>
     /// <returns>A concise summary of the neighborhood vibe, pros, and cons.</returns>
     public async Task<string> AnalyzeReportAsync(ContextReportDto report, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
