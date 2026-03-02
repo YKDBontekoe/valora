@@ -44,6 +44,16 @@ public static class WorkspaceEndpoints
         return group;
     }
 
+    /// <summary>
+    /// Creates a new Workspace for the authenticated user.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why Workspaces?</strong> Workspaces provide a collaborative environment where users
+    /// can group, save, and discuss context reports. By allowing users to create multiple workspaces,
+    /// they can organize properties by project, city, or client.
+    /// </para>
+    /// </remarks>
     private static async Task<IResult> CreateWorkspace(
         ClaimsPrincipal user,
         [FromBody] CreateWorkspaceDto dto,
@@ -163,6 +173,16 @@ public static class WorkspaceEndpoints
         return Results.Ok(result);
     }
 
+    /// <summary>
+    /// Saves a newly generated Context Report directly to a Workspace.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why save reports?</strong> Context reports are dynamically generated in real-time ("Fan-Out").
+    /// Saving a report to a workspace takes a "snapshot" of the data and persists it to the database,
+    /// allowing users to revisit the exact stats, share them with team members, and add comments.
+    /// </para>
+    /// </remarks>
     private static async Task<IResult> SavePropertyFromReport(
         ClaimsPrincipal user,
         Guid id,

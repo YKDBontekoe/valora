@@ -21,6 +21,17 @@ public class BatchJobService : IBatchJobService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Creates a new background job and queues it for execution.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why decoupling?</strong> Long-running tasks, such as 'City Ingestion', make HTTP endpoints timeout.
+    /// By pushing a `BatchJob` to the database with a "Pending" status, the API can return a 201 Created immediately.
+    /// A background worker (<see cref="BatchJobExecutor"/>) continuously polls for pending jobs and processes them
+    /// independently from the web request thread.
+    /// </para>
+    /// </remarks>
     public async Task<BatchJobDto> EnqueueJobAsync(BatchJobType type, string target, CancellationToken cancellationToken = default)
     {
         var job = new BatchJob
