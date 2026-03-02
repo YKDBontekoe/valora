@@ -59,11 +59,31 @@ public class CorsConfigurationTests
 
             builder.ConfigureTestServices(services =>
             {
-                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ValoraDbContext>));
-                if (descriptor != null) services.Remove(descriptor);
+                services.RemoveAll<DbContextOptions<ValoraDbContext>>();
+                services.RemoveAll<DbContextOptions>();
+                services.RemoveAll<ValoraDbContext>();
 
-                var dbOptions = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions));
-                if (dbOptions != null) services.Remove(dbOptions);
+                var configType = Type.GetType("Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration`1, Microsoft.EntityFrameworkCore");
+                if (configType != null)
+                {
+                    var genericConfigType = configType.MakeGenericType(typeof(ValoraDbContext));
+                    services.RemoveAll(genericConfigType);
+                }
+
+                var configServices = services.Where(d => d.ServiceType.Name.Contains("IDbContextOptionsConfiguration") &&
+                                                         d.ServiceType.IsGenericType &&
+                                                         d.ServiceType.GetGenericArguments()[0] == typeof(ValoraDbContext)).ToList();
+                foreach (var s in configServices) services.Remove(s);
+
+                var sqlServerServices = services.Where(d =>
+                    d.ServiceType.FullName?.Contains("SqlServer") == true ||
+                    d.ImplementationType?.FullName?.Contains("SqlServer") == true ||
+                    d.ServiceType.FullName?.Contains("Microsoft.EntityFrameworkCore.Infrastructure") == true && d.ServiceType.FullName?.Contains("SqlServer") == true).ToList();
+
+                foreach (var s in sqlServerServices)
+                {
+                    services.Remove(s);
+                }
 
                 services.AddDbContext<ValoraDbContext>(options =>
                 {

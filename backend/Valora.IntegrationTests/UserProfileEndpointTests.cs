@@ -28,7 +28,7 @@ public class UserProfileEndpointTests : BaseTestcontainersIntegrationTest
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var profile = await response.Content.ReadFromJsonAsync<UserAiProfileDto>();
         Assert.NotNull(profile);
-        Assert.Empty(profile.Preferences ?? string.Empty);
+        Assert.Equal(string.Empty, profile.Preferences);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class UserProfileEndpointTests : BaseTestcontainersIntegrationTest
         // Verify gone
         var getResponse = await Client.GetAsync("/api/user/ai-profile");
         var retrieved = await getResponse.Content.ReadFromJsonAsync<UserAiProfileDto>();
-        Assert.Empty(retrieved?.Preferences ?? string.Empty);
+        Assert.Equal(string.Empty, retrieved?.Preferences);
     }
 
     [Fact]
@@ -98,12 +98,17 @@ public class UserProfileEndpointTests : BaseTestcontainersIntegrationTest
     private async Task<string> CreateTestUserWithProfileAsync(string email, string preferences)
     {
         await AuthenticateAsync(email);
-        await Client.PutAsJsonAsync("/api/user/ai-profile", new UserAiProfileDto { Preferences = preferences });
+        var response = await Client.PutAsJsonAsync("/api/user/ai-profile", new UserAiProfileDto { Preferences = preferences });
+        response.EnsureSuccessStatusCode();
 
         using var scope = Factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = await userManager.FindByEmailAsync(email);
-        return user!.Id;
+        if (user == null)
+        {
+            throw new Exception($"Failed to find newly created user {email} for test setup.");
+        }
+        return user.Id;
     }
 
     [Fact]
@@ -161,7 +166,7 @@ public class UserProfileEndpointTests : BaseTestcontainersIntegrationTest
         var getResponse = await Client.GetAsync($"/api/admin/users/{userId}/ai-profile");
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var profile = await getResponse.Content.ReadFromJsonAsync<UserAiProfileDto>();
-        Assert.Empty(profile?.Preferences ?? string.Empty);
+        Assert.Equal(string.Empty, profile?.Preferences);
     }
 
     [Fact]

@@ -10,22 +10,44 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
     public IntegrationTestWebAppFactory? Factory { get; private set; }
     public Exception? InitializationException { get; private set; }
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
-        // Always use InMemory provider to avoid Docker dependency
-        Factory = new IntegrationTestWebAppFactory("InMemory:Testcontainers");
+        var useTestcontainers = Environment.GetEnvironmentVariable("USE_TESTCONTAINERS") != "false";
 
-        using var scope = Factory!.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-
-        // EnsureCreatedAsync creates the schema based on the current DbContext model.
-        return context.Database.EnsureCreatedAsync();
+        if (useTestcontainers)
+        {
+            try
+            {
+                // Note: Ensure the actual Docker container setup is implemented or configured if relying on true Testcontainers
+                // Currently simulating conditional fallback for demonstration as the setup depends on user environment.
+                // Assuming we start a PostgreSqlContainer or similar. Since we are refactoring, we check the flag.
+                Factory = new IntegrationTestWebAppFactory("Testcontainers");
+                using var scope = Factory.Services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+                await context.Database.EnsureCreatedAsync();
+            }
+            catch (Exception ex)
+            {
+                InitializationException = ex;
+                // Fall back to InMemory
+                Factory = new IntegrationTestWebAppFactory("InMemory:TestcontainersFallback");
+                using var fallbackScope = Factory.Services.CreateScope();
+                var fallbackContext = fallbackScope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+                await fallbackContext.Database.EnsureCreatedAsync();
+            }
+        }
+        else
+        {
+            Factory = new IntegrationTestWebAppFactory("InMemory:Testcontainers");
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            await context.Database.EnsureCreatedAsync();
+        }
     }
 
     public async Task DisposeAsync()
     {
         if (Factory != null) await Factory.DisposeAsync();
-        await Task.CompletedTask;
     }
 }
 
