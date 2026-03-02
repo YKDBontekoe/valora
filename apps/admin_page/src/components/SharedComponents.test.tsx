@@ -40,12 +40,12 @@ describe('Shared Components', () => {
     it('renders default number of rows', () => {
       const { container } = render(<LoadingState />);
       // Default is 3 rows
-      expect(container.querySelectorAll('.space-y-4 > div')).toHaveLength(3);
+      expect(container.querySelectorAll('.grid > div')).toHaveLength(3);
     });
 
     it('renders specified number of rows', () => {
       const { container } = render(<LoadingState rows={5} />);
-      expect(container.querySelectorAll('.space-y-4 > div')).toHaveLength(5);
+      expect(container.querySelectorAll('.grid > div')).toHaveLength(5);
     });
   });
 

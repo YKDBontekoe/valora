@@ -46,10 +46,11 @@ describe('Dashboard Page', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Total Users')).toBeInTheDocument();
-      expect(screen.getByText('123')).toBeInTheDocument();
+      // Use a matcher to find the value since CountUp might be animating
+      expect(screen.getByText(/123/)).toBeInTheDocument();
       expect(screen.getByText('Notifications')).toBeInTheDocument();
-      expect(screen.getByText('45')).toBeInTheDocument();
-    });
+      expect(screen.getByText(/45/)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   it('handles error state', async () => {

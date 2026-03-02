@@ -74,7 +74,7 @@ describe('SystemHealth Component', () => {
     render(<SystemHealth />);
 
     await waitFor(() => {
-      expect(screen.getByText('Fault Detected')).toBeInTheDocument();
+      expect(screen.getByText('Critical Fault')).toBeInTheDocument();
     });
   });
 
@@ -102,19 +102,19 @@ describe('SystemHealth Component', () => {
     // Wait for initial load
     await waitFor(() => {
       expect(screen.getByText('Operational')).toBeInTheDocument();
-      expect(screen.queryByText('Offline Data')).not.toBeInTheDocument();
+      expect(screen.queryByText('Out of Sync')).not.toBeInTheDocument();
     });
 
     // Mock next call failure
     (adminService.getHealth as Mock).mockRejectedValueOnce(new Error('Network error'));
 
     // Find refresh button
-    const refreshButton = screen.getByText('Refresh Nodes');
+    const refreshButton = screen.getByText('Sync Nodes');
     fireEvent.click(refreshButton);
 
     // Wait for stale indicator
     await waitFor(() => {
-      expect(screen.getByText('Offline Data')).toBeInTheDocument();
+      expect(screen.getByText('Out of Sync')).toBeInTheDocument();
       // Data should still be visible
       expect(screen.getByText('Operational')).toBeInTheDocument();
     });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, ShieldAlert } from 'lucide-react';
 import Button from './Button';
 
 interface ConfirmationDialogProps {
@@ -38,47 +38,57 @@ const ConfirmationDialog = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="dialog-title"
+          aria-describedby="dialog-description"
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !isSubmitting && onClose()}
-            className="absolute inset-0 bg-brand-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-brand-900/60 backdrop-blur-md"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md bg-white rounded-[2rem] shadow-premium-xl overflow-hidden border border-brand-100"
+            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-premium-2xl overflow-hidden border border-brand-100"
           >
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className={`p-3 rounded-2xl ${isDestructive ? 'bg-error-50 text-error-600' : 'bg-primary-50 text-primary-600'}`}>
-                  <AlertCircle size={24} />
+            {/* Top accent bar */}
+            <div className={`absolute top-0 left-0 w-full h-2 ${isDestructive ? 'bg-error-500' : 'bg-primary-500'}`} />
+
+            <div className="p-10">
+              <div className="flex items-center justify-between mb-8">
+                <div className={`p-4 rounded-2xl ${isDestructive ? 'bg-error-50 text-error-600 shadow-glow-error' : 'bg-primary-50 text-primary-600 shadow-glow-primary'}`}>
+                  {isDestructive ? <ShieldAlert size={28} /> : <AlertCircle size={28} />}
                 </div>
                 <button
                   onClick={() => !isSubmitting && onClose()}
-                  className="p-2 text-brand-400 hover:text-brand-900 transition-colors rounded-xl hover:bg-brand-50"
+                  className="p-2.5 text-brand-300 hover:text-brand-900 transition-all duration-300 rounded-xl hover:bg-brand-50"
                   disabled={isSubmitting}
+                  aria-label="Close dialog"
                 >
-                  <X size={20} />
+                  <X size={22} />
                 </button>
               </div>
 
-              <h3 className="text-2xl font-black text-brand-900 tracking-tight mb-3">
+              <h3 id="dialog-title" className="text-3xl font-black text-brand-900 tracking-tight mb-4">
                 {title}
               </h3>
-              <p className="text-brand-500 font-medium leading-relaxed">
+              <p id="dialog-description" className="text-brand-500 font-bold leading-relaxed text-lg">
                 {message}
               </p>
 
-              <div className="flex gap-4 mt-10">
+              <div className="flex gap-5 mt-12">
                 <Button
                   variant="outline"
                   onClick={onClose}
-                  className="flex-1"
+                  className="flex-1 font-black"
                   disabled={isSubmitting}
                 >
                   {cancelLabel}
@@ -86,7 +96,7 @@ const ConfirmationDialog = ({
                 <Button
                   variant={isDestructive ? 'danger' : 'secondary'}
                   onClick={handleConfirm}
-                  className="flex-1"
+                  className="flex-1 font-black shadow-glow"
                   isLoading={isSubmitting}
                   disabled={isSubmitting}
                 >

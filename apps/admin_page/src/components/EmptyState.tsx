@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import { PackageOpen } from 'lucide-react';
+import { PackageOpen, Sparkles } from 'lucide-react';
 import Button from './Button';
 import { motion } from 'framer-motion';
 
@@ -16,20 +16,47 @@ interface EmptyStateProps {
 const EmptyState = ({ title, description, icon: Icon = PackageOpen, action }: EmptyStateProps) => {
   return (
     <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center p-16 text-center bg-white border border-brand-100 rounded-[2.5rem] shadow-premium relative overflow-hidden group"
+        initial={{ opacity: 0, scale: 0.95, y: 40 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 25 }}
+        className="flex flex-col items-center justify-center p-20 text-center bg-white border border-brand-100 rounded-[3rem] shadow-premium-xl relative overflow-hidden group"
     >
-      <div className="absolute inset-0 bg-linear-to-b from-brand-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      {/* Decorative dynamic background elements */}
+      <div className="absolute top-[-10%] right-[-10%] w-[30%] h-[30%] rounded-full bg-primary-50/40 blur-[80px] group-hover:bg-primary-100/40 transition-colors duration-1000" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] rounded-full bg-info-50/40 blur-[80px] group-hover:bg-info-100/40 transition-colors duration-1000" />
 
       <div className="relative z-10 flex flex-col items-center">
-          <div className="w-24 h-24 bg-brand-50 rounded-[2rem] flex items-center justify-center mb-8 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-6 shadow-inner">
-            <Icon className="w-10 h-10 text-brand-200" />
+          <div className="relative mb-10">
+            <motion.div
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="w-28 h-28 bg-brand-50 rounded-[2.5rem] flex items-center justify-center transition-all duration-700 group-hover:scale-110 group-hover:rotate-6 shadow-inner border border-brand-100"
+            >
+              <Icon className="w-12 h-12 text-brand-300" />
+            </motion.div>
+            <motion.div
+              className="absolute -top-4 -right-4 p-3 bg-white rounded-2xl shadow-premium border border-brand-100 text-warning-400"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Sparkles size={20} />
+            </motion.div>
           </div>
-          <h3 className="text-2xl font-black text-brand-900 mb-3 tracking-tight">{title}</h3>
-          <p className="text-brand-400 font-bold max-w-sm mb-10 leading-relaxed">{description}</p>
+
+          <h3 className="text-3xl font-black text-brand-900 mb-4 tracking-tight uppercase tracking-widest leading-none">
+            {title}
+          </h3>
+          <p className="text-brand-400 font-bold max-w-sm mb-12 leading-relaxed text-lg">
+            {description}
+          </p>
+
           {action && (
-            <Button onClick={action.onClick} variant="primary" className="px-10 py-4 shadow-premium shadow-primary-200/50">
+            <Button
+              onClick={action.onClick}
+              variant="secondary"
+              className="px-12 py-5 shadow-glow"
+              size="lg"
+            >
               {action.label}
             </Button>
           )}

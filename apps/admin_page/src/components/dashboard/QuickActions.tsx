@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RefreshCw, PlayCircle, Users, Activity, ChevronRight } from 'lucide-react';
+import { RefreshCw, PlayCircle, Users, Activity, ChevronRight, Sparkles } from 'lucide-react';
 import { adminService } from '../../services/api';
 import { showToast } from '../../services/toast';
 import { useNavigate } from 'react-router-dom';
@@ -77,38 +77,45 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
   ];
 
   return (
-    <div className="h-full flex flex-col gap-8">
-        <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center border border-primary-100/50 shadow-sm">
-                <Activity className="text-primary-600" size={20} />
+    <div className="h-full flex flex-col gap-10">
+        <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center border border-primary-100 shadow-sm transition-all duration-500 hover:rotate-6 hover:scale-110">
+                <Activity className="text-primary-600" size={28} />
             </div>
-            <h2 className="text-2xl font-black text-brand-900 tracking-tight">Control Center</h2>
+            <div className="flex flex-col">
+                <h2 className="text-3xl font-black text-brand-900 tracking-tight">Control Center</h2>
+                <div className="flex items-center gap-2 mt-1 opacity-50">
+                    <Sparkles size={12} className="text-brand-300" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Executive Shortcuts</span>
+                </div>
+            </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-8">
             {actionCards.map((action) => (
                 <motion.button
                     key={action.title}
                     whileHover={{
-                      x: 8,
-                      transition: { type: 'spring', stiffness: 400, damping: 25 }
+                      x: 12,
+                      scale: 1.01,
+                      transition: { type: 'spring', stiffness: 350, damping: 20 }
                     }}
                     whileTap={{ scale: 0.98 }}
                     onClick={action.onClick}
                     disabled={action.isLoading}
-                    className="flex items-center gap-6 p-8 bg-white rounded-4xl border border-brand-100 shadow-premium hover:shadow-premium-xl transition-all duration-500 text-left group cursor-pointer relative overflow-hidden hover-border-gradient"
+                    className="flex items-center gap-8 p-10 bg-white rounded-[2.5rem] border border-brand-100 shadow-premium hover:shadow-2xl transition-all duration-500 text-left group cursor-pointer relative overflow-hidden hover-border-gradient"
                 >
                     {/* Active highlight line */}
-                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1/2 ${action.accent} rounded-r-full opacity-0 group-hover:opacity-100 transition-all duration-500 scale-y-0 group-hover:scale-y-100`} />
+                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2/3 ${action.accent} rounded-r-full opacity-0 group-hover:opacity-100 transition-all duration-700 scale-y-0 group-hover:scale-y-100 shadow-glow shadow-current`} style={{ color: `var(--color-${action.accent.split('-')[1]}-500)` }} />
 
-                    <div className={`relative z-10 w-16 h-16 ${action.bg} rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-lg group-hover:shadow-brand-100/50`}>
-                        <action.icon className={`w-8 h-8 ${action.color} ${action.isLoading ? 'animate-spin' : ''}`} />
+                    <div className={`relative z-10 w-20 h-20 ${action.bg} rounded-[1.5rem] flex items-center justify-center transition-all duration-700 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-premium group-hover:shadow-brand-100/50 border border-brand-100/30`}>
+                        <action.icon className={`w-10 h-10 ${action.color} ${action.isLoading ? 'animate-spin' : ''}`} />
                     </div>
                     <div className="relative z-10 flex-1">
-                        <h3 className="text-xl font-black text-brand-900 leading-tight tracking-tight">{action.title}</h3>
-                        <p className="text-xs font-bold text-brand-400 mt-2 uppercase tracking-widest">{action.description}</p>
+                        <h3 className="text-2xl font-black text-brand-900 leading-tight tracking-tight">{action.title}</h3>
+                        <p className="text-[11px] font-bold text-brand-400 mt-2 uppercase tracking-[0.2em] leading-relaxed max-w-[200px]">{action.description}</p>
                     </div>
-                    <div className="relative z-10 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                    <div className={`relative z-10 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl ${action.bg}`}>
                         <ChevronRight className={`w-6 h-6 ${action.color}`} />
                     </div>
                 </motion.button>
