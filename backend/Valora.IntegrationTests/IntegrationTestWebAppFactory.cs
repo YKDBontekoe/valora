@@ -71,8 +71,7 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
 
             var sqlServerServices = services.Where(d =>
                 d.ServiceType.FullName?.Contains("SqlServer") == true ||
-                d.ImplementationType?.FullName?.Contains("SqlServer") == true ||
-                d.ServiceType.FullName?.Contains("Microsoft.EntityFrameworkCore.Infrastructure") == true && d.ServiceType.FullName?.Contains("SqlServer") == true).ToList();
+                d.ImplementationType?.FullName?.Contains("SqlServer") == true).ToList();
 
             foreach (var s in sqlServerServices)
             {
