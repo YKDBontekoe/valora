@@ -12,7 +12,7 @@ namespace Valora.UnitTests.Enrichment;
 public class ExternalClientsErrorHandlingTests
 {
     [Fact]
-    public async Task OverpassClient_OnHttpFailure_ThrowsAndLogsWarning()
+    public async Task OverpassClient_OnHttpFailure_ReturnsNullAndLogsWarning()
     {
         var logger = new Mock<ILogger<OverpassAmenityClient>>();
         var client = new OverpassAmenityClient(
@@ -21,12 +21,105 @@ public class ExternalClientsErrorHandlingTests
             Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
             logger.Object);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAmenitiesAsync(CreateLocation(), 1000));
+        var result = await client.GetAmenitiesAsync(CreateLocation(), 1000);
+        Assert.Null(result);
         VerifyWarningLogged(logger);
     }
 
     [Fact]
-    public async Task CbsClient_OnHttpFailure_ThrowsAndLogsWarning()
+    public async Task CbsCrimeClient_OnCancellation_ThrowsOperationCanceledException()
+    {
+        var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
+        var client = new CbsCrimeStatsClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetStatsAsync(CreateLocation(), cts.Token));
+    }
+
+    [Fact]
+    public async Task CbsClient_OnException_ReturnsNullAndLogsWarning()
+    {
+        var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
+        var client = new CbsNeighborhoodStatsClient(
+            new HttpClient(new ExceptionResponseHandler(() => new Exception("Generic Error"))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        var result = await client.GetStatsAsync(CreateLocation());
+        Assert.Null(result);
+        VerifyWarningLogged(logger);
+    }
+
+    [Fact]
+    public async Task CbsCrimeClient_OnHttpFailure_ReturnsNullAndLogsWarning()
+    {
+        var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
+        var client = new CbsCrimeStatsClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        var result = await client.GetStatsAsync(CreateLocation());
+        Assert.Null(result);
+        VerifyWarningLogged(logger);
+    }
+
+    [Fact]
+    public async Task CbsCrimeClient_OnException_ReturnsNullAndLogsWarning()
+    {
+        var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
+        var client = new CbsCrimeStatsClient(
+            new HttpClient(new ExceptionResponseHandler(() => new Exception("Generic Error"))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        var result = await client.GetStatsAsync(CreateLocation());
+        Assert.Null(result);
+        VerifyWarningLogged(logger);
+    }
+
+    [Fact]
+    public async Task OverpassClient_OnException_ReturnsNullAndLogsWarning()
+    {
+        var logger = new Mock<ILogger<OverpassAmenityClient>>();
+        var client = new OverpassAmenityClient(
+            new HttpClient(new ExceptionResponseHandler(() => new Exception("Generic Error"))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
+            logger.Object);
+
+        var result = await client.GetAmenitiesAsync(CreateLocation(), 1000);
+        Assert.Null(result);
+        VerifyWarningLogged(logger);
+    }
+
+    [Fact]
+    public async Task OverpassClient_Bbox_OnHttpFailure_ReturnsEmptyAndLogsWarning()
+    {
+        var logger = new Mock<ILogger<OverpassAmenityClient>>();
+        var client = new OverpassAmenityClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.BadGateway))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
+            logger.Object);
+
+        var result = await client.GetAmenitiesInBboxAsync(52.0, 4.0, 53.0, 5.0);
+        Assert.Empty(result);
+        VerifyWarningLogged(logger);
+    }
+
+    [Fact]
+    public async Task CbsClient_OnHttpFailure_ReturnsNullAndLogsWarning()
     {
         var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
         var client = new CbsNeighborhoodStatsClient(
@@ -35,7 +128,8 @@ public class ExternalClientsErrorHandlingTests
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetStatsAsync(CreateLocation()));
+        var result = await client.GetStatsAsync(CreateLocation());
+        Assert.Null(result);
         VerifyWarningLogged(logger);
     }
 
@@ -76,6 +170,16 @@ public class ExternalClientsErrorHandlingTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             return Task.FromResult(_responseFactory());
+        }
+    }
+
+    private sealed class ExceptionResponseHandler(Func<Exception> exceptionFactory) : HttpMessageHandler
+    {
+        private readonly Func<Exception> _exceptionFactory = exceptionFactory;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            throw _exceptionFactory();
         }
     }
 }

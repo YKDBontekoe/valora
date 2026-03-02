@@ -79,30 +79,48 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
     private async Task<T?> FetchAndProcessAsync<T>(string query, Func<List<OverpassElement>, T> processor, CancellationToken ct)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.OverpassBaseUrl.TrimEnd('/')}/api/interpreter")
+        try
         {
-            Content = new StringContent($"data={Uri.EscapeDataString(query)}", Encoding.UTF8, "application/x-www-form-urlencoded")
-        };
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.OverpassBaseUrl.TrimEnd('/')}/api/interpreter")
+            {
+                Content = new StringContent($"data={Uri.EscapeDataString(query)}", Encoding.UTF8, "application/x-www-form-urlencoded")
+            };
 
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        using var response = await _httpClient.SendAsync(request, ct);
+            using var response = await _httpClient.SendAsync(request, ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("Overpass lookup failed with status {StatusCode}", response.StatusCode);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Overpass lookup failed with status {StatusCode}", response.StatusCode);
+                response.EnsureSuccessStatusCode();
+            }
+
+            using var content = await response.Content.ReadAsStreamAsync(ct);
+            var overpassResponse = await JsonSerializer.DeserializeAsync<OverpassResponse>(content, cancellationToken: ct);
+
+            if (overpassResponse?.Elements is null)
+            {
+                _logger.LogWarning("Overpass lookup response was missing expected elements array");
+                return default;
+            }
+
+            return processor(overpassResponse.Elements);
         }
-
-        using var content = await response.Content.ReadAsStreamAsync(ct);
-        var overpassResponse = await JsonSerializer.DeserializeAsync<OverpassResponse>(content, cancellationToken: ct);
-
-        if (overpassResponse?.Elements is null)
+        catch (HttpRequestException ex)
         {
-            _logger.LogWarning("Overpass lookup response was missing expected elements array");
+            _logger.LogWarning(ex, "Overpass lookup network error");
             return default;
         }
-
-        return processor(overpassResponse.Elements);
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Overpass lookup returned invalid JSON");
+            return default;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Overpass lookup failed");
+            return default;
+        }
     }
 }

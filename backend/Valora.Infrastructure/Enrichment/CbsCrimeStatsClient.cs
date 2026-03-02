@@ -68,22 +68,36 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
         var url =
             $"{_options.CbsBaseUrl.TrimEnd('/')}/83765NED/TypedDataSet?$filter=WijkenEnBuurten%20eq%20'{escapedCode}'&$top=1&$select=WijkenEnBuurten,AantalInwoners_5,TotaalDiefstalUitWoningSchuurED_106,VernielingMisdrijfTegenOpenbareOrde_107,GeweldsEnSeksueleMisdrijven_108";
 
-        using var response = await _httpClient.GetAsync(url, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("CBS crime lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
-            return null;
-        }
-
         JsonDocument document;
         try
         {
+            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("CBS crime lookup failed for region {RegionCode} with status {StatusCode}", regionCode.Trim(), response.StatusCode);
+                return null;
+            }
+
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
             document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "CBS crime lookup network error for region {RegionCode}", regionCode.Trim());
+            return null;
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "CBS crime lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "CBS crime lookup failed for region {RegionCode}", regionCode.Trim());
             return null;
         }
 

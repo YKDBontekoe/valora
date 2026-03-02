@@ -9,6 +9,7 @@ import '../../core/theme/valora_colors.dart';
 import 'layouts/search_layout.dart';
 import 'layouts/report_layout.dart';
 import 'layouts/comparison_layout.dart';
+import '../../widgets/valora_error_state.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key, this.pdokService, this.onFabChanged});
@@ -54,18 +55,20 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
           ContextReportProvider(repository: context.read<ContextReportRepository>()),
       child: Material(
         type: MaterialType.transparency,
-        child: Selector<ContextReportProvider, ({bool hasReport, bool isLoading, int comparisonCount, bool isComparisonMode})>(
+        child: Selector<ContextReportProvider, ({bool hasReport, bool isLoading, int comparisonCount, bool isComparisonMode, String? error})>(
           selector: (_, p) => (
             hasReport: p.report != null,
             isLoading: p.isLoading,
             comparisonCount: p.comparisonIds.length,
             isComparisonMode: _isComparisonMode,
+            error: p.error,
           ),
           builder: (context, data, _) {
             final provider = context.read<ContextReportProvider>();
             final hasReport = data.hasReport;
             final isLoading = data.isLoading;
             final comparisonCount = data.comparisonCount;
+            final error = data.error;
 
             // Report the FAB to the parent HomeScreen
             final Widget? fab = comparisonCount > 0 && !_isComparisonMode
@@ -97,6 +100,30 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
               return ComparisonLayout(
                 onBack: () => setState(() => _isComparisonMode = false),
                 onClear: provider.clearComparison,
+              );
+            }
+
+            if (error != null && !isLoading && !hasReport) {
+              return Column(
+                children: [
+                  Expanded(
+                    child: ValoraErrorState(
+                      error: error,
+                      onRetry: () => provider.generate(_inputController.text),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: TextButton.icon(
+                      onPressed: () {
+                         _inputController.clear();
+                         provider.clear();
+                      },
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('New Search'),
+                    ),
+                  ),
+                ],
               );
             }
 
