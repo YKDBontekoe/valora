@@ -38,7 +38,8 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
         initial={{ opacity: 0, scale: 0.9, y: 40 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 40 }}
-        className="relative w-full max-w-3xl bg-white rounded-[3rem] shadow-premium-xl overflow-hidden border border-white/20"
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="relative w-full max-w-3xl bg-white rounded-5xl shadow-premium-xl overflow-hidden border border-white/20"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -71,7 +72,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Intent Key</label>
                 <input
                   type="text"
-                  className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
+                  className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
                   value={editingConfig.intent}
                   onChange={(e) => onChange({ ...editingConfig, intent: e.target.value })}
                   disabled={!!editingConfig.id}
@@ -95,7 +96,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 </div>
                 <select
                   aria-label="Primary Model"
-                  className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono appearance-none"
+                  className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono appearance-none"
                   value={editingConfig.primaryModel}
                   onChange={(e) => onChange({ ...editingConfig, primaryModel: e.target.value })}
                 >
@@ -115,7 +116,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 <div className="flex gap-3">
                   <input
                     type="text"
-                    className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono"
+                    className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono"
                     value={editingConfig.fallbackModels.join(', ')}
                     onChange={(e) => onChange({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
                     placeholder="node-a, node-b"
@@ -161,7 +162,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
           <div className="mt-10">
             <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Policy Justification</label>
             <textarea
-              className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[120px] placeholder:text-brand-200"
+              className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[120px] placeholder:text-brand-200"
               value={editingConfig.description}
               onChange={(e) => onChange({ ...editingConfig, description: e.target.value })}
               placeholder="Provide context for this routing policy..."

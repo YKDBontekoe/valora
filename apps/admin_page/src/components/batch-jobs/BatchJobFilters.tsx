@@ -44,7 +44,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
             placeholder="Search by target..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-10 py-3.5 bg-white border border-brand-100 rounded-2xl text-sm font-black text-brand-900 outline-none focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 transition-all placeholder:font-bold placeholder:text-brand-200 shadow-sm"
+            className="w-full pl-12 pr-10 py-3.5 bg-white border border-brand-100 rounded-2xl text-sm font-black text-brand-900 outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:font-bold placeholder:text-brand-200 shadow-sm"
           />
           {searchQuery && (
               <button
@@ -85,7 +85,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
+                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
               >
                 <option value="All">All Statuses</option>
                 <option value="Pending">Pending</option>
@@ -105,7 +105,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
                   setTypeFilter(e.target.value);
                   setPage(1);
                 }}
-                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-8 focus:ring-primary-500/5 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
+                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
               >
                 <option value="All">All Types</option>
                 <option value="CityIngestion">CityIngestion</option>

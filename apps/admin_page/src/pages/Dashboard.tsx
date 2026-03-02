@@ -70,7 +70,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-white/50 backdrop-blur-md px-6 py-4 rounded-2xl border border-brand-100 shadow-sm">
+        <div className="flex items-center gap-4 glass-premium px-6 py-4 rounded-2xl border border-brand-100 shadow-sm">
             <div className="flex flex-col items-end">
                 <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Status</span>
                 <span className="text-sm font-black text-success-600">All Systems Go</span>

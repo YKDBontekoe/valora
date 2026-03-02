@@ -30,6 +30,7 @@ const UserRow = ({
     <motion.tr
       variants={rowVariants}
       exit={{ opacity: 0, scale: 0.98, x: 20 }}
+      whileHover={{ x: 8 }}
       layout
       className="hover:bg-brand-50/30 transition-all duration-300 group cursor-default relative overflow-hidden"
     >

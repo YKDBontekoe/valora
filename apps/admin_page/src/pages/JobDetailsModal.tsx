@@ -97,7 +97,8 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
             initial={{ opacity: 0, scale: 0.9, y: 40 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 40 }}
-            className="relative bg-white rounded-[2.5rem] shadow-premium-xl border border-white/20 w-full max-w-3xl max-h-[90vh] flex flex-col pointer-events-auto z-10 overflow-hidden"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="relative bg-white rounded-5xl shadow-premium-xl border border-white/20 w-full max-w-3xl max-h-[90vh] flex flex-col pointer-events-auto z-10 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
