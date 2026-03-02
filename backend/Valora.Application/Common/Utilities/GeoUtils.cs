@@ -218,6 +218,11 @@ public static class GeoUtils
 
     public static void ValidateBoundingBox(double minLat, double minLon, double maxLat, double maxLon, double maxSpan = MaxSpan)
     {
+        if (double.IsNaN(maxSpan) || double.IsInfinity(maxSpan) || maxSpan <= 0 || maxSpan > 360)
+        {
+            throw new ValidationException("maxSpan must be a positive finite number, less than or equal to 360.");
+        }
+
         if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon) ||
             double.IsInfinity(minLat) || double.IsInfinity(minLon) || double.IsInfinity(maxLat) || double.IsInfinity(maxLon))
         {
