@@ -128,7 +128,20 @@ describe('BatchJobs Page', () => {
           expect(screen.getByText('Restart Pipeline')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Restart Pipeline'));
+      // Click the first "Restart Pipeline" to open the confirmation modal
+      const restartButtons = screen.getAllByText('Restart Pipeline');
+      fireEvent.click(restartButtons[0]);
+
+      // Wait for the modal and click its confirm button
+      // The button text is "Restart Pipeline"
+      await waitFor(() => {
+          expect(screen.getByText('Are you sure you want to restart this ingestion pipeline? This will clear the current progress and attempt to re-run the entire process.')).toBeInTheDocument();
+      });
+
+      // 0 is original button (in modal), 1 is modal title (in confirm dialog), 2 is confirm button (in confirm dialog)
+      const confirmButtons = screen.getAllByRole('button', { name: /Restart Pipeline/i });
+      // The last button matching "Restart Pipeline" should be our confirmation button
+      fireEvent.click(confirmButtons[confirmButtons.length - 1]);
 
       await waitFor(() => {
           expect(adminService.retryJob).toHaveBeenCalledWith('2');
