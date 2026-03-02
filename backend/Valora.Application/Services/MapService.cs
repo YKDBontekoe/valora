@@ -93,7 +93,7 @@ public class MapService : IMapService
         List<string>? types = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateAggregatedBoundingBox(minLat, minLon, maxLat, maxLon);
+        GeoUtils.ValidateBoundingBox(minLat, minLon, maxLat, maxLon, MaxAggregatedSpan);
         if (minLon > maxLon) return [];
 
         double cellSize = GetCellSize(zoom);
@@ -133,7 +133,7 @@ public class MapService : IMapService
         MapOverlayMetric metric,
         CancellationToken cancellationToken = default)
     {
-        ValidateAggregatedBoundingBox(minLat, minLon, maxLat, maxLon);
+        GeoUtils.ValidateBoundingBox(minLat, minLon, maxLat, maxLon, MaxAggregatedSpan);
         if (minLon > maxLon) return [];
 
         double cellSize = GetCellSize(zoom);
@@ -324,17 +324,4 @@ public class MapService : IMapService
         return 0.1;
     }
 
-    private static void ValidateAggregatedBoundingBox(double minLat, double minLon, double maxLat, double maxLon)
-    {
-        if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon))
-            throw new ValidationException("Coordinates must be valid numbers.");
-
-        if (minLat >= maxLat)
-            throw new ValidationException("Invalid bounding box dimensions.");
-
-        var lonSpan = maxLon >= minLon ? maxLon - minLon : 360 - (minLon - maxLon);
-
-        if (maxLat - minLat > MaxAggregatedSpan || lonSpan > MaxAggregatedSpan)
-            throw new ValidationException($"Bounding box span too large for aggregated view. Max is {MaxAggregatedSpan}.");
-    }
 }
