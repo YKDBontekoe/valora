@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Activity, Settings, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Activity, Settings, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
@@ -46,46 +46,49 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-brand-50 w-full overflow-hidden">
+    <div className="flex h-screen bg-brand-50 w-full overflow-hidden font-body">
       {/* Sidebar */}
-      <aside className="w-72 glass-premium border-r border-brand-100 flex flex-col z-20 relative">
+      <aside className="w-80 glass-premium border-r border-brand-100 flex flex-col z-20 relative shadow-premium-2xl">
         <div className="p-10">
-          <Link to="/" className="flex items-center space-x-4 group">
+          <Link to="/" className="flex items-center space-x-5 group">
             <motion.div
-              whileHover={{ rotate: 12, scale: 1.1 }}
+              whileHover={{ rotate: 12, scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
-              className="w-12 h-12 bg-linear-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-premium-lg shadow-primary-200/50 transition-all duration-500 group-hover:shadow-primary-400/30"
+              className="w-14 h-14 bg-linear-to-br from-primary-500 to-primary-700 rounded-[1.25rem] flex items-center justify-center shadow-premium-lg shadow-primary-200/50 transition-all duration-500 group-hover:shadow-glow-primary-lg"
             >
-              <span className="text-white font-black text-2xl">V</span>
+              <span className="text-white font-black text-3xl">V</span>
             </motion.div>
             <div className="flex flex-col">
-                <h1 className="text-xl font-black text-brand-900 tracking-tight leading-none">Valora</h1>
-                <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.2em] mt-1">Admin Console</span>
+                <h1 className="text-2xl font-black text-brand-900 tracking-tight leading-none">Valora</h1>
+                <div className="flex items-center gap-2 mt-1.5">
+                    <Sparkles size={10} className="text-primary-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.25em]">Admin Console</span>
+                </div>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 px-6 space-y-10 overflow-y-auto py-4">
+        <nav className="flex-1 px-8 space-y-12 overflow-y-auto py-6 custom-scrollbar">
           {navGroups.map((group) => (
             hasAccess(group.requiredRoles) && (
-              <div key={group.title} className="space-y-3">
+              <div key={group.title} className="space-y-4">
                 <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-4">
                   {group.title}
                 </h3>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;
                     return (
                       <motion.div
                         key={item.name}
-                        whileHover={{ x: 4 }}
+                        whileHover={{ x: 6 }}
                         whileTap={{ scale: 0.98 }}
                         className="relative"
                       >
                         <Link
                           to={item.path}
-                          className={`group flex items-center px-4 py-3.5 text-sm font-black rounded-2xl transition-all duration-500 relative ${
+                          className={`group flex items-center px-5 py-4 text-sm font-black rounded-2xl transition-all duration-500 relative ${
                             isActive
                               ? 'text-primary-700'
                               : 'text-brand-500 hover:text-brand-900'
@@ -94,20 +97,22 @@ const Layout = () => {
                           {isActive && (
                             <motion.div
                               layoutId="nav-glow"
-                              className="absolute inset-0 bg-primary-50 border border-primary-100/50 rounded-2xl shadow-premium z-0"
-                              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                              className="absolute inset-0 bg-white border border-primary-100 shadow-premium z-0 ring-4 ring-primary-500/5"
+                              transition={{ type: "spring", stiffness: 350, damping: 25 }}
                             />
                           )}
 
                           <div className="relative z-10 flex items-center w-full">
-                              <Icon className={`mr-3 h-5 w-5 transition-all duration-500 ${isActive ? 'text-primary-600 scale-110' : 'text-brand-400 group-hover:text-brand-900 group-hover:rotate-6'}`} />
-                              <span className="flex-1">{item.name}</span>
+                              <div className={`p-2 rounded-xl transition-all duration-500 mr-4 ${isActive ? 'bg-primary-50 text-primary-600 scale-110 shadow-sm' : 'text-brand-400 group-hover:text-brand-900 group-hover:rotate-6'}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <span className="flex-1 tracking-tight">{item.name}</span>
                               {isActive && (
                                 <motion.div
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                 >
-                                    <ChevronRight size={14} className="text-primary-400" />
+                                    <ChevronRight size={16} className="text-primary-400" />
                                 </motion.div>
                               )}
                           </div>
@@ -121,13 +126,15 @@ const Layout = () => {
           ))}
         </nav>
 
-        <div className="p-6 border-t border-brand-100 mt-auto bg-brand-50/30">
+        <div className="p-8 border-t border-brand-100 mt-auto bg-brand-50/20 backdrop-blur-md">
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-4 text-sm font-black text-brand-400 rounded-2xl hover:bg-error-50 hover:text-error-600 transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-error-100/50 border border-transparent hover:border-error-100"
+            className="flex items-center w-full px-5 py-5 text-sm font-black text-brand-400 rounded-2xl hover:bg-error-50 hover:text-error-600 transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-glow-error border border-transparent hover:border-error-100"
           >
-            <LogOut className="mr-3 h-5 w-5 transition-transform group-hover:-translate-x-1" />
+            <div className="p-2 rounded-xl transition-transform group-hover:-translate-x-1 group-hover:bg-white mr-4">
+                <LogOut className="h-5 w-5" />
+            </div>
             Sign Out
           </motion.button>
         </div>
@@ -136,17 +143,21 @@ const Layout = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-auto relative bg-brand-50/30">
         {/* Top Decorative bar */}
-        <div className="h-1.5 w-full bg-linear-to-r from-primary-600 via-primary-400 to-transparent opacity-10 absolute top-0 left-0 z-10" />
+        <div className="h-2 w-full bg-linear-to-r from-primary-600 via-primary-400 to-transparent opacity-20 absolute top-0 left-0 z-10" />
 
-        <div className="max-w-7xl mx-auto p-8 md:p-12 lg:p-16">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-primary-50/20 blur-[150px] -z-10 rounded-full" />
+        <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-info-50/20 blur-[120px] -z-10 rounded-full" />
+
+        <div className="max-w-7xl mx-auto p-10 md:p-14 lg:p-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.98 }}
+              exit={{ opacity: 0, y: -30, scale: 0.98 }}
               transition={{
-                duration: 0.5,
+                duration: 0.6,
                 ease: [0.22, 1, 0.36, 1] as const
               }}
             >

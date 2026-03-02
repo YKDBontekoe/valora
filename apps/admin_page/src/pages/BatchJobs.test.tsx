@@ -78,9 +78,14 @@ describe('BatchJobs Page', () => {
       expect(screen.getByText('Amsterdam')).toBeInTheDocument();
     });
 
-    // Click Details button (was View)
-    const viewButton = screen.getByText('Details');
-    fireEvent.click(viewButton);
+    // Use a more robust selector since the row might be wrapped in motion components
+    const rows = screen.getAllByRole('row');
+    const amsterdamRow = rows.find(row => row.textContent?.includes('Amsterdam'));
+
+    if (!amsterdamRow) throw new Error('Could not find Amsterdam row');
+
+    // We can't rely on getByText('Details') directly if it's hidden or duplicated
+    fireEvent.click(amsterdamRow);
 
     await waitFor(() => {
         expect(screen.getByText('Pipeline Diagnostics')).toBeInTheDocument();
@@ -122,7 +127,11 @@ describe('BatchJobs Page', () => {
           expect(screen.getByText('Rotterdam')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Details'));
+      const rows = screen.getAllByRole('row');
+      const rotterdamRow = rows.find(row => row.textContent?.includes('Rotterdam'));
+      if (!rotterdamRow) throw new Error('Could not find Rotterdam row');
+
+      fireEvent.click(rotterdamRow);
 
       await waitFor(() => {
           expect(screen.getByText('Restart Pipeline')).toBeInTheDocument();
