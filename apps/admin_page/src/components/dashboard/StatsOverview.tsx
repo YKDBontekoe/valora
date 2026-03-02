@@ -1,4 +1,4 @@
-import { motion, useSpring, useTransform, animate } from 'framer-motion';
+import { motion, animate } from 'framer-motion';
 import { Users, Bell, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { Stats } from '../../types';

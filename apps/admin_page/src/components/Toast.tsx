@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toastManager, type ToastMessage } from '../services/toast';
-import { CheckCircle2, AlertCircle, Info, X, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertCircle, X, Sparkles } from 'lucide-react';
 
 const Toast = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
