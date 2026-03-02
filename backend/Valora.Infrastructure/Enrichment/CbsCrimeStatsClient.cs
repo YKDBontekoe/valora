@@ -91,7 +91,7 @@ public sealed class CbsCrimeStatsClient : ICbsCrimeStatsClient
             _logger.LogWarning(ex, "CBS crime lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
             return null;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }

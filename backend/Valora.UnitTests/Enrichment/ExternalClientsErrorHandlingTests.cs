@@ -27,6 +27,23 @@ public class ExternalClientsErrorHandlingTests
     }
 
     [Fact]
+    public async Task CbsCrimeClient_OnCancellation_ThrowsOperationCanceledException()
+    {
+        var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
+        var client = new CbsCrimeStatsClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
+            new MemoryCache(new MemoryCacheOptions()),
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetStatsAsync(CreateLocation(), cts.Token));
+    }
+
+    [Fact]
     public async Task CbsClient_OnException_ReturnsNullAndLogsWarning()
     {
         var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
@@ -87,7 +104,7 @@ public class ExternalClientsErrorHandlingTests
     }
 
     [Fact]
-    public async Task OverpassClient_Bbox_OnHttpFailure_ReturnsNullAndLogsWarning()
+    public async Task OverpassClient_Bbox_OnHttpFailure_ReturnsEmptyAndLogsWarning()
     {
         var logger = new Mock<ILogger<OverpassAmenityClient>>();
         var client = new OverpassAmenityClient(
