@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
+using Valora.Domain.Extensions;
 
 namespace Valora.Application.Services.BatchJobs;
 
@@ -26,18 +27,18 @@ public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
     public async Task ProcessAsync(BatchJob job, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing all cities ingestion.");
-        AppendLog(job, "Fetching all municipalities from CBS...");
+        job.AppendLog("Fetching all municipalities from CBS...");
         await _jobRepository.UpdateAsync(job, cancellationToken);
 
         var cities = await _geoClient.GetAllMunicipalitiesAsync(cancellationToken);
         if (cities == null || !cities.Any())
         {
-            AppendLog(job, "No municipalities found.");
+            job.AppendLog("No municipalities found.");
             job.ResultSummary = "No municipalities found.";
             return;
         }
 
-        AppendLog(job, $"Found {cities.Count} municipalities. Queueing jobs...");
+        job.AppendLog($"Found {cities.Count} municipalities. Queueing jobs...");
 
         int count = 0;
         foreach (var city in cities)
@@ -71,15 +72,6 @@ public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
         }
 
         job.ResultSummary = $"Queued ingestion for {cities.Count} municipalities.";
-        AppendLog(job, $"Successfully queued {cities.Count} jobs.");
-    }
-
-    private void AppendLog(BatchJob job, string message)
-    {
-        var entry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
-        if (string.IsNullOrEmpty(job.ExecutionLog))
-            job.ExecutionLog = entry;
-        else
-            job.ExecutionLog += Environment.NewLine + entry;
+        job.AppendLog($"Successfully queued {cities.Count} jobs.");
     }
 }

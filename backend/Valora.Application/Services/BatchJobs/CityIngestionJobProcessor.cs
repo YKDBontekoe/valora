@@ -3,6 +3,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
+using Valora.Domain.Extensions;
 
 namespace Valora.Application.Services.BatchJobs;
 
@@ -50,7 +51,7 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
     public async Task ProcessAsync(BatchJob job, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing city ingestion for {City}", job.Target);
-        AppendLog(job, $"Processing city ingestion for {job.Target}");
+        job.AppendLog($"Processing city ingestion for {job.Target}");
 
         List<NeighborhoodGeometryDto> neighborhoods;
         try
@@ -64,7 +65,7 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
 
         if (neighborhoods == null || !neighborhoods.Any())
         {
-            AppendLog(job, "No neighborhoods found for city.");
+            job.AppendLog("No neighborhoods found for city.");
             job.ResultSummary = "No neighborhoods found for city.";
             return;
         }
@@ -128,12 +129,12 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
                 await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
 
                 job.Progress = (int)((double)count / total * 100);
-                AppendLog(job, $"Processed {count}/{total} neighborhoods.");
+                job.AppendLog($"Processed {count}/{total} neighborhoods.");
                 await _jobRepository.UpdateAsync(job, cancellationToken);
             }
         }
 
-        AppendLog(job, $"Processed {total} neighborhoods.");
+        job.AppendLog($"Processed {total} neighborhoods.");
         job.ResultSummary = $"Processed {total} neighborhoods.";
     }
 
@@ -204,14 +205,5 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         neighborhood.LastUpdated = DateTime.UtcNow;
 
         return (neighborhood, isNew);
-    }
-
-    private void AppendLog(BatchJob job, string message)
-    {
-        var entry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
-        if (string.IsNullOrEmpty(job.ExecutionLog))
-            job.ExecutionLog = entry;
-        else
-            job.ExecutionLog += Environment.NewLine + entry;
     }
 }

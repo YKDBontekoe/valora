@@ -216,8 +216,13 @@ public static class GeoUtils
         return inside;
     }
 
-    public static void ValidateBoundingBox(double minLat, double minLon, double maxLat, double maxLon)
+    public static void ValidateBoundingBox(double minLat, double minLon, double maxLat, double maxLon, double maxSpan = MaxSpan)
     {
+        if (double.IsNaN(maxSpan) || double.IsInfinity(maxSpan) || maxSpan <= 0 || maxSpan > 360)
+        {
+            throw new ValidationException("maxSpan must be a positive finite number, less than or equal to 360.");
+        }
+
         if (double.IsNaN(minLat) || double.IsNaN(minLon) || double.IsNaN(maxLat) || double.IsNaN(maxLon) ||
             double.IsInfinity(minLat) || double.IsInfinity(minLon) || double.IsInfinity(maxLat) || double.IsInfinity(maxLon))
         {
@@ -243,9 +248,9 @@ public static class GeoUtils
         // Handle wrapped longitudes (crossing date line)
         var lonSpan = maxLon >= minLon ? maxLon - minLon : 360 - (minLon - maxLon);
 
-        if (maxLat - minLat > MaxSpan || lonSpan > MaxSpan)
+        if (maxLat - minLat > maxSpan || lonSpan > maxSpan)
         {
-            throw new ValidationException(string.Create(CultureInfo.InvariantCulture, $"Bounding box span too large. Maximum allowed is {MaxSpan} degrees."));
+            throw new ValidationException(string.Create(CultureInfo.InvariantCulture, $"Bounding box span too large. Maximum allowed is {maxSpan} degrees."));
         }
     }
 }
