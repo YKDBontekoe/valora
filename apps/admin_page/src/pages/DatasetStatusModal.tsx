@@ -90,7 +90,17 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
                     <Button variant="outline" onClick={fetchData}>Retry</Button>
                 </div>
             ) : data.length === 0 ? (
-                <div className="text-center py-12 text-brand-400 font-bold">No dataset information available.</div>
+                <div className="flex flex-col items-center justify-center py-12 text-brand-400 gap-6">
+                    <div className="p-8 bg-brand-50 rounded-4xl border border-brand-100 shadow-inner">
+                        <Database size={64} className="opacity-30" />
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="font-black text-2xl uppercase tracking-widest text-brand-300">No Dataset Available</span>
+                        <p className="font-bold max-w-sm text-center">
+                            The dataset is currently empty. Start an ingestion pipeline to populate municipalities.
+                        </p>
+                    </div>
+                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {data.map((item) => (
