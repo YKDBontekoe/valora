@@ -14,28 +14,34 @@ class ComparisonView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Select the actual reports needed for comparison to rebuild only when they change.
-    // Using a List of reports and a Selector with deep equality comparison ensures we only
-    // rebuild when reports are added/removed or a report's actual instance changes.
-    return Selector<ContextReportProvider, List<ContextReport?>>(
-      selector: (_, provider) =>
-          provider.comparisonIds.map((id) => provider.getReportById(id)).toList(),
+    // Select both the IDs and the actual reports needed for comparison to rebuild only when they change.
+    // Using a Record and a Selector with deep equality comparison ensures we only
+    // rebuild when IDs are added/removed or a report's actual instance changes.
+    return Selector<ContextReportProvider, ({List<String> ids, List<ContextReport?> reportsList})>(
+      selector: (_, provider) => (
+          ids: provider.comparisonIds.toList(),
+          reportsList: provider.comparisonIds.map((id) => provider.getReportById(id)).toList()
+      ),
       shouldRebuild: (previous, next) {
-        if (previous.length != next.length) return true;
-        for (int i = 0; i < previous.length; i++) {
-          if (previous[i] != next[i]) return true;
+        if (previous.ids.length != next.ids.length) return true;
+        for (int i = 0; i < previous.ids.length; i++) {
+          if (previous.ids[i] != next.ids[i]) return true;
+        }
+        if (previous.reportsList.length != next.reportsList.length) return true;
+        for (int i = 0; i < previous.reportsList.length; i++) {
+          if (previous.reportsList[i] != next.reportsList[i]) return true;
         }
         return false;
       },
-      builder: (context, reportsList, child) {
+      builder: (context, data, child) {
         final provider = context.read<ContextReportProvider>();
-        final ids = provider.comparisonIds.toList();
+        final ids = data.ids;
 
         if (ids.isEmpty) {
           return const Center(child: Text('No reports to compare'));
         }
 
-        final reports = reportsList.whereType<ContextReport>().toList();
+        final reports = data.reportsList.whereType<ContextReport>().toList();
 
         // Header Row
         return ListView(
