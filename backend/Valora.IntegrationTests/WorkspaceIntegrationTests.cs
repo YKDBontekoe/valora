@@ -318,6 +318,93 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SavePropertyFromReport_ShouldSucceed_WhenValidReportProvided()
+    {
+        // Arrange
+        var ownerEmail = "owner_report@test.com";
+        await AuthenticateAsync(ownerEmail);
+
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Save From Report Test", ""));
+        createResponse.EnsureSuccessStatusCode();
+        var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
+
+        var mockLocation = new ResolvedLocationDto(
+            "Test Query",
+            "123 Fake Street",
+            52.3676,
+            4.9041,
+            null,
+            null,
+            null,
+            "Fake Municipality",
+            null,
+            null,
+            null,
+            null,
+            "1234AB"
+        );
+
+        var mockScores = new Dictionary<string, double>
+        {
+            { "Safety", 8.5 },
+            { "Social", 7.2 },
+            { "Amenities", 9.1 },
+            { "Environment", 6.8 }
+        };
+
+        var mockReport = new ContextReportDto(
+            mockLocation,
+            new List<ContextMetricDto>(),
+            new List<ContextMetricDto>(),
+            new List<ContextMetricDto>(),
+            new List<ContextMetricDto>(),
+            new List<ContextMetricDto>(),
+            new List<ContextMetricDto>(),
+            new List<ContextMetricDto>(),
+            7.9, // CompositeScore
+            mockScores,
+            new List<SourceAttributionDto>(),
+            new List<string>()
+        );
+
+        var saveDto = new SavePropertyFromReportDto(mockReport, "Saved from amazing report");
+
+        // Act
+        var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties/from-report", saveDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<SavedPropertyDto>();
+        Assert.NotNull(result);
+        Assert.Equal("Saved from amazing report", result.Notes);
+
+        // Verify DB side-effects
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
+            // Verify Property was created and mapped correctly
+            var property = await db.Properties.FirstOrDefaultAsync(p => p.Address == "123 Fake Street" && p.PostalCode == "1234AB");
+            Assert.NotNull(property);
+            Assert.Equal("Fake Municipality", property.City);
+            Assert.Equal(52.3676, property.Latitude);
+            Assert.Equal(4.9041, property.Longitude);
+            Assert.Equal(7.9, property.ContextCompositeScore);
+            Assert.Equal(8.5, property.ContextSafetyScore);
+            Assert.Equal(7.2, property.ContextSocialScore);
+            Assert.Equal(9.1, property.ContextAmenitiesScore);
+            Assert.Equal(6.8, property.ContextEnvironmentScore);
+
+            // Verify SavedProperty link was created
+            var saved = await db.SavedProperties.FirstOrDefaultAsync(sl => sl.WorkspaceId == workspace.Id && sl.PropertyId == property.Id);
+            Assert.NotNull(saved);
+            Assert.Equal("Saved from amazing report", saved.Notes);
+            Assert.Equal(result.Id, saved.Id);
+        }
+    }
+
     // --- Comments ---
 
     [Fact]
