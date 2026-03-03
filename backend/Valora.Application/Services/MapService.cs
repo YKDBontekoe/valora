@@ -103,25 +103,7 @@ public class MapService : IMapService
         // For now, we trust the client or standard validation if MaxAggregatedSpan is reasonable.
         var amenities = await _amenityClient.GetAmenitiesInBboxAsync(minLat, minLon, maxLat, maxLon, types, cancellationToken);
 
-        var clusters = amenities
-            .GroupBy(amenity => (
-                Lat: Math.Floor(amenity.Latitude / cellSize),
-                Lon: Math.Floor(amenity.Longitude / cellSize)
-            ))
-            .Select(groupedAmenities =>
-            {
-                var count = groupedAmenities.Count();
-                var lat = (groupedAmenities.Key.Lat * cellSize) + (cellSize / 2);
-                var lon = (groupedAmenities.Key.Lon * cellSize) + (cellSize / 2);
-
-                var typeCounts = groupedAmenities.GroupBy(amenity => amenity.Type)
-                    .ToDictionary(typeGroup => typeGroup.Key, typeGroup => typeGroup.Count());
-
-                return new MapAmenityClusterDto(lat, lon, count, typeCounts);
-            })
-            .ToList();
-
-        return clusters;
+        return Utilities.AmenityClusterer.ClusterAmenities(amenities, cellSize);
     }
 
     public async Task<IReadOnlyList<MapOverlayTileDto>> GetMapOverlayTilesAsync(
@@ -164,56 +146,13 @@ public class MapService : IMapService
             metric,
             cancellationToken);
 
-        var tiles = new List<MapOverlayTileDto>();
-
-        // Pre-parse geometries for performance
-        var parsedOverlays = overlays.Select(overlay =>
-            (Dto: overlay, Geometry: GeoUtils.ParseGeometry(overlay.GeoJson))
-        ).ToList();
-
-        // Build spatial index
-        double indexCellSize = cellSize * 5;
-        var spatialIndex = new Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>>();
-
-        foreach (var parsedOverlay in parsedOverlays)
-        {
-            int minX = (int)Math.Floor(parsedOverlay.Geometry.BBox.MinLon / indexCellSize);
-            int maxX = (int)Math.Floor(parsedOverlay.Geometry.BBox.MaxLon / indexCellSize);
-            int minY = (int)Math.Floor(parsedOverlay.Geometry.BBox.MinLat / indexCellSize);
-            int maxY = (int)Math.Floor(parsedOverlay.Geometry.BBox.MaxLat / indexCellSize);
-
-            for (int y = minY; y <= maxY; y++)
-            {
-                for (int x = minX; x <= maxX; x++)
-                {
-                    var key = (x, y);
-                    if (!spatialIndex.TryGetValue(key, out var list))
-                    {
-                        list = new List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>();
-                        spatialIndex[key] = list;
-                    }
-                    list.Add(parsedOverlay);
-                }
-            }
-        }
-
-        // Rasterize: iterate by cellSize, center each tile
-        for (double lat = snappedMinLat + cellSize / 2; lat < snappedMaxLat; lat += cellSize)
-        {
-            int gridY = (int)Math.Floor(lat / indexCellSize);
-
-            for (double lon = snappedMinLon + cellSize / 2; lon < snappedMaxLon; lon += cellSize)
-            {
-                int gridX = (int)Math.Floor(lon / indexCellSize);
-                var key = (gridX, gridY);
-
-                var tile = FindOverlayForPoint(lat, lon, cellSize, key, spatialIndex);
-                if (tile != null)
-                {
-                    tiles.Add(tile);
-                }
-            }
-        }
+        var tiles = Utilities.OverlayRasterizer.RasterizeOverlays(
+            overlays,
+            snappedMinLat,
+            snappedMinLon,
+            snappedMaxLat,
+            snappedMaxLon,
+            cellSize);
 
         var readOnlyTiles = tiles.ToArray();
         _cache.Set(cacheKey, readOnlyTiles, OverlayTilesCacheDuration);
@@ -227,34 +166,6 @@ public class MapService : IMapService
     /// <summary>Snaps a coordinate to the next grid boundary at the given cell size.</summary>
     private static double SnapToGridCeil(double value, double cellSize) =>
         Math.Ceiling(value / cellSize) * cellSize;
-
-    private static MapOverlayTileDto? FindOverlayForPoint(
-        double lat,
-        double lon,
-        double cellSize,
-        (int, int) key,
-        Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>> spatialIndex)
-    {
-        if (spatialIndex.TryGetValue(key, out var candidates))
-        {
-            // Simple point-in-polygon check for the center of the tile on candidates only
-            var overlayIndex = candidates.FindIndex(o =>
-                GeoUtils.IsPointInPolygon(lat, lon, o.Geometry));
-
-            if (overlayIndex >= 0)
-            {
-                var overlay = candidates[overlayIndex];
-                return new MapOverlayTileDto(
-                    lat,
-                    lon,
-                    cellSize,
-                    overlay.Dto.MetricValue,
-                    overlay.Dto.DisplayValue
-                );
-            }
-        }
-        return null;
-    }
 
     private async Task<List<MapOverlayDto>> CalculateAveragePriceOverlayAsync(
         double minLat, double minLon, double maxLat, double maxLon, CancellationToken ct)
@@ -277,42 +188,10 @@ public class MapService : IMapService
         var overlays = await overlaysTask;
         var listingData = await listingDataTask;
 
-        var overlayResults = overlays.Select(overlay =>
-        {
-            var geometry = GeoUtils.ParseGeometry(overlay.GeoJson);
-            var neighborhoodListings = listingData.Where(l =>
-                l.Latitude.HasValue && l.Longitude.HasValue &&
-                GeoUtils.IsPointInPolygon(l.Latitude.Value, l.Longitude.Value, geometry));
-
-            var avgPrice = CalculateAveragePrice(neighborhoodListings);
-
-            var displayValue = avgPrice.HasValue ? $"€ {avgPrice:N0} / m²" : "No listing data";
-            var metricValue = avgPrice ?? 0;
-
-            return overlay with
-            {
-                MetricName = "PricePerSquareMeter",
-                MetricValue = metricValue,
-                DisplayValue = displayValue
-            };
-        }).ToList();
+        var overlayResults = Utilities.PriceOverlayCalculator.CalculateAveragePriceOverlay(overlays, listingData);
 
         _cache.Set(cacheKey, overlayResults, PriceOverlayCacheDuration);
         return overlayResults;
-    }
-
-    private static double? CalculateAveragePrice(IEnumerable<ListingPriceData> listings)
-    {
-        var validListings = listings
-            .Where(l => l.Price.HasValue && l.LivingAreaM2.HasValue && l.LivingAreaM2.Value > 0)
-            .ToList();
-
-        if (validListings.Count == 0)
-        {
-            return null;
-        }
-
-        return (double?)validListings.Average(l => l.Price!.Value / l.LivingAreaM2!.Value);
     }
 
     private static double GetCellSize(double zoom)
