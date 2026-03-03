@@ -29,6 +29,10 @@ describe('AiModelsTable', () => {
     onEdit: vi.fn(),
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders table headers and rows', () => {
     render(<AiModelsTable {...defaultProps} />);
 

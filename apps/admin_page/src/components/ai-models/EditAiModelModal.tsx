@@ -34,6 +34,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
   }, [initialConfig, editingConfig]);
 
   const handleCloseAttempt = () => {
+    if (isSaving) return;
     if (isDirty) {
       setShowDiscardConfirmation(true);
     } else {
@@ -77,7 +78,8 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
               <button
                 onClick={handleCloseAttempt}
                 aria-label="Close modal"
-                className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300"
+                className="w-12 h-12 flex items-center justify-center text-brand-300 hover:text-brand-900 hover:bg-brand-50 rounded-2xl transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={isSaving}
               >
                 <X size={32} aria-hidden="true" />
               </button>

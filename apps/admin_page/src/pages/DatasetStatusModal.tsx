@@ -65,28 +65,27 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
     return days > 30;
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-brand-900/60 backdrop-blur-md"
-        />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 40 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 40 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="relative w-full max-w-5xl bg-white rounded-5xl shadow-premium-2xl overflow-hidden border border-white/20 flex flex-col max-h-[90vh]"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
-        >
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-brand-900/60 backdrop-blur-md"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 40 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="relative w-full max-w-5xl bg-white rounded-5xl shadow-premium-2xl overflow-hidden border border-white/20 flex flex-col max-h-[90vh]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+          >
           {/* Header */}
           <div className="flex items-center justify-between px-10 py-10 border-b border-brand-100 bg-white/50 backdrop-blur-md sticky top-0 z-20">
             <div className="flex items-center gap-6">
@@ -217,8 +216,9 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
                 </motion.div>
             )}
           </div>
-        </motion.div>
-      </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 };

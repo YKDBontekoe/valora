@@ -12,7 +12,10 @@ describe('BatchJobTable', () => {
       target: 'Amsterdam',
       progress: 100,
       createdAt: new Date().toISOString(),
-      resultSummary: 'Finished Amsterdam'
+      resultSummary: 'Finished Amsterdam',
+      error: null,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
     },
     {
       id: '2',
@@ -21,6 +24,10 @@ describe('BatchJobTable', () => {
       target: 'Rotterdam',
       progress: 50,
       createdAt: new Date().toISOString(),
+      resultSummary: null,
+      error: null,
+      startedAt: new Date().toISOString(),
+      completedAt: null,
     }
   ];
 
