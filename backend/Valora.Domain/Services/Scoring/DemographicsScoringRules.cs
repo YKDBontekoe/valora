@@ -42,12 +42,29 @@ public static class DemographicsScoringRules
         return Math.Clamp(score, 0, 100);
     }
 
+    /// <summary>
+    /// Scores the average income per inhabitant.
+    /// </summary>
+    /// <remarks>
+    /// The formula maps the typical Dutch income range to a 0-100 score.
+    /// Assuming a baseline low-income threshold of 18k (Score = 0).
+    /// As income grows, the score increases, capped at 100 (~33k+).
+    /// Higher income generally correlates with better maintained neighborhood aesthetics and amenities.
+    /// </remarks>
     public static double? ScoreIncome(double? incomePerInhabitantK)
     {
         if (!incomePerInhabitantK.HasValue) return null;
         return Math.Clamp((incomePerInhabitantK.Value - 18) * 6.5, 0, 100);
     }
 
+    /// <summary>
+    /// Scores the education level based on the proportion of highly educated residents.
+    /// </summary>
+    /// <remarks>
+    /// This metric highlights areas with higher education densities.
+    /// The score uses a 1.4 multiplier on the percentage of highly educated individuals.
+    /// A neighborhood with ~71%+ highly educated residents scores 100.
+    /// </remarks>
     public static double? ScoreEducation(int? low, int? medium, int? high)
     {
         var share = ToPercent(high, low, medium);
@@ -55,6 +72,14 @@ public static class DemographicsScoringRules
         return Math.Clamp(share.Value * 1.4, 0, 100);
     }
 
+    /// <summary>
+    /// Scores the neighborhood's urbanity level based on density categories.
+    /// </summary>
+    /// <remarks>
+    /// Mid-urban neighborhoods (Level 3) tend to provide the best balance of calm and access to amenities, scoring 100.
+    /// Highly dense areas (Level 1) suffer from noise and crowding (Score 65).
+    /// Rural/non-urban areas (Level 5) lack access to nearby amenities (Score 70).
+    /// </remarks>
     public static double? ScoreUrbanity(string? urbanity)
     {
         var level = ParseUrbanityLevel(urbanity);

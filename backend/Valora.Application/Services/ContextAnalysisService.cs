@@ -84,6 +84,21 @@ public class ContextAnalysisService : IContextAnalysisService
         return result;
     }
 
+    /// <summary>
+    /// Builds the final system prompt by appending the user's AI profile preferences to the base system prompt.
+    /// </summary>
+    /// <param name="baseSystemPrompt">The default system prompt instructing the AI on its role.</param>
+    /// <param name="sessionProfile">Optional user profile override. If null, the method attempts to fetch it from the database.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The combined system prompt.</returns>
+    /// <remarks>
+    /// <para>
+    /// <strong>Fallback Logic:</strong> If a <paramref name="sessionProfile"/> is not provided directly by the caller
+    /// (e.g., from an active client session), the service falls back to retrieving the user's persisted preferences
+    /// from the database using <see cref="IUserAiProfileService"/>. This ensures AI personalization is applied
+    /// consistently even if the client app doesn't cache the profile locally.
+    /// </para>
+    /// </remarks>
     private async Task<string> BuildSystemPromptAsync(string baseSystemPrompt, UserAiProfileDto? sessionProfile, CancellationToken cancellationToken)
     {
         UserAiProfileDto? profileToUse = sessionProfile;

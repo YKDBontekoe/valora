@@ -23,6 +23,12 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 Follow these steps to get the entire system running locally. For a detailed walkthrough, see the **[Onboarding Guide](docs/onboarding.md)**.
 
+### 0. Clone the Repository
+```bash
+git clone https://github.com/your-org/valora.git
+cd valora
+```
+
 ### Prerequisites & Dependencies
 Before you start, ensure you have the following installed on your machine:
 - **Docker Desktop** (for spinning up the local PostgreSQL database)
@@ -165,11 +171,11 @@ graph TD
 
 | Layer | Responsibility | Key Tech |
 |---|---|---|
-| **Valora.Domain** | Core business rules and entities. Zero dependencies. | C# |
-| **Valora.Application** | Use cases (e.g., `GetContextReport`). Orchestrates data flow. | MediatR |
-| **Valora.Infrastructure** | External integrations (Database, APIs). | EF Core, HttpClient |
-| **Valora.Api** | Entry point. Configuration, Auth, and HTTP handling. | ASP.NET Core Minimal APIs |
-| **Flutter App** | Cross-platform mobile client. | Flutter, Provider |
+| **Valora.Domain** | Core enterprise business rules and entities. Completely independent; zero dependencies on other layers. | C# |
+| **Valora.Application** | Defines Use cases (e.g., `GetContextReport`). Orchestrates data flow and delegates to Domain. | MediatR |
+| **Valora.Infrastructure** | External integrations (Database, APIs). Implements interfaces defined in Application. | EF Core, HttpClient |
+| **Valora.Api** | Entry point. Configuration, Auth, and HTTP handling. Strictly delegates all business logic to the Application layer. | ASP.NET Core Minimal APIs |
+| **Flutter App** | Cross-platform mobile client providing the main user interface. | Flutter, Provider |
 
 ---
 
@@ -239,7 +245,7 @@ The API provides core functionalities to access and manage Valora's context data
 - **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
 - **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
 - **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
-- **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
+- **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`, `GET /api/admin/jobs/{id}`
 
 ---
 
