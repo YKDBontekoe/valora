@@ -53,9 +53,8 @@ class ComparisonView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(ids.length, (index) {
               final id = ids[index];
-              // Actually reports list might be shorter if some IDs don't have reports loaded.
-              // We should map IDs to reports carefully.
-              final loadedReport = provider.getReportById(id);
+              // The selector already mapped the IDs to reports sequentially.
+              final loadedReport = data.reportsList[index];
 
               final parts = id.split('|');
               final query = parts[0];
