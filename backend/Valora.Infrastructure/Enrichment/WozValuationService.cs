@@ -97,8 +97,7 @@ public class WozValuationService : IWozValuationService
 
             // Get the latest valuation
             var latestValuation = detailsResult?.WozWaarden
-                ?.OrderByDescending(w => w.Peildatum)
-                .FirstOrDefault();
+                ?.MaxBy(w => w.Peildatum);
 
             if (latestValuation == null)
             {
