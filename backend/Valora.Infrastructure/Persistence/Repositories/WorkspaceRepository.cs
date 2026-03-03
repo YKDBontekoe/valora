@@ -22,17 +22,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         return Task.FromResult(workspace);
     }
 
-    public async Task<List<Workspace>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default)
-    {
-        return await _context.Workspaces
-            .AsNoTracking()
-            .Include(w => w.Members)
-            .Include(w => w.SavedProperties)
-            .Where(w => w.Members.Any(m => m.UserId == userId))
-            .OrderByDescending(w => w.CreatedAt)
-            .ToListAsync(ct);
-    }
-
     public async Task<List<WorkspaceDto>> GetUserWorkspaceDtosAsync(string userId, CancellationToken ct = default)
     {
         return await _context.Workspaces
@@ -171,17 +160,6 @@ public class WorkspaceRepository : IWorkspaceRepository
             .FirstOrDefaultAsync(sp => sp.Id == savedPropertyId, ct);
     }
 
-    public async Task<List<SavedProperty>> GetSavedPropertiesAsync(Guid workspaceId, CancellationToken ct = default)
-    {
-        return await _context.SavedProperties
-            .AsNoTracking()
-            .Include(sp => sp.Property)
-            .Include(sp => sp.Comments)
-            .Where(sp => sp.WorkspaceId == workspaceId)
-            .OrderByDescending(sp => sp.CreatedAt)
-            .ToListAsync(ct);
-    }
-
     public async Task<List<SavedPropertyDto>> GetSavedPropertyDtosAsync(Guid workspaceId, CancellationToken ct = default)
     {
         return await _context.SavedProperties
@@ -260,16 +238,6 @@ public class WorkspaceRepository : IWorkspaceRepository
     {
         _context.ActivityLogs.Add(log);
         return Task.CompletedTask;
-    }
-
-    public async Task<List<ActivityLog>> GetActivityLogsAsync(Guid workspaceId, CancellationToken ct = default)
-    {
-        return await _context.ActivityLogs
-            .AsNoTracking()
-            .Where(a => a.WorkspaceId == workspaceId)
-            .OrderByDescending(a => a.CreatedAt)
-            .Take(50)
-            .ToListAsync(ct);
     }
 
     public async Task<List<ActivityLogDto>> GetActivityLogDtosAsync(Guid workspaceId, CancellationToken ct = default)

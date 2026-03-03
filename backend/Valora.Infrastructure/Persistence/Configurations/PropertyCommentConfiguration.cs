@@ -33,5 +33,8 @@ public class PropertyCommentConfiguration : IEntityTypeConfiguration<PropertyCom
                 v => JsonHelper.Serialize(v),
                 v => JsonHelper.Deserialize<Dictionary<string, List<string>>>(v))
             .Metadata.SetValueComparer(ValueComparers.DictionaryListComparer);
+
+        // Optimize fetching comments for a saved property ordered by creation time
+        builder.HasIndex(e => new { e.SavedPropertyId, e.CreatedAt });
     }
 }

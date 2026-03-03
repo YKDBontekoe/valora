@@ -14,18 +14,37 @@ class ComparisonView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watch comparisonIds to rebuild when list changes
-    final provider = context.watch<ContextReportProvider>();
-    final ids = provider.comparisonIds.toList();
+    // Select both the IDs and the actual reports needed for comparison to rebuild only when they change.
+    // Using a Record and a Selector with deep equality comparison ensures we only
+    // rebuild when IDs are added/removed or a report's actual instance changes.
+    return Selector<ContextReportProvider, ({List<String> ids, List<ContextReport?> reportsList})>(
+      selector: (_, provider) => (
+          ids: provider.comparisonIds.toList(),
+          reportsList: provider.comparisonIds.map((id) => provider.getReportById(id)).toList()
+      ),
+      shouldRebuild: (previous, next) {
+        if (previous.ids.length != next.ids.length) return true;
+        for (int i = 0; i < previous.ids.length; i++) {
+          if (previous.ids[i] != next.ids[i]) return true;
+        }
+        if (previous.reportsList.length != next.reportsList.length) return true;
+        for (int i = 0; i < previous.reportsList.length; i++) {
+          if (previous.reportsList[i] != next.reportsList[i]) return true;
+        }
+        return false;
+      },
+      builder: (context, data, child) {
+        final provider = context.read<ContextReportProvider>();
+        final ids = data.ids;
 
-    if (ids.isEmpty) {
-      return const Center(child: Text('No reports to compare'));
-    }
+        if (ids.isEmpty) {
+          return const Center(child: Text('No reports to compare'));
+        }
 
-    final reports = ids.map((id) => provider.getReportById(id)).whereType<ContextReport>().toList();
+        final reports = data.reportsList.whereType<ContextReport>().toList();
 
-    // Header Row
-    return ListView(
+        // Header Row
+        return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         SingleChildScrollView(
@@ -34,9 +53,8 @@ class ComparisonView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(ids.length, (index) {
               final id = ids[index];
-              // Actually reports list might be shorter if some IDs don't have reports loaded.
-              // We should map IDs to reports carefully.
-              final loadedReport = provider.getReportById(id);
+              // The selector already mapped the IDs to reports sequentially.
+              final loadedReport = data.reportsList[index];
 
               final parts = id.split('|');
               final query = parts[0];
@@ -105,18 +123,20 @@ class ComparisonView extends StatelessWidget {
 
         Text('AI Insights', style: ValoraTypography.titleMedium),
         const SizedBox(height: 16),
-        ...reports.map((report) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
-              const SizedBox(height: 8),
-              AiInsightCard(report: report),
-            ],
-          ),
-        )),
-      ],
+            ...reports.map((report) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
+                  const SizedBox(height: 8),
+                  AiInsightCard(report: report),
+                ],
+              ),
+            )),
+          ],
+        );
+      },
     );
   }
 
