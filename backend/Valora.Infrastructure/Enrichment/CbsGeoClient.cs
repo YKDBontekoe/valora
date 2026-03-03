@@ -222,7 +222,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
 
         var cacheTask = _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var requestUrl = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=wijkenbuurten:gemeenten&outputFormat=json&srsName=EPSG:4326";
+            var requestUrl = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetPropertyValue&typeName=wijkenbuurten:gemeenten&valueReference=gemeentenaam";
             var emptyResult = new List<string>();
 
             try
@@ -237,23 +237,17 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 }
 
                 using var content = await response.Content.ReadAsStreamAsync(CancellationToken.None);
-                using var document = await JsonDocument.ParseAsync(content, cancellationToken: CancellationToken.None);
+                var xdoc = await System.Xml.Linq.XDocument.LoadAsync(content, System.Xml.Linq.LoadOptions.None, CancellationToken.None);
 
-                if (!document.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
-                {
-                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
-                    return emptyResult;
-                }
+                var wijkenbuurten = System.Xml.Linq.XNamespace.Get("http://wijkenbuurten.geonovum.nl");
+                var elements = xdoc.Descendants(wijkenbuurten + "gemeentenaam");
 
                 var results = new HashSet<string>();
-                foreach (var feature in features.EnumerateArray())
+                foreach (var element in elements)
                 {
-                    if (!feature.TryGetProperty("properties", out var props)) continue;
-
-                    var name = props.GetStringSafe("gemeentenaam");
-                    if (!string.IsNullOrWhiteSpace(name))
+                    if (!string.IsNullOrWhiteSpace(element.Value))
                     {
-                        results.Add(name);
+                        results.Add(element.Value);
                     }
                 }
 
@@ -266,9 +260,9 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
                 return emptyResult;
             }
-            catch (JsonException ex)
+            catch (System.Xml.XmlException ex)
             {
-                _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipalities.");
+                _logger.LogWarning(ex, "Failed to parse PDOK WFS XML response for municipalities.");
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
                 return emptyResult;
             }
