@@ -91,4 +91,52 @@ void main() {
     // Test 3 has 0.0 for Safety and Social. Note: ScoreGauge for Test 3 also has 0, so '0.0' or '0' might exist. The table uses toStringAsFixed(1)
     expect(find.text('0.0'), findsWidgets);
   });
+
+  testWidgets('ComparisonView Selector shouldRebuild logic is covered', (tester) async {
+    final mockRepo = MockContextReportRepository();
+    final provider = ContextReportProvider(repository: mockRepo);
+
+    final report1 = ContextReport(
+      location: ContextLocation(query: 'test1', displayAddress: 'Test 1', latitude: 0, longitude: 0),
+      socialMetrics: [], crimeMetrics: [], demographicsMetrics: [], housingMetrics: [],
+      mobilityMetrics: [], amenityMetrics: [], environmentMetrics: [],
+      compositeScore: 50, categoryScores: {}, sources: [], warnings: [],
+    );
+
+    final report2 = ContextReport(
+      location: ContextLocation(query: 'test2', displayAddress: 'Test 2', latitude: 0, longitude: 0),
+      socialMetrics: [], crimeMetrics: [], demographicsMetrics: [], housingMetrics: [],
+      mobilityMetrics: [], amenityMetrics: [], environmentMetrics: [],
+      compositeScore: 60, categoryScores: {}, sources: [], warnings: [],
+    );
+
+    when(mockRepo.getContextReport('test1', radiusMeters: 1000)).thenAnswer((_) async => report1);
+    when(mockRepo.getContextReport('test2', radiusMeters: 1000)).thenAnswer((_) async => report2);
+
+    await tester.pumpWidget(MaterialApp(
+      home: ChangeNotifierProvider<ContextReportProvider>.value(
+        value: provider,
+        child: const Scaffold(body: ComparisonView()),
+      ),
+    ));
+
+    // Initially empty
+    expect(find.text('No reports to compare'), findsOneWidget);
+
+    // 1. Add first report (triggers length change check)
+    await provider.addToComparison('test1', 1000);
+    await tester.pumpAndSettle();
+    expect(find.text('Test 1'), findsWidgets);
+
+    // 2. Cause a provider notification without any change (triggers return false)
+    provider.notifyListeners();
+    await tester.pumpAndSettle();
+
+    // 3. Swap the id but keep length same (mock internal map swap directly is hard, we can remove and add)
+    // Actually we can just add test2 and remove test1 in same frame
+    provider.removeFromComparison('test1', 1000);
+    await provider.addToComparison('test2', 1000);
+    await tester.pumpAndSettle();
+    expect(find.text('Test 2'), findsWidgets);
+  });
 }
