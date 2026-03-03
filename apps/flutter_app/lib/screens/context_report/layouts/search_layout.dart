@@ -8,6 +8,7 @@ import '../../../providers/context_report_provider.dart';
 import '../widgets/search_field.dart';
 import '../widgets/radius_selector.dart';
 import '../widgets/generate_button.dart';
+import '../../../widgets/valora_error_state.dart';
 import '../widgets/quick_actions.dart';
 import '../widgets/history_section.dart';
 import '../widgets/saved_searches_section.dart';
@@ -114,12 +115,9 @@ class SearchLayout extends StatelessWidget {
                 // Error state
                 if (provider.error != null) ...[
                   const SizedBox(height: 24),
-                  ValoraEmptyState(
-                    icon: Icons.error_outline_rounded,
-                    title: 'Analysis Failed',
-                    subtitle: provider.error,
-                    actionLabel: 'Try Again',
-                    onAction: () => provider.generate(inputController.text),
+                  ValoraErrorState(
+                    error: provider.error!,
+                    onRetry: () => provider.generate(inputController.text),
                   ),
                 ],
               ],

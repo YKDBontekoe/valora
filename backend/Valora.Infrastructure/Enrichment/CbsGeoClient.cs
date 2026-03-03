@@ -107,6 +107,11 @@ public sealed class CbsGeoClient : ICbsGeoClient
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response.");
             return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
         }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unexpected error calling PDOK WFS.");
+            return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
+        }
 
     }
 
@@ -206,6 +211,11 @@ public sealed class CbsGeoClient : ICbsGeoClient
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipality {Municipality}.", municipalityName);
             return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
         }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unexpected error calling PDOK WFS for municipality {Municipality}.", municipalityName);
+            return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
+        }
     }
 
     private static string BuildMunicipalityFilter(string municipalityName)
@@ -269,6 +279,12 @@ public sealed class CbsGeoClient : ICbsGeoClient
             catch (JsonException ex)
             {
                 _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipalities.");
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+                return emptyResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unexpected error calling PDOK WFS for municipalities.");
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
                 return emptyResult;
             }

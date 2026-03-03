@@ -7,6 +7,7 @@ import '../core/theme/valora_spacing.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_error_state.dart';
 import '../widgets/notifications/notification_card.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -206,13 +207,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
-                      child: ValoraEmptyState(
-                        icon: Icons.error_outline_rounded,
-                        title: 'Something went wrong',
-                        subtitle:
-                            'We couldn\'t load your notifications. Please try again.',
-                        actionLabel: 'Retry',
-                        onAction: _handleRefresh,
+                      child: ValoraErrorState(
+                        error: provider.error!,
+                        onRetry: _handleRefresh,
                       ),
                     ),
                   );

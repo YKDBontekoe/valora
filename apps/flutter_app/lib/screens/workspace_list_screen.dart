@@ -6,6 +6,7 @@ import '../core/theme/valora_spacing.dart';
 import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_error_state.dart';
 import '../widgets/workspaces/workspace_list_item.dart';
 
 enum SortOption { name, createdDate, memberCount }
@@ -153,12 +154,9 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
-                    child: ValoraEmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Failed to load',
-                      subtitle: 'Could not load your workspaces. Please try again.',
-                      actionLabel: 'Retry',
-                      onAction: () =>
+                    child: ValoraErrorState(
+                      error: data.error!,
+                      onRetry: () =>
                           context.read<WorkspaceProvider>().fetchWorkspaces(),
                     ),
                   ),
