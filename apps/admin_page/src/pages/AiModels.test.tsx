@@ -99,4 +99,40 @@ describe('AiModels Page', () => {
       }));
     });
   });
+
+  it('shows discard confirmation when closing with unsaved changes', async () => {
+    (aiService.getAvailableModels as Mock).mockResolvedValue([
+        { id: 'test-model', name: 'Test Model', description: '', contextLength: 1000, promptPrice: 0, completionPrice: 0 },
+        { id: 'new-model', name: 'New Model', description: '', contextLength: 2000, promptPrice: 0.1, completionPrice: 0.2 }
+    ]);
+    (aiService.getConfigs as Mock).mockResolvedValue([
+      {
+        id: '1',
+        intent: 'test-intent',
+        primaryModel: 'test-model',
+        fallbackModels: [],
+        isEnabled: true,
+        description: ''
+      }
+    ]);
+
+    render(<MemoryRouter><AiModels /></MemoryRouter>);
+
+    await waitFor(() => screen.getByText('test-intent'));
+    fireEvent.click(screen.getByText('Modify'));
+
+    const primaryModelSelect = screen.getByRole('combobox', { name: /primary model/i });
+    fireEvent.change(primaryModelSelect, { target: { value: 'new-model' } });
+
+    fireEvent.click(screen.getByLabelText('Close modal'));
+
+    expect(screen.getByText('Discard Changes?')).toBeInTheDocument();
+    expect(screen.getByText(/You have unsaved modifications to this AI policy/)).toBeInTheDocument();
+
+    // Confirming discard should close the modal
+    fireEvent.click(screen.getByText('Discard Changes'));
+    await waitFor(() => {
+        expect(screen.queryByText('Edit Policy')).not.toBeInTheDocument();
+    });
+  });
 });
