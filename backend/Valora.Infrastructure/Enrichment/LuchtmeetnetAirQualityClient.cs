@@ -7,6 +7,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Domain.Common;
+using Valora.Infrastructure.Services.AppServices.Utilities;
 
 namespace Valora.Infrastructure.Enrichment;
 
@@ -110,40 +111,28 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         CancellationToken cancellationToken)
     {
         // Optimization: Cache the entire station coordinates list to avoid hundreds of requests on every cache miss
-        var allStations = await GetCachedStationListAsync(cancellationToken);
-        if (allStations.Count == 0) return null;
+        var kdTree = await GetCachedStationListAsync(cancellationToken);
+        if (kdTree == null) return null;
 
-        (string Id, string Name, double Lat, double Lon)? nearest = null;
-        double minDistance = double.MaxValue;
-
-        foreach (var station in allStations)
-        {
-            var distance = GeoDistance.BetweenMeters(location.Latitude, location.Longitude, station.Lat, station.Lon);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                nearest = station;
-            }
-        }
-
-        if (nearest == null) return null;
-        return (nearest.Value.Id, nearest.Value.Name, minDistance);
+        return kdTree.FindNearest(location.Latitude, location.Longitude);
     }
 
-    private async Task<List<(string Id, string Name, double Lat, double Lon)>> GetCachedStationListAsync(CancellationToken cancellationToken)
+    private async Task<StationKDTree?> GetCachedStationListAsync(CancellationToken cancellationToken)
     {
-        const string cacheKey = "lucht:all-stations-metadata";
-        if (_cache.TryGetValue(cacheKey, out List<(string Id, string Name, double Lat, double Lon)>? cached))
+        const string cacheKey = "lucht:all-stations-metadata-kdtree";
+        if (_cache.TryGetValue(cacheKey, out StationKDTree? cached))
         {
-            return cached!;
+            return cached;
         }
 
         var stations = await DiscoverAllStationsWithCoordinatesAsync(cancellationToken);
         if (stations.Count > 0)
         {
-            _cache.Set(cacheKey, stations, TimeSpan.FromHours(24));
+            var tree = new StationKDTree(stations);
+            _cache.Set(cacheKey, tree, TimeSpan.FromHours(24));
+            return tree;
         }
-        return stations;
+        return null;
     }
 
     private async Task<List<(string Id, string Name, double Lat, double Lon)>> DiscoverAllStationsWithCoordinatesAsync(CancellationToken cancellationToken)
