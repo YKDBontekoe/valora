@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
 import { Component } from 'react';
@@ -28,6 +29,10 @@ class GlobalErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
     this.setState({ errorInfo });
+
+    if (import.meta.env.PROD) {
+      Sentry.captureException(error, { extra: { errorInfo } });
+    }
   }
 
   private handleReset = () => {
