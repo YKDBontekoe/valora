@@ -18,9 +18,9 @@ public class MapService : IMapService
     private const double MaxAggregatedSpan = 2.0;
 
     // Cache durations
-    private static readonly TimeSpan CityInsightsCacheDuration    = TimeSpan.FromMinutes(30);
-    private static readonly TimeSpan PriceOverlayCacheDuration    = TimeSpan.FromMinutes(10);
-    private static readonly TimeSpan OverlayTilesCacheDuration    = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan CityInsightsCacheDuration = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan PriceOverlayCacheDuration = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan OverlayTilesCacheDuration = TimeSpan.FromMinutes(10);
 
     public MapService(
         IMapRepository repository,

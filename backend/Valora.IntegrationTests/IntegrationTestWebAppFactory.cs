@@ -60,8 +60,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             var configType = Type.GetType("Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration`1, Microsoft.EntityFrameworkCore");
             if (configType != null)
             {
-                 var genericConfigType = configType.MakeGenericType(typeof(ValoraDbContext));
-                 services.RemoveAll(genericConfigType);
+                var genericConfigType = configType.MakeGenericType(typeof(ValoraDbContext));
+                services.RemoveAll(genericConfigType);
             }
 
             var configServices = services.Where(d => d.ServiceType.Name.Contains("IDbContextOptionsConfiguration") &&
@@ -81,8 +81,8 @@ public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>
             // Add DbContext
             if (_connectionString.StartsWith("InMemory"))
             {
-                var dbName = _connectionString.Contains(":") 
-                    ? _connectionString.Split(':')[1] 
+                var dbName = _connectionString.Contains(":")
+                    ? _connectionString.Split(':')[1]
                     : $"ValoraIntegrationTestDb_{Guid.NewGuid()}";
                 services.AddDbContext<ValoraDbContext>(options =>
                     options.UseInMemoryDatabase(dbName)

@@ -117,8 +117,8 @@ public class ValidationFilter<T> : IEndpointFilter
                type == typeof(DateTimeOffset) ||
                type == typeof(Guid) ||
                type == typeof(TimeSpan);
-               // Removed string from here because we handle it explicitly above or want to check properties if it's somehow wrapped (unlikely but safe)
-               // Actually, string IS safe to skip property reflection on (Length, Chars), but we check the string value itself in ContainsMaliciousInput.
+        // Removed string from here because we handle it explicitly above or want to check properties if it's somehow wrapped (unlikely but safe)
+        // Actually, string IS safe to skip property reflection on (Length, Chars), but we check the string value itself in ContainsMaliciousInput.
     }
 
     private bool IsStringMalicious(string value)
