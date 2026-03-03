@@ -91,7 +91,7 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit 
                   <motion.tr
                     key={config.id || (config as AiModelConfig & { _clientId?: string })._clientId || config.intent}
                     variants={rowVariants}
-                    whileHover={{ scale: 1.002, backgroundColor: 'var(--color-brand-50)' }}
+                    whileHover={{ x: 10, backgroundColor: 'var(--color-brand-50)' }}
                     className="group cursor-pointer relative"
                     onClick={() => onEdit(config)}
                   >

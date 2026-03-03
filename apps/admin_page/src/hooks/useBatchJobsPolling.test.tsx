@@ -71,7 +71,18 @@ describe('useBatchJobsPolling', () => {
 
   it('polls faster when active jobs exist', async () => {
     vi.useFakeTimers();
-    const activeJobs = [{ id: '1', status: 'Processing' }];
+    const activeJobs = [{
+      id: '1',
+      status: 'Processing',
+      type: 'CityIngestion',
+      target: 'Test',
+      progress: 50,
+      createdAt: new Date().toISOString(),
+      error: null,
+      resultSummary: null,
+      startedAt: new Date().toISOString(),
+      completedAt: null
+    }];
     (adminService.getJobs as Mock).mockResolvedValue({ items: activeJobs, totalPages: 1 });
 
     const { result } = renderHook(() => useBatchJobsPolling(defaultOptions));
@@ -139,7 +150,21 @@ describe('useBatchJobsPolling', () => {
 
     let resolveFirst: (val: PaginatedResponse<BatchJob>) => void = () => {};
     const firstPromise = new Promise<PaginatedResponse<BatchJob>>(resolve => { resolveFirst = resolve; });
-    const secondPromise = Promise.resolve({ items: [{ id: 'new', status: 'Completed' }], totalPages: 1 });
+    const secondPromise = Promise.resolve({
+      items: [{
+        id: 'new',
+        status: 'Completed',
+        type: 'CityIngestion',
+        target: 'Test',
+        progress: 100,
+        createdAt: new Date().toISOString(),
+        error: null,
+        resultSummary: 'Success',
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString()
+      }],
+      totalPages: 1
+    });
 
     (adminService.getJobs as Mock)
         .mockReturnValueOnce(firstPromise)
@@ -154,7 +179,7 @@ describe('useBatchJobsPolling', () => {
 
     // Wait for second fetch to complete
     await waitFor(() => {
-        expect(result.current.jobs).toEqual([{ id: 'new', status: 'Completed' }]);
+        expect(result.current.jobs).toEqual([expect.objectContaining({ id: 'new', status: 'Completed' })]);
     });
 
     // Now resolve the first fetch
@@ -182,6 +207,6 @@ describe('useBatchJobsPolling', () => {
     });
 
     // Should still be 'new'
-    expect(result.current.jobs).toEqual([{ id: 'new', status: 'Completed' }]);
+    expect(result.current.jobs).toEqual([expect.objectContaining({ id: 'new', status: 'Completed' })]);
   });
 });
