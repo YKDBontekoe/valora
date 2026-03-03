@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { X, Database, RefreshCw, AlertCircle, Sparkles, MapPin, Calendar, Layers } from 'lucide-react';
 import { adminService } from '../services/api';
 import type { DatasetStatus } from '../types';
@@ -11,7 +11,7 @@ interface DatasetStatusModalProps {
   onClose: () => void;
 }
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -22,7 +22,7 @@ const containerVariants = {
   }
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: {
     opacity: 1,
