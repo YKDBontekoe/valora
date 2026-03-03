@@ -326,7 +326,9 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         await AuthenticateAsync(ownerEmail);
 
         var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Save From Report Test", ""));
+        createResponse.EnsureSuccessStatusCode();
         var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
 
         var mockLocation = new ResolvedLocationDto(
             "Test Query",
