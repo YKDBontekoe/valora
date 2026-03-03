@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Configurations;
@@ -24,12 +25,17 @@ public class UserAiProfileConfiguration : IEntityTypeConfiguration<UserAiProfile
         builder.Property(e => e.Preferences)
             .HasMaxLength(4000);
 
-        // Store List<string> as JSON
+        var stringListComparer = new ValueComparer<List<string>>(
+            (c1, c2) => c1 != null && c2 != null ? c1.SequenceEqual(c2) : c1 == c2,
+            c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)) : 0,
+            c => c != null ? c.ToList() : new List<string>());
+
         builder.Property(e => e.DisallowedSuggestions)
             .HasMaxLength(4000)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
-            );
+            )
+            .Metadata.SetValueComparer(stringListComparer);
     }
 }
