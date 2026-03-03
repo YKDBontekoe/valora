@@ -375,7 +375,7 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         var response = await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties/from-report", saveDto);
 
         // Assert
-        response.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<SavedPropertyDto>();
         Assert.NotNull(result);
         Assert.Equal("Saved from amazing report", result.Notes);
