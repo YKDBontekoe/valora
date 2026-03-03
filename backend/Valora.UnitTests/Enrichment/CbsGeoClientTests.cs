@@ -90,6 +90,62 @@ public class CbsGeoClientTests
     }
 
     [Fact]
+    public async Task GetNeighborhoodOverlaysAsync_ReturnsEmpty_OnException()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.IsAny<HttpRequestMessage>(),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ThrowsAsync(new Exception("Generic network failure"));
+
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result = await client.GetNeighborhoodOverlaysAsync(52.0, 4.0, 53.0, 5.0, MapOverlayMetric.CrimeRate);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetNeighborhoodsByMunicipalityAsync_ReturnsEmpty_OnException()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.IsAny<HttpRequestMessage>(),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ThrowsAsync(new Exception("Generic network failure"));
+
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result = await client.GetNeighborhoodsByMunicipalityAsync("Amsterdam");
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
     public async Task GetNeighborhoodOverlaysAsync_ReturnsEmpty_OnHttpRequestException()
     {
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
@@ -113,6 +169,34 @@ public class CbsGeoClientTests
             _loggerMock.Object);
 
         var result = await client.GetNeighborhoodOverlaysAsync(52.3, 4.9, 52.31, 4.91, MapOverlayMetric.PopulationDensity);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllMunicipalitiesAsync_ReturnsEmpty_OnException()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.IsAny<HttpRequestMessage>(),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ThrowsAsync(new Exception("Generic failure"));
+
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        var result = await client.GetAllMunicipalitiesAsync();
 
         Assert.Empty(result);
     }
