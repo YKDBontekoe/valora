@@ -5,7 +5,7 @@ using Valora.Application.DTOs.Map;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class MapService : IMapService
 {

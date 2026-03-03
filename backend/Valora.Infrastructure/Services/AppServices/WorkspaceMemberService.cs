@@ -3,7 +3,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class WorkspaceMemberService : IWorkspaceMemberService
 {

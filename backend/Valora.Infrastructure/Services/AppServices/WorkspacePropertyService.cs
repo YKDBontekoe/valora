@@ -4,7 +4,7 @@ using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Application.Common.Extensions;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class WorkspacePropertyService : IWorkspacePropertyService
 {
@@ -57,18 +57,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
         
         if (property == null) {
-            property = new Property {
-                Address = report.Location.DisplayAddress,
-                City = report.Location.MunicipalityName,
-                PostalCode = report.Location.PostalCode,
-                Latitude = report.Location.Latitude,
-                Longitude = report.Location.Longitude,
-                ContextCompositeScore = report.CompositeScore,
-                ContextSafetyScore = report.CategoryScores.TryGetValue("Safety", out var safety) ? safety : null,
-                ContextSocialScore = report.CategoryScores.TryGetValue("Social", out var social) ? social : null,
-                ContextAmenitiesScore = report.CategoryScores.TryGetValue("Amenities", out var amenities) ? amenities : null,
-                ContextEnvironmentScore = report.CategoryScores.TryGetValue("Environment", out var environment) ? environment : null,
-            };
+            property = Valora.Infrastructure.Services.AppServices.Utilities.PropertyMapper.FromContextReport(report);
             await _repository.AddPropertyAsync(property, ct);
         }
 

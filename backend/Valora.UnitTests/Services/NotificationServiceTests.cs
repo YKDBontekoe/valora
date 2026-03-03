@@ -6,7 +6,7 @@ using Valora.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services.AppServices;
 using Valora.Infrastructure.Persistence.Repositories;
 using Xunit;
 

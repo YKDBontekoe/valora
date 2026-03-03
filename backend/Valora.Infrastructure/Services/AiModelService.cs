@@ -12,14 +12,6 @@ public class AiModelService : IAiModelService
     private readonly ValoraDbContext _context;
     private readonly IConfiguration _configuration;
 
-    // Hardcoded defaults to ensure system works without DB entries
-    private readonly Dictionary<string, string> _defaultModels = new()
-    {
-        { "quick_summary", "openai/gpt-4o-mini" },
-        { "detailed_analysis", "openai/gpt-4o" },
-        { "chat", "openai/gpt-4o-mini" }
-    };
-
     public AiModelService(ValoraDbContext context, IConfiguration configuration)
     {
         _context = context;
@@ -91,7 +83,7 @@ public class AiModelService : IAiModelService
         }
 
         // Return default if not found or disabled
-        if (_defaultModels.TryGetValue(intent, out var defaultModel))
+        if (Valora.Application.Common.Constants.AiModelDefaults.DefaultModels.TryGetValue(intent, out var defaultModel))
         {
             return (defaultModel, new List<string>());
         }
