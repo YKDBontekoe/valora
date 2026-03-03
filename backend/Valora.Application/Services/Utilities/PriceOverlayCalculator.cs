@@ -11,10 +11,22 @@ public static class PriceOverlayCalculator
         IEnumerable<MapOverlayDto> baseOverlays,
         IEnumerable<ListingPriceData> listings)
     {
+        if (baseOverlays == null)
+        {
+            throw new ArgumentNullException(nameof(baseOverlays));
+        }
+
+        if (listings == null)
+        {
+            throw new ArgumentNullException(nameof(listings));
+        }
+
+        var listingsList = listings.ToList();
+
         return baseOverlays.Select(overlay =>
         {
             var geometry = GeoUtils.ParseGeometry(overlay.GeoJson);
-            var neighborhoodListings = listings.Where(l =>
+            var neighborhoodListings = listingsList.Where(l =>
                 l.Latitude.HasValue && l.Longitude.HasValue &&
                 GeoUtils.IsPointInPolygon(l.Latitude.Value, l.Longitude.Value, geometry));
 
