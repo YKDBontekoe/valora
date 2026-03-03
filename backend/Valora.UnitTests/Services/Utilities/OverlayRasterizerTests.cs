@@ -38,16 +38,23 @@ public class OverlayRasterizerTests
         // Area is 0.2 x 0.2, cellSize is 0.1 => 4 cells total
         Assert.Equal(4, tiles.Count);
 
+        var centers = new HashSet<(double Lat, double Lon)>();
+
         foreach (var tile in tiles)
         {
             Assert.Equal(0.1, tile.Size);
             Assert.Equal(10.0, tile.Value);
             Assert.Equal("10", tile.DisplayValue);
 
-            // Verify centers are correct with small tolerance for floating point math
-            Assert.True(Math.Abs(tile.Latitude - 52.05) < 0.001 || Math.Abs(tile.Latitude - 52.15) < 0.001);
-            Assert.True(Math.Abs(tile.Longitude - 4.05) < 0.001 || Math.Abs(tile.Longitude - 4.15) < 0.001);
+            centers.Add((Math.Round(tile.Latitude, 3), Math.Round(tile.Longitude, 3)));
         }
+
+        // Verify unique centers
+        Assert.Equal(4, centers.Count);
+        Assert.Contains((52.05, 4.05), centers);
+        Assert.Contains((52.05, 4.15), centers);
+        Assert.Contains((52.15, 4.05), centers);
+        Assert.Contains((52.15, 4.15), centers);
     }
 
     [Fact]

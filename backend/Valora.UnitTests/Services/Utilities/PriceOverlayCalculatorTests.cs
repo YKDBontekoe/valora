@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Valora.Application.DTOs.Map;
 using Valora.Application.Services.Utilities;
@@ -35,7 +36,9 @@ public class PriceOverlayCalculatorTests
 
         Assert.Equal("PricePerSquareMeter", overlay.MetricName);
         Assert.Equal(5000.0, overlay.MetricValue);
-        Assert.Equal("€ 5,000 / m²", overlay.DisplayValue);
+        var expectedValue = 5000.0;
+        var formatted = expectedValue.ToString("N0", CultureInfo.CurrentCulture);
+        Assert.Equal($"€ {formatted} / m²", overlay.DisplayValue);
         // Compare string representations since JsonElement equality might fail on clones
         Assert.Equal(baseOverlays[0].GeoJson.ToString(), overlay.GeoJson.ToString());
         Assert.Equal(baseOverlays[0].Id, overlay.Id);
@@ -97,6 +100,8 @@ public class PriceOverlayCalculatorTests
 
         Assert.Equal("PricePerSquareMeter", overlay.MetricName);
         Assert.Equal(4000.0, overlay.MetricValue);
-        Assert.Equal("€ 4,000 / m²", overlay.DisplayValue);
+        var expectedValue = 4000.0;
+        var formatted = expectedValue.ToString("N0", CultureInfo.CurrentCulture);
+        Assert.Equal($"€ {formatted} / m²", overlay.DisplayValue);
     }
 }

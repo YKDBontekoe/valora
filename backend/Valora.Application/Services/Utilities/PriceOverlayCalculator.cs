@@ -1,3 +1,4 @@
+using System.Globalization;
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs.Map;
 using Valora.Domain.Entities;
@@ -19,7 +20,12 @@ public static class PriceOverlayCalculator
 
             var avgPrice = CalculateAveragePrice(neighborhoodListings);
 
-            var displayValue = avgPrice.HasValue ? $"€ {avgPrice:N0} / m²" : "No listing data";
+            string displayValue = "No listing data";
+            if (avgPrice.HasValue)
+            {
+                var formatted = avgPrice.Value.ToString("N0", CultureInfo.CurrentCulture);
+                displayValue = $"€ {formatted} / m²";
+            }
             var metricValue = avgPrice ?? 0;
 
             return overlay with

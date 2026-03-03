@@ -5,6 +5,8 @@ namespace Valora.Application.Services.Utilities;
 
 public static class OverlayRasterizer
 {
+    private const int SpatialIndexMultiplier = 5;
+
     public static List<MapOverlayTileDto> RasterizeOverlays(
         IEnumerable<MapOverlayDto> overlays,
         double snappedMinLat,
@@ -13,6 +15,11 @@ public static class OverlayRasterizer
         double snappedMaxLon,
         double cellSize)
     {
+        if (cellSize <= 0 || double.IsNaN(cellSize) || double.IsInfinity(cellSize))
+        {
+            throw new ArgumentException("Cell size must be a positive, finite number.", nameof(cellSize));
+        }
+
         var tiles = new List<MapOverlayTileDto>();
 
         // Pre-parse geometries for performance
@@ -21,7 +28,13 @@ public static class OverlayRasterizer
         ).ToList();
 
         // Build spatial index
-        double indexCellSize = cellSize * 5;
+        double indexCellSize = cellSize * SpatialIndexMultiplier;
+
+        if (indexCellSize <= 0 || double.IsNaN(indexCellSize) || double.IsInfinity(indexCellSize))
+        {
+            throw new ArgumentException("Index cell size must be a positive, finite number.");
+        }
+
         var spatialIndex = new Dictionary<(int, int), List<(MapOverlayDto Dto, GeoUtils.ParsedGeometry Geometry)>>();
 
         foreach (var parsedOverlay in parsedOverlays)

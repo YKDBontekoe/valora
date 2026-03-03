@@ -6,6 +6,16 @@ public static class AmenityClusterer
 {
     public static List<MapAmenityClusterDto> ClusterAmenities(IEnumerable<MapAmenityDto> amenities, double cellSize)
     {
+        if (amenities == null)
+        {
+            throw new ArgumentNullException(nameof(amenities));
+        }
+
+        if (cellSize <= 0 || double.IsNaN(cellSize) || double.IsInfinity(cellSize))
+        {
+            throw new ArgumentException("Cell size must be a positive, finite number.", nameof(cellSize));
+        }
+
         return amenities
             .GroupBy(amenity => (
                 Lat: Math.Floor(amenity.Latitude / cellSize),
