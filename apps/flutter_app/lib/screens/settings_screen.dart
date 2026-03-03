@@ -290,7 +290,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(
-                    height: 100,
+                    height: ValoraSpacing.xxl * 2,
                   ), // Bottom padding for navigation bar
                 ],
               ),

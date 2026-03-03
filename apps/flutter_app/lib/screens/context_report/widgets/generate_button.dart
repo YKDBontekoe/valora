@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/valora_widgets.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../providers/context_report_provider.dart';
 
 class GenerateButton extends StatelessWidget {
@@ -14,8 +15,18 @@ class GenerateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 56,
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            blurRadius: ValoraSpacing.sm,
+            offset: const Offset(0, 4),
+          )
+        ],
+        borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+      ),
+      height: ValoraSpacing.buttonHeightLg,
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: controller,
         builder: (context, value, _) {

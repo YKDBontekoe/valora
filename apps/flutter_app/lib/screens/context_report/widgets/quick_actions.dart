@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../widgets/report/location_picker.dart';
 import '../../../core/theme/valora_colors.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../services/pdok_service.dart';
 import '../../../services/location_service.dart';
 import '../../../providers/context_report_provider.dart';
@@ -210,7 +211,7 @@ class QuickActions extends StatelessWidget {
           size: ValoraButtonSize.small,
           onPressed: () => _pickLocation(context),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: ValoraSpacing.sm),
         ValoraButton(
           label: 'My Location',
           icon: Icons.gps_fixed_rounded,

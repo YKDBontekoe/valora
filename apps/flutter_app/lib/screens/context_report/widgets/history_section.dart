@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_colors.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../core/theme/valora_typography.dart';
 import '../../../providers/context_report_provider.dart';
 
@@ -26,7 +27,7 @@ class HistorySection extends StatelessWidget {
       builder: (context, history, _) {
         if (history.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+          padding: const EdgeInsets.fromLTRB(ValoraSpacing.lg, ValoraSpacing.xl, ValoraSpacing.lg, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -44,104 +45,14 @@ class HistorySection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: ValoraSpacing.md),
               ...history.take(5).map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: ValoraCard(
-                    onTap: provider.isLoading
-                        ? null
-                        : () {
-                            controller.text = item.query;
-                            provider.generate(item.query);
-                          },
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: ValoraColors.primary
-                                .withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.history_rounded,
-                            size: 16,
-                            color: ValoraColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.query,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: ValoraTypography.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatDate(item.timestamp),
-                                style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? ValoraColors.neutral500
-                                      : ValoraColors.neutral400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Compare toggle
-                        IconButton(
-                          tooltip: provider.isComparing(
-                                  item.query, provider.radiusMeters)
-                              ? 'Remove from Compare'
-                              : 'Add to Compare',
-                          icon: Icon(
-                            provider.isComparing(
-                                    item.query, provider.radiusMeters)
-                                ? Icons.playlist_add_check_rounded
-                                : Icons.playlist_add_rounded,
-                            size: 20,
-                            color: provider.isComparing(
-                                    item.query, provider.radiusMeters)
-                                ? ValoraColors.primary
-                                : ValoraColors.neutral400,
-                          ),
-                          onPressed: () async {
-                            try {
-                              await provider.toggleComparison(
-                                  item.query, provider.radiusMeters);
-                            } catch (e) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to add to compare: ${e.toString()}'),
-                                  backgroundColor: ValoraColors.error,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: isDark
-                              ? ValoraColors.neutral500
-                              : ValoraColors.neutral400,
-                        ),
-                      ],
-                    ),
-                  ),
+                return _HistoryItem(
+                  item: item,
+                  controller: controller,
+                  provider: provider,
+                  isDark: isDark,
+                  formatDate: _formatDate,
                 );
               }),
             ],
@@ -193,5 +104,149 @@ class HistorySection extends StatelessWidget {
     if (midnightDate == yesterday) return 'Yesterday';
 
     return DateFormat('dd/MM/yyyy').format(date);
+  }
+}
+
+class _HistoryItem extends StatefulWidget {
+  final dynamic item;
+  final TextEditingController controller;
+  final ContextReportProvider provider;
+  final bool isDark;
+  final String Function(DateTime) formatDate;
+
+  const _HistoryItem({
+    required this.item,
+    required this.controller,
+    required this.provider,
+    required this.isDark,
+    required this.formatDate,
+  });
+
+  @override
+  State<_HistoryItem> createState() => _HistoryItemState();
+}
+
+class _HistoryItemState extends State<_HistoryItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: ValoraSpacing.sm),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          transform: _isHovered ? Matrix4.translationValues(4, 0, 0) : Matrix4.identity(),
+          decoration: BoxDecoration(
+            boxShadow: _isHovered ? [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  blurRadius: ValoraSpacing.md,
+                  offset: const Offset(2, 4),
+                )
+              ] : null,
+            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+          ),
+          child: ValoraCard(
+            onTap: widget.provider.isLoading
+                ? null
+                : () {
+                    widget.controller.text = widget.item.query;
+                    widget.provider.generate(widget.item.query);
+                  },
+            padding: const EdgeInsets.symmetric(
+                horizontal: ValoraSpacing.md, vertical: ValoraSpacing.sm),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(ValoraSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: _isHovered ? ValoraColors.primary.withValues(alpha: 0.15) : ValoraColors.primary
+                        .withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    size: ValoraSpacing.md,
+                    color: ValoraColors.primary,
+                  ),
+                ),
+                const SizedBox(width: ValoraSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.item.query,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: ValoraTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.formatDate(widget.item.timestamp),
+                        style: ValoraTypography.labelSmall.copyWith(
+                          color: widget.isDark
+                              ? ValoraColors.neutral500
+                              : ValoraColors.neutral400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Compare toggle
+                IconButton(
+                  tooltip: widget.provider.isComparing(
+                          widget.item.query, widget.provider.radiusMeters)
+                      ? 'Remove from Compare'
+                      : 'Add to Compare',
+                  icon: Icon(
+                    widget.provider.isComparing(
+                            widget.item.query, widget.provider.radiusMeters)
+                        ? Icons.playlist_add_check_rounded
+                        : Icons.playlist_add_rounded,
+                    size: ValoraSpacing.iconSizeSm,
+                    color: widget.provider.isComparing(
+                            widget.item.query, widget.provider.radiusMeters)
+                        ? ValoraColors.primary
+                        : ValoraColors.neutral400,
+                  ),
+                  onPressed: () async {
+                    try {
+                      await widget.provider.toggleComparison(
+                          widget.item.query, widget.provider.radiusMeters);
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to add to compare: ${e.toString()}'),
+                          backgroundColor: ValoraColors.error,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: ValoraSpacing.iconSizeSm,
+                  color: _isHovered ? ValoraColors.primary : widget.isDark
+                      ? ValoraColors.neutral500
+                      : ValoraColors.neutral400,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

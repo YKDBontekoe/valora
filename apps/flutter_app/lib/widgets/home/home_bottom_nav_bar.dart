@@ -108,7 +108,7 @@ class _NavItem {
   });
 }
 
-class _GlassNavItem extends StatelessWidget {
+class _GlassNavItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
@@ -126,6 +126,13 @@ class _GlassNavItem extends StatelessWidget {
   });
 
   @override
+  State<_GlassNavItem> createState() => _GlassNavItemState();
+}
+
+class _GlassNavItemState extends State<_GlassNavItem> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unselectedColor = isDark
@@ -134,158 +141,195 @@ class _GlassNavItem extends StatelessWidget {
 
     return Semantics(
       button: true,
-      selected: isSelected,
-      label: '$label tab',
+      selected: widget.isSelected,
+      label: '${widget.label} tab',
       child: Tooltip(
-        message: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onTap();
-            },
-            borderRadius: BorderRadius.circular(ValoraSpacing.lg),
-            child: AnimatedContainer(
-              duration: ValoraAnimations.medium,
-              curve: ValoraAnimations.emphatic,
-              padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? ValoraSpacing.sm : ValoraSpacing.xs,
-                vertical: ValoraSpacing.radiusMd,
-              ),
-              decoration: BoxDecoration(
-                gradient: isSelected
-                    ? LinearGradient(
-                        colors: [
-                          ValoraColors.primary.withValues(alpha: 0.1),
-                          ValoraColors.primary.withValues(alpha: 0.2),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: isSelected ? null : Colors.transparent,
-                borderRadius: BorderRadius.circular(ValoraSpacing.lg),
-                border: isSelected
-                    ? Border.all(
-                        color: ValoraColors.primary.withValues(alpha: 0.2),
-                        width: 1,
-                      )
-                    : null,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(
-                                icon,
-                                size: ValoraSpacing.iconSizeMd,
-                                semanticLabel: null,
-                                color: isSelected
-                                    ? ValoraColors.primary
-                                    : unselectedColor,
+        message: widget.label,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.onTap();
+              },
+              borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+              highlightColor: ValoraColors.primary.withValues(alpha: 0.1),
+              splashColor: ValoraColors.primary.withValues(alpha: 0.15),
+              child: AnimatedContainer(
+                duration: ValoraAnimations.medium,
+                curve: ValoraAnimations.emphatic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.isSelected ? ValoraSpacing.md : ValoraSpacing.sm,
+                  vertical: ValoraSpacing.md,
+                ),
+                decoration: BoxDecoration(
+                  gradient: widget.isSelected
+                      ? LinearGradient(
+                          colors: [
+                            ValoraColors.primary.withValues(alpha: 0.15),
+                            ValoraColors.primary.withValues(alpha: 0.25),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : _isHovered
+                          ? LinearGradient(
+                              colors: [
+                                (isDark ? ValoraColors.neutral800 : ValoraColors.neutral200).withValues(alpha: 0.5),
+                                (isDark ? ValoraColors.neutral800 : ValoraColors.neutral200).withValues(alpha: 0.8),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            )
+                          : null,
+                  color: widget.isSelected || _isHovered ? null : Colors.transparent,
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
+                  border: widget.isSelected
+                      ? Border.all(
+                          color: ValoraColors.primary.withValues(alpha: 0.3),
+                          width: 1.5,
+                        )
+                      : _isHovered
+                          ? Border.all(
+                              color: (isDark ? ValoraColors.neutral700 : ValoraColors.neutral300).withValues(alpha: 0.5),
+                              width: 1,
+                            )
+                          : Border.all(color: Colors.transparent, width: 1),
+                  boxShadow: widget.isSelected
+                      ? [
+                          BoxShadow(
+                            color: ValoraColors.primary.withValues(alpha: 0.2),
+                            blurRadius: ValoraSpacing.sm,
+                            offset: const Offset(0, 2),
+                          )
+                        ]
+                      : _isHovered
+                          ? [
+                              BoxShadow(
+                                color: (isDark ? Colors.black : Colors.black).withValues(alpha: 0.05),
+                                blurRadius: ValoraSpacing.xs,
+                                offset: const Offset(0, 1),
                               )
-                              .animate(target: isSelected ? 1 : 0)
-                              .scale(
-                                begin: const Offset(1, 1),
-                                end: const Offset(1.15, 1.15),
-                                duration: ValoraAnimations.fast,
-                                curve: ValoraAnimations.emphatic,
-                              )
-                              .tint(color: ValoraColors.primary, end: 1),
-                          if (showBadge)
-                            Selector<NotificationService, int>(
-                              selector: (_, s) => s.unreadCount,
-                              builder: (context, unreadCount, _) {
-                                if (unreadCount == 0) return const SizedBox.shrink();
-                                return Positioned(
-                                  top: -4,
-                                  right: -6,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(3),
-                                    decoration: const BoxDecoration(
-                                      color: ValoraColors.error,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 16,
-                                      minHeight: 16,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        unreadCount > 9 ? '9+' : '$unreadCount',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
+                            ]
+                          : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                                  widget.icon,
+                                  size: ValoraSpacing.iconSizeMd,
+                                  semanticLabel: null,
+                                  color: widget.isSelected
+                                      ? ValoraColors.primary
+                                      : unselectedColor,
+                                )
+                                .animate(target: widget.isSelected ? 1 : 0)
+                                .scale(
+                                  begin: const Offset(1, 1),
+                                  end: const Offset(1.15, 1.15),
+                                  duration: ValoraAnimations.fast,
+                                  curve: ValoraAnimations.emphatic,
+                                )
+                                .tint(color: ValoraColors.primary, end: 1),
+                            if (widget.showBadge)
+                              Selector<NotificationService, int>(
+                                selector: (_, s) => s.unreadCount,
+                                builder: (context, unreadCount, _) {
+                                  if (unreadCount == 0) return const SizedBox.shrink();
+                                  return Positioned(
+                                    top: -ValoraSpacing.xs,
+                                    right: -6,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(
+                                        color: ValoraColors.error,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: ValoraSpacing.md,
+                                        minHeight: ValoraSpacing.md,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          unreadCount > 9 ? '9+' : '$unreadCount',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                      if (showSelectedLabel) ...[
-                        Flexible(
-                          child: AnimatedSize(
-                            duration: ValoraAnimations.medium,
-                            curve: ValoraAnimations.emphatic,
-                            child: isSelected
-                                ? ExcludeSemantics(
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: ValoraSpacing.xs,
-                                      ),
-                                      child: Text(
-                                        label,
-                                        style: ValoraTypography.labelMedium
-                                            .copyWith(
-                                              color: ValoraColors.primary,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.2,
-                                            ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false,
-                                      ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
+                                  );
+                                },
+                              ),
+                          ],
                         ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: ValoraSpacing.xs),
-                  AnimatedOpacity(
-                    opacity: isSelected ? 1 : 0,
-                    duration: ValoraAnimations.normal,
-                    curve: Curves.easeOut,
-                    child: Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(
-                        color: ValoraColors.primary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: ValoraColors.primary,
-                            blurRadius: 4,
-                            spreadRadius: 0,
+                        if (widget.showSelectedLabel) ...[
+                          Flexible(
+                            child: AnimatedSize(
+                              duration: ValoraAnimations.medium,
+                              curve: ValoraAnimations.emphatic,
+                              child: widget.isSelected
+                                  ? ExcludeSemantics(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: ValoraSpacing.xs,
+                                        ),
+                                        child: Text(
+                                          widget.label,
+                                          style: ValoraTypography.labelMedium
+                                              .copyWith(
+                                                color: ValoraColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.2,
+                                              ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ),
                         ],
+                      ],
+                    ),
+                    const SizedBox(height: ValoraSpacing.xs),
+                    AnimatedOpacity(
+                      opacity: widget.isSelected ? 1 : 0,
+                      duration: ValoraAnimations.normal,
+                      curve: Curves.easeOut,
+                      child: Container(
+                        width: ValoraSpacing.xs,
+                        height: ValoraSpacing.xs,
+                        decoration: const BoxDecoration(
+                          color: ValoraColors.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: ValoraColors.primary,
+                              blurRadius: ValoraSpacing.xs,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
