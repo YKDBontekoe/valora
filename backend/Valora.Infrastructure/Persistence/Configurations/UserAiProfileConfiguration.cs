@@ -27,8 +27,8 @@ public class UserAiProfileConfiguration : IEntityTypeConfiguration<UserAiProfile
 
         var stringListComparer = new ValueComparer<List<string>>(
             (c1, c2) => c1 != null && c2 != null ? c1.SequenceEqual(c2) : c1 == c2,
-            c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)),
-            c => c.ToList());
+            c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)) : 0,
+            c => c != null ? c.ToList() : new List<string>());
 
         builder.Property(e => e.DisallowedSuggestions)
             .HasMaxLength(4000)

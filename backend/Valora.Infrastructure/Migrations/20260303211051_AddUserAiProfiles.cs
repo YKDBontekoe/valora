@@ -36,12 +36,8 @@ namespace Valora.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'UserAiProfiles')
-                BEGIN
-                    DROP TABLE [UserAiProfiles];
-                END
-            ");
+            // We do not unconditionally drop the table in Down() because we conditionally created it in Up().
+            // Dropping it unconditionally could destroy real data if Up() was a no-op.
         }
     }
 }
