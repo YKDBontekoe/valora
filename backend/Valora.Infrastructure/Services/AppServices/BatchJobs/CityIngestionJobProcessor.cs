@@ -1,3 +1,4 @@
+using Valora.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
@@ -5,7 +6,7 @@ using Valora.Domain.Entities;
 using Valora.Domain.Enums;
 using Valora.Domain.Extensions;
 
-namespace Valora.Application.Services.BatchJobs;
+namespace Valora.Infrastructure.Services.AppServices.BatchJobs;
 
 public class CityIngestionJobProcessor : IBatchJobProcessor
 {

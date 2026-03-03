@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services.AppServices;
 using Xunit;
 
 namespace Valora.IntegrationTests;

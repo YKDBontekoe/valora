@@ -5,7 +5,7 @@ using Valora.Application.Common.Constants;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services.AppServices;
 using Valora.Domain.Entities;
 
 namespace Valora.UnitTests.Services;
