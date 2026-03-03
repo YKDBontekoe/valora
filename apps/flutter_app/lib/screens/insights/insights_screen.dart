@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
 import '../../providers/insights_provider.dart';
-import '../../widgets/valora_widgets.dart';
 import '../../widgets/valora_error_state.dart';
 import '../../widgets/insights/insights_header.dart';
 import '../../widgets/insights/insights_legend.dart';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_colors.dart';
 import '../../../core/theme/valora_typography.dart';
 import '../../../services/pdok_service.dart';
