@@ -14,18 +14,31 @@ class ComparisonView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watch comparisonIds to rebuild when list changes
-    final provider = context.watch<ContextReportProvider>();
-    final ids = provider.comparisonIds.toList();
+    // Select the actual reports needed for comparison to rebuild only when they change.
+    // Using a List of reports and a Selector with deep equality comparison ensures we only
+    // rebuild when reports are added/removed or a report's actual instance changes.
+    return Selector<ContextReportProvider, List<ContextReport?>>(
+      selector: (_, provider) =>
+          provider.comparisonIds.map((id) => provider.getReportById(id)).toList(),
+      shouldRebuild: (previous, next) {
+        if (previous.length != next.length) return true;
+        for (int i = 0; i < previous.length; i++) {
+          if (previous[i] != next[i]) return true;
+        }
+        return false;
+      },
+      builder: (context, reportsList, child) {
+        final provider = context.read<ContextReportProvider>();
+        final ids = provider.comparisonIds.toList();
 
-    if (ids.isEmpty) {
-      return const Center(child: Text('No reports to compare'));
-    }
+        if (ids.isEmpty) {
+          return const Center(child: Text('No reports to compare'));
+        }
 
-    final reports = ids.map((id) => provider.getReportById(id)).whereType<ContextReport>().toList();
+        final reports = reportsList.whereType<ContextReport>().toList();
 
-    // Header Row
-    return ListView(
+        // Header Row
+        return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         SingleChildScrollView(
@@ -105,18 +118,20 @@ class ComparisonView extends StatelessWidget {
 
         Text('AI Insights', style: ValoraTypography.titleMedium),
         const SizedBox(height: 16),
-        ...reports.map((report) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
-              const SizedBox(height: 8),
-              AiInsightCard(report: report),
-            ],
-          ),
-        )),
-      ],
+            ...reports.map((report) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
+                  const SizedBox(height: 8),
+                  AiInsightCard(report: report),
+                ],
+              ),
+            )),
+          ],
+        );
+      },
     );
   }
 
