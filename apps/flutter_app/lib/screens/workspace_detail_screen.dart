@@ -7,6 +7,7 @@ import '../providers/workspace_provider.dart';
 import '../providers/context_report_provider.dart';
 import '../screens/context_report/context_report_screen.dart';
 import '../widgets/valora_widgets.dart';
+import '../widgets/valora_error_state.dart';
 import '../widgets/workspaces/activity_feed_widget.dart';
 import '../models/activity_log.dart';
 import '../models/workspace.dart';
@@ -97,12 +98,9 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
           }
           if (data.error != null) {
             return Center(
-              child: ValoraEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Something went wrong',
-                subtitle: 'Could not load workspace details.',
-                actionLabel: 'Retry',
-                onAction: () =>
+              child: ValoraErrorState(
+                error: data.error!,
+                onRetry: () =>
                     context.read<WorkspaceProvider>().selectWorkspace(widget.workspaceId),
               ),
             );

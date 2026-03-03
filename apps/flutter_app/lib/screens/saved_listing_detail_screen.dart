@@ -8,6 +8,7 @@ import '../models/comment.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/comment_thread_widget.dart';
+import '../widgets/valora_error_state.dart';
 
 class SavedListingDetailScreen extends StatefulWidget {
   final SavedProperty savedListing;
@@ -197,12 +198,9 @@ class _SavedListingDetailScreenState extends State<SavedListingDetailScreen> {
                 }
                 if (snapshot.hasError) {
                   return Center(
-                    child: ValoraEmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Failed to load comments',
-                      subtitle: 'Please try again.',
-                      actionLabel: 'Retry',
-                      onAction: _refreshComments,
+                    child: ValoraErrorState(
+                      error: snapshot.error!,
+                      onRetry: _refreshComments,
                     ),
                   );
                 }

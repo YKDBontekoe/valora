@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
 import '../../providers/insights_provider.dart';
-import '../../widgets/valora_widgets.dart';
+import '../../widgets/valora_error_state.dart';
 import '../../widgets/insights/insights_header.dart';
 import '../../widgets/insights/insights_legend.dart';
 import '../../widgets/insights/insights_controls.dart';
@@ -86,12 +86,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
           }
           if (error != null && isEmpty) {
             return Center(
-              child: ValoraEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Failed to load insights',
-                subtitle: 'An unexpected error occurred while loading data.',
-                actionLabel: 'Retry',
-                onAction: context.read<InsightsProvider>().loadInsights,
+              child: ValoraErrorState(
+                error: error,
+                onRetry: context.read<InsightsProvider>().loadInsights,
               ),
             );
           }

@@ -124,9 +124,9 @@ void main() {
     await tester.pumpWidget(createScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('Failed to load'), findsOneWidget);
-    expect(find.text('Could not load your workspaces. Please try again.'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('An unexpected error occurred. Please try again.'), findsOneWidget);
+    expect(find.text('Try Again'), findsOneWidget);
   });
 
   testWidgets('Shows empty state when no workspaces', (WidgetTester tester) async {
