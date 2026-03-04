@@ -27,6 +27,9 @@ public class AiModelConfiguration : IEntityTypeConfiguration<AiModelConfig>
         builder.Property(c => c.SafetySettings)
             .HasMaxLength(2000); // Assuming JSON string for safety settings
 
+        builder.Property(c => c.SystemPrompt)
+            .HasMaxLength(4000);
+
         // Enforce strict character limits on Feature to match DTO validation
         builder.ToTable(t => t.HasCheckConstraint("CK_AiModelConfig_Feature", "[Feature] NOT LIKE '%[^a-zA-Z0-9_]%'"));
     }

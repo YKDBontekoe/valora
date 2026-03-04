@@ -56,14 +56,14 @@ const AiModels: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!editingConfig || !editingConfig.intent) {
-      showToast("Intent is required", "error");
+    if (!editingConfig || !editingConfig.feature) {
+      showToast("Feature is required", "error");
       return;
     }
 
     setIsSaving(true);
     try {
-      await aiService.updateConfig(editingConfig.intent, editingConfig);
+      await aiService.updateConfig(editingConfig.feature, editingConfig);
       showToast('Configuration saved successfully', 'success');
       setEditingConfig(null);
       loadData();
@@ -79,25 +79,27 @@ const AiModels: React.FC = () => {
     <div className="space-y-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
-          <h1 className="text-5xl lg:text-6xl font-black text-brand-900 tracking-tightest">AI Orchestration</h1>
-          <p className="text-brand-400 mt-4 font-bold text-lg">Configure model routing and fallback strategies for various intents.</p>
+          <h1 className="text-5xl lg:text-6xl font-black text-brand-900 tracking-tightest">AI Configuration</h1>
+          <p className="text-brand-400 mt-4 font-bold text-lg">Configure LLM parameters for various features.</p>
         </div>
         <Button
           onClick={() => setEditingConfig({
             id: '',
-            intent: '',
-            primaryModel: 'openai/gpt-4o-mini',
-            fallbackModels: [],
+            feature: '',
+            modelId: 'openai/gpt-4o-mini',
             description: '',
             isEnabled: true,
             safetySettings: '',
+            systemPrompt: '',
+            temperature: 0.7,
+            maxTokens: 2048,
             _clientId: Date.now().toString()
           } as AiModelConfig & { _clientId?: string })}
           variant="secondary"
           leftIcon={<Plus size={20} />}
           className="px-8 py-4"
         >
-          Provision New Policy
+          Add Feature Config
         </Button>
       </div>
 

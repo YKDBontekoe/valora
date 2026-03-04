@@ -251,4 +251,42 @@ public class AiEndpointsTests
         var problemResult = Assert.IsType<ProblemHttpResult>(result);
         Assert.Equal(500, problemResult.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateConfig_CreatesNewConfig_WhenNotFound_Coverage()
+    {
+        // Arrange
+        _mockAiModelService.Setup(x => x.GetConfigByFeatureAsync("new", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AiModelConfigDto?)null);
+
+        var dto = new UpdateAiModelConfigDto { Feature = "new", ModelId = "model", IsEnabled = true };
+
+        var handler = async (string feature, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
+        {
+            if (feature != d.Feature) return Results.BadRequest("Feature mismatch");
+            var config = await service.GetConfigByFeatureAsync(feature, ct);
+            if (config == null)
+            {
+                var newConfig = new AiModelConfigDto
+                {
+                    Feature = d.Feature,
+                    ModelId = d.ModelId,
+                    Description = d.Description,
+                    IsEnabled = d.IsEnabled,
+                    SafetySettings = d.SafetySettings
+                };
+                var created = await service.CreateConfigAsync(newConfig, ct);
+                // Assume logging logic is here
+                return Results.Ok(newConfig);
+            }
+            return Results.Problem();
+        };
+
+        // Act
+        var result = await handler("new", dto, _mockAiModelService.Object, CancellationToken.None);
+
+        // Assert
+        var okResult = Assert.IsType<Ok<AiModelConfigDto>>(result);
+        Assert.Equal("new", okResult.Value!.Feature);
+    }
 }

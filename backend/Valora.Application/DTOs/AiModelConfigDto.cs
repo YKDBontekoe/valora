@@ -8,4 +8,8 @@ public class AiModelConfigDto
     public string Description { get; set; } = string.Empty;
     public bool IsEnabled { get; set; }
     public string? SafetySettings { get; set; }
+
+    public string? SystemPrompt { get; set; }
+    public double? Temperature { get; set; }
+    public int? MaxTokens { get; set; }
 }

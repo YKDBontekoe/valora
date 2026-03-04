@@ -10,18 +10,27 @@ namespace Valora.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropCheckConstraint(
-                name: "CK_AiModelConfig_Intent",
-                table: "AiModelConfigs");
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.DropCheckConstraint(
+                    name: "CK_AiModelConfig_Intent",
+                    table: "AiModelConfigs");
 
-            // We must wrap schema changes in raw SQL with IF EXISTS checks because SQLite (Testcontainers default)
-            // does not support constraints and Testcontainers may run out of sync.
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT * FROM sys.columns WHERE Name = N'FallbackModels' AND Object_ID = Object_ID(N'AiModelConfigs'))
-                BEGIN
-                    ALTER TABLE [AiModelConfigs] DROP COLUMN [FallbackModels];
-                END
-            ", suppressTransaction: true);
+                // Safely drop column if it exists in SQL Server
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.columns WHERE Name = N'FallbackModels' AND Object_ID = Object_ID(N'AiModelConfigs'))
+                    BEGIN
+                        ALTER TABLE [AiModelConfigs] DROP COLUMN [FallbackModels];
+                    END
+                ", suppressTransaction: true);
+            }
+            else
+            {
+                // Fallback for SQLite / Testing
+                migrationBuilder.DropColumn(
+                    name: "FallbackModels",
+                    table: "AiModelConfigs");
+            }
 
             migrationBuilder.RenameColumn(
                 name: "PrimaryModel",
@@ -38,17 +47,55 @@ namespace Valora.Infrastructure.Migrations
                 table: "AiModelConfigs",
                 newName: "IX_AiModelConfigs_Feature");
 
-            migrationBuilder.AddCheckConstraint(
-                name: "CK_AiModelConfig_Feature",
+            // Add LLM Parameters columns
+            migrationBuilder.AddColumn<int>(
+                name: "MaxTokens",
                 table: "AiModelConfigs",
-                sql: "[Feature] NOT LIKE '%[^a-zA-Z0-9_]%'");
+                type: "int",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "SystemPrompt",
+                table: "AiModelConfigs",
+                type: "nvarchar(4000)",
+                maxLength: 4000,
+                nullable: true);
+
+            migrationBuilder.AddColumn<double>(
+                name: "Temperature",
+                table: "AiModelConfigs",
+                type: "float",
+                nullable: true);
+
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.AddCheckConstraint(
+                    name: "CK_AiModelConfig_Feature",
+                    table: "AiModelConfigs",
+                    sql: "[Feature] NOT LIKE '%[^a-zA-Z0-9_]%'");
+            }
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropCheckConstraint(
-                name: "CK_AiModelConfig_Feature",
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.DropCheckConstraint(
+                    name: "CK_AiModelConfig_Feature",
+                    table: "AiModelConfigs");
+            }
+
+            migrationBuilder.DropColumn(
+                name: "MaxTokens",
+                table: "AiModelConfigs");
+
+            migrationBuilder.DropColumn(
+                name: "SystemPrompt",
+                table: "AiModelConfigs");
+
+            migrationBuilder.DropColumn(
+                name: "Temperature",
                 table: "AiModelConfigs");
 
             migrationBuilder.RenameColumn(
@@ -73,10 +120,13 @@ namespace Valora.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: "");
 
-            migrationBuilder.AddCheckConstraint(
-                name: "CK_AiModelConfig_Intent",
-                table: "AiModelConfigs",
-                sql: "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'");
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.AddCheckConstraint(
+                    name: "CK_AiModelConfig_Intent",
+                    table: "AiModelConfigs",
+                    sql: "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'");
+            }
         }
     }
 }

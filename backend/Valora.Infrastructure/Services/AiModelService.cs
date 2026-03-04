@@ -29,7 +29,7 @@ public class AiModelService : IAiModelService
     public async Task<AiModelConfigDto?> GetConfigByFeatureAsync(string feature, CancellationToken cancellationToken = default)
     {
         var config = await _context.AiModelConfigs
-            .FirstOrDefaultAsync(c => c.Feature == feature, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Feature == feature.ToLowerInvariant(), cancellationToken);
 
         return config == null ? null : MapToDto(config);
     }
@@ -43,6 +43,7 @@ public class AiModelService : IAiModelService
     public async Task<AiModelConfigDto> CreateConfigAsync(AiModelConfigDto configDto, CancellationToken cancellationToken = default)
     {
         var config = MapToEntity(configDto);
+        config.Feature = config.Feature.ToLowerInvariant();
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync(cancellationToken);
         return MapToDto(config);
@@ -58,11 +59,14 @@ public class AiModelService : IAiModelService
         }
 
         // Update properties
-        config.Feature = configDto.Feature;
+        config.Feature = configDto.Feature.ToLowerInvariant();
         config.ModelId = configDto.ModelId;
         config.Description = configDto.Description;
         config.IsEnabled = configDto.IsEnabled;
         config.SafetySettings = configDto.SafetySettings;
+        config.SystemPrompt = configDto.SystemPrompt;
+        config.Temperature = configDto.Temperature;
+        config.MaxTokens = configDto.MaxTokens;
 
         _context.AiModelConfigs.Update(config);
         await _context.SaveChangesAsync(cancellationToken);
@@ -81,8 +85,7 @@ public class AiModelService : IAiModelService
 
     public async Task<string> GetModelForFeatureAsync(string feature, CancellationToken cancellationToken = default)
     {
-        var config = await _context.AiModelConfigs
-            .FirstOrDefaultAsync(c => c.Feature == feature, cancellationToken);
+        var config = await GetConfigByFeatureAsync(feature, cancellationToken);
 
         if (config != null && config.IsEnabled)
         {
@@ -90,7 +93,7 @@ public class AiModelService : IAiModelService
         }
 
         // Return default if not found or disabled
-        if (_defaultModels.TryGetValue(feature, out var defaultModel))
+        if (_defaultModels.TryGetValue(feature.ToLowerInvariant(), out var defaultModel))
         {
             return defaultModel;
         }
@@ -108,7 +111,10 @@ public class AiModelService : IAiModelService
             ModelId = entity.ModelId,
             Description = entity.Description,
             IsEnabled = entity.IsEnabled,
-            SafetySettings = entity.SafetySettings
+            SafetySettings = entity.SafetySettings,
+            SystemPrompt = entity.SystemPrompt,
+            Temperature = entity.Temperature,
+            MaxTokens = entity.MaxTokens
         };
     }
 
@@ -121,7 +127,10 @@ public class AiModelService : IAiModelService
             ModelId = dto.ModelId,
             Description = dto.Description,
             IsEnabled = dto.IsEnabled,
-            SafetySettings = dto.SafetySettings
+            SafetySettings = dto.SafetySettings,
+            SystemPrompt = dto.SystemPrompt,
+            Temperature = dto.Temperature,
+            MaxTokens = dto.MaxTokens
         };
     }
 }

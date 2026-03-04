@@ -184,4 +184,46 @@ public class AiServiceTests : IDisposable
         _server.Stop();
         _server.Dispose();
     }
+
+    [Fact]
+    public async Task ChatAsync_ThrowsException_WhenResponseIsEmpty()
+    {
+        // Arrange
+        _mockAiModelService
+            .Setup(x => x.GetModelForFeatureAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("gpt-4o");
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{ ""choices"": [] }")); // SDK treats empty choices as no content
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(() => sut.ChatAsync("Hello", null, "chat"));
+        Assert.Contains("AI model failed", ex.Message);
+    }
+
+    [Fact]
+    public async Task ChatAsync_ThrowsHttpRequestException_WhenRateLimited()
+    {
+        // Arrange
+        _mockAiModelService
+            .Setup(x => x.GetModelForFeatureAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("gpt-4o");
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(429)
+                .WithBody("Too Many Requests"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
+    }
 }

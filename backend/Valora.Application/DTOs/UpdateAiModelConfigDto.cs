@@ -20,4 +20,13 @@ public class UpdateAiModelConfigDto
 
     [StringLength(2000)]
     public string? SafetySettings { get; set; }
+
+    [StringLength(4000)]
+    public string? SystemPrompt { get; set; }
+
+    [Range(0.0, 2.0)]
+    public double? Temperature { get; set; }
+
+    [Range(1, 128000)]
+    public int? MaxTokens { get; set; }
 }
