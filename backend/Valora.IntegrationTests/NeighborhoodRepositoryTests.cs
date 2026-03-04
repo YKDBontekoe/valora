@@ -24,15 +24,16 @@ public class NeighborhoodRepositoryTests
         using var scope = _fixture.Factory!.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
 
-        var neighborhood = new Neighborhood { Code = "TEST_GET_01", Name = "Test Get 1", City = "GetCity", Latitude = 1, Longitude = 1, Type = "Buurt" };
+        var uniqueCode = $"TEST_GET_{Guid.NewGuid()}";
+        var neighborhood = new Neighborhood { Code = uniqueCode, Name = "Test Get 1", City = "GetCity", Latitude = 1, Longitude = 1, Type = "Buurt" };
         await repository.AddAsync(neighborhood);
 
         // Act
-        var result = await repository.GetByCodeAsync("TEST_GET_01");
+        var result = await repository.GetByCodeAsync(uniqueCode);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("TEST_GET_01", result.Code);
+        Assert.Equal(uniqueCode, result.Code);
     }
 
     [Fact]
@@ -42,8 +43,10 @@ public class NeighborhoodRepositoryTests
         using var scope = _fixture.Factory!.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
 
+        var nonExistingCode = $"NON_EXISTING_{Guid.NewGuid()}";
+
         // Act
-        var result = await repository.GetByCodeAsync("NON_EXISTING");
+        var result = await repository.GetByCodeAsync(nonExistingCode);
 
         // Assert
         Assert.Null(result);
@@ -56,10 +59,10 @@ public class NeighborhoodRepositoryTests
         using var scope = _fixture.Factory!.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
 
-        var city = "CityMatchTest";
-        var n1 = new Neighborhood { Code = "CITY_TEST_01", Name = "N1", City = city, Latitude = 1, Longitude = 1, Type = "Buurt" };
-        var n2 = new Neighborhood { Code = "CITY_TEST_02", Name = "N2", City = city, Latitude = 2, Longitude = 2, Type = "Buurt" };
-        var n3 = new Neighborhood { Code = "OTHER_TEST_01", Name = "N3", City = "OtherCity", Latitude = 3, Longitude = 3, Type = "Buurt" };
+        var city = $"CityMatchTest_{Guid.NewGuid()}";
+        var n1 = new Neighborhood { Code = $"CITY_TEST_{Guid.NewGuid()}", Name = "N1", City = city, Latitude = 1, Longitude = 1, Type = "Buurt" };
+        var n2 = new Neighborhood { Code = $"CITY_TEST_{Guid.NewGuid()}", Name = "N2", City = city, Latitude = 2, Longitude = 2, Type = "Buurt" };
+        var n3 = new Neighborhood { Code = $"OTHER_TEST_{Guid.NewGuid()}", Name = "N3", City = $"OtherCity_{Guid.NewGuid()}", Latitude = 3, Longitude = 3, Type = "Buurt" };
 
         repository.AddRange(new[] { n1, n2, n3 });
         await repository.SaveChangesAsync();
@@ -115,14 +118,15 @@ public class NeighborhoodRepositoryTests
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        var neighborhood = new Neighborhood { Code = "SINGLE_ADD", Name = "Single Add", City = "SingleCity", Latitude = 1, Longitude = 1, Type = "Buurt" };
+        var uniqueCode = $"SINGLE_ADD_{Guid.NewGuid()}";
+        var neighborhood = new Neighborhood { Code = uniqueCode, Name = "Single Add", City = "SingleCity", Latitude = 1, Longitude = 1, Type = "Buurt" };
 
         // Act
         var result = await repository.AddAsync(neighborhood);
 
         // Assert
         Assert.NotNull(result);
-        var dbEntity = await context.Neighborhoods.FirstOrDefaultAsync(n => n.Code == "SINGLE_ADD");
+        var dbEntity = await context.Neighborhoods.FirstOrDefaultAsync(n => n.Code == uniqueCode);
         Assert.NotNull(dbEntity);
         Assert.Equal("Single Add", dbEntity.Name);
     }
@@ -135,11 +139,12 @@ public class NeighborhoodRepositoryTests
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        var neighborhood = new Neighborhood { Code = "UPDATE_SINGLE", Name = "Before Update", City = "UpdateCity", Latitude = 1, Longitude = 1, Type = "Buurt" };
+        var uniqueCode = $"UPDATE_SINGLE_{Guid.NewGuid()}";
+        var neighborhood = new Neighborhood { Code = uniqueCode, Name = "Before Update", City = "UpdateCity", Latitude = 1, Longitude = 1, Type = "Buurt" };
         await repository.AddAsync(neighborhood);
 
         context.ChangeTracker.Clear();
-        var toUpdate = await context.Neighborhoods.FirstAsync(n => n.Code == "UPDATE_SINGLE");
+        var toUpdate = await context.Neighborhoods.FirstAsync(n => n.Code == uniqueCode);
         toUpdate.Name = "After Update";
 
         // Act
@@ -147,7 +152,7 @@ public class NeighborhoodRepositoryTests
 
         // Assert
         context.ChangeTracker.Clear();
-        var dbEntity = await context.Neighborhoods.FirstAsync(n => n.Code == "UPDATE_SINGLE");
+        var dbEntity = await context.Neighborhoods.FirstAsync(n => n.Code == uniqueCode);
         Assert.Equal("After Update", dbEntity.Name);
         Assert.True(dbEntity.UpdatedAt > DateTime.MinValue);
     }
@@ -160,11 +165,13 @@ public class NeighborhoodRepositoryTests
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        var city = "TestAddCity";
+        var city = $"TestAddCity_{Guid.NewGuid()}";
+        var code1 = $"TEST_ADD_{Guid.NewGuid()}";
+        var code2 = $"TEST_ADD_{Guid.NewGuid()}";
         var neighborhoods = new List<Neighborhood>
         {
-            new Neighborhood { Code = "TEST_ADD_01", Name = "Test Add 1", City = city, Latitude = 1, Longitude = 1, Type = "Buurt" },
-            new Neighborhood { Code = "TEST_ADD_02", Name = "Test Add 2", City = city, Latitude = 2, Longitude = 2, Type = "Buurt" }
+            new Neighborhood { Code = code1, Name = "Test Add 1", City = city, Latitude = 1, Longitude = 1, Type = "Buurt" },
+            new Neighborhood { Code = code2, Name = "Test Add 2", City = city, Latitude = 2, Longitude = 2, Type = "Buurt" }
         };
 
         // Act
@@ -176,8 +183,8 @@ public class NeighborhoodRepositoryTests
         Assert.Equal(2, count);
 
         var saved = await context.Neighborhoods.Where(n => n.City == city).OrderBy(n => n.Code).ToListAsync();
-        Assert.Equal("TEST_ADD_01", saved[0].Code);
-        Assert.Equal("TEST_ADD_02", saved[1].Code);
+        Assert.Contains(saved, s => s.Code == code1);
+        Assert.Contains(saved, s => s.Code == code2);
     }
 
     [Fact]
@@ -188,11 +195,13 @@ public class NeighborhoodRepositoryTests
         var repository = scope.ServiceProvider.GetRequiredService<INeighborhoodRepository>();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
 
-        var city = "TestUpdateCity";
+        var city = $"TestUpdateCity_{Guid.NewGuid()}";
+        var code3 = $"TEST_UPD_{Guid.NewGuid()}";
+        var code4 = $"TEST_UPD_{Guid.NewGuid()}";
         var neighborhoods = new List<Neighborhood>
         {
-            new Neighborhood { Code = "TEST_UPD_03", Name = "Original 3", City = city, Latitude = 3, Longitude = 3, Type = "Buurt" },
-            new Neighborhood { Code = "TEST_UPD_04", Name = "Original 4", City = city, Latitude = 4, Longitude = 4, Type = "Buurt" }
+            new Neighborhood { Code = code3, Name = "Original 3", City = city, Latitude = 3, Longitude = 3, Type = "Buurt" },
+            new Neighborhood { Code = code4, Name = "Original 4", City = city, Latitude = 4, Longitude = 4, Type = "Buurt" }
         };
 
         // Initial Seed
@@ -205,8 +214,8 @@ public class NeighborhoodRepositoryTests
         Assert.Equal(2, toUpdate.Count);
 
         // Act
-        toUpdate[0].Name = "Updated 3";
-        toUpdate[1].Name = "Updated 4";
+        toUpdate.First(n => n.Code == code3).Name = "Updated 3";
+        toUpdate.First(n => n.Code == code4).Name = "Updated 4";
 
         repository.UpdateRange(toUpdate);
         await repository.SaveChangesAsync();
@@ -215,8 +224,8 @@ public class NeighborhoodRepositoryTests
         context.ChangeTracker.Clear();
         var updated = await context.Neighborhoods.Where(n => n.City == city).OrderBy(n => n.Code).ToListAsync();
 
-        Assert.Equal("Updated 3", updated[0].Name);
-        Assert.Equal("Updated 4", updated[1].Name);
-        Assert.True(updated[0].UpdatedAt > DateTime.MinValue);
+        Assert.Equal("Updated 3", updated.First(n => n.Code == code3).Name);
+        Assert.Equal("Updated 4", updated.First(n => n.Code == code4).Name);
+        Assert.True(updated.First(n => n.Code == code3).UpdatedAt > DateTime.MinValue);
     }
 }
