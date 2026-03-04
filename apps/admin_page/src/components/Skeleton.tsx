@@ -30,12 +30,12 @@ const Skeleton = ({
           x: ['-100%', '100%']
         }}
         transition={{
-          duration: 2,
+          duration: 2.5,
           repeat: Infinity,
           ease: "easeInOut"
         }}
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, var(--color-brand-50) 50%, transparent 100%)',
         }}
       />
     </div>

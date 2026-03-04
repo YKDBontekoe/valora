@@ -31,7 +31,7 @@ const UserRow = ({
     <motion.tr
       variants={rowVariants}
       exit={{ opacity: 0, scale: 0.95, x: 20, transition: { duration: 0.3 } }}
-      whileHover={{ x: 10, backgroundColor: 'rgba(241, 245, 249, 0.3)' }}
+      whileHover={{ x: 10, backgroundColor: 'var(--color-brand-50)' }}
       layout
       className="group cursor-default relative overflow-hidden transition-colors duration-500"
     >

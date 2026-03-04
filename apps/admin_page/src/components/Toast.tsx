@@ -70,6 +70,7 @@ const Toast = () => {
             initial={{ opacity: 0, x: 60, scale: 0.8, y: 10 }}
             animate={{ opacity: 1, x: 0, scale: 1, y: 0 }}
             exit={{ opacity: 0, x: 30, scale: 0.9, transition: { duration: 0.25, ease: "easeInOut" } }}
+            whileHover={{ scale: 1.02 }}
             layout
             className={`pointer-events-auto flex items-center gap-6 px-8 py-7 rounded-[2.5rem] border backdrop-blur-3xl min-w-[380px] max-w-lg relative overflow-hidden ${getBgColor(toast.type)}`}
           >
