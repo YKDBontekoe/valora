@@ -81,16 +81,16 @@ internal static class OverpassResponseParser
 
     private static string CategorizeAmenity(Dictionary<string, string> tags)
     {
-        if (tags.TryGetValue("amenity", out var a))
+        if (tags.TryGetValue("amenity", out var amenityType))
         {
-            if (a == "school") return "school";
-            if (a is "hospital" or "clinic" or "doctors" or "pharmacy") return "healthcare";
-            if (a == "charging_station") return "charging_station";
+            if (amenityType == "school") return "school";
+            if (amenityType is "hospital" or "clinic" or "doctors" or "pharmacy") return "healthcare";
+            if (amenityType == "charging_station") return "charging_station";
         }
-        if (tags.TryGetValue("shop", out var s) && s == "supermarket") return "supermarket";
-        if (tags.TryGetValue("leisure", out var l) && l == "park") return "park";
-        if (tags.TryGetValue("highway", out var h) && h == "bus_stop") return "transit";
-        if (tags.TryGetValue("railway", out var r) && r == "station") return "transit";
+        if (tags.TryGetValue("shop", out var shopType) && shopType == "supermarket") return "supermarket";
+        if (tags.TryGetValue("leisure", out var leisureType) && leisureType == "park") return "park";
+        if (tags.TryGetValue("highway", out var highwayType) && highwayType == "bus_stop") return "transit";
+        if (tags.TryGetValue("railway", out var railwayType) && railwayType == "station") return "transit";
 
         return "unknown";
     }

@@ -54,10 +54,10 @@ public class StationKDTree
     {
         if (node == null) return;
 
-        double d = GeoDistance.BetweenMeters(targetLat, targetLon, node.Station.Lat, node.Station.Lon);
-        if (d < bestDist)
+        double distanceToNode = GeoDistance.BetweenMeters(targetLat, targetLon, node.Station.Lat, node.Station.Lon);
+        if (distanceToNode < bestDist)
         {
-            bestDist = d;
+            bestDist = distanceToNode;
             bestNode = node;
         }
 
@@ -70,11 +70,11 @@ public class StationKDTree
         SearchNearest(first, targetLat, targetLon, ref bestNode, ref bestDist);
 
         // Simple approximation for short distances
-        double planeDist = node.Axis == 0
+        double planeDistance = node.Axis == 0
             ? GeoDistance.BetweenMeters(targetLat, targetLon, node.Station.Lat, targetLon)
             : GeoDistance.BetweenMeters(targetLat, targetLon, targetLat, node.Station.Lon);
 
-        if (planeDist < bestDist)
+        if (planeDistance < bestDist)
         {
             SearchNearest(second, targetLat, targetLon, ref bestNode, ref bestDist);
         }
