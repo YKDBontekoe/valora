@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
-import '../../../core/theme/valora_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/valora_typography.dart';
 import '../../../providers/context_report_provider.dart';
 
@@ -19,7 +19,6 @@ class HistorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Selector<ContextReportProvider, List<dynamic>>(
       selector: (_, p) => p.history,
@@ -45,7 +44,9 @@ class HistorySection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              ...history.take(5).map((item) {
+              ...history.take(5).toList().asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: ValoraCard(
@@ -62,14 +63,14 @@ class HistorySection extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: ValoraColors.primary
+                            color: theme.colorScheme.primary
                                 .withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.history_rounded,
                             size: 16,
-                            color: ValoraColors.primary,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -89,9 +90,7 @@ class HistorySection extends StatelessWidget {
                               Text(
                                 _formatDate(item.timestamp),
                                 style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? ValoraColors.neutral500
-                                      : ValoraColors.neutral400,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -111,8 +110,8 @@ class HistorySection extends StatelessWidget {
                             size: 20,
                             color: provider.isComparing(
                                     item.query, provider.radiusMeters)
-                                ? ValoraColors.primary
-                                : ValoraColors.neutral400,
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
                           onPressed: () async {
                             try {
@@ -123,7 +122,7 @@ class HistorySection extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Failed to add to compare: ${e.toString()}'),
-                                  backgroundColor: ValoraColors.error,
+                                  backgroundColor: theme.colorScheme.error,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12)),
@@ -135,14 +134,12 @@ class HistorySection extends StatelessWidget {
                         Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
-                          color: isDark
-                              ? ValoraColors.neutral500
-                              : ValoraColors.neutral400,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ],
                     ),
                   ),
-                );
+                ).animate().fadeIn(duration: 400.ms, delay: (100 * index).ms).slideX(begin: -0.05);
               }),
             ],
           ),
