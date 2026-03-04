@@ -27,8 +27,8 @@ const Button = ({
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-premium-lg shadow-primary-200/30 hover:shadow-glow-primary border border-primary-500',
     secondary: 'bg-brand-900 text-white hover:bg-brand-800 shadow-premium-lg shadow-brand-200/30 hover:shadow-premium-xl border border-brand-800',
-    outline: 'bg-white border-2 border-brand-100 text-brand-700 hover:bg-brand-50 hover:border-brand-300 hover:text-brand-900 shadow-sm',
-    ghost: 'bg-transparent text-brand-500 hover:bg-brand-50 hover:text-brand-900',
+    outline: 'bg-white border-2 border-brand-100 text-brand-700 hover:bg-brand-50 hover:border-brand-300 hover:text-brand-900 shadow-sm hover:shadow-premium',
+    ghost: 'bg-transparent text-brand-500 hover:bg-brand-50 hover:text-brand-900 hover:shadow-inner-premium',
     danger: 'bg-error-50 text-error-700 border border-error-100 hover:bg-error-100 hover:text-error-800 hover:shadow-glow-error'
   };
 

@@ -221,7 +221,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                     <motion.tr
                       key={job.id}
                       variants={rowVariants}
-                      whileHover={{ x: 12, backgroundColor: 'rgba(241, 245, 249, 0.4)', transition: { duration: 0.3 } }}
+                      whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
                       className="group cursor-pointer relative transition-colors duration-500"
                       onClick={() => openDetails(job.id)}
                     >

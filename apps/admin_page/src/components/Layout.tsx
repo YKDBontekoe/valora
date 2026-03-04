@@ -48,7 +48,7 @@ const Layout = () => {
   return (
     <div className="flex h-screen bg-brand-50 w-full overflow-hidden font-body">
       {/* Sidebar */}
-      <aside className="w-80 glass-premium border-r border-brand-100 flex flex-col z-20 relative shadow-premium-2xl">
+      <aside className="w-80 glass-premium-accent border-r border-white/40 flex flex-col z-20 relative shadow-premium-2xl">
         <div className="p-10">
           <Link to="/" className="flex items-center space-x-5 group">
             <motion.div
@@ -97,8 +97,8 @@ const Layout = () => {
                           {isActive && (
                             <motion.div
                               layoutId="nav-glow"
-                              className="absolute inset-0 bg-white border border-primary-100 shadow-premium z-0 ring-4 ring-primary-500/5"
-                              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                              className="absolute inset-0 bg-white border border-primary-100 shadow-premium z-0 ring-4 ring-primary-500/10"
+                              transition={{ type: "spring", stiffness: 260, damping: 20 }}
                             />
                           )}
 

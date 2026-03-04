@@ -91,13 +91,13 @@ const Dashboard = () => {
             <StatsOverview stats={stats} loading={loading} error={error} />
         </section>
 
-        <section className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-12">
             <div className="h-full">
                 <QuickActions onRefreshStats={fetchStats} />
             </div>
             <div className="h-full">
                 {/* We could add another component here, but for now we let SystemHealth take full width below */}
-                <div className="p-10 bg-linear-to-br from-brand-900 to-brand-800 rounded-[2.5rem] shadow-premium-xl text-white relative overflow-hidden group h-full">
+                <div className="p-12 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] shadow-premium-2xl text-white relative overflow-hidden group h-full border border-white/10">
                     <div className="relative z-10 h-full flex flex-col justify-between">
                         <div>
                             <h2 className="text-2xl font-black tracking-tight mb-2">Platform Integrity</h2>

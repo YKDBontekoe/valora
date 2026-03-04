@@ -76,11 +76,11 @@ const Login = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-md z-10"
+        className="w-full max-w-lg z-10"
       >
-        <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-premium-xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-premium-2xl p-12 md:p-16 border border-white/60 relative overflow-hidden">
           {/* Subtle top glow */}
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-primary-400 via-primary-600 to-primary-400" />
+          <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-primary-400 via-primary-600 to-primary-400 opacity-80" />
 
           <motion.div variants={itemVariants} className="flex flex-col items-center mb-10 text-center">
             <motion.div
