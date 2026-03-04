@@ -101,7 +101,6 @@ public static class AiEndpoints
             }
 
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userEmail = user.FindFirstValue(ClaimTypes.Email);
 
             var config = await aiModelService.GetConfigByFeatureAsync(feature, ct);
             if (config == null)
@@ -112,12 +111,15 @@ public static class AiEndpoints
                     ModelId = dto.ModelId,
                     Description = dto.Description,
                     IsEnabled = dto.IsEnabled,
-                    SafetySettings = dto.SafetySettings
+                    SafetySettings = dto.SafetySettings,
+                    SystemPrompt = dto.SystemPrompt,
+                    Temperature = dto.Temperature,
+                    MaxTokens = dto.MaxTokens
                 };
                 var createdConfig = await aiModelService.CreateConfigAsync(newConfig, ct);
 
-                logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) CREATED AI config for feature {Feature}. Model: {ModelId}",
-                    userEmail, userId, feature, dto.ModelId);
+                logger.LogWarning("AUDIT: User {UserId} CREATED AI config for feature {Feature}. Model: {ModelId}",
+                    userId, feature.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
 
                 return Results.Ok(createdConfig);
             }
@@ -129,11 +131,14 @@ public static class AiEndpoints
                 config.Description = dto.Description;
                 config.IsEnabled = dto.IsEnabled;
                 config.SafetySettings = dto.SafetySettings;
+                config.SystemPrompt = dto.SystemPrompt;
+                config.Temperature = dto.Temperature;
+                config.MaxTokens = dto.MaxTokens;
 
                 await aiModelService.UpdateConfigAsync(config, ct);
 
-                logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) UPDATED AI config for feature {Feature}. Model: {OldModel} -> {NewModel}",
-                    userEmail, userId, feature, oldModel, dto.ModelId);
+                logger.LogWarning("AUDIT: User {UserId} UPDATED AI config for feature {Feature}. Model: {OldModel} -> {NewModel}",
+                    userId, feature.Replace("\r", "").Replace("\n", ""), oldModel.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
 
                 return Results.Ok(config);
             }

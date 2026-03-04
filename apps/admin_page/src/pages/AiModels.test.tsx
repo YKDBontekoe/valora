@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import AiModels from './AiModels';
 import { aiService } from '../services/api';
 
@@ -21,18 +21,18 @@ describe('AiModels', () => {
   });
 
   it('renders loading state initially', () => {
-    (aiService.getConfigs as any).mockImplementation(() => new Promise(() => {}));
-    (aiService.getAvailableModels as any).mockImplementation(() => new Promise(() => {}));
+    (aiService.getConfigs as Mock).mockImplementation(() => new Promise(() => {}));
+    (aiService.getAvailableModels as Mock).mockImplementation(() => new Promise(() => {}));
 
     render(<AiModels />);
     expect(screen.getByText('AI Configuration')).toBeInTheDocument();
   });
 
   it('loads and displays configurations', async () => {
-    (aiService.getConfigs as any).mockResolvedValue([
-      { id: '1', feature: 'test-feature', modelId: 'model-1', fallbackModels: [], description: '', isEnabled: true }
+    (aiService.getConfigs as Mock).mockResolvedValue([
+      { id: '1', feature: 'test-feature', modelId: 'model-1', description: '', isEnabled: true }
     ]);
-    (aiService.getAvailableModels as any).mockResolvedValue([
+    (aiService.getAvailableModels as Mock).mockResolvedValue([
       { id: 'model-1', name: 'Model 1', promptPrice: 0, completionPrice: 0 }
     ]);
 
@@ -44,10 +44,10 @@ describe('AiModels', () => {
   });
 
   it('opens edit modal on Configure click', async () => {
-    (aiService.getConfigs as any).mockResolvedValue([
-      { id: '1', feature: 'test-feature', modelId: 'model-1', fallbackModels: [], description: '', isEnabled: true }
+    (aiService.getConfigs as Mock).mockResolvedValue([
+      { id: '1', feature: 'test-feature', modelId: 'model-1', description: '', isEnabled: true }
     ]);
-    (aiService.getAvailableModels as any).mockResolvedValue([]);
+    (aiService.getAvailableModels as Mock).mockResolvedValue([]);
 
     render(<AiModels />);
 
@@ -62,8 +62,8 @@ describe('AiModels', () => {
   });
 
   it('opens empty modal on New Config click', async () => {
-    (aiService.getConfigs as any).mockResolvedValue([]);
-    (aiService.getAvailableModels as any).mockResolvedValue([]);
+    (aiService.getConfigs as Mock).mockResolvedValue([]);
+    (aiService.getAvailableModels as Mock).mockResolvedValue([]);
 
     render(<AiModels />);
 

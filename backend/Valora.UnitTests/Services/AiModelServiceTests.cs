@@ -99,16 +99,23 @@ public class AiModelServiceTests : IDisposable
         {
             Feature = "new-feature",
             ModelId = "new-model",
-            IsEnabled = true
+            IsEnabled = true,
+            SystemPrompt = "System Prompt",
+            Temperature = 0.5,
+            MaxTokens = 100
         };
 
         var result = await _service.CreateConfigAsync(configDto);
 
         Assert.NotNull(result);
         Assert.Equal("new-feature", result.Feature);
+        Assert.Equal("System Prompt", result.SystemPrompt);
+        Assert.Equal(0.5, result.Temperature);
+        Assert.Equal(100, result.MaxTokens);
 
         var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == "new-feature");
         Assert.NotNull(dbConfig);
+        Assert.Equal("System Prompt", dbConfig.SystemPrompt);
     }
 
     [Fact]
@@ -118,7 +125,10 @@ public class AiModelServiceTests : IDisposable
         {
             Feature = "update-feature",
             ModelId = "old-model",
-            IsEnabled = true
+            IsEnabled = true,
+            SystemPrompt = "Old Prompt",
+            Temperature = 0.9,
+            MaxTokens = 200
         };
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync();
@@ -128,7 +138,10 @@ public class AiModelServiceTests : IDisposable
             Id = config.Id,
             Feature = "update-feature",
             ModelId = "updated-model",
-            IsEnabled = true
+            IsEnabled = true,
+            SystemPrompt = "New Prompt",
+            Temperature = 0.1,
+            MaxTokens = 300
         };
 
         var result = await _service.UpdateConfigAsync(configDto);
@@ -137,9 +150,13 @@ public class AiModelServiceTests : IDisposable
         Assert.Equal("updated-model", result.ModelId);
         Assert.Equal(config.Id, result.Id);
         Assert.Equal("update-feature", result.Feature);
+        Assert.Equal("New Prompt", result.SystemPrompt);
+        Assert.Equal(0.1, result.Temperature);
+        Assert.Equal(300, result.MaxTokens);
 
         var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == "update-feature");
         Assert.Equal("updated-model", dbConfig!.ModelId);
+        Assert.Equal("New Prompt", dbConfig.SystemPrompt);
     }
 
     [Fact]

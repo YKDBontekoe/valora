@@ -1,3 +1,4 @@
+using Valora.Application.DTOs;
 using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -225,5 +226,55 @@ public class AiServiceTests : IDisposable
         // Act & Assert
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
         Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChatAsync_UsesConfiguredLLMParameters()
+    {
+        // Arrange
+        var configDto = new AiModelConfigDto
+        {
+            Id = Guid.NewGuid(),
+            Feature = "test-feature",
+            ModelId = "gpt-4o-custom",
+            IsEnabled = true,
+            SystemPrompt = "Custom System Prompt",
+            Temperature = 0.5,
+            MaxTokens = 100
+        };
+
+        _mockAiModelService
+            .Setup(x => x.GetConfigByFeatureAsync("test-feature", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(configDto);
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""choices"": [{
+                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from custom params"" }
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act
+        var result = await sut.ChatAsync("Hello", "Default Prompt", "test-feature");
+
+        // Assert
+        Assert.Equal("Response from custom params", result);
+
+        var request = _server.LogEntries.Last().RequestMessage;
+        var body = request.BodyData?.BodyAsString;
+
+        // Assert that the Custom System Prompt from the DB overrode the "Default Prompt" passed to the method
+        Assert.Contains("Custom System Prompt", body!);
+        Assert.DoesNotContain("Default Prompt", body!);
+
+        // Assert parameters were injected
+        Assert.Contains("\"temperature\":0.5", body!.Replace(" ", ""));
+        Assert.Contains("\"max_completion_tokens\":100", body!.Replace(" ", ""));
+        Assert.Contains("gpt-4o-custom", body!);
     }
 }
