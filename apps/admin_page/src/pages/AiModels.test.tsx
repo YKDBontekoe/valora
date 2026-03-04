@@ -10,7 +10,6 @@ vi.mock('../services/toast');
 describe('AiModels Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default mock for getAvailableModels to avoid "not iterable" error
     (aiService.getAvailableModels as Mock).mockResolvedValue([]);
   });
 
@@ -18,11 +17,11 @@ describe('AiModels Page', () => {
     (aiService.getConfigs as Mock).mockResolvedValue([
       {
         id: '1',
-        intent: 'test-intent',
-        primaryModel: 'test-model',
-        fallbackModels: ['fallback-1'],
-        isEnabled: true,
-        description: 'Test description'
+        feature: 'test-feature',
+        modelId: 'test-model',
+        systemPrompt: 'prompt',
+        temperature: 0.7,
+        maxTokens: 1000
       }
     ]);
 
@@ -31,9 +30,10 @@ describe('AiModels Page', () => {
     expect(screen.getByText('AI Orchestration')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('test-intent')).toBeInTheDocument();
+      expect(screen.getByText('test-feature')).toBeInTheDocument();
       expect(screen.getByText('test-model')).toBeInTheDocument();
-      expect(screen.getByText('fallback-1')).toBeInTheDocument();
+      expect(screen.getByText('0.7')).toBeInTheDocument();
+      expect(screen.getByText('1000')).toBeInTheDocument();
     });
   });
 
@@ -44,25 +44,25 @@ describe('AiModels Page', () => {
     (aiService.getConfigs as Mock).mockResolvedValue([
       {
         id: '1',
-        intent: 'test-intent',
-        primaryModel: 'test-model',
-        fallbackModels: ['fallback-1'],
-        isEnabled: true,
-        description: 'Test description'
+        feature: 'test-feature',
+        modelId: 'test-model',
+        systemPrompt: 'prompt',
+        temperature: 0.7,
+        maxTokens: 1000
       }
     ]);
 
     render(<MemoryRouter><AiModels /></MemoryRouter>);
 
-    await waitFor(() => screen.getByText('test-intent'));
+    await waitFor(() => screen.getByText('test-feature'));
 
     fireEvent.click(screen.getByText('Modify'));
 
-    expect(screen.getByText('Edit Policy')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('test-intent')).toBeDisabled();
+    expect(screen.getByText('Edit Configuration')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('test-feature')).toBeDisabled();
 
     // Select should have the value 'test-model'
-    const select = screen.getByRole('combobox', { name: /primary model/i });
+    const select = screen.getByRole('combobox', { name: "Model" });
     expect(select).toHaveValue('test-model');
   });
 
@@ -74,28 +74,28 @@ describe('AiModels Page', () => {
     (aiService.getConfigs as Mock).mockResolvedValue([
       {
         id: '1',
-        intent: 'test-intent',
-        primaryModel: 'test-model',
-        fallbackModels: [],
-        isEnabled: true,
-        description: ''
+        feature: 'test-feature',
+        modelId: 'test-model',
+        systemPrompt: 'prompt',
+        temperature: 0.7,
+        maxTokens: 1000
       }
     ]);
     (aiService.updateConfig as Mock).mockResolvedValue({});
 
     render(<MemoryRouter><AiModels /></MemoryRouter>);
 
-    await waitFor(() => screen.getByText('test-intent'));
+    await waitFor(() => screen.getByText('test-feature'));
     fireEvent.click(screen.getByText('Modify'));
 
-    const primaryModelSelect = screen.getByRole('combobox', { name: /primary model/i });
+    const primaryModelSelect = screen.getByRole('combobox', { name: "Model" });
     fireEvent.change(primaryModelSelect, { target: { value: 'new-model' } });
 
-    fireEvent.click(screen.getByText('Commit Policy'));
+    fireEvent.click(screen.getByText('Commit Config'));
 
     await waitFor(() => {
-      expect(aiService.updateConfig).toHaveBeenCalledWith('test-intent', expect.objectContaining({
-        primaryModel: 'new-model'
+      expect(aiService.updateConfig).toHaveBeenCalledWith('test-feature', expect.objectContaining({
+        modelId: 'new-model'
       }));
     });
   });
@@ -108,31 +108,31 @@ describe('AiModels Page', () => {
     (aiService.getConfigs as Mock).mockResolvedValue([
       {
         id: '1',
-        intent: 'test-intent',
-        primaryModel: 'test-model',
-        fallbackModels: [],
-        isEnabled: true,
-        description: ''
+        feature: 'test-feature',
+        modelId: 'test-model',
+        systemPrompt: 'prompt',
+        temperature: 0.7,
+        maxTokens: 1000
       }
     ]);
 
     render(<MemoryRouter><AiModels /></MemoryRouter>);
 
-    await waitFor(() => screen.getByText('test-intent'));
+    await waitFor(() => screen.getByText('test-feature'));
     fireEvent.click(screen.getByText('Modify'));
 
-    const primaryModelSelect = screen.getByRole('combobox', { name: /primary model/i });
+    const primaryModelSelect = screen.getByRole('combobox', { name: "Model" });
     fireEvent.change(primaryModelSelect, { target: { value: 'new-model' } });
 
     fireEvent.click(screen.getByLabelText('Close modal'));
 
     expect(screen.getByText('Discard Changes?')).toBeInTheDocument();
-    expect(screen.getByText(/You have unsaved modifications to this AI policy/)).toBeInTheDocument();
+    expect(screen.getByText(/You have unsaved modifications to this configuration/)).toBeInTheDocument();
 
     // Confirming discard should close the modal
     fireEvent.click(screen.getByText('Discard Changes'));
     await waitFor(() => {
-        expect(screen.queryByText('Edit Policy')).not.toBeInTheDocument();
+        expect(screen.queryByText('Edit Configuration')).not.toBeInTheDocument();
     });
   });
 });

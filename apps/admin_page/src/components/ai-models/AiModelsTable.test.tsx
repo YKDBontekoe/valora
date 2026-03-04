@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AiModelsTable from './AiModelsTable';
 import type { AiModelConfig } from '../../services/api';
 
@@ -7,19 +7,19 @@ describe('AiModelsTable', () => {
   const mockConfigs: AiModelConfig[] = [
     {
       id: '1',
-      intent: 'test-intent-1',
-      primaryModel: 'model-a',
-      fallbackModels: ['fallback-1', 'fallback-2'],
-      isEnabled: true,
-      description: 'Description 1'
+      feature: 'test-feature-1',
+      modelId: 'model-a',
+      systemPrompt: 'prompt',
+      temperature: 0.7,
+      maxTokens: 1000
     },
     {
       id: '2',
-      intent: 'test-intent-2',
-      primaryModel: 'model-b',
-      fallbackModels: [],
-      isEnabled: false,
-      description: 'Description 2'
+      feature: 'test-feature-2',
+      modelId: 'model-b',
+      systemPrompt: 'prompt',
+      temperature: 0.5,
+      maxTokens: 2000
     }
   ];
 
@@ -36,24 +36,20 @@ describe('AiModelsTable', () => {
   it('renders table headers and rows', () => {
     render(<AiModelsTable {...defaultProps} />);
 
-    expect(screen.getByText('Intent Key')).toBeInTheDocument();
-    expect(screen.getByText('Primary Model')).toBeInTheDocument();
+    expect(screen.getByText('Feature')).toBeInTheDocument();
+    expect(screen.getByText('Model')).toBeInTheDocument();
+    expect(screen.getByText('Temperature')).toBeInTheDocument();
+    expect(screen.getByText('Max Tokens')).toBeInTheDocument();
 
-    expect(screen.getByText('test-intent-1')).toBeInTheDocument();
+    expect(screen.getByText('test-feature-1')).toBeInTheDocument();
     expect(screen.getByText('model-a')).toBeInTheDocument();
-    expect(screen.getByText('fallback-1')).toBeInTheDocument();
-    expect(screen.getByText('fallback-2')).toBeInTheDocument();
+    expect(screen.getByText('0.7')).toBeInTheDocument();
+    expect(screen.getByText('1000')).toBeInTheDocument();
 
-    expect(screen.getByText('test-intent-2')).toBeInTheDocument();
+    expect(screen.getByText('test-feature-2')).toBeInTheDocument();
     expect(screen.getByText('model-b')).toBeInTheDocument();
-    expect(screen.getByText('Default Stack')).toBeInTheDocument();
-  });
-
-  it('renders status badges correctly', () => {
-    render(<AiModelsTable {...defaultProps} />);
-
-    expect(screen.getByText('Active')).toBeInTheDocument();
-    expect(screen.getByText('Offline')).toBeInTheDocument();
+    expect(screen.getByText('0.5')).toBeInTheDocument();
+    expect(screen.getByText('2000')).toBeInTheDocument();
   });
 
   it('calls onEdit when clicking Modify button', () => {
@@ -68,7 +64,7 @@ describe('AiModelsTable', () => {
   it('calls onEdit when clicking a row', () => {
     render(<AiModelsTable {...defaultProps} />);
 
-    const row = screen.getByText('test-intent-1').closest('tr')!;
+    const row = screen.getByText('test-feature-1').closest('tr')!;
     fireEvent.click(row);
 
     expect(defaultProps.onEdit).toHaveBeenCalledWith(mockConfigs[0]);
@@ -83,6 +79,6 @@ describe('AiModelsTable', () => {
   it('renders empty state', () => {
     render(<AiModelsTable {...defaultProps} configs={[]} />);
 
-    expect(screen.getByText('No custom policies defined')).toBeInTheDocument();
+    expect(screen.getByText('No feature configurations defined')).toBeInTheDocument();
   });
 });
