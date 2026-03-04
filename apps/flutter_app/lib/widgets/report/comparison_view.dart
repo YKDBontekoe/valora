@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
 
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
@@ -14,109 +15,133 @@ class ComparisonView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watch comparisonIds to rebuild when list changes
-    final provider = context.watch<ContextReportProvider>();
-    final ids = provider.comparisonIds.toList();
+    return Selector<ContextReportProvider, ({List<String> ids, List<ContextReport?> loadedReports})>(
+      selector: (_, p) {
+        final ids = p.comparisonIds.toList();
+        final loadedReports = ids.map((id) => p.getReportById(id)).toList();
+        return (ids: ids, loadedReports: loadedReports);
+      },
+      shouldRebuild: (previous, next) {
+        final idsChanged = const ListEquality().equals(previous.ids, next.ids) == false;
+        final reportsChanged = const ListEquality().equals(previous.loadedReports, next.loadedReports) == false;
+        return idsChanged || reportsChanged;
+      },
+      builder: (context, data, child) {
+        final ids = data.ids;
+        final loadedReports = data.loadedReports;
 
-    if (ids.isEmpty) {
-      return const Center(child: Text('No reports to compare'));
-    }
+        if (ids.isEmpty) {
+          return const Center(child: Text('No reports to compare'));
+        }
 
-    final reports = ids.map((id) => provider.getReportById(id)).whereType<ContextReport>().toList();
+        final reports = loadedReports.whereType<ContextReport>().toList();
 
-    // Header Row
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(ids.length, (index) {
-              final id = ids[index];
-              // Actually reports list might be shorter if some IDs don't have reports loaded.
-              // We should map IDs to reports carefully.
-              final loadedReport = provider.getReportById(id);
+        // Header Row
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(ids.length, (index) {
+                  final id = ids[index];
+                  final loadedReport = loadedReports[index];
 
-              final parts = id.split('|');
-              final query = parts[0];
-              final radius = int.tryParse(parts[1]) ?? 1000;
+                  final sep = id.lastIndexOf('|');
+                  final query = sep >= 0 ? id.substring(0, sep) : id;
+                  final radiusText = sep >= 0 ? id.substring(sep + 1) : null;
+                  final radius = int.tryParse(radiusText ?? '') ?? 1000;
 
-              if (loadedReport == null) {
-                 return const SizedBox(
-                   width: 160,
-                   height: 200,
-                   child: Center(child: CircularProgressIndicator())
-                 );
-              }
+                  if (loadedReport == null) {
+                     return SizedBox(
+                       width: 160,
+                       height: 200,
+                       child: Column(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         children: [
+                           const CircularProgressIndicator(),
+                           const SizedBox(height: 16),
+                           IconButton(
+                             icon: const Icon(Icons.close, size: 20),
+                             onPressed: () {
+                               context.read<ContextReportProvider>().removeFromComparison(query, radius);
+                             },
+                           ),
+                         ],
+                       )
+                     );
+                  }
 
-              return Container(
-                width: 160,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Column(
-                  children: [
-                    Text(
-                      loadedReport.location.displayAddress.split(',')[0],
-                      style: ValoraTypography.titleMedium,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  return Container(
+                    width: 160,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Column(
+                      children: [
+                        Text(
+                          loadedReport.location.displayAddress.split(',')[0],
+                          style: ValoraTypography.titleMedium,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${radius}m radius',
+                          style: ValoraTypography.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () {
+                             context.read<ContextReportProvider>().removeFromComparison(query, radius);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        ScoreGauge(
+                          score: loadedReport.compositeScore,
+                          size: 100,
+                          strokeWidth: 8,
+                        ),
+                        const SizedBox(height: 16),
+                        AspectRatio(
+                          aspectRatio: 1,
+                          child: CategoryRadar(
+                            categoryScores: loadedReport.categoryScores,
+                            size: 100,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '${radius}m radius',
-                      style: ValoraTypography.bodySmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () {
-                         provider.removeFromComparison(query, radius);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    ScoreGauge(
-                      score: loadedReport.compositeScore,
-                      size: 100,
-                      strokeWidth: 8,
-                    ),
-                    const SizedBox(height: 16),
-                    AspectRatio(
-                      aspectRatio: 1,
-                      child: CategoryRadar(
-                        categoryScores: loadedReport.categoryScores,
-                        size: 100,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-        Text('Metrics Comparison', style: ValoraTypography.titleMedium),
-        const SizedBox(height: 16),
-        if (reports.isNotEmpty) _buildMetricsTable(context, reports),
+            Text('Metrics Comparison', style: ValoraTypography.titleMedium),
+            const SizedBox(height: 16),
+            if (reports.isNotEmpty) _buildMetricsTable(context, reports),
 
-        const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-        Text('AI Insights', style: ValoraTypography.titleMedium),
-        const SizedBox(height: 16),
-        ...reports.map((report) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
-              const SizedBox(height: 8),
-              AiInsightCard(report: report),
-            ],
-          ),
-        )),
-      ],
+            Text('AI Insights', style: ValoraTypography.titleMedium),
+            const SizedBox(height: 16),
+            ...reports.map((report) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(report.location.displayAddress, style: ValoraTypography.labelMedium),
+                  const SizedBox(height: 8),
+                  AiInsightCard(report: report),
+                ],
+              ),
+            )),
+          ],
+        );
+      },
     );
   }
 
