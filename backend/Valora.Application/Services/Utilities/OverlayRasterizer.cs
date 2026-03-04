@@ -3,10 +3,37 @@ using Valora.Application.DTOs.Map;
 
 namespace Valora.Application.Services.Utilities;
 
+/// <summary>
+/// Provides high-performance spatial rasterization of vector geometries (GeoJSON) into discrete map tiles.
+/// </summary>
 public static class OverlayRasterizer
 {
     private const int SpatialIndexMultiplier = 5;
 
+    /// <summary>
+    /// Converts a collection of vector-based map overlays (polygons) into a grid of uniform raster tiles.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why Server-Side Rasterization?</strong><br/>
+    /// Map overlays (like neighborhoods) are fetched from external APIs (e.g., CBS / PDOK) as large GeoJSON vector shapes.
+    /// Rendering dozens of complex polygons with thousands of vertices on the client (Flutter Maps) can cause severe frame drops and lag, especially on older devices.
+    /// By rasterizing the data server-side into a grid of simple tiles (similar to a heatmap), we trade visual precision for a massive improvement in client rendering performance.
+    /// </para>
+    /// <para>
+    /// <strong>Spatial Index Optimization:</strong>
+    /// A naive rasterization approach checks if the center point of every grid cell falls within every polygon, resulting in O(Cells * Polygons) complexity.
+    /// To fix this, we build a temporary spatial index (`Dictionary&lt;(int, int), List&lt;Geometry&gt;&gt;`). The index cell size is a multiple of the requested raster cell size.
+    /// Instead of checking every polygon, a given tile only checks the geometries that intersect its larger spatial bucket. This reduces point-in-polygon checks by orders of magnitude.
+    /// </para>
+    /// </remarks>
+    /// <param name="overlays">The list of map overlays containing GeoJSON shapes.</param>
+    /// <param name="snappedMinLat">The snapped lower latitude bounds.</param>
+    /// <param name="snappedMinLon">The snapped lower longitude bounds.</param>
+    /// <param name="snappedMaxLat">The snapped upper latitude bounds.</param>
+    /// <param name="snappedMaxLon">The snapped upper longitude bounds.</param>
+    /// <param name="cellSize">The size of each raster tile in coordinate degrees.</param>
+    /// <returns>A flat list of rasterized tiles, suitable for fast heatmap rendering on the client.</returns>
     public static List<MapOverlayTileDto> RasterizeOverlays(
         IEnumerable<MapOverlayDto> overlays,
         double snappedMinLat,
