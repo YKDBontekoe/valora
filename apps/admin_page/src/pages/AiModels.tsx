@@ -74,8 +74,8 @@ const AiModels: React.FC = () => {
     // Sort
     if (sortConfig) {
       result.sort((a, b) => {
-        let aValue: any = a[sortConfig.key];
-        let bValue: any = b[sortConfig.key];
+        const aValue: unknown = a[sortConfig.key];
+        const bValue: unknown = b[sortConfig.key];
 
         // Handle string comparison
         if (typeof aValue === 'string' && typeof bValue === 'string') {

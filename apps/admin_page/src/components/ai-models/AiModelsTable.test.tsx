@@ -27,6 +27,9 @@ describe('AiModelsTable', () => {
     configs: mockConfigs,
     loading: false,
     onEdit: vi.fn(),
+    sortConfig: { key: 'intent' as const, direction: 'asc' as const },
+    onSort: vi.fn(),
+    searchQuery: '',
   };
 
   beforeEach(() => {
@@ -84,5 +87,11 @@ describe('AiModelsTable', () => {
     render(<AiModelsTable {...defaultProps} configs={[]} />);
 
     expect(screen.getByText('No custom policies defined')).toBeInTheDocument();
+  });
+
+  it('renders empty state during search', () => {
+    render(<AiModelsTable {...defaultProps} configs={[]} searchQuery="test" />);
+
+    expect(screen.getByText('No routing configurations found')).toBeInTheDocument();
   });
 });

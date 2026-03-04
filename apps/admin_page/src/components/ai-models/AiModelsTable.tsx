@@ -63,18 +63,18 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
         <table className="min-w-full divide-y divide-brand-100">
           <thead>
             <tr className="bg-brand-50/10">
-              <th className="px-10 py-5 text-left">
+              <th className="px-10 py-5 text-left" aria-sort={sortConfig?.key === 'intent' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" onClick={() => onSort('intent')} className="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-900 focus:outline-none flex items-center">
                   Intent Key {renderSortIcon('intent')}
                 </button>
               </th>
-              <th className="px-10 py-5 text-left">
+              <th className="px-10 py-5 text-left" aria-sort={sortConfig?.key === 'primaryModel' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" onClick={() => onSort('primaryModel')} className="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-900 focus:outline-none flex items-center">
                   Primary Model {renderSortIcon('primaryModel')}
                 </button>
               </th>
               <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Fallback Stack</th>
-              <th className="px-10 py-5 text-left">
+              <th className="px-10 py-5 text-left" aria-sort={sortConfig?.key === 'isEnabled' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" onClick={() => onSort('isEnabled')} className="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-900 focus:outline-none flex items-center">
                   Status {renderSortIcon('isEnabled')}
                 </button>
