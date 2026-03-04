@@ -21,8 +21,7 @@ public class MapGenerationJobProcessor : IBatchJobProcessor
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Processing Map Generation Job {JobId} for target {Target}", job.Id, job.Target);
 
-        // TODO: Implement actual map generation logic (Tracking Ticket: #XYZ)
-        job.Status = BatchJobStatus.Pending;
+        // TODO: Implement actual map generation logic (Tracking Ticket: #598)
         _logger.LogWarning("MapGenerationJobProcessor.ProcessAsync is currently unimplemented.");
         throw new NotImplementedException("Map generation is not yet implemented.");
 
