@@ -236,7 +236,7 @@ export const aiService = {
     return response.data;
   },
   updateConfig: async (feature: string, dto: UpdateAiModelConfigDto): Promise<AiModelConfig> => {
-    const response = await api.put<AiModelConfig>(`/ai/config/${feature}`, dto);
+    const response = await api.put<AiModelConfig>(`/ai/config/${encodeURIComponent(feature)}`, dto);
     return response.data;
   },
   getAvailableModels: async (): Promise<AiModel[]> => {

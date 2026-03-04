@@ -56,14 +56,18 @@ const AiModels: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!editingConfig || !editingConfig.feature) {
+    if (!editingConfig || !editingConfig.feature.trim()) {
       showToast("Feature is required", "error");
       return;
     }
 
     setIsSaving(true);
     try {
-      await aiService.updateConfig(editingConfig.feature, editingConfig);
+      const { _clientId, ...dto } = editingConfig as AiModelConfig & { _clientId?: string };
+      const trimmedFeature = dto.feature.trim();
+      dto.feature = trimmedFeature;
+
+      await aiService.updateConfig(trimmedFeature, dto);
       showToast('Configuration saved successfully', 'success');
       setEditingConfig(null);
       loadData();
