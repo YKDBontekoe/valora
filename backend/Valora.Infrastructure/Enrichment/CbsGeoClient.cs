@@ -82,23 +82,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 var neighborhoodName = props.GetStringSafe("buurtnaam") ?? "Unknown";
                 var featureClone = feature.Clone();
 
-                tasks.Add(Task.Run(async () =>
-                {
-                    var (metricValue, metricDisplayValue) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
-
-                    if (metricValue.HasValue)
-                    {
-                        return new MapOverlayDto(
-                            neighborhoodCode,
-                            neighborhoodName,
-                            metric.ToString(),
-                            metricValue.Value,
-                            metricDisplayValue,
-                            featureClone);
-                    }
-
-                    return null;
-                }, cancellationToken));
+                tasks.Add(ProcessFeatureAsync(neighborhoodCode, neighborhoodName, metric, featureClone, cancellationToken));
             }
 
             var mapOverlays = await Task.WhenAll(tasks);
@@ -125,6 +109,31 @@ public sealed class CbsGeoClient : ICbsGeoClient
         var emptyResult = new List<T>();
         _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
         return emptyResult;
+    }
+
+    private async Task<MapOverlayDto?> ProcessFeatureAsync(string neighborhoodCode, string neighborhoodName, MapOverlayMetric metric, JsonElement featureClone, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var (metricValue, metricDisplayValue) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
+
+            if (metricValue.HasValue)
+            {
+                return new MapOverlayDto(
+                    neighborhoodCode,
+                    neighborhoodName,
+                    metric.ToString(),
+                    metricValue.Value,
+                    metricDisplayValue,
+                    featureClone);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to get metric value for neighborhood {NeighborhoodCode}", neighborhoodCode);
+        }
+
+        return null;
     }
 
     private async Task<(double? Value, string Display)> GetMetricValueAsync(string code, MapOverlayMetric metric, CancellationToken ct)
