@@ -315,21 +315,17 @@ public class CbsGeoClientTests
     [Fact]
     public async Task GetAllMunicipalitiesAsync_ReturnsMunicipalitiesOnSuccess()
     {
-        var features = new[]
-        {
-            new
-            {
-                type = "Feature",
-                properties = new { gemeentenaam = "Amsterdam" }
-            },
-            new
-            {
-                type = "Feature",
-                properties = new { gemeentenaam = "Rotterdam" }
-            }
-        };
-
-        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+        var jsonResponse = @"<?xml version='1.0' encoding='UTF-8' ?>
+<wfs:ValueCollection
+   xmlns:wijkenbuurten='http://wijkenbuurten.geonovum.nl'
+   xmlns:wfs='http://www.opengis.net/wfs/2.0'>
+    <wfs:member>
+        <wijkenbuurten:gemeentenaam>Amsterdam</wijkenbuurten:gemeentenaam>
+    </wfs:member>
+    <wfs:member>
+        <wijkenbuurten:gemeentenaam>Rotterdam</wijkenbuurten:gemeentenaam>
+    </wfs:member>
+</wfs:ValueCollection>";
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
 
@@ -396,9 +392,9 @@ public class CbsGeoClientTests
     }
 
     [Fact]
-    public async Task GetAllMunicipalitiesAsync_HandlesMalformedJson()
+    public async Task GetAllMunicipalitiesAsync_HandlesMalformedXml()
     {
-        var jsonResponse = "{\"type\": \"FeatureCollection\", \"features\": \"not-an-array\"}";
+        var jsonResponse = "<not-xml>";
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
 
@@ -418,13 +414,17 @@ public class CbsGeoClientTests
     [Fact]
     public async Task GetAllMunicipalitiesAsync_HandlesMissingProperties()
     {
-        var features = new object[]
-        {
-            new { type = "Feature" }, // Missing properties
-            new { type = "Feature", properties = new { other = "value" } } // Missing gemeentenaam
-        };
-
-        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+        var jsonResponse = @"<?xml version='1.0' encoding='UTF-8' ?>
+<wfs:ValueCollection
+   xmlns:wijkenbuurten='http://wijkenbuurten.geonovum.nl'
+   xmlns:wfs='http://www.opengis.net/wfs/2.0'>
+    <wfs:member>
+        <!-- Missing gemeentenaam -->
+    </wfs:member>
+    <wfs:member>
+        <wijkenbuurten:other>value</wijkenbuurten:other>
+    </wfs:member>
+</wfs:ValueCollection>";
         var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
         var httpClient = new HttpClient(handlerMock.Object);
 
