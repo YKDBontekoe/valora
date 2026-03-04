@@ -55,9 +55,7 @@ public class SystemHealthService : ISystemHealthService
 
                 lastPipelineSuccess = await _db.BatchJobs
                     .Where(j => j.Status == BatchJobStatus.Completed)
-                    .OrderByDescending(j => j.CompletedAt)
-                    .Select(j => j.CompletedAt)
-                    .FirstOrDefaultAsync(ct);
+                    .MaxAsync(j => (DateTime?)j.CompletedAt, ct);
             }
 
             var p50 = _metricsService.GetPercentile(50);
