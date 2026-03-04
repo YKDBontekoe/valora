@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings2, Cpu, Sparkles, Edit2 } from 'lucide-react';
+import { Settings2, Cpu, Sparkles, Edit2, ArrowUp, ArrowDown } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import Button from '../Button';
 import type { AiModelConfig } from '../../services/api';
@@ -24,13 +24,23 @@ const rowVariants = {
   }
 } as const;
 
+export type ConfigSortOption = 'intent' | 'primaryModel' | 'isEnabled' | 'description';
+
 interface AiModelsTableProps {
   configs: AiModelConfig[];
   loading: boolean;
   onEdit: (config: AiModelConfig) => void;
+  sortConfig: { key: ConfigSortOption; direction: 'asc' | 'desc' } | null;
+  onSort: (key: ConfigSortOption) => void;
+  searchQuery: string;
 }
 
-const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit }) => {
+const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit, sortConfig, onSort, searchQuery }) => {
+  const renderSortIcon = (key: ConfigSortOption) => {
+    if (sortConfig?.key !== key) return null;
+    return sortConfig.direction === 'asc' ? <ArrowUp size={12} className="inline ml-1" /> : <ArrowDown size={12} className="inline ml-1" />;
+  };
+
   return (
     <motion.div
       variants={container}
@@ -53,10 +63,22 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit 
         <table className="min-w-full divide-y divide-brand-100">
           <thead>
             <tr className="bg-brand-50/10">
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Intent Key</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Primary Model</th>
+              <th className="px-10 py-5 text-left">
+                <button type="button" onClick={() => onSort('intent')} className="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-900 focus:outline-none flex items-center">
+                  Intent Key {renderSortIcon('intent')}
+                </button>
+              </th>
+              <th className="px-10 py-5 text-left">
+                <button type="button" onClick={() => onSort('primaryModel')} className="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-900 focus:outline-none flex items-center">
+                  Primary Model {renderSortIcon('primaryModel')}
+                </button>
+              </th>
               <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Fallback Stack</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Status</th>
+              <th className="px-10 py-5 text-left">
+                <button type="button" onClick={() => onSort('isEnabled')} className="text-[10px] font-black text-brand-400 uppercase tracking-widest hover:text-brand-900 focus:outline-none flex items-center">
+                  Status {renderSortIcon('isEnabled')}
+                </button>
+              </th>
               <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
             </tr>
           </thead>
@@ -81,7 +103,9 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit 
                 <td colSpan={5} className="px-10 py-32 text-center">
                   <div className="flex flex-col items-center gap-6 text-brand-200">
                     <Cpu size={64} className="opacity-10 mb-2" />
-                    <span className="font-black text-xl uppercase tracking-widest">No custom policies defined</span>
+                    <span className="font-black text-xl uppercase tracking-widest">
+                      {searchQuery ? "No routing configurations found" : "No custom policies defined"}
+                    </span>
                   </div>
                 </td>
               </tr>
