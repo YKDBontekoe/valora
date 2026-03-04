@@ -216,28 +216,41 @@ public sealed class CbsGeoClient : ICbsGeoClient
         return Uri.EscapeDataString(filter);
     }
 
+    private static readonly SemaphoreSlim _municipalitiesCacheLock = new(1, 1);
+
     public async Task<List<string>> GetAllMunicipalitiesAsync(CancellationToken cancellationToken = default)
     {
         var cacheKey = "cbs-geo:municipalities";
 
-        var cacheTask = _cache.GetOrCreateAsync(cacheKey, async entry =>
+        if (_cache.TryGetValue(cacheKey, out List<string>? cachedResult))
         {
+            return cachedResult!;
+        }
+
+        await _municipalitiesCacheLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_cache.TryGetValue(cacheKey, out cachedResult))
+            {
+                return cachedResult!;
+            }
+
             var requestUrl = "https://service.pdok.nl/cbs/wijkenbuurten/2023/wfs/v1_0?service=WFS&version=2.0.0&request=GetPropertyValue&typeName=wijkenbuurten:gemeenten&valueReference=gemeentenaam";
             var emptyResult = new List<string>();
 
             try
             {
-                using var response = await _httpClient.GetAsync(requestUrl, CancellationToken.None);
+                using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("PDOK WFS failed with status {StatusCode} for municipalities", response.StatusCode);
-                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+                    _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
                     return emptyResult;
                 }
 
-                using var content = await response.Content.ReadAsStreamAsync(CancellationToken.None);
-                var xdoc = await System.Xml.Linq.XDocument.LoadAsync(content, System.Xml.Linq.LoadOptions.None, CancellationToken.None);
+                using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
+                var xdoc = await System.Xml.Linq.XDocument.LoadAsync(content, System.Xml.Linq.LoadOptions.None, cancellationToken);
 
                 var wijkenbuurten = System.Xml.Linq.XNamespace.Get("http://wijkenbuurten.geonovum.nl");
                 var elements = xdoc.Descendants(wijkenbuurten + "gemeentenaam");
@@ -251,25 +264,27 @@ public sealed class CbsGeoClient : ICbsGeoClient
                     }
                 }
 
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24);
-                return results.OrderBy(x => x).ToList();
+                var sortedResults = results.OrderBy(x => x).ToList();
+                _cache.Set(cacheKey, sortedResults, TimeSpan.FromHours(24));
+                return sortedResults;
             }
             catch (HttpRequestException ex)
             {
                 _logger.LogWarning(ex, "HTTP request to PDOK WFS failed for municipalities.");
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
                 return emptyResult;
             }
             catch (System.Xml.XmlException ex)
             {
                 _logger.LogWarning(ex, "Failed to parse PDOK WFS XML response for municipalities.");
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
                 return emptyResult;
             }
-        });
-
-        var result = await cacheTask.WaitAsync(cancellationToken);
-        return result ?? [];
+        }
+        finally
+        {
+            _municipalitiesCacheLock.Release();
+        }
     }
 
 }
