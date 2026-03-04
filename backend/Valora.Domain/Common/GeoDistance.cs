@@ -20,7 +20,8 @@ public static class GeoDistance
                          Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2)) *
                          Math.Sin(deltaLon / 2) * Math.Sin(deltaLon / 2);
 
-        var haversineC = 2 * Math.Atan2(Math.Sqrt(haversineA), Math.Sqrt(1 - haversineA));
+        var safeA = Math.Clamp(haversineA, 0.0, 1.0);
+        var haversineC = 2 * Math.Atan2(Math.Sqrt(safeA), Math.Sqrt(1 - safeA));
         return EarthRadiusMeters * haversineC;
     }
 
