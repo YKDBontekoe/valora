@@ -5,15 +5,13 @@ namespace Valora.Application.DTOs;
 public class UpdateAiModelConfigDto
 {
     [Required]
-    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Intent must only contain letters, numbers, and underscores.")]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Feature must only contain letters, numbers, and underscores.")]
     [StringLength(100)]
-    public string Intent { get; set; } = string.Empty;
+    public string Feature { get; set; } = string.Empty;
 
     [Required]
     [StringLength(100)]
-    public string PrimaryModel { get; set; } = string.Empty;
-
-    public List<string> FallbackModels { get; set; } = new();
+    public string ModelId { get; set; } = string.Empty;
 
     [StringLength(500)]
     public string Description { get; set; } = string.Empty;
@@ -22,4 +20,13 @@ public class UpdateAiModelConfigDto
 
     [StringLength(2000)]
     public string? SafetySettings { get; set; }
+
+    [StringLength(4000)]
+    public string? SystemPrompt { get; set; }
+
+    [Range(0.0, 2.0)]
+    public double? Temperature { get; set; }
+
+    [Range(1, 128000)]
+    public int? MaxTokens { get; set; }
 }

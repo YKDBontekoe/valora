@@ -37,7 +37,7 @@ public class ContextAnalysisService : IContextAnalysisService
     /// Sends a user prompt to the AI service (e.g., OpenAI) and returns the response.
     /// </summary>
     /// <param name="prompt">The user's question or statement.</param>
-    /// <param name="intent">An optional intent string (e.g., "chat", "search") to guide the AI model.</param>
+    /// <param name="feature">An optional intent string (e.g., "chat", "search") to guide the AI model.</param>
     /// <remarks>
     /// <para>
     /// <strong>System Prompt Injection:</strong> To personalize AI responses, this method fetches the user's
@@ -48,10 +48,10 @@ public class ContextAnalysisService : IContextAnalysisService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <param name="sessionProfile">Optional user profile override for this specific request.</param>
     /// <returns>The AI's textual response.</returns>
-    public async Task<string> ChatAsync(string prompt, string? intent, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
+    public async Task<string> ChatAsync(string prompt, string? feature, CancellationToken cancellationToken, UserAiProfileDto? sessionProfile = null)
     {
         var systemPrompt = await BuildSystemPromptAsync(ChatSystemPrompt, sessionProfile, cancellationToken);
-        return await _aiService.ChatAsync(prompt, systemPrompt, intent ?? "chat", cancellationToken);
+        return await _aiService.ChatAsync(prompt, systemPrompt, feature ?? "chat", cancellationToken);
     }
 
     /// <summary>

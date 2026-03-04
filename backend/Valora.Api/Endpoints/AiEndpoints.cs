@@ -22,7 +22,7 @@ public static class AiEndpoints
         {
             try
             {
-                var response = await contextAnalysisService.ChatAsync(request.Prompt, request.Intent, ct);
+                var response = await contextAnalysisService.ChatAsync(request.Prompt, request.Feature, ct);
                 return Results.Ok(new { response });
             }
             catch (OperationCanceledException)
@@ -87,55 +87,58 @@ public static class AiEndpoints
             return Results.Ok(configs);
         });
 
-        configGroup.MapPut("/{intent}", async (
-            string intent,
+        configGroup.MapPut("/{feature}", async (
+            string feature,
             [FromBody] UpdateAiModelConfigDto dto,
             IAiModelService aiModelService,
             ClaimsPrincipal user,
             ILogger<UpdateAiModelConfigDto> logger,
             CancellationToken ct) =>
         {
-            if (intent != dto.Intent)
+            if (feature != dto.Feature)
             {
-                return Results.BadRequest("Intent mismatch");
+                return Results.BadRequest("Feature mismatch");
             }
 
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userEmail = user.FindFirstValue(ClaimTypes.Email);
 
-            var config = await aiModelService.GetConfigByIntentAsync(intent, ct);
+            var config = await aiModelService.GetConfigByFeatureAsync(feature, ct);
             if (config == null)
             {
                 var newConfig = new AiModelConfigDto
                 {
-                    Intent = dto.Intent,
-                    PrimaryModel = dto.PrimaryModel,
-                    FallbackModels = dto.FallbackModels,
+                    Feature = dto.Feature,
+                    ModelId = dto.ModelId,
                     Description = dto.Description,
                     IsEnabled = dto.IsEnabled,
-                    SafetySettings = dto.SafetySettings
+                    SafetySettings = dto.SafetySettings,
+                    SystemPrompt = dto.SystemPrompt,
+                    Temperature = dto.Temperature,
+                    MaxTokens = dto.MaxTokens
                 };
                 var createdConfig = await aiModelService.CreateConfigAsync(newConfig, ct);
 
-                logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) CREATED AI config for intent {Intent}. Primary: {PrimaryModel}",
-                    userEmail, userId, intent, dto.PrimaryModel);
+                logger.LogWarning("AUDIT: User {UserId} CREATED AI config for feature {Feature}. Model: {ModelId}",
+                    userId, feature.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
 
                 return Results.Ok(createdConfig);
             }
             else
             {
-                var oldPrimary = config.PrimaryModel;
+                var oldModel = config.ModelId;
 
-                config.PrimaryModel = dto.PrimaryModel;
-                config.FallbackModels = dto.FallbackModels;
+                config.ModelId = dto.ModelId;
                 config.Description = dto.Description;
                 config.IsEnabled = dto.IsEnabled;
                 config.SafetySettings = dto.SafetySettings;
+                config.SystemPrompt = dto.SystemPrompt;
+                config.Temperature = dto.Temperature;
+                config.MaxTokens = dto.MaxTokens;
 
                 await aiModelService.UpdateConfigAsync(config, ct);
 
-                logger.LogWarning("AUDIT: User {UserEmail} ({UserId}) UPDATED AI config for intent {Intent}. Primary: {OldModel} -> {NewModel}",
-                    userEmail, userId, intent, oldPrimary, dto.PrimaryModel);
+                logger.LogWarning("AUDIT: User {UserId} UPDATED AI config for feature {Feature}. Model: {OldModel} -> {NewModel}",
+                    userId, feature.Replace("\r", "").Replace("\n", ""), oldModel.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
 
                 return Results.Ok(config);
             }

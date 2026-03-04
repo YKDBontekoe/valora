@@ -26,10 +26,10 @@ public class AiModelService : IAiModelService
         _configuration = configuration;
     }
 
-    public async Task<AiModelConfigDto?> GetConfigByIntentAsync(string intent, CancellationToken cancellationToken = default)
+    public async Task<AiModelConfigDto?> GetConfigByFeatureAsync(string feature, CancellationToken cancellationToken = default)
     {
         var config = await _context.AiModelConfigs
-            .FirstOrDefaultAsync(c => c.Intent == intent, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Feature == feature.ToLowerInvariant(), cancellationToken);
 
         return config == null ? null : MapToDto(config);
     }
@@ -43,6 +43,7 @@ public class AiModelService : IAiModelService
     public async Task<AiModelConfigDto> CreateConfigAsync(AiModelConfigDto configDto, CancellationToken cancellationToken = default)
     {
         var config = MapToEntity(configDto);
+        config.Feature = config.Feature.ToLowerInvariant();
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync(cancellationToken);
         return MapToDto(config);
@@ -58,12 +59,14 @@ public class AiModelService : IAiModelService
         }
 
         // Update properties
-        config.Intent = configDto.Intent;
-        config.PrimaryModel = configDto.PrimaryModel;
-        config.FallbackModels = configDto.FallbackModels;
+        config.Feature = configDto.Feature.ToLowerInvariant();
+        config.ModelId = configDto.ModelId;
         config.Description = configDto.Description;
         config.IsEnabled = configDto.IsEnabled;
         config.SafetySettings = configDto.SafetySettings;
+        config.SystemPrompt = configDto.SystemPrompt;
+        config.Temperature = configDto.Temperature;
+        config.MaxTokens = configDto.MaxTokens;
 
         _context.AiModelConfigs.Update(config);
         await _context.SaveChangesAsync(cancellationToken);
@@ -80,24 +83,23 @@ public class AiModelService : IAiModelService
         }
     }
 
-    public async Task<(string PrimaryModel, List<string> FallbackModels)> GetModelsForIntentAsync(string intent, CancellationToken cancellationToken = default)
+    public async Task<string> GetModelForFeatureAsync(string feature, CancellationToken cancellationToken = default)
     {
-        var config = await _context.AiModelConfigs
-            .FirstOrDefaultAsync(c => c.Intent == intent, cancellationToken);
+        var config = await GetConfigByFeatureAsync(feature, cancellationToken);
 
         if (config != null && config.IsEnabled)
         {
-            return (config.PrimaryModel, config.FallbackModels);
+            return config.ModelId;
         }
 
         // Return default if not found or disabled
-        if (_defaultModels.TryGetValue(intent, out var defaultModel))
+        if (_defaultModels.TryGetValue(feature.ToLowerInvariant(), out var defaultModel))
         {
-            return (defaultModel, new List<string>());
+            return defaultModel;
         }
 
-        // Fallback for unknown intents
-        return ("openai/gpt-4o-mini", new List<string>());
+        // Fallback for unknown features
+        return "openai/gpt-4o-mini";
     }
 
     private static AiModelConfigDto MapToDto(AiModelConfig entity)
@@ -105,12 +107,14 @@ public class AiModelService : IAiModelService
         return new AiModelConfigDto
         {
             Id = entity.Id,
-            Intent = entity.Intent,
-            PrimaryModel = entity.PrimaryModel,
-            FallbackModels = entity.FallbackModels,
+            Feature = entity.Feature,
+            ModelId = entity.ModelId,
             Description = entity.Description,
             IsEnabled = entity.IsEnabled,
-            SafetySettings = entity.SafetySettings
+            SafetySettings = entity.SafetySettings,
+            SystemPrompt = entity.SystemPrompt,
+            Temperature = entity.Temperature,
+            MaxTokens = entity.MaxTokens
         };
     }
 
@@ -119,12 +123,14 @@ public class AiModelService : IAiModelService
         return new AiModelConfig
         {
             Id = dto.Id,
-            Intent = dto.Intent,
-            PrimaryModel = dto.PrimaryModel,
-            FallbackModels = dto.FallbackModels,
+            Feature = dto.Feature,
+            ModelId = dto.ModelId,
             Description = dto.Description,
             IsEnabled = dto.IsEnabled,
-            SafetySettings = dto.SafetySettings
+            SafetySettings = dto.SafetySettings,
+            SystemPrompt = dto.SystemPrompt,
+            Temperature = dto.Temperature,
+            MaxTokens = dto.MaxTokens
         };
     }
 }

@@ -1,7 +1,5 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Valora.Domain.Entities;
 
 namespace Valora.Infrastructure.Persistence.Configurations;
@@ -12,28 +10,16 @@ public class AiModelConfiguration : IEntityTypeConfiguration<AiModelConfig>
     {
         builder.HasKey(c => c.Id);
 
-        builder.Property(c => c.Intent)
+        builder.Property(c => c.Feature)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.HasIndex(c => c.Intent)
+        builder.HasIndex(c => c.Feature)
             .IsUnique();
 
-        builder.Property(c => c.PrimaryModel)
+        builder.Property(c => c.ModelId)
             .IsRequired()
             .HasMaxLength(100);
-
-        var stringListComparer = new ValueComparer<List<string>>(
-            (c1, c2) => c1 != null && c2 != null ? c1.SequenceEqual(c2) : c1 == c2,
-            c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)) : 0,
-            c => c != null ? c.ToList() : new List<string>());
-
-        builder.Property(c => c.FallbackModels)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
-            )
-            .Metadata.SetValueComparer(stringListComparer);
 
         builder.Property(c => c.Description)
             .HasMaxLength(500);
@@ -41,7 +27,10 @@ public class AiModelConfiguration : IEntityTypeConfiguration<AiModelConfig>
         builder.Property(c => c.SafetySettings)
             .HasMaxLength(2000); // Assuming JSON string for safety settings
 
-        // Enforce strict character limits on Intent to match DTO validation
-        builder.ToTable(t => t.HasCheckConstraint("CK_AiModelConfig_Intent", "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'"));
+        builder.Property(c => c.SystemPrompt)
+            .HasMaxLength(4000);
+
+        // Enforce strict character limits on Feature to match DTO validation
+        builder.ToTable(t => t.HasCheckConstraint("CK_AiModelConfig_Feature", "[Feature] NOT LIKE '%[^a-zA-Z0-9_]%'"));
     }
 }

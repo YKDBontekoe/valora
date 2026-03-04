@@ -7,17 +7,15 @@ describe('AiModelsTable', () => {
   const mockConfigs: AiModelConfig[] = [
     {
       id: '1',
-      intent: 'test-intent-1',
-      primaryModel: 'model-a',
-      fallbackModels: ['fallback-1', 'fallback-2'],
+      feature: 'test-feature-1',
+      modelId: 'model-a',
       isEnabled: true,
       description: 'Description 1'
     },
     {
       id: '2',
-      intent: 'test-intent-2',
-      primaryModel: 'model-b',
-      fallbackModels: [],
+      feature: 'test-feature-2',
+      modelId: 'model-b',
       isEnabled: false,
       description: 'Description 2'
     }
@@ -36,17 +34,14 @@ describe('AiModelsTable', () => {
   it('renders table headers and rows', () => {
     render(<AiModelsTable {...defaultProps} />);
 
-    expect(screen.getByText('Intent Key')).toBeInTheDocument();
-    expect(screen.getByText('Primary Model')).toBeInTheDocument();
+    expect(screen.getByText('Feature')).toBeInTheDocument();
+    expect(screen.getByText('Model')).toBeInTheDocument();
 
-    expect(screen.getByText('test-intent-1')).toBeInTheDocument();
+    expect(screen.getByText('test-feature-1')).toBeInTheDocument();
     expect(screen.getByText('model-a')).toBeInTheDocument();
-    expect(screen.getByText('fallback-1')).toBeInTheDocument();
-    expect(screen.getByText('fallback-2')).toBeInTheDocument();
 
-    expect(screen.getByText('test-intent-2')).toBeInTheDocument();
+    expect(screen.getByText('test-feature-2')).toBeInTheDocument();
     expect(screen.getByText('model-b')).toBeInTheDocument();
-    expect(screen.getByText('Default Stack')).toBeInTheDocument();
   });
 
   it('renders status badges correctly', () => {
@@ -68,7 +63,7 @@ describe('AiModelsTable', () => {
   it('calls onEdit when clicking a row', () => {
     render(<AiModelsTable {...defaultProps} />);
 
-    const row = screen.getByText('test-intent-1').closest('tr')!;
+    const row = screen.getByText('test-feature-1').closest('tr')!;
     fireEvent.click(row);
 
     expect(defaultProps.onEdit).toHaveBeenCalledWith(mockConfigs[0]);
@@ -83,6 +78,6 @@ describe('AiModelsTable', () => {
   it('renders empty state', () => {
     render(<AiModelsTable {...defaultProps} configs={[]} />);
 
-    expect(screen.getByText('No custom policies defined')).toBeInTheDocument();
+    expect(screen.getByText('No configurations defined')).toBeInTheDocument();
   });
 });

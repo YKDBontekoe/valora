@@ -204,23 +204,27 @@ export default api;
 
 export interface AiModelConfig {
   id: string;
-  intent: string;
-  primaryModel: string;
-  fallbackModels: string[];
+  feature: string;
+  modelId: string;
   description: string;
   isEnabled: boolean;
   safetySettings?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export type SortOption = 'name' | 'price_asc' | 'price_desc';
 
 export interface UpdateAiModelConfigDto {
-  intent: string;
-  primaryModel: string;
-  fallbackModels: string[];
+  feature: string;
+  modelId: string;
   description: string;
   isEnabled: boolean;
   safetySettings?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface AiModel {
@@ -237,8 +241,8 @@ export const aiService = {
     const response = await api.get<AiModelConfig[]>('/ai/config');
     return response.data;
   },
-  updateConfig: async (intent: string, dto: UpdateAiModelConfigDto): Promise<AiModelConfig> => {
-    const response = await api.put<AiModelConfig>(`/ai/config/${intent}`, dto);
+  updateConfig: async (feature: string, dto: UpdateAiModelConfigDto): Promise<AiModelConfig> => {
+    const response = await api.put<AiModelConfig>(`/ai/config/${feature}`, dto);
     return response.data;
   },
   getAvailableModels: async (): Promise<AiModel[]> => {

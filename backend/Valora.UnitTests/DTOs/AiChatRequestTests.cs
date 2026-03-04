@@ -10,22 +10,22 @@ public class AiChatRequestTests
     [InlineData("quick_summary", true)]
     [InlineData("detailed_analysis", true)]
     [InlineData("chat", true)]
-    [InlineData("custom_intent_123", true)] // Added flexible intent check
-    [InlineData("invalid intent", false)] // Spaces not allowed
+    [InlineData("custom_feature_123", true)] // Added flexible feature check
+    [InlineData("invalid feature", false)] // Spaces not allowed
     [InlineData("", false)]
     [InlineData(null, false)]
-    public void Intent_Validation(string? intent, bool isValid)
+    public void Feature_Validation(string? feature, bool isValid)
     {
         var request = new AiChatRequest
         {
             Prompt = "Test Prompt"
         };
 
-        // We need to set Intent explicitly, as the property initializer sets a default.
+        // We need to set Feature explicitly, as the property initializer sets a default.
         // If the test case provides null, we want to test validation of null.
-        if (intent != null)
+        if (feature != null)
         {
-            request.Intent = intent;
+            request.Feature = feature;
         }
         else
         {
@@ -34,7 +34,7 @@ public class AiChatRequestTests
             // For ValidationContext to catch null on a non-nullable property, it usually needs [Required].
             // However, our DTO initializes it to "chat".
             // To test null validation, we force it to null.
-            typeof(AiChatRequest).GetProperty("Intent")!.SetValue(request, null);
+            typeof(AiChatRequest).GetProperty("Feature")!.SetValue(request, null);
         }
 
         var context = new ValidationContext(request);
@@ -44,7 +44,7 @@ public class AiChatRequestTests
         Assert.Equal(isValid, result);
         if (!isValid)
         {
-            Assert.Contains(results, r => r.MemberNames.Contains("Intent"));
+            Assert.Contains(results, r => r.MemberNames.Contains("Feature"));
         }
     }
 }

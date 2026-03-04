@@ -1,18 +1,22 @@
 export interface AiModelConfig {
   id: string;
-  intent: string;
-  primaryModel: string;
-  fallbackModels: string[];
+  feature: string;
+  modelId: string;
   description: string;
   isEnabled: boolean;
   safetySettings?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface UpdateAiModelConfigDto {
-  intent: string;
-  primaryModel: string;
-  fallbackModels: string[];
+  feature: string;
+  modelId: string;
   description: string;
   isEnabled: boolean;
   safetySettings?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }

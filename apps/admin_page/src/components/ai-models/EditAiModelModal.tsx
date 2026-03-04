@@ -62,7 +62,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          <div className="p-10 md:p-14 overflow-y-auto custom-scrollbar">
+          <div className="p-10 md:p-14 overflow-y-auto custom-scrollbar pb-32">
             <div className="flex items-center justify-between mb-12 sticky top-0 bg-white/80 backdrop-blur-md z-10 py-2 -mt-2">
               <div className="flex items-center gap-6">
                 <div className="w-20 h-20 bg-linear-to-br from-primary-500 to-primary-700 rounded-3xl shadow-xl shadow-primary-200/50 text-white flex items-center justify-center transition-transform hover:rotate-6 duration-500">
@@ -70,9 +70,9 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 </div>
                 <div>
                   <h2 id="modal-title" className="text-3xl font-black text-brand-900 tracking-tightest">
-                    {editingConfig.id ? 'Edit Policy' : 'Provision Policy'}
+                    {editingConfig.id ? 'Edit Feature' : 'Configure Feature'}
                   </h2>
-                  <p className="text-brand-400 font-bold text-lg">Define orchestrator routing logic.</p>
+                  <p className="text-brand-400 font-bold text-lg">Configure LLM parameters.</p>
                 </div>
               </div>
               <button
@@ -88,20 +88,20 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-8">
                 <div>
-                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Intent Key</label>
+                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Feature Key</label>
                   <input
                     type="text"
                     className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
-                    value={editingConfig.intent}
-                    onChange={(e) => onChange({ ...editingConfig, intent: e.target.value })}
+                    value={editingConfig.feature}
+                    onChange={(e) => onChange({ ...editingConfig, feature: e.target.value })}
                     disabled={!!editingConfig.id}
-                    placeholder="e.g. intelligent_ranking"
+                    placeholder="e.g. quick_summary"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] ml-1">Primary Provider</label>
+                    <label className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] ml-1">Model</label>
                     <select
                       aria-label="Sort models"
                       value={modelSort}
@@ -114,10 +114,10 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                     </select>
                   </div>
                   <select
-                    aria-label="Primary Model"
+                    aria-label="Model"
                     className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono appearance-none cursor-pointer"
-                    value={editingConfig.primaryModel}
-                    onChange={(e) => onChange({ ...editingConfig, primaryModel: e.target.value })}
+                    value={editingConfig.modelId}
+                    onChange={(e) => onChange({ ...editingConfig, modelId: e.target.value })}
                   >
                     <option value="">Select compute node...</option>
                     {sortedModels.map(model => (
@@ -130,34 +130,31 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
               </div>
 
               <div className="space-y-8">
-                <div>
-                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Fallback Stack</label>
-                  <div className="flex gap-3">
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Temperature</label>
                     <input
-                      type="text"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
                       className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono"
-                      value={editingConfig.fallbackModels.join(', ')}
-                      onChange={(e) => onChange({ ...editingConfig, fallbackModels: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
-                      placeholder="node-a, node-b"
+                      value={editingConfig.temperature ?? ''}
+                      onChange={(e) => onChange({ ...editingConfig, temperature: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      placeholder="e.g. 0.7"
                     />
-                    <select
-                      aria-label="Add Fallback Model"
-                      className="w-1/3 px-4 py-5 bg-brand-50 border border-brand-100 rounded-2xl font-black text-brand-900 text-xs outline-none hover:bg-white transition-colors cursor-pointer"
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          if (!editingConfig.fallbackModels.includes(e.target.value)) {
-                            const newFallbacks = [...editingConfig.fallbackModels, e.target.value];
-                            onChange({ ...editingConfig, fallbackModels: newFallbacks });
-                          }
-                          e.target.value = ""; // Reset select
-                        }
-                      }}
-                    >
-                      <option value="">+ ADD</option>
-                      {sortedModels.map(model => (
-                        <option key={model.id} value={model.id}>{model.name}</option>
-                      ))}
-                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Max Tokens</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 font-mono"
+                      value={editingConfig.maxTokens ?? ''}
+                      onChange={(e) => onChange({ ...editingConfig, maxTokens: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                      placeholder="e.g. 2048"
+                    />
                   </div>
                 </div>
 
@@ -171,7 +168,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                         : 'bg-brand-50 border-brand-100 text-brand-300'
                     }`}
                   >
-                    <span className="font-black uppercase tracking-widest">{editingConfig.isEnabled ? 'Active & Routing' : 'Deactivated'}</span>
+                    <span className="font-black uppercase tracking-widest">{editingConfig.isEnabled ? 'Active' : 'Deactivated'}</span>
                     <div className={`p-1 rounded-lg transition-all duration-500 ${editingConfig.isEnabled ? 'bg-success-100 text-success-600' : 'bg-brand-100 text-brand-300'}`}>
                         {editingConfig.isEnabled ? <Check size={20} /> : <X size={20} />}
                     </div>
@@ -181,40 +178,51 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             </div>
 
             <div className="mt-10">
-              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Policy Justification</label>
+              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">System Prompt Override</label>
+              <textarea
+                className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[160px] font-mono text-sm placeholder:text-brand-200"
+                value={editingConfig.systemPrompt || ''}
+                onChange={(e) => onChange({ ...editingConfig, systemPrompt: e.target.value })}
+                placeholder="Optional: Provide a custom system prompt to override the default..."
+              />
+            </div>
+
+            <div className="mt-10">
+              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Configuration Justification</label>
               <textarea
                 className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[120px] placeholder:text-brand-200"
                 value={editingConfig.description}
                 onChange={(e) => onChange({ ...editingConfig, description: e.target.value })}
-                placeholder="Provide context for this routing policy..."
+                placeholder="Provide context for this configuration..."
               />
             </div>
+          </div>
 
-            <div className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-8 sticky bottom-0 bg-white/80 backdrop-blur-md py-4 -mb-4">
-              <div className="flex items-center gap-3 text-warning-600 bg-warning-50 px-5 py-2.5 rounded-full border border-warning-100/50">
-                <AlertCircle size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Immediate Propagation</span>
-              </div>
-              <div className="flex gap-5 w-full sm:w-auto">
-                <Button
-                  onClick={handleCloseAttempt}
-                  variant="ghost"
-                  className="text-brand-400 font-black px-8"
-                  disabled={isSaving}
-                >
-                  Discard
-                </Button>
-                <Button
-                  onClick={onSave}
-                  isLoading={isSaving}
-                  leftIcon={<Save size={20} />}
-                  className="shadow-premium shadow-primary-200/50 px-10"
-                >
-                  Commit Policy
-                </Button>
-              </div>
+          <div className="absolute bottom-0 left-0 right-0 p-10 md:px-14 md:py-8 bg-white/80 backdrop-blur-xl border-t border-brand-100 flex flex-col sm:flex-row items-center justify-between gap-8 z-20">
+            <div className="flex items-center gap-3 text-warning-600 bg-warning-50 px-5 py-2.5 rounded-full border border-warning-100/50">
+              <AlertCircle size={20} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Immediate Propagation</span>
+            </div>
+            <div className="flex gap-5 w-full sm:w-auto">
+              <Button
+                onClick={handleCloseAttempt}
+                variant="ghost"
+                className="text-brand-400 font-black px-8"
+                disabled={isSaving}
+              >
+                Discard
+              </Button>
+              <Button
+                onClick={onSave}
+                isLoading={isSaving}
+                leftIcon={<Save size={20} />}
+                className="shadow-premium shadow-primary-200/50 px-10"
+              >
+                Save Configuration
+              </Button>
             </div>
           </div>
+
         </motion.div>
       </div>
 
@@ -226,7 +234,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
           onClose();
         }}
         title="Discard Changes?"
-        message="You have unsaved modifications to this AI policy. Discarding will permanently lose all current progress."
+        message="You have unsaved modifications to this AI configuration. Discarding will permanently lose all current progress."
         confirmLabel="Discard Changes"
         isDestructive
       />

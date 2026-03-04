@@ -1,5 +1,5 @@
+using Valora.Application.DTOs;
 using System.Net;
-using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -15,32 +15,29 @@ namespace Valora.IntegrationTests;
 public class AiServiceTests : IDisposable
 {
     private readonly WireMockServer _server;
+    private readonly Mock<IAiModelService> _mockAiModelService = new();
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new();
     private readonly IConfiguration _validConfig;
-    private readonly Mock<IAiModelService> _mockAiModelService;
-    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
 
     public AiServiceTests()
     {
         _server = WireMockServer.Start();
 
-        var inMemorySettings = new Dictionary<string, string?> {
-            {"OPENROUTER_API_KEY", "test-key"},
-            {"OPENROUTER_BASE_URL", _server.Url},
-            {"OPENROUTER_SITE_URL", "https://valora.app"},
-            {"OPENROUTER_SITE_NAME", "Valora"}
+        var inMemorySettings = new Dictionary<string, string?>
+        {
+            { "OPENROUTER_API_KEY", "test-key" },
+            { "OPENROUTER_BASE_URL", _server.Url },
+            { "OPENROUTER_SITE_URL", "https://test.com" },
+            { "OPENROUTER_SITE_NAME", "TestApp" }
         };
 
         _validConfig = new ConfigurationBuilder()
             .AddInMemoryCollection(inMemorySettings)
             .Build();
 
-        _mockAiModelService = new Mock<IAiModelService>();
-        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-
-        // Default mock setup
         _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("openrouter/default", new List<string>()));
+            .Setup(x => x.GetModelForFeatureAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("openrouter/default");
 
         // Setup HttpClientFactory to return a client that points to WireMock
         var client = _server.CreateClient();
@@ -48,12 +45,12 @@ public class AiServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ChatAsync_UsesCorrectModelForIntent()
+    public async Task ChatAsync_UsesCorrectModelForFeature()
     {
         // Arrange
         _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("gpt-4o", new List<string>()));
+            .Setup(x => x.GetModelForFeatureAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("gpt-4o");
 
         _server
             .Given(Request.Create().WithPath("/chat/completions").UsingPost())
@@ -76,50 +73,6 @@ public class AiServiceTests : IDisposable
         var request = _server.LogEntries.Last().RequestMessage;
         var body = request.BodyData?.BodyAsString;
         Assert.Contains("gpt-4o", body!);
-    }
-
-    [Fact]
-    public async Task ChatAsync_FallsBack_WhenPrimaryModelFails()
-    {
-        // Arrange
-        _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
-
-        // Primary fails with 500
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*primary-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(500));
-
-        // Fallback succeeds
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*fallback-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithBody(@"{
-                    ""choices"": [{
-                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from fallback"" }
-                    }]
-                }"));
-
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
-
-        // Act
-        var result = await sut.ChatAsync("Hello", null, "chat");
-
-        // Assert
-        Assert.Equal("Response from fallback", result);
-
-        // Verify both models were tried by checking the log entries
-        Assert.Contains(_server.LogEntries, e => e.RequestMessage.BodyData!.BodyAsString!.Contains("primary-model"));
-        Assert.Contains(_server.LogEntries, e => e.RequestMessage.BodyData!.BodyAsString!.Contains("fallback-model"));
     }
 
     [Fact]
@@ -147,47 +100,6 @@ public class AiServiceTests : IDisposable
         // Act & Assert
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
         Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
-    }
-
-    [Fact]
-    public async Task ChatAsync_TriggersFallback_OnEmptyResponse()
-    {
-        // Arrange
-        _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
-
-        // Primary returns empty content
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*primary-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithBody(@"{ ""choices"": [] }")); // SDK might treat this as empty string
-
-        // Fallback succeeds
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*fallback-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithBody(@"{
-                    ""choices"": [{
-                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from fallback"" }
-                    }]
-                }"));
-
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
-
-        // Act
-        var result = await sut.ChatAsync("Hello", null, "chat");
-
-        // Assert
-        Assert.Equal("Response from fallback", result);
     }
 
     [Fact]
@@ -239,26 +151,6 @@ public class AiServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ChatAsync_Throws_After_All_Models_Fail()
-    {
-        // Arrange
-        _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
-
-        // Both fail
-        _server
-            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
-            .RespondWith(Response.Create()
-                .WithStatusCode(500));
-
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
-    }
-
-    [Fact]
     public async Task GetAvailableModelsAsync_ReturnsModels_WhenApiCallSucceeds()
     {
         // Arrange
@@ -292,5 +184,97 @@ public class AiServiceTests : IDisposable
     {
         _server.Stop();
         _server.Dispose();
+    }
+
+    [Fact]
+    public async Task ChatAsync_ThrowsException_WhenResponseIsEmpty()
+    {
+        // Arrange
+        _mockAiModelService
+            .Setup(x => x.GetModelForFeatureAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("gpt-4o");
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{ ""choices"": [] }")); // SDK treats empty choices as no content
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(() => sut.ChatAsync("Hello", null, "chat"));
+        Assert.Contains("AI model failed", ex.Message);
+    }
+
+    [Fact]
+    public async Task ChatAsync_ThrowsHttpRequestException_WhenRateLimited()
+    {
+        // Arrange
+        _mockAiModelService
+            .Setup(x => x.GetModelForFeatureAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("gpt-4o");
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(429)
+                .WithBody("Too Many Requests"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChatAsync_UsesConfiguredLLMParameters()
+    {
+        // Arrange
+        var configDto = new AiModelConfigDto
+        {
+            Id = Guid.NewGuid(),
+            Feature = "test-feature",
+            ModelId = "gpt-4o-custom",
+            IsEnabled = true,
+            SystemPrompt = "Custom System Prompt",
+            Temperature = 0.5,
+            MaxTokens = 100
+        };
+
+        _mockAiModelService
+            .Setup(x => x.GetConfigByFeatureAsync("test-feature", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(configDto);
+
+        _server
+            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(@"{
+                    ""choices"": [{
+                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from custom params"" }
+                    }]
+                }"));
+
+        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
+
+        // Act
+        var result = await sut.ChatAsync("Hello", "Default Prompt", "test-feature");
+
+        // Assert
+        Assert.Equal("Response from custom params", result);
+
+        var request = _server.LogEntries.Last().RequestMessage;
+        var body = request.BodyData?.BodyAsString;
+
+        // Assert that the Custom System Prompt from the DB overrode the "Default Prompt" passed to the method
+        Assert.Contains("Custom System Prompt", body!);
+        Assert.DoesNotContain("Default Prompt", body!);
+
+        // Assert parameters were injected
+        Assert.Contains("\"temperature\":0.5", body!.Replace(" ", ""));
+        Assert.Contains("\"max_completion_tokens\":100", body!.Replace(" ", ""));
+        Assert.Contains("gpt-4o-custom", body!);
     }
 }

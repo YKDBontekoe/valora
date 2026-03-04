@@ -87,62 +87,57 @@ public class OpenRouterAiService : IAiService
         return models;
     }
 
-    public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string intent = "chat", CancellationToken cancellationToken = default)
+    public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string feature = "chat", CancellationToken cancellationToken = default)
     {
-        var (primaryModel, fallbackModels) = await _aiModelService.GetModelsForIntentAsync(intent, cancellationToken);
-        var modelsToTry = new List<string> { primaryModel };
-        if (fallbackModels != null)
+        var config = await _aiModelService.GetConfigByFeatureAsync(feature, cancellationToken);
+        var modelId = config?.IsEnabled == true ? config.ModelId : "openai/gpt-4o-mini"; // Default fallback
+
+        // Override system prompt if configured
+        var finalSystemPrompt = systemPrompt;
+        if (config?.IsEnabled == true && !string.IsNullOrWhiteSpace(config.SystemPrompt))
         {
-            modelsToTry.AddRange(fallbackModels);
+            // Append or replace based on requirements. Replacing is standard if configured globally.
+            finalSystemPrompt = config.SystemPrompt;
         }
 
-        Exception? lastException = null;
-        int attempt = 0;
+        var temperature = config?.Temperature;
+        var maxTokens = config?.MaxTokens;
 
-        foreach (var model in modelsToTry)
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            attempt++;
-            try
-            {
-                var response = await ExecuteChatWithModelAsync(prompt, systemPrompt, model, cancellationToken);
+            var response = await ExecuteChatWithModelAsync(prompt, finalSystemPrompt, modelId, temperature, maxTokens, cancellationToken);
 
-                if (string.IsNullOrWhiteSpace(response))
-                {
-                    throw new Exception($"Model {model} returned empty response.");
-                }
-
-                _logger.LogInformation("AI Chat Success. Intent: {Intent}, Model: {Model}, FallbackAttempt: {IsFallback}",
-                    intent, model, attempt > 1);
-
-                return response;
-            }
-            catch (OperationCanceledException)
+            if (string.IsNullOrWhiteSpace(response))
             {
-                throw;
+                throw new Exception($"Model {modelId} returned empty response.");
             }
-            catch (Exception ex)
-            {
-                lastException = ex;
-                _logger.LogWarning(ex, "Failed to chat with model {Model} for intent {Intent}. Trying next fallback...", model, intent);
-            }
+
+            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", feature.Replace("\r", "").Replace("\n", ""), modelId.Replace("\r", "").Replace("\n", ""));
+
+            return response;
         }
-
-        _logger.LogError(lastException, "All models failed for intent {Intent}.", intent);
-
-        if (lastException is ClientResultException clientEx)
+        catch (OperationCanceledException)
         {
+            throw;
+        }
+        catch (ClientResultException clientEx)
+        {
+            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", feature.Replace("\r", "").Replace("\n", ""), modelId.Replace("\r", "").Replace("\n", ""));
+
             if (clientEx.Status == 429 || clientEx.Status >= 500)
             {
                 throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
             }
             throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
         }
-
-        throw lastException ?? new Exception("All models failed.");
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", modelId.Replace("\r", "").Replace("\n", ""), feature.Replace("\r", "").Replace("\n", ""));
+            throw new Exception("AI model failed.", ex);
+        }
     }
 
-    private async Task<string> ExecuteChatWithModelAsync(string prompt, string? systemPrompt, string model, CancellationToken cancellationToken)
+    private async Task<string> ExecuteChatWithModelAsync(string prompt, string? systemPrompt, string model, double? temperature, int? maxTokens, CancellationToken cancellationToken)
     {
         var options = new OpenAIClientOptions
         {
@@ -168,6 +163,10 @@ public class OpenRouterAiService : IAiService
 
         messages.Add(new UserChatMessage(prompt));
 
+        var chatOptions = new ChatCompletionOptions();
+        if (temperature.HasValue) chatOptions.Temperature = (float)temperature.Value;
+        if (maxTokens.HasValue) chatOptions.MaxOutputTokenCount = maxTokens.Value;
+
         int maxRetries = 1;
         int delayMilliseconds = 1000;
 
@@ -178,7 +177,7 @@ public class OpenRouterAiService : IAiService
             {
                 ChatCompletion completion = await client.CompleteChatAsync(
                     messages,
-                    options: null,
+                    options: chatOptions,
                     cancellationToken
                 );
 
@@ -196,7 +195,7 @@ public class OpenRouterAiService : IAiService
                     throw;
                 }
 
-                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", model, i + 1, ex.Status, delayMilliseconds);
+                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", model.Replace("\r", "").Replace("\n", ""), i + 1, ex.Status, delayMilliseconds);
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 delayMilliseconds *= 2;
             }
