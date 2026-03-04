@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_colors.dart';
 import '../../../core/theme/valora_typography.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/context_report_provider.dart';
 import '../../../models/saved_search.dart';
 
@@ -33,7 +34,9 @@ class SavedSearchesSection extends StatelessWidget {
             children: [
               const ValoraSectionHeader(title: 'Saved Searches'),
               const SizedBox(height: 12),
-              ...savedSearches.map((item) {
+              ...savedSearches.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: ValoraCard(
@@ -51,14 +54,14 @@ class SavedSearchesSection extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: ValoraColors.primary
+                            color: theme.colorScheme.primary
                                 .withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.bookmark_rounded,
                             size: 16,
-                            color: ValoraColors.primary,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -78,9 +81,7 @@ class SavedSearchesSection extends StatelessWidget {
                               Text(
                                 '${item.radiusMeters}m radius • ${_formatDate(item.createdAt)}',
                                 style: ValoraTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? ValoraColors.neutral500
-                                      : ValoraColors.neutral400,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -95,8 +96,8 @@ class SavedSearchesSection extends StatelessWidget {
                                 : Icons.notifications_none_rounded,
                             size: 20,
                             color: item.isAlertEnabled
-                                ? ValoraColors.primary
-                                : ValoraColors.neutral400,
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
                           onPressed: () => provider.toggleSearchAlert(item.id),
                         ),
@@ -106,16 +107,14 @@ class SavedSearchesSection extends StatelessWidget {
                           icon: Icon(
                             Icons.close_rounded,
                             size: 18,
-                            color: isDark
-                                ? ValoraColors.neutral500
-                                : ValoraColors.neutral400,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                           onPressed: () => _confirmRemove(context, provider, item),
                         ),
                       ],
                     ),
                   ),
-                );
+                ).animate().fadeIn(duration: 400.ms, delay: (100 * index).ms).slideX(begin: -0.05);
               }),
             ],
           ),

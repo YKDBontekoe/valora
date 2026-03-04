@@ -56,7 +56,7 @@ class QuickActions extends StatelessWidget {
             SnackBar(
               content: const Text(
                   'Could not resolve an address. Try searching by text.'),
-              backgroundColor: ValoraColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -70,7 +70,7 @@ class QuickActions extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Could not determine location.'),
-            backgroundColor: ValoraColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -129,7 +129,7 @@ class QuickActions extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Could not resolve an address for your location.'),
-              backgroundColor: ValoraColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -142,7 +142,7 @@ class QuickActions extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Could not determine location.'),
-            backgroundColor: ValoraColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -155,7 +155,7 @@ class QuickActions extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
-          backgroundColor: ValoraColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -167,7 +167,7 @@ class QuickActions extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
-          backgroundColor: ValoraColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -179,7 +179,7 @@ class QuickActions extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
-          backgroundColor: ValoraColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -191,7 +191,7 @@ class QuickActions extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Could not determine location.'),
-          backgroundColor: ValoraColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -201,7 +201,9 @@ class QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: [
         ValoraButton(
           label: 'Pick on Map',
@@ -210,7 +212,6 @@ class QuickActions extends StatelessWidget {
           size: ValoraButtonSize.small,
           onPressed: () => _pickLocation(context),
         ),
-        const SizedBox(width: 10),
         ValoraButton(
           label: 'My Location',
           icon: Icons.gps_fixed_rounded,

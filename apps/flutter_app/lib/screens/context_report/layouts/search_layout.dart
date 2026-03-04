@@ -48,21 +48,38 @@ class SearchLayout extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [ValoraColors.primary, ValoraColors.primaryLight],
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.primaryContainer,
+                          ],
                           begin: Alignment.bottomLeft,
                           end: Alignment.topRight,
                         ),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.analytics_rounded,
-                        size: 24,
-                        color: Colors.white,
+                        size: 26,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
-                    ),
+                    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                     .scale(
+                       begin: const Offset(1, 1),
+                       end: const Offset(1.05, 1.05),
+                       duration: 2000.ms,
+                       curve: Curves.easeInOutSine,
+                     ),
                     const SizedBox(width: 14),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,9 +94,7 @@ class SearchLayout extends StatelessWidget {
                         Text(
                           'Neighborhood insights for any Dutch address',
                           style: ValoraTypography.bodySmall.copyWith(
-                            color: isDark
-                                ? ValoraColors.neutral400
-                                : ValoraColors.neutral500,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],

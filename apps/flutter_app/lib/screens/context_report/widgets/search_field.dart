@@ -47,12 +47,38 @@ class SearchField extends StatelessWidget {
         return await pdokService.search(pattern);
       },
       itemBuilder: (context, suggestion) {
-        return ListTile(
-          leading: const Icon(Icons.location_on_outlined, size: 20),
-          title: Text(suggestion.displayName,
-              style: ValoraTypography.bodyMedium),
-          subtitle: Text(suggestion.type,
-              style: ValoraTypography.labelSmall),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.location_on_outlined,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      suggestion.displayName,
+                      style: ValoraTypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      suggestion.type,
+                      style: ValoraTypography.labelSmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
       onSelected: (suggestion) {

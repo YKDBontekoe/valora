@@ -15,6 +15,7 @@ class RadiusSelector extends StatelessWidget {
 
     return ValoraCard(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      onTap: null, // Keep card interactive setup
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -26,9 +27,7 @@ class RadiusSelector extends StatelessWidget {
                   Icon(
                     Icons.radar_rounded,
                     size: 18,
-                    color: isDark
-                        ? ValoraColors.neutral400
-                        : ValoraColors.neutral500,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
                   Text(
