@@ -48,9 +48,10 @@ class ComparisonView extends StatelessWidget {
                   final id = ids[index];
                   final loadedReport = loadedReports[index];
 
-                  final parts = id.split('|');
-                  final query = parts[0];
-                  final radius = int.tryParse(parts[1]) ?? 1000;
+                  final sep = id.lastIndexOf('|');
+                  final query = sep >= 0 ? id.substring(0, sep) : id;
+                  final radiusText = sep >= 0 ? id.substring(sep + 1) : null;
+                  final radius = int.tryParse(radiusText ?? '') ?? 1000;
 
                   if (loadedReport == null) {
                      return SizedBox(
