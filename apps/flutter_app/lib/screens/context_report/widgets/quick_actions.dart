@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../widgets/report/location_picker.dart';
-import '../../../core/theme/valora_colors.dart';
 import '../../../services/pdok_service.dart';
 import '../../../services/location_service.dart';
 import '../../../providers/context_report_provider.dart';

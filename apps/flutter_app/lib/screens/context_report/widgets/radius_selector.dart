@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../widgets/valora_widgets.dart';
-import '../../../core/theme/valora_colors.dart';
 import '../../../core/theme/valora_typography.dart';
 import '../../../providers/context_report_provider.dart';
 
@@ -11,7 +10,6 @@ class RadiusSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return ValoraCard(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),

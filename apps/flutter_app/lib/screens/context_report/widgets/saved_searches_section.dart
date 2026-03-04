@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
-import '../../../core/theme/valora_colors.dart';
 import '../../../core/theme/valora_typography.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/context_report_provider.dart';
@@ -21,7 +20,6 @@ class SavedSearchesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Selector<ContextReportProvider, List<SavedSearch>>(
       selector: (_, p) => p.savedSearches,

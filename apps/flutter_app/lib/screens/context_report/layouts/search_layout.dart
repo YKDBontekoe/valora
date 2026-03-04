@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../widgets/valora_widgets.dart';
-import '../../../core/theme/valora_colors.dart';
 import '../../../core/theme/valora_typography.dart';
 import '../../../services/pdok_service.dart';
 import '../../../providers/context_report_provider.dart';
@@ -26,8 +25,6 @@ class SearchLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return CustomScrollView(
       slivers: [
         // Minimal top spacing for status bar
