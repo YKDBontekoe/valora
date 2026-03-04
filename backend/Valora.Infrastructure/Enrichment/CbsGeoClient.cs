@@ -70,7 +70,8 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
             }
 
-            var results = new List<MapOverlayDto>();
+            var tasks = new List<Task<MapOverlayDto?>>();
+
             foreach (var feature in features.EnumerateArray())
             {
                 if (!feature.TryGetProperty("properties", out var props)) continue;
@@ -79,20 +80,29 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 if (string.IsNullOrEmpty(neighborhoodCode)) continue;
 
                 var neighborhoodName = props.GetStringSafe("buurtnaam") ?? "Unknown";
+                var featureClone = feature.Clone();
 
-                var (metricValue, metricDisplayValue) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
-
-                if (metricValue.HasValue)
+                tasks.Add(Task.Run(async () =>
                 {
-                    results.Add(new MapOverlayDto(
-                        neighborhoodCode,
-                        neighborhoodName,
-                        metric.ToString(),
-                        metricValue.Value,
-                        metricDisplayValue,
-                        feature.Clone()));
-                }
+                    var (metricValue, metricDisplayValue) = await GetMetricValueAsync(neighborhoodCode, metric, cancellationToken);
+
+                    if (metricValue.HasValue)
+                    {
+                        return new MapOverlayDto(
+                            neighborhoodCode,
+                            neighborhoodName,
+                            metric.ToString(),
+                            metricValue.Value,
+                            metricDisplayValue,
+                            featureClone);
+                    }
+
+                    return null;
+                }, cancellationToken));
             }
+
+            var mapOverlays = await Task.WhenAll(tasks);
+            var results = mapOverlays.Where(x => x != null).Select(x => x!).ToList();
 
             _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
             return results;
