@@ -28,16 +28,19 @@ public class NeighborhoodRepository : INeighborhoodRepository
 
     public async Task<List<DatasetStatusDto>> GetDatasetStatusAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Neighborhoods
+        var query = await _context.Neighborhoods
             .AsNoTracking()
             .GroupBy(n => n.City)
-            .Select(g => new DatasetStatusDto(
-                g.Key,
-                g.Count(),
-                g.Max(n => n.LastUpdated)
-            ))
+            .Select(g => new
+            {
+                City = g.Key,
+                Count = g.Count(),
+                LastUpdated = g.Max(n => n.LastUpdated)
+            })
             .OrderBy(d => d.City)
             .ToListAsync(cancellationToken);
+
+        return query.Select(x => new DatasetStatusDto(x.City, x.Count, x.LastUpdated)).ToList();
     }
 
     public async Task<Neighborhood> AddAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default)
