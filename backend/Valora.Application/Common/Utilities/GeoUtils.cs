@@ -192,28 +192,38 @@ public static class GeoUtils
 
     private static bool IsPointInLinearRing(double lat, double lon, List<Coordinate> ring)
     {
-        bool inside = false;
-        int count = ring.Count;
+        bool isInside = false;
+        int vertexCount = ring.Count;
 
-        for (int i = 0, previousPointIndex = count - 1; i < count; previousPointIndex = i++)
+        for (int currentIndex = 0, previousIndex = vertexCount - 1; currentIndex < vertexCount; previousIndex = currentIndex++)
         {
-            double startLon = ring[i].Lon;
-            double startLat = ring[i].Lat;
-            double endLon = ring[previousPointIndex].Lon;
-            double endLat = ring[previousPointIndex].Lat;
+            double startLon = ring[currentIndex].Lon;
+            double startLat = ring[currentIndex].Lat;
+            double endLon = ring[previousIndex].Lon;
+            double endLat = ring[previousIndex].Lat;
 
-            bool isPointBetweenLatitudes = (startLat > lat) != (endLat > lat);
-            bool isPointToTheLeftOfSegment = lon < (endLon - startLon) * (lat - startLat) / (endLat - startLat) + startLon;
-
-            bool doesIntersect = isPointBetweenLatitudes && isPointToTheLeftOfSegment;
-
-            if (doesIntersect)
+            if (RayIntersectsSegment(lat, lon, startLat, startLon, endLat, endLon))
             {
-                inside = !inside;
+                isInside = !isInside;
             }
         }
 
-        return inside;
+        return isInside;
+    }
+
+    private static bool RayIntersectsSegment(double pointLat, double pointLon, double segmentStartLat, double segmentStartLon, double segmentEndLat, double segmentEndLon)
+    {
+        bool isPointBetweenLatitudes = (segmentStartLat > pointLat) != (segmentEndLat > pointLat);
+
+        // If the point is not between the latitudes of the segment, the ray cannot intersect
+        if (!isPointBetweenLatitudes)
+        {
+            return false;
+        }
+
+        bool isPointToTheLeftOfSegment = pointLon < (segmentEndLon - segmentStartLon) * (pointLat - segmentStartLat) / (segmentEndLat - segmentStartLat) + segmentStartLon;
+
+        return isPointToTheLeftOfSegment;
     }
 
     public static void ValidateBoundingBox(double minLat, double minLon, double maxLat, double maxLon, double maxSpan = MaxSpan)
