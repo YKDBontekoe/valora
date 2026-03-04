@@ -34,8 +34,16 @@ class ValoraErrorState extends StatelessWidget {
       icon = Icons.warning_amber_rounded;
       title = 'Invalid Request';
       message = (error as ValidationException).message;
+    } else if (error is JsonParsingException) {
+      icon = Icons.data_object_rounded;
+      title = 'Data Error';
+      message = (error as JsonParsingException).message;
     } else if (error is AppException) {
       message = (error as AppException).message;
+    } else {
+      // Fallback for completely unknown/native errors
+      message = 'An unexpected error occurred. Please try again.';
+      debugPrint('Unhandled error type in ValoraErrorState: ${error.runtimeType}');
     }
 
     return ValoraEmptyState(

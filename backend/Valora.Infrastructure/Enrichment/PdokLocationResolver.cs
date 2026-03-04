@@ -131,6 +131,16 @@ public sealed class PdokLocationResolver : ILocationResolver
             _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.ResolverCacheMinutes));
             return result;
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "PDOK resolve network error for input '{InputHash}'", normalizedInput.GetHashCode());
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "PDOK resolve returned invalid JSON for input '{InputHash}'", normalizedInput.GetHashCode());
+            return null;
+        }
         catch (OperationCanceledException)
         {
             throw;
