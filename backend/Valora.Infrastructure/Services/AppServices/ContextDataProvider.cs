@@ -4,7 +4,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Common;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 /// <summary>
 /// Provides data from multiple external sources for context reports.

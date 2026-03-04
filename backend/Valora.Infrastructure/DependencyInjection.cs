@@ -7,7 +7,8 @@ using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services.AppServices;
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
@@ -84,6 +85,37 @@ public static class DependencyInjection
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+        services.AddScoped<IAuthService, AuthService>();
+
+        services.AddScoped<IAdminService, AdminService>();
+
+        services.AddScoped<INotificationService, NotificationService>();
+
+        services.AddScoped<IContextReportService, ContextReportService>();
+
+        services.AddScoped<IContextAnalysisService, ContextAnalysisService>();
+
+        services.AddScoped<IUserAiProfileService, UserAiProfileService>();
+
+        services.AddScoped<IContextDataProvider, ContextDataProvider>();
+
+        services.AddScoped<IMapService, MapService>();
+
+        services.AddScoped<IBatchJobService, BatchJobService>();
+
+        services.AddScoped<IBatchJobExecutor, BatchJobExecutor>();
+
+        services.AddScoped<IWorkspaceService, WorkspaceService>();
+
+        services.AddScoped<IWorkspaceMemberService, WorkspaceMemberService>();
+
+        services.AddScoped<IWorkspacePropertyService, WorkspacePropertyService>();
+
+        services.AddScoped<IBatchJobProcessor, CityIngestionJobProcessor>();
+
+        services.AddScoped<IBatchJobProcessor, MapGenerationJobProcessor>();
+
+        services.AddScoped<IBatchJobProcessor, AllCitiesIngestionJobProcessor>();
 
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));

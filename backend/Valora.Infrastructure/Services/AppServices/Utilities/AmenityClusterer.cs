@@ -1,6 +1,6 @@
 using Valora.Application.DTOs.Map;
 
-namespace Valora.Application.Services.Utilities;
+namespace Valora.Infrastructure.Services.AppServices.Utilities;
 
 public static class AmenityClusterer
 {

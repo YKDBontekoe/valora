@@ -6,7 +6,7 @@ using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class BatchJobService : IBatchJobService
 {

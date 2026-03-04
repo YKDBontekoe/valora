@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Valora.Application.Services;
 using Valora.Domain.Enums;
+using Valora.Application.Common.Interfaces;
 
 namespace Valora.Api.Endpoints;
 

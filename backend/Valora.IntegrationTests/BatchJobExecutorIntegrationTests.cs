@@ -8,8 +8,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Shouldly;
 using Valora.Application.Common.Events;
+
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Xunit;
