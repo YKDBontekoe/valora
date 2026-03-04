@@ -135,4 +135,109 @@ describe('AiModels Page', () => {
         expect(screen.queryByText('Edit Policy')).not.toBeInTheDocument();
     });
   });
+  it('filters models by intent', async () => {
+    const configs = [
+      { id: '1', intent: 'intent-alpha', primaryModel: 'model-a', fallbackModels: [], isEnabled: true, description: '' },
+      { id: '2', intent: 'intent-beta', primaryModel: 'model-b', fallbackModels: [], isEnabled: true, description: '' }
+    ];
+    (aiService.getConfigs as Mock).mockResolvedValue(configs);
+
+    render(<MemoryRouter><AiModels /></MemoryRouter>);
+    await waitFor(() => screen.getByText('intent-alpha'));
+
+    const searchInput = screen.getByPlaceholderText(/Search routing configurations/i);
+    fireEvent.change(searchInput, { target: { value: 'alpha' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('intent-alpha')).toBeInTheDocument();
+      expect(screen.queryByText('intent-beta')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows empty state during search', async () => {
+    const configs = [
+      { id: '1', intent: 'intent-alpha', primaryModel: 'model-a', fallbackModels: [], isEnabled: true, description: '' }
+    ];
+    (aiService.getConfigs as Mock).mockResolvedValue(configs);
+
+    render(<MemoryRouter><AiModels /></MemoryRouter>);
+    await waitFor(() => screen.getByText('intent-alpha'));
+
+    const searchInput = screen.getByPlaceholderText(/Search routing configurations/i);
+    fireEvent.change(searchInput, { target: { value: 'not-found' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('No routing configurations found')).toBeInTheDocument();
+    });
+  });
+
+  it('sorts models by intent', async () => {
+    const configs = [
+      { id: '2', intent: 'intent-b', primaryModel: 'model-b', fallbackModels: [], isEnabled: true, description: '' },
+      { id: '1', intent: 'intent-a', primaryModel: 'model-a', fallbackModels: [], isEnabled: true, description: '' }
+    ];
+    (aiService.getConfigs as Mock).mockResolvedValue(configs);
+
+    render(<MemoryRouter><AiModels /></MemoryRouter>);
+    await waitFor(() => screen.getByText('intent-b'));
+
+    const sortButton = screen.getByRole('button', { name: /Intent Key/i });
+
+    // Sort Ascending
+    fireEvent.click(sortButton);
+    await waitFor(() => {
+      const rows = screen.getAllByRole('row');
+      expect(rows[1]).toHaveTextContent('intent-a');
+      expect(rows[2]).toHaveTextContent('intent-b');
+    });
+
+    // Sort Descending
+    fireEvent.click(sortButton);
+    await waitFor(() => {
+      const rows = screen.getAllByRole('row');
+      expect(rows[1]).toHaveTextContent('intent-b');
+      expect(rows[2]).toHaveTextContent('intent-a');
+    });
+  });
+
+  it('paginates models correctly', async () => {
+    // Generate 15 items to test pagination
+    const configs = Array.from({ length: 15 }, (_, i) => ({
+      id: `${i}`,
+      intent: `intent-${i.toString().padStart(2, '0')}`,
+      primaryModel: 'model-x',
+      fallbackModels: [],
+      isEnabled: true,
+      description: ''
+    }));
+    (aiService.getConfigs as Mock).mockResolvedValue(configs);
+
+    render(<MemoryRouter><AiModels /></MemoryRouter>);
+
+    // Check first page
+    await waitFor(() => {
+      expect(screen.getByText('intent-00')).toBeInTheDocument();
+      expect(screen.queryByText('intent-10')).not.toBeInTheDocument();
+    });
+
+    // Go to second page
+    const nextButton = screen.getByRole('button', { name: /Next/i });
+    fireEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('intent-00')).not.toBeInTheDocument();
+      expect(screen.getByText('intent-10')).toBeInTheDocument();
+      expect(screen.getByText('intent-14')).toBeInTheDocument();
+      expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+    });
+
+    // Go to previous page
+    const prevButton = screen.getByRole('button', { name: /Previous/i });
+    fireEvent.click(prevButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('intent-00')).toBeInTheDocument();
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    });
+  });
 });
