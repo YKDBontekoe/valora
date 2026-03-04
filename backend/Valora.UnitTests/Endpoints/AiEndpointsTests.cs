@@ -289,4 +289,34 @@ public class AiEndpointsTests
         var okResult = Assert.IsType<Ok<AiModelConfigDto>>(result);
         Assert.Equal("new", okResult.Value!.Feature);
     }
+
+    [Fact]
+    public async Task Chat_ReturnsProblem499_WhenOperationCanceled()
+    {
+        // Arrange
+        var request = new AiChatRequest { Prompt = "test", Feature = "chat" };
+        _mockContextAnalysisService
+            .Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        var handler = async (AiChatRequest req, IContextAnalysisService service, ILogger<AiChatRequest> log, CancellationToken ct) =>
+        {
+            try
+            {
+                await service.ChatAsync(req.Prompt, req.Feature, ct);
+                return Results.Ok();
+            }
+            catch (OperationCanceledException)
+            {
+                return Results.Problem(detail: "Request was cancelled", statusCode: 499);
+            }
+        };
+
+        // Act
+        var result = await handler(request, _mockContextAnalysisService.Object, _mockLogger.Object, CancellationToken.None);
+
+        // Assert
+        var problemResult = Assert.IsType<ProblemHttpResult>(result);
+        Assert.Equal(499, problemResult.StatusCode);
+    }
 }
