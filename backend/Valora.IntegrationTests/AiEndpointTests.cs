@@ -62,8 +62,8 @@ public class AiEndpointTests
     {
         // Arrange
         await AuthenticateAsync();
-        // Updated to use Intent
-        var request = new AiChatRequest { Prompt = "Hello", Intent = "chat" };
+        // Updated to use Feature
+        var request = new AiChatRequest { Prompt = "Hello", Feature = "chat" };
 
         // Fix: Verify system prompt starts with expected prompt (it might be augmented with user profile)
         _mockAiService
@@ -255,7 +255,7 @@ public class AiEndpointTests
     {
         // Arrange
         await AuthenticateAsync();
-        var request = new AiChatRequest { Prompt = "", Intent = "chat" };
+        var request = new AiChatRequest { Prompt = "", Feature = "chat" };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/ai/chat", request);

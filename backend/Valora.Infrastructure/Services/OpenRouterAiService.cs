@@ -87,59 +87,42 @@ public class OpenRouterAiService : IAiService
         return models;
     }
 
-    public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string intent = "chat", CancellationToken cancellationToken = default)
+    public async Task<string> ChatAsync(string prompt, string? systemPrompt = null, string feature = "chat", CancellationToken cancellationToken = default)
     {
-        var (primaryModel, fallbackModels) = await _aiModelService.GetModelsForIntentAsync(intent, cancellationToken);
-        var modelsToTry = new List<string> { primaryModel };
-        if (fallbackModels != null)
+        var model = await _aiModelService.GetModelForFeatureAsync(feature, cancellationToken);
+
+        try
         {
-            modelsToTry.AddRange(fallbackModels);
+            var response = await ExecuteChatWithModelAsync(prompt, systemPrompt, model, cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                throw new Exception($"Model {model} returned empty response.");
+            }
+
+            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", feature, model);
+
+            return response;
         }
-
-        Exception? lastException = null;
-        int attempt = 0;
-
-        foreach (var model in modelsToTry)
+        catch (OperationCanceledException)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            attempt++;
-            try
-            {
-                var response = await ExecuteChatWithModelAsync(prompt, systemPrompt, model, cancellationToken);
-
-                if (string.IsNullOrWhiteSpace(response))
-                {
-                    throw new Exception($"Model {model} returned empty response.");
-                }
-
-                _logger.LogInformation("AI Chat Success. Intent: {Intent}, Model: {Model}, FallbackAttempt: {IsFallback}",
-                    intent, model, attempt > 1);
-
-                return response;
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                lastException = ex;
-                _logger.LogWarning(ex, "Failed to chat with model {Model} for intent {Intent}. Trying next fallback...", model, intent);
-            }
+            throw;
         }
-
-        _logger.LogError(lastException, "All models failed for intent {Intent}.", intent);
-
-        if (lastException is ClientResultException clientEx)
+        catch (ClientResultException clientEx)
         {
+            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", feature, model);
+
             if (clientEx.Status == 429 || clientEx.Status >= 500)
             {
                 throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
             }
             throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
         }
-
-        throw lastException ?? new Exception("All models failed.");
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", model, feature);
+            throw new Exception("AI model failed.", ex);
+        }
     }
 
     private async Task<string> ExecuteChatWithModelAsync(string prompt, string? systemPrompt, string model, CancellationToken cancellationToken)

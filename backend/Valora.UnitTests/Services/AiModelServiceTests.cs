@@ -43,59 +43,53 @@ public class AiModelServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetModelsForIntent_ReturnsConfiguredModel_WhenExists()
+    public async Task GetModelForFeature_ReturnsConfiguredModel_WhenExists()
     {
         var config = new AiModelConfig
         {
-            Intent = "chat",
-            PrimaryModel = "configured-model",
-            FallbackModels = new List<string> { "fallback-1" },
+            Feature = "chat",
+            ModelId = "configured-model",
             IsEnabled = true
         };
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync();
 
-        var (primary, fallbacks) = await _service.GetModelsForIntentAsync("chat");
+        var model = await _service.GetModelForFeatureAsync("chat");
 
-        Assert.Equal("configured-model", primary);
-        Assert.Single(fallbacks);
-        Assert.Equal("fallback-1", fallbacks[0]);
+        Assert.Equal("configured-model", model);
     }
 
     [Fact]
-    public async Task GetModelsForIntent_ReturnsDefaultModel_WhenNotExists()
+    public async Task GetModelForFeature_ReturnsDefaultModel_WhenNotExists()
     {
-        var (primary, fallbacks) = await _service.GetModelsForIntentAsync("chat");
+        var model = await _service.GetModelForFeatureAsync("chat");
 
-        Assert.Equal("openai/gpt-4o-mini", primary);
-        Assert.Empty(fallbacks);
+        Assert.Equal("openai/gpt-4o-mini", model);
     }
 
     [Fact]
-    public async Task GetModelsForIntent_ReturnsDefaultModel_WhenDisabled()
+    public async Task GetModelForFeature_ReturnsDefaultModel_WhenDisabled()
     {
         var config = new AiModelConfig
         {
-            Intent = "chat",
-            PrimaryModel = "configured-model",
+            Feature = "chat",
+            ModelId = "configured-model",
             IsEnabled = false
         };
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync();
 
-        var (primary, fallbacks) = await _service.GetModelsForIntentAsync("chat");
+        var model = await _service.GetModelForFeatureAsync("chat");
 
-        Assert.Equal("openai/gpt-4o-mini", primary);
-        Assert.Empty(fallbacks);
+        Assert.Equal("openai/gpt-4o-mini", model);
     }
 
     [Fact]
-    public async Task GetModelsForIntent_ReturnsFallback_ForUnknownIntent()
+    public async Task GetModelForFeature_ReturnsFallback_ForUnknownFeature()
     {
-        var (primary, fallbacks) = await _service.GetModelsForIntentAsync("unknown_intent");
+        var model = await _service.GetModelForFeatureAsync("unknown_feature");
 
-        Assert.Equal("openai/gpt-4o-mini", primary); // Hardcoded fallback in service
-        Assert.Empty(fallbacks);
+        Assert.Equal("openai/gpt-4o-mini", model); // Hardcoded fallback in service
     }
 
     [Fact]
@@ -103,18 +97,17 @@ public class AiModelServiceTests : IDisposable
     {
         var configDto = new AiModelConfigDto
         {
-            Intent = "new-intent",
-            PrimaryModel = "new-model",
-            FallbackModels = new List<string>(),
+            Feature = "new-feature",
+            ModelId = "new-model",
             IsEnabled = true
         };
 
         var result = await _service.CreateConfigAsync(configDto);
 
         Assert.NotNull(result);
-        Assert.Equal("new-intent", result.Intent);
+        Assert.Equal("new-feature", result.Feature);
 
-        var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == "new-intent");
+        var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == "new-feature");
         Assert.NotNull(dbConfig);
     }
 
@@ -123,9 +116,8 @@ public class AiModelServiceTests : IDisposable
     {
         var config = new AiModelConfig
         {
-            Intent = "update-intent",
-            PrimaryModel = "old-model",
-            FallbackModels = new List<string>(),
+            Feature = "update-feature",
+            ModelId = "old-model",
             IsEnabled = true
         };
         _context.AiModelConfigs.Add(config);
@@ -134,21 +126,20 @@ public class AiModelServiceTests : IDisposable
         var configDto = new AiModelConfigDto
         {
             Id = config.Id,
-            Intent = "update-intent",
-            PrimaryModel = "updated-model",
-            FallbackModels = new List<string>(),
+            Feature = "update-feature",
+            ModelId = "updated-model",
             IsEnabled = true
         };
 
         var result = await _service.UpdateConfigAsync(configDto);
 
         Assert.NotNull(result);
-        Assert.Equal("updated-model", result.PrimaryModel);
+        Assert.Equal("updated-model", result.ModelId);
         Assert.Equal(config.Id, result.Id);
-        Assert.Equal("update-intent", result.Intent);
+        Assert.Equal("update-feature", result.Feature);
 
-        var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == "update-intent");
-        Assert.Equal("updated-model", dbConfig!.PrimaryModel);
+        var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == "update-feature");
+        Assert.Equal("updated-model", dbConfig!.ModelId);
     }
 
     [Fact]
@@ -156,9 +147,8 @@ public class AiModelServiceTests : IDisposable
     {
         var config = new AiModelConfig
         {
-            Intent = "delete-intent",
-            PrimaryModel = "model",
-            FallbackModels = new List<string>(),
+            Feature = "delete-feature",
+            ModelId = "model",
             IsEnabled = true
         };
         _context.AiModelConfigs.Add(config);
@@ -166,15 +156,15 @@ public class AiModelServiceTests : IDisposable
 
         await _service.DeleteConfigAsync(config.Id);
 
-        var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == "delete-intent");
+        var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == "delete-feature");
         Assert.Null(dbConfig);
     }
 
     [Fact]
     public async Task GetAllConfigsAsync_ReturnsAllConfigs()
     {
-        _context.AiModelConfigs.Add(new AiModelConfig { Intent = "intent1", PrimaryModel = "m1" });
-        _context.AiModelConfigs.Add(new AiModelConfig { Intent = "intent2", PrimaryModel = "m2" });
+        _context.AiModelConfigs.Add(new AiModelConfig { Feature = "feature1", ModelId = "m1" });
+        _context.AiModelConfigs.Add(new AiModelConfig { Feature = "feature2", ModelId = "m2" });
         await _context.SaveChangesAsync();
 
         var configs = await _service.GetAllConfigsAsync();

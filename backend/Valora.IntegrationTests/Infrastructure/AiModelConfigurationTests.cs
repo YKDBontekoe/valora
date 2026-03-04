@@ -15,7 +15,7 @@ public class AiModelConfigurationTests : BaseTestcontainersIntegrationTest
     }
 
     [Fact]
-    public async Task AddConfig_ShouldFail_WhenIntentHasInvalidCharacters()
+    public async Task AddConfig_ShouldFail_WhenFeatureHasInvalidCharacters()
     {
         // Skip if running in memory fallback, as Check Constraints are not supported by EF Core InMemory
         // We can check if the provider is InMemory by looking at the DbContext options
@@ -26,8 +26,8 @@ public class AiModelConfigurationTests : BaseTestcontainersIntegrationTest
 
         var config = new AiModelConfig
         {
-            Intent = "invalid-intent!",
-            PrimaryModel = "gpt-4",
+            Feature = "invalid-feature!",
+            ModelId = "gpt-4",
             Description = "Test"
         };
 
@@ -39,14 +39,14 @@ public class AiModelConfigurationTests : BaseTestcontainersIntegrationTest
     }
 
     [Fact]
-    public async Task AddConfig_ShouldPass_WhenIntentIsValid()
+    public async Task AddConfig_ShouldPass_WhenFeatureIsValid()
     {
         // Arrange
-        var intent = $"valid_intent_{Guid.NewGuid():N}";
+        var feature = $"valid_feature_{Guid.NewGuid():N}";
         var config = new AiModelConfig
         {
-            Intent = intent,
-            PrimaryModel = "gpt-4",
+            Feature = feature,
+            ModelId = "gpt-4",
             Description = "Test"
         };
 
@@ -55,7 +55,7 @@ public class AiModelConfigurationTests : BaseTestcontainersIntegrationTest
         await DbContext.SaveChangesAsync();
 
         // Assert
-        var saved = await DbContext.AiModelConfigs.FirstOrDefaultAsync(c => c.Intent == intent);
+        var saved = await DbContext.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == feature);
         Assert.NotNull(saved);
     }
 }

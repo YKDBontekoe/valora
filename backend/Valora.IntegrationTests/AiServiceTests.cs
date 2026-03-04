@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -15,32 +14,29 @@ namespace Valora.IntegrationTests;
 public class AiServiceTests : IDisposable
 {
     private readonly WireMockServer _server;
+    private readonly Mock<IAiModelService> _mockAiModelService = new();
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new();
     private readonly IConfiguration _validConfig;
-    private readonly Mock<IAiModelService> _mockAiModelService;
-    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
 
     public AiServiceTests()
     {
         _server = WireMockServer.Start();
 
-        var inMemorySettings = new Dictionary<string, string?> {
-            {"OPENROUTER_API_KEY", "test-key"},
-            {"OPENROUTER_BASE_URL", _server.Url},
-            {"OPENROUTER_SITE_URL", "https://valora.app"},
-            {"OPENROUTER_SITE_NAME", "Valora"}
+        var inMemorySettings = new Dictionary<string, string?>
+        {
+            { "OPENROUTER_API_KEY", "test-key" },
+            { "OPENROUTER_BASE_URL", _server.Url },
+            { "OPENROUTER_SITE_URL", "https://test.com" },
+            { "OPENROUTER_SITE_NAME", "TestApp" }
         };
 
         _validConfig = new ConfigurationBuilder()
             .AddInMemoryCollection(inMemorySettings)
             .Build();
 
-        _mockAiModelService = new Mock<IAiModelService>();
-        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-
-        // Default mock setup
         _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("openrouter/default", new List<string>()));
+            .Setup(x => x.GetModelForFeatureAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("openrouter/default");
 
         // Setup HttpClientFactory to return a client that points to WireMock
         var client = _server.CreateClient();
@@ -48,12 +44,12 @@ public class AiServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ChatAsync_UsesCorrectModelForIntent()
+    public async Task ChatAsync_UsesCorrectModelForFeature()
     {
         // Arrange
         _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("gpt-4o", new List<string>()));
+            .Setup(x => x.GetModelForFeatureAsync("chat", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("gpt-4o");
 
         _server
             .Given(Request.Create().WithPath("/chat/completions").UsingPost())
@@ -76,50 +72,6 @@ public class AiServiceTests : IDisposable
         var request = _server.LogEntries.Last().RequestMessage;
         var body = request.BodyData?.BodyAsString;
         Assert.Contains("gpt-4o", body!);
-    }
-
-    [Fact]
-    public async Task ChatAsync_FallsBack_WhenPrimaryModelFails()
-    {
-        // Arrange
-        _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
-
-        // Primary fails with 500
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*primary-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(500));
-
-        // Fallback succeeds
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*fallback-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithBody(@"{
-                    ""choices"": [{
-                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from fallback"" }
-                    }]
-                }"));
-
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
-
-        // Act
-        var result = await sut.ChatAsync("Hello", null, "chat");
-
-        // Assert
-        Assert.Equal("Response from fallback", result);
-
-        // Verify both models were tried by checking the log entries
-        Assert.Contains(_server.LogEntries, e => e.RequestMessage.BodyData!.BodyAsString!.Contains("primary-model"));
-        Assert.Contains(_server.LogEntries, e => e.RequestMessage.BodyData!.BodyAsString!.Contains("fallback-model"));
     }
 
     [Fact]
@@ -147,47 +99,6 @@ public class AiServiceTests : IDisposable
         // Act & Assert
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
         Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
-    }
-
-    [Fact]
-    public async Task ChatAsync_TriggersFallback_OnEmptyResponse()
-    {
-        // Arrange
-        _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
-
-        // Primary returns empty content
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*primary-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithBody(@"{ ""choices"": [] }")); // SDK might treat this as empty string
-
-        // Fallback succeeds
-        _server
-            .Given(Request.Create()
-                .WithPath("/chat/completions")
-                .UsingPost()
-                .WithBody(new WireMock.Matchers.WildcardMatcher("*fallback-model*")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithBody(@"{
-                    ""choices"": [{
-                        ""message"": { ""role"": ""assistant"", ""content"": ""Response from fallback"" }
-                    }]
-                }"));
-
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
-
-        // Act
-        var result = await sut.ChatAsync("Hello", null, "chat");
-
-        // Assert
-        Assert.Equal("Response from fallback", result);
     }
 
     [Fact]
@@ -236,26 +147,6 @@ public class AiServiceTests : IDisposable
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => new OpenRouterAiService(config, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object));
-    }
-
-    [Fact]
-    public async Task ChatAsync_Throws_After_All_Models_Fail()
-    {
-        // Arrange
-        _mockAiModelService
-            .Setup(x => x.GetModelsForIntentAsync("chat", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("primary-model", new List<string> { "fallback-model" }));
-
-        // Both fail
-        _server
-            .Given(Request.Create().WithPath("/chat/completions").UsingPost())
-            .RespondWith(Response.Create()
-                .WithStatusCode(500));
-
-        var sut = new OpenRouterAiService(_validConfig, NullLogger<OpenRouterAiService>.Instance, _mockAiModelService.Object, _mockHttpClientFactory.Object);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => sut.ChatAsync("Hello", null, "chat"));
     }
 
     [Fact]

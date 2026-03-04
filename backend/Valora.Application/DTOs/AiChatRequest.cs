@@ -10,9 +10,9 @@ public class AiChatRequest
     [RegularExpression(@".*\S.*", ErrorMessage = "Prompt must contain at least one non-whitespace character.")]
     public string Prompt { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Intent is required.")]
+    [Required(ErrorMessage = "Feature is required.")]
     [StringLength(50)]
-    // Allow alphanumeric and underscores for flexible intents managed via Admin UI
-    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Intent must only contain letters, numbers, and underscores.")]
-    public string Intent { get; set; } = "chat";
+    // Allow alphanumeric and underscores for flexible features managed via Admin UI
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Feature must only contain letters, numbers, and underscores.")]
+    public string Feature { get; set; } = "chat";
 }

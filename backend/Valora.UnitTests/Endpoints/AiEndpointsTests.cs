@@ -24,7 +24,7 @@ public class AiEndpointsTests
     public async Task GetConfigs_ReturnsOk_WithConfigs()
     {
         // Arrange
-        var configs = new List<AiModelConfigDto> { new() { Intent = "test" } };
+        var configs = new List<AiModelConfigDto> { new() { Feature = "test" } };
         _mockAiModelService.Setup(x => x.GetAllConfigsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(configs);
 
@@ -44,40 +44,39 @@ public class AiEndpointsTests
     }
 
     [Fact]
-    public async Task UpdateConfig_ReturnsBadRequest_WhenIntentMismatch()
+    public async Task UpdateConfig_ReturnsBadRequest_WhenFeatureMismatch()
     {
-        var handler = async (string intent, UpdateAiModelConfigDto dto, IAiModelService service, CancellationToken ct) =>
+        var handler = async (string feature, UpdateAiModelConfigDto dto, IAiModelService service, CancellationToken ct) =>
         {
-            if (intent != dto.Intent) return Results.BadRequest("Intent mismatch");
+            if (feature != dto.Feature) return Results.BadRequest("Feature mismatch");
             return Results.Ok();
         };
 
-        var result = await handler("intent1", new UpdateAiModelConfigDto { Intent = "intent2" }, _mockAiModelService.Object, CancellationToken.None);
+        var result = await handler("feature1", new UpdateAiModelConfigDto { Feature = "feature2" }, _mockAiModelService.Object, CancellationToken.None);
 
         var badRequest = Assert.IsType<BadRequest<string>>(result);
-        Assert.Equal("Intent mismatch", badRequest.Value);
+        Assert.Equal("Feature mismatch", badRequest.Value);
     }
 
     [Fact]
     public async Task UpdateConfig_CreatesNewConfig_WhenNotFound()
     {
         // Arrange
-        _mockAiModelService.Setup(x => x.GetConfigByIntentAsync("new", It.IsAny<CancellationToken>()))
+        _mockAiModelService.Setup(x => x.GetConfigByFeatureAsync("new", It.IsAny<CancellationToken>()))
             .ReturnsAsync((AiModelConfigDto?)null);
 
-        var dto = new UpdateAiModelConfigDto { Intent = "new", PrimaryModel = "model", IsEnabled = true };
+        var dto = new UpdateAiModelConfigDto { Feature = "new", ModelId = "model", IsEnabled = true };
 
-        var handler = async (string intent, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
+        var handler = async (string feature, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
         {
-            if (intent != d.Intent) return Results.BadRequest("Intent mismatch");
-            var config = await service.GetConfigByIntentAsync(intent, ct);
+            if (feature != d.Feature) return Results.BadRequest("Feature mismatch");
+            var config = await service.GetConfigByFeatureAsync(feature, ct);
             if (config == null)
             {
                 var newConfig = new AiModelConfigDto
                 {
-                    Intent = d.Intent,
-                    PrimaryModel = d.PrimaryModel,
-                    FallbackModels = d.FallbackModels,
+                    Feature = d.Feature,
+                    ModelId = d.ModelId,
                     Description = d.Description,
                     IsEnabled = d.IsEnabled,
                     SafetySettings = d.SafetySettings
@@ -93,7 +92,7 @@ public class AiEndpointsTests
 
         // Assert
         var okResult = Assert.IsType<Ok<AiModelConfigDto>>(result);
-        Assert.Equal("new", okResult.Value!.Intent);
+        Assert.Equal("new", okResult.Value!.Feature);
         _mockAiModelService.Verify(x => x.CreateConfigAsync(It.IsAny<AiModelConfigDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -101,19 +100,19 @@ public class AiEndpointsTests
     public async Task UpdateConfig_UpdatesExisting_WhenFound()
     {
         // Arrange
-        var existing = new AiModelConfigDto { Intent = "exist", PrimaryModel = "old" };
-        _mockAiModelService.Setup(x => x.GetConfigByIntentAsync("exist", It.IsAny<CancellationToken>()))
+        var existing = new AiModelConfigDto { Feature = "exist", ModelId = "old" };
+        _mockAiModelService.Setup(x => x.GetConfigByFeatureAsync("exist", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
-        var dto = new UpdateAiModelConfigDto { Intent = "exist", PrimaryModel = "new", IsEnabled = true };
+        var dto = new UpdateAiModelConfigDto { Feature = "exist", ModelId = "new", IsEnabled = true };
 
-        var handler = async (string intent, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
+        var handler = async (string feature, UpdateAiModelConfigDto d, IAiModelService service, CancellationToken ct) =>
         {
-            if (intent != d.Intent) return Results.BadRequest("Intent mismatch");
-            var config = await service.GetConfigByIntentAsync(intent, ct);
+            if (feature != d.Feature) return Results.BadRequest("Feature mismatch");
+            var config = await service.GetConfigByFeatureAsync(feature, ct);
             if (config != null)
             {
-                config.PrimaryModel = d.PrimaryModel;
+                config.ModelId = d.ModelId;
                 await service.UpdateConfigAsync(config, ct);
                 return Results.Ok(config);
             }
@@ -125,7 +124,7 @@ public class AiEndpointsTests
 
         // Assert
         var okResult = Assert.IsType<Ok<AiModelConfigDto>>(result);
-        Assert.Equal("new", okResult.Value!.PrimaryModel);
+        Assert.Equal("new", okResult.Value!.ModelId);
         _mockAiModelService.Verify(x => x.UpdateConfigAsync(It.IsAny<AiModelConfigDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -133,7 +132,7 @@ public class AiEndpointsTests
     public async Task Chat_ReturnsResponse_WhenSuccessful()
     {
         // Arrange
-        var request = new AiChatRequest { Prompt = "test", Intent = "chat" };
+        var request = new AiChatRequest { Prompt = "test", Feature = "chat" };
         _mockContextAnalysisService
             .Setup(x => x.ChatAsync("test", "chat", It.IsAny<CancellationToken>()))
             .ReturnsAsync("response");
@@ -142,7 +141,7 @@ public class AiEndpointsTests
         {
             try
             {
-                var response = await service.ChatAsync(req.Prompt, req.Intent, ct);
+                var response = await service.ChatAsync(req.Prompt, req.Feature, ct);
                 return Results.Ok(new { response });
             }
             catch (Exception)
@@ -163,7 +162,7 @@ public class AiEndpointsTests
     public async Task Chat_ReturnsProblem_WhenExceptionOccurs()
     {
         // Arrange
-        var request = new AiChatRequest { Prompt = "test", Intent = "chat" };
+        var request = new AiChatRequest { Prompt = "test", Feature = "chat" };
         _mockContextAnalysisService
             .Setup(x => x.ChatAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("error"));
@@ -172,7 +171,7 @@ public class AiEndpointsTests
         {
             try
             {
-                var response = await service.ChatAsync(req.Prompt, req.Intent, ct);
+                var response = await service.ChatAsync(req.Prompt, req.Feature, ct);
                 return Results.Ok(new { response });
             }
             catch (Exception ex)
