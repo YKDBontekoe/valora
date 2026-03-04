@@ -63,7 +63,8 @@ const AiModels: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const { _clientId, ...dto } = editingConfig as AiModelConfig & { _clientId?: string };
+      const dto = { ...editingConfig } as AiModelConfig & { _clientId?: string };
+      delete dto._clientId;
       const trimmedFeature = dto.feature.trim();
       dto.feature = trimmedFeature;
 
