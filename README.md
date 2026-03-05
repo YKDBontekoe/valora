@@ -279,6 +279,8 @@ The API provides core functionalities to access and manage Valora's context data
     - Walkthrough of the data flow from API request down to database persistence (e.g., User Registration).
 - **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-guide.md)** (Includes Mermaid Diagram):
     - Comprehensive guide tracing the exact path a write request takes in Valora, passing through Clean Architecture to PostgreSQL.
+- **[Data Flow: Map & Rasterization](docs/onboarding-map-flow.md)** (Includes Mermaid Diagram):
+    - Details the server-side spatial indexing and map overlay tile generation, explaining why data is clustered instead of sent as raw vectors.
 - **[Data Flow: Batch Jobs](docs/onboarding-batch-job-flow.md)**:
     - Explains background processing (City Ingestion).
 - **[Data Flow: AI Chat](docs/onboarding-ai-chat-flow.md)**:
