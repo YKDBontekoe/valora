@@ -279,9 +279,15 @@ Update the current user's AI personalization profile.
   "householdProfile": "Couple, 30s, working from home.",
   "disallowedSuggestions": ["Apartments on busy streets", "Houses without a garden"],
   "isEnabled": true,
-  "isSessionOnlyMode": false
+  "isSessionOnlyMode": false,
+  "version": 1
 }
 ```
+
+### Delete User AI Profile
+`DELETE /api/user/ai-profile`
+
+Permanently remove the current user's AI personalization profile.
 
 ### Export User AI Profile
 `GET /api/user/ai-profile/export`
