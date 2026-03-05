@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_spacing.dart';
 
 /// A premium glassmorphism container with backdrop blur and subtle borders.
 ///

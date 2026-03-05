@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../core/exceptions/app_exceptions.dart';
-import 'valora_widgets.dart';
+import '../../core/exceptions/app_exceptions.dart';
+import '../valora_widgets.dart';
 
 class ValoraErrorState extends StatelessWidget {
   final Object error;

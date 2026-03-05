@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_typography.dart';
-import '../core/theme/valora_spacing.dart';
-import '../models/saved_property.dart';
-import '../models/comment.dart';
-import '../providers/workspace_provider.dart';
-import '../widgets/valora_widgets.dart';
-import '../widgets/workspaces/comment_thread_widget.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../models/saved_property.dart';
+import '../../models/comment.dart';
+import '../../providers/workspace_provider.dart';
+import '../../widgets/valora_widgets.dart';
+import '../../widgets/workspaces/comment_thread_widget.dart';
 
 class SavedListingDetailScreen extends StatefulWidget {
   final SavedProperty savedListing;

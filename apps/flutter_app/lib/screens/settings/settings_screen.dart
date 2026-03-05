@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'workspace_list_screen.dart';
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_typography.dart';
-import '../core/theme/valora_spacing.dart';
-import '../providers/theme_provider.dart';
-import '../providers/auth_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../widgets/valora_widgets.dart';
+import '../workspaces/workspace_list_screen.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/workspace_provider.dart';
+import '../../widgets/valora_widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../models/context_report.dart';
 import '../../providers/context_report_provider.dart';
-import '../valora_glass_container.dart';
+import '../common/valora_glass_container.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_colors.dart';
 import 'ai_insight_card.dart';
