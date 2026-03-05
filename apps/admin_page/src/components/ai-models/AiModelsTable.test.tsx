@@ -25,6 +25,7 @@ describe('AiModelsTable', () => {
     configs: mockConfigs,
     loading: false,
     onEdit: vi.fn(),
+    onDelete: vi.fn(),
   };
 
   beforeEach(() => {
@@ -79,5 +80,15 @@ describe('AiModelsTable', () => {
     render(<AiModelsTable {...defaultProps} configs={[]} />);
 
     expect(screen.getByText('No configurations defined')).toBeInTheDocument();
+  });
+
+  it('calls onDelete when clicking the delete button', () => {
+    render(<AiModelsTable {...defaultProps} />);
+
+    // Find the trash icons and click their parent button
+    const deleteBtns = screen.getAllByRole('button').filter(btn => btn.querySelector('svg.lucide-trash2'));
+    fireEvent.click(deleteBtns[0]);
+
+    expect(defaultProps.onDelete).toHaveBeenCalledWith(mockConfigs[0]);
   });
 });

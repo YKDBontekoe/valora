@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings2, Cpu, Sparkles, Edit2 } from 'lucide-react';
+import { Settings2, Cpu, Sparkles, Edit2, Trash2 } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import Button from '../Button';
 import type { AiModelConfig } from '../../services/api';
@@ -28,9 +28,10 @@ interface AiModelsTableProps {
   configs: AiModelConfig[];
   loading: boolean;
   onEdit: (config: AiModelConfig) => void;
+  onDelete: (config: AiModelConfig) => void;
 }
 
-const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit }) => {
+const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit, onDelete }) => {
   return (
     <motion.div
       variants={container}
@@ -117,15 +118,27 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit 
                       </span>
                     </td>
                     <td className="px-10 py-6 whitespace-nowrap text-right">
-                      <Button
-                        onClick={(e) => { e.stopPropagation(); onEdit(config); }}
-                        variant="ghost"
-                        size="sm"
-                        leftIcon={<Edit2 size={16} />}
-                        className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
-                      >
-                        Modify
-                      </Button>
+                      <div className="flex items-center justify-end gap-3">
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); onEdit(config); }}
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Edit2 size={16} />}
+                          className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
+                        >
+                          Modify
+                        </Button>
+                        <Button
+                          aria-label={`Delete ${config.feature} configuration`}
+                          title="Delete Configuration"
+                          onClick={(e) => { e.stopPropagation(); onDelete(config); }}
+                          variant="ghost"
+                          size="sm"
+                          className="text-brand-300 hover:text-error-600 hover:bg-error-50 px-2"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
                     </td>
                   </motion.tr>
                 ))}

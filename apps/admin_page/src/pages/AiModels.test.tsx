@@ -7,7 +7,8 @@ vi.mock('../services/api', () => ({
   aiService: {
     getConfigs: vi.fn(),
     getAvailableModels: vi.fn(),
-    updateConfig: vi.fn()
+    updateConfig: vi.fn(),
+    deleteConfig: vi.fn()
   }
 }));
 
@@ -75,5 +76,35 @@ describe('AiModels', () => {
     fireEvent.click(newBtn);
 
     expect(screen.getByText('Configure Feature')).toBeInTheDocument();
+  });
+
+  it('opens confirmation dialog when delete is clicked and handles successful deletion', async () => {
+    (aiService.getConfigs as Mock).mockResolvedValue([
+      { id: '1', feature: 'test-feature-to-delete', modelId: 'model-1', description: '', isEnabled: true }
+    ]);
+    (aiService.getAvailableModels as Mock).mockResolvedValue([]);
+    (aiService.deleteConfig as Mock).mockResolvedValue(undefined);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+      expect(screen.getByText('test-feature-to-delete')).toBeInTheDocument();
+    });
+
+    const deleteBtns = screen.getAllByRole('button').filter(btn => btn.querySelector('svg.lucide-trash2'));
+    fireEvent.click(deleteBtns[0]);
+
+    await waitFor(() => {
+        expect(screen.getByText('Delete AI Configuration')).toBeInTheDocument();
+        expect(screen.getByText(/Are you sure you want to delete the configuration for the feature/)).toBeInTheDocument();
+    });
+
+    const confirmDeleteBtn = screen.getByRole('button', { name: 'Delete' });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+        expect(aiService.deleteConfig).toHaveBeenCalledWith('1');
+        expect(aiService.getConfigs).toHaveBeenCalledTimes(2); // Initial load + reload
+    });
   });
 });
