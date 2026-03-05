@@ -144,5 +144,19 @@ public static class AiEndpoints
             }
         })
         .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<UpdateAiModelConfigDto>>();
+
+        configGroup.MapDelete("/{id:guid}", async (
+            Guid id,
+            IAiModelService aiModelService,
+            ClaimsPrincipal user,
+            ILogger<AiModelConfigDto> logger,
+            CancellationToken ct) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            await aiModelService.DeleteConfigAsync(id, ct);
+            logger.LogWarning("AUDIT: User {UserId} DELETED AI config with ID {ConfigId}",
+                userId, id);
+            return Results.NoContent();
+        });
     }
 }

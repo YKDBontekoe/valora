@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import AiModelsTable from '../components/ai-models/AiModelsTable';
 import EditAiModelModal from '../components/ai-models/EditAiModelModal';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 const AiModels: React.FC = () => {
   const [configs, setConfigs] = useState<AiModelConfig[]>([]);
@@ -14,6 +15,10 @@ const AiModels: React.FC = () => {
   const [editingConfig, setEditingConfig] = useState<AiModelConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [modelSort, setModelSort] = useState<SortOption>('name');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; config: AiModelConfig | null }>({
+    isOpen: false,
+    config: null,
+  });
 
   useEffect(() => {
     loadData();
@@ -53,6 +58,24 @@ const AiModels: React.FC = () => {
 
   const handleEdit = (config: AiModelConfig) => {
     setEditingConfig({ ...config });
+  };
+
+  const handleDeleteClick = (config: AiModelConfig) => {
+    setDeleteConfirmation({ isOpen: true, config });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.config?.id) return;
+    try {
+      await aiService.deleteConfig(deleteConfirmation.config.id);
+      showToast('Configuration deleted successfully.', 'success');
+      setDeleteConfirmation({ isOpen: false, config: null });
+      loadData();
+    } catch (error) {
+      console.error(error);
+      showToast('Failed to delete configuration.', 'error');
+      setDeleteConfirmation({ isOpen: false, config: null });
+    }
   };
 
   const handleSave = async () => {
@@ -107,6 +130,7 @@ const AiModels: React.FC = () => {
         configs={configs}
         loading={loading}
         onEdit={handleEdit}
+        onDelete={handleDeleteClick}
       />
 
       {/* Edit Modal */}
@@ -124,6 +148,16 @@ const AiModels: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, config: null })}
+        onConfirm={confirmDelete}
+        title="Delete AI Configuration"
+        message={`Are you sure you want to delete the configuration for the feature "${deleteConfirmation.config?.feature}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        isDestructive
+      />
     </div>
   );
 };

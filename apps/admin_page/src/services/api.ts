@@ -245,6 +245,9 @@ export const aiService = {
     const response = await api.put<AiModelConfig>(`/ai/config/${feature}`, dto);
     return response.data;
   },
+  deleteConfig: async (id: string): Promise<void> => {
+    await api.delete(`/ai/config/${id}`);
+  },
   getAvailableModels: async (): Promise<AiModel[]> => {
     const response = await api.get<AiModel[]>('/ai/config/models');
     return response.data;
