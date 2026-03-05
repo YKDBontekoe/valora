@@ -350,6 +350,19 @@ Remove a member from the workspace.
 
 Retrieve all properties (saved context reports) in the workspace.
 
+### Save Property (By ID)
+`POST /api/workspaces/{id}/properties`
+
+Save an existing property to the workspace using its ID.
+
+**Request Body:**
+```json
+{
+  "propertyId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "notes": "Good potential."
+}
+```
+
 ### Save Property (From Existing Report)
 `POST /api/workspaces/{id}/properties/from-report`
 
@@ -364,9 +377,32 @@ Save a dynamically generated context report directly to the workspace for persis
 ```
 
 ### Delete Saved Property
-`DELETE /api/workspaces/{id}/properties/{propertyId}`
+`DELETE /api/workspaces/{id}/properties/{savedPropertyId}`
 
 Remove a saved property from the workspace.
+
+### List Property Comments
+`GET /api/workspaces/{id}/properties/{savedPropertyId}/comments`
+
+Retrieve all comments on a specific saved property.
+
+### Add Property Comment
+`POST /api/workspaces/{id}/properties/{savedPropertyId}/comments`
+
+Add a new comment to a saved property.
+
+**Request Body:**
+```json
+{
+  "content": "Is the price negotiable?",
+  "parentId": null
+}
+```
+
+### List Workspace Activity
+`GET /api/workspaces/{id}/activity`
+
+Retrieve an audit log of recent actions in the workspace (e.g., members joining, properties added).
 
 ---
 

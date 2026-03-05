@@ -42,10 +42,22 @@ sequenceDiagram
         API->>WM_Svc: AddMemberAsync()
         WM_Svc->>DB: Lookup User by Email
         WM_Svc->>DB: INSERT INTO WorkspaceMembers (Role: Editor)
-        WM_Svc->>Event: Dispatch(WorkspaceInviteAcceptedEvent)
+        WM_Svc->>Event: Dispatch(WorkspaceInviteSentEvent)
         Event->>DB: INSERT INTO Notifications (For: Bob)
         WM_Svc-->>API: 200 OK
         API-->>UserA: Member Invited
+    end
+
+    %% 2b. Accept Invite
+    rect rgb(30, 40, 50)
+        Note over UserB, DB: 2b. Accepting the Invite
+        UserB->>API: POST /api/workspaces/123/members/accept
+        API->>WM_Svc: AcceptInviteAsync()
+        WM_Svc->>DB: UPDATE WorkspaceMembers (IsPending: false)
+        WM_Svc->>Event: Dispatch(WorkspaceInviteAcceptedEvent)
+        Event->>DB: INSERT INTO Notifications (For: Alice)
+        WM_Svc-->>API: 200 OK
+        API-->>UserB: Invite Accepted
     end
 
     %% 3. Save Report Snapshot
