@@ -115,6 +115,20 @@ public class WozValuationService : IWozValuationService
             _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
             return result;
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "WOZ value lookup network error for property (Hash: {CacheKey})", cacheKey);
+            return null;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _logger.LogWarning(ex, "WOZ value lookup returned invalid JSON for property (Hash: {CacheKey})", cacheKey);
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to scrape WOZ value for property (Hash: {CacheKey})", cacheKey);
