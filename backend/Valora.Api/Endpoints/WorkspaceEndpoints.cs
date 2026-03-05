@@ -27,6 +27,7 @@ public static class WorkspaceEndpoints
 
         group.MapDelete("/{id}/members/{memberId}", RemoveMember);
 
+        group.MapGet("/{id}/properties", GetSavedProperties);
         group.MapPost("/{id}/properties", SaveProperty)
             .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<SavePropertyDto>>();
 
