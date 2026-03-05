@@ -73,14 +73,16 @@ public class AiModelService : IAiModelService
         return MapToDto(config);
     }
 
-    public async Task DeleteConfigAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteConfigAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var config = await _context.AiModelConfigs.FindAsync(new object[] { id }, cancellationToken);
         if (config != null)
         {
             _context.AiModelConfigs.Remove(config);
             await _context.SaveChangesAsync(cancellationToken);
+            return true;
         }
+        return false;
     }
 
     public async Task<string> GetModelForFeatureAsync(string feature, CancellationToken cancellationToken = default)

@@ -70,7 +70,7 @@ const AiModels: React.FC = () => {
       await aiService.deleteConfig(deleteConfirmation.config.id);
       showToast('Configuration deleted successfully.', 'success');
       setDeleteConfirmation({ isOpen: false, config: null });
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       showToast('Failed to delete configuration.', 'error');

@@ -8,6 +8,6 @@ public interface IAiModelService
     Task<IEnumerable<AiModelConfigDto>> GetAllConfigsAsync(CancellationToken cancellationToken = default);
     Task<AiModelConfigDto> CreateConfigAsync(AiModelConfigDto configDto, CancellationToken cancellationToken = default);
     Task<AiModelConfigDto> UpdateConfigAsync(AiModelConfigDto configDto, CancellationToken cancellationToken = default);
-    Task DeleteConfigAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> DeleteConfigAsync(Guid id, CancellationToken cancellationToken = default);
     Task<string> GetModelForFeatureAsync(string feature, CancellationToken cancellationToken = default);
 }

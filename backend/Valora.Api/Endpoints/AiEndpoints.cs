@@ -153,7 +153,14 @@ public static class AiEndpoints
             CancellationToken ct) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            await aiModelService.DeleteConfigAsync(id, ct);
+            var deleted = await aiModelService.DeleteConfigAsync(id, ct);
+
+            if (!deleted)
+            {
+                logger.LogInformation("User {UserId} attempted to delete non-existent AI config with ID {ConfigId}", userId, id);
+                return Results.NotFound();
+            }
+
             logger.LogWarning("AUDIT: User {UserId} DELETED AI config with ID {ConfigId}",
                 userId, id);
             return Results.NoContent();

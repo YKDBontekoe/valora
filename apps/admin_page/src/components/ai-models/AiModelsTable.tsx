@@ -129,6 +129,8 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
                           Modify
                         </Button>
                         <Button
+                          aria-label={`Delete ${config.feature} configuration`}
+                          title="Delete Configuration"
                           onClick={(e) => { e.stopPropagation(); onDelete(config); }}
                           variant="ghost"
                           size="sm"
