@@ -64,7 +64,7 @@ sequenceDiagram
     %% 4. Add Comment
     rect rgb(40, 50, 60)
         Note over UserA, DB: 4. Discussing the Property
-        UserA->>API: POST /api/workspaces/123/properties/456/comments {"text": "Too expensive."}
+        UserA->>API: POST /api/workspaces/123/properties/456/comments {"content": "Too expensive."}
         API->>WP_Svc: AddCommentAsync()
         WP_Svc->>DB: INSERT INTO PropertyComments
         WP_Svc->>Event: Dispatch(CommentAddedEvent)

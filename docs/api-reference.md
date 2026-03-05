@@ -275,9 +275,11 @@ Update the current user's AI personalization profile.
 **Request Body:**
 ```json
 {
-  "householdType": "Family",
-  "commutePreference": "PublicTransport",
-  "importantAmenities": ["Schools", "Parks"]
+  "preferences": "I prefer quiet neighborhoods with easy access to the highway.",
+  "householdProfile": "Couple, 30s, working from home.",
+  "disallowedSuggestions": ["Apartments on busy streets", "Houses without a garden"],
+  "isEnabled": true,
+  "isSessionOnlyMode": false
 }
 ```
 
