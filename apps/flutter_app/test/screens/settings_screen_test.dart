@@ -6,7 +6,7 @@ import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 import 'package:valora_app/providers/theme_provider.dart';
-import 'package:valora_app/screens/settings_screen.dart';
+import 'package:valora_app/screens/settings/settings_screen.dart';
 
 @GenerateMocks([AuthProvider, ThemeProvider])
 @GenerateNiceMocks([

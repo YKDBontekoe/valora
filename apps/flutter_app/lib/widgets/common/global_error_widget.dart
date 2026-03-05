@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../core/theme/valora_spacing.dart';
-import '../core/theme/valora_typography.dart';
-import '../screens/startup_screen.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
+import '../../screens/startup/startup_screen.dart';
 
 class GlobalErrorWidget extends StatelessWidget {
   final FlutterErrorDetails details;

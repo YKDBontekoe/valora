@@ -9,7 +9,7 @@ import '../../core/theme/valora_colors.dart';
 import 'layouts/search_layout.dart';
 import 'layouts/report_layout.dart';
 import 'layouts/comparison_layout.dart';
-import '../../widgets/valora_error_state.dart';
+import '../../widgets/common/valora_error_state.dart';
 
 class ContextReportScreen extends StatefulWidget {
   const ContextReportScreen({super.key, this.pdokService, this.onFabChanged});
