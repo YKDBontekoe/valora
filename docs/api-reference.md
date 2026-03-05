@@ -15,6 +15,8 @@ graph LR
         API --> Admin[/api/admin]
         API --> AI[/api/ai]
         API --> Notify[/api/notifications]
+        API --> Profile[/api/user]
+        API --> Workspace[/api/workspaces]
     end
 ```
 
@@ -253,6 +255,116 @@ Generate a textual summary of a context report.
   }
 }
 ```
+
+---
+
+## 👥 User Profile
+
+Manage AI personalization and user settings.
+
+### Get User AI Profile
+`GET /api/user/ai-profile`
+
+Retrieve the current user's AI personalization profile.
+
+### Update User AI Profile
+`PUT /api/user/ai-profile`
+
+Update the current user's AI personalization profile.
+
+**Request Body:**
+```json
+{
+  "householdType": "Family",
+  "commutePreference": "PublicTransport",
+  "importantAmenities": ["Schools", "Parks"]
+}
+```
+
+### Export User AI Profile
+`GET /api/user/ai-profile/export`
+
+Export the current user's AI profile as a JSON file.
+
+---
+
+## 📁 Workspaces
+
+Manage collaborative environments for organizing saved context reports.
+
+### List User Workspaces
+`GET /api/workspaces`
+
+Retrieve a list of workspaces the current user is a member of.
+
+### Create Workspace
+`POST /api/workspaces`
+
+Create a new workspace.
+
+**Request Body:**
+```json
+{
+  "name": "Amsterdam Search",
+  "description": "Properties we are considering in Amsterdam."
+}
+```
+
+### Get Workspace Details
+`GET /api/workspaces/{id}`
+
+Retrieve the details of a specific workspace, including its members and recent activity.
+
+### Delete Workspace
+`DELETE /api/workspaces/{id}`
+
+Permanently delete a workspace. Only the workspace owner can perform this action.
+
+### List Workspace Members
+`GET /api/workspaces/{id}/members`
+
+List all members of the workspace.
+
+### Invite Workspace Member
+`POST /api/workspaces/{id}/members`
+
+Invite a user to the workspace.
+
+**Request Body:**
+```json
+{
+  "email": "colleague@example.com",
+  "role": "Viewer"
+}
+```
+
+### Remove Workspace Member
+`DELETE /api/workspaces/{id}/members/{memberId}`
+
+Remove a member from the workspace.
+
+### List Saved Properties
+`GET /api/workspaces/{id}/properties`
+
+Retrieve all properties (saved context reports) in the workspace.
+
+### Save Property (From Existing Report)
+`POST /api/workspaces/{id}/properties/from-report`
+
+Save a dynamically generated context report directly to the workspace for persistence.
+
+**Request Body:**
+```json
+{
+  "report": { ... },
+  "notes": "Looks like a great neighborhood!"
+}
+```
+
+### Delete Saved Property
+`DELETE /api/workspaces/{id}/properties/{propertyId}`
+
+Remove a saved property from the workspace.
 
 ---
 

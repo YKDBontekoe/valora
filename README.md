@@ -237,6 +237,9 @@ The API provides core functionalities to access and manage Valora's context data
 
 - **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
 - **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
+- **Workspaces:** `GET /api/workspaces`, `POST /api/workspaces/{id}/properties/from-report`
+- **User Profile:** `GET /api/user/ai-profile`, `PUT /api/user/ai-profile`
+- **Notifications:** `GET /api/notifications`
 - **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
 - **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
 - **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
@@ -285,6 +288,8 @@ The API provides core functionalities to access and manage Valora's context data
     - Explains background processing (City Ingestion).
 - **[Data Flow: AI Chat](docs/onboarding-ai-chat-flow.md)**:
     - Traces the request path for the AI Chat feature, including profile resolution and prompt construction.
+- **[Data Flow: Workspaces & Collaboration](docs/onboarding-workspace-flow.md)** (Includes Mermaid Diagram):
+    - Explains the flow of saving context reports and managing shared workspaces.
 
 ### ⚙️ Developer Reference
 *Technical details for contributors.*
