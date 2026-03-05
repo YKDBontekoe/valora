@@ -160,7 +160,7 @@ public class AiModelServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteConfigAsync_RemovesConfig()
+    public async Task DeleteConfigAsync_RemovesConfig_AndReturnsTrue()
     {
         var config = new AiModelConfig
         {
@@ -171,10 +171,21 @@ public class AiModelServiceTests : IDisposable
         _context.AiModelConfigs.Add(config);
         await _context.SaveChangesAsync();
 
-        await _service.DeleteConfigAsync(config.Id);
+        var result = await _service.DeleteConfigAsync(config.Id);
 
+        Assert.True(result);
         var dbConfig = await _context.AiModelConfigs.FirstOrDefaultAsync(c => c.Feature == "delete-feature");
         Assert.Null(dbConfig);
+    }
+
+    [Fact]
+    public async Task DeleteConfigAsync_ReturnsFalse_WhenNotFound()
+    {
+        var nonExistentId = Guid.NewGuid();
+
+        var result = await _service.DeleteConfigAsync(nonExistentId);
+
+        Assert.False(result);
     }
 
     [Fact]

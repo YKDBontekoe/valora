@@ -153,6 +153,11 @@ public static class AiEndpoints
             CancellationToken ct) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Results.Unauthorized();
+            }
+
             var deleted = await aiModelService.DeleteConfigAsync(id, ct);
 
             if (!deleted)
