@@ -7,6 +7,32 @@ using Valora.Domain.Extensions;
 
 namespace Valora.Application.Services.BatchJobs;
 
+/// <summary>
+/// Processor for executing "CityIngestion" batch jobs. This downloads and stores
+/// context statistics for all neighborhoods within a specified city.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Ingestion Strategy &amp; Fan-Out/Fan-In:</strong><br/>
+/// This processor follows an ETL (Extract, Transform, Load) pipeline:
+/// <list type="number">
+/// <item><strong>Extract:</strong> It first queries the PDOK Location Server to get all neighborhood geometries for the target city.</item>
+/// <item><strong>Transform:</strong> For each neighborhood geometry, it performs a parallel "Fan-Out" to fetch stats from CBS (demographics, safety).</item>
+/// <item><strong>Load:</strong> The enriched entities are persisted to the PostgreSQL database.</item>
+/// </list>
+/// </para>
+/// <para>
+/// <strong>Optimization (Avoiding N+1 Queries):</strong><br/>
+/// Before processing the raw neighborhood lists, this job queries the database *once* to fetch all existing neighborhoods for the city.
+/// Checking existing data in-memory is infinitely faster than dispatching hundreds of <c>SELECT</c> queries for individual neighborhoods.
+/// </para>
+/// <para>
+/// <strong>Batching &amp; Memory Constraints:</strong><br/>
+/// Operations are performed using EF Core <c>AddRange</c> and <c>UpdateRange</c> inside a batched loop (e.g., saving every 10 records).
+/// This prevents memory spikes from tracking hundreds of entities and provides incremental progress updates to the database,
+/// ensuring that UI clients can track the ingestion status continuously.
+/// </para>
+/// </remarks>
 public class CityIngestionJobProcessor : IBatchJobProcessor
 {
     private readonly IBatchJobRepository _jobRepository;
