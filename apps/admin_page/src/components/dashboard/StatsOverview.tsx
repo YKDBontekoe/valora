@@ -105,9 +105,9 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
             whileHover={{
               y: -15,
               scale: 1.02,
-              transition: { type: 'spring', stiffness: 350, damping: 25 }
+              transition: { type: 'spring', stiffness: 300, damping: 15 }
             }}
-            className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium-xl hover:shadow-2xl rounded-[3rem] transition-all duration-500 border border-brand-100/60 group cursor-default relative hover-border-gradient backdrop-blur-sm`}
+            className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium-xl hover:shadow-premium-2xl rounded-[3rem] transition-all duration-500 border border-brand-100/60 group cursor-default relative hover-border-gradient backdrop-blur-sm`}
           >
             {/* Top Accent line */}
             <div className={`absolute top-0 left-0 w-full h-2 ${card.accent} opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-100%] group-hover:translate-y-0`} />

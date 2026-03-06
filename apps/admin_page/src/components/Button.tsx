@@ -43,7 +43,7 @@ const Button = ({
       whileTap={{ scale: 0.97, y: 0 }}
       whileHover={{
         y: -2,
-        transition: { type: 'spring', stiffness: 400, damping: 12 }
+        transition: { type: 'spring', stiffness: 300, damping: 15 }
       }}
       disabled={disabled || isLoading}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
@@ -55,7 +55,7 @@ const Button = ({
             className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -skew-x-45"
             initial={{ x: '-150%' }}
             whileHover={{ x: '150%' }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
+            transition={{ duration: 1.2, ease: "circInOut" }}
         />
       )}
 

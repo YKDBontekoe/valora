@@ -60,7 +60,7 @@ const SystemHealth = () => {
       variants={item}
       initial="hidden"
       animate="show"
-      className="mt-20 p-14 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] border border-white/10 shadow-premium-2xl relative overflow-hidden group text-white"
+      className="mt-20 p-14 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] border border-white/10 shadow-premium-2xl relative overflow-hidden group text-white backdrop-blur-xl"
     >
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 p-16 text-brand-50 transition-all duration-1000 group-hover:scale-125 group-hover:rotate-6 group-hover:text-primary-50/20 opacity-20 pointer-events-none">
