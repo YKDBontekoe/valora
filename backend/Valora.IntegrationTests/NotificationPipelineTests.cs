@@ -20,13 +20,13 @@ public class NotificationPipelineTests : BaseIntegrationTest
     {
         // Arrange
         var user1Id = await AuthenticateAsync("user1@test.com");
-        
+
         // Create a second user who will receive the notification
         var user2Email = "user2@test.com";
         var user2Password = "Password123!";
         var user2Response = await Client.PostAsJsonAsync("/api/auth/register", new { Email = user2Email, Password = user2Password, ConfirmPassword = user2Password });
         user2Response.EnsureSuccessStatusCode();
-        
+
         Guid propertyId;
         using (var scope = Factory.Services.CreateScope())
         {
@@ -51,7 +51,7 @@ public class NotificationPipelineTests : BaseIntegrationTest
 
         // Assert
         response.EnsureSuccessStatusCode();
-        
+
         // Switch to User 2 to check notifications
         await AuthenticateAsync(user2Email, user2Password);
 

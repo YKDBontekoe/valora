@@ -4,7 +4,7 @@ using Valora.Domain.Entities;
 namespace Valora.Application.DTOs;
 
 public record CreateWorkspaceDto(
-    [property: Required] [property: StringLength(100)] string Name,
+    [property: Required][property: StringLength(100)] string Name,
     [property: StringLength(500)] string? Description
 );
 
@@ -28,7 +28,7 @@ public record WorkspaceMemberDto(
 );
 
 public record InviteMemberDto(
-    [property: Required] [property: EmailAddress] [property: StringLength(254)] string Email,
+    [property: Required][property: EmailAddress][property: StringLength(254)] string Email,
     [property: Required] WorkspaceRole Role
 );
 
@@ -72,7 +72,7 @@ public record CommentDto(
 );
 
 public record AddCommentDto(
-    [property: Required] [property: StringLength(2000)] string Content,
+    [property: Required][property: StringLength(2000)] string Content,
     Guid? ParentId
 );
 

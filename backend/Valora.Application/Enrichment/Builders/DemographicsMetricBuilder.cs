@@ -64,7 +64,7 @@ public static class DemographicsMetricBuilder
             new("owner_occupied", "Owner-Occupied", cbs.PercentageOwnerOccupied, "%", null, DataSources.CbsDemographics),
             new("single_households", "Single Households", pSingle, "%", null, DataSources.CbsDemographics),
             new("income_per_inhabitant", "Avg Income per Inhabitant", cbs.AverageIncomePerInhabitant, "k€/year", incomeScore, DataSources.CbsDemographics),
-            new("education_high_share", "Higher Education Share", DemographicsScoringRules.ToPercent(cbs.EducationHigh, cbs.EducationLow, cbs.EducationMedium), "%", educationScore, DataSources.CbsDemographics),
+            new("education_high_share", "Higher Education Share", DemographicsScoringRules.CalculateTargetPercentage(cbs.EducationHigh, cbs.EducationLow, cbs.EducationMedium), "%", educationScore, DataSources.CbsDemographics),
             new("urbanity_level", "Urbanity Level", DemographicsScoringRules.ParseUrbanityLevel(cbs.Urbanity), "level", urbanityScore, DataSources.CbsDemographics),
             new("family_friendly", "Family-Friendly Score", familyScore, "score", familyScore, SourceValora)
         ];
