@@ -32,12 +32,22 @@ interface BatchJobTableRowProps {
 export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDetails }) => {
   const clampedProgress = Math.min(Math.max(job.progress || 0, 0), 100);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openDetails(job.id);
+    }
+  };
+
   return (
     <motion.tr
       variants={rowVariants}
       whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
       className="group cursor-pointer relative transition-colors duration-500"
       onClick={() => openDetails(job.id)}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
     >
       <td className="px-12 py-10 whitespace-nowrap">
         <div className="flex flex-col gap-2">
@@ -97,11 +107,16 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
         </div>
       </td>
       <td className="px-12 py-10 whitespace-nowrap">
-        <div className="flex items-center gap-4 text-brand-500 text-sm font-bold max-w-[280px] truncate group-hover:text-brand-800 transition-colors">
-          <div className={`p-2 rounded-xl transition-colors ${job.error ? 'bg-error-50 text-error-500' : 'bg-brand-50 text-brand-300 group-hover:bg-primary-50 group-hover:text-primary-500'}`}>
+        <div
+          className="flex items-center gap-4 text-brand-500 text-sm font-bold max-w-[280px] group-hover:text-brand-800 transition-colors"
+          title={job.error || job.resultSummary || 'Sync in progression...'}
+        >
+          <div className={`shrink-0 p-2 rounded-xl transition-colors ${job.error ? 'bg-error-50 text-error-500' : 'bg-brand-50 text-brand-300 group-hover:bg-primary-50 group-hover:text-primary-500'}`}>
             {job.error ? <AlertCircle size={16} /> : <Info size={16} />}
           </div>
-          {job.error ? 'Cluster Fault Protocol Active' : (job.resultSummary || 'Sync in progression...')}
+          <span className="truncate">
+            {job.error || (job.resultSummary || 'Sync in progression...')}
+          </span>
         </div>
       </td>
       <td className="px-12 py-10 whitespace-nowrap">
