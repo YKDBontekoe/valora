@@ -75,9 +75,13 @@ public class WorkspaceRepositoryTests : BaseTestcontainersIntegrationTest
         var workspace3 = new Workspace { Id = Guid.NewGuid(), Name = "WS 3", OwnerId = otherUserId };
         workspace3.Members.Add(new WorkspaceMember { Id = Guid.NewGuid(), WorkspaceId = workspace3.Id, UserId = otherUserId, Role = WorkspaceRole.Owner });
 
+        var workspace4 = new Workspace { Id = Guid.NewGuid(), Name = "WS 4", OwnerId = otherUserId };
+        workspace4.Members.Add(new WorkspaceMember { Id = Guid.NewGuid(), WorkspaceId = workspace4.Id, UserId = targetUserId, Role = WorkspaceRole.Viewer });
+
         await repository.AddAsync(workspace1);
         await repository.AddAsync(workspace2);
         await repository.AddAsync(workspace3);
+        await repository.AddAsync(workspace4);
         await repository.SaveChangesAsync();
 
         // Act
@@ -85,9 +89,10 @@ public class WorkspaceRepositoryTests : BaseTestcontainersIntegrationTest
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
+        Assert.Equal(3, result.Count);
         Assert.Contains(result, w => w.Id == workspace1.Id);
         Assert.Contains(result, w => w.Id == workspace2.Id);
         Assert.DoesNotContain(result, w => w.Id == workspace3.Id);
+        Assert.Contains(result, w => w.Id == workspace4.Id);
     }
 }
