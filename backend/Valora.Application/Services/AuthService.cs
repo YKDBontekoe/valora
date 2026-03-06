@@ -133,9 +133,10 @@ public class AuthService : IAuthService
             var (result, userId) = await _identityService.CreateUserAsync(externalUser.Email, password);
             if (!result.Succeeded)
             {
-                var safeErrors = string.Join(", ", result.Errors).Replace("\r", "").Replace("\n", "");
-                _logger.LogWarning("Auto-registration failed for external user {EmailHash}: {Errors}", PrivacyUtils.HashEmail(externalUser.Email), safeErrors);
-                throw new ValidationException(result.Errors);
+                var safeErrors = result.Errors.Select(e => e.Replace("\r", "").Replace("\n", "")).ToList();
+                var safeErrorsString = string.Join(", ", safeErrors);
+                _logger.LogWarning("Auto-registration failed for external user {EmailHash}: {Errors}", PrivacyUtils.HashEmail(externalUser.Email), safeErrorsString);
+                throw new ValidationException(safeErrors);
             }
             user = await _identityService.GetUserByEmailAsync(externalUser.Email);
         }
