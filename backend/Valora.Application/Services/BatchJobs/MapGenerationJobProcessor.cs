@@ -4,6 +4,19 @@ using Valora.Domain.Enums;
 
 namespace Valora.Application.Services.BatchJobs;
 
+/// <summary>
+/// Processor for executing "MapGeneration" batch jobs. This background job
+/// generates or updates map data for a specific target area.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Purpose &amp; Design:</strong><br/>
+/// Similar to other batch jobs, this is meant to offload expensive map data processing tasks
+/// (e.g. pre-computing clustering or overlay tiles) from the main API threads.
+/// It implements the <see cref="IBatchJobProcessor"/> interface, integrating with the overarching
+/// batch job worker architecture.
+/// </para>
+/// </remarks>
 public class MapGenerationJobProcessor : IBatchJobProcessor
 {
     private readonly ILogger<MapGenerationJobProcessor> _logger;
