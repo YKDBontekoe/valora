@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { HTMLMotionProps } from 'framer-motion';
 import type { ReactNode } from 'react';
 
@@ -22,6 +22,7 @@ const Button = ({
   disabled,
   ...props
 }: ButtonProps) => {
+  const shouldReduceMotion = useReducedMotion();
   const baseStyles = 'inline-flex items-center justify-center font-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed outline-none select-none relative overflow-hidden group';
 
   const variants = {
@@ -40,8 +41,8 @@ const Button = ({
 
   return (
     <motion.button
-      whileTap={{ scale: 0.97, y: 0 }}
-      whileHover={{
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.97, y: 0 }}
+      whileHover={shouldReduceMotion ? undefined : {
         y: -2,
         transition: { type: 'spring', stiffness: 300, damping: 15 }
       }}
@@ -50,7 +51,7 @@ const Button = ({
       {...props}
     >
       {/* Premium Shine Effect for primary/secondary */}
-      {(variant === 'primary' || variant === 'secondary') && (
+      {(variant === 'primary' || variant === 'secondary') && !shouldReduceMotion && (
         <motion.div
             className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -skew-x-45"
             initial={{ x: '-150%' }}
@@ -62,16 +63,30 @@ const Button = ({
       {isLoading ? (
         <div className="flex items-center justify-center">
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            animate={shouldReduceMotion ? {} : { rotate: 360 }}
+            transition={shouldReduceMotion ? {} : { duration: 1, repeat: Infinity, ease: "linear" }}
             className="h-5 w-5 border-2 border-current border-t-transparent rounded-full"
           />
         </div>
       ) : (
         <div className="flex items-center justify-center gap-3 relative z-10">
-          {leftIcon && <motion.span whileHover={{ rotate: -10, scale: 1.1 }} className="flex-shrink-0">{leftIcon}</motion.span>}
+          {leftIcon && (
+            <motion.span
+              whileHover={shouldReduceMotion ? undefined : { rotate: -10, scale: 1.1 }}
+              className="flex-shrink-0"
+            >
+              {leftIcon}
+            </motion.span>
+          )}
           <span className="truncate">{children}</span>
-          {rightIcon && <motion.span whileHover={{ x: 3, scale: 1.1 }} className="flex-shrink-0">{rightIcon}</motion.span>}
+          {rightIcon && (
+            <motion.span
+              whileHover={shouldReduceMotion ? undefined : { x: 3, scale: 1.1 }}
+              className="flex-shrink-0"
+            >
+              {rightIcon}
+            </motion.span>
+          )}
         </div>
       )}
     </motion.button>
