@@ -83,6 +83,7 @@ describe('Dashboard Page', () => {
     // Assert dialog appears and API is not called yet
     const dialogTitle = await screen.findByText('Retry Failed Jobs');
     expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
     expect(adminService.retryJob).not.toHaveBeenCalled();
 
     // Click confirm in dialog
@@ -112,6 +113,7 @@ describe('Dashboard Page', () => {
     // Assert dialog appears
     const dialogTitle = await screen.findByText('Retry Failed Jobs');
     expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
     expect(adminService.retryJob).not.toHaveBeenCalled();
 
     // Click cancel in dialog
@@ -145,6 +147,12 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
     // Click confirm in dialog
     const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
     fireEvent.click(confirmButton);
@@ -168,6 +176,12 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
     // Click confirm in dialog
     const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
     fireEvent.click(confirmButton);
@@ -187,6 +201,12 @@ describe('Dashboard Page', () => {
 
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
+
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
 
     // Click confirm in dialog
     const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
