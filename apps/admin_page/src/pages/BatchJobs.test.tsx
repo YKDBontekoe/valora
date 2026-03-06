@@ -79,7 +79,7 @@ describe('BatchJobs Page', () => {
     });
 
     // Use a more robust selector since the row might be wrapped in motion components
-    const rows = screen.getAllByRole('row');
+    const rows = screen.getAllByRole('button'); // Rows have role="button" now
     const amsterdamRow = rows.find(row => row.textContent?.includes('Amsterdam'));
 
     if (!amsterdamRow) throw new Error('Could not find Amsterdam row');
@@ -127,7 +127,7 @@ describe('BatchJobs Page', () => {
           expect(screen.getByText('Rotterdam')).toBeInTheDocument();
       });
 
-      const rows = screen.getAllByRole('row');
+      const rows = screen.getAllByRole('button');
       const rotterdamRow = rows.find(row => row.textContent?.includes('Rotterdam'));
       if (!rotterdamRow) throw new Error('Could not find Rotterdam row');
 
