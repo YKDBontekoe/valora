@@ -20,13 +20,14 @@ public static class AdminEndpoints
             IAdminService adminService,
             ClaimsPrincipal user,
             [AsParameters] PaginationRequest pagination,
-            [FromQuery] string? q = null,
+            [FromQuery(Name = "q")] string? search = null,
             [FromQuery] string? sort = null) =>
         {
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            var paginatedUsers = await adminService.GetUsersAsync(pagination.Page, pagination.PageSize, q, sort, currentUserId);
+            var paginatedUsers = await adminService.GetUsersAsync(pagination.Page, pagination.PageSize, search, sort, currentUserId);
 
-            return Results.Ok(new {
+            return Results.Ok(new
+            {
                 paginatedUsers.Items,
                 paginatedUsers.PageIndex,
                 paginatedUsers.TotalPages,
@@ -46,7 +47,7 @@ public static class AdminEndpoints
 
             if (string.IsNullOrEmpty(currentUserId))
             {
-                 return Results.Problem(detail: "Unauthorized.", statusCode: 401);
+                return Results.Problem(detail: "Unauthorized.", statusCode: 401);
             }
 
             var result = await adminService.DeleteUserAsync(id, currentUserId);
@@ -100,11 +101,12 @@ public static class AdminEndpoints
             [AsParameters] PaginationRequest pagination,
             [FromQuery] string? status = null,
             [FromQuery] string? type = null,
-            [FromQuery] string? q = null,
+            [FromQuery(Name = "q")] string? search = null,
             [FromQuery] string? sort = null) =>
         {
-            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, q, sort, ct);
-            return Results.Ok(new {
+            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, search, sort, ct);
+            return Results.Ok(new
+            {
                 jobs.Items,
                 jobs.PageIndex,
                 jobs.TotalPages,

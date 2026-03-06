@@ -86,7 +86,7 @@ public class ContextAnalysisServiceTests
     [Fact]
     public async Task AnalyzeReportAsync_SanitizesInputs()
     {
-         // Arrange
+        // Arrange
         var service = CreateService();
         var report = CreateFullReportDto();
 

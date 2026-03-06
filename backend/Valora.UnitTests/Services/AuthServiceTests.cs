@@ -40,7 +40,7 @@ public class AuthServiceTests
     public async Task RegisterAsync_ValidData_ReturnsSuccess()
     {
         var registerDto = new RegisterDto { Email = "t@t.com", Password = "p", ConfirmPassword = "p" };
-        
+
         _mockIdentityService.Setup(x => x.CreateUserAsync(registerDto.Email, registerDto.Password))
             .ReturnsAsync((Result.Success(), "userId"));
 
