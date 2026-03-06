@@ -23,7 +23,7 @@ const Button = ({
   ...props
 }: ButtonProps) => {
   const shouldReduceMotion = useReducedMotion();
-  const baseStyles = 'inline-flex items-center justify-center font-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed outline-none select-none relative overflow-hidden group';
+  const baseStyles = `inline-flex items-center justify-center font-black ${shouldReduceMotion ? '' : 'transition-all duration-300'} disabled:opacity-50 disabled:cursor-not-allowed outline-none select-none relative overflow-hidden group`;
 
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-premium-lg shadow-primary-200/30 hover:shadow-glow-primary border border-primary-500',
@@ -62,7 +62,10 @@ const Button = ({
 
       {isLoading ? (
         <div className="flex items-center justify-center">
+          <span className="sr-only">{children}</span>
           <motion.div
+            role="img"
+            aria-hidden="true"
             animate={shouldReduceMotion ? {} : { rotate: 360 }}
             transition={shouldReduceMotion ? {} : { duration: 1, repeat: Infinity, ease: "linear" }}
             className="h-5 w-5 border-2 border-current border-t-transparent rounded-full"
