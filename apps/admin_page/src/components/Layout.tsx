@@ -40,6 +40,23 @@ const Layout = () => {
     }
   ];
 
+  const sidebarVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: {
+        opacity: 1,
+        x: 0,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.1
+        }
+    }
+  };
+
+  const groupVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   const hasAccess = (requiredRoles?: string[]) => {
     if (!requiredRoles || requiredRoles.length === 0) return true;
     return roles.some(role => requiredRoles.includes(role));
@@ -68,10 +85,15 @@ const Layout = () => {
           </Link>
         </div>
 
-        <nav className="flex-1 px-8 space-y-12 overflow-y-auto py-6 custom-scrollbar">
+        <motion.nav
+            variants={sidebarVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex-1 px-8 space-y-12 overflow-y-auto py-6 custom-scrollbar"
+        >
           {navGroups.map((group) => (
             hasAccess(group.requiredRoles) && (
-              <div key={group.title} className="space-y-4">
+              <motion.div key={group.title} variants={groupVariants} className="space-y-4">
                 <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-4">
                   {group.title}
                 </h3>
@@ -98,7 +120,7 @@ const Layout = () => {
                             <motion.div
                               layoutId="nav-glow"
                               className="absolute inset-0 bg-white border border-primary-100 shadow-premium z-0 ring-4 ring-primary-500/10"
-                              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 25 }}
                             />
                           )}
 
@@ -121,10 +143,10 @@ const Layout = () => {
                     );
                   })}
                 </div>
-              </div>
+              </motion.div>
             )
           ))}
-        </nav>
+        </motion.nav>
 
         <div className="p-8 border-t border-brand-100 mt-auto bg-brand-50/20 backdrop-blur-md">
           <motion.button
