@@ -3,14 +3,12 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
-import 'dart:ui' as _i7;
+import 'dart:async' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:valora_app/models/ai_chat_message.dart' as _i4;
-import 'package:valora_app/models/ai_conversation.dart' as _i3;
-import 'package:valora_app/providers/ai_chat_provider.dart' as _i2;
-import 'package:valora_app/services/ai_service.dart' as _i5;
+import 'package:valora_app/models/ai_chat_message.dart' as _i5;
+import 'package:valora_app/models/ai_conversation.dart' as _i4;
+import 'package:valora_app/services/ai_service.dart' as _i2;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -27,136 +25,75 @@ import 'package:valora_app/services/ai_service.dart' as _i5;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-/// A class which mocks [AiChatProvider].
+/// A class which mocks [AiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAiChatProvider extends _i1.Mock implements _i2.AiChatProvider {
+class MockAiService extends _i1.Mock implements _i2.AiService {
   @override
-  List<_i3.AiConversation> get conversations =>
+  _i3.Future<List<_i4.AiConversation>> getHistory() =>
       (super.noSuchMethod(
-            Invocation.getter(#conversations),
-            returnValue: <_i3.AiConversation>[],
-            returnValueForMissingStub: <_i3.AiConversation>[],
+            Invocation.method(#getHistory, []),
+            returnValue: _i3.Future<List<_i4.AiConversation>>.value(
+              <_i4.AiConversation>[],
+            ),
+            returnValueForMissingStub:
+                _i3.Future<List<_i4.AiConversation>>.value(
+                  <_i4.AiConversation>[],
+                ),
           )
-          as List<_i3.AiConversation>);
+          as _i3.Future<List<_i4.AiConversation>>);
 
   @override
-  List<_i4.AiChatMessage> get activeMessages =>
+  _i3.Future<List<_i5.AiChatMessage>> getMessages(String? conversationId) =>
       (super.noSuchMethod(
-            Invocation.getter(#activeMessages),
-            returnValue: <_i4.AiChatMessage>[],
-            returnValueForMissingStub: <_i4.AiChatMessage>[],
+            Invocation.method(#getMessages, [conversationId]),
+            returnValue: _i3.Future<List<_i5.AiChatMessage>>.value(
+              <_i5.AiChatMessage>[],
+            ),
+            returnValueForMissingStub:
+                _i3.Future<List<_i5.AiChatMessage>>.value(
+                  <_i5.AiChatMessage>[],
+                ),
           )
-          as List<_i4.AiChatMessage>);
+          as _i3.Future<List<_i5.AiChatMessage>>);
 
   @override
-  bool get isLoadingHistory =>
-      (super.noSuchMethod(
-            Invocation.getter(#isLoadingHistory),
-            returnValue: false,
-            returnValueForMissingStub: false,
-          )
-          as bool);
-
-  @override
-  bool get isSending =>
-      (super.noSuchMethod(
-            Invocation.getter(#isSending),
-            returnValue: false,
-            returnValueForMissingStub: false,
-          )
-          as bool);
-
-  @override
-  bool get hasListeners =>
-      (super.noSuchMethod(
-            Invocation.getter(#hasListeners),
-            returnValue: false,
-            returnValueForMissingStub: false,
-          )
-          as bool);
-
-  @override
-  void updateService(_i5.AiService? service) => super.noSuchMethod(
-    Invocation.method(#updateService, [service]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void setContextReport(Map<String, dynamic>? report) => super.noSuchMethod(
-    Invocation.method(#setContextReport, [report]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  _i6.Future<void> loadHistory() =>
-      (super.noSuchMethod(
-            Invocation.method(#loadHistory, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
-          )
-          as _i6.Future<void>);
-
-  @override
-  _i6.Future<void> loadConversation(String? conversationId) =>
-      (super.noSuchMethod(
-            Invocation.method(#loadConversation, [conversationId]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
-          )
-          as _i6.Future<void>);
-
-  @override
-  void startNewConversation() => super.noSuchMethod(
-    Invocation.method(#startNewConversation, []),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  _i6.Future<void> deleteConversation(String? conversationId) =>
+  _i3.Future<void> deleteConversation(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteConversation, [conversationId]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i3.Future<void>);
 
   @override
-  _i6.Future<void> sendMessage(String? prompt) =>
+  _i3.Future<Map<String, dynamic>> sendMessage({
+    String? conversationId,
+    required String? prompt,
+    String? intent = 'chat',
+    List<_i5.AiChatMessage>? history,
+    Map<String, dynamic>? contextReport,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#sendMessage, [prompt]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            Invocation.method(#sendMessage, [], {
+              #conversationId: conversationId,
+              #prompt: prompt,
+              #intent: intent,
+              #history: history,
+              #contextReport: contextReport,
+            }),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+            returnValueForMissingStub: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
           )
-          as _i6.Future<void>);
-
-  @override
-  void retryLastMessage() => super.noSuchMethod(
-    Invocation.method(#retryLastMessage, []),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void addListener(_i7.VoidCallback? listener) => super.noSuchMethod(
-    Invocation.method(#addListener, [listener]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void removeListener(_i7.VoidCallback? listener) => super.noSuchMethod(
-    Invocation.method(#removeListener, [listener]),
-    returnValueForMissingStub: null,
-  );
+          as _i3.Future<Map<String, dynamic>>);
 
   @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void notifyListeners() => super.noSuchMethod(
-    Invocation.method(#notifyListeners, []),
     returnValueForMissingStub: null,
   );
 }
