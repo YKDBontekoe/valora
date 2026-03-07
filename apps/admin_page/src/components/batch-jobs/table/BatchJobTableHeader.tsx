@@ -28,7 +28,7 @@ export const BatchJobTableHeader: React.FC<BatchJobTableHeaderProps> = ({ sortBy
           onClick={() => toggleSort('type')}
           onKeyDown={(e) => handleKeyDown(e, 'type')}
           tabIndex={0}
-          role="button"
+          role="columnheader"
           aria-sort={getAriaSort('type')}
           aria-label="Sort by Definition"
         >
@@ -45,7 +45,7 @@ export const BatchJobTableHeader: React.FC<BatchJobTableHeaderProps> = ({ sortBy
           onClick={() => toggleSort('target')}
           onKeyDown={(e) => handleKeyDown(e, 'target')}
           tabIndex={0}
-          role="button"
+          role="columnheader"
           aria-sort={getAriaSort('target')}
           aria-label="Sort by Target"
         >
@@ -62,7 +62,7 @@ export const BatchJobTableHeader: React.FC<BatchJobTableHeaderProps> = ({ sortBy
           onClick={() => toggleSort('status')}
           onKeyDown={(e) => handleKeyDown(e, 'status')}
           tabIndex={0}
-          role="button"
+          role="columnheader"
           aria-sort={getAriaSort('status')}
           aria-label="Sort by Status"
         >
@@ -81,7 +81,7 @@ export const BatchJobTableHeader: React.FC<BatchJobTableHeaderProps> = ({ sortBy
           onClick={() => toggleSort('createdAt')}
           onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
           tabIndex={0}
-          role="button"
+          role="columnheader"
           aria-sort={getAriaSort('createdAt')}
           aria-label="Sort by Timestamp"
         >

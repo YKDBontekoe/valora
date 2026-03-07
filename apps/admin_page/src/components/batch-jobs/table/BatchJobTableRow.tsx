@@ -16,8 +16,7 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
     <motion.tr
       variants={rowVariants}
       whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
-      className="group cursor-pointer relative transition-colors duration-500"
-      onClick={() => openDetails(job.id)}
+      className="group relative transition-colors duration-500"
     >
       <td className="px-12 py-10 whitespace-nowrap">
         <div className="flex flex-col gap-2">
@@ -99,9 +98,13 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
       </td>
       <td className="px-12 py-10 whitespace-nowrap text-right">
         <div className="flex items-center justify-end gap-6">
-          <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl bg-primary-50">
+          <button
+            onClick={() => openDetails(job.id)}
+            className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 focus:translate-x-0 p-3 rounded-2xl bg-primary-50 cursor-pointer focus:outline-none focus:ring-4 focus:ring-primary-500/20"
+            aria-label={`Open details for job ${job.id}`}
+          >
             <ChevronRight size={22} className="text-primary-500" />
-          </div>
+          </button>
         </div>
       </td>
     </motion.tr>

@@ -16,7 +16,7 @@ export const BatchJobTableError: React.FC<BatchJobTableErrorProps> = ({ displayE
             <AlertCircle size={80} className="opacity-40" />
           </div>
           <div className="flex flex-col gap-3">
-            <span className="font-black text-4xl tracking-tightest uppercase tracking-widest">Sync Failure</span>
+            <span className="font-black text-4xl tracking-tightest uppercase">Sync Failure</span>
             <p className="text-error-600 font-bold text-lg">{displayError}</p>
           </div>
           <Button onClick={refresh} variant="outline" size="lg" className="mt-4 border-error-200 text-error-700 bg-white shadow-sm hover:shadow-glow-error">Retry Pipeline Sync</Button>

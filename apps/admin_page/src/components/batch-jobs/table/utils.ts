@@ -15,6 +15,7 @@ export const getStatusBadge = (status: string) => {
     case 'Completed': return `${base} bg-success-50 text-success-700 border-success-200 shadow-glow-success group-hover:bg-white`;
     case 'Failed': return `${base} bg-error-50 text-error-700 border-error-200 shadow-glow-error group-hover:bg-white`;
     case 'Processing': return `${base} bg-primary-50 text-primary-700 border-primary-200 shadow-glow-primary group-hover:bg-white`;
+    case 'Pending': return `${base} bg-warning-50 text-warning-700 border-warning-200 shadow-glow-warning group-hover:bg-white animate-pulse`;
     default: return `${base} bg-brand-50 text-brand-700 border-brand-200`;
   }
 };
