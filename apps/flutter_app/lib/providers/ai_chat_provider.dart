@@ -84,7 +84,7 @@ class AiChatProvider with ChangeNotifier {
   Future<void> deleteConversation(String conversationId) async {
     try {
       await _aiService.deleteConversation(conversationId);
-      _conversations.removeWhere((c) => c.id == conversationId);
+      _conversations = _conversations.where((c) => c.id != conversationId).toList();
       if (_activeConversationId == conversationId) {
         startNewConversation();
       } else {
