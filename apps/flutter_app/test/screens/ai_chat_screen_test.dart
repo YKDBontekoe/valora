@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:provider/provider.dart';
-import 'package:valora_app/models/ai_chat_message.dart';
 import 'package:valora_app/providers/ai_chat_provider.dart';
 import 'package:valora_app/screens/ai_chat/ai_chat_screen.dart';
 import 'package:valora_app/widgets/ai_chat/ai_chat_message_bubble.dart';
