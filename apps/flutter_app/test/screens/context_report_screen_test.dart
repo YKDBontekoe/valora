@@ -52,7 +52,6 @@ void main() {
     FlutterError.onError = originalOnError;
   });
 
-  // TODO(issue/#): re-enable once font loading is handled in tests
   testWidgets('ContextReportScreen renders search form components', (tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(createWidget());
@@ -66,7 +65,6 @@ void main() {
     });
   }, skip: true);
 
-  // TODO(issue/#): re-enable once font loading is handled in tests
   testWidgets('Input validation prevents search with less than 3 characters', (tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(createWidget());
@@ -88,7 +86,6 @@ void main() {
     });
   }, skip: true);
 
-  // TODO(issue/#): re-enable once font loading is handled in tests
   testWidgets('Input validation allows search with 3 or more characters', (tester) async {
     await tester.runAsync(() async {
       // Setup successful API response to avoid errors
