@@ -84,8 +84,6 @@ public class WorkspaceRepository : IWorkspaceRepository
     public async Task<Workspace?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _context.Workspaces
-            .Include(w => w.Members)
-            .Include(w => w.SavedProperties)
             .FirstOrDefaultAsync(w => w.Id == id, ct);
     }
 
