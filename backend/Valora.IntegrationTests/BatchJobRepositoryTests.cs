@@ -58,28 +58,34 @@ public class BatchJobRepositoryTests : BaseTestcontainersIntegrationTest
     [Fact]
     public async Task GetNextPendingJobAsync_ShouldReturnNullWhenNoPendingJobs()
     {
-        // Clear pending jobs using ExecuteUpdateAsync if supported, else manual update
-        if (DbContext.Database.ProviderName != "Microsoft.EntityFrameworkCore.InMemory")
+        // First ensure the table is clean of pending jobs from any other tests
+        // that might have leaked state. While BaseTestcontainersIntegrationTest
+        // cleans up before each test, if we run in parallel without a fresh DB per test,
+        // we might still have a race condition. However, to strictly follow the review:
+        // "Mutates all pending jobs... which can affect other tests; instead, seed isolated data...
+        // remove the global ExecuteUpdateAsync/loop..."
+
+        // In a true isolated Testcontainer setup, the DB is empty here anyway
+        // because of `InitializeAsync` wiping the table.
+        // We will seed a single completed job to prove the repository ignores it.
+        var uniqueTarget = Guid.NewGuid().ToString();
+        var completedJob = new BatchJob
         {
-            await DbContext.BatchJobs
-                .Where(j => j.Status == BatchJobStatus.Pending)
-                .ExecuteUpdateAsync(s => s.SetProperty(j => j.Status, BatchJobStatus.Completed));
-        }
-        else
-        {
-            var pendingJobs = await DbContext.BatchJobs.Where(j => j.Status == BatchJobStatus.Pending).ToListAsync();
-            foreach (var job in pendingJobs)
-            {
-                job.Status = BatchJobStatus.Completed;
-            }
-            await DbContext.SaveChangesAsync();
-        }
+            Type = BatchJobType.CityIngestion,
+            Target = $"{uniqueTarget}-Completed",
+            Status = BatchJobStatus.Completed,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        DbContext.BatchJobs.Add(completedJob);
+        await DbContext.SaveChangesAsync();
         DbContext.ChangeTracker.Clear();
 
         // Act
         var result = await _repository.GetNextPendingJobAsync();
 
         // Assert
+        // We assert null because there are no PENDING jobs, only COMPLETED.
         Assert.Null(result);
     }
 
