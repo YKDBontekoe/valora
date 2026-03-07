@@ -114,7 +114,7 @@ class AiChatProvider with ChangeNotifier {
         content: prompt,
         createdAtUtc: DateTime.now().toUtc(),
       );
-      _activeMessages.add(userMessage);
+      _activeMessages = [..._activeMessages, userMessage];
     }
     
     notifyListeners();
@@ -136,7 +136,7 @@ class AiChatProvider with ChangeNotifier {
         createdAtUtc: DateTime.now().toUtc(),
       );
 
-      _activeMessages.add(assistantMessage);
+      _activeMessages = [..._activeMessages, assistantMessage];
 
       if (_activeConversationId == null && response['conversationId'] != null) {
         _activeConversationId = response['conversationId'];
