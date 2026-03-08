@@ -186,7 +186,7 @@ const Users = () => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-brand-900 font-black text-2xl tracking-tight uppercase tracking-widest">
+                                    <span className="text-brand-900 font-black text-2xl uppercase tracking-ultra-wide">
                                         {fetchError ? 'Sync Failed' : (searchQuery ? 'No results found' : 'No records exist')}
                                     </span>
                                     <p className="text-brand-300 font-bold max-w-sm mx-auto">

@@ -43,7 +43,7 @@ const EmptyState = ({ title, description, icon: Icon = PackageOpen, action }: Em
             </motion.div>
           </div>
 
-          <h3 className="text-3xl font-black text-brand-900 mb-4 tracking-tight uppercase tracking-widest leading-none">
+          <h3 className="text-3xl font-black text-brand-900 mb-4 uppercase tracking-ultra-wide leading-none">
             {title}
           </h3>
           <p className="text-brand-400 font-bold max-w-sm mb-12 leading-relaxed text-lg">
