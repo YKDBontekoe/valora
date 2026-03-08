@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
 
