@@ -1,9 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { BatchJobFilters } from './BatchJobFilters';
 
 describe('BatchJobFilters', () => {
-  const defaultProps = {
+  const createProps = (overrides = {}) => ({
     searchQuery: '',
     setSearchQuery: vi.fn(),
     statusFilter: 'All',
@@ -13,61 +13,73 @@ describe('BatchJobFilters', () => {
     hasActiveFilters: false,
     clearFilters: vi.fn(),
     setPage: vi.fn(),
-  };
+    ...overrides,
+  });
 
   it('updates state on search input focus and blur', () => {
-    render(<BatchJobFilters {...defaultProps} />);
+    const props = createProps();
+    render(<BatchJobFilters {...props} />);
     const input = screen.getByPlaceholderText(/search by target/i);
 
     // This exercises the onFocus and onBlur handlers added in the premium UI refinement
-    fireEvent.focus(input);
-    fireEvent.blur(input);
+    act(() => {
+      input.focus();
+    });
+    expect(document.activeElement).toBe(input);
 
-    expect(input).toBeInTheDocument();
+    act(() => {
+      input.blur();
+    });
+    expect(document.activeElement).not.toBe(input);
   });
 
   it('calls setSearchQuery on input change', () => {
-    render(<BatchJobFilters {...defaultProps} />);
+    const props = createProps();
+    render(<BatchJobFilters {...props} />);
     const input = screen.getByPlaceholderText(/search by target/i);
 
     fireEvent.change(input, { target: { value: 'Amsterdam' } });
-    expect(defaultProps.setSearchQuery).toHaveBeenCalledWith('Amsterdam');
+    expect(props.setSearchQuery).toHaveBeenCalledWith('Amsterdam');
   });
 
   it('calls setStatusFilter and setPage(1) on status change', () => {
-    render(<BatchJobFilters {...defaultProps} />);
+    const props = createProps();
+    render(<BatchJobFilters {...props} />);
 
     // Get the status select specifically
     const statusSelect = screen.getByDisplayValue('All Statuses');
     fireEvent.change(statusSelect, { target: { value: 'Completed' } });
 
-    expect(defaultProps.setStatusFilter).toHaveBeenCalledWith('Completed');
-    expect(defaultProps.setPage).toHaveBeenCalledWith(1);
+    expect(props.setStatusFilter).toHaveBeenCalledWith('Completed');
+    expect(props.setPage).toHaveBeenCalledWith(1);
   });
 
   it('calls setTypeFilter and setPage(1) on type change', () => {
-    render(<BatchJobFilters {...defaultProps} />);
+    const props = createProps();
+    render(<BatchJobFilters {...props} />);
 
     const typeSelect = screen.getByDisplayValue('All Types');
     fireEvent.change(typeSelect, { target: { value: 'CityIngestion' } });
 
-    expect(defaultProps.setTypeFilter).toHaveBeenCalledWith('CityIngestion');
-    expect(defaultProps.setPage).toHaveBeenCalledWith(1);
+    expect(props.setTypeFilter).toHaveBeenCalledWith('CityIngestion');
+    expect(props.setPage).toHaveBeenCalledWith(1);
   });
 
   it('calls setSearchQuery("") when clear search button is clicked', () => {
-    render(<BatchJobFilters {...defaultProps} searchQuery="Amsterdam" />);
+    const props = createProps({ searchQuery: 'Amsterdam' });
+    render(<BatchJobFilters {...props} />);
     const clearSearchButton = screen.getByRole('button', { name: '' }); // The X button in the search input
 
     fireEvent.click(clearSearchButton);
-    expect(defaultProps.setSearchQuery).toHaveBeenCalledWith('');
+    expect(props.setSearchQuery).toHaveBeenCalledWith('');
   });
 
   it('calls clearFilters when clear button is clicked', () => {
-    render(<BatchJobFilters {...defaultProps} hasActiveFilters={true} />);
+    const props = createProps({ hasActiveFilters: true });
+    render(<BatchJobFilters {...props} />);
     const clearButton = screen.getByText(/clear filters/i);
 
     fireEvent.click(clearButton);
-    expect(defaultProps.clearFilters).toHaveBeenCalled();
+    expect(props.clearFilters).toHaveBeenCalled();
   });
 });
