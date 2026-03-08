@@ -157,8 +157,8 @@ public class BatchJobRepositoryTests : IAsyncLifetime
         }
 
         // Act
-        // Create an array of tasks that will call GetNextPendingJobAsync concurrently
-        var tasks = repositories.Select(r => r.GetNextPendingJobAsync()).ToArray();
+        // Create tasks without materializing immediately, use Task.WhenAll
+        var tasks = repositories.Select(r => Task.Run(async () => await r.GetNextPendingJobAsync()));
 
         // Wait for all tasks to complete
         var results = await Task.WhenAll(tasks);
@@ -173,7 +173,7 @@ public class BatchJobRepositoryTests : IAsyncLifetime
         Assert.Equal(BatchJobStatus.Processing, successfulClaims.First()!.Status);
 
         // Verify database state directly
-        var verifyScope = _fixture.Factory!.Services.CreateScope();
+        using var verifyScope = _fixture.Factory!.Services.CreateScope();
         var verifyRepo = verifyScope.ServiceProvider.GetRequiredService<IBatchJobRepository>();
         var jobInDb = await verifyRepo.GetByIdAsync(jobId);
 
