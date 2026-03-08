@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_animations.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/notification.dart';
 import '../services/notification_service.dart';
 import '../widgets/valora_widgets.dart';
@@ -266,7 +268,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             getIcon: _getIconForType,
                             getColor: _getColorForType,
                           ),
-                        );
+                        ).animate()
+                        .fadeIn(
+                          duration: ValoraAnimations.normal,
+                          delay: (ValoraAnimations.staggerInterval.inMilliseconds * index).ms
+                        )
+                        .slideX(begin: 0.05);
                       },
                       childCount: provider.notifications.length + 1,
                     ),

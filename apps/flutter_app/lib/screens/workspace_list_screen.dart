@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
+import '../core/theme/valora_animations.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
@@ -208,7 +210,12 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                       return WorkspaceListItem(
                         workspace: workspace,
                         index: index ~/ 2,
-                      );
+                      ).animate()
+                      .fadeIn(
+                        duration: ValoraAnimations.normal,
+                        delay: (ValoraAnimations.staggerInterval.inMilliseconds * (index ~/ 2)).ms,
+                      )
+                      .slideY(begin: 0.1);
                     },
                     childCount: displayList.length * 2 - 1,
                   ),
