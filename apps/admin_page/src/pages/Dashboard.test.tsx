@@ -159,4 +159,15 @@ describe('Dashboard Page', () => {
 
      expect(mockNavigate).toHaveBeenCalledWith('/users');
   });
+
+  it('renders Platform Integrity card', async () => {
+    (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(screen.getByText('Platform Integrity')).toBeInTheDocument();
+      expect(screen.getByText('Security and access logs are monitored 24/7.')).toBeInTheDocument();
+      expect(screen.getByText('Secure Connection')).toBeInTheDocument();
+    });
+  });
 });
