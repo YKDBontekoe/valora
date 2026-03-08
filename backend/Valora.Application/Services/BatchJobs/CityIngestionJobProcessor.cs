@@ -7,6 +7,8 @@ using Valora.Domain.Extensions;
 
 namespace Valora.Application.Services.BatchJobs;
 
+
+
 public class CityIngestionJobProcessor : IBatchJobProcessor
 {
     private readonly IBatchJobRepository _jobRepository;
