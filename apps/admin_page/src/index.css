@@ -199,7 +199,7 @@ h1, h2, h3, h4, h5, h6 {
   @apply ring-4 ring-primary-500/20 border-primary-500 transition-all duration-300;
 }
 
-@utility hover-lift {
+.hover-lift {
   @apply transition-transform duration-300 ease-out hover:-translate-y-1;
 }
 

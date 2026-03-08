@@ -98,7 +98,7 @@ const Dashboard = () => {
             <div className="h-full">
                 {/* We could add another component here, but for now we let SystemHealth take full width below */}
                 <motion.div
-                  whileHover={{ y: -5, boxShadow: "var(--shadow-premium-2xl)" }}
+                  whileHover={{ y: -8, boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.5)" }}
                   className="p-12 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] shadow-premium-2xl text-white relative overflow-hidden group h-full border border-white/10"
                 >
                     <div className="relative z-10 h-full flex flex-col justify-between">
