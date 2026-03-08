@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { aiService, type AiModelConfig, type AiModel, type SortOption } from '../services/api';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
-import { Plus } from 'lucide-react';
+import { Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import AiModelsTable from '../components/ai-models/AiModelsTable';
 import EditAiModelModal from '../components/ai-models/EditAiModelModal';
@@ -15,14 +15,35 @@ const AiModels: React.FC = () => {
   const [editingConfig, setEditingConfig] = useState<AiModelConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [modelSort, setModelSort] = useState<SortOption>('name');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; config: AiModelConfig | null }>({
     isOpen: false,
     config: null,
   });
 
+  const { filteredConfigs, paginatedConfigs, totalPages } = useMemo(() => {
+     const filtered = configs.filter(c =>
+        c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+     );
+     const total = Math.max(1, Math.ceil(filtered.length / pageSize));
+     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+     return { filteredConfigs: filtered, paginatedConfigs: paginated, totalPages: total };
+  }, [configs, searchQuery, pageSize, page]);
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setPage(prev => Math.min(prev, totalPages));
+  }, [totalPages]);
 
   const loadData = async () => {
     setLoading(true);
@@ -126,12 +147,63 @@ const AiModels: React.FC = () => {
         </Button>
       </div>
 
+      <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
+        <div className="relative w-full max-w-xl group shadow-premium rounded-3xl">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-brand-300 group-focus-within:text-primary-500 transition-all duration-300 group-focus-within:scale-110" />
+          <input
+            type="text"
+            placeholder="Search configurations by feature or model..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-14 pr-12 py-5 bg-white border border-brand-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all shadow-premium hover:shadow-premium-lg font-black text-brand-900 placeholder:text-brand-200"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-5 top-1/2 -translate-y-1/2 p-1 hover:bg-brand-50 rounded-full text-brand-300 hover:text-brand-600 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
       <AiModelsTable
-        configs={configs}
+        configs={paginatedConfigs}
         loading={loading}
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
       />
+
+      {!loading && filteredConfigs.length > 0 && (
+        <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-3xl border border-brand-100/50">
+          <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
+            Page <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+          </div>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              leftIcon={<ChevronLeft size={18} />}
+              className="font-black bg-white"
+            >
+              Prev
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              rightIcon={<ChevronRight size={18} />}
+              className="font-black bg-white"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       <AnimatePresence>
