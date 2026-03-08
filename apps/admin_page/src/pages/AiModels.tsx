@@ -23,16 +23,6 @@ const AiModels: React.FC = () => {
     config: null,
   });
 
-  const { filteredConfigs, paginatedConfigs, totalPages } = useMemo(() => {
-     const filtered = configs.filter(c =>
-        c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
-     );
-     const total = Math.max(1, Math.ceil(filtered.length / pageSize));
-     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-     return { filteredConfigs: filtered, paginatedConfigs: paginated, totalPages: total };
-  }, [configs, searchQuery, pageSize, page]);
-
   useEffect(() => {
     loadData();
   }, []);
@@ -42,8 +32,13 @@ const AiModels: React.FC = () => {
   }, [searchQuery]);
 
   useEffect(() => {
+    const filteredCount = configs.filter(c =>
+      c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+    ).length;
+    const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
     setPage(prev => Math.min(prev, totalPages));
-  }, [totalPages]);
+  }, [configs, searchQuery, pageSize]);
 
   const loadData = async () => {
     setLoading(true);
@@ -168,42 +163,58 @@ const AiModels: React.FC = () => {
         </div>
       </div>
 
-      <AiModelsTable
-        configs={paginatedConfigs}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={handleDeleteClick}
-      />
+      {(() => {
+        const { filteredConfigs, paginatedConfigs, totalPages } = useMemo(() => {
+           const filtered = configs.filter(c =>
+              c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+           );
+           const total = Math.max(1, Math.ceil(filtered.length / pageSize));
+           const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+           return { filteredConfigs: filtered, paginatedConfigs: paginated, totalPages: total };
+        }, [configs, searchQuery, pageSize, page]);
 
-      {!loading && filteredConfigs.length > 0 && (
-        <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-3xl border border-brand-100/50">
-          <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
-            Page <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
-          </div>
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              leftIcon={<ChevronLeft size={18} />}
-              className="font-black bg-white"
-            >
-              Prev
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              rightIcon={<ChevronRight size={18} />}
-              className="font-black bg-white"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+        return (
+          <>
+            <AiModelsTable
+              configs={paginatedConfigs}
+              loading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+
+            {!loading && filteredConfigs.length > 0 && (
+              <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-3xl border border-brand-100/50">
+                <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
+                  Page <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+                </div>
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    leftIcon={<ChevronLeft size={18} />}
+                    className="font-black bg-white"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    rightIcon={<ChevronRight size={18} />}
+                    className="font-black bg-white"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Edit Modal */}
       <AnimatePresence>
