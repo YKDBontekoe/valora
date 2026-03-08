@@ -31,6 +31,15 @@ const AiModels: React.FC = () => {
     setPage(1);
   }, [searchQuery]);
 
+  useEffect(() => {
+    const filteredCount = configs.filter(c =>
+      c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+    ).length;
+    const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+    setPage(prev => Math.min(prev, totalPages));
+  }, [configs, searchQuery, pageSize]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -155,12 +164,15 @@ const AiModels: React.FC = () => {
       </div>
 
       {(() => {
-        const filteredConfigs = configs.filter(c =>
-          c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        const totalPages = Math.max(1, Math.ceil(filteredConfigs.length / pageSize));
-        const paginatedConfigs = filteredConfigs.slice((page - 1) * pageSize, page * pageSize);
+        const { filteredConfigs, paginatedConfigs, totalPages } = useMemo(() => {
+           const filtered = configs.filter(c =>
+              c.feature.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              c.modelId.toLowerCase().includes(searchQuery.toLowerCase())
+           );
+           const total = Math.max(1, Math.ceil(filtered.length / pageSize));
+           const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+           return { filteredConfigs: filtered, paginatedConfigs: paginated, totalPages: total };
+        }, [configs, searchQuery, pageSize, page]);
 
         return (
           <>
