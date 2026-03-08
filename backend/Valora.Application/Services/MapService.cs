@@ -84,6 +84,19 @@ public class MapService : IMapService
         return await _cbsGeoClient.GetNeighborhoodOverlaysAsync(minLat, minLon, maxLat, maxLon, metric, cancellationToken);
     }
 
+    /// <summary>
+    /// Fetches amenities within a bounding box and clusters them.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Grid Clustering Strategy:</strong> We use a server-side grid-based clustering algorithm
+    /// (O(N) complexity) rather than distance-based clustering (like DBSCAN, O(N^2)). This ensures
+    /// ultra-fast real-time responses even when returning thousands of raw Overpass nodes.
+    /// The trade-off is slightly less precise geographic centers for clusters (snapped to grid),
+    /// which is negligible at the zoom levels we operate on.
+    /// </para>
+    /// </remarks>
+    /// <returns>A list of amenity clusters representing the grouped points.</returns>
     public async Task<List<MapAmenityClusterDto>> GetMapAmenityClustersAsync(
         double minLat,
         double minLon,
@@ -106,6 +119,23 @@ public class MapService : IMapService
         return Utilities.AmenityClusterer.ClusterAmenities(amenities, cellSize);
     }
 
+    /// <summary>
+    /// Computes rasterized map overlay tiles (e.g., population heatmaps) for a bounding box.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Rasterization over Vectors:</strong> Returning complex GeoJSON polygons (WFS) with
+    /// thousands of coordinates directly to the Flutter client causes severe UI lag during panning/zooming.
+    /// By rasterizing the polygons server-side into a discrete grid of low-resolution tiles based on the zoom level,
+    /// we offload heavy geometric intersection math to the backend, enabling fluid 60FPS heatmap rendering on mobile.
+    /// </para>
+    /// <para>
+    /// <strong>Grid-Snapped Cache Strategy:</strong> The bounding box is snapped to the nearest cell boundary
+    /// prior to building the cache key. This means users panning slowly around an area will hit the same
+    /// precomputed tiles cache block, drastically reducing DB load and CPU rasterization spikes.
+    /// </para>
+    /// </remarks>
+    /// <returns>A read-only list of lightweight raster overlay tiles.</returns>
     public async Task<IReadOnlyList<MapOverlayTileDto>> GetMapOverlayTilesAsync(
         double minLat,
         double minLon,
