@@ -54,10 +54,10 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
         <table className="min-w-full divide-y divide-brand-100">
           <thead>
             <tr className="bg-brand-50/10">
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Feature</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Model</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Status</th>
-              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
+              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Feature</th>
+              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Model</th>
+              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Status</th>
+              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Action</th>
             </tr>
           </thead>
           <motion.tbody
@@ -99,7 +99,7 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
                         <div className="p-2.5 bg-primary-50 rounded-xl text-primary-600 shadow-sm border border-primary-100/50">
                           <Sparkles size={16} />
                         </div>
-                        <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{config.feature}</span>
+                        <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors tracking-tightest">{config.feature}</span>
                       </div>
                     </td>
                     <td className="px-10 py-6 whitespace-nowrap">

@@ -59,7 +59,7 @@ const Dashboard = () => {
       >
         <div>
           <div className="flex items-center gap-3 mb-4">
-              <div className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <div className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-[10px] font-black uppercase tracking-ultra-wide">
                   Enterprise Dashboard
               </div>
           </div>
@@ -97,7 +97,10 @@ const Dashboard = () => {
             </div>
             <div className="h-full">
                 {/* We could add another component here, but for now we let SystemHealth take full width below */}
-                <div className="p-12 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] shadow-premium-2xl text-white relative overflow-hidden group h-full border border-white/10">
+                <motion.div
+                  whileHover={{ y: -5, boxShadow: "var(--shadow-premium-2xl)" }}
+                  className="p-12 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] shadow-premium-2xl text-white relative overflow-hidden group h-full border border-white/10"
+                >
                     <div className="relative z-10 h-full flex flex-col justify-between">
                         <div>
                             <h2 className="text-2xl font-black tracking-tight mb-2">Platform Integrity</h2>
@@ -105,13 +108,17 @@ const Dashboard = () => {
                         </div>
                         <div className="mt-8">
                             <div className="flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-primary-400">
-                                <div className="w-2 h-2 rounded-full bg-primary-500" />
+                                <motion.div
+                                  animate={{ opacity: [0.5, 1, 0.5] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                  className="w-2 h-2 rounded-full bg-primary-500 shadow-glow-primary"
+                                />
                                 Secure Connection
                             </div>
                         </div>
                     </div>
                     <Sparkles className="absolute -right-8 -bottom-8 text-white/5 w-64 h-64 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12" />
-                </div>
+                </motion.div>
             </div>
         </section>
 
