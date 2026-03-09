@@ -49,7 +49,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
     {
         await EnsureUserIsNotViewerAsync(userId, workspaceId, ct);
 
-        var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct);
+        var property = await _repository.GetPropertyByAddressAsync(report.Location.PostalCode ?? "", report.Location.DisplayAddress, ct);
         
         if (property == null) {
             property = new Property {

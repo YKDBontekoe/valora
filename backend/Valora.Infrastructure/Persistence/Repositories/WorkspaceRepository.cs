@@ -229,6 +229,11 @@ public class WorkspaceRepository : IWorkspaceRepository
         return await _context.Properties.FirstOrDefaultAsync(p => p.BagId == bagId, ct);
     }
 
+    public async Task<Property?> GetPropertyByAddressAsync(string postalCode, string displayAddress, CancellationToken ct = default)
+    {
+        return await _context.Properties.FirstOrDefaultAsync(p => p.PostalCode == postalCode && p.Address == displayAddress, ct);
+    }
+
     public async Task<Property> AddPropertyAsync(Property property, CancellationToken ct = default)
     {
         _context.Properties.Add(property);

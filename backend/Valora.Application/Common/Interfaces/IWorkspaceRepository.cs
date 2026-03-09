@@ -45,6 +45,7 @@ public interface IWorkspaceRepository
     // Property Queries (for checks)
     Task<Property?> GetPropertyAsync(Guid propertyId, CancellationToken ct = default);
     Task<Property?> GetPropertyByBagIdAsync(string bagId, CancellationToken ct = default);
+    Task<Property?> GetPropertyByAddressAsync(string postalCode, string displayAddress, CancellationToken ct = default);
     Task<Property> AddPropertyAsync(Property property, CancellationToken ct = default);
 
     // Comment Management
