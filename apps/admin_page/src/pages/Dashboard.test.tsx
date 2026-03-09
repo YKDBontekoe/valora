@@ -173,6 +173,28 @@ describe('Dashboard Page', () => {
     });
   });
 
+  it('exercises the cancel/dismiss path of the confirmation dialog', async () => {
+    (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
+
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
+
+    const retryButton = screen.getByText('Retry Pipeline');
+    fireEvent.click(retryButton);
+
+    // Wait for confirmation dialog to appear
+    await waitFor(() => expect(screen.getByText('Retry Failed Pipelines?')).toBeInTheDocument());
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Retry Failed Pipelines?')).not.toBeInTheDocument();
+      expect(adminService.getJobs).not.toHaveBeenCalled();
+      expect(adminService.retryJob).not.toHaveBeenCalled();
+    });
+  });
+
   it('navigates to users page on Manage Users click', async () => {
      (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
      render(<MemoryRouter><Dashboard /></MemoryRouter>);
