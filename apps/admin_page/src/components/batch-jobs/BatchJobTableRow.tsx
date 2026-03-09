@@ -120,6 +120,7 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
       <td className="px-12 py-10 whitespace-nowrap text-right">
         <div className="flex items-center justify-end gap-6">
             <button
+                type="button"
                 onClick={(e) => {
                     e.stopPropagation();
                     openDetails(job.id);

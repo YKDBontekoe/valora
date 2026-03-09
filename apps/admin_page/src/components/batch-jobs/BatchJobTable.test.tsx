@@ -130,6 +130,7 @@ describe('BatchJobTable', () => {
     expect(targetHeaderCell).toHaveAttribute('aria-sort', 'ascending');
 
     rerender(<BatchJobTable {...defaultProps} sortBy="target_desc" />);
-    expect(targetHeaderCell).toHaveAttribute('aria-sort', 'descending');
+    const updatedTargetHeaderCell = screen.getByRole('button', { name: /sort by target/i }).closest('th')!;
+    expect(updatedTargetHeaderCell).toHaveAttribute('aria-sort', 'descending');
   });
 });
