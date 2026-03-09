@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Activity, AlertTriangle } from 'lucide-react';
 import Skeleton from '../Skeleton';

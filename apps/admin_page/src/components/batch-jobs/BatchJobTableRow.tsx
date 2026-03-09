@@ -124,8 +124,8 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
                     e.stopPropagation();
                     openDetails(job.id);
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl bg-primary-50 border-none cursor-pointer"
-                aria-label="View Details"
+                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-focus-within:translate-x-0 focus-visible:ring-2 focus-visible:ring-offset-2 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl bg-primary-50 border-none cursor-pointer focus:outline-none"
+                aria-label={`View details for ${job.id}`}
             >
                 <ChevronRight size={22} className="text-primary-500" />
             </button>

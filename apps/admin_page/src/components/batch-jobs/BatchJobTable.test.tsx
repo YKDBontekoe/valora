@@ -125,10 +125,11 @@ describe('BatchJobTable', () => {
 
   it('shows correct sort indicators', () => {
     const { rerender } = render(<BatchJobTable {...defaultProps} sortBy="target_asc" />);
-    const targetHeader = screen.getByRole('button', { name: /sort by target/i });
-    expect(targetHeader).toHaveAttribute('aria-sort', 'ascending');
+    // The aria-sort attribute is on the <th>, not the inner <button>
+    const targetHeaderCell = screen.getByRole('button', { name: /sort by target/i }).closest('th')!;
+    expect(targetHeaderCell).toHaveAttribute('aria-sort', 'ascending');
 
     rerender(<BatchJobTable {...defaultProps} sortBy="target_desc" />);
-    expect(targetHeader).toHaveAttribute('aria-sort', 'descending');
+    expect(targetHeaderCell).toHaveAttribute('aria-sort', 'descending');
   });
 });

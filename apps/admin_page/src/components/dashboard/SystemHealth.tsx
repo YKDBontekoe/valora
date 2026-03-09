@@ -77,7 +77,7 @@ const SystemHealth = () => {
           <SystemHealthJobs health={health} loading={loading} isStale={isStale} />
         </div>
 
-        <SystemHealthFooter health={health} />
+        <SystemHealthFooter health={health} isStale={isStale} />
       </div>
     </motion.div>
   );

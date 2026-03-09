@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Server, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 

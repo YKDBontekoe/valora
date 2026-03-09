@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Database } from 'lucide-react';
 import Skeleton from '../Skeleton';
@@ -37,8 +38,8 @@ export const SystemHealthDatabase: React.FC<SystemHealthDatabaseProps> = ({ heal
             animate={{ opacity: 1, x: 0 }}
             className="flex flex-col gap-4"
           >
-            <div className={`w-fit px-6 py-2 rounded-2xl border flex items-center gap-3 font-black text-base ${getStatusColor(health?.status || 'Unhealthy')}`}>
-              <div className={`w-2.5 h-2.5 rounded-full bg-current ${(health?.status === 'Healthy' && !loading) ? 'animate-pulse' : ''}`} />
+            <div className={`w-fit px-6 py-2 rounded-2xl border flex items-center gap-3 font-black text-base ${getStatusColor(health?.database ? 'Healthy' : 'Unhealthy')}`}>
+              <div className={`w-2.5 h-2.5 rounded-full bg-current ${(health?.database && !loading) ? 'animate-pulse' : ''}`} />
               {health ? (health.database ? 'Operational' : 'Critical Fault') : 'Connecting...'}
             </div>
             <p className="text-brand-400 text-xs font-bold uppercase tracking-widest ml-1">Database Shard: EU-WEST-1</p>
