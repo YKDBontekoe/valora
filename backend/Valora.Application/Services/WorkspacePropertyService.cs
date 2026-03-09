@@ -19,8 +19,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
 
     public async Task<SavedPropertyDto> SavePropertyAsync(string userId, Guid workspaceId, Guid propertyId, string? notes, CancellationToken ct = default)
     {
-        var role = await GetUserRole(userId, workspaceId, ct);
-        if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
+        await EnsureUserIsNotViewerAsync(userId, workspaceId, ct);
 
         var existing = await _repository.GetSavedPropertyAsync(workspaceId, propertyId, ct);
         if (existing != null) return MapToSavedPropertyDto(existing);
@@ -48,13 +47,9 @@ public class WorkspacePropertyService : IWorkspacePropertyService
 
     public async Task<SavedPropertyDto> SaveContextReportAsync(string userId, Guid workspaceId, ContextReportDto report, string? notes, CancellationToken ct = default)
     {
-        var role = await GetUserRole(userId, workspaceId, ct);
-        if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
+        await EnsureUserIsNotViewerAsync(userId, workspaceId, ct);
 
-        // Check if property exists by Address/BAG ID
-        // The ContextReportDto doesn't currently expose BagId, so we use Address as a fallback or if we can extract it.
-        // For now, let's try Address.
-        var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
+        var property = await _repository.GetPropertyByAddressAsync(report.Location.PostalCode, report.Location.DisplayAddress, ct);
         
         if (property == null) {
             property = new Property {
@@ -84,8 +79,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
 
     public async Task RemoveSavedPropertyAsync(string userId, Guid workspaceId, Guid savedPropertyId, CancellationToken ct = default)
     {
-        var role = await GetUserRole(userId, workspaceId, ct);
-        if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
+        await EnsureUserIsNotViewerAsync(userId, workspaceId, ct);
 
         var savedProperty = await _repository.GetSavedPropertyByIdAsync(savedPropertyId, ct);
 
@@ -172,7 +166,12 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         return rootComments;
     }
 
-    // Helpers
+    private async Task EnsureUserIsNotViewerAsync(string userId, Guid workspaceId, CancellationToken ct)
+    {
+        var role = await GetUserRole(userId, workspaceId, ct);
+        if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
+    }
+
     private async Task ValidateMemberAccess(string userId, Guid workspaceId, CancellationToken ct)
     {
         var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
