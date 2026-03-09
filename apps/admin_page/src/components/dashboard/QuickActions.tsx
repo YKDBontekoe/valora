@@ -4,6 +4,7 @@ import { adminService } from '../../services/api';
 import { showToast } from '../../services/toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ConfirmationDialog from '../ConfirmationDialog';
 
 interface QuickActionsProps {
   onRefreshStats: () => void;
@@ -11,10 +12,16 @@ interface QuickActionsProps {
 
 const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
   const [retrying, setRetrying] = useState(false);
+  const [showRetryConfirmation, setShowRetryConfirmation] = useState(false);
   const navigate = useNavigate();
+
+  const handleRetryFailedJobsClick = () => {
+    setShowRetryConfirmation(true);
+  };
 
   const handleRetryFailedJobs = async () => {
     setRetrying(true);
+    setShowRetryConfirmation(false);
     try {
       const response = await adminService.getJobs(1, 100, 'Failed');
       const failedJobs = response.items;
@@ -59,7 +66,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
           title: 'Retry Pipeline',
           description: 'Re-queue all currently failed batch jobs.',
           icon: PlayCircle,
-          onClick: handleRetryFailedJobs,
+          onClick: handleRetryFailedJobsClick,
           isLoading: retrying,
           color: 'text-warning-600',
           bg: 'bg-warning-50',
@@ -121,6 +128,15 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                 </motion.button>
             ))}
         </div>
+
+        <ConfirmationDialog
+            isOpen={showRetryConfirmation}
+            onClose={() => setShowRetryConfirmation(false)}
+            onConfirm={handleRetryFailedJobs}
+            title="Retry Failed Pipelines?"
+            message="Are you sure you want to re-queue all currently failed batch jobs? This will consume cluster resources."
+            confirmLabel="Retry Pipelines"
+        />
     </div>
   );
 };

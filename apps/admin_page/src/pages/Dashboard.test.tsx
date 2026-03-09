@@ -80,6 +80,12 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Wait for confirmation dialog to appear
+    await waitFor(() => expect(screen.getByText('Retry Failed Pipelines?')).toBeInTheDocument());
+
+    const confirmButton = screen.getByText('Retry Pipelines');
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(adminService.getJobs).toHaveBeenCalled();
       expect(adminService.retryJob).toHaveBeenCalledTimes(2); // Should retry both failed jobs
@@ -109,6 +115,12 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Wait for confirmation dialog to appear
+    await waitFor(() => expect(screen.getByText('Retry Failed Pipelines?')).toBeInTheDocument());
+
+    const confirmButton = screen.getByText('Retry Pipelines');
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(adminService.retryJob).toHaveBeenCalledTimes(2);
       // Only 1 succeeded
@@ -128,6 +140,12 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Wait for confirmation dialog to appear
+    await waitFor(() => expect(screen.getByText('Retry Failed Pipelines?')).toBeInTheDocument());
+
+    const confirmButton = screen.getByText('Retry Pipelines');
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(adminService.retryJob).not.toHaveBeenCalled();
       expect(showToast).toHaveBeenCalledWith('No failed jobs found in the cluster.', 'info');
@@ -144,8 +162,36 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Wait for confirmation dialog to appear
+    await waitFor(() => expect(screen.getByText('Retry Failed Pipelines?')).toBeInTheDocument());
+
+    const confirmButton = screen.getByText('Retry Pipelines');
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(showToast).toHaveBeenCalledWith('System failed to re-queue jobs.', 'error');
+    });
+  });
+
+  it('exercises the cancel/dismiss path of the confirmation dialog', async () => {
+    (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
+
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
+
+    const retryButton = screen.getByText('Retry Pipeline');
+    fireEvent.click(retryButton);
+
+    // Wait for confirmation dialog to appear
+    await waitFor(() => expect(screen.getByText('Retry Failed Pipelines?')).toBeInTheDocument());
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Retry Failed Pipelines?')).not.toBeInTheDocument();
+      expect(adminService.getJobs).not.toHaveBeenCalled();
+      expect(adminService.retryJob).not.toHaveBeenCalled();
     });
   });
 
