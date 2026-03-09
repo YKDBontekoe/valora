@@ -36,8 +36,7 @@ public class WorkspaceMemberService : IWorkspaceMemberService
 
     public async Task AddMemberAsync(string userId, Guid workspaceId, InviteMemberDto dto, CancellationToken ct = default)
     {
-        var role = await GetUserRole(userId, workspaceId, ct);
-        if (role != WorkspaceRole.Owner) throw new ForbiddenAccessException();
+        await EnsureUserIsOwnerAsync(userId, workspaceId, ct);
 
         var existingMember = await _repository.GetMemberByEmailAsync(workspaceId, dto.Email, ct);
         if (existingMember != null) return;
@@ -66,8 +65,7 @@ public class WorkspaceMemberService : IWorkspaceMemberService
 
     public async Task RemoveMemberAsync(string userId, Guid workspaceId, Guid memberId, CancellationToken ct = default)
     {
-        var currentUserRole = await GetUserRole(userId, workspaceId, ct);
-        if (currentUserRole != WorkspaceRole.Owner) throw new ForbiddenAccessException();
+        await EnsureUserIsOwnerAsync(userId, workspaceId, ct);
 
         var member = await _repository.GetMemberAsync(memberId, ct);
         if (member == null || member.WorkspaceId != workspaceId) throw new NotFoundException(nameof(WorkspaceMember), memberId);
@@ -79,7 +77,12 @@ public class WorkspaceMemberService : IWorkspaceMemberService
         await _repository.SaveChangesAsync(ct);
     }
 
-    // Helpers
+    private async Task EnsureUserIsOwnerAsync(string userId, Guid workspaceId, CancellationToken ct)
+    {
+        var role = await GetUserRole(userId, workspaceId, ct);
+        if (role != WorkspaceRole.Owner) throw new ForbiddenAccessException();
+    }
+
     private async Task ValidateMemberAccess(string userId, Guid workspaceId, CancellationToken ct)
     {
         var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
