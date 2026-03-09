@@ -15,28 +15,30 @@ namespace Valora.IntegrationTests;
 
 public class BatchJobRepositoryIntegrationTests : IDisposable
 {
-    private readonly SqliteConnection _connection;
-    private readonly DbContextOptions<ValoraDbContext> _options;
+    private readonly SqliteConnection _anchorConnection;
     private readonly ServiceProvider _serviceProvider;
 
     public BatchJobRepositoryIntegrationTests()
     {
-        // Use a persistent SQLite in-memory database specifically for testing relational features
-        // like ExecuteUpdateAsync which are not supported by the InMemory provider.
-        _connection = new SqliteConnection("DataSource=:memory:");
-        _connection.Open();
+        // Use a shared-cache in-memory connection string to allow multiple thread-safe connections
+        // to the same in-memory database.
+        var connectionString = "Data Source=BatchJobTestDb;Mode=Memory;Cache=Shared";
 
-        _options = new DbContextOptionsBuilder<ValoraDbContext>()
-            .UseSqlite(_connection)
-            .Options;
+        // Open a single anchor SqliteConnection and keep it open to preserve the in-memory DB
+        // throughout the lifetime of the test.
+        _anchorConnection = new SqliteConnection(connectionString);
+        _anchorConnection.Open();
 
         // Ensure the schema is created in the SQLite database
-        using var context = new ValoraDbContext(_options);
+        var options = new DbContextOptionsBuilder<ValoraDbContext>()
+            .UseSqlite(connectionString)
+            .Options;
+        using var context = new ValoraDbContext(options);
         context.Database.EnsureCreated();
 
-        // Setup DI similar to what WebAppFactory does, but wired to SQLite
+        // Setup DI. Use the connection string so each scope creates its own thread-safe connection.
         var services = new ServiceCollection();
-        services.AddDbContext<ValoraDbContext>(opts => opts.UseSqlite(_connection));
+        services.AddDbContext<ValoraDbContext>(opts => opts.UseSqlite(connectionString));
         services.AddScoped<IBatchJobRepository, Valora.Infrastructure.Persistence.Repositories.BatchJobRepository>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -46,7 +48,6 @@ public class BatchJobRepositoryIntegrationTests : IDisposable
     public async Task GetNextPendingJobAsync_ShouldAtomicallyClaimJob_WithRelationalDb()
     {
         // Arrange
-        // Create a single pending job using a dedicated scope
         var pendingJob = new BatchJob
         {
             Id = Guid.NewGuid(),
@@ -66,23 +67,17 @@ public class BatchJobRepositoryIntegrationTests : IDisposable
         int concurrentWorkers = 5;
         var tasks = new List<Task<BatchJob?>>();
 
-        // Use a Barrier to synchronize the start of all worker tasks
         var startGate = new Barrier(concurrentWorkers);
 
         // Act
-        // Attempt to claim the job simultaneously from multiple scopes
         for (int i = 0; i < concurrentWorkers; i++)
         {
             tasks.Add(Task.Run(async () =>
             {
-                // Wait for all workers to be ready to call the repository
                 startGate.SignalAndWait();
 
-                // Delay execution randomly slightly to increase chance of concurrent ExecuteUpdateAsync clashes
-                // We use Thread.Sleep to not yield the thread before creating the scope
                 Thread.Sleep(Random.Shared.Next(1, 10));
 
-                // Create the scope inside the worker delegate
                 using var scope = _serviceProvider.CreateScope();
                 var repository = scope.ServiceProvider.GetRequiredService<IBatchJobRepository>();
 
@@ -90,16 +85,25 @@ public class BatchJobRepositoryIntegrationTests : IDisposable
                 {
                     return await repository.GetNextPendingJobAsync();
                 }
-                catch (DbUpdateException)
+                catch (DbUpdateException ex) when (ex.InnerException is SqliteException sqliteEx)
                 {
-                    // SQLite throws DbUpdateException if the database is locked during a concurrent ExecuteUpdateAsync.
-                    // A real relational DB like Postgres would lock the row and execute sequentially, returning 0 rows affected.
-                    // In this test, a DbUpdateException indicates another worker claimed it and locked the DB, which is a valid negative result.
-                    return null;
+                    // DbUpdateException wraps SqliteException from SaveChanges/SaveChangesAsync.
+                    // If SQLite is busy or locked (5 or 6), it means another worker successfully claimed
+                    // and locked the database. This is a valid negative result (no claim).
+                    if (sqliteEx.SqliteErrorCode is 5 or 6) // SQLITE_BUSY or SQLITE_LOCKED
+                    {
+                        return null;
+                    }
+                    throw;
                 }
-                catch (SqliteException)
+                catch (SqliteException sqliteEx)
                 {
-                    return null;
+                    // Catch direct SqliteExceptions in case ExecuteUpdateAsync throws it directly
+                    if (sqliteEx.SqliteErrorCode is 5 or 6) // SQLITE_BUSY or SQLITE_LOCKED
+                    {
+                        return null;
+                    }
+                    throw;
                 }
             }));
         }
@@ -109,7 +113,6 @@ public class BatchJobRepositoryIntegrationTests : IDisposable
         // Assert
         var successfulClaims = results.Where(r => r != null).ToList();
 
-        // Ensure only a single worker claimed the job.
         Assert.Single(successfulClaims);
 
         var claimedJob = successfulClaims.First();
@@ -129,7 +132,6 @@ public class BatchJobRepositoryIntegrationTests : IDisposable
             Assert.Equal(BatchJobStatus.Processing, dbJob.Status);
             Assert.NotNull(dbJob.StartedAt);
 
-            // Ensure only one job exists in the table to be safe
             var totalJobsCount = await verifyDbContext.BatchJobs.CountAsync();
             Assert.Equal(1, totalJobsCount);
         }
@@ -138,6 +140,6 @@ public class BatchJobRepositoryIntegrationTests : IDisposable
     public void Dispose()
     {
         _serviceProvider?.Dispose();
-        _connection?.Dispose();
+        _anchorConnection?.Dispose();
     }
 }
