@@ -1,11 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:valora_app/models/map_city_insight.dart';
-import 'package:valora_app/core/utils/map_bounds.dart';
 import 'package:valora_app/repositories/map_repository.dart';
-import 'package:valora_app/services/api_client.dart';
 import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:http/http.dart' as http;
 
 import '../services/ai_service_test.mocks.dart';
