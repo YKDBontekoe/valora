@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/exceptions/app_exceptions.dart';
+import 'dart:collection';
+
 import '../models/context_report.dart';
 import '../models/search_history_item.dart';
 import '../models/saved_search.dart';
@@ -38,9 +40,11 @@ class ContextReportProvider extends ChangeNotifier {
 
   int _radiusMeters = 1000;
   List<SearchHistoryItem> _history = [];
+  UnmodifiableListView<SearchHistoryItem>? _cachedHistory;
   int _historyLoadSeq = 0;
 
   List<SavedSearch> _savedSearches = [];
+  UnmodifiableListView<SavedSearch>? _cachedSavedSearches;
   int _savedSearchLoadSeq = 0;
 
   // Persistent state for report children
@@ -71,8 +75,8 @@ class ContextReportProvider extends ChangeNotifier {
   Set<String> get comparisonIds => Set.unmodifiable(_comparisonIds);
 
   int get radiusMeters => _radiusMeters;
-  List<SearchHistoryItem> get history => List.unmodifiable(_history);
-  List<SavedSearch> get savedSearches => List.unmodifiable(_savedSearches);
+  List<SearchHistoryItem> get history => _cachedHistory ??= UnmodifiableListView(_history);
+  List<SavedSearch> get savedSearches => _cachedSavedSearches ??= UnmodifiableListView(_savedSearches);
 
   @override
   void dispose() {
@@ -251,6 +255,7 @@ class ContextReportProvider extends ChangeNotifier {
     if (_isDisposed || seq != _historyLoadSeq) return;
 
     _history = history;
+    _cachedHistory = null;
     notifyListeners();
   }
 
@@ -261,6 +266,7 @@ class ContextReportProvider extends ChangeNotifier {
     if (_isDisposed || seq != _savedSearchLoadSeq) return;
 
     _savedSearches = searches;
+    _cachedSavedSearches = null;
     notifyListeners();
   }
 
