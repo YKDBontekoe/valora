@@ -23,8 +23,9 @@ class QuickActions extends StatelessWidget {
   final TextEditingController controller;
   final LocationService _locationService;
 
-  static final _snackBarShape =
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd));
+  static const _snackBarShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(ValoraSpacing.radiusMd)),
+  );
 
   Future<void> _pickLocation(BuildContext context) async {
     final LatLng? result = await Navigator.push<LatLng>(
