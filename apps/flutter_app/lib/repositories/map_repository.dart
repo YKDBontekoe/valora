@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
 import '../models/map_amenity_cluster.dart';
+import 'dart:collection';
+
 import '../models/map_overlay.dart';
 import '../models/map_overlay_tile.dart';
 import '../services/api_client.dart';
@@ -45,6 +47,7 @@ class MapRepository {
   /// every 30–60 min on the server), so we keep the result for the whole
   /// app session and never re-fetch unless explicitly invalidated.
   List<MapCityInsight>? _cachedCityInsights;
+  UnmodifiableListView<MapCityInsight>? _cachedCityInsightsView;
 
   MapRepository(this._client);
 
@@ -52,7 +55,7 @@ class MapRepository {
   /// subsequent calls. Pass [forceRefresh] to bypass the cache.
   Future<List<MapCityInsight>> getCityInsights({bool forceRefresh = false}) async {
     if (!forceRefresh && _cachedCityInsights != null) {
-      return _cachedCityInsights!;
+      return _cachedCityInsightsView ??= UnmodifiableListView(_cachedCityInsights!);
     }
     final response = await _client.get('/map/cities');
     final body = await _client.handleResponse<String>(
@@ -60,12 +63,16 @@ class MapRepository {
       (body) => body,
     );
     final result = await compute(_parseCityInsights, body);
-    _cachedCityInsights = result;
-    return _cachedCityInsights!;
+    _cachedCityInsights = List.unmodifiable(result);
+    _cachedCityInsightsView = null;
+    return _cachedCityInsightsView ??= UnmodifiableListView(_cachedCityInsights!);
   }
 
   /// Invalidates the session cache so the next [getCityInsights] call fetches fresh data.
-  void invalidateCityInsightsCache() => _cachedCityInsights = null;
+  void invalidateCityInsightsCache() {
+    _cachedCityInsights = null;
+    _cachedCityInsightsView = null;
+  }
 
   Future<List<MapAmenity>> getMapAmenities({
     required double minLat,
