@@ -161,6 +161,54 @@ graph TD
     API -.->|"Persist (Optional)"| DB[(PostgreSQL)]
 ```
 
+### Data Flow: API to Database Persistence
+
+When a "Write" operation is requested (e.g., a user saves a Context Report to a Workspace), the request traverses the Clean Architecture layers down to the PostgreSQL database.
+
+The following sequence diagram illustrates this persistence flow using the `POST /api/workspaces` endpoint as an example:
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App (Flutter/Web)
+    participant API as Valora.Api (Endpoints)
+    participant App as Valora.Application (Service)
+    participant Domain as Valora.Domain (Entity)
+    participant Repo as Valora.Infrastructure (Repository)
+    participant DB as PostgreSQL
+
+    Client->>API: POST /api/workspaces { "name": "My Favorites" }
+
+    %% API Layer Validation
+    API->>API: Validate Request (ValidationFilter)
+
+    %% Delegate to Application Layer
+    API->>App: IWorkspaceService.CreateWorkspaceAsync
+
+    %% Business Logic
+    App->>Domain: Create Workspace Entity (Public Setters)
+    Domain-->>App: Workspace Instance
+
+    %% Persistence Call
+    App->>Repo: AddAsync(Workspace)
+    App->>Repo: SaveChangesAsync()
+
+    %% Database Transaction
+    Repo->>DB: INSERT INTO "Workspaces"
+    DB-->>Repo: Acknowledge Insert
+
+    %% Completion
+    Repo-->>App: Completed
+    App-->>API: Map to WorkspaceDto
+    API-->>Client: 201 Created (WorkspaceDto)
+```
+
+1. **API Layer (`Valora.Api`)**: Intercepts the request, validates the payload (`ValidationFilter`), and delegates to the Application service.
+2. **Application Layer (`Valora.Application`)**: Enforces business rules (e.g., workspace limits) and instructs the Domain layer to instantiate the entity.
+3. **Domain Layer (`Valora.Domain`)**: Creates the `Workspace` entity ensuring structural integrity.
+4. **Infrastructure Layer (`Valora.Infrastructure`)**: The `WorkspaceRepository` tracks the entity and issues `SaveChangesAsync()`, converting the object into an SQL `INSERT` transaction against PostgreSQL.
+
+*For more details, see the [Onboarding Guide: Data Flow from API Request to Database Persistence](docs/onboarding-api-to-db-guide.md).*
+
 ### Key Components
 
 | Layer | Responsibility | Key Tech |
