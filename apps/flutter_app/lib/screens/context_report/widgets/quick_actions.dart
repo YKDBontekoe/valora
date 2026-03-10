@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../widgets/report/location_picker.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../services/pdok_service.dart';
 import '../../../services/location_service.dart';
 import '../../../providers/context_report_provider.dart';
@@ -36,7 +37,7 @@ class QuickActions extends StatelessWidget {
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
         ),
       );
 
@@ -58,7 +59,7 @@ class QuickActions extends StatelessWidget {
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
             ),
           );
         }
@@ -71,7 +72,7 @@ class QuickActions extends StatelessWidget {
             content: const Text('Could not determine location.'),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
           ),
         );
       }
@@ -84,7 +85,7 @@ class QuickActions extends StatelessWidget {
         content: const Text('Getting location…'),
         duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
       ),
     );
 
@@ -98,7 +99,7 @@ class QuickActions extends StatelessWidget {
           content: const Text('Resolving address…'),
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
         ),
       );
 
@@ -130,7 +131,7 @@ class QuickActions extends StatelessWidget {
               content: const Text('Could not resolve an address for your location.'),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
             ),
           );
         }
@@ -143,7 +144,7 @@ class QuickActions extends StatelessWidget {
             content: const Text('Could not determine location.'),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
           ),
         );
       }
@@ -156,7 +157,7 @@ class QuickActions extends StatelessWidget {
           content: Text(e.toString()),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
         ),
       );
     } on ValoraPermissionDeniedException catch (e) {
@@ -168,7 +169,7 @@ class QuickActions extends StatelessWidget {
           content: Text(e.toString()),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
         ),
       );
     } on ValoraPermissionDeniedForeverException catch (e) {
@@ -180,7 +181,7 @@ class QuickActions extends StatelessWidget {
           content: Text(e.toString()),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
         ),
       );
     } catch (e, stackTrace) {
@@ -192,7 +193,7 @@ class QuickActions extends StatelessWidget {
           content: const Text('Could not determine location.'),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
         ),
       );
     }
@@ -201,8 +202,8 @@ class QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 12,
-      runSpacing: 12,
+      spacing: ValoraSpacing.md,
+      runSpacing: ValoraSpacing.md,
       children: [
         ValoraButton(
           label: 'Pick on Map',

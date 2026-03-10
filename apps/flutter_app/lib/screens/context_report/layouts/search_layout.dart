@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../services/pdok_service.dart';
 import '../../../providers/context_report_provider.dart';
 import '../widgets/search_field.dart';
@@ -30,14 +31,14 @@ class SearchLayout extends StatelessWidget {
         // Minimal top spacing for status bar
         SliverToBoxAdapter(
           child: SizedBox(
-            height: MediaQuery.of(context).padding.top + 16,
+            height: MediaQuery.of(context).padding.top + ValoraSpacing.lg,
           ),
         ),
 
         // Hero section
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -45,7 +46,7 @@ class SearchLayout extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(ValoraSpacing.sm),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -55,7 +56,7 @@ class SearchLayout extends StatelessWidget {
                           begin: Alignment.bottomLeft,
                           end: Alignment.topRight,
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
                         boxShadow: [
                           BoxShadow(
                             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
@@ -77,7 +78,7 @@ class SearchLayout extends StatelessWidget {
                        duration: 2000.ms,
                        curve: Curves.easeInOutSine,
                      ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: ValoraSpacing.md),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -98,7 +99,7 @@ class SearchLayout extends StatelessWidget {
                     ),
                   ],
                 ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.05),
-                const SizedBox(height: 32),
+                const SizedBox(height: ValoraSpacing.xl),
 
                 // Search field
                 SearchField(
@@ -107,7 +108,7 @@ class SearchLayout extends StatelessWidget {
                   pdokService: pdokService,
                 ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: ValoraSpacing.md),
 
                 // Radius selector
                 const RadiusSelector()
@@ -115,7 +116,7 @@ class SearchLayout extends StatelessWidget {
                     .fadeIn(duration: 400.ms, delay: 200.ms)
                     .slideY(begin: 0.1),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: ValoraSpacing.md),
 
                 // Generate button
                 GenerateButton(
@@ -125,7 +126,7 @@ class SearchLayout extends StatelessWidget {
 
                 // Error state
                 if (provider.error != null) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: ValoraSpacing.lg),
                   ValoraEmptyState(
                     icon: Icons.error_outline_rounded,
                     title: 'Analysis Failed',
@@ -142,7 +143,7 @@ class SearchLayout extends StatelessWidget {
         // Quick actions
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+            padding: const EdgeInsets.fromLTRB(ValoraSpacing.lg, ValoraSpacing.xl, ValoraSpacing.lg, 0),
             child: QuickActions(pdokService: pdokService, provider: provider, controller: inputController)
                 .animate()
                 .fadeIn(duration: 400.ms, delay: 350.ms),
@@ -152,7 +153,7 @@ class SearchLayout extends StatelessWidget {
         // Saved Searches section
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(top: 32),
+            padding: const EdgeInsets.only(top: ValoraSpacing.xl),
             child: SavedSearchesSection(
               controller: inputController,
               provider: provider,
@@ -170,7 +171,7 @@ class SearchLayout extends StatelessWidget {
 
         // Bottom padding for nav bar
         const SliverToBoxAdapter(
-          child: SizedBox(height: 120),
+          child: SizedBox(height: 120.0),
         ),
       ],
     );
