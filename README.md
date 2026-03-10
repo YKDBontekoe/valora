@@ -207,7 +207,7 @@ sequenceDiagram
 3. **Domain Layer (`Valora.Domain`)**: Creates the `Workspace` entity ensuring structural integrity.
 4. **Infrastructure Layer (`Valora.Infrastructure`)**: The `WorkspaceRepository` tracks the entity and issues `SaveChangesAsync()`, converting the object into an SQL `INSERT` transaction against PostgreSQL.
 
-*For more details, see the [Onboarding Guide: Data Flow from API Request to Database Persistence](docs/onboarding-api-to-db-guide.md).*
+*For more details, see the [Onboarding Guide: Data Flow from API Request to Database Persistence](docs/onboarding-persistence-flow.md).*
 
 ### Key Components
 

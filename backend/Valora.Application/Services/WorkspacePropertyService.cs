@@ -76,6 +76,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         
         if (property == null) {
             property = new Property {
+                BagId = report.Location.PostalCode + report.Location.DisplayAddress,
                 Address = report.Location.DisplayAddress,
                 City = report.Location.MunicipalityName,
                 PostalCode = report.Location.PostalCode,
