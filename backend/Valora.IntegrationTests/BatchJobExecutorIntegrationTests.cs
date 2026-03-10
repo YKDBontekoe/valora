@@ -1,3 +1,4 @@
+using Valora.Application.Common.Interfaces;
 using System;
 using System.Linq;
 using System.Threading;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Shouldly;
 using Valora.Application.Common.Events;
-using Valora.Application.Common.Interfaces;
 using Valora.Application.Services.BatchJobs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;

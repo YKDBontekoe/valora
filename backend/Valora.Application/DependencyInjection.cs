@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Services;
 using Valora.Application.Services.BatchJobs;
 
