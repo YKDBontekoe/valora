@@ -131,15 +131,16 @@ class WorkspaceListItem extends StatelessWidget {
             variant: ValoraButtonVariant.ghost,
             onPressed: () => Navigator.pop(ctx),
           ),
-          Consumer<WorkspaceProvider>(
-            builder: (context, provider, _) {
+          Selector<WorkspaceProvider, bool>(
+            selector: (context, provider) => provider.isDeletingWorkspace,
+            builder: (context, isDeleting, _) {
               return ValoraButton(
                 label: 'Delete',
                 variant: ValoraButtonVariant.primary,
-                isLoading: provider.isDeletingWorkspace,
+                isLoading: isDeleting,
                 onPressed: () async {
                   try {
-                    await provider.deleteWorkspace(workspace.id);
+                    await context.read<WorkspaceProvider>().deleteWorkspace(workspace.id);
                     if (context.mounted) {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(

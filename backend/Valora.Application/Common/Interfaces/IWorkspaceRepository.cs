@@ -7,7 +7,6 @@ public interface IWorkspaceRepository
 {
     // Workspace Management
     Task<Workspace> AddAsync(Workspace workspace, CancellationToken ct = default);
-    Task<List<Workspace>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default);
     /// <summary>
     /// Gets projected DTOs for workspaces where the user is a member, ordered by creation date.
     /// </summary>
@@ -18,7 +17,6 @@ public interface IWorkspaceRepository
     Task<int> GetUserOwnedWorkspacesCountAsync(string userId, CancellationToken ct = default);
     Task<(WorkspaceDto? Dto, bool IsMember)> GetWorkspaceDtoAndMemberStatusAsync(Guid id, string userId, CancellationToken ct = default);
     Task<Workspace?> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task<Workspace?> GetByIdWithMembersAsync(Guid id, CancellationToken ct = default);
     Task UpdateAsync(Workspace workspace, CancellationToken ct = default);
     Task DeleteAsync(Workspace workspace, CancellationToken ct = default);
 
@@ -34,7 +32,6 @@ public interface IWorkspaceRepository
     // Saved Properties Management
     Task<SavedProperty?> GetSavedPropertyAsync(Guid workspaceId, Guid propertyId, CancellationToken ct = default);
     Task<SavedProperty?> GetSavedPropertyByIdAsync(Guid savedPropertyId, CancellationToken ct = default);
-    Task<List<SavedProperty>> GetSavedPropertiesAsync(Guid workspaceId, CancellationToken ct = default);
     /// <summary>
     /// Gets projected DTOs for saved properties in a workspace.
     /// </summary>
