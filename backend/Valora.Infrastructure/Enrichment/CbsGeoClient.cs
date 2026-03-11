@@ -132,6 +132,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
                     featureClone);
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to get metric value for neighborhood {NeighborhoodCode}", neighborhoodCode);
