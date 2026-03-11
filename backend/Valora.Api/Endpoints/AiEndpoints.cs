@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
+using Valora.Application.Common.Utilities;
 
 namespace Valora.Api.Endpoints;
 
@@ -119,7 +120,7 @@ public static class AiEndpoints
                 var createdConfig = await aiModelService.CreateConfigAsync(newConfig, ct);
 
                 logger.LogWarning("AUDIT: User {UserId} CREATED AI config for feature {Feature}. Model: {ModelId}",
-                    userId, feature.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
+                    userId, LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(dto.ModelId));
 
                 return Results.Ok(createdConfig);
             }
@@ -138,7 +139,7 @@ public static class AiEndpoints
                 await aiModelService.UpdateConfigAsync(config, ct);
 
                 logger.LogWarning("AUDIT: User {UserId} UPDATED AI config for feature {Feature}. Model: {OldModel} -> {NewModel}",
-                    userId, feature.Replace("\r", "").Replace("\n", ""), oldModel.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
+                    userId, LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(oldModel), LogSanitizer.Sanitize(dto.ModelId));
 
                 return Results.Ok(config);
             }
