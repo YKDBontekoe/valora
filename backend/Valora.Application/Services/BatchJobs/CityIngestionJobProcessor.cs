@@ -193,7 +193,7 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         {
             await Task.WhenAll(statsTask, crimeTask);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
