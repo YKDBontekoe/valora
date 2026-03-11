@@ -32,6 +32,8 @@ const itemVariants = {
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -90,7 +92,7 @@ const Login = () => {
             >
               <span className="text-white font-black text-4xl">V</span>
             </motion.div>
-            <h2 className="text-4xl font-black text-brand-900 tracking-tight mb-2">Valora Admin</h2>
+            <h2 className="text-4xl font-black text-brand-900 tracking-tightest mb-2">Valora Admin</h2>
             <p className="text-brand-500 font-bold tracking-tight">Enterprise Console Access</p>
           </motion.div>
 
@@ -108,8 +110,14 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-7">
             <motion.div variants={itemVariants}>
-              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-[0.25em]">Email Address</label>
-              <div className="relative group">
+              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-ultra-wide">Email Address</label>
+              <motion.div
+                animate={{
+                    scale: emailFocused ? 1.015 : 1,
+                    boxShadow: emailFocused ? 'var(--shadow-glow-primary)' : 'none'
+                }}
+                className="relative group"
+              >
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Mail className="h-5 w-5" />
                 </div>
@@ -118,16 +126,24 @@ const Login = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
                   placeholder="admin@valora.com"
                   className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none"
                   required
                 />
-              </div>
+              </motion.div>
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-[0.25em]">Secure Password</label>
-              <div className="relative group">
+              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-ultra-wide">Secure Password</label>
+              <motion.div
+                animate={{
+                    scale: passwordFocused ? 1.015 : 1,
+                    boxShadow: passwordFocused ? 'var(--shadow-glow-primary)' : 'none'
+                }}
+                className="relative group"
+              >
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Lock className="h-5 w-5" />
                 </div>
@@ -136,11 +152,13 @@ const Login = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
                   placeholder="••••••••••••"
                   className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none"
                   required
                 />
-              </div>
+              </motion.div>
             </motion.div>
 
             <motion.div variants={itemVariants} className="pt-2">
