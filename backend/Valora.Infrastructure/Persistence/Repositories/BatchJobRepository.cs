@@ -11,7 +11,7 @@ namespace Valora.Infrastructure.Persistence.Repositories;
 public class BatchJobRepository : IBatchJobRepository
 {
     private readonly ValoraDbContext _context;
-    private static readonly object _inMemoryLock = new object();
+    private static readonly SemaphoreSlim _inMemorySemaphore = new SemaphoreSlim(1, 1);
 
     public BatchJobRepository(ValoraDbContext context)
     {
@@ -129,20 +129,25 @@ public class BatchJobRepository : IBatchJobRepository
             // Lock to simulate atomic updates in memory, since EF InMemory does not handle true concurrency.
             // Note: Since each request gets a different context instance, locking on a static object
             // is required to simulate a database lock across threads/scopes.
-            lock (_inMemoryLock)
+            await _inMemorySemaphore.WaitAsync(cancellationToken);
+            try
             {
-                var job = _context.BatchJobs
+                var job = await _context.BatchJobs
                     .Where(j => j.Status == BatchJobStatus.Pending)
                     .OrderBy(j => j.CreatedAt)
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 if (job != null)
                 {
                     job.Status = BatchJobStatus.Processing;
                     job.StartedAt = DateTime.UtcNow;
-                    _context.SaveChanges();
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
                 return job;
+            }
+            finally
+            {
+                _inMemorySemaphore.Release();
             }
         }
 

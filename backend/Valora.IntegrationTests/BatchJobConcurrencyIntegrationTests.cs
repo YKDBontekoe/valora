@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
+using Valora.Domain.Enums;
 using Valora.Infrastructure.Persistence;
 using Xunit;
 using Shouldly;
@@ -20,8 +20,11 @@ public class BatchJobConcurrencyIntegrationTests : BaseTestcontainersIntegration
     }
 
     [Fact]
-    public async Task GetNextPendingJobAsync_ConcurrentCalls_OnlyOneWorkerClaimsJob()
+    public async Task GetNextPendingJobAsync_InMemoryFallback_OnlyOneWorkerClaimsJob()
     {
+        // This test specifically exercises the InMemory static semaphore fallback mechanism
+        // used when Testcontainers are unavailable and we fall back to the InMemory provider.
+
         // Arrange
         // We need a job that is pending and can be claimed
         Guid jobId;
