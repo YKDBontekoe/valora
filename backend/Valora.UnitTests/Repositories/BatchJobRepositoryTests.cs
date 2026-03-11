@@ -217,4 +217,26 @@ public class BatchJobRepositoryTests
         Assert.Single(result.Items);
         Assert.Equal("Amsterdam", result.Items[0].Target);
     }
+
+    [Fact]
+    public async Task GetActiveJobCountAsync_ShouldCountOnlyPendingAndProcessing()
+    {
+        // Arrange
+        using var context = new ValoraDbContext(_options);
+        await SeedDatabase(context);
+        var repository = new BatchJobRepository(context);
+
+        // SeedDatabase includes:
+        // 1 Completed (Amsterdam)
+        // 1 Processing (Rotterdam)
+        // 1 Pending (Utrecht)
+        // 1 Failed (Netherlands)
+
+        // Act
+        var activeCount = await repository.GetActiveJobCountAsync();
+
+        // Assert
+        // We expect exactly 2 active jobs (1 Pending + 1 Processing)
+        Assert.Equal(2, activeCount);
+    }
 }
