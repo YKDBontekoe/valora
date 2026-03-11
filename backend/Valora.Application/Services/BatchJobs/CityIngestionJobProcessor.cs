@@ -193,6 +193,10 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         {
             await Task.WhenAll(statsTask, crimeTask);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch stats for neighborhood {NeighborhoodCode}", geo.Code);
