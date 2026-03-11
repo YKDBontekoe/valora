@@ -164,4 +164,22 @@ public class CityIngestionJobProcessorTests
         Assert.Equal("No neighborhoods found for city.", job.ResultSummary);
         _neighborhoodRepositoryMock.Verify(x => x.AddRange(It.IsAny<IEnumerable<Neighborhood>>()), Times.Never);
     }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldThrowOperationCanceledException_WhenGetNeighborhoodsIsCanceled()
+    {
+        var processor = CreateProcessor();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
+
+        using var cts = new CancellationTokenSource();
+
+        _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .Returns(async (string city, CancellationToken token) => {
+                cts.Cancel();
+                token.ThrowIfCancellationRequested();
+                return await Task.FromResult(new List<NeighborhoodGeometryDto>());
+            });
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync(job, cts.Token));
+    }
 }
