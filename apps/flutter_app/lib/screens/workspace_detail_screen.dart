@@ -51,9 +51,10 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen>
       appBar: AppBar(
         backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
         surfaceTintColor: Colors.transparent,
-        title: Consumer<WorkspaceProvider>(
-          builder: (_, p, child) => Text(
-            p.selectedWorkspace?.name ?? 'Workspace',
+        title: Selector<WorkspaceProvider, String?>(
+          selector: (_, p) => p.selectedWorkspace?.name,
+          builder: (_, name, child) => Text(
+            name ?? 'Workspace',
             style: ValoraTypography.titleLarge.copyWith(
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
