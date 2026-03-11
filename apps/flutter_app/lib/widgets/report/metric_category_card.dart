@@ -377,7 +377,12 @@ class _HousingChartBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final housingTypeMetrics = metrics.where((m) => m.key.startsWith('housing_')).toList();
+    // Only include mutually exclusive tenure metrics to ensure pie chart is a valid partition
+    final housingTypeMetrics = metrics.where((m) =>
+        m.key == 'housing_owner' ||
+        m.key == 'housing_rental' ||
+        m.key == 'housing_social').toList();
+
     if (housingTypeMetrics.isEmpty) return const SizedBox.shrink();
 
     return Column(

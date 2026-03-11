@@ -42,7 +42,7 @@ public static class WorkspaceMemberEndpoints
         if (userId == null) return Results.Unauthorized();
 
         await service.AddMemberAsync(userId, id, dto, ct);
-        return Results.Ok();
+        return Results.Status(201);
     }
 
     private static async Task<IResult> RemoveMember(
