@@ -203,10 +203,10 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Luchtmeetnet station list lookup failed for page {Page}", page);
                 continue;

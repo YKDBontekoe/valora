@@ -6,6 +6,7 @@ using Moq;
 using Valora.Application.DTOs;
 using Valora.Application.Enrichment;
 using Valora.Infrastructure.Enrichment;
+using Valora.Application.Common.Interfaces;
 
 namespace Valora.UnitTests.Enrichment;
 
@@ -17,7 +18,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<OverpassAmenityClient>>();
         var client = new OverpassAmenityClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.BadGateway))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
             logger.Object);
 
@@ -32,7 +33,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
         var client = new CbsCrimeStatsClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
@@ -49,7 +50,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
         var client = new CbsNeighborhoodStatsClient(
             new HttpClient(new ExceptionResponseHandler(() => new Exception("Generic Error"))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
@@ -64,7 +65,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
         var client = new CbsCrimeStatsClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
@@ -79,7 +80,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<CbsCrimeStatsClient>>();
         var client = new CbsCrimeStatsClient(
             new HttpClient(new ExceptionResponseHandler(() => new Exception("Generic Error"))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
@@ -94,7 +95,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<OverpassAmenityClient>>();
         var client = new OverpassAmenityClient(
             new HttpClient(new ExceptionResponseHandler(() => new Exception("Generic Error"))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
             logger.Object);
 
@@ -109,7 +110,7 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<OverpassAmenityClient>>();
         var client = new OverpassAmenityClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.BadGateway))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
             logger.Object);
 
@@ -124,13 +125,86 @@ public class ExternalClientsErrorHandlingTests
         var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
         var client = new CbsNeighborhoodStatsClient(
             new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))),
-            new MemoryCache(new MemoryCacheOptions()),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
             Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
             logger.Object);
 
         var result = await client.GetStatsAsync(CreateLocation());
         Assert.Null(result);
         VerifyWarningLogged(logger);
+    }
+
+    [Fact]
+    public async Task CbsNeighborhoodStatsClient_OnCancellation_ThrowsOperationCanceledException()
+    {
+        var logger = new Mock<ILogger<CbsNeighborhoodStatsClient>>();
+        var client = new CbsNeighborhoodStatsClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetStatsAsync(CreateLocation(), cts.Token));
+    }
+
+    [Fact]
+    public async Task OverpassAmenityClient_OnCancellation_ThrowsOperationCanceledException()
+    {
+        var logger = new Mock<ILogger<OverpassAmenityClient>>();
+        var client = new OverpassAmenityClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
+            Options.Create(new ContextEnrichmentOptions { OverpassBaseUrl = "https://overpass.local" }),
+            logger.Object);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetAmenitiesAsync(CreateLocation(), 1000, cts.Token));
+    }
+
+    [Fact]
+    public async Task LuchtmeetnetAirQualityClient_OnCancellation_ThrowsOperationCanceledException()
+    {
+        var logger = new Mock<ILogger<LuchtmeetnetAirQualityClient>>();
+        var client = new LuchtmeetnetAirQualityClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
+            Options.Create(new ContextEnrichmentOptions { LuchtmeetnetBaseUrl = "https://luchtmeetnet.local" }),
+            logger.Object);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetSnapshotAsync(CreateLocation(), cts.Token));
+    }
+
+    [Fact]
+    public async Task CbsGeoClient_OnCancellation_ThrowsOperationCanceledException()
+    {
+        var logger = new Mock<ILogger<CbsGeoClient>>();
+        var statsClient = new Mock<ICbsNeighborhoodStatsClient>();
+        var crimeClient = new Mock<ICbsCrimeStatsClient>();
+
+        var client = new CbsGeoClient(
+            new HttpClient(new StaticResponseHandler(() => new HttpResponseMessage(HttpStatusCode.OK))),
+            new MemoryCache(Options.Create(new MemoryCacheOptions())),
+            statsClient.Object,
+            crimeClient.Object,
+            Options.Create(new ContextEnrichmentOptions { CbsBaseUrl = "https://cbs.local" }),
+            logger.Object);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetNeighborhoodOverlaysAsync(52.0, 4.0, 53.0, 5.0, Valora.Application.DTOs.Map.MapOverlayMetric.PopulationDensity, cts.Token));
     }
 
     private static void VerifyWarningLogged<T>(Mock<ILogger<T>> logger) where T : class
