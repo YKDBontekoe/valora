@@ -197,4 +197,10 @@ public class BatchJobRepository : IBatchJobRepository
         _context.Entry(job).State = EntityState.Modified;
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<int> GetActiveJobCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.BatchJobs
+            .CountAsync(j => j.Status == BatchJobStatus.Processing || j.Status == BatchJobStatus.Pending, cancellationToken);
+    }
 }

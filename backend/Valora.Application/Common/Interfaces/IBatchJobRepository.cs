@@ -25,4 +25,5 @@ public interface IBatchJobRepository
     Task<BatchJob> AddAsync(BatchJob job, CancellationToken cancellationToken = default);
     Task<BatchJobStatus?> GetStatusAsync(Guid id, CancellationToken cancellationToken = default);
     Task UpdateAsync(BatchJob job, CancellationToken cancellationToken = default);
+    Task<int> GetActiveJobCountAsync(CancellationToken cancellationToken = default);
 }
