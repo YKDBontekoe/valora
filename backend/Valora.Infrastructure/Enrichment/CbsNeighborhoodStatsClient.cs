@@ -72,6 +72,10 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
             document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "CBS lookup network error for region {RegionCode}", regionCode.Trim());
