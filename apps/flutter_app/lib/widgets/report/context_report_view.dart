@@ -173,113 +173,86 @@ class ContextReportView extends StatelessWidget {
     // Categories
     if (report.socialMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Social', defaultValue: true),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Social',
-            icon: Icons.people_rounded,
-            metrics: report.socialMetrics,
-            score: report.categoryScores['Social'],
-            accentColor: const Color(0xFF3B82F6),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Social', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Social',
+          icon: Icons.people_rounded,
+          metrics: report.socialMetrics,
+          accentColor: const Color(0xFF3B82F6),
+          categoryScores: report.categoryScores,
+          defaultExpanded: true,
         );
       }
     }
     if (report.crimeMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Safety'),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Safety',
-            icon: Icons.shield_rounded,
-            metrics: report.crimeMetrics,
-            score: report.categoryScores['Safety'],
-            accentColor: const Color(0xFF10B981),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Safety', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Safety',
+          icon: Icons.shield_rounded,
+          metrics: report.crimeMetrics,
+          accentColor: const Color(0xFF10B981),
+          categoryScores: report.categoryScores,
         );
       }
     }
     if (report.demographicsMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Demographics'),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Demographics',
-            icon: Icons.family_restroom_rounded,
-            metrics: report.demographicsMetrics,
-            score: report.categoryScores['Demographics'],
-            accentColor: const Color(0xFF8B5CF6),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Demographics', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Demographics',
+          icon: Icons.family_restroom_rounded,
+          metrics: report.demographicsMetrics,
+          accentColor: const Color(0xFF8B5CF6),
+          categoryScores: report.categoryScores,
         );
       }
     }
     if (report.housingMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Housing'),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Housing',
-            icon: Icons.home_work_rounded,
-            metrics: report.housingMetrics,
-            score: report.categoryScores['Housing'],
-            accentColor: const Color(0xFFEC4899),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Housing', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Housing',
+          icon: Icons.home_work_rounded,
+          metrics: report.housingMetrics,
+          accentColor: const Color(0xFFEC4899),
+          categoryScores: report.categoryScores,
         );
       }
     }
     if (report.mobilityMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Mobility'),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Mobility',
-            icon: Icons.directions_car_rounded,
-            metrics: report.mobilityMetrics,
-            score: report.categoryScores['Mobility'],
-            accentColor: const Color(0xFF0EA5E9),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Mobility', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Mobility',
+          icon: Icons.directions_car_rounded,
+          metrics: report.mobilityMetrics,
+          accentColor: const Color(0xFF0EA5E9),
+          categoryScores: report.categoryScores,
         );
       }
     }
     if (report.amenityMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Amenities'),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Amenities',
-            icon: Icons.store_rounded,
-            metrics: report.amenityMetrics,
-            score: report.categoryScores['Amenities'],
-            accentColor: const Color(0xFFF59E0B),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Amenities', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Amenities',
+          icon: Icons.store_rounded,
+          metrics: report.amenityMetrics,
+          accentColor: const Color(0xFFF59E0B),
+          categoryScores: report.categoryScores,
         );
       }
     }
     if (report.environmentMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Selector<ContextReportProvider, bool>(
-          selector: (_, p) => p.isExpanded('Environment'),
-          builder: (context, isExpanded, _) => MetricCategoryCard(
-            title: 'Environment',
-            icon: Icons.eco_rounded,
-            metrics: report.environmentMetrics,
-            score: report.categoryScores['Environment'],
-            accentColor: const Color(0xFF22C55E),
-            isExpanded: isExpanded,
-            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Environment', v),
-          ),
+        return _buildCategoryCard(
+          context: context,
+          category: 'Environment',
+          icon: Icons.eco_rounded,
+          metrics: report.environmentMetrics,
+          accentColor: const Color(0xFF22C55E),
+          categoryScores: report.categoryScores,
         );
       }
     }
@@ -327,5 +300,28 @@ class ContextReportView extends StatelessWidget {
     if (index == currentIndex++) return const SizedBox(height: 40);
 
     return const SizedBox.shrink();
+  }
+
+  static Widget _buildCategoryCard({
+    required BuildContext context,
+    required String category,
+    required IconData icon,
+    required List<ContextMetric> metrics,
+    required Color accentColor,
+    required Map<String, double?> categoryScores,
+    bool defaultExpanded = false,
+  }) {
+    return Selector<ContextReportProvider, bool>(
+      selector: (_, p) => p.isExpanded(category, defaultValue: defaultExpanded),
+      builder: (context, isExpanded, _) => MetricCategoryCard(
+        title: category,
+        icon: icon,
+        metrics: metrics,
+        score: categoryScores[category],
+        accentColor: accentColor,
+        isExpanded: isExpanded,
+        onToggle: (v) => context.read<ContextReportProvider>().setExpanded(category, v),
+      ),
+    );
   }
 }
