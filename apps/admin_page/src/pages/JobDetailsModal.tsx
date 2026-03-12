@@ -44,6 +44,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       fetchJobDetails(jobId);
     } else {
       setJob(null);
+      setConfirmation({ isOpen: false, action: null });
     }
   }, [isOpen, jobId, fetchJobDetails]);
 
@@ -287,15 +288,17 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       )}
 
       {/* Confirmation Dialog mapped outside the relative div to ensure it stays on top of modal */}
-      <ConfirmationDialog
-        isOpen={confirmation.isOpen}
-        onClose={() => setConfirmation({ isOpen: false, action: null })}
-        onConfirm={confirmation.action === 'retry' ? handleRetry : handleCancel}
-        title={confirmation.action === 'retry' ? "Restart Pipeline?" : "Terminate Process?"}
-        message={confirmation.action === 'retry' ? "Are you sure you want to restart this pipeline? It will reset to 'Pending' status." : "Are you sure you want to terminate this pipeline? In-progress execution will be interrupted."}
-        confirmLabel={confirmation.action === 'retry' ? "Restart" : "Terminate"}
-        isDestructive={confirmation.action === 'cancel'}
-      />
+      {isOpen && (
+        <ConfirmationDialog
+          isOpen={confirmation.isOpen}
+          onClose={() => setConfirmation({ isOpen: false, action: null })}
+          onConfirm={confirmation.action === 'retry' ? handleRetry : handleCancel}
+          title={confirmation.action === 'retry' ? "Restart Pipeline?" : "Terminate Process?"}
+          message={confirmation.action === 'retry' ? "Are you sure you want to restart this pipeline? It will reset to 'Pending' status." : "Are you sure you want to terminate this pipeline? In-progress execution will be interrupted."}
+          confirmLabel={confirmation.action === 'retry' ? "Restart" : "Terminate"}
+          isDestructive={confirmation.action === 'cancel'}
+        />
+      )}
     </AnimatePresence>
   );
 };

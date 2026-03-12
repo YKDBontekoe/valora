@@ -49,6 +49,19 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({
   prevPage,
   nextPage
 }) => {
+  const getAriaSort = (field: string) => {
+    if (sortBy === `${field}_asc`) return 'ascending';
+    if (sortBy === `${field}_desc`) return 'descending';
+    return 'none';
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSort?.(field);
+    }
+  };
+
   return (
     <motion.div
       variants={container}
@@ -74,6 +87,11 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({
               <th
                 className={`px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest ${toggleSort ? 'cursor-pointer group hover:bg-brand-100/50 transition-colors select-none' : ''}`}
                 onClick={() => toggleSort?.('feature')}
+                onKeyDown={(e) => handleKeyDown(e, 'feature')}
+                tabIndex={toggleSort ? 0 : undefined}
+                role={toggleSort ? "button" : undefined}
+                aria-sort={toggleSort ? getAriaSort('feature') : undefined}
+                aria-label={toggleSort ? "Sort by Feature" : undefined}
               >
                 <div className="flex items-center gap-2">
                   Feature
@@ -88,6 +106,11 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({
               <th
                 className={`px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest ${toggleSort ? 'cursor-pointer group hover:bg-brand-100/50 transition-colors select-none' : ''}`}
                 onClick={() => toggleSort?.('modelId')}
+                onKeyDown={(e) => handleKeyDown(e, 'modelId')}
+                tabIndex={toggleSort ? 0 : undefined}
+                role={toggleSort ? "button" : undefined}
+                aria-sort={toggleSort ? getAriaSort('modelId') : undefined}
+                aria-label={toggleSort ? "Sort by Model" : undefined}
               >
                 <div className="flex items-center gap-2">
                   Model
@@ -102,6 +125,11 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({
               <th
                 className={`px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest ${toggleSort ? 'cursor-pointer group hover:bg-brand-100/50 transition-colors select-none' : ''}`}
                 onClick={() => toggleSort?.('isEnabled')}
+                onKeyDown={(e) => handleKeyDown(e, 'isEnabled')}
+                tabIndex={toggleSort ? 0 : undefined}
+                role={toggleSort ? "button" : undefined}
+                aria-sort={toggleSort ? getAriaSort('isEnabled') : undefined}
+                aria-label={toggleSort ? "Sort by Status" : undefined}
               >
                 <div className="flex items-center gap-2">
                   Status
