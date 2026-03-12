@@ -55,6 +55,28 @@ public sealed class ContextReportService : IContextReportService
     /// This provider fires multiple tasks in parallel (Task.WhenAll) to fetch data from CBS, PDOK, and OSM simultaneously.</item>
     /// <item><strong>Fan-In:</strong> The results are normalized and scored by <see cref="ContextReportBuilder"/>.</item>
     /// </list>
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[User Request] --> B{Cache Hit?}
+    ///     B -- Yes --> C[Return Cached Report]
+    ///     B -- No --> D[Resolve Location]
+    ///     D --> E[IContextDataProvider.GetSourceDataAsync]
+    ///
+    ///     E -->|Fan-Out| F[CBS]
+    ///     E -->|Fan-Out| G[PDOK]
+    ///     E -->|Fan-Out| H[Overpass]
+    ///     E -->|Fan-Out| I[Luchtmeetnet]
+    ///
+    ///     F -->|Fan-In| J[ContextReportBuilder]
+    ///     G -->|Fan-In| J
+    ///     H -->|Fan-In| J
+    ///     I -->|Fan-In| J
+    ///
+    ///     J --> K[Score & Normalize]
+    ///     K --> L[Save to Cache]
+    ///     L --> M[Return Report]
+    /// ```
     /// </para>
     /// <para>
     /// <strong>Key Design Decisions:</strong>
