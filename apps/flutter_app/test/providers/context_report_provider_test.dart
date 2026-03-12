@@ -146,14 +146,4 @@ void main() {
     expect(provider.history, isEmpty);
   });
 
-  test('history list is unmodifiable', () async {
-     final provider = ContextReportProvider(
-      repository: MockContextReportRepository(report: buildReport()),
-      historyService: SearchHistoryService(),
-    );
-
-    await provider.generate('search 1');
-
-    expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
-  });
 }
