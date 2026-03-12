@@ -2,23 +2,35 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Activity, AlertCircle, Info, ChevronRight, Clock, Database } from 'lucide-react';
 import type { BatchJob } from '../../types';
-import { rowVariants, getStatusBadge } from './BatchJobTableUtils';
+import { rowVariants, getStatusBadge, STATUS } from './BatchJobTableUtils';
 
 interface BatchJobTableRowProps {
   job: BatchJob;
   openDetails: (jobId: string) => void;
 }
 
-export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDetails }) => {
-  const clampedProgress = Math.min(Math.max(job.progress || 0, 0), 100);
+export const BatchJobTableRow = React.forwardRef<HTMLTableRowElement, BatchJobTableRowProps>(
+  ({ job, openDetails }, ref) => {
+    const clampedProgress = Math.min(Math.max(job.progress || 0, 0), 100);
 
-  return (
-    <motion.tr
-      variants={rowVariants}
-      whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
-      className="group cursor-pointer relative transition-colors duration-500"
-      onClick={() => openDetails(job.id)}
-    >
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openDetails(job.id);
+      }
+    };
+
+    return (
+      <motion.tr
+        ref={ref}
+        variants={rowVariants}
+        whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
+        className="group cursor-pointer relative transition-colors duration-500"
+        onClick={() => openDetails(job.id)}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        aria-label={`View details for ${job.type} job targeting ${job.target}`}
+      >
       <td className="px-12 py-10 whitespace-nowrap">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
@@ -45,12 +57,12 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
         <div className="flex flex-col gap-4">
           <div className="w-full bg-brand-50 rounded-full h-4 min-w-[200px] overflow-hidden relative border border-brand-100/50 shadow-inner">
             <motion.div
-              className={`h-full rounded-full relative z-10 ${job.status === 'Failed' ? 'bg-error-500 shadow-glow-error' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-glow-primary'}`}
+              className={`h-full rounded-full relative z-10 ${job.status === STATUS.Failed ? 'bg-error-500 shadow-glow-error' : 'bg-linear-to-r from-primary-500 to-primary-600 shadow-glow-primary'}`}
               initial={{ width: 0 }}
               animate={{ width: `${clampedProgress}%` }}
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              {job.status === 'Processing' && (
+              {job.status === STATUS.Processing && (
                 <motion.div
                   className="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg]"
                   animate={{ x: ['-200%', '300%'] }}
@@ -61,7 +73,7 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-brand-400 font-black tracking-[0.25em]">{clampedProgress}% SYNCED</span>
-            {job.status === 'Processing' && (
+            {job.status === STATUS.Processing && (
                 <div className="flex gap-1">
                     {[1, 2, 3].map(i => (
                         <motion.div
@@ -97,13 +109,16 @@ export const BatchJobTableRow: React.FC<BatchJobTableRowProps> = ({ job, openDet
             </span>
         </div>
       </td>
-      <td className="px-12 py-10 whitespace-nowrap text-right">
-        <div className="flex items-center justify-end gap-6">
-            <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl bg-primary-50">
-                <ChevronRight size={22} className="text-primary-500" />
-            </div>
-        </div>
-      </td>
-    </motion.tr>
-  );
-};
+        <td className="px-12 py-10 whitespace-nowrap text-right">
+          <div className="flex items-center justify-end gap-6">
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl bg-primary-50">
+                  <ChevronRight size={22} className="text-primary-500" />
+              </div>
+          </div>
+        </td>
+      </motion.tr>
+    );
+  }
+);
+
+BatchJobTableRow.displayName = 'BatchJobTableRow';
