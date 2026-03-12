@@ -112,7 +112,7 @@ public class OpenRouterAiService : IAiService
                 throw new Exception($"Model {modelId} returned empty response.");
             }
 
-            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", feature.Replace("\r", "").Replace("\n", ""), modelId.Replace("\r", "").Replace("\n", ""));
+            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId));
 
             return response;
         }
@@ -122,7 +122,7 @@ public class OpenRouterAiService : IAiService
         }
         catch (ClientResultException clientEx)
         {
-            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", feature.Replace("\r", "").Replace("\n", ""), modelId.Replace("\r", "").Replace("\n", ""));
+            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId));
 
             if (clientEx.Status == 429 || clientEx.Status >= 500)
             {
@@ -132,7 +132,7 @@ public class OpenRouterAiService : IAiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", modelId.Replace("\r", "").Replace("\n", ""), feature.Replace("\r", "").Replace("\n", ""));
+            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature));
             throw new Exception("AI model failed.", ex);
         }
     }
@@ -195,7 +195,7 @@ public class OpenRouterAiService : IAiService
                     throw;
                 }
 
-                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", model.Replace("\r", "").Replace("\n", ""), i + 1, ex.Status, delayMilliseconds);
+                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(model), i + 1, ex.Status, delayMilliseconds);
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 delayMilliseconds *= 2;
             }

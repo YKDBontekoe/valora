@@ -119,7 +119,7 @@ public static class AiEndpoints
                 var createdConfig = await aiModelService.CreateConfigAsync(newConfig, ct);
 
                 logger.LogWarning("AUDIT: User {UserId} CREATED AI config for feature {Feature}. Model: {ModelId}",
-                    userId, feature.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
+                    userId, Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(dto.ModelId));
 
                 return Results.Ok(createdConfig);
             }
@@ -138,7 +138,7 @@ public static class AiEndpoints
                 await aiModelService.UpdateConfigAsync(config, ct);
 
                 logger.LogWarning("AUDIT: User {UserId} UPDATED AI config for feature {Feature}. Model: {OldModel} -> {NewModel}",
-                    userId, feature.Replace("\r", "").Replace("\n", ""), oldModel.Replace("\r", "").Replace("\n", ""), dto.ModelId.Replace("\r", "").Replace("\n", ""));
+                    userId, Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(oldModel), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(dto.ModelId));
 
                 return Results.Ok(config);
             }
