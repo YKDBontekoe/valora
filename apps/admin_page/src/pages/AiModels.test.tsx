@@ -107,4 +107,24 @@ describe('AiModels', () => {
         expect(aiService.getConfigs).toHaveBeenCalledTimes(2); // Initial load + reload
     });
   });
+
+  it('filters and paginates configs', async () => {
+    const mockConfigs = [
+        { id: '1', feature: 'apple', modelId: 'gpt-4', isEnabled: true, description: 'Test 1', safetySettings: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000 },
+        { id: '2', feature: 'banana', modelId: 'gpt-3.5', isEnabled: false, description: 'Test 2', safetySettings: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000 }
+    ];
+    (aiService.getConfigs as Mock).mockResolvedValue(mockConfigs);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+        expect(screen.getByText('apple')).toBeInTheDocument();
+        expect(screen.getByText('banana')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Search feature or model...'), { target: { value: 'apple' } });
+
+    expect(screen.getByText('apple')).toBeInTheDocument();
+    expect(screen.queryByText('banana')).not.toBeInTheDocument();
+  });
 });

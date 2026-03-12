@@ -91,4 +91,16 @@ describe('AiModelsTable', () => {
 
     expect(defaultProps.onDelete).toHaveBeenCalledWith(mockConfigs[0]);
   });
+
+  it('calls toggleSort when column headers are clicked', () => {
+    const toggleSort = vi.fn();
+    render(<AiModelsTable configs={mockConfigs} loading={false} onEdit={vi.fn()} onDelete={vi.fn()} toggleSort={toggleSort} />);
+
+    fireEvent.click(screen.getByText('Feature'));
+    expect(toggleSort).toHaveBeenCalledWith('feature');
+    fireEvent.click(screen.getByText('Model'));
+    expect(toggleSort).toHaveBeenCalledWith('modelId');
+    fireEvent.click(screen.getByText('Status'));
+    expect(toggleSort).toHaveBeenCalledWith('isEnabled');
+  });
 });
