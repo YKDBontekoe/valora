@@ -5,6 +5,7 @@ import 'share_workspace_dialog.dart';
 import '../valora_widgets.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
+import 'dart:math' as math;
 import '../../core/theme/valora_typography.dart';
 
 class MemberManagementWidget extends StatelessWidget {
@@ -88,7 +89,7 @@ class MemberManagementWidget extends StatelessWidget {
                     ],
                   ),
                 )
-                    .animate(delay: (50 * index).ms)
+                    .animate(delay: math.min(50 * index, 500).ms)
                     .fadeIn(duration: 300.ms, curve: Curves.easeOut)
                     .slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut);
               },
