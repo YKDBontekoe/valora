@@ -60,7 +60,7 @@ class MapRepository {
       (body) => body,
     );
     final result = await compute(_parseCityInsights, body);
-    _cachedCityInsights = result;
+    _cachedCityInsights = List.unmodifiable(result);
     return _cachedCityInsights!;
   }
 

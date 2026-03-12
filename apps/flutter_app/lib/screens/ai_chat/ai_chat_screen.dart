@@ -58,16 +58,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: Selector<AiChatProvider, ({List<dynamic> activeMessages, bool isSending, String? error})>(
-              selector: (context, provider) => (
-                activeMessages: provider.activeMessages,
-                isSending: provider.isSending,
-                error: provider.error,
-              ),
-              builder: (context, data, child) {
-                final messages = data.activeMessages;
+            child: Consumer<AiChatProvider>(
+              builder: (context, provider, child) {
+                final messages = provider.activeMessages;
 
-                if (messages.isEmpty && !data.isSending) {
+                if (messages.isEmpty && !provider.isSending) {
                   return const Center(
                     child: Text('How can I help you today?'),
                   );
@@ -81,19 +76,19 @@ class _AiChatScreenState extends State<AiChatScreen> {
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
                           final isLast = index == messages.length - 1;
-                          final isError = isLast && data.error != null;
+                          final isError = isLast && provider.error != null;
                           return AiChatMessageBubble(
                             message: messages[index],
                             isError: isError,
                             onRetry: isError ? () {
-                              context.read<AiChatProvider>().retryLastMessage();
+                              provider.retryLastMessage();
                               Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
                             } : null,
                           );
                         },
                       ),
                     ),
-                    if (data.error != null)
+                    if (provider.error != null)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -104,7 +99,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                data.error!,
+                                provider.error!,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onErrorContainer,
                                 ),
@@ -118,10 +113,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
               },
             ),
           ),
-          Selector<AiChatProvider, bool>(
-            selector: (context, provider) => provider.isSending,
-            builder: (context, isSending, child) {
-              if (isSending) {
+          Consumer<AiChatProvider>(
+            builder: (context, provider, child) {
+              if (provider.isSending) {
                 return const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: LinearProgressIndicator(),
@@ -165,13 +159,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Selector<AiChatProvider, bool>(
-                      selector: (context, provider) => provider.isSending,
-                      builder: (context, isSending, child) {
+                    Consumer<AiChatProvider>(
+                      builder: (context, provider, child) {
                         return IconButton(
                           icon: const Icon(Icons.send),
                           color: theme.colorScheme.primary,
-                          onPressed: isSending
+                          onPressed: provider.isSending
                               ? null
                               : () => _handleSubmitted(_textController.text),
                         );

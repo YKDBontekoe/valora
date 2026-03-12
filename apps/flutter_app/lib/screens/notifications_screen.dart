@@ -191,15 +191,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 );
               },
             ),
-            Selector<NotificationService, ({bool isLoading, String? error, List<dynamic> notifications, bool isLoadingMore})>(
-              selector: (context, provider) => (
-                isLoading: provider.isLoading,
-                error: provider.error,
-                notifications: provider.notifications,
-                isLoadingMore: provider.isLoadingMore,
-              ),
-              builder: (context, data, _) {
-                if (data.isLoading && data.notifications.isEmpty) {
+            Consumer<NotificationService>(
+              builder: (context, provider, _) {
+                if (provider.isLoading && provider.notifications.isEmpty) {
                   return const SliverFillRemaining(
                     child: Center(
                       child: ValoraLoadingIndicator(
@@ -208,7 +202,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   );
                 }
 
-                if (data.error != null && data.notifications.isEmpty) {
+                if (provider.error != null && provider.notifications.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
@@ -224,7 +218,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   );
                 }
 
-                if (data.notifications.isEmpty) {
+                if (provider.notifications.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
@@ -248,8 +242,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        if (index == data.notifications.length) {
-                          if (data.isLoadingMore) {
+                        if (index == provider.notifications.length) {
+                          if (provider.isLoadingMore) {
                             return const Padding(
                               padding: EdgeInsets.all(16.0),
                               child:
@@ -259,14 +253,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           return const SizedBox(height: 100);
                         }
 
-                        final notification = data.notifications[index];
+                        final notification = provider.notifications[index];
                         return Padding(
                           padding: const EdgeInsets.only(
                               bottom: ValoraSpacing.sm),
                           child: NotificationCard(
                             key: Key(notification.id),
                             notification: notification,
-                            provider: context.read<NotificationService>(),
+                            provider: provider,
                             isDark: isDark,
                             formatTime: _formatTime,
                             getIcon: _getIconForType,
@@ -274,7 +268,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ),
                         );
                       },
-                      childCount: data.notifications.length + 1,
+                      childCount: provider.notifications.length + 1,
                     ),
                   ),
                 );

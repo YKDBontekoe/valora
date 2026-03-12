@@ -46,14 +46,8 @@ class _NotificationSheetState extends State<NotificationSheet> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Selector<NotificationService, ({bool isLoading, String? error, List<dynamic> notifications, bool isLoadingMore})>(
-        selector: (context, service) => (
-          isLoading: service.isLoading,
-          error: service.error,
-          notifications: service.notifications,
-          isLoadingMore: service.isLoadingMore,
-        ),
-        builder: (context, data, _) {
+      child: Consumer<NotificationService>(
+        builder: (context, service, _) {
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -69,23 +63,23 @@ class _NotificationSheetState extends State<NotificationSheet> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (data.notifications.isNotEmpty)
+                    if (service.notifications.isNotEmpty)
                       TextButton(
-                        onPressed: data.isLoading
+                        onPressed: service.isLoading
                             ? null
-                            : () => context.read<NotificationService>().markAllAsRead(),
+                            : () => service.markAllAsRead(),
                         child: const Text('Mark all as read'),
                       ),
                   ],
                 ),
               ),
               const Divider(height: 1),
-              if (data.isLoading && data.notifications.isEmpty)
+              if (service.isLoading && service.notifications.isEmpty)
                 const SizedBox(
                   height: 200,
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (data.error != null && data.notifications.isEmpty)
+              else if (service.error != null && service.notifications.isEmpty)
                 SizedBox(
                   height: 200,
                   child: Center(
@@ -100,14 +94,14 @@ class _NotificationSheetState extends State<NotificationSheet> {
                           style: ValoraTypography.bodyMedium,
                         ),
                         TextButton(
-                          onPressed: () => context.read<NotificationService>().fetchNotifications(refresh: true),
+                          onPressed: () => service.fetchNotifications(refresh: true),
                           child: const Text('Try Again'),
                         ),
                       ],
                     ),
                   ),
                 )
-              else if (data.notifications.isEmpty)
+              else if (service.notifications.isEmpty)
                 SizedBox(
                   height: 200,
                   child: Center(
@@ -135,20 +129,20 @@ class _NotificationSheetState extends State<NotificationSheet> {
                   child: ListView.separated(
                     controller: _scrollController,
                     shrinkWrap: true,
-                    itemCount: data.notifications.length +
-                        (data.isLoadingMore ? 1 : 0),
+                    itemCount: service.notifications.length +
+                        (service.isLoadingMore ? 1 : 0),
                     separatorBuilder: (context, index) => const Divider(
                       height: 1,
                       indent: 72,
                     ),
                     itemBuilder: (context, index) {
-                      if (index == data.notifications.length) {
+                      if (index == service.notifications.length) {
                         return const Padding(
                           padding: EdgeInsets.all(16.0),
                           child: Center(child: CircularProgressIndicator()),
                         );
                       }
-                      final notification = data.notifications[index];
+                      final notification = service.notifications[index];
                       return Dismissible(
                         key: Key(notification.id),
                         direction: DismissDirection.endToStart,
@@ -186,7 +180,7 @@ class _NotificationSheetState extends State<NotificationSheet> {
                         },
                         onDismissed: (direction) async {
                           try {
-                            await context.read<NotificationService>().deleteNotification(notification.id);
+                            await service.deleteNotification(notification.id);
                           } catch (_) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -202,7 +196,7 @@ class _NotificationSheetState extends State<NotificationSheet> {
                           notification: notification,
                           onTap: () async {
                             if (!notification.isRead) {
-                              context.read<NotificationService>().markAsRead(notification.id);
+                              service.markAsRead(notification.id);
                             }
                             if (notification.actionUrl != null) {
                               final uri = Uri.parse(notification.actionUrl!);
