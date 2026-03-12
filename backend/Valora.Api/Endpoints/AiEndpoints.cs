@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Valora.Application.Common.Interfaces;
+using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 
 namespace Valora.Api.Endpoints;
@@ -119,7 +120,7 @@ public static class AiEndpoints
                 var createdConfig = await aiModelService.CreateConfigAsync(newConfig, ct);
 
                 logger.LogWarning("AUDIT: User {UserId} CREATED AI config for feature {Feature}. Model: {ModelId}",
-                    Valora.Application.Common.Utilities.LogSanitizer.Sanitize(userId), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(dto.ModelId));
+                    LogSanitizer.Sanitize(userId), LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(dto.ModelId));
 
                 return Results.Ok(createdConfig);
             }
@@ -138,7 +139,7 @@ public static class AiEndpoints
                 await aiModelService.UpdateConfigAsync(config, ct);
 
                 logger.LogWarning("AUDIT: User {UserId} UPDATED AI config for feature {Feature}. Model: {OldModel} -> {NewModel}",
-                    Valora.Application.Common.Utilities.LogSanitizer.Sanitize(userId), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(oldModel), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(dto.ModelId));
+                    LogSanitizer.Sanitize(userId), LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(oldModel), LogSanitizer.Sanitize(dto.ModelId));
 
                 return Results.Ok(config);
             }
@@ -162,12 +163,12 @@ public static class AiEndpoints
 
             if (!deleted)
             {
-                logger.LogInformation("User {UserId} attempted to delete non-existent AI config with ID {ConfigId}", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(userId), id);
+                logger.LogInformation("User {UserId} attempted to delete non-existent AI config with ID {ConfigId}", LogSanitizer.Sanitize(userId), id);
                 return Results.NotFound();
             }
 
             logger.LogWarning("AUDIT: User {UserId} DELETED AI config with ID {ConfigId}",
-                Valora.Application.Common.Utilities.LogSanitizer.Sanitize(userId), id);
+                LogSanitizer.Sanitize(userId), id);
             return Results.NoContent();
         });
     }

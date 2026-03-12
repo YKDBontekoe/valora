@@ -1,3 +1,5 @@
+using System;
+
 namespace Valora.Application.Common.Utilities;
 
 public static class LogSanitizer
@@ -6,7 +8,7 @@ public static class LogSanitizer
     {
         if (string.IsNullOrEmpty(input))
         {
-            return input ?? string.Empty;
+            return string.Empty;
         }
 
         return input.Replace(Environment.NewLine, "")

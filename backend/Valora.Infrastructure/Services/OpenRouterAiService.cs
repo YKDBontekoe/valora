@@ -1,3 +1,4 @@
+using Valora.Application.Common.Utilities;
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net.Http.Json;
@@ -109,10 +110,10 @@ public class OpenRouterAiService : IAiService
 
             if (string.IsNullOrWhiteSpace(response))
             {
-                throw new Exception($"Model {Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId)} returned empty response.");
+                throw new Exception($"Model {LogSanitizer.Sanitize(modelId)} returned empty response.");
             }
 
-            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId));
+            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(modelId));
 
             return response;
         }
@@ -122,7 +123,7 @@ public class OpenRouterAiService : IAiService
         }
         catch (ClientResultException clientEx)
         {
-            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId));
+            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(modelId));
 
             if (clientEx.Status == 429 || clientEx.Status >= 500)
             {
@@ -132,7 +133,7 @@ public class OpenRouterAiService : IAiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature));
+            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", LogSanitizer.Sanitize(modelId), LogSanitizer.Sanitize(feature));
             throw new Exception("AI model failed.", ex);
         }
     }
@@ -195,7 +196,7 @@ public class OpenRouterAiService : IAiService
                     throw;
                 }
 
-                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(model), i + 1, ex.Status, delayMilliseconds);
+                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", LogSanitizer.Sanitize(model), i + 1, ex.Status, delayMilliseconds);
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 delayMilliseconds *= 2;
             }
