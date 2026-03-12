@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings2, Cpu, Sparkles, Edit2, Trash2 } from 'lucide-react';
+import { Settings2, Cpu, Sparkles, Edit2, Trash2, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import Button from '../Button';
 import type { AiModelConfig } from '../../services/api';
@@ -29,9 +29,39 @@ interface AiModelsTableProps {
   loading: boolean;
   onEdit: (config: AiModelConfig) => void;
   onDelete: (config: AiModelConfig) => void;
+  sortBy?: string;
+  toggleSort?: (field: string) => void;
+  page?: number;
+  totalPages?: number;
+  prevPage?: () => void;
+  nextPage?: () => void;
 }
 
-const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit, onDelete }) => {
+const AiModelsTable: React.FC<AiModelsTableProps> = ({
+  configs,
+  loading,
+  onEdit,
+  onDelete,
+  sortBy,
+  toggleSort,
+  page,
+  totalPages,
+  prevPage,
+  nextPage
+}) => {
+  const getAriaSort = (field: string) => {
+    if (sortBy === `${field}_asc`) return 'ascending';
+    if (sortBy === `${field}_desc`) return 'descending';
+    return 'none';
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSort?.(field);
+    }
+  };
+
   return (
     <motion.div
       variants={container}
@@ -54,9 +84,63 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
         <table className="min-w-full divide-y divide-brand-100">
           <thead>
             <tr className="bg-brand-50/10">
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Feature</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Model</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Status</th>
+              <th
+                className={`px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest ${toggleSort ? 'cursor-pointer group hover:bg-brand-100/50 transition-colors select-none' : ''}`}
+                onClick={() => toggleSort?.('feature')}
+                onKeyDown={(e) => handleKeyDown(e, 'feature')}
+                tabIndex={toggleSort ? 0 : undefined}
+                role={toggleSort ? "button" : undefined}
+                aria-sort={toggleSort ? getAriaSort('feature') : undefined}
+                aria-label={toggleSort ? "Sort by Feature" : undefined}
+              >
+                <div className="flex items-center gap-2">
+                  Feature
+                  {toggleSort && (
+                    <div className="flex flex-col">
+                      <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'feature_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                      <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'feature_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                    </div>
+                  )}
+                </div>
+              </th>
+              <th
+                className={`px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest ${toggleSort ? 'cursor-pointer group hover:bg-brand-100/50 transition-colors select-none' : ''}`}
+                onClick={() => toggleSort?.('modelId')}
+                onKeyDown={(e) => handleKeyDown(e, 'modelId')}
+                tabIndex={toggleSort ? 0 : undefined}
+                role={toggleSort ? "button" : undefined}
+                aria-sort={toggleSort ? getAriaSort('modelId') : undefined}
+                aria-label={toggleSort ? "Sort by Model" : undefined}
+              >
+                <div className="flex items-center gap-2">
+                  Model
+                  {toggleSort && (
+                    <div className="flex flex-col">
+                      <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'modelId_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                      <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'modelId_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                    </div>
+                  )}
+                </div>
+              </th>
+              <th
+                className={`px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest ${toggleSort ? 'cursor-pointer group hover:bg-brand-100/50 transition-colors select-none' : ''}`}
+                onClick={() => toggleSort?.('isEnabled')}
+                onKeyDown={(e) => handleKeyDown(e, 'isEnabled')}
+                tabIndex={toggleSort ? 0 : undefined}
+                role={toggleSort ? "button" : undefined}
+                aria-sort={toggleSort ? getAriaSort('isEnabled') : undefined}
+                aria-label={toggleSort ? "Sort by Status" : undefined}
+              >
+                <div className="flex items-center gap-2">
+                  Status
+                  {toggleSort && (
+                    <div className="flex flex-col">
+                      <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'isEnabled_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                      <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'isEnabled_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                    </div>
+                  )}
+                </div>
+              </th>
               <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
             </tr>
           </thead>
@@ -147,6 +231,37 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
           </motion.tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {page && totalPages && totalPages > 1 && (
+        <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-b-[2.5rem] border-t border-brand-100/50">
+          <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
+            Record Group <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
+          </div>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={prevPage}
+              disabled={page === 1 || loading}
+              leftIcon={<ChevronLeft size={18} />}
+              className="font-black bg-white"
+            >
+              Prev
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={nextPage}
+              disabled={page === totalPages || loading}
+              rightIcon={<ChevronRight size={18} />}
+              className="font-black bg-white"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

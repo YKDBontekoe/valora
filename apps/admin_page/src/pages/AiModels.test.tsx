@@ -107,4 +107,44 @@ describe('AiModels', () => {
         expect(aiService.getConfigs).toHaveBeenCalledTimes(2); // Initial load + reload
     });
   });
+
+  it('filters configs by search query', async () => {
+    const mockConfigs = [
+        { id: '1', feature: 'apple', modelId: 'gpt-4', isEnabled: true, description: 'Test 1', safetySettings: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000 },
+        { id: '2', feature: 'banana', modelId: 'gpt-3.5', isEnabled: false, description: 'Test 2', safetySettings: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000 }
+    ];
+    (aiService.getConfigs as Mock).mockResolvedValue(mockConfigs);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+        expect(screen.getByText('apple')).toBeInTheDocument();
+        expect(screen.getByText('banana')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Search feature or model...'), { target: { value: 'apple' } });
+
+    expect(screen.getByText('apple')).toBeInTheDocument();
+    expect(screen.queryByText('banana')).not.toBeInTheDocument();
+  });
+
+  it('paginates configs correctly', async () => {
+    // Create 11 configs to span across two pages (default page size is 10)
+    const mockConfigs = Array.from({ length: 11 }).map((_, i) => ({
+        id: `${i}`, feature: `feature_${i}`, modelId: 'gpt-4', isEnabled: true, description: `Test ${i}`, safetySettings: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000
+    }));
+    (aiService.getConfigs as Mock).mockResolvedValue(mockConfigs);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+        expect(screen.getByText('feature_0')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('feature_10')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Next'));
+
+    expect(screen.getByText('feature_10')).toBeInTheDocument();
+  });
 });
