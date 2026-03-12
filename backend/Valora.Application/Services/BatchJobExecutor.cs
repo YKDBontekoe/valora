@@ -59,11 +59,10 @@ public class BatchJobExecutor : IBatchJobExecutor
     ///
     ///     Processing --> Completed : LogicComplete
     ///     Processing --> Failed : LogicFailed / FindingProcessor Failed
-    ///     Processing --> Cancelled : CancellationToken Triggered
+    ///     Processing --> Failed : CancellationToken Triggered (this method marks job as Failed)
     ///
     ///     Completed --> [*]
     ///     Failed --> [*]
-    ///     Cancelled --> [*]
     /// ```
     /// </para>
     /// </remarks>
