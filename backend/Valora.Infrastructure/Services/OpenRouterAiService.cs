@@ -123,17 +123,17 @@ public class OpenRouterAiService : IAiService
         }
         catch (ClientResultException clientEx)
         {
-            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(modelId));
+            _logger.LogError("AI service client error for feature {Feature} using model {Model}.", LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(modelId));
 
             if (clientEx.Status == 429 || clientEx.Status >= 500)
             {
-                throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
+                throw new HttpRequestException("AI service temporarily unavailable", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
             }
-            throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
+            throw new HttpRequestException("AI service client error", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", LogSanitizer.Sanitize(modelId), LogSanitizer.Sanitize(feature));
+            _logger.LogError("Failed to chat with model {Model} for feature {Feature}.", LogSanitizer.Sanitize(modelId), LogSanitizer.Sanitize(feature));
             throw new Exception("AI model failed.", ex);
         }
     }
