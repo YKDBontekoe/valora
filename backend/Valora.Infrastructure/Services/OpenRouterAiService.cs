@@ -109,7 +109,7 @@ public class OpenRouterAiService : IAiService
 
             if (string.IsNullOrWhiteSpace(response))
             {
-                throw new Exception($"Model {modelId} returned empty response.");
+                throw new Exception($"Model {Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId)} returned empty response.");
             }
 
             _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", Valora.Application.Common.Utilities.LogSanitizer.Sanitize(feature), Valora.Application.Common.Utilities.LogSanitizer.Sanitize(modelId));
