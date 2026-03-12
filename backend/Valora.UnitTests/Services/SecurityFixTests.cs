@@ -54,7 +54,7 @@ public class SecurityFixTests
             .ReturnsAsync(newUser);
 
         _mockIdentityService.Setup(x => x.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((Application.Common.Models.Result.Success(), "userId"));
+            .ReturnsAsync((Valora.Application.Common.Models.Result.Success(), "userId"));
 
         _mockTokenService.Setup(x => x.CreateJwtTokenAsync(newUser)).ReturnsAsync("token");
         _mockIdentityService.Setup(x => x.GetUserRolesAsync(newUser)).ReturnsAsync(new List<string>());

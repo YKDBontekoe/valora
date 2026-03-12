@@ -1,3 +1,4 @@
+using Valora.Application.Common.Utilities;
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net.Http.Json;
@@ -109,10 +110,10 @@ public class OpenRouterAiService : IAiService
 
             if (string.IsNullOrWhiteSpace(response))
             {
-                throw new Exception($"Model {modelId} returned empty response.");
+                throw new Exception($"Model {LogSanitizer.Sanitize(modelId)} returned empty response.");
             }
 
-            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", feature.Replace("\r", "").Replace("\n", ""), modelId.Replace("\r", "").Replace("\n", ""));
+            _logger.LogInformation("AI Chat Success. Feature: {Feature}, Model: {Model}", LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(modelId));
 
             return response;
         }
@@ -122,17 +123,17 @@ public class OpenRouterAiService : IAiService
         }
         catch (ClientResultException clientEx)
         {
-            _logger.LogError(clientEx, "AI service client error for feature {Feature} using model {Model}.", feature.Replace("\r", "").Replace("\n", ""), modelId.Replace("\r", "").Replace("\n", ""));
+            _logger.LogError("AI service client error for feature {Feature} using model {Model}.", LogSanitizer.Sanitize(feature), LogSanitizer.Sanitize(modelId));
 
             if (clientEx.Status == 429 || clientEx.Status >= 500)
             {
-                throw new HttpRequestException($"AI service temporarily unavailable: {clientEx.Message}", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
+                throw new HttpRequestException("AI service temporarily unavailable", clientEx, System.Net.HttpStatusCode.ServiceUnavailable);
             }
-            throw new HttpRequestException($"AI service client error: {clientEx.Message}", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
+            throw new HttpRequestException("AI service client error", clientEx, (System.Net.HttpStatusCode)clientEx.Status);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to chat with model {Model} for feature {Feature}.", modelId.Replace("\r", "").Replace("\n", ""), feature.Replace("\r", "").Replace("\n", ""));
+            _logger.LogError("Failed to chat with model {Model} for feature {Feature}.", LogSanitizer.Sanitize(modelId), LogSanitizer.Sanitize(feature));
             throw new Exception("AI model failed.", ex);
         }
     }
@@ -195,13 +196,13 @@ public class OpenRouterAiService : IAiService
                     throw;
                 }
 
-                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", model.Replace("\r", "").Replace("\n", ""), i + 1, ex.Status, delayMilliseconds);
+                _logger.LogWarning("Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", LogSanitizer.Sanitize(model), i + 1, ex.Status, delayMilliseconds);
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 delayMilliseconds *= 2;
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                _logger.LogWarning(ex, "ArgumentOutOfRangeException in AI SDK. Treating as failure.");
+                _logger.LogWarning("ArgumentOutOfRangeException in AI SDK. Treating as failure.");
                 throw new Exception("AI SDK error", ex);
             }
         }
