@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/activity_log.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../valora_widgets.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
@@ -72,7 +73,10 @@ class ActivityFeedWidget extends StatelessWidget {
               ),
             ],
           ),
-        );
+        )
+            .animate(delay: (50 * index).ms)
+            .fadeIn(duration: 300.ms, curve: Curves.easeOut)
+            .slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut);
       },
     );
   }
