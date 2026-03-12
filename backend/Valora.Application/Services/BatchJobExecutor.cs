@@ -43,6 +43,27 @@ public class BatchJobExecutor : IBatchJobExecutor
     /// <item>Execute logic.</item>
     /// <item>Mark as 'Completed' or 'Failed'.</item>
     /// </list>
+    ///
+    /// ```mermaid
+    /// stateDiagram-v2
+    ///     [*] --> Pending : Enqueue Job
+    ///     Pending --> Processing : GetNextPendingJobAsync (Atomic Claim)
+    ///
+    ///     state Processing {
+    ///         [*] --> FindingProcessor
+    ///         FindingProcessor --> ExecutingLogic : Processor Found
+    ///         FindingProcessor --> Failed : No Processor / Multiple Processors
+    ///         ExecutingLogic --> LogicComplete : Success
+    ///         ExecutingLogic --> LogicFailed : Exception Thrown
+    ///     }
+    ///
+    ///     Processing --> Completed : LogicComplete
+    ///     Processing --> Failed : LogicFailed / FindingProcessor Failed
+    ///     Processing --> Failed : CancellationToken Triggered (this method marks job as Failed)
+    ///
+    ///     Completed --> [*]
+    ///     Failed --> [*]
+    /// ```
     /// </para>
     /// </remarks>
     public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
