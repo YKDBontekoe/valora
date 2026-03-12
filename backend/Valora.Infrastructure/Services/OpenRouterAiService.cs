@@ -196,13 +196,13 @@ public class OpenRouterAiService : IAiService
                     throw;
                 }
 
-                _logger.LogWarning(ex, "Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", LogSanitizer.Sanitize(model), i + 1, ex.Status, delayMilliseconds);
+                _logger.LogWarning("Model {Model} attempt {Attempt} failed with status {Status}. Retrying in {Delay}ms...", LogSanitizer.Sanitize(model), i + 1, ex.Status, delayMilliseconds);
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 delayMilliseconds *= 2;
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                _logger.LogWarning(ex, "ArgumentOutOfRangeException in AI SDK. Treating as failure.");
+                _logger.LogWarning("ArgumentOutOfRangeException in AI SDK. Treating as failure.");
                 throw new Exception("AI SDK error", ex);
             }
         }
