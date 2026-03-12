@@ -233,7 +233,7 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({
       </div>
 
       {/* Pagination */}
-      {page && totalPages && (
+      {page && totalPages && totalPages > 1 && (
         <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-b-[2.5rem] border-t border-brand-100/50">
           <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
             Record Group <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
