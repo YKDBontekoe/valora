@@ -114,15 +114,24 @@ const AiModels: React.FC = () => {
   const sortedConfigs = useMemo(() => {
     if (!sortBy) return filteredConfigs;
     return [...filteredConfigs].sort((a, b) => {
-      let aValue: any = a[sortBy.split('_')[0] as keyof AiModelConfig];
-      let bValue: any = b[sortBy.split('_')[0] as keyof AiModelConfig];
+      const field = sortBy.split("_")[0] as keyof AiModelConfig;
+      const isAsc = sortBy.endsWith("_asc");
+      const aValue = a[field];
+      const bValue = b[field];
 
-      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return isAsc ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      if (typeof aValue === "boolean" && typeof bValue === "boolean") {
+        return isAsc ? (aValue === bValue ? 0 : aValue ? -1 : 1) : (aValue === bValue ? 0 : aValue ? 1 : -1);
+      }
 
-      if (aValue < bValue) return sortBy.endsWith('_asc') ? -1 : 1;
-      if (aValue > bValue) return sortBy.endsWith('_asc') ? 1 : -1;
+      const aNum = Number(aValue);
+      const bNum = Number(bValue);
+      if (aNum < bNum) return isAsc ? -1 : 1;
+      if (aNum > bNum) return isAsc ? 1 : -1;
       return 0;
+
     });
   }, [filteredConfigs, sortBy]);
 
