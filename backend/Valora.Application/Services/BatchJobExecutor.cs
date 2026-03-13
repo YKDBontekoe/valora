@@ -98,38 +98,57 @@ public class BatchJobExecutor : IBatchJobExecutor
     {
         job.Status = newStatus;
 
-        if (newStatus == BatchJobStatus.Processing)
+        switch (newStatus)
         {
-            job.StartedAt = DateTime.UtcNow;
-            AppendLog(job, message ?? "Job started.");
-        }
-        else if (newStatus == BatchJobStatus.Completed)
-        {
-            job.CompletedAt = DateTime.UtcNow;
-            job.Progress = 100;
-            AppendLog(job, message ?? "Job completed successfully.");
-        }
-        else if (newStatus == BatchJobStatus.Failed)
-        {
-            job.CompletedAt = DateTime.UtcNow;
-
-            if (ex != null)
-            {
-                // Do not expose raw exception details to the public job status
-                job.Error = "Job failed due to an internal error.";
-                _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
-                AppendLog(job, "Job failed due to an internal error.");
-            }
-            else
-            {
-                job.Error = message ?? "Job failed.";
-                _logger.LogInformation("Batch job {JobId} cancelled/failed: {Message}", job.Id, job.Error);
-                AppendLog(job, message ?? "Job failed.");
-            }
+            case BatchJobStatus.Processing:
+                HandleProcessingStatus(job, message);
+                break;
+            case BatchJobStatus.Completed:
+                HandleCompletedStatus(job, message);
+                break;
+            case BatchJobStatus.Failed:
+                HandleFailedStatus(job, message, ex);
+                break;
         }
 
         await _jobRepository.UpdateAsync(job, cancellationToken);
 
+        await DispatchJobEventsAsync(job, newStatus, cancellationToken);
+    }
+
+    private void HandleProcessingStatus(BatchJob job, string? message)
+    {
+        job.StartedAt = DateTime.UtcNow;
+        AppendLog(job, message ?? "Job started.");
+    }
+
+    private void HandleCompletedStatus(BatchJob job, string? message)
+    {
+        job.CompletedAt = DateTime.UtcNow;
+        job.Progress = 100;
+        AppendLog(job, message ?? "Job completed successfully.");
+    }
+
+    private void HandleFailedStatus(BatchJob job, string? message, Exception? ex)
+    {
+        job.CompletedAt = DateTime.UtcNow;
+
+        if (ex != null)
+        {
+            job.Error = "Job failed due to an internal error.";
+            _logger.LogError(ex, "Batch job {JobId} failed", job.Id);
+            AppendLog(job, "Job failed due to an internal error.");
+        }
+        else
+        {
+            job.Error = message ?? "Job failed.";
+            _logger.LogInformation("Batch job {JobId} cancelled/failed: {Message}", job.Id, job.Error);
+            AppendLog(job, message ?? "Job failed.");
+        }
+    }
+
+    private async Task DispatchJobEventsAsync(BatchJob job, BatchJobStatus newStatus, CancellationToken cancellationToken)
+    {
         if (newStatus == BatchJobStatus.Completed)
         {
             await _eventDispatcher.DispatchAsync(new BatchJobCompletedEvent(job.Id, job.Type, job.Target), cancellationToken);
@@ -142,10 +161,10 @@ public class BatchJobExecutor : IBatchJobExecutor
 
     private void AppendLog(BatchJob job, string message)
     {
-        var entry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
+        var logEntry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {message}";
         if (string.IsNullOrEmpty(job.ExecutionLog))
-            job.ExecutionLog = entry;
+            job.ExecutionLog = logEntry;
         else
-            job.ExecutionLog += Environment.NewLine + entry;
+            job.ExecutionLog += Environment.NewLine + logEntry;
     }
 }

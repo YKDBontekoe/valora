@@ -51,28 +51,31 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         var role = await GetUserRole(userId, workspaceId, ct);
         if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
 
-        // Check if property exists by Address/BAG ID
-        // The ContextReportDto doesn't currently expose BagId, so we use Address as a fallback or if we can extract it.
-        // For now, let's try Address.
-        var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
+        var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct);
         
         if (property == null) {
-            property = new Property {
-                Address = report.Location.DisplayAddress,
-                City = report.Location.MunicipalityName,
-                PostalCode = report.Location.PostalCode,
-                Latitude = report.Location.Latitude,
-                Longitude = report.Location.Longitude,
-                ContextCompositeScore = report.CompositeScore,
-                ContextSafetyScore = report.CategoryScores.TryGetValue("Safety", out var safety) ? safety : null,
-                ContextSocialScore = report.CategoryScores.TryGetValue("Social", out var social) ? social : null,
-                ContextAmenitiesScore = report.CategoryScores.TryGetValue("Amenities", out var amenities) ? amenities : null,
-                ContextEnvironmentScore = report.CategoryScores.TryGetValue("Environment", out var environment) ? environment : null,
-            };
-            await _repository.AddPropertyAsync(property, ct);
+            property = await CreatePropertyFromReportAsync(report, ct);
         }
 
         return await SavePropertyAsync(userId, workspaceId, property.Id, notes, ct);
+    }
+
+    private async Task<Property> CreatePropertyFromReportAsync(ContextReportDto report, CancellationToken ct)
+    {
+        var property = new Property {
+            Address = report.Location.DisplayAddress,
+            City = report.Location.MunicipalityName,
+            PostalCode = report.Location.PostalCode,
+            Latitude = report.Location.Latitude,
+            Longitude = report.Location.Longitude,
+            ContextCompositeScore = report.CompositeScore,
+            ContextSafetyScore = report.CategoryScores.TryGetValue("Safety", out var safety) ? safety : null,
+            ContextSocialScore = report.CategoryScores.TryGetValue("Social", out var social) ? social : null,
+            ContextAmenitiesScore = report.CategoryScores.TryGetValue("Amenities", out var amenities) ? amenities : null,
+            ContextEnvironmentScore = report.CategoryScores.TryGetValue("Environment", out var environment) ? environment : null,
+        };
+        await _repository.AddPropertyAsync(property, ct);
+        return property;
     }
 
     public async Task<List<SavedPropertyDto>> GetSavedPropertiesAsync(string userId, Guid workspaceId, CancellationToken ct = default)
@@ -154,6 +157,11 @@ public class WorkspacePropertyService : IWorkspacePropertyService
             c.Reactions ?? new Dictionary<string, List<string>>()
         )).ToList();
 
+        return BuildCommentTree(dtos);
+    }
+
+    private static List<CommentDto> BuildCommentTree(List<CommentDto> dtos)
+    {
         var lookup = dtos.ToDictionary(c => c.Id);
         var rootComments = new List<CommentDto>();
 

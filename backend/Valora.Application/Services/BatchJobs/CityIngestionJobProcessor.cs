@@ -77,19 +77,17 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         var existingNeighborhoods = await _neighborhoodRepository.GetByCityAsync(job.Target, cancellationToken);
         var existingDict = existingNeighborhoods.ToDictionary(n => n.Code);
 
-        int count = 0;
-        int total = neighborhoods.Count;
+        int processedNeighborhoods = 0;
+        int totalNeighborhoods = neighborhoods.Count;
 
         var toAdd = new List<Neighborhood>();
         var toUpdate = new List<Neighborhood>();
-        // Batch size for writes
         const int batchSize = 10;
 
         foreach (var geo in neighborhoods)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            // Check for cancellation every iteration or periodically
-            if (count % 10 == 0)
+            if (processedNeighborhoods % 10 == 0)
             {
                 var status = await _jobRepository.GetStatusAsync(job.Id, cancellationToken);
                 if (status == BatchJobStatus.Failed)
@@ -104,38 +102,33 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
             if (isNew) toAdd.Add(neighborhood);
             else toUpdate.Add(neighborhood);
 
-            count++;
+            processedNeighborhoods++;
 
-            // Batch Flush
-            if (count % batchSize == 0 || count == total)
+            if (processedNeighborhoods % batchSize == 0 || processedNeighborhoods == totalNeighborhoods)
             {
                 if (toAdd.Count > 0)
                 {
                     _neighborhoodRepository.AddRange(toAdd);
-                    // Add to dictionary so we don't try to add again if duplicates in list (unlikely)
                     foreach (var n in toAdd) existingDict[n.Code] = n;
-                    // Create new list to avoid reference mutation issues with Moq in tests
                     toAdd = new List<Neighborhood>();
                 }
 
                 if (toUpdate.Count > 0)
                 {
                     _neighborhoodRepository.UpdateRange(toUpdate);
-                    // Create new list to avoid reference mutation issues with Moq in tests
                     toUpdate = new List<Neighborhood>();
                 }
 
-                // Persist all changes
                 await _neighborhoodRepository.SaveChangesAsync(cancellationToken);
 
-                job.Progress = (int)((double)count / total * 100);
-                job.AppendLog($"Processed {count}/{total} neighborhoods.");
+                job.Progress = (int)((double)processedNeighborhoods / totalNeighborhoods * 100);
+                job.AppendLog($"Processed {processedNeighborhoods}/{totalNeighborhoods} neighborhoods.");
                 await _jobRepository.UpdateAsync(job, cancellationToken);
             }
         }
 
-        job.AppendLog($"Processed {total} neighborhoods.");
-        job.ResultSummary = $"Processed {total} neighborhoods.";
+        job.AppendLog($"Processed {totalNeighborhoods} neighborhoods.");
+        job.ResultSummary = $"Processed {totalNeighborhoods} neighborhoods.";
     }
 
     private async Task<(Neighborhood Entity, bool IsNew)> EnrichNeighborhoodAsync(
@@ -165,8 +158,7 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
             isNew = true;
         }
 
-        // Fetch stats (external calls still per item, but could be parallelized if API allows)
-        var loc = new ResolvedLocationDto(
+        var locationDto = new ResolvedLocationDto(
             Query: string.Empty,
             DisplayAddress: string.Empty,
             Latitude: 0,
@@ -181,9 +173,8 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
             NeighborhoodName: null,
             PostalCode: null);
 
-        // Parallelize stats fetching
-        var statsTask = _statsClient.GetStatsAsync(loc, cancellationToken);
-        var crimeTask = _crimeClient.GetStatsAsync(loc, cancellationToken);
+        var statsTask = _statsClient.GetStatsAsync(locationDto, cancellationToken);
+        var crimeTask = _crimeClient.GetStatsAsync(locationDto, cancellationToken);
 
         try
         {
