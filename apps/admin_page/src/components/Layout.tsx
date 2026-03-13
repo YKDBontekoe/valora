@@ -59,10 +59,10 @@ const Layout = () => {
               <span className="text-white font-black text-3xl">V</span>
             </motion.div>
             <div className="flex flex-col">
-                <h1 className="text-2xl font-black text-brand-900 tracking-tight leading-none">Valora</h1>
+                <h1 className="text-2xl font-black text-brand-900 tracking-tightest leading-none">Valora</h1>
                 <div className="flex items-center gap-2 mt-1.5">
                     <Sparkles size={10} className="text-primary-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.25em]">Admin Console</span>
+                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-ultra-wide">Admin Console</span>
                 </div>
             </div>
           </Link>
@@ -72,7 +72,7 @@ const Layout = () => {
           {navGroups.map((group) => (
             hasAccess(group.requiredRoles) && (
               <div key={group.title} className="space-y-4">
-                <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-4">
+                <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-4">
                   {group.title}
                 </h3>
                 <div className="space-y-2">
@@ -128,6 +128,7 @@ const Layout = () => {
 
         <div className="p-8 border-t border-brand-100 mt-auto bg-brand-50/20 backdrop-blur-md">
           <motion.button
+            whileHover={{ y: -4 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleLogout}
             className="flex items-center w-full px-5 py-5 text-sm font-black text-brand-400 rounded-2xl hover:bg-error-50 hover:text-error-600 transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-glow-error border border-transparent hover:border-error-100"

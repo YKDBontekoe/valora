@@ -77,10 +77,10 @@ const SystemHealth = () => {
                     <Server className="text-white" size={28} />
                 </div>
                 <div className="flex flex-col">
-                    <h2 className="text-4xl font-black text-white tracking-tight">System Infrastructure</h2>
+                    <h2 className="text-4xl font-black text-white tracking-tightest">System Infrastructure</h2>
                     <div className="flex items-center gap-2 mt-1.5">
                         <Sparkles size={12} className="text-primary-400" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-400">Node Cluster: Primary-Alpha</span>
+                        <span className="text-[10px] font-black uppercase tracking-ultra-wide text-primary-400">Node Cluster: Primary-Alpha</span>
                     </div>
                 </div>
             </div>
@@ -125,7 +125,7 @@ const SystemHealth = () => {
               <div className="p-4 bg-white/10 rounded-2xl shadow-sm border border-white/10 group-hover/card:scale-110 group-hover/card:rotate-6 transition-transform">
                 <Database size={26} className="text-primary-400" />
               </div>
-              <span className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">Persistent Layer</span>
+              <span className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">Persistent Layer</span>
             </div>
             <AnimatePresence mode="wait">
               {loading && !health && !isStale ? (
@@ -162,7 +162,7 @@ const SystemHealth = () => {
               <div className="p-4 bg-white/10 rounded-2xl shadow-sm border border-white/10 group-hover/card:scale-110 group-hover/card:rotate-6 transition-transform">
                 <Activity size={26} className="text-info-400" />
               </div>
-              <span className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">Traffic Signal</span>
+              <span className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">Traffic Signal</span>
             </div>
             <AnimatePresence mode="wait">
               {loading && !health && !isStale ? (
@@ -205,7 +205,7 @@ const SystemHealth = () => {
               <div className="p-4 bg-white/10 rounded-2xl shadow-sm border border-white/10 group-hover/card:scale-110 group-hover/card:rotate-6 transition-transform">
                 <Clock size={26} className="text-success-400" />
               </div>
-              <span className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">Job Concurrency</span>
+              <span className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">Job Concurrency</span>
             </div>
             <AnimatePresence mode="wait">
               {loading && !health && !isStale ? (
@@ -263,7 +263,7 @@ const SystemHealth = () => {
             <div className="flex flex-col">
                 <div className="flex items-center gap-3">
                     <div className="w-2.5 h-2.5 rounded-full bg-success-500 animate-pulse shadow-glow-success" />
-                    <span className="text-[12px] font-black text-white uppercase tracking-[0.25em]">Cluster Integrity Verified</span>
+                    <span className="text-[12px] font-black text-white uppercase tracking-ultra-wide">Cluster Integrity Verified</span>
                 </div>
                 {health?.lastPipelineSuccess && (
                      <span className="text-[11px] font-bold text-brand-400 mt-1">
