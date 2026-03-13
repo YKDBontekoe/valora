@@ -73,6 +73,31 @@ public sealed class ContextReportService : IContextReportService
     /// </item>
     /// </list>
     /// </para>
+    /// <para>
+    /// <strong>Visual Data Flow:</strong>
+    /// <br/>
+    /// ```mermaid
+    /// graph TD
+    ///     User((User)) -->|1. Request Report| API[Valora API]
+    ///     API -->|2. Orchestrate| Service[ContextReportService]
+    ///
+    ///     subgraph "Fan-Out (Parallel Execution)"
+    ///         Service -->|Geocode| PDOK[PDOK Locatieserver]
+    ///         Service -->|Stats| CBS[CBS Open Data]
+    ///         Service -->|Amenities| OSM[OpenStreetMap / Overpass]
+    ///         Service -->|Air Quality| Air[Luchtmeetnet]
+    ///     end
+    ///
+    ///     PDOK -->|Coords| Service
+    ///     CBS -->|Demographics| Service
+    ///     OSM -->|Shops/Parks| Service
+    ///     Air -->|PM2.5| Service
+    ///
+    ///     Service -->|3. Normalize & Score| Service
+    ///     Service -->|4. Return Report| API
+    ///     API -->|5. Response| User
+    /// ```
+    /// </para>
     /// </remarks>
     /// <param name="request">The request containing the input location and desired radius.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

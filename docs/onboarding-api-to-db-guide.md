@@ -48,8 +48,8 @@ sequenceDiagram
 ### 1. The Request Arrives (API Layer)
 * **Location:** `Valora.Api/Endpoints/WorkspaceEndpoints.cs`
 * The request is received by a Minimal API endpoint (`MapPost("/")`). Before the core logic is hit, it passes through the `ValidationFilter`.
-* The `ValidationFilter` enforces DataAnnotations and checks for XSS strings. If validation fails, it returns a `400 Bad Request`.
-* The endpoint extracts the DTO and invokes `IWorkspaceService.CreateWorkspaceAsync`.
+* **Security Boundary:** The `ValidationFilter` acts as a crucial first line of defense. By strictly enforcing DataAnnotations (e.g., maximum string lengths, required fields) and performing deep inspection for common XSS patterns before the request is even routed to a service, we ensure that only structurally valid, safe data reaches the Application layer. If validation fails, it short-circuits the pipeline and immediately returns a `400 Bad Request` with detailed property-level error messages.
+* The endpoint extracts the sanitized DTO and invokes `IWorkspaceService.CreateWorkspaceAsync`.
 
 ### 2. Service Logic (Application Layer)
 * **Location:** `Valora.Application/Services/WorkspaceService.cs`

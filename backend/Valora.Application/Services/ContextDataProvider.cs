@@ -34,6 +34,45 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This method executes multiple HTTP requests in parallel to external data sources.
+    /// Each request is wrapped in a safe executor (<c>TryGetSourceAsync</c>) that catches exceptions
+    /// and returns <c>null</c> instead of failing the entire operation. This allows Valora to
+    /// serve reports even if a non-critical source like Luchtmeetnet is down.
+    /// </para>
+    /// <para>
+    /// <strong>Concurrent Fetching Data Flow:</strong>
+    /// <br/>
+    /// ```mermaid
+    /// sequenceDiagram
+    ///     participant Provider as ContextDataProvider
+    ///     participant CBS as CBS API
+    ///     participant Crime as CBS Crime API
+    ///     participant OSM as Overpass API
+    ///     participant LMN as Luchtmeetnet API
+    ///
+    ///     Provider->>Provider: Start Task.WhenAll
+    ///     par Fetch Demographics
+    ///         Provider->>CBS: GetStatsAsync
+    ///     and Fetch Crime
+    ///         Provider->>Crime: GetStatsAsync
+    ///     and Fetch Amenities
+    ///         Provider->>OSM: GetAmenitiesAsync
+    ///     and Fetch Air Quality
+    ///         Provider->>LMN: GetSnapshotAsync
+    ///     end
+    ///
+    ///     CBS-->>Provider: Demographics Data
+    ///     Crime-->>Provider: Crime Data
+    ///     OSM-->>Provider: Amenity Data
+    ///     LMN-->>Provider: Partial Failure (null)
+    ///
+    ///     Provider->>Provider: BuildSourceAttributions
+    ///     Provider-->>Provider: Return ContextSourceData (with warnings)
+    /// ```
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
