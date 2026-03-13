@@ -40,25 +40,25 @@ public sealed class ContextDataProvider : IContextDataProvider
 
         // Fetch all data sources in parallel (Fan-out)
         // Each task is wrapped in a safe executor that returns null on failure instead of throwing
-        var cbsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), warnings, cancellationToken);
-        var crimeTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), warnings, cancellationToken);
-        var amenitiesTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, radiusMeters, token), warnings, cancellationToken);
-        var airQualityTask = TryGetSourceAsync("Luchtmeetnet", token => _airQualityClient.GetSnapshotAsync(location, token), warnings, cancellationToken);
+        var cbsStatsTask = TryGetSourceAsync("CBS", token => _cbsClient.GetStatsAsync(location, token), warnings, cancellationToken);
+        var crimeStatsTask = TryGetSourceAsync("CBS Crime", token => _crimeClient.GetStatsAsync(location, token), warnings, cancellationToken);
+        var amenitiesStatsTask = TryGetSourceAsync("Overpass", token => _amenityClient.GetAmenitiesAsync(location, radiusMeters, token), warnings, cancellationToken);
+        var airQualitySnapshotTask = TryGetSourceAsync("Luchtmeetnet", token => _airQualityClient.GetSnapshotAsync(location, token), warnings, cancellationToken);
 
-        await Task.WhenAll(cbsTask, crimeTask, amenitiesTask, airQualityTask);
+        await Task.WhenAll(cbsStatsTask, crimeStatsTask, amenitiesStatsTask, airQualitySnapshotTask);
 
-        var cbs = await cbsTask;
-        var crime = await crimeTask;
-        var amenities = await amenitiesTask;
-        var air = await airQualityTask;
+        var cbsStats = await cbsStatsTask;
+        var crimeStats = await crimeStatsTask;
+        var amenityStats = await amenitiesStatsTask;
+        var airQualitySnapshot = await airQualitySnapshotTask;
 
-        var sources = BuildSourceAttributions(cbs, crime, amenities, air);
+        var sources = BuildSourceAttributions(cbsStats, crimeStats, amenityStats, airQualitySnapshot);
 
         return new ContextSourceData(
-            NeighborhoodStats: cbs,
-            CrimeStats: crime,
-            AmenityStats: amenities,
-            AirQualitySnapshot: air,
+            NeighborhoodStats: cbsStats,
+            CrimeStats: crimeStats,
+            AmenityStats: amenityStats,
+            AirQualitySnapshot: airQualitySnapshot,
             Sources: sources,
             Warnings: warnings.ToList());
     }
@@ -89,34 +89,34 @@ public sealed class ContextDataProvider : IContextDataProvider
     }
 
     private static List<SourceAttributionDto> BuildSourceAttributions(
-        NeighborhoodStatsDto? cbs,
-        CrimeStatsDto? crime,
-        AmenityStatsDto? amenities,
-        AirQualitySnapshotDto? air)
+        NeighborhoodStatsDto? cbsStats,
+        CrimeStatsDto? crimeStats,
+        AmenityStatsDto? amenityStats,
+        AirQualitySnapshotDto? airQualitySnapshot)
     {
         var sources = new List<SourceAttributionDto>
         {
             new("PDOK Locatieserver", "https://api.pdok.nl", "Publiek", DateTimeOffset.UtcNow)
         };
 
-        if (cbs is not null)
+        if (cbsStats is not null)
         {
-            sources.Add(new SourceAttributionDto(DataSources.CbsStatLine, "https://opendata.cbs.nl", "Publiek", cbs.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto(DataSources.CbsStatLine, "https://opendata.cbs.nl", "Publiek", cbsStats.RetrievedAtUtc));
         }
 
-        if (crime is not null)
+        if (crimeStats is not null)
         {
-            sources.Add(new SourceAttributionDto(DataSources.CbsCrimeStatLine, "https://opendata.cbs.nl", "Publiek", crime.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto(DataSources.CbsCrimeStatLine, "https://opendata.cbs.nl", "Publiek", crimeStats.RetrievedAtUtc));
         }
 
-        if (amenities is not null)
+        if (amenityStats is not null)
         {
-            sources.Add(new SourceAttributionDto("OpenStreetMap Overpass", "https://overpass-api.de", "ODbL", amenities.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto("OpenStreetMap Overpass", "https://overpass-api.de", "ODbL", amenityStats.RetrievedAtUtc));
         }
 
-        if (air is not null)
+        if (airQualitySnapshot is not null)
         {
-            sources.Add(new SourceAttributionDto(DataSources.Luchtmeetnet, "https://api.luchtmeetnet.nl", "Publiek", air.RetrievedAtUtc));
+            sources.Add(new SourceAttributionDto(DataSources.Luchtmeetnet, "https://api.luchtmeetnet.nl", "Publiek", airQualitySnapshot.RetrievedAtUtc));
         }
 
         return sources;
