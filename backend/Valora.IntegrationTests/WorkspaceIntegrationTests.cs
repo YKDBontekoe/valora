@@ -230,6 +230,55 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
     }
 
     [Fact]
+    public async Task GetSavedProperties_ShouldReturnList_WhenUserIsMember()
+    {
+        // Arrange
+        var ownerEmail = "owner_gets_props@test.com";
+        await AuthenticateAsync(ownerEmail);
+
+        Guid propertyId1;
+        Guid propertyId2;
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var property1 = new Property { BagId = "1001", Address = "Get St 1" };
+            var property2 = new Property { BagId = "1002", Address = "Get St 2" };
+            db.Properties.Add(property1);
+            db.Properties.Add(property2);
+            await db.SaveChangesAsync();
+            propertyId1 = property1.Id;
+            propertyId2 = property2.Id;
+        }
+
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Get Properties Test", ""));
+        var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+
+        // Save properties
+        await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/properties", new SavePropertyDto(propertyId1, "Note 1"));
+        await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/properties", new SavePropertyDto(propertyId2, "Note 2"));
+
+        // Act
+        var response = await Client.GetAsync($"/api/workspaces/{workspace.Id}/properties");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<List<SavedPropertyDto>>();
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, rp => rp.PropertyId == propertyId1 && rp.Notes == "Note 1");
+        Assert.Contains(result, rp => rp.PropertyId == propertyId2 && rp.Notes == "Note 2");
+
+        // Verify DB side effects directly
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var savedPropsCount = await db.SavedProperties.CountAsync(sp => sp.WorkspaceId == workspace.Id);
+            Assert.Equal(2, savedPropsCount);
+        }
+    }
+
+    [Fact]
     public async Task RemoveSavedProperty_ShouldSucceed_WhenOwner()
     {
         // Arrange
@@ -447,6 +496,43 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
             var comment = await db.PropertyComments.FirstOrDefaultAsync(c => c.SavedPropertyId == savedProperty.Id);
             Assert.NotNull(comment);
             Assert.Equal("This is a comment", comment.Content);
+        }
+    }
+
+    [Fact]
+    public async Task GetActivityLogs_ShouldReturnLogs_WhenActivityOccurs()
+    {
+        // Arrange
+        var ownerEmail = "owner_activity@test.com";
+        await AuthenticateAsync(ownerEmail);
+
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Activity Test", ""));
+        var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+
+        // Trigger an activity log by adding a member
+        var inviteDto = new InviteMemberDto("activity_member@test.com", WorkspaceRole.Editor);
+        await Client.PostAsJsonAsync($"/api/workspaces/{workspace!.Id}/members", inviteDto);
+
+        // Act
+        var response = await Client.GetAsync($"/api/workspaces/{workspace.Id}/activity");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<List<ActivityLogDto>>();
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains(result, log => log.Type == ActivityLogType.MemberInvited.ToString() && log.Summary.Contains("Invited a new member"));
+        Assert.Contains(result, log => log.Type == ActivityLogType.WorkspaceCreated.ToString());
+
+        // Verify DB side effects directly
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var activityLogsCount = await db.ActivityLogs.CountAsync(al => al.WorkspaceId == workspace.Id);
+            Assert.True(activityLogsCount >= 2);
+            var hasInviteLog = await db.ActivityLogs.AnyAsync(al => al.WorkspaceId == workspace.Id && al.Type == ActivityLogType.MemberInvited);
+            Assert.True(hasInviteLog);
         }
     }
 
