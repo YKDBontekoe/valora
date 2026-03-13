@@ -23,8 +23,9 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1] as const
+      type: 'spring',
+      stiffness: 260,
+      damping: 25
     }
   }
 } as const;
@@ -67,9 +68,10 @@ const Login = () => {
     <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-brand-50">
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-100/30 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary-200/20 blur-[120px]" />
-          <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-info-100/20 blur-[100px]" />
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-100/30 blur-[120px] animate-pulse-slow" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary-200/20 blur-[120px] animate-pulse-slow [animation-delay:2s]" />
+          <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-info-100/20 blur-[100px] animate-pulse-slow [animation-delay:4s]" />
+          <div className="absolute bottom-[20%] left-[10%] w-[25%] h-[25%] rounded-full bg-primary-500/10 blur-[80px] animate-float" />
       </div>
 
       <motion.div
@@ -78,7 +80,7 @@ const Login = () => {
         animate="visible"
         className="w-full max-w-lg z-10"
       >
-        <div className="bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-premium-2xl p-12 md:p-16 border border-white/60 relative overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-3xl rounded-[3rem] shadow-premium-2xl p-12 md:p-16 border border-white/60 relative overflow-hidden group/card hover:shadow-glow-primary transition-shadow duration-700">
           {/* Subtle top glow */}
           <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-primary-400 via-primary-600 to-primary-400 opacity-80" />
 
@@ -86,12 +88,12 @@ const Login = () => {
             <motion.div
               whileHover={{ scale: 1.05, rotate: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="w-20 h-20 bg-primary-600 rounded-[2rem] flex items-center justify-center shadow-premium-lg shadow-primary-200/40 mb-8 cursor-default"
+              className="w-20 h-20 bg-primary-600 rounded-[2rem] flex items-center justify-center shadow-premium-lg shadow-primary-200/40 mb-8 cursor-default group-hover/card:shadow-glow-primary transition-all duration-500"
             >
               <span className="text-white font-black text-4xl">V</span>
             </motion.div>
-            <h2 className="text-4xl font-black text-brand-900 tracking-tight mb-2">Valora Admin</h2>
-            <p className="text-brand-500 font-bold tracking-tight">Enterprise Console Access</p>
+            <h2 className="text-4xl font-black text-brand-900 tracking-tightest mb-2">Valora Admin</h2>
+            <p className="text-brand-500 font-black tracking-ultra-wide uppercase text-[10px]">Enterprise Console Access</p>
           </motion.div>
 
           {error && (
@@ -108,7 +110,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-7">
             <motion.div variants={itemVariants}>
-              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-[0.25em]">Email Address</label>
+              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-ultra-wide">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Mail className="h-5 w-5" />
@@ -119,14 +121,14 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@valora.com"
-                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none group-focus-within:scale-[1.01]"
                   required
                 />
               </div>
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-[0.25em]">Secure Password</label>
+              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-ultra-wide">Secure Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Lock className="h-5 w-5" />
@@ -137,7 +139,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-brand-50/50 border border-brand-100 rounded-[1.25rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white transition-all placeholder:text-brand-300 font-bold text-brand-900 outline-none group-focus-within:scale-[1.01]"
                   required
                 />
               </div>

@@ -56,7 +56,7 @@ const ConfirmationDialog = ({
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
-            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            transition={{ type: "spring", damping: 28, stiffness: 400 }}
             className="relative w-full max-w-md bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-premium-2xl overflow-hidden border border-white/40"
           >
             {/* Top accent bar */}
@@ -77,7 +77,7 @@ const ConfirmationDialog = ({
                 </button>
               </div>
 
-              <h3 id="dialog-title" className="text-3xl font-black text-brand-900 tracking-tight mb-4">
+              <h3 id="dialog-title" className="text-3xl font-black text-brand-900 tracking-tightest mb-4">
                 {title}
               </h3>
               <p id="dialog-description" className="text-brand-500 font-bold leading-relaxed text-lg">

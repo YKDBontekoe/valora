@@ -12,7 +12,7 @@ import Button from '../components/Button';
 const listVariants = {
   visible: {
     transition: {
-      staggerChildren: 0.05
+      staggerChildren: 0.03
     }
   }
 };
@@ -140,7 +140,7 @@ const Users = () => {
             <thead className="bg-brand-50/50">
               <tr>
                 <th
-                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
                     onClick={() => toggleSort('email')}
                 >
                     <div className="flex items-center gap-2">
@@ -151,8 +151,8 @@ const Users = () => {
                         </div>
                     </div>
                 </th>
-                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Authorized Roles</th>
-                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Management</th>
+                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Authorized Roles</th>
+                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Management</th>
               </tr>
             </thead>
             <motion.tbody

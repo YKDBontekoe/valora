@@ -125,7 +125,7 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
                     </div>
                 </div>
                 <div className="flex flex-col gap-3">
-                    <dt className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] ml-1">{card.title}</dt>
+                    <dt className="text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide ml-1">{card.title}</dt>
                     <dd className="text-7xl font-black text-brand-900 leading-none tracking-tightest flex items-baseline gap-2">
                       <CountUp value={card.value} />
                     </dd>

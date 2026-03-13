@@ -33,7 +33,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
             <div className="p-2 bg-white rounded-lg border border-brand-100 shadow-sm">
                 <Filter size={16} className="text-primary-600" />
             </div>
-            <h2 className="font-black text-brand-900 uppercase tracking-[0.25em] text-xs whitespace-nowrap">
+            <h2 className="font-black text-brand-900 uppercase tracking-ultra-wide text-xs whitespace-nowrap">
               Pipeline History
             </h2>
         </div>
@@ -85,7 +85,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
+                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-ultra-wide outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
               >
                 <option value="All">All Statuses</option>
                 <option value="Pending">Pending</option>
@@ -105,7 +105,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
                   setTypeFilter(e.target.value);
                   setPage(1);
                 }}
-                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
+                className="pl-5 pr-10 py-3 bg-white border border-brand-100 rounded-2xl text-[10px] font-black text-brand-600 uppercase tracking-ultra-wide outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 cursor-pointer hover:border-brand-200 transition-all appearance-none shadow-sm"
               >
                 <option value="All">All Types</option>
                 <option value="CityIngestion">CityIngestion</option>
@@ -119,7 +119,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
         </div>
         <div className="flex items-center gap-3 bg-primary-50 px-4 py-2 rounded-2xl border border-primary-100/50 shadow-sm ml-2">
           <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse" />
-          <span className="text-[10px] font-black text-primary-700 uppercase tracking-widest hidden sm:inline">
+          <span className="text-[10px] font-black text-primary-700 uppercase tracking-ultra-wide hidden sm:inline">
             Realtime Sync
           </span>
         </div>
