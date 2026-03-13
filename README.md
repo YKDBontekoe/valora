@@ -58,6 +58,8 @@ export JWT_SECRET="YourStrongSecretKeyHere_MustBeAtLeast32CharsLong!"
 # Run the API
 dotnet run --project Valora.Api
 ```
+*Note: You do not need to run manual `dotnet ef database update` commands. Valora uses `DbInitializer.InitializeAsync` to automatically apply all Entity Framework Core migrations and seed the initial Admin user on startup.*
+
 *Verify: Open `http://localhost:5253/api/health` in your browser. You should see `{"status":"healthy", "timestamp": "..."}`.*
 
 ### 3. Configure & Run Mobile App
@@ -95,6 +97,22 @@ Valora's architecture is specifically designed to act as an aggregation layer fo
 
 1.  **Strict Clean Architecture**: The backend strictly segregates concerns. External integrations (EF Core, HTTP clients) live in `Infrastructure`, HTTP routing lives in `Api`, and pure business logic lives in `Domain` and `Application`.
 2.  **Fan-Out / Fan-In Fetching Pattern**: Instead of persisting millions of real estate listings, the system queries external providers in parallel only when a user requests a report.
+
+```mermaid
+graph TD
+    API[Valora.Api] --> App[Valora.Application]
+    App --> Domain[Valora.Domain]
+    Infra[Valora.Infrastructure] --> App
+    Infra --> Domain
+
+    classDef domain fill:#1f2937,stroke:#3b82f6,color:#fff;
+    classDef app fill:#374151,stroke:#8b5cf6,color:#fff;
+    classDef outer fill:#4b5563,stroke:#10b981,color:#fff;
+
+    class Domain domain;
+    class App app;
+    class API,Infra outer;
+```
 
 ### System Context & Data Flow
 
@@ -237,6 +255,7 @@ The API provides core functionalities to access and manage Valora's context data
 
 - **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
 - **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
+- **Workspaces:** `GET /api/workspaces`, `POST /api/workspaces` (Save and organize reports)
 - **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
 - **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
 - **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`

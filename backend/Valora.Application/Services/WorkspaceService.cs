@@ -15,6 +15,50 @@ public class WorkspaceService : IWorkspaceService
         _repository = repository;
     }
 
+    /// <summary>
+    /// Creates a new workspace for the given user, enforcing limits and persisting to the database.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This method demonstrates the complete data flow from the Application layer to database persistence.
+    /// First, it performs business rule validation (e.g., checking the maximum workspace limit).
+    /// Next, it instantiates a Domain entity (<c>Workspace</c>) and configures the creator as the Owner.
+    /// Finally, it uses the injected <c>IWorkspaceRepository</c> to track the entity and save the changes.
+    /// </para>
+    /// <para>
+    /// <strong>API to DB Flow:</strong>
+    /// <br/>
+    /// ```mermaid
+    /// sequenceDiagram
+    ///     participant Endpoint as WorkspaceEndpoints (API)
+    ///     participant Service as WorkspaceService (App)
+    ///     participant Entity as Workspace (Domain)
+    ///     participant Repo as WorkspaceRepository (Infra)
+    ///     participant DB as PostgreSQL
+    ///
+    ///     Endpoint->>Service: CreateWorkspaceAsync(dto)
+    ///     Service->>Repo: Check Existing Count
+    ///     Repo-->>Service: Current Count
+    ///
+    ///     alt Count >= 10
+    ///         Service-->>Endpoint: Throw InvalidOperationException
+    ///     else Count < 10
+    ///         Service->>Entity: new Workspace { OwnerId, Members... }
+    ///         Entity-->>Service: Workspace Instance
+    ///
+    ///         Service->>Repo: AddAsync(workspace)
+    ///         Service->>Repo: LogActivityEventAsync(Created)
+    ///         Service->>Repo: SaveChangesAsync()
+    ///
+    ///         Repo->>DB: INSERT INTO Workspaces...
+    ///         DB-->>Repo: Success
+    ///         Repo-->>Service: Success
+    ///
+    ///         Service-->>Endpoint: WorkspaceDto mapped from Entity
+    ///     end
+    /// ```
+    /// </para>
+    /// </remarks>
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
         var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
