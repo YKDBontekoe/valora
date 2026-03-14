@@ -57,13 +57,6 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
     return 'none';
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleSort(field);
-    }
-  };
-
   return (
     <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-premium-xl border border-brand-100/50">
       <div className="overflow-x-auto custom-scrollbar">
