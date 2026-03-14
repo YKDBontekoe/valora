@@ -114,6 +114,7 @@ public class IdentityService : IIdentityService
         var usersPage = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .AsNoTracking()
             .ToListAsync();
 
         return new PaginatedList<ApplicationUser>(usersPage, totalUsers, pageNumber, pageSize);
@@ -273,6 +274,7 @@ public class IdentityService : IIdentityService
                 ur => ur.RoleId,
                 r => r.Id,
                 (ur, r) => new { ur.UserId, RoleName = r.Name })
+            .AsNoTracking()
             .ToListAsync();
 
         return userRoles
