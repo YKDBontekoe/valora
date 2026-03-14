@@ -90,11 +90,8 @@ public class BaseTestcontainersIntegrationTest : IAsyncLifetime
         Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authResponse.Token);
     }
 
-    protected async Task AuthenticateAsAdminAsync()
+    protected async Task AuthenticateAsAdminAsync(string email = "admin@example.com", string password = "AdminPassword123!")
     {
-        var email = "admin@example.com";
-        var password = "AdminPassword123!";
-
         // 1. Create User via UserManager to bypass API limits and ensure role
         using var scope = Factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
