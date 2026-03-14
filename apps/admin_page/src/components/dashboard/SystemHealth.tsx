@@ -80,7 +80,7 @@ const SystemHealth = () => {
                     <h2 className="text-4xl font-black text-white tracking-tight">System Infrastructure</h2>
                     <div className="flex items-center gap-2 mt-1.5">
                         <Sparkles size={12} className="text-primary-400" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-400">Node Cluster: Primary-Alpha</span>
+                        <span className="text-[10px] font-black uppercase tracking-ultra-wide text-primary-400">Node Cluster: Primary-Alpha</span>
                     </div>
                 </div>
             </div>
@@ -92,7 +92,7 @@ const SystemHealth = () => {
                 <motion.span
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-2 text-[10px] font-black text-error-600 bg-error-50 px-4 py-1.5 rounded-full uppercase tracking-widest border border-error-100 animate-pulse shadow-glow-error"
+                    className="flex items-center gap-2 text-[10px] font-black text-error-600 bg-error-50 px-4 py-1.5 rounded-full uppercase tracking-ultra-wide border border-error-100 animate-pulse shadow-glow-error"
                 >
                   <AlertTriangle size={14} />
                   Out of Sync
@@ -105,7 +105,7 @@ const SystemHealth = () => {
             whileTap={{ scale: 0.95 }}
             onClick={fetchHealth}
             disabled={loading}
-            className={`flex items-center gap-4 px-8 py-4 bg-white/10 backdrop-blur-xl text-white font-black text-sm uppercase tracking-widest rounded-[1.25rem] hover:bg-white hover:text-brand-900 transition-all border border-white/10 hover:border-white shadow-premium group/btn ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-4 px-8 py-4 bg-white/10 backdrop-blur-xl text-white font-black text-sm uppercase tracking-ultra-wide rounded-[1.25rem] hover:bg-white hover:text-brand-900 transition-all border border-white/10 hover:border-white shadow-premium group/btn ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <RefreshCw size={20} className={`transition-colors ${loading ? 'animate-spin' : ''}`} />
             Sync Nodes
@@ -125,7 +125,7 @@ const SystemHealth = () => {
               <div className="p-4 bg-white/10 rounded-2xl shadow-sm border border-white/10 group-hover/card:scale-110 group-hover/card:rotate-6 transition-transform">
                 <Database size={26} className="text-primary-400" />
               </div>
-              <span className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">Persistent Layer</span>
+              <span className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">Persistent Layer</span>
             </div>
             <AnimatePresence mode="wait">
               {loading && !health && !isStale ? (
@@ -162,7 +162,7 @@ const SystemHealth = () => {
               <div className="p-4 bg-white/10 rounded-2xl shadow-sm border border-white/10 group-hover/card:scale-110 group-hover/card:rotate-6 transition-transform">
                 <Activity size={26} className="text-info-400" />
               </div>
-              <span className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">Traffic Signal</span>
+              <span className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">Traffic Signal</span>
             </div>
             <AnimatePresence mode="wait">
               {loading && !health && !isStale ? (
@@ -205,7 +205,7 @@ const SystemHealth = () => {
               <div className="p-4 bg-white/10 rounded-2xl shadow-sm border border-white/10 group-hover/card:scale-110 group-hover/card:rotate-6 transition-transform">
                 <Clock size={26} className="text-success-400" />
               </div>
-              <span className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">Job Concurrency</span>
+              <span className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">Job Concurrency</span>
             </div>
             <AnimatePresence mode="wait">
               {loading && !health && !isStale ? (
@@ -222,7 +222,7 @@ const SystemHealth = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col group/stat" title="Active">
-                        <span className="text-[10px] font-black text-primary-400 uppercase tracking-[0.2em] mb-2">Live</span>
+                        <span className="text-[10px] font-black text-primary-400 uppercase tracking-ultra-wide mb-2">Live</span>
                         <div className="flex items-center gap-2">
                             <Activity size={16} className="text-primary-500" />
                             <span className="font-black text-white text-2xl leading-none">{health ? health.activeJobs : '-'}</span>
@@ -230,7 +230,7 @@ const SystemHealth = () => {
                     </div>
                     <div className="w-px h-10 bg-white/10" />
                     <div className="flex flex-col group/stat" title="Queued">
-                        <span className="text-[10px] font-black text-brand-400 uppercase tracking-[0.2em] mb-2">Wait</span>
+                        <span className="text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide mb-2">Wait</span>
                         <div className="flex items-center gap-2">
                             <Clock size={16} className="text-brand-300" />
                             <span className="font-bold text-brand-100 text-2xl leading-none">{health ? health.queuedJobs : '-'}</span>
@@ -238,7 +238,7 @@ const SystemHealth = () => {
                     </div>
                     <div className="w-px h-10 bg-white/10" />
                     <div className="flex flex-col group/stat" title="Failed">
-                        <span className="text-[10px] font-black text-error-400 uppercase tracking-[0.2em] mb-2">Fault</span>
+                        <span className="text-[10px] font-black text-error-400 uppercase tracking-ultra-wide mb-2">Fault</span>
                         <div className="flex items-center gap-2">
                              <AlertTriangle size={16} className="text-error-500" />
                             <span className="font-black text-error-100 text-2xl leading-none">{health ? health.failedJobs : '-'}</span>
@@ -263,7 +263,7 @@ const SystemHealth = () => {
             <div className="flex flex-col">
                 <div className="flex items-center gap-3">
                     <div className="w-2.5 h-2.5 rounded-full bg-success-500 animate-pulse shadow-glow-success" />
-                    <span className="text-[12px] font-black text-white uppercase tracking-[0.25em]">Cluster Integrity Verified</span>
+                    <span className="text-[12px] font-black text-white uppercase tracking-ultra-wide">Cluster Integrity Verified</span>
                 </div>
                 {health?.lastPipelineSuccess && (
                      <span className="text-[11px] font-bold text-brand-400 mt-1">
@@ -277,7 +277,7 @@ const SystemHealth = () => {
                 <Clock size={14} className="text-primary-400" />
             </div>
             <div className="flex flex-col">
-                <span className="text-[10px] font-black text-brand-400 uppercase tracking-[0.2em]">Service Uptime</span>
+                <span className="text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Service Uptime</span>
                 <span className="text-xs font-black text-white tracking-widest">99.998% AGGREGATE</span>
             </div>
           </div>

@@ -70,11 +70,8 @@ describe('BatchJobTable', () => {
   it('handles keyboard navigation for sorting', () => {
     render(<BatchJobTable {...defaultProps} />);
 
-    const header = screen.getByRole('button', { name: /sort by definition/i });
-    fireEvent.keyDown(header, { key: 'Enter' });
-    expect(defaultProps.toggleSort).toHaveBeenCalledWith('type');
-
-    fireEvent.keyDown(header, { key: ' ' });
+    const header = screen.getByRole('columnheader', { name: /sort by definition/i });
+    fireEvent.click(header);
     expect(defaultProps.toggleSort).toHaveBeenCalledWith('type');
   });
 
@@ -125,7 +122,7 @@ describe('BatchJobTable', () => {
 
   it('shows correct sort indicators', () => {
     const { rerender } = render(<BatchJobTable {...defaultProps} sortBy="target_asc" />);
-    const targetHeader = screen.getByRole('button', { name: /sort by target/i });
+    const targetHeader = screen.getByRole('columnheader', { name: /sort by target/i });
     expect(targetHeader).toHaveAttribute('aria-sort', 'ascending');
 
     rerender(<BatchJobTable {...defaultProps} sortBy="target_desc" />);

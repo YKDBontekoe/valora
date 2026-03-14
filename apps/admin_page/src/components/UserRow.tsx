@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, ShieldCheck, Shield, ChevronRight, User as UserIcon } from 'lucide-react';
 import type { User } from '../types';
@@ -19,16 +20,17 @@ const rowVariants = {
   }
 } as const;
 
-const UserRow = ({
+const UserRow = React.forwardRef<HTMLTableRowElement, UserRowProps>(({
   user,
   currentUserId,
   loading,
   onDeleteClick
-}: UserRowProps) => {
+}, ref) => {
   const isSelf = user.id === currentUserId;
 
   return (
     <motion.tr
+      ref={ref}
       variants={rowVariants}
       exit={{ opacity: 0, scale: 0.95, x: 20, transition: { duration: 0.3 } }}
       whileHover={{ x: 10, backgroundColor: 'var(--color-brand-50)' }}
@@ -60,9 +62,9 @@ const UserRow = ({
                 </div>
                 <div className="flex items-center gap-2 mt-1.5 opacity-60">
                     <UserIcon size={12} className="text-brand-300" />
-                    <span className="text-[10px] font-black text-brand-400 uppercase tracking-[0.2em]">Operator Entity</span>
+                    <span className="text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Operator Entity</span>
                     {isSelf && (
-                         <span className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em] ml-2">• Current Active Identity</span>
+                         <span className="text-[10px] font-black text-primary-500 uppercase tracking-ultra-wide ml-2">• Current Active Identity</span>
                     )}
                 </div>
             </div>
@@ -71,7 +73,7 @@ const UserRow = ({
       <td className="px-12 py-8 whitespace-nowrap">
         <div className="flex flex-wrap gap-4">
           {user.roles.map(role => (
-            <span key={role} className={`px-5 py-2 inline-flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl border transition-all duration-500 ${role === 'Admin' ? 'bg-primary-50 text-primary-700 border-primary-100 shadow-sm' : 'bg-white text-brand-400 border-brand-100'} group-hover:shadow-md group-hover:translate-y-[-2px] group-hover:bg-white`}>
+            <span key={role} className={`px-5 py-2 inline-flex items-center gap-2.5 text-[11px] font-black uppercase tracking-ultra-wide rounded-xl border transition-all duration-500 ${role === 'Admin' ? 'bg-primary-50 text-primary-700 border-primary-100 shadow-sm' : 'bg-white text-brand-400 border-brand-100'} group-hover:shadow-md group-hover:translate-y-[-2px] group-hover:bg-white`}>
               {role === 'Admin' ? <ShieldCheck size={16} className="text-primary-500" /> : <Shield size={16} />}
               {role}
             </span>
@@ -98,6 +100,8 @@ const UserRow = ({
       </td>
     </motion.tr>
   );
-};
+});
+
+UserRow.displayName = 'UserRow';
 
 export default UserRow;

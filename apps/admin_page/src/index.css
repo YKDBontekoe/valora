@@ -73,6 +73,10 @@
   --font-display: "Plus Jakarta Sans", sans-serif;
   --font-body: "Inter", sans-serif;
 
+  --tracking-ultra-wide: 0.3em;
+  --tracking-tightest: -0.075em;
+  --tracking-tighter: -0.05em;
+
   --animate-shimmer: shimmer 2.5s infinite linear;
   --animate-float: float 6s ease-in-out infinite;
   --animate-pulse-slow: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -120,7 +124,11 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  @apply tracking-tight;
+  @apply tracking-tightest;
+}
+
+h2, h3 {
+  @apply tracking-tighter;
 }
 
 .login-page {
@@ -213,8 +221,24 @@ h1, h2, h3, h4, h5, h6 {
   @apply bg-brand-900/60 backdrop-blur-2xl border border-white/10 shadow-premium-2xl;
 }
 
+.hover-lift {
+  @apply transition-transform duration-300 ease-out hover:-translate-y-1;
+}
+
 .shadow-glow-primary {
   box-shadow: 0 0 20px -5px var(--color-primary-500);
+}
+
+.shadow-glow-success {
+  box-shadow: 0 0 20px -5px var(--color-success-500);
+}
+
+.shadow-glow-error {
+  box-shadow: 0 0 20px -5px var(--color-error-500);
+}
+
+.shadow-glow-warning {
+  box-shadow: 0 0 20px -5px var(--color-warning-500);
 }
 
 /* Subtle border animation for cards */
