@@ -7,6 +7,7 @@ import '../models/workspace.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/valora_widgets.dart';
 import '../widgets/workspaces/workspace_list_item.dart';
+import '../core/theme/valora_shadows.dart';
 
 enum SortOption { name, createdDate, memberCount }
 
@@ -63,6 +64,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -119,9 +121,17 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
                 ValoraSpacing.md,
                 ValoraSpacing.sm,
               ),
-              child: ValoraSearchField(
-                controller: _searchController,
-                hintText: 'Search workspaces...',
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
+                  boxShadow: isDark ? ValoraShadows.smDark : ValoraShadows.sm,
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
+                ),
+                child: ValoraSearchField(
+                  controller: _searchController,
+                  hintText: 'Search workspaces...',
+                ),
               ),
             ),
           ),
