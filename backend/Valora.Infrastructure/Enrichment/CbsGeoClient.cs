@@ -269,10 +269,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 }
 
                 using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
-                var xdoc = await System.Xml.Linq.XDocument.LoadAsync(content, System.Xml.Linq.LoadOptions.None, cancellationToken);
+                var xmlDocument = await System.Xml.Linq.XDocument.LoadAsync(content, System.Xml.Linq.LoadOptions.None, cancellationToken);
 
                 var wijkenbuurten = System.Xml.Linq.XNamespace.Get("http://wijkenbuurten.geonovum.nl");
-                var elements = xdoc.Descendants(wijkenbuurten + "gemeentenaam");
+                var elements = xmlDocument.Descendants(wijkenbuurten + "gemeentenaam");
 
                 var results = new HashSet<string>();
                 foreach (var element in elements)
