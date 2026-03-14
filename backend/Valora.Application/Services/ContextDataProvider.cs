@@ -34,6 +34,35 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Architecture Pattern: Fan-Out</strong><br/>
+    /// This method implements the data fetching phase of the Context Report generation. It issues parallel requests to multiple external sources to minimize the overall response time.
+    /// </para>
+    /// <para>
+    /// <strong>Data Flow:</strong>
+    /// <code>
+    /// ```mermaid
+    /// graph TD
+    ///     A[GetSourceDataAsync] -->|Parallel Task| B(CBS Stats API)
+    ///     A -->|Parallel Task| C(CBS Crime API)
+    ///     A -->|Parallel Task| D(Overpass API)
+    ///     A -->|Parallel Task| E(Luchtmeetnet API)
+    ///
+    ///     B --> F{Task.WhenAll}
+    ///     C --> F
+    ///     D --> F
+    ///     E --> F
+    ///
+    ///     F --> G[ContextSourceData]
+    /// ```
+    /// </code>
+    /// </para>
+    /// <para>
+    /// <strong>Partial Failure Tolerance:</strong>
+    /// Each external API call is wrapped in <see cref="TryGetSourceAsync{T}"/>. If a non-critical source (e.g., Luchtmeetnet) fails or times out, the overall report generation does not fail. Instead, the task returns <c>null</c> for that specific source, a warning is logged and appended to the final report, and the system degrades gracefully. This is critical for maintaining high availability.
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();

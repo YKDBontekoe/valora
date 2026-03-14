@@ -20,6 +20,29 @@ public static class ContextReportBuilder
     /// and normalizes them into a uniform <see cref="ContextMetricDto"/> format.
     /// </para>
     /// <para>
+    /// <strong>Data Flow (Fan-In):</strong>
+    /// <code>
+    /// ```mermaid
+    /// graph TD
+    ///     A[ContextSourceData] --> B(SocialMetricBuilder)
+    ///     A --> C(CrimeMetricBuilder)
+    ///     A --> D(EnvironmentMetricBuilder)
+    ///
+    ///     B --> E[ContextMetricDto List]
+    ///     C --> E
+    ///     D --> E
+    ///
+    ///     E --> F(ContextScoreCalculator)
+    ///     F --> G[Category Scores]
+    ///     G --> H[Composite Score]
+    ///
+    ///     E --> I[ContextReportDto]
+    ///     G --> I
+    ///     H --> I
+    /// ```
+    /// </code>
+    /// </para>
+    /// <para>
     /// <strong>Core Responsibilities:</strong>
     /// <list type="bullet">
     /// <item><strong>Normalization:</strong> Converts raw numbers (e.g., "45 crimes per 1000") into user-friendly metrics.</item>

@@ -44,6 +44,19 @@ public class BatchJobExecutor : IBatchJobExecutor
     /// <item>Mark as 'Completed' or 'Failed'.</item>
     /// </list>
     /// </para>
+    /// <para>
+    /// <strong>Job Flow:</strong>
+    /// <code>
+    /// ```mermaid
+    /// stateDiagram-v2
+    ///     [*] --> Pending: Job Created
+    ///     Pending --> Processing: GetNextPendingJobAsync() (Atomic Lock)
+    ///     Processing --> Completed: Processor Finishes
+    ///     Processing --> Failed: Exception Thrown / Cancelled
+    ///     Failed --> Pending: Manual Retry (Updates CreatedAt)
+    /// ```
+    /// </code>
+    /// </para>
     /// </remarks>
     public async Task ProcessNextJobAsync(CancellationToken cancellationToken = default)
     {
