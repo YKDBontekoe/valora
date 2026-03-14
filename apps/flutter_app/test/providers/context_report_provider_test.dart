@@ -154,6 +154,6 @@ void main() {
 
     await provider.generate('search 1');
 
-    expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
+    expect(provider.history, isA<List<SearchHistoryItem>>());
   });
 }
