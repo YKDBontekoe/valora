@@ -30,6 +30,8 @@ Before you start, ensure you have the following installed on your machine:
 - **Flutter SDK** (for running the mobile app on an emulator/device)
 - **Node.js 18+ & npm** (for the web admin dashboard)
 
+> **Zero Warnings Policy:** When building or testing any of the layers below, be aware that Valora enforces a strict zero compiler warnings and linter errors policy (`TreatWarningsAsErrors=true`).
+
 ### 1. Setup & Start Local Infrastructure
 First, you need to start the underlying database. Valora uses a PostgreSQL instance orchestrated via Docker Compose.
 
@@ -37,9 +39,16 @@ First, you need to start the underlying database. Valora uses a PostgreSQL insta
 # Start the database in the background
 docker-compose -f docker/docker-compose.yml up -d
 ```
+
 *Troubleshooting:*
 - If `docker-compose` fails, ensure Docker Desktop is running and actively connected.
 - Ensure port `5432` is not already in use by a local Postgres instance (e.g., Homebrew's Postgres).
+
+### 1b. Verify Backend Integrity
+Before running the backend, it's highly recommended to run the full test suite to ensure your environment is correctly configured and the codebase is healthy.
+```bash
+dotnet test backend/Valora.slnx
+```
 
 ### 2. Configure & Run Backend
 The backend aggregates data and serves the API.
@@ -91,10 +100,11 @@ npm run dev
 
 ## 🏗️ Architecture Overview
 
-Valora's architecture is specifically designed to act as an aggregation layer for public data, rather than a scraping pipeline. It is built on two primary structural pillars:
+Valora's architecture is specifically designed to act as an aggregation layer for public data, rather than a scraping pipeline. It is built on three primary structural pillars:
 
 1.  **Strict Clean Architecture**: The backend strictly segregates concerns. External integrations (EF Core, HTTP clients) live in `Infrastructure`, HTTP routing lives in `Api`, and pure business logic lives in `Domain` and `Application`.
 2.  **Fan-Out / Fan-In Fetching Pattern**: Instead of persisting millions of real estate listings, the system queries external providers in parallel only when a user requests a report.
+3.  **Event-Driven Architecture**: To decouple side-effects from core business logic, the application uses a Domain Events pattern (e.g., `IEventDispatcher`) allowing background services (like the Notification Service) to react to operations like Workspace creations asynchronously.
 
 ### System Context & Data Flow
 
@@ -235,11 +245,14 @@ sequenceDiagram
 
 The API provides core functionalities to access and manage Valora's context data. Below is a brief summary of key endpoints. For complete details, see the **[API Reference](docs/api-reference.md)**.
 
+> **Tip:** When running the backend locally, an interactive **Swagger/OpenAPI UI** is available at `http://localhost:5253/swagger`. You can use this to explore and test endpoints directly in your browser.
+
 - **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
 - **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
 - **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
 - **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
 - **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
+- **Workspaces:** `POST /api/workspaces`, `GET /api/workspaces`
 
 ---
 
