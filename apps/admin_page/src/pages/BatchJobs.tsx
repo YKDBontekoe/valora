@@ -155,7 +155,7 @@ const BatchJobs: React.FC = () => {
         <div className="flex items-center gap-4 px-6 py-4 bg-white rounded-2xl border border-brand-100 shadow-premium group cursor-default">
             <div className="flex items-center gap-3">
                 <div className={`w-2.5 h-2.5 rounded-full ${health?.status === 'Healthy' ? 'bg-success-500 animate-pulse' : 'bg-error-500'}`} />
-                <span className="text-[10px] font-black text-brand-900 uppercase tracking-widest">Cluster: Primary-A</span>
+                <span className="text-[10px] font-black text-brand-900 uppercase tracking-ultra-wide">Cluster: Primary-A</span>
             </div>
             <div className="w-px h-6 bg-brand-100" />
             <div className="flex items-center gap-3">

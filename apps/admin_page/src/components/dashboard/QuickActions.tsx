@@ -25,15 +25,8 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         return;
       }
 
-      let successCount = 0;
-      for (const job of failedJobs) {
-        try {
-          await adminService.retryJob(job.id);
-          successCount++;
-        } catch (e) {
-          console.error(`Failed to retry job ${job.id}`, e);
-        }
-      }
+      const results = await Promise.allSettled(failedJobs.map(job => adminService.retryJob(job.id)));
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
 
       showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
       onRefreshStats();
@@ -86,7 +79,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                 <h2 className="text-3xl font-black text-brand-900 tracking-tight">Control Center</h2>
                 <div className="flex items-center gap-2 mt-1 opacity-50">
                     <Sparkles size={12} className="text-brand-300" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Executive Shortcuts</span>
+                    <span className="text-[10px] font-black uppercase tracking-ultra-wide text-brand-400">Executive Shortcuts</span>
                 </div>
             </div>
         </div>
@@ -103,7 +96,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                     whileTap={{ scale: 0.98 }}
                     onClick={action.onClick}
                     disabled={action.isLoading}
-                    className="flex items-center gap-8 p-10 bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-brand-100 shadow-premium hover:shadow-premium-xl transition-all duration-500 text-left group cursor-pointer relative overflow-hidden hover-border-gradient"
+                    className="flex items-center gap-8 p-10 bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-brand-100 shadow-premium hover:shadow-premium-xl transition-all duration-500 text-left group cursor-pointer relative overflow-hidden hover-border-gradient hover-lift"
                 >
                     {/* Active highlight line */}
                     <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2/3 ${action.accent} rounded-r-full opacity-0 group-hover:opacity-100 transition-all duration-700 scale-y-0 group-hover:scale-y-100 shadow-glow shadow-current`} style={{ color: `var(--color-${action.accent.split('-')[1]}-500)` }} />
@@ -112,8 +105,8 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                         <action.icon className={`w-10 h-10 ${action.color} ${action.isLoading ? 'animate-spin' : ''}`} />
                     </div>
                     <div className="relative z-10 flex-1">
-                        <h3 className="text-2xl font-black text-brand-900 leading-tight tracking-tight">{action.title}</h3>
-                        <p className="text-[11px] font-bold text-brand-400 mt-2 uppercase tracking-[0.2em] leading-relaxed max-w-[200px]">{action.description}</p>
+                        <h3 className="text-2xl font-black text-brand-900 leading-tight tracking-tighter">{action.title}</h3>
+                        <p className="text-[11px] font-bold text-brand-400 mt-2 uppercase tracking-ultra-wide leading-relaxed max-w-[200px]">{action.description}</p>
                     </div>
                     <div className={`relative z-10 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-8 group-hover:translate-x-0 p-3 rounded-2xl ${action.bg}`}>
                         <ChevronRight className={`w-6 h-6 ${action.color}`} />

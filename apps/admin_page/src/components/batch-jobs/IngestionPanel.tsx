@@ -44,7 +44,7 @@ export const IngestionPanel: React.FC<IngestionPanelProps> = ({
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Ready for cluster synchronization</span>
+                    <span className="text-[10px] font-black uppercase tracking-ultra-wide text-brand-400">Ready for cluster synchronization</span>
                 </div>
             </div>
         </div>
@@ -99,7 +99,7 @@ export const IngestionPanel: React.FC<IngestionPanelProps> = ({
             <div className="p-2 bg-white rounded-lg shadow-sm">
                 <AlertCircle size={18} className="text-warning-600" />
             </div>
-            <p className="text-[10px] text-warning-700 font-black uppercase tracking-[0.25em] max-w-md leading-relaxed">
+            <p className="text-[10px] text-warning-700 font-black uppercase tracking-ultra-wide max-w-md leading-relaxed">
               Caution: Ingestion jobs are resource-intensive cluster operations. Avoid concurrent overlapping on same-city shards.
             </p>
         </div>
