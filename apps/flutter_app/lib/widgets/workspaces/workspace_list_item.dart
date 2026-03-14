@@ -56,33 +56,61 @@ class WorkspaceListItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.people_alt_rounded,
-                        size: 14,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: ValoraSpacing.sm,
+                          vertical: ValoraSpacing.xs),
+                      decoration: BoxDecoration(
                         color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${workspace.memberCount} members',
-                      style: ValoraTypography.labelSmall.copyWith(
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500,
+                            ? ValoraColors.neutral800
+                            : ValoraColors.neutral100,
+                        borderRadius:
+                            BorderRadius.circular(ValoraSpacing.radiusSm),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.people_alt_rounded,
+                              size: 14,
+                              color: isDark
+                                  ? ValoraColors.neutral300
+                                  : ValoraColors.neutral600),
+                          const SizedBox(width: ValoraSpacing.xs),
+                          Text('${workspace.memberCount} members',
+                              style: ValoraTypography.labelSmall.copyWith(
+                                  color: isDark
+                                      ? ValoraColors.neutral300
+                                      : ValoraColors.neutral600)),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.bookmark_rounded,
-                        size: 14,
+                    const SizedBox(width: ValoraSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: ValoraSpacing.sm,
+                          vertical: ValoraSpacing.xs),
+                      decoration: BoxDecoration(
                         color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${workspace.savedListingCount} saved',
-                      style: ValoraTypography.labelSmall.copyWith(
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500,
+                            ? ValoraColors.neutral800
+                            : ValoraColors.neutral100,
+                        borderRadius:
+                            BorderRadius.circular(ValoraSpacing.radiusSm),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.bookmark_rounded,
+                              size: 14,
+                              color: isDark
+                                  ? ValoraColors.neutral300
+                                  : ValoraColors.neutral600),
+                          const SizedBox(width: ValoraSpacing.xs),
+                          Text('${workspace.savedListingCount} saved',
+                              style: ValoraTypography.labelSmall.copyWith(
+                                  color: isDark
+                                      ? ValoraColors.neutral300
+                                      : ValoraColors.neutral600)),
+                        ],
                       ),
                     ),
                   ],

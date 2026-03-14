@@ -96,15 +96,16 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
               _reportFab(fab);
             }
 
+            Widget content;
             if (_isComparisonMode) {
-              return ComparisonLayout(
+              content = ComparisonLayout(
+                key: const ValueKey('comparison'),
                 onBack: () => setState(() => _isComparisonMode = false),
                 onClear: provider.clearComparison,
               );
-            }
-
-            if (error != null && !isLoading && !hasReport) {
-              return Column(
+            } else if (error != null && !isLoading && !hasReport) {
+              content = Column(
+                key: const ValueKey('error'),
                 children: [
                   Expanded(
                     child: ValoraErrorState(
@@ -125,20 +126,29 @@ class _ContextReportScreenState extends State<ContextReportScreen> {
                   ),
                 ],
               );
+            } else {
+              content = hasReport || isLoading
+                  ? ReportLayout(
+                      key: const ValueKey('report'),
+                      inputController: _inputController,
+                      provider: provider,
+                      pdokService: _pdokService,
+                      isLoading: isLoading,
+                    )
+                  : SearchLayout(
+                      key: const ValueKey('search'),
+                      inputController: _inputController,
+                      provider: provider,
+                      pdokService: _pdokService,
+                    );
             }
 
-            return hasReport || isLoading
-                ? ReportLayout(
-                    inputController: _inputController,
-                    provider: provider,
-                    pdokService: _pdokService,
-                    isLoading: isLoading,
-                  )
-                : SearchLayout(
-                    inputController: _inputController,
-                    provider: provider,
-                    pdokService: _pdokService,
-                  );
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: content,
+            );
           },
         ),
       ),

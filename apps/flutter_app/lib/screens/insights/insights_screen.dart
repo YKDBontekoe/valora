@@ -4,6 +4,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_shadows.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../core/theme/valora_typography.dart';
 import '../../providers/insights_provider.dart';
 import '../../widgets/valora_widgets.dart';
 import '../../widgets/insights/insights_header.dart';
@@ -101,11 +103,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
                   boxShadow: ValoraShadows.lg,
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(ValoraSpacing.radiusXl),
                   child: Stack(
                     children: [
                       InsightsMap(
@@ -189,14 +191,14 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget _buildMapError(String error) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: ValoraColors.neutral800.withValues(alpha: 0.82),
+        color: ValoraColors.error.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Text(
           error,
-          style: const TextStyle(color: Colors.white, fontSize: 12.5),
+          style: ValoraTypography.labelMedium.copyWith(color: Colors.white),
           textAlign: TextAlign.center,
         ),
       ),

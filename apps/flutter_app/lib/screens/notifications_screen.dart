@@ -158,16 +158,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         const SizedBox(width: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: ValoraSpacing.sm, vertical: ValoraSpacing.xs / 2),
                           decoration: BoxDecoration(
                             color: ValoraColors.primary,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd),
                           ),
                           child: Text(
                             '$unreadCount',
-                            style: const TextStyle(
+                            style: ValoraTypography.labelSmall.copyWith(
                               color: Colors.white,
-                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -180,10 +179,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     if (unreadCount > 0)
                       TextButton.icon(
                         onPressed: _confirmMarkAllRead,
-                        icon: const Icon(Icons.done_all_rounded, size: 18),
+                        icon: const Icon(Icons.done_all_rounded, size: ValoraSpacing.iconSizeSm),
                         label: const Text('Read all'),
                         style: TextButton.styleFrom(
                           foregroundColor: ValoraColors.primary,
+                          textStyle: ValoraTypography.labelMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     const SizedBox(width: 8),
