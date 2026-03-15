@@ -73,6 +73,30 @@ public sealed class ContextReportService : IContextReportService
     /// </item>
     /// </list>
     /// </para>
+    /// <para>
+    /// <strong>Data Flow Diagram:</strong>
+    /// <code>
+    /// <![CDATA[
+    /// mermaid
+    /// graph TD
+    ///     A[Input Address] --> B(Resolve Location)
+    ///     B --> C{Check Cache}
+    ///     C -->|Hit| D[Return Cached Report]
+    ///     C -->|Miss| E(Fan-Out to Sources)
+    ///     E --> F[CBS]
+    ///     E --> G[PDOK]
+    ///     E --> H[Luchtmeetnet]
+    ///     E --> I[OSM]
+    ///     F --> J(Fan-In: ContextReportBuilder)
+    ///     G --> J
+    ///     H --> J
+    ///     I --> J
+    ///     J --> K[Score & Normalize]
+    ///     K --> L[Cache Report]
+    ///     L --> M[Return Report]
+    /// ]]>
+    /// </code>
+    /// </para>
     /// </remarks>
     /// <param name="request">The request containing the input location and desired radius.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

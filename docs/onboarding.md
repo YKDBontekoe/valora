@@ -4,9 +4,9 @@
 
 Get a local environment running, understand the architecture, and generate your first context report.
 
-## 1. Environment Setup (First 10 Minutes)
+## 1. Environment Setup (The 10-Minute Guide)
 
-Use this visual guide to understand the dependencies between the setup steps.
+You must have this running locally within 10 minutes. Use this visual guide to understand the dependencies between the setup steps.
 
 ```mermaid
 graph TD
@@ -24,13 +24,13 @@ graph TD
 - Flutter SDK
 
 ### Step 1: Start Infrastructure
-Start the database (PostgreSQL).
+Start the database (PostgreSQL) and the Valora caching layer in the background.
 
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-*Verification:* Run `docker ps` and ensure `valora-db` is running.
+*Verification:* Run `docker ps` and ensure `valora-db` is actively running and healthy. You MUST verify this before starting the API.
 
 ### Step 2: Configure & Run Backend
 
@@ -87,7 +87,9 @@ curl http://localhost:5001/api/health
 
 ## 3. Understanding the Architecture
 
-To understand how your request was processed, read the **[Data Flow Deep Dive](onboarding-data-flow.md)**.
+To understand the core reading path (how reports are generated), read the **[Data Flow Deep Dive (Fan-Out)](onboarding-data-flow.md)**.
+
+To understand the writing path (how a request translates to database storage via Clean Architecture layers), read the **[API to DB Persistence Guide](onboarding-api-to-db-flow.md)**.
 
 ### Product Mental Model
 - **Valora is not a scraper.** It does not copy listing photos or descriptions.
