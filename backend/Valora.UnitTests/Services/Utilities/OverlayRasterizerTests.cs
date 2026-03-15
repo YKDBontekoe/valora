@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Valora.Application.DTOs.Map;
-using Valora.Application.Services.Utilities;
+using Valora.Infrastructure.Services.AppServices.Utilities;
 using Xunit;
 
 namespace Valora.UnitTests.Services.Utilities;

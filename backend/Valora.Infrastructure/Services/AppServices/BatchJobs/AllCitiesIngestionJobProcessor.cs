@@ -4,7 +4,8 @@ using Valora.Domain.Entities;
 using Valora.Domain.Enums;
 using Valora.Domain.Extensions;
 
-namespace Valora.Application.Services.BatchJobs;
+namespace Valora.Infrastructure.Services.AppServices.BatchJobs;
+using Valora.Application.Common.Interfaces;
 
 public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
 {

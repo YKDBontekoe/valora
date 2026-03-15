@@ -4,7 +4,7 @@ using Valora.Application.Common.Models;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class UserAiProfileService : IUserAiProfileService
 {
