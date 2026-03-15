@@ -1,7 +1,6 @@
 using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure.Services.AppServices;
 
 namespace Valora.UnitTests.Services;

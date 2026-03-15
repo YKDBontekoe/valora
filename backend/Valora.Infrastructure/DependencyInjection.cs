@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
-using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure.Services.AppServices;
 using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
@@ -15,7 +14,6 @@ using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
 using Valora.Application.Common.Interfaces.External;
 using Valora.Infrastructure.Services.External;
-using Valora.Infrastructure.Services.AppServices;
 using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Infrastructure.Services.AppServices.Utilities;
 
