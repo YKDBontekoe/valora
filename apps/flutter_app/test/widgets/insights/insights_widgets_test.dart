@@ -1,3 +1,4 @@
+import '../../../lib/core/theme/valora_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -233,7 +234,7 @@ void main() {
       expect(polygon.points.first.latitude, 52.0);
       expect(polygon.points.first.longitude, 5.0);
       expect(polygon.color, isNotNull);
-      expect(polygon.borderColor, Colors.orange);
+      expect(polygon.borderColor, ValoraColors.warning);
     });
 
     testWidgets('buildAmenityMarker returns correct Marker', (WidgetTester tester) async {
