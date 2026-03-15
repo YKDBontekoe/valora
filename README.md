@@ -133,8 +133,13 @@ C4Container
 
 For a deeper dive into *why* we built it this way, see **[Architecture Decisions](docs/architecture-decisions.md)**.
 
-### The "Fan-Out" Aggregation Pattern
-When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results ("Fan-In") into a unified score.
+### The "Fan-Out / Fan-In" Aggregation Pattern
+When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results into a single object in memory ("Fan-In").
+
+**Why Fan-Out?**
+- **Speed:** By using `Task.WhenAll`, total latency is bound to the slowest single query rather than the sum of all queries.
+- **Resilience:** If one provider (e.g., Air Quality) times out, the system catches the exception and returns a partial report with a warning, rather than failing the entire request.
+- **Freshness:** Data is always real-time; we do not store stale listings.
 
 ```mermaid
 graph TD
@@ -235,11 +240,12 @@ sequenceDiagram
 
 The API provides core functionalities to access and manage Valora's context data. Below is a brief summary of key endpoints. For complete details, see the **[API Reference](docs/api-reference.md)**.
 
-- **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
-- **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
-- **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
-- **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
-- **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/context/report` | `POST` | Generates a new context report. Triggers the Fan-Out flow to CBS, PDOK, and OSM. Requires JWT. |
+| `/api/auth/register` | `POST` | Creates a new user account. |
+| `/api/auth/login` | `POST` | Authenticates a user and returns a JWT for protected endpoints. |
+| `/api/workspaces` | `POST` | Creates a new workspace to save and group reports. |
 
 ---
 
@@ -277,7 +283,7 @@ The API provides core functionalities to access and manage Valora's context data
     - Explains the API request lifecycle from Flutter -> API -> PDOK/CBS/OSM -> Report.
 - **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)** (Includes Mermaid Diagram):
     - Walkthrough of the data flow from API request down to database persistence (e.g., User Registration).
-- **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-guide.md)** (Includes Mermaid Diagram):
+- **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-flow.md)** (Includes Mermaid Diagram):
     - Comprehensive guide tracing the exact path a write request takes in Valora, passing through Clean Architecture to PostgreSQL.
 - **[Data Flow: Map & Rasterization](docs/onboarding-map-flow.md)** (Includes Mermaid Diagram):
     - Details the server-side spatial indexing and map overlay tile generation, explaining why data is clustered instead of sent as raw vectors.

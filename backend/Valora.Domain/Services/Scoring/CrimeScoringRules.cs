@@ -11,6 +11,22 @@ public static class CrimeScoringRules
     /// <remarks>
     /// Based on CBS data where national average fluctuates around 45-50.
     /// Scores are bucketed to provide clear safety tiers (Very Safe, Safe, Average, etc.).
+    /// <para>
+    /// <strong>Bucketing Logic:</strong>
+    /// <code>
+    /// <![CDATA[
+    /// mermaid
+    /// graph TD
+    ///     Input(Crimes per 1000) --> B{Condition}
+    ///     B -->|<= 20| C(100: Very Safe)
+    ///     B -->|> 20 and <= 35| D(85: Safe)
+    ///     B -->|> 35 and <= 50| E(70: Average)
+    ///     B -->|> 50 and <= 75| F(50: Below Average)
+    ///     B -->|> 75 and <= 100| G(30: Unsafe)
+    ///     B -->|> 100| H(15: Very Unsafe)
+    /// ]]>
+    /// </code>
+    /// </para>
     /// </remarks>
     public static double? ScoreTotalCrime(int? crimesPer1000)
     {

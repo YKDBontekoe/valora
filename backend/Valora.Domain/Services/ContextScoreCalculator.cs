@@ -38,6 +38,10 @@ public static class ContextScoreCalculator
     /// <summary>
     /// Aggregates individual metrics into category scores (0-100).
     /// </summary>
+    /// <remarks>
+    /// The average is taken across all provided metrics in a category to form the final category score.
+    /// This prevents any single outlier metric from disproportionately tanking a category's rating.
+    /// </remarks>
     /// <returns>A dictionary mapping category names to their average scores.</returns>
     public static Dictionary<string, double> ComputeCategoryScores(CategoryMetricsModel input)
     {
@@ -57,6 +61,31 @@ public static class ContextScoreCalculator
     /// <summary>
     /// Calculates the final 0-100 "Valora Score" based on weighted category scores.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A weighted average provides a composite metric where high-importance dimensions (like Safety and Amenities)
+    /// have a stronger pull than secondary contextual data (like Environment).
+    /// </para>
+    /// <para>
+    /// <strong>Scoring Tree Diagram:</strong>
+    /// <code>
+    /// <![CDATA[
+    /// mermaid
+    /// graph TD
+    ///     A(Valora Composite Score) --> B[Safety 20%]
+    ///     A --> C[Social 20%]
+    ///     A --> D[Amenities 25%]
+    ///     A --> E[Demographics 10%]
+    ///     A --> F[Housing 10%]
+    ///     A --> G[Environment 10%]
+    ///     A --> H[Mobility 5%]
+    ///     B --> B1[Total Crime]
+    ///     B --> B2[Burglary]
+    ///     B --> B3[Violent Crime]
+    /// ]]>
+    /// </code>
+    /// </para>
+    /// </remarks>
     public static double ComputeCompositeScore(IReadOnlyDictionary<string, double> categoryScores)
     {
         if (categoryScores.Count == 0)

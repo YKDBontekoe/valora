@@ -34,6 +34,35 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Parallel Fetching Strategy:</strong><br/>
+    /// We use <c>Task.WhenAll</c> to perform the "Fan-Out" phase. Each external source is queried simultaneously.
+    /// This is crucial because querying these sources sequentially would take 3-5 seconds, whereas parallel fetching
+    /// reduces the total time to the duration of the slowest single request (typically ~1 second).
+    /// </para>
+    /// <para>
+    /// <strong>Data Flow Diagram:</strong>
+    /// <code>
+    /// <![CDATA[
+    /// mermaid
+    /// sequenceDiagram
+    ///     participant Provider as ContextDataProvider
+    ///     participant CBS
+    ///     participant OSM
+    ///     participant LMN as Luchtmeetnet
+    ///     Provider->>CBS: GetStatsAsync (Parallel)
+    ///     Provider->>OSM: GetAmenitiesAsync (Parallel)
+    ///     Provider->>LMN: GetSnapshotAsync (Parallel)
+    ///     CBS-->>Provider: NeighborhoodStats
+    ///     OSM-->>Provider: AmenityStats
+    ///     LMN-->>Provider: AirQuality
+    ///     Note over Provider: Awaits Task.WhenAll
+    ///     Provider->>Provider: BuildSourceAttributions
+    /// ]]>
+    /// </code>
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
