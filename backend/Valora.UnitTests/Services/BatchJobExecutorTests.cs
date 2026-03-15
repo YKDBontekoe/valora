@@ -1,8 +1,9 @@
 using Valora.Application.Common.Interfaces;
 using Moq;
 using Microsoft.Extensions.Logging;
-using Valora.Application.Services;
-using Valora.Application.Services.BatchJobs;
+using Valora.Application.Common.Interfaces;
+using Valora.Infrastructure.Services.AppServices;
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Domain.Entities;
 
 namespace Valora.UnitTests.Services;
