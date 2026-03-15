@@ -9,7 +9,7 @@ import { logger } from '../../services/logger';
 const listVariants = {
   visible: {
     transition: {
-      staggerChildren: 0.05
+      staggerChildren: 0.03
     }
   }
 };
@@ -26,7 +26,7 @@ const rowVariants = {
 } as const;
 
 const getStatusBadge = (status: string) => {
-  const base = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest border flex items-center gap-2.5 transition-all duration-500 group-hover:shadow-md group-hover:translate-y-[-2px]";
+  const base = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-ultra-wide border flex items-center gap-2.5 transition-all duration-500 group-hover:shadow-md group-hover:translate-y-[-2px]";
   switch (status) {
     case 'Completed': return `${base} bg-success-50 text-success-700 border-success-200 shadow-glow-success group-hover:bg-white`;
     case 'Failed': return `${base} bg-error-50 text-error-700 border-error-200 shadow-glow-error group-hover:bg-white`;
@@ -77,13 +77,6 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
     return 'none';
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleSort(field);
-    }
-  };
-
   return (
     <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-premium-xl border border-brand-100/50">
       <div className="overflow-x-auto custom-scrollbar">
@@ -91,76 +84,76 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
           <thead className="bg-brand-50/50 backdrop-blur-md">
             <tr>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('type')}
-                onKeyDown={(e) => handleKeyDown(e, 'type')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100"
+                role="columnheader"
                 aria-sort={getAriaSort('type')}
-                aria-label="Sort by Definition"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleSort('type')}
+                  className="flex items-center gap-3 w-full h-full text-left outline-none cursor-pointer"
+                  aria-label="Sort by Definition"
+                >
                   Definition
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'type_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'type_desc' ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('target')}
-                onKeyDown={(e) => handleKeyDown(e, 'target')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100"
+                role="columnheader"
                 aria-sort={getAriaSort('target')}
-                aria-label="Sort by Target"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleSort('target')}
+                  className="flex items-center gap-3 w-full h-full text-left outline-none cursor-pointer"
+                  aria-label="Sort by Target"
+                >
                   Target
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'target_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'target_desc' ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('status')}
-                onKeyDown={(e) => handleKeyDown(e, 'status')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100"
+                role="columnheader"
                 aria-sort={getAriaSort('status')}
-                aria-label="Sort by Status"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleSort('status')}
+                  className="flex items-center gap-3 w-full h-full text-left outline-none cursor-pointer"
+                  aria-label="Sort by Status"
+                >
                   Status
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'status_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'status_desc' ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
-              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Progress</th>
-              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Context</th>
+              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Progress</th>
+              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Context</th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('createdAt')}
-                onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100"
+                role="columnheader"
                 aria-sort={getAriaSort('createdAt')}
-                aria-label="Sort by Timestamp"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleSort('createdAt')}
+                  className="flex items-center gap-3 w-full h-full text-left outline-none cursor-pointer"
+                  aria-label="Sort by Timestamp"
+                >
                   Timestamp
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'createdAt_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'createdAt_desc' || (!sortBy) ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
-              <th className="px-12 py-8 text-right text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Action</th>
+              <th className="px-12 py-8 text-right text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Action</th>
             </tr>
           </thead>
           <motion.tbody
@@ -189,7 +182,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                         <AlertCircle size={80} className="opacity-40" />
                     </div>
                     <div className="flex flex-col gap-3">
-                        <span className="font-black text-4xl tracking-tightest uppercase tracking-widest">Sync Failure</span>
+                        <span className="font-black text-4xl tracking-tightest uppercase tracking-ultra-wide">Sync Failure</span>
                         <p className="text-error-600 font-bold text-lg">{displayError}</p>
                     </div>
                     <Button onClick={refresh} variant="outline" size="lg" className="mt-4 border-error-200 text-error-700 bg-white shadow-sm hover:shadow-glow-error">Retry Pipeline Sync</Button>
@@ -207,7 +200,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                         />
                     </div>
                     <div className="flex flex-col gap-3">
-                        <span className="font-black text-3xl uppercase tracking-[0.3em] text-brand-200">Idle Pipeline</span>
+                        <span className="font-black text-3xl uppercase tracking-ultra-wide text-brand-200">Idle Pipeline</span>
                         <p className="text-brand-300 font-bold">No active batches detected in the current cluster.</p>
                     </div>
                   </div>
@@ -228,12 +221,12 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                       <td className="px-12 py-10 whitespace-nowrap">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-3">
-                            <span className="text-base font-black text-brand-900 group-hover:text-primary-700 transition-colors tracking-tight">{job.type}</span>
+                            <span className="text-base font-black text-brand-900 group-hover:text-primary-700 transition-colors tracking-tightest">{job.type}</span>
                             <div className="p-1.5 bg-brand-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500">
                                 <Activity size={12} className="text-primary-500" />
                             </div>
                           </div>
-                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-[0.2em]">ID: {job.id.slice(0, 12)}</span>
+                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-ultra-wide">ID: {job.id.slice(0, 12)}</span>
                         </div>
                       </td>
                       <td className="px-12 py-10 whitespace-nowrap">
@@ -266,7 +259,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                             </motion.div>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-brand-400 font-black tracking-[0.25em]">{clampedProgress}% SYNCED</span>
+                            <span className="text-[10px] text-brand-400 font-black tracking-ultra-wide">{clampedProgress}% SYNCED</span>
                             {job.status === 'Processing' && (
                                 <div className="flex gap-1">
                                     {[1, 2, 3].map(i => (
@@ -325,7 +318,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-brand-100 shadow-sm">
                 <Sparkles size={18} className="text-primary-500" />
             </div>
-            <div className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">
+            <div className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">
                 Registry Page <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{safeTotalPages}</span>
             </div>
         </div>

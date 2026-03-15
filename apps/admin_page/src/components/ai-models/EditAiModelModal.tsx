@@ -88,7 +88,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-8">
                 <div>
-                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Feature Key</label>
+                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Feature Key</label>
                   <input
                     type="text"
                     className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
@@ -101,12 +101,12 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
 
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] ml-1">Model</label>
+                    <label className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide ml-1">Model</label>
                     <select
                       aria-label="Sort models"
                       value={modelSort}
                       onChange={(e) => onModelSortChange(e.target.value as SortOption)}
-                      className="bg-brand-50 border border-brand-100 rounded-lg text-[10px] font-black text-brand-400 px-2 py-1 outline-none focus:border-primary-500 uppercase tracking-widest cursor-pointer"
+                      className="bg-brand-50 border border-brand-100 rounded-lg text-[10px] font-black text-brand-400 px-2 py-1 outline-none focus:border-primary-500 uppercase tracking-ultra-wide cursor-pointer"
                     >
                       <option value="name">Alpha</option>
                       <option value="price_asc">Price Asc</option>
@@ -132,7 +132,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
               <div className="space-y-8">
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Temperature</label>
+                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Temperature</label>
                     <input
                       type="number"
                       step="0.1"
@@ -145,7 +145,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Max Tokens</label>
+                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Max Tokens</label>
                     <input
                       type="number"
                       step="1"
@@ -159,7 +159,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Operational State</label>
+                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Operational State</label>
                   <button
                     onClick={() => onChange({ ...editingConfig, isEnabled: !editingConfig.isEnabled })}
                     className={`w-full flex items-center justify-between px-8 py-5 rounded-2xl border transition-all duration-500 group/toggle ${
@@ -168,7 +168,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                         : 'bg-brand-50 border-brand-100 text-brand-300'
                     }`}
                   >
-                    <span className="font-black uppercase tracking-widest">{editingConfig.isEnabled ? 'Active' : 'Deactivated'}</span>
+                    <span className="font-black uppercase tracking-ultra-wide">{editingConfig.isEnabled ? 'Active' : 'Deactivated'}</span>
                     <div className={`p-1 rounded-lg transition-all duration-500 ${editingConfig.isEnabled ? 'bg-success-100 text-success-600' : 'bg-brand-100 text-brand-300'}`}>
                         {editingConfig.isEnabled ? <Check size={20} /> : <X size={20} />}
                     </div>
@@ -178,7 +178,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             </div>
 
             <div className="mt-10">
-              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">System Prompt Override</label>
+              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">System Prompt Override</label>
               <textarea
                 className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[160px] font-mono text-sm placeholder:text-brand-200"
                 value={editingConfig.systemPrompt || ''}
@@ -188,7 +188,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             </div>
 
             <div className="mt-10">
-              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Configuration Justification</label>
+              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Configuration Justification</label>
               <textarea
                 className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[120px] placeholder:text-brand-200"
                 value={editingConfig.description}
@@ -201,7 +201,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
           <div className="absolute bottom-0 left-0 right-0 p-10 md:px-14 md:py-8 bg-white/80 backdrop-blur-xl border-t border-brand-100 flex flex-col sm:flex-row items-center justify-between gap-8 z-20">
             <div className="flex items-center gap-3 text-warning-600 bg-warning-50 px-5 py-2.5 rounded-full border border-warning-100/50">
               <AlertCircle size={20} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Immediate Propagation</span>
+              <span className="text-[10px] font-black uppercase tracking-ultra-wide">Immediate Propagation</span>
             </div>
             <div className="flex gap-5 w-full sm:w-auto">
               <Button

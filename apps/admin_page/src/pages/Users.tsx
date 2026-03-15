@@ -12,7 +12,7 @@ import Button from '../components/Button';
 const listVariants = {
   visible: {
     transition: {
-      staggerChildren: 0.05
+      staggerChildren: 0.03
     }
   }
 };
@@ -97,7 +97,7 @@ const Users = () => {
                         <AlertCircle className="w-8 h-8" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-error-500 mb-1">Service Interruption</span>
+                        <span className="text-[10px] uppercase tracking-ultra-wide text-error-500 mb-1">Service Interruption</span>
                         <span className="text-xl tracking-tight">{fetchError}</span>
                     </div>
                 </div>
@@ -129,7 +129,7 @@ const Users = () => {
           </div>
 
           <div className="flex items-center gap-2 px-4 py-2 bg-brand-100/50 rounded-2xl border border-brand-200/50">
-              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Displaying</span>
+              <span className="text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Displaying</span>
               <span className="text-xs font-black text-brand-900">{users.length} Records</span>
           </div>
       </div>
@@ -140,19 +140,23 @@ const Users = () => {
             <thead className="bg-brand-50/50">
               <tr>
                 <th
-                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
-                    onClick={() => toggleSort('email')}
+                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-colors select-none"
+                    role="columnheader"
+                    aria-sort={sortBy === 'email_asc' ? 'ascending' : sortBy === 'email_desc' ? 'descending' : 'none'}
                 >
-                    <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => toggleSort('email')}
+                        className="flex items-center gap-2 w-full h-full text-left outline-none cursor-pointer"
+                    >
                         Identity
                         <div className="flex flex-col">
                             <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${sortBy === 'email_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
                             <ArrowDown className={`w-3 h-3 transition-colors ${sortBy === 'email_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
                         </div>
-                    </div>
+                    </button>
                 </th>
-                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Authorized Roles</th>
-                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Management</th>
+                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Authorized Roles</th>
+                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Management</th>
               </tr>
             </thead>
             <motion.tbody
@@ -186,7 +190,7 @@ const Users = () => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-brand-900 font-black text-2xl tracking-tight uppercase tracking-widest">
+                                    <span className="text-brand-900 font-black text-2xl tracking-tightest uppercase tracking-ultra-wide">
                                         {fetchError ? 'Sync Failed' : (searchQuery ? 'No results found' : 'No records exist')}
                                     </span>
                                     <p className="text-brand-300 font-bold max-w-sm mx-auto">
@@ -215,7 +219,7 @@ const Users = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between px-8 py-4 bg-white/50 rounded-3xl border border-brand-100/50">
-        <div className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em]">
+        <div className="text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide">
           Record Group <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{totalPages}</span>
         </div>
         <div className="flex gap-4">
