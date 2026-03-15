@@ -1,0 +1,358 @@
+00:00 +0: loading /app/apps/flutter_app/test/services/saved_search_service_test.dart
+00:00 +0: /app/apps/flutter_app/test/services/saved_search_service_test.dart: saveSearch adds a new search
+00:00 +1: /app/apps/flutter_app/test/services/location_service_test.dart: LocationService getCurrentLocation returns position when permission granted
+00:00 +2: /app/apps/flutter_app/test/services/location_service_test.dart: LocationService throws ValoraLocationServiceDisabledException when service disabled
+00:00 +3: /app/apps/flutter_app/test/services/location_service_test.dart: LocationService throws ValoraLocationServiceDisabledException when service disabled
+00:00 +4: /app/apps/flutter_app/test/services/saved_search_service_test.dart: toggleAlert updates isAlertEnabled
+00:00 +5: /app/apps/flutter_app/test/services/location_service_test.dart: LocationService throws ValoraPermissionDeniedException when permission denied
+00:00 +6: /app/apps/flutter_app/test/services/saved_search_service_test.dart: removeSearch removes the item
+00:00 +7: /app/apps/flutter_app/test/services/location_service_test.dart: LocationService throws ValoraPermissionDeniedForeverException when permission denied forever
+00:00 +8: loading /app/apps/flutter_app/test/services/pdok_service_test.dart
+00:01 +8: /app/apps/flutter_app/test/services/pdok_service_test.dart: PdokService Tests search returns suggestions on 200
+00:01 +9: /app/apps/flutter_app/test/services/pdok_service_test.dart: PdokService Tests reverseLookup returns address on 200
+00:01 +10: /app/apps/flutter_app/test/services/pdok_service_test.dart: PdokService Tests reverseLookup returns null on empty docs
+00:01 +11: /app/apps/flutter_app/test/services/pdok_service_test.dart: PdokService Tests handles malformed JSON
+PDOK request failed: FormatException: Unexpected character (at character 1)
+invalid json
+^
+
+PDOK reverse lookup failed: FormatException: Unexpected character (at character 1)
+invalid json
+^
+
+00:01 +12: /app/apps/flutter_app/test/services/pdok_service_test.dart: PdokService Tests search returns empty list on exception
+PDOK request failed: Exception: Network fail
+00:01 +13: /app/apps/flutter_app/test/services/property_photo_service_test.dart: PropertyPhotoService builds PDOK WMS image URLs for valid coordinates
+00:01 +14: /app/apps/flutter_app/test/services/property_photo_service_test.dart: PropertyPhotoService respects limit parameter
+00:01 +15: /app/apps/flutter_app/test/services/property_photo_service_test.dart: PropertyPhotoService returns empty for invalid coordinates
+00:11 +16: /app/apps/flutter_app/test/services/notification_service_coverage_test.dart: NotificationService Coverage _fetchUnreadCount failure is handled silently
+00:11 +17: /app/apps/flutter_app/test/services/notification_service_coverage_test.dart: NotificationService Coverage loadMoreNotifications failure sets error state
+00:11 +18: /app/apps/flutter_app/test/services/notification_service_coverage_test.dart: NotificationService Coverage markAsRead failure is handled
+00:11 +19: /app/apps/flutter_app/test/services/notification_service_coverage_test.dart: NotificationService Coverage markAllAsRead failure is handled
+00:12 +20: /app/apps/flutter_app/test/services/auth_service_test.dart: (setUpAll)
+00:12 +20: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService login saves token and refresh token on success
+00:12 +21: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService login failure parses error
+00:12 +22: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService login failure with errors dictionary parses error
+00:12 +23: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService login failure with errors list parses error
+00:12 +24: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register success
+00:12 +25: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:13 +26: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:13 +27: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:13 +28: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:13 +29: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:13 +30: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:15 +31: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:15 +32: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:15 +33: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:15 +34: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:15 +34: /app/apps/flutter_app/test/services/logging_service_test.dart: LoggingService Tests Severe logs execute (Sentry integration path)
+{"level":"SEVERE","time":"2026-03-15T18:42:41.575140","logger":"","message":"Critical error"}
+{"level":"SEVERE","time":"2026-03-15T18:42:41.583920","logger":"","message":"Critical error","error":"Exception: Fatal"}
+00:15 +35: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:17 +36: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:17 +37: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:17 +38: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:17 +39: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:17 +40: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService register throws exception on failure
+00:17 +41: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService refreshToken returns new token on success
+00:17 +42: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService refreshToken throws if no refresh token stored
+00:17 +43: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService refreshToken throws on invalid refresh token
+00:17 +44: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService deleteToken removes both tokens
+00:17 +45: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService externalLogin saves tokens on success
+00:17 +46: /app/apps/flutter_app/test/services/auth_service_test.dart: AuthService externalLogin throws on failure
+00:17 +47: /app/apps/flutter_app/test/services/auth_service_test.dart: (tearDownAll)
+00:18 +47: /app/apps/flutter_app/test/services/crash_reporting_service_test.dart: (setUpAll)
+00:18 +47: /app/apps/flutter_app/test/services/crash_reporting_service_test.dart: initialize is no-op when SENTRY_DSN is missing
+00:18 +48: /app/apps/flutter_app/test/services/crash_reporting_service_test.dart: (tearDownAll)
+00:19 +48: /app/apps/flutter_app/test/services/auth_service_coverage_test.dart: getToken handles StorageException (read error)
+00:19 +49: /app/apps/flutter_app/test/services/auth_service_coverage_test.dart: saveToken handles StorageException (write error)
+00:19 +50: /app/apps/flutter_app/test/services/auth_service_coverage_test.dart: deleteToken handles StorageException (delete error)
+00:19 +51: /app/apps/flutter_app/test/services/auth_service_coverage_test.dart: refreshToken handles StorageException on read
+00:19 +52: /app/apps/flutter_app/test/services/auth_service_coverage_test.dart: refreshToken handles StorageException on write (new token)
+00:19 +53: /app/apps/flutter_app/test/services/auth_service_coverage_test.dart: login handles StorageException on refresh token write
+00:20 +54: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService getHistory returns empty list initially
+00:20 +55: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService addToHistory adds item
+00:20 +56: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService addToHistory puts latest item at top
+00:20 +57: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService addToHistory avoids duplicates and moves to top
+00:20 +58: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService addToHistory limits history to 10
+00:20 +59: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService removeFromHistory removes item
+00:20 +60: /app/apps/flutter_app/test/services/search_history_service_test.dart: SearchHistoryService clearHistory removes all items
+00:21 +61: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry returns empty list for null input
+00:21 +62: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry returns empty list for empty map
+00:21 +63: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry returns empty list for missing coordinates
+00:21 +64: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry returns empty list for non-list coordinates
+00:21 +65: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry parses simple Polygon correctly
+00:21 +66: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry parses simple MultiPolygon correctly
+00:21 +67: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.parsePolygonGeometry handles malformed coordinates gracefully
+00:21 +68: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns school icon for school
+00:21 +69: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns supermarket icon for supermarket
+00:21 +70: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns park icon for park
+00:21 +71: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns healthcare icon for healthcare
+00:21 +72: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns transit icon for transit
+00:21 +73: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns charging_station icon for charging_station
+00:21 +74: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getAmenityIcon returns place icon for unknown type
+00:21 +75: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getOverlayColor returns correct colors for PricePerSquareMeter
+00:21 +76: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getOverlayColor returns correct colors for CrimeRate (inverted)
+00:21 +77: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getOverlayColor returns correct colors for default metrics (higher is better)
+00:21 +78: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getColorForScore returns grey for null score
+00:21 +79: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getColorForScore returns success for >= 80
+00:21 +80: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getColorForScore returns warning for >= 60
+00:21 +81: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getColorForScore returns orange for >= 40
+00:21 +82: /app/apps/flutter_app/test/core/utils/map_utils_test.dart: MapUtils.getColorForScore returns error for < 40
+00:21 +83: /app/apps/flutter_app/test/core/utils/map_utils_coverage_test.dart: parsePolygonGeometry handles malformed geometry gracefully
+00:21 +84: /app/apps/flutter_app/test/core/utils/map_utils_coverage_test.dart: parsePolygonGeometry handles invalid coordinates gracefully
+00:22 +85: /app/apps/flutter_app/test/core/currency_formatter_test.dart: formats euro values consistently for nl_NL locale
+00:23 +86: /app/apps/flutter_app/test/core/app_config_test.dart: (setUpAll)
+00:23 +86: /app/apps/flutter_app/test/core/app_config_test.dart: AppConfig uses fallback when API_URL is missing
+00:23 +87: /app/apps/flutter_app/test/core/app_config_test.dart: AppConfig uses configured API_URL when provided
+00:23 +88: /app/apps/flutter_app/test/core/app_config_test.dart: (tearDownAll)
+00:28 +88: /app/apps/flutter_app/test/widgets/workspaces/comment_thread_widget_test.dart: renders empty state when no comments
+00:30 +89: /app/apps/flutter_app/test/widgets/workspaces/comment_thread_widget_test.dart: renders comments and replies
+00:30 +90: /app/apps/flutter_app/test/widgets/workspaces/comment_thread_widget_test.dart: can reply to a comment
+00:31 +91: /app/apps/flutter_app/test/widgets/workspaces/comment_thread_widget_test.dart: submitting comment handles failure
+00:32 +92: /app/apps/flutter_app/test/widgets/workspaces/workspace_detail_screen_test.dart: WorkspaceDetailScreen renders correctly
+00:33 +93: /app/apps/flutter_app/test/widgets/workspaces/activity_feed_widget_test.dart: renders empty state when activities list is empty
+00:34 +94: /app/apps/flutter_app/test/widgets/workspaces/activity_feed_widget_test.dart: renders list of activities
+00:35 +95: /app/apps/flutter_app/test/widgets/workspaces/member_management_widget_test.dart: renders empty state when members list is empty
+00:36 +96: /app/apps/flutter_app/test/widgets/workspaces/member_management_widget_test.dart: renders list of members
+00:37 +97: /app/apps/flutter_app/test/widgets/workspaces/share_workspace_dialog_test.dart: renders dialog correctly
+00:37 +98: /app/apps/flutter_app/test/widgets/workspaces/share_workspace_dialog_test.dart: renders dialog correctly
+00:37 +99: /app/apps/flutter_app/test/widgets/workspaces/share_workspace_dialog_test.dart: renders dialog correctly
+00:39 +100: /app/apps/flutter_app/test/widgets/workspaces/share_workspace_dialog_test.dart: successful invite shows snackbar and calls provider
+00:39 +101: /app/apps/flutter_app/test/widgets/workspaces/share_workspace_dialog_test.dart: failed invite shows error snackbar
+00:40 +102: /app/apps/flutter_app/test/widgets/workspaces/workspace_list_screen_test.dart: WorkspaceListScreen renders list
+00:41 +103: /app/apps/flutter_app/test/widgets/workspaces/workspace_list_screen_test.dart: WorkspaceListScreen shows create dialog
+00:42 +104: /app/apps/flutter_app/test/widgets/common/valora_tag_test.dart: ValoraTag renders label and icon correctly
+00:42 +105: /app/apps/flutter_app/test/widgets/common/valora_tag_test.dart: ValoraTag responds to tap when onTap is provided
+00:42 +106: /app/apps/flutter_app/test/widgets/common/valora_tag_test.dart: ValoraTag does not wrap in GestureDetector when onTap is null
+00:42 +107: /app/apps/flutter_app/test/widgets/common/valora_tag_test.dart: ValoraTag applies custom background color
+00:43 +108: /app/apps/flutter_app/test/widgets/common/valora_settings_tile_test.dart: ValoraSettingsTile renders title and subtitle
+00:45 +109: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays NetworkException correctly
+00:45 +110: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays NetworkException correctly
+00:45 +111: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays NetworkException correctly
+00:45 +112: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays NetworkException correctly
+00:46 +113: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays ServerException correctly
+00:46 +114: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays NotFoundException correctly
+00:46 +115: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays ValidationException correctly
+00:46 +116: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState displays generic AppException correctly
+00:46 +117: /app/apps/flutter_app/test/widgets/valora_error_state_test.dart: ValoraErrorState retry callback is called when button pressed
+Unhandled error type in ValoraErrorState: _Exception
+00:48 +118: /app/apps/flutter_app/test/widgets/valora_badge_test.dart: (setUpAll)
+00:48 +118: /app/apps/flutter_app/test/widgets/valora_badge_test.dart: ValoraBadge renders with blur and animation by default
+00:49 +119: /app/apps/flutter_app/test/widgets/valora_badge_test.dart: ValoraBadge skips blur when enableBlur is false
+00:49 +120: /app/apps/flutter_app/test/widgets/valora_badge_test.dart: ValoraBadge skips animation when enableAnimation is false
+00:49 +121: /app/apps/flutter_app/test/widgets/valora_badge_test.dart: (tearDownAll)
+00:49 +121: /app/apps/flutter_app/test/widgets/home_bottom_nav_bar_test.dart: HomeBottomNavBar renders and handles taps
+00:51 +122: /app/apps/flutter_app/test/widgets/notifications/notification_item_test.dart: NotificationItem renders content correctly
+00:51 +123: /app/apps/flutter_app/test/widgets/notifications/notification_item_test.dart: NotificationItem renders content correctly
+00:52 +124: /app/apps/flutter_app/test/widgets/notifications/notification_item_test.dart: NotificationItem handles tap
+00:52 +125: /app/apps/flutter_app/test/widgets/notifications/notification_item_test.dart: NotificationItem renders correct icon for type
+00:53 +126: /app/apps/flutter_app/test/widgets/notifications/notification_sheet_test.dart: NotificationSheet shows loading indicator
+00:54 +127: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: ValoraTextField manages internal focus node when none provided
+00:54 +128: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: ValoraTextField manages internal focus node when none provided
+00:55 +129: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: ValoraTextField manages internal focus node when none provided
+00:55 +130: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: ValoraTextField manages internal focus node when none provided
+00:56 +131: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: ValoraTextField respects external focus node
+00:56 +132: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: ValoraTextField updates focus listener when FocusNode changes
+00:56 +133: /app/apps/flutter_app/test/widgets/valora_text_field_test.dart: (tearDownAll)
+00:57 +133: /app/apps/flutter_app/test/widgets/insights/insights_selection_test.dart: MapModeSelector switches modes
+00:58 +134: /app/apps/flutter_app/test/widgets/insights/insights_selection_test.dart: PersistentDetailsPanel shows city details when selected
+00:58 +135: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsHeader displays title and count
+00:59 +136: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsLegend displays correct label for Overall metric
+00:59 +137: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsLegend displays correct label for Safety metric
+00:59 +138: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsLegend displays legend rows
+00:59 +139: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsMetricSelector displays all metric chips
+00:59 +140: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsMetricSelector calls setMetric on chip tap
+00:59 +141: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsControls displays zoom buttons and toggles
+01:00 +142: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsControls triggers zoom callbacks
+01:00 +143: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsControls shows dropdown when overlays are enabled
+01:00 +144: /app/apps/flutter_app/test/widgets/insights/insights_widgets_test.dart: InsightsMap Widget renders FlutterMap with TileLayer
+01:00 +145: /app/apps/flutter_app/test/widgets/insights/insights_map_record_test.dart: InsightsMap compiles and builds with record access
+01:00 +146: /app/apps/flutter_app/test/widgets/insights/insights_map_record_test.dart: InsightsMap compiles and builds with record access
+01:00 +147: /app/apps/flutter_app/test/widgets/insights/insights_map_record_test.dart: InsightsMap compiles and builds with record access
+01:00 +148: /app/apps/flutter_app/test/widgets/insights/insights_map_record_test.dart: InsightsMap compiles and builds with record access
+01:00 +149: /app/apps/flutter_app/test/widgets/insights/insights_map_record_test.dart: InsightsMap compiles and builds with record access
+01:02 +150: /app/apps/flutter_app/test/widgets/insights/insights_map_zoom_test.dart: InsightsMap renders tiles when overlayTiles are present
+01:03 +151: /app/apps/flutter_app/test/widgets/insights/insights_controls_overlap_test.dart: InsightsControls moves up when selectedFeature is present
+01:03 +152: /app/apps/flutter_app/test/widgets/insights/insights_controls_overlap_test.dart: InsightsControls moves up when selectedFeature is present
+01:05 +153: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraCard Tests renders child content
+01:05 +154: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraCard Tests calls onTap when tapped
+01:06 +155: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +156: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +157: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +158: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +159: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +160: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +161: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +162: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +163: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +164: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:06 +165: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:07 +166: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:07 +167: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:07 +168: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows initial state
+01:07 +169: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraAvatar Tests renders initials
+01:07 +170: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows loading state
+01:07 +171: /app/apps/flutter_app/test/widgets/ai_insight_card_test.dart: AiInsightCard shows loading state
+01:07 +172: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSearchField Tests renders hint text
+01:07 +173: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSearchField Tests renders hint text
+01:07 +174: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSearchField Tests renders hint text
+01:07 +175: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSearchField Tests shows clear button when text is entered
+01:07 +176: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSearchField Tests clears text when clear button is pressed
+01:07 +177: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSlider Tests renders slider and handles changes
+01:07 +178: /app/apps/flutter_app/test/widgets/valora_widgets_test.dart: ValoraSectionHeader Tests renders title uppercase
+01:09 +179: /app/apps/flutter_app/test/widgets/global_error_widget_test.dart: GlobalErrorWidget displays user friendly error message
+01:10 +180: /app/apps/flutter_app/test/widgets/report/charts_test.dart: ContextBarChart Tests renders bars for metrics
+01:11 +181: /app/apps/flutter_app/test/widgets/global_error_widget_test.dart: GlobalErrorWidget Restart button navigates to StartupScreen
+01:11 +182: /app/apps/flutter_app/test/widgets/global_error_widget_test.dart: GlobalErrorWidget Restart button navigates to StartupScreen
+01:11 +183: /app/apps/flutter_app/test/widgets/global_error_widget_test.dart: GlobalErrorWidget Restart button navigates to StartupScreen
+01:11 +184: /app/apps/flutter_app/test/widgets/report/charts_test.dart: ProximityChart Tests renders progress bars and distances
+01:11 +185: /app/apps/flutter_app/test/widgets/global_error_widget_test.dart: GlobalErrorWidget shows debug info in debug mode
+01:11 +186: loading /app/apps/flutter_app/test/widgets/report/context_report_view_test.dart
+01:13 +186: /app/apps/flutter_app/test/widgets/report/context_report_view_test.dart: ContextReportView renders correctly
+01:14 +187: /app/apps/flutter_app/test/widgets/report/comparison_view_test.dart: ComparisonView renders empty state when no ids to compare
+01:14 +188: /app/apps/flutter_app/test/widgets/report/context_report_view_test.dart: ContextReportView.buildChild returns expected components
+01:14 +189: /app/apps/flutter_app/test/widgets/report/comparison_view_test.dart: ComparisonView renders table with scroll view and correct width columns
+01:14 +190: /app/apps/flutter_app/test/widgets/report/comparison_view_test.dart: ComparisonView renders table with scroll view and correct width columns
+01:14 +191: /app/apps/flutter_app/test/widgets/report/comparison_view_test.dart: ComparisonView renders table with scroll view and correct width columns
+01:15 +192: /app/apps/flutter_app/test/widgets/report/comparison_view_test.dart: ComparisonView renders table with scroll view and correct width columns
+01:16 +193: /app/apps/flutter_app/test/widgets/report/ai_insight_card_test.dart: Skipped: AI Insight Card Tests
+01:17 +194: /app/apps/flutter_app/test/widgets/report/context_report_skeleton_test.dart: ContextReportSkeleton renders shimmers
+01:18 +195: /app/apps/flutter_app/test/widgets/report/metric_category_card_test.dart: MetricCategoryCard builds BarChart for Demographics
+01:19 +196: /app/apps/flutter_app/test/widgets/report/metric_category_card_test.dart: MetricCategoryCard expansion toggle didUpdateWidget coverage
+01:19 +197: /app/apps/flutter_app/test/widgets/report/metric_category_card_test.dart: MetricCategoryCard icon mapping covers various keys
+01:19 +198: /app/apps/flutter_app/test/widgets/report/metric_category_card_test.dart: MetricRow handles note-only metrics
+01:20 +199: /app/apps/flutter_app/test/widgets/report/location_picker_test.dart: LocationPicker renders map and instructions
+[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;208m│ ⚠️ [1m[3mflutter_map[0m[0m
+[38;5;208m│ ⚠️ When using the OSM tile servers, you must set an HTTP User-Agent which[0m
+[38;5;208m│ ⚠️ adequately identifies your application to the servers.[0m
+[38;5;208m│ ⚠️ Set `TileLayer.userAgentPackageName` appropriately, or set a UA header manually.[0m
+[38;5;208m│ ⚠️ OSMF (the tile server operators), and/or flutter_map in future, may block usage[0m
+[38;5;208m│ ⚠️ if inadequately identified.[0m
+[38;5;208m│ ⚠️ [0m
+[38;5;208m│ ⚠️ flutter_map wants to help keep map data available for everyone.[0m
+[38;5;208m│ ⚠️ We use the OpenStreetMap public tile servers in our code examples & demo app,[0m
+[38;5;208m│ ⚠️ but they are NOT free to use by everyone. Please review whether OSM's tile[0m
+[38;5;208m│ ⚠️ servers are appropriate and the best choice for your app.[0m
+[38;5;208m│ ⚠️ See:[0m
+[38;5;208m│ ⚠️  * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)[0m
+[38;5;208m│ ⚠️  * https://docs.fleaflet.dev/osm-warn for more information about this warning[0m
+[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;208m│ ⚠️ [1m[3mflutter_map[0m[0m
+[38;5;208m│ ⚠️ Avoid using subdomains with OSM's tile server. Support may be become slow or be removed in future.[0m
+[38;5;208m│ ⚠️ See https://github.com/openstreetmap/operations/issues/737 for more info.[0m
+[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+01:21 +200: /app/apps/flutter_app/test/widgets/report/smart_insights_grid_test.dart: SmartInsightsGrid renders correct scores and labels
+01:22 +201: /app/apps/flutter_app/test/widgets/report/smart_insights_grid_test.dart: SmartInsightsGrid handles partial fallbacks
+01:22 +202: /app/apps/flutter_app/test/widgets/report/smart_insights_grid_test.dart: SmartInsightsGrid handles missing data
+01:22 +203: /app/apps/flutter_app/test/widgets/category_radar_test.dart: CategoryRadar renders empty state
+01:23 +204: /app/apps/flutter_app/test/widgets/category_radar_test.dart: CategoryRadar handles animation
+01:23 +205: /app/apps/flutter_app/test/widgets/category_radar_test.dart: CategoryRadar paints chart with data
+01:24 +206: /app/apps/flutter_app/test/models/map_models_test.dart: MapAmenity fromJson handles valid data
+01:24 +207: /app/apps/flutter_app/test/models/map_models_test.dart: MapAmenity fromJson handles null values gracefully
+01:24 +208: /app/apps/flutter_app/test/models/map_models_test.dart: MapOverlay fromJson handles valid data
+01:24 +209: /app/apps/flutter_app/test/models/map_models_test.dart: MapOverlay fromJson handles null metricValue
+01:25 +210: /app/apps/flutter_app/test/models/ai_chat_message_test.dart: AiChatMessage fromJson and toJson
+01:25 +211: /app/apps/flutter_app/test/models/ai_chat_message_test.dart: AiConversation fromJson and toJson
+01:26 +212: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: loadHistory updates state correctly
+01:26 +213: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: loadHistory handles errors
+01:26 +214: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: loadConversation updates active state
+01:26 +215: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: deleteConversation updates list and clears active if matching
+01:26 +216: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: deleteConversation handles error gracefully
+01:26 +217: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: sendMessage optimistic update and success
+01:26 +218: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: sendMessage returns early if empty
+01:26 +219: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: setContextReport updates currentContextReport
+01:26 +220: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: sendMessage handles failure and retry
+01:26 +221: /app/apps/flutter_app/test/providers/ai_chat_provider_test.dart: startNewConversation resets state
+01:27 +222: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should set email from valid token
+01:27 +223: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should handle invalid token gracefully
+01:27 +224: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth should set isAuthenticated to false if token is null
+01:27 +225: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception from authService
+01:27 +226: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider login should set email from returned token
+01:27 +227: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider login propagates exception
+01:27 +228: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider register calls authService register
+01:27 +229: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider register propagates exception
+01:27 +230: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider logout should clear token and email
+01:27 +231: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider refreshSession should update token and email on success
+01:27 +232: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider refreshSession should clear state on invalid refresh token
+01:27 +233: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider refreshSession should keep state on transient failure
+01:27 +234: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth catches exception during parsing
+01:27 +235: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider refreshSession should log severe and keep state on unexpected failure
+01:27 +236: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider checkAuth handles JWT parsing error gracefully
+01:27 +237: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider loginWithGoogle success path
+01:27 +238: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider loginWithGoogle handles missing idToken
+01:27 +239: /app/apps/flutter_app/test/providers/auth_provider_test.dart: AuthProvider loginWithGoogle failure propagates exception
+01:28 +240: /app/apps/flutter_app/test/providers/context_report_provider_test.dart: generate stores report and updates history on success
+01:28 +241: /app/apps/flutter_app/test/providers/context_report_provider_test.dart: generate sets user-friendly error on failure and does not update history
+01:28 +242: /app/apps/flutter_app/test/providers/context_report_provider_test.dart: generate returns report even if history service fails
+01:28 +243: /app/apps/flutter_app/test/providers/context_report_provider_test.dart: generate requires input
+01:28 +244: /app/apps/flutter_app/test/providers/context_report_provider_test.dart: history operations work
+01:28 +245: /app/apps/flutter_app/test/providers/context_report_provider_test.dart: history list is unmodifiable
+01:29 +246: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider fetchWorkspaces populates list on success
+01:29 +247: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider fetchWorkspaces handles error
+01:29 +248: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider createWorkspace adds new workspace
+01:29 +249: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider selectWorkspace fetches details
+01:29 +250: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider inviteMember calls API and refreshes members
+01:29 +251: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider saveProperty calls API and refreshes listings
+01:29 +252: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider addComment calls API
+01:29 +253: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider fetchComments returns list
+01:29 +254: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider deleteWorkspace removes workspace from list on success
+01:29 +255: /app/apps/flutter_app/test/providers/workspace_provider_test.dart: WorkspaceProvider deleteWorkspace sets error on failure
+01:29 +256: /app/apps/flutter_app/test/providers/favorites_provider_coverage_test.dart: FavoritesProvider handles SharedPreferences load error
+01:31 +257: /app/apps/flutter_app/test/providers/theme_provider_test.dart: loads persisted theme mode
+01:31 +258: /app/apps/flutter_app/test/providers/theme_provider_test.dart: persists theme mode updates
+01:33 +259: /app/apps/flutter_app/test/providers/insights_provider_test.dart: InsightsProvider toggleAmenities updates state and clears data when disabled
+01:33 +260: /app/apps/flutter_app/test/providers/insights_provider_test.dart: InsightsProvider fetchMapData calls API when layers enabled and zoom sufficient
+01:33 +261: /app/apps/flutter_app/test/providers/insights_provider_test.dart: InsightsProvider fetchMapData handles errors gracefully
+Error fetching _MapLayer.amenities: Exception: API Error
+01:33 +262: /app/apps/flutter_app/test/providers/insights_provider_test.dart: InsightsProvider fetchMapData calls getMapAmenityClusters when zoom is low
+01:33 +263: /app/apps/flutter_app/test/providers/insights_provider_test.dart: InsightsProvider fetchMapData calls getMapOverlayTiles when zoom is low
+01:34 +264: /app/apps/flutter_app/test/screens/gallery/full_screen_gallery_test.dart: FullScreenGallery shows initial counter
+01:35 +265: /app/apps/flutter_app/test/screens/context_report/widgets/history_section_test.dart: HistorySection renders items and handles tap
+01:36 +266: /app/apps/flutter_app/test/screens/context_report/widgets/history_section_test.dart: HistorySection renders items and handles tap
+01:36 +267: /app/apps/flutter_app/test/screens/context_report/widgets/history_section_test.dart: HistorySection renders items and handles tap
+01:37 +268: /app/apps/flutter_app/test/screens/context_report/widgets/history_section_test.dart: HistorySection handles clear history
+01:38 +269: /app/apps/flutter_app/test/screens/context_report/widgets/compare_button_test.dart: CompareButton toggles comparison state
+01:39 +270: /app/apps/flutter_app/test/screens/context_report/widgets/generate_button_test.dart: GenerateButton enables when text is entered
+01:41 +271: /app/apps/flutter_app/test/screens/context_report/widgets/quick_actions_test.dart: shows loading snackbar when My Location is pressed
+01:42 +272: /app/apps/flutter_app/test/screens/context_report/layouts/comparison_layout_test.dart: ComparisonLayout shows ValoraDialog on clear all and respects cancel
+01:42 +273: /app/apps/flutter_app/test/screens/context_report/layouts/comparison_layout_test.dart: ComparisonLayout shows ValoraDialog on clear all and respects cancel
+01:44 +274: /app/apps/flutter_app/test/screens/context_report/saved_search_test.dart: SavedSearchesSection renders and interacts
+01:48 +275: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen displays user email
+01:49 +276: /app/apps/flutter_app/test/screens/context_report_screen_test.dart: (setUpAll)
+01:49 +276: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen shows logout confirmation dialog
+01:49 +276 ~1: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen shows logout confirmation dialog
+01:49 +276 ~2: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen shows logout confirmation dialog
+01:49 +276 ~3: /app/apps/flutter_app/test/screens/settings_screen_test.dart: SettingsScreen shows logout confirmation dialog
+01:50 +277 ~3: /app/apps/flutter_app/test/screens/context_report_screen_test.dart: ContextReportScreen slider updates radius
+01:50 +278 ~3: /app/apps/flutter_app/test/screens/context_report_screen_test.dart: ContextReportScreen slider updates radius
+01:50 +279 ~3: /app/apps/flutter_app/test/screens/context_report_screen_test.dart: ContextReportScreen slider updates radius
+01:51 +280 ~3: /app/apps/flutter_app/test/screens/context_report_screen_test.dart: (tearDownAll)
+01:52 +280 ~3: /app/apps/flutter_app/test/screens/startup_screen_test.dart: Startup waits for auth check completion before navigating
+01:54 +281 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen shows loading indicator initially
+01:54 +282 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen shows loading indicator initially
+01:54 +282 ~3: /app/apps/flutter_app/test/screens/startup_screen_test.dart: Startup shows error state when auth check fails
+Unhandled error type in ValoraErrorState: _Exception
+Unhandled error type in ValoraErrorState: _Exception
+01:55 +283 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen shows loading indicator initially
+01:55 +284 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen shows empty state
+01:55 +285 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen shows error state
+01:55 +286 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen displays list of notifications
+01:55 +287 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen calls fetchNotifications on init
+01:55 +288 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen calls markAllAsRead
+01:56 +289 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen calls markAsRead on tap
+01:56 +290 ~3: /app/apps/flutter_app/test/screens/notifications_screen_test.dart: NotificationsScreen swipes to delete
+01:56 +291 ~3: /app/apps/flutter_app/test/screens/workspace_detail_screen_test.dart: WorkspaceDetailScreen renders tabs
+01:57 +292 ~3: /app/apps/flutter_app/test/screens/workspace_detail_screen_test.dart: WorkspaceDetailScreen shows empty state for saved listings
+01:58 +293 ~3: /app/apps/flutter_app/test/screens/workspace_list_screen_test.dart: Renders title
+02:00 +294 ~3: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints
+02:00 +295 ~3: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints
+02:00 +296 ~3: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints
+02:00 +297 ~3: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints
+02:00 +298 ~3: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: LoginScreen has AutofillGroup and correct hints
+02:01 +299 ~3: /app/apps/flutter_app/test/screens/auth/login_screen_test.dart: Tapping Google button calls loginWithGoogle
+02:02 +300 ~3: /app/apps/flutter_app/test/screens/auth/register_screen_test.dart: RegisterScreen has AutofillGroup and correct hints
+02:04 +301 ~3: /app/apps/flutter_app/test/screens/auth/register_screen_test.dart: RegisterScreen toggles password visibility
+02:04 +302 ~3: All tests passed!
