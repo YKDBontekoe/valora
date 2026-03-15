@@ -108,30 +108,30 @@ void main() {
 
   group('MapUtils.getOverlayColor', () {
     test('returns correct colors for PricePerSquareMeter', () {
-      expect(MapUtils.getOverlayColor(6001, MapOverlayMetric.pricePerSquareMeter), ValoraColors.error);
-      expect(MapUtils.getOverlayColor(4501, MapOverlayMetric.pricePerSquareMeter), ValoraColors.warning);
-      expect(MapUtils.getOverlayColor(3001, MapOverlayMetric.pricePerSquareMeter), ValoraColors.info);
-      expect(MapUtils.getOverlayColor(1000, MapOverlayMetric.pricePerSquareMeter), ValoraColors.success);
+      expect(MapUtils.getOverlayColor(6001, MapOverlayMetric.pricePerSquareMeter), Colors.red);
+      expect(MapUtils.getOverlayColor(4501, MapOverlayMetric.pricePerSquareMeter), Colors.orange);
+      expect(MapUtils.getOverlayColor(3001, MapOverlayMetric.pricePerSquareMeter), Colors.yellow);
+      expect(MapUtils.getOverlayColor(1000, MapOverlayMetric.pricePerSquareMeter), Colors.green);
     });
 
     test('returns correct colors for CrimeRate (inverted)', () {
-      expect(MapUtils.getOverlayColor(101, MapOverlayMetric.crimeRate), ValoraColors.error);
-      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.crimeRate), ValoraColors.warning);
-      expect(MapUtils.getOverlayColor(21, MapOverlayMetric.crimeRate), ValoraColors.info);
-      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.crimeRate), ValoraColors.success);
+      expect(MapUtils.getOverlayColor(101, MapOverlayMetric.crimeRate), Colors.red);
+      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.crimeRate), Colors.orange);
+      expect(MapUtils.getOverlayColor(21, MapOverlayMetric.crimeRate), Colors.yellow);
+      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.crimeRate), Colors.green);
     });
 
     test('returns correct colors for default metrics (higher is better)', () {
       // Testing with PopulationDensity as a default case
-      expect(MapUtils.getOverlayColor(81, MapOverlayMetric.populationDensity), ValoraColors.success);
-      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.populationDensity), ValoraColors.warning);
-      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.populationDensity), ValoraColors.error);
+      expect(MapUtils.getOverlayColor(81, MapOverlayMetric.populationDensity), Colors.green);
+      expect(MapUtils.getOverlayColor(51, MapOverlayMetric.populationDensity), Colors.orange);
+      expect(MapUtils.getOverlayColor(10, MapOverlayMetric.populationDensity), Colors.red);
     });
   });
 
   group('MapUtils.getColorForScore', () {
     test('returns grey for null score', () {
-      expect(MapUtils.getColorForScore(null), ValoraColors.neutral400);
+      expect(MapUtils.getColorForScore(null), Colors.grey);
     });
 
     test('returns success for >= 80', () {
@@ -145,8 +145,8 @@ void main() {
     });
 
     test('returns orange for >= 40', () {
-      expect(MapUtils.getColorForScore(40), ValoraColors.warning);
-      expect(MapUtils.getColorForScore(59), ValoraColors.warning);
+      expect(MapUtils.getColorForScore(40), Colors.orange);
+      expect(MapUtils.getColorForScore(59), Colors.orange);
     });
 
     test('returns error for < 40', () {

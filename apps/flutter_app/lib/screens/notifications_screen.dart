@@ -160,13 +160,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: colorScheme.primary,
+                            color: ValoraColors.primary,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '$unreadCount',
-                            style: TextStyle(
-                              color: colorScheme.onPrimary,
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -183,7 +183,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         icon: const Icon(Icons.done_all_rounded, size: 18),
                         label: const Text('Read all'),
                         style: TextButton.styleFrom(
-                          foregroundColor: colorScheme.primary,
+                          foregroundColor: ValoraColors.primary,
                         ),
                       ),
                     const SizedBox(width: 8),

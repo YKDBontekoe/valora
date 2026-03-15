@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/valora_colors.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:logging/logging.dart';
+import '../../core/theme/valora_colors.dart';
 import '../../models/map_overlay.dart';
 
 class MapUtils {
@@ -57,31 +57,31 @@ class MapUtils {
 
   static Color getOverlayColor(double value, MapOverlayMetric metric) {
     if (metric == MapOverlayMetric.pricePerSquareMeter) {
-      if (value > 6000) return ValoraColors.error;
-      if (value > 4500) return ValoraColors.warning;
-      if (value > 3000) return ValoraColors.info;
-      return ValoraColors.success;
+      if (value > 6000) return Colors.red;
+      if (value > 4500) return Colors.orange;
+      if (value > 3000) return Colors.yellow;
+      return Colors.green;
     }
 
     if (metric == MapOverlayMetric.crimeRate) {
       // For crime rate, higher is WORSE (invert scale)
-      if (value > 100) return ValoraColors.error;
-      if (value > 50) return ValoraColors.warning;
-      if (value > 20) return ValoraColors.info;
-      return ValoraColors.success;
+      if (value > 100) return Colors.red;
+      if (value > 50) return Colors.orange;
+      if (value > 20) return Colors.yellow;
+      return Colors.green;
     }
 
     // Default gradient (higher is better)
-    if (value > 80) return ValoraColors.success;
-    if (value > 50) return ValoraColors.warning;
-    return ValoraColors.error;
+    if (value > 80) return Colors.green;
+    if (value > 50) return Colors.orange;
+    return Colors.red;
   }
 
   static Color getColorForScore(double? score) {
-    if (score == null) return ValoraColors.neutral400;
+    if (score == null) return Colors.grey;
     if (score >= 80) return ValoraColors.success;
     if (score >= 60) return ValoraColors.warning;
-    if (score >= 40) return ValoraColors.warning;
+    if (score >= 40) return Colors.orange;
     return ValoraColors.error;
   }
 }
