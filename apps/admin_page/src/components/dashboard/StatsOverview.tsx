@@ -16,7 +16,7 @@ const container = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
+      staggerChildren: 0.03,
       delayChildren: 0.3
     }
   }
@@ -121,11 +121,11 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
                     </div>
                     <div className={`flex items-center gap-2 px-4 py-2 bg-brand-50 rounded-full border border-brand-100/50 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0`}>
                         <TrendingUp size={14} className={card.color} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${card.color}`}>Live</span>
+                        <span className={`text-[10px] font-black uppercase tracking-ultra-wide ${card.color}`}>Live</span>
                     </div>
                 </div>
                 <div className="flex flex-col gap-3">
-                    <dt className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] ml-1">{card.title}</dt>
+                    <dt className="text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide ml-1">{card.title}</dt>
                     <dd className="text-7xl font-black text-brand-900 leading-none tracking-tightest flex items-baseline gap-2">
                       <CountUp value={card.value} />
                     </dd>

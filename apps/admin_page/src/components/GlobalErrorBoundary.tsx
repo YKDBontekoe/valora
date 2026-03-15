@@ -95,7 +95,7 @@ class GlobalErrorBoundary extends Component<Props, State> {
                 </Button>
               </div>
 
-              <p className="text-center mt-8 text-xs font-bold text-brand-400 uppercase tracking-widest">
+              <p className="text-center mt-8 text-xs font-bold text-brand-400 uppercase tracking-ultra-wide">
                 Support ID: {Math.random().toString(36).substring(2, 10).toUpperCase()}
               </p>
             </div>

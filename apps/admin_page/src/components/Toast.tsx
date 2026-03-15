@@ -94,7 +94,7 @@ const Toast = () => {
               </p>
               <div className="flex items-center gap-2 mt-1.5 opacity-40">
                 <div className="w-1.5 h-1.5 rounded-full bg-current" style={{ color: `var(--color-${toast.type === 'info' ? 'primary' : toast.type}-500)` }} />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{toast.type === 'info' ? 'System Bulletin' : 'Real-time Signal'}</span>
+                <span className="text-[10px] font-black uppercase tracking-ultra-wide">{toast.type === 'info' ? 'System Bulletin' : 'Real-time Signal'}</span>
               </div>
             </div>
             <button

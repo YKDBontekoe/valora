@@ -12,7 +12,7 @@ const container = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.03,
       delayChildren: 0.2
     }
   }
@@ -59,7 +59,7 @@ const Dashboard = () => {
       >
         <div>
           <div className="flex items-center gap-3 mb-4">
-              <div className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <div className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-[10px] font-black uppercase tracking-ultra-wide">
                   Enterprise Dashboard
               </div>
           </div>
@@ -72,7 +72,7 @@ const Dashboard = () => {
 
         <div className="flex items-center gap-4 glass-premium px-6 py-4 rounded-2xl border border-brand-100 shadow-sm">
             <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Status</span>
+                <span className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide">Status</span>
                 <span className="text-sm font-black text-success-600">All Systems Go</span>
             </div>
             <div className="w-10 h-10 bg-success-50 rounded-full flex items-center justify-center border border-success-100">
@@ -97,14 +97,14 @@ const Dashboard = () => {
             </div>
             <div className="h-full">
                 {/* We could add another component here, but for now we let SystemHealth take full width below */}
-                <div className="p-12 bg-linear-to-br from-brand-900 via-brand-950 to-brand-900 rounded-[3rem] shadow-premium-2xl text-white relative overflow-hidden group h-full border border-white/10">
+                <div className="p-12 bg-linear-to-br from-brand-900 via-brand-950 to-primary-900/50 rounded-[3rem] shadow-premium-2xl hover:shadow-glow-primary text-white relative overflow-hidden group h-full border border-white/10 transition-shadow duration-500">
                     <div className="relative z-10 h-full flex flex-col justify-between">
                         <div>
-                            <h2 className="text-2xl font-black tracking-tight mb-2">Platform Integrity</h2>
+                            <h2 className="text-2xl font-black tracking-tightest mb-2">Platform Integrity</h2>
                             <p className="text-brand-300 font-bold">Security and access logs are monitored 24/7.</p>
                         </div>
                         <div className="mt-8">
-                            <div className="flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-primary-400">
+                            <div className="flex items-center gap-3 text-sm font-black uppercase tracking-ultra-wide text-primary-400">
                                 <div className="w-2 h-2 rounded-full bg-primary-500" />
                                 Secure Connection
                             </div>
