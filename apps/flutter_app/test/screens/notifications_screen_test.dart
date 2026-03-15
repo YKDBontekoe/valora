@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -51,7 +52,7 @@ void main() {
     when(mockNotificationService.notifications).thenReturn([]);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('All caught up!'), findsOneWidget);
   });
@@ -62,7 +63,7 @@ void main() {
     when(mockNotificationService.error).thenReturn('Network error');
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Something went wrong'), findsOneWidget);
     // Should show generic message, not the raw error
@@ -94,7 +95,7 @@ void main() {
     when(mockNotificationService.unreadCount).thenReturn(1);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Test Title 1'), findsOneWidget);
     expect(find.text('Test Body 1'), findsOneWidget);
@@ -108,7 +109,7 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pump();
     verify(mockNotificationService.fetchNotifications()).called(1);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('NotificationsScreen calls markAllAsRead', (WidgetTester tester) async {
@@ -118,16 +119,16 @@ void main() {
     when(mockNotificationService.unreadCount).thenReturn(1);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.text('Read all'));
-    await tester.pumpAndSettle(); // Show dialog
+    await tester.pump(const Duration(milliseconds: 500)); // Show dialog
 
     expect(find.text('Mark all as read?'), findsOneWidget);
     expect(find.text('Confirm'), findsOneWidget);
 
     await tester.tap(find.text('Confirm'));
-    await tester.pumpAndSettle(); // Close dialog
+    await tester.pump(const Duration(milliseconds: 500)); // Close dialog
 
     verify(mockNotificationService.markAllAsRead()).called(1);
   });
@@ -144,7 +145,7 @@ void main() {
     when(mockNotificationService.notifications).thenReturn([notification]);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.text('Title'));
     verify(mockNotificationService.markAsRead('1')).called(1);
@@ -162,10 +163,14 @@ void main() {
     when(mockNotificationService.notifications).thenReturn([notification]);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    await tester.drag(find.text('Title'), const Offset(-500, 0));
+    Animate.defaultDuration = Duration.zero;
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.drag(find.byType(Dismissible), const Offset(-500, 0));
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
 
     verify(mockNotificationService.deleteNotification('1')).called(1);
     expect(find.text('Notification deleted'), findsOneWidget);

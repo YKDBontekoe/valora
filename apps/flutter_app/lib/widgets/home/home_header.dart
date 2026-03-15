@@ -167,7 +167,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                                 ),
                               ),
                             ),
-                          ).animate().scale(curve: Curves.elasticOut),
+                          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).scale(begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2), duration: ValoraAnimations.slow).fade(begin: 0.6, end: 1.0),
                       ],
                     ),
                   ),

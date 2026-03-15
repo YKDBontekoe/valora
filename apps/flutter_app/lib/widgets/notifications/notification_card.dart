@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_animations.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../models/notification.dart';
@@ -37,12 +39,12 @@ class NotificationCard extends StatelessWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         decoration: BoxDecoration(
-          color: ValoraColors.error,
+          color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(ValoraSpacing.radiusLg),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        child: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.onError),
       ),
       onDismissed: (_) {
         provider.deleteNotification(notification.id);
@@ -193,7 +195,10 @@ class NotificationCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
+                )
+                .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2), duration: ValoraAnimations.slow)
+                .fade(begin: 0.6, end: 1.0),
               ),
           ],
         ),
