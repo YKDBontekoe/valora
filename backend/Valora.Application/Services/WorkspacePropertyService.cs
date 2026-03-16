@@ -17,6 +17,28 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         _eventDispatcher = eventDispatcher;
     }
 
+    /// <summary>
+    /// Saves a property to a user's workspace, acting as a "bookmark" or "shortlist" action.
+    /// </summary>
+    /// <param name="userId">The ID of the user attempting to save the property.</param>
+    /// <param name="workspaceId">The unique identifier of the target workspace.</param>
+    /// <param name="propertyId">The unique identifier of the property to be saved.</param>
+    /// <param name="notes">Optional user notes attached to the saved property.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why verify roles?</strong> Valora workspaces can be shared. A user with a 'Viewer'
+    /// role should only be able to view properties, not modify the workspace content.
+    /// This prevents unauthorized additions to shared team or family workspaces.
+    /// </para>
+    /// <para>
+    /// <strong>Idempotency:</strong> If the property is already saved in the workspace,
+    /// the method returns the existing record rather than throwing an error or duplicating the entry.
+    /// </para>
+    /// </remarks>
+    /// <returns>A DTO containing the details of the newly saved or existing property.</returns>
+    /// <exception cref="ForbiddenAccessException">Thrown if the user does not have sufficient permissions (e.g., Viewer role).</exception>
+    /// <exception cref="NotFoundException">Thrown if the property does not exist in the system.</exception>
     public async Task<SavedPropertyDto> SavePropertyAsync(string userId, Guid workspaceId, Guid propertyId, string? notes, CancellationToken ct = default)
     {
         var role = await GetUserRole(userId, workspaceId, ct);

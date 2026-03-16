@@ -302,6 +302,38 @@ Get a list of recent background jobs.
 
 ---
 
+## 📂 Workspaces & Collaboration
+
+Workspaces allow users to organize properties and collaborate with others.
+
+### Create Workspace
+`POST /api/workspaces`
+
+Create a new shared workspace. Maximum of 10 owned workspaces per user.
+
+**Request Body:**
+```json
+{
+  "name": "Dream Homes",
+  "description": "Shortlist for homes in Amsterdam"
+}
+```
+
+### Save Property to Workspace
+`POST /api/workspaces/{id}/properties`
+
+Save a property to a workspace. The user must have an 'Owner' or 'Editor' role in the target workspace.
+
+**Request Body:**
+```json
+{
+  "propertyId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "notes": "Looks great, but maybe too close to the highway."
+}
+```
+
+---
+
 ## 🏗️ Error Handling
 
 The API uses standard HTTP status codes.
