@@ -119,7 +119,7 @@ describe('Dashboard Page', () => {
     await waitFor(() => {
       expect(adminService.retryJob).toHaveBeenCalledTimes(2);
       // Only 1 succeeded
-      expect(showToast).toHaveBeenCalledWith('Successfully re-queued 1 out of 2 jobs.', 'warning');
+      expect(showToast).toHaveBeenCalledWith('Successfully re-queued 1 out of 2 jobs.', 'info');
     });
   });
 

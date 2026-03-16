@@ -41,7 +41,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
       if (successCount === 0) {
         showToast('System failed to re-queue any jobs.', 'error');
       } else if (successCount < failedJobs.length) {
-        showToast(`Successfully re-queued ${successCount} out of ${failedJobs.length} jobs.`, 'warning');
+        showToast(`Successfully re-queued ${successCount} out of ${failedJobs.length} jobs.`, 'info');
         onRefreshStats();
       } else {
         showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
