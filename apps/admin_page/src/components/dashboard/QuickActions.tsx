@@ -4,6 +4,7 @@ import { adminService } from '../../services/api';
 import { showToast } from '../../services/toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ConfirmationDialog from '../ConfirmationDialog';
 
 interface QuickActionsProps {
   onRefreshStats: () => void;
@@ -11,9 +12,11 @@ interface QuickActionsProps {
 
 const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
   const [retrying, setRetrying] = useState(false);
+  const [showRetryConfirm, setShowRetryConfirm] = useState(false);
   const navigate = useNavigate();
 
   const handleRetryFailedJobs = async () => {
+    setShowRetryConfirm(false);
     setRetrying(true);
     try {
       const response = await adminService.getJobs(1, 100, 'Failed');
@@ -25,21 +28,28 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         return;
       }
 
-      let successCount = 0;
-      for (const job of failedJobs) {
-        try {
-          await adminService.retryJob(job.id);
-          successCount++;
-        } catch (e) {
+      const retryPromises = failedJobs.map((job) =>
+        adminService.retryJob(job.id).catch((e) => {
           console.error(`Failed to retry job ${job.id}`, e);
-        }
-      }
+          throw e; // Re-throw to be caught by Promise.allSettled as rejected
+        })
+      );
 
-      showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
-      onRefreshStats();
+      const results = await Promise.allSettled(retryPromises);
+      const successCount = results.filter((result) => result.status === 'fulfilled').length;
+
+      if (successCount === 0) {
+        showToast('System failed to re-queue any jobs.', 'error');
+      } else if (successCount < failedJobs.length) {
+        showToast(`Successfully re-queued ${successCount} out of ${failedJobs.length} jobs.`, 'info');
+        onRefreshStats();
+      } else {
+        showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
+        onRefreshStats();
+      }
     } catch (error) {
         console.error(error);
-        showToast('System failed to re-queue jobs.', 'error');
+        showToast('System failed to fetch or re-queue jobs.', 'error');
     } finally {
       setRetrying(false);
     }
@@ -59,7 +69,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
           title: 'Retry Pipeline',
           description: 'Re-queue all currently failed batch jobs.',
           icon: PlayCircle,
-          onClick: handleRetryFailedJobs,
+          onClick: () => setShowRetryConfirm(true),
           isLoading: retrying,
           color: 'text-warning-600',
           bg: 'bg-warning-50',
@@ -121,6 +131,15 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                 </motion.button>
             ))}
         </div>
+
+        <ConfirmationDialog
+            isOpen={showRetryConfirm}
+            onClose={() => setShowRetryConfirm(false)}
+            onConfirm={handleRetryFailedJobs}
+            title="Retry Failed Jobs"
+            message="Are you sure you want to re-queue all currently failed batch jobs? This will attempt to re-run them concurrently."
+            confirmLabel="Retry Pipeline"
+        />
     </div>
   );
 };

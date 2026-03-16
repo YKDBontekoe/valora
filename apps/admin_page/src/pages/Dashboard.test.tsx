@@ -77,8 +77,12 @@ describe('Dashboard Page', () => {
     // Wait for initial render
     await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
-    const retryButton = screen.getByText('Retry Pipeline');
+    const retryButton = screen.getByRole('button', { name: /Retry Pipeline/i });
     fireEvent.click(retryButton);
+
+    // Dialog should appear, click confirm inside the dialog
+    const confirmButton = await screen.findByRole('button', { name: /^Retry Pipeline$/i });
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(adminService.getJobs).toHaveBeenCalled();
@@ -106,13 +110,16 @@ describe('Dashboard Page', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
-    const retryButton = screen.getByText('Retry Pipeline');
+    const retryButton = screen.getByRole('button', { name: /Retry Pipeline/i });
     fireEvent.click(retryButton);
+
+    const confirmButton = await screen.findByRole('button', { name: /^Retry Pipeline$/i });
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(adminService.retryJob).toHaveBeenCalledTimes(2);
       // Only 1 succeeded
-      expect(showToast).toHaveBeenCalledWith('Successfully re-queued 1 failed job.', 'success');
+      expect(showToast).toHaveBeenCalledWith('Successfully re-queued 1 out of 2 jobs.', 'info');
     });
   });
 
@@ -125,8 +132,11 @@ describe('Dashboard Page', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
-    const retryButton = screen.getByText('Retry Pipeline');
+    const retryButton = screen.getByRole('button', { name: /Retry Pipeline/i });
     fireEvent.click(retryButton);
+
+    const confirmButton = await screen.findByRole('button', { name: /^Retry Pipeline$/i });
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(adminService.retryJob).not.toHaveBeenCalled();
@@ -141,11 +151,14 @@ describe('Dashboard Page', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
 
-    const retryButton = screen.getByText('Retry Pipeline');
+    const retryButton = screen.getByRole('button', { name: /Retry Pipeline/i });
     fireEvent.click(retryButton);
 
+    const confirmButton = await screen.findByRole('button', { name: /^Retry Pipeline$/i });
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
-      expect(showToast).toHaveBeenCalledWith('System failed to re-queue jobs.', 'error');
+      expect(showToast).toHaveBeenCalledWith('System failed to fetch or re-queue jobs.', 'error');
     });
   });
 
