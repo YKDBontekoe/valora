@@ -92,16 +92,20 @@ api.interceptors.response.use(
     }
 
     // Resilience Logic
-    const isNetworkError = !error.response;
-    const isServerError = error.response?.status && (error.response.status >= 500 || error.response.status === 429);
+    // In order to make the application crash-proof, we implement robust retry logic for network calls.
+    // Network errors (like ECONNREFUSED) or 5xx/429 server errors are transient and should be retried.
+    const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.message === 'Network Error';
+    const isServerError = error.response?.status && (error.response.status >= 500 || error.response.status === 429 || error.response.status === 408);
+    // Generally, only idempotent requests should be retried automatically. However, 429 or 503 often warrant retry even for POSTs in some contexts, but we stick to idempotent for safety unless explicitly opted-in.
     const isIdempotent = ['get', 'put', 'delete', 'head', 'options'].includes(originalRequest.method?.toLowerCase() || '');
 
-    if ((isNetworkError || (isServerError && isIdempotent))) {
+    if (isNetworkError || (isServerError && isIdempotent)) {
         originalRequest._retryCount = originalRequest._retryCount || 0;
 
         if (originalRequest._retryCount < MAX_RETRIES) {
              originalRequest._retryCount++;
-             const delay = RETRY_DELAY * Math.pow(2, originalRequest._retryCount - 1);
+             const delay = RETRY_DELAY * Math.pow(2, originalRequest._retryCount - 1); // Exponential backoff
+             console.warn(`Retrying request ${originalRequest.url} (Attempt ${originalRequest._retryCount} of ${MAX_RETRIES}) in ${delay}ms...`);
              await new Promise(resolve => setTimeout(resolve, delay));
              return api(originalRequest);
         }
@@ -137,6 +141,11 @@ api.interceptors.response.use(
 
     // Avoid logging full error object to prevent token leakage
     console.error('API Error:', error.message);
+
+    // Modify the existing error object instead of creating a new one
+    // to preserve AxiosError properties (like .response) that components rely on.
+    error.message = fallbackMessage;
+
     return Promise.reject(error);
   }
 );

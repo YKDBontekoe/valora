@@ -133,6 +133,11 @@ public class ExceptionHandlingMiddleware
                 title = "Upstream Response Error";
                 detail = "An external service returned an invalid or unexpected response format.";
                 break;
+            case IOException:
+                statusCode = (int)HttpStatusCode.InternalServerError;
+                title = "File I/O Error";
+                detail = "An error occurred while accessing the file system.";
+                break;
             default:
                 // For unhandled exceptions, hide details in production
                 statusCode = (int)HttpStatusCode.InternalServerError;
