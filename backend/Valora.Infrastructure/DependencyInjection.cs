@@ -14,6 +14,7 @@ using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
 using Valora.Application.Common.Interfaces.External;
 using Valora.Infrastructure.Services.External;
+using Valora.Infrastructure.Services.AppServices;
 using System.Net;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
@@ -80,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAiModelService, AiModelService>();
         services.AddScoped<IAiService, OpenRouterAiService>();
+        services.AddScoped<IContextDataProvider, ContextDataProvider>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();

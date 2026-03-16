@@ -15,6 +15,26 @@ public class WorkspaceService : IWorkspaceService
         _repository = repository;
     }
 
+    /// <summary>
+    /// Creates a new workspace and assigns the creator as the Owner.
+    /// </summary>
+    /// <param name="userId">The ID of the user creating the workspace.</param>
+    /// <param name="dto">The data transfer object containing the workspace name and description.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why the hard limit of 10 workspaces?</strong>
+    /// To protect the database from abuse (e.g., malicious scripts creating endless empty workspaces)
+    /// and to encourage users to actively organize rather than hoard data, ownership is capped.
+    /// Users can still be members of an unlimited number of workspaces owned by others.
+    /// </para>
+    /// <para>
+    /// <strong>Role Assignment:</strong> The creator is automatically added to the <see cref="Workspace.Members"/>
+    /// list with the <see cref="WorkspaceRole.Owner"/> role upon creation.
+    /// </para>
+    /// </remarks>
+    /// <returns>A DTO containing the newly created workspace details.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the user attempts to create a workspace but has reached the ownership limit.</exception>
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
         var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);

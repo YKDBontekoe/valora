@@ -15,7 +15,6 @@ public static class DependencyInjection
         services.AddScoped<IContextReportService, ContextReportService>();
         services.AddScoped<IContextAnalysisService, ContextAnalysisService>();
         services.AddScoped<IUserAiProfileService, UserAiProfileService>();
-        services.AddScoped<IContextDataProvider, ContextDataProvider>();
         services.AddScoped<IMapService, MapService>();
         services.AddScoped<IBatchJobService, BatchJobService>();
         services.AddScoped<IBatchJobExecutor, BatchJobExecutor>();
