@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Trash2, ShieldCheck, Shield, ChevronRight, User as UserIcon } from 'lucide-react';
 import type { User } from '../types';
+import { forwardRef } from 'react';
 
 interface UserRowProps {
   user: User;
@@ -19,16 +20,17 @@ const rowVariants = {
   }
 } as const;
 
-const UserRow = ({
+const UserRow = forwardRef<HTMLTableRowElement, UserRowProps>(({
   user,
   currentUserId,
   loading,
   onDeleteClick
-}: UserRowProps) => {
+}, ref) => {
   const isSelf = user.id === currentUserId;
 
   return (
     <motion.tr
+      ref={ref}
       variants={rowVariants}
       exit={{ opacity: 0, scale: 0.95, x: 20, transition: { duration: 0.3 } }}
       whileHover={{ x: 10, backgroundColor: 'var(--color-brand-50)' }}
@@ -98,6 +100,6 @@ const UserRow = ({
       </td>
     </motion.tr>
   );
-};
+});
 
 export default UserRow;

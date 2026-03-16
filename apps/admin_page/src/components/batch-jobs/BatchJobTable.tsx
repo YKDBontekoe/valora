@@ -91,7 +91,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
           <thead className="bg-brand-50/50 backdrop-blur-md">
             <tr>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
                 onClick={() => toggleSort('type')}
                 onKeyDown={(e) => handleKeyDown(e, 'type')}
                 tabIndex={0}
@@ -108,7 +108,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 </div>
               </th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
                 onClick={() => toggleSort('target')}
                 onKeyDown={(e) => handleKeyDown(e, 'target')}
                 tabIndex={0}
@@ -125,7 +125,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                 </div>
               </th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
                 onClick={() => toggleSort('status')}
                 onKeyDown={(e) => handleKeyDown(e, 'status')}
                 tabIndex={0}
@@ -141,10 +141,10 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                   </div>
                 </div>
               </th>
-              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Progress</th>
-              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Context</th>
+              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Progress</th>
+              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Context</th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
                 onClick={() => toggleSort('createdAt')}
                 onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
                 tabIndex={0}
@@ -160,7 +160,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                   </div>
                 </div>
               </th>
-              <th className="px-12 py-8 text-right text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Action</th>
+              <th className="px-12 py-8 text-right text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Action</th>
             </tr>
           </thead>
           <motion.tbody
