@@ -40,7 +40,7 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
       className="bg-white rounded-[2.5rem] border border-brand-100 shadow-premium overflow-hidden"
     >
       <div className="px-10 py-8 border-b border-brand-100 bg-brand-50/30 flex items-center justify-between">
-        <h2 className="font-black text-brand-900 uppercase tracking-[0.2em] text-xs flex items-center gap-3">
+        <h2 className="font-black text-brand-900 uppercase tracking-ultra-wide text-xs flex items-center gap-3">
           <Settings2 size={18} className="text-primary-600" />
           Configurations
         </h2>
@@ -54,10 +54,10 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
         <table className="min-w-full divide-y divide-brand-100">
           <thead>
             <tr className="bg-brand-50/10">
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Feature</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Model</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Status</th>
-              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
+              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Feature</th>
+              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Model</th>
+              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Status</th>
+              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Action</th>
             </tr>
           </thead>
           <motion.tbody

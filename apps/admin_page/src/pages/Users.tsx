@@ -12,7 +12,7 @@ import Button from '../components/Button';
 const listVariants = {
   visible: {
     transition: {
-      staggerChildren: 0.05
+      staggerChildren: 0.03
     }
   }
 };

@@ -80,7 +80,7 @@ const SystemHealth = () => {
                     <h2 className="text-4xl font-black text-white tracking-tight">System Infrastructure</h2>
                     <div className="flex items-center gap-2 mt-1.5">
                         <Sparkles size={12} className="text-primary-400" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-400">Node Cluster: Primary-Alpha</span>
+                    <span className="text-[10px] font-black uppercase tracking-ultra-wide text-primary-400">Node Cluster: Primary-Alpha</span>
                     </div>
                 </div>
             </div>
@@ -140,10 +140,10 @@ const SystemHealth = () => {
                   className="flex flex-col gap-4"
                 >
                   <div className={`w-fit px-6 py-2 rounded-2xl border flex items-center gap-3 font-black text-base ${getStatusColor(health?.status || 'Unhealthy')}`}>
-                    <div className={`w-2.5 h-2.5 rounded-full bg-current ${(health?.status === 'Healthy' && !loading) ? 'animate-pulse' : ''}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full bg-current ${(health?.status === 'Healthy' && !loading) ? 'animate-pulse-slow' : ''}`} />
                     {health ? (health.database ? 'Operational' : 'Critical Fault') : 'Connecting...'}
                   </div>
-                  <p className="text-brand-400 text-xs font-bold uppercase tracking-widest ml-1">Database Shard: EU-WEST-1</p>
+                  <p className="text-brand-400 text-xs font-bold uppercase tracking-ultra-wide ml-1">Database Shard: EU-WEST-1</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -222,7 +222,7 @@ const SystemHealth = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col group/stat" title="Active">
-                        <span className="text-[10px] font-black text-primary-400 uppercase tracking-[0.2em] mb-2">Live</span>
+                        <span className="text-[10px] font-black text-primary-400 uppercase tracking-ultra-wide mb-2">Live</span>
                         <div className="flex items-center gap-2">
                             <Activity size={16} className="text-primary-500" />
                             <span className="font-black text-white text-2xl leading-none">{health ? health.activeJobs : '-'}</span>

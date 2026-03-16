@@ -72,7 +72,7 @@ const Layout = () => {
           {navGroups.map((group) => (
             hasAccess(group.requiredRoles) && (
               <div key={group.title} className="space-y-4">
-                <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-4">
+                <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-4">
                   {group.title}
                 </h3>
                 <div className="space-y-2">
