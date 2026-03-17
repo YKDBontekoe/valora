@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings2, Cpu, Sparkles, Edit2, Trash2 } from 'lucide-react';
+import { Settings2, Cpu, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
 import Skeleton from '../Skeleton';
-import Button from '../Button';
+import AiModelRow from './AiModelRow';
 import type { AiModelConfig } from '../../services/api';
 
 const container = {
@@ -15,23 +15,18 @@ const container = {
   }
 } as const;
 
-const rowVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }
-  }
-} as const;
 
 interface AiModelsTableProps {
   configs: AiModelConfig[];
   loading: boolean;
   onEdit: (config: AiModelConfig) => void;
   onDelete: (config: AiModelConfig) => void;
+  tableSortBy?: string;
+  toggleSort?: (field: string) => void;
+  hasActiveFilters?: boolean;
 }
 
-const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit, onDelete }) => {
+const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit, onDelete, tableSortBy, toggleSort, hasActiveFilters }) => {
   return (
     <motion.div
       variants={container}
@@ -54,10 +49,55 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
         <table className="min-w-full divide-y divide-brand-100">
           <thead>
             <tr className="bg-brand-50/10">
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Feature</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Model</th>
-              <th className="px-10 py-5 text-left text-[10px] font-black text-brand-400 uppercase tracking-widest">Status</th>
-              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest">Action</th>
+              <th
+                role="columnheader"
+                className="px-10 py-5 text-left cursor-pointer group hover:bg-brand-50 transition-colors w-[25%]"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort && toggleSort('feature')}
+                  className="flex items-center gap-2 w-full h-full text-[10px] font-black text-brand-400 uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
+                >
+                  Feature
+                  <div className="flex flex-col">
+                    <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${tableSortBy === 'feature_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                    <ArrowDown className={`w-3 h-3 transition-colors ${tableSortBy === 'feature_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                  </div>
+                </button>
+              </th>
+              <th
+                role="columnheader"
+                className="px-10 py-5 text-left cursor-pointer group hover:bg-brand-50 transition-colors w-[40%]"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort && toggleSort('modelId')}
+                  className="flex items-center gap-2 w-full h-full text-[10px] font-black text-brand-400 uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
+                >
+                  Model
+                  <div className="flex flex-col">
+                    <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${tableSortBy === 'modelId_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                    <ArrowDown className={`w-3 h-3 transition-colors ${tableSortBy === 'modelId_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                  </div>
+                </button>
+              </th>
+              <th
+                role="columnheader"
+                className="px-10 py-5 text-left cursor-pointer group hover:bg-brand-50 transition-colors w-[20%]"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort && toggleSort('isEnabled')}
+                  className="flex items-center gap-2 w-full h-full text-[10px] font-black text-brand-400 uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
+                >
+                  Status
+                  <div className="flex flex-col">
+                    <ArrowUp className={`w-3 h-3 -mb-1 transition-colors ${tableSortBy === 'isEnabled_asc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                    <ArrowDown className={`w-3 h-3 transition-colors ${tableSortBy === 'isEnabled_desc' ? 'text-primary-600' : 'text-brand-200 group-hover:text-brand-300'}`} />
+                  </div>
+                </button>
+              </th>
+              <th className="px-10 py-5 text-right text-[10px] font-black text-brand-400 uppercase tracking-widest w-[15%]">Action</th>
             </tr>
           </thead>
           <motion.tbody
@@ -76,71 +116,50 @@ const AiModelsTable: React.FC<AiModelsTableProps> = ({ configs, loading, onEdit,
                 </tr>
               ))
             ) : configs.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-10 py-32 text-center">
-                  <div className="flex flex-col items-center gap-6 text-brand-200">
-                    <Cpu size={64} className="opacity-10 mb-2" />
-                    <span className="font-black text-xl uppercase tracking-widest">No configurations defined</span>
-                  </div>
-                </td>
-              </tr>
+              <motion.tr
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+              >
+                  <td colSpan={4} className="px-10 py-32 text-center">
+                      <div className="flex flex-col items-center gap-8">
+                          {hasActiveFilters ? (
+                              <>
+                                <div className="p-10 bg-brand-50 rounded-4xl text-brand-100 border border-brand-100 shadow-inner relative">
+                                    <Search className="h-20 w-20" />
+                                    <div className="absolute -bottom-2 -right-2 p-3 bg-white rounded-2xl shadow-premium text-brand-300 border border-brand-100">
+                                        <X size={24} />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-brand-900 font-black text-2xl uppercase tracking-widest">
+                                        No matching results
+                                    </span>
+                                    <p className="text-brand-300 font-bold max-w-sm mx-auto">
+                                        We couldn't find any configuration matching your filters. Try adjusting your search query.
+                                    </p>
+                                </div>
+                              </>
+                          ) : (
+                              <>
+                                <Cpu size={64} className="text-brand-200 opacity-20 mb-2" />
+                                <span className="font-black text-brand-200 text-xl uppercase tracking-widest">No configurations defined</span>
+                              </>
+                          )}
+                      </div>
+                  </td>
+              </motion.tr>
             ) : (
               <AnimatePresence mode="popLayout">
                 {configs.map((config) => (
-                  <motion.tr
+                  <AiModelRow
                     key={config.id || (config as AiModelConfig & { _clientId?: string })._clientId || config.feature}
-                    variants={rowVariants}
-                    whileHover={{ x: 10, backgroundColor: 'var(--color-brand-50)' }}
-                    className="group cursor-pointer relative"
+                    config={config}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
                     onClick={() => onEdit(config)}
-                  >
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-primary-50 rounded-xl text-primary-600 shadow-sm border border-primary-100/50">
-                          <Sparkles size={16} />
-                        </div>
-                        <span className="text-sm font-black text-brand-900 group-hover:text-primary-700 transition-colors">{config.feature}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <span className="text-[11px] font-black text-brand-600 font-mono bg-white border border-brand-100 px-3 py-1.5 rounded-lg shadow-sm">
-                        {config.modelId}
-                      </span>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 w-fit border ${
-                        config.isEnabled
-                          ? 'bg-success-50 text-success-700 border-success-100 shadow-sm shadow-success-100/50'
-                          : 'bg-brand-50 text-brand-400 border-brand-100 opacity-60'
-                      }`}>
-                        <div className={`w-2 h-2 rounded-full ${config.isEnabled ? 'bg-success-500 animate-pulse' : 'bg-brand-300'}`} />
-                        {config.isEnabled ? 'Active' : 'Offline'}
-                      </span>
-                    </td>
-                    <td className="px-10 py-6 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <Button
-                          onClick={(e) => { e.stopPropagation(); onEdit(config); }}
-                          variant="ghost"
-                          size="sm"
-                          leftIcon={<Edit2 size={16} />}
-                          className="text-brand-300 hover:text-primary-600 hover:bg-primary-50"
-                        >
-                          Modify
-                        </Button>
-                        <Button
-                          aria-label={`Delete ${config.feature} configuration`}
-                          title="Delete Configuration"
-                          onClick={(e) => { e.stopPropagation(); onDelete(config); }}
-                          variant="ghost"
-                          size="sm"
-                          className="text-brand-300 hover:text-error-600 hover:bg-error-50 px-2"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </td>
-                  </motion.tr>
+                  />
                 ))}
               </AnimatePresence>
             )}
