@@ -2,37 +2,47 @@
 
 .NET 10 backend for location context enrichment.
 
-## Responsibilities
-- Error tracking and performance monitoring (Sentry)
+## Architecture Overview
 
-- Authentication and authorization
-- Context report generation (`/api/context/report`)
-- Persistence layer (EF Core/PostgreSQL)
-- Public API connector orchestration
+The backend follows Clean Architecture principles, ensuring separation of concerns:
+- **Domain**: Core business logic and entities. No dependencies.
+- **Application**: Use cases and interfaces (MediatR pattern).
+- **Infrastructure**: External API clients, database access (EF Core), and third-party services.
+- **Api**: The presentation layer containing minimal APIs and dependency injection setup.
 
-## Run
+```mermaid
+graph TD
+    API[Valora.Api] --> App[Valora.Application]
+    App --> Domain[Valora.Domain]
+    Infra[Valora.Infrastructure] --> App
+    Infra --> Domain
+    API --> Infra
+```
 
+## Setup Instructions
+
+1. Ensure you have the .NET 10 SDK installed and Docker running (for PostgreSQL).
+2. Start the database by running `docker-compose -f ../docker/docker-compose.yml up -d` from the root directory.
+3. Clone the `.env.example` file and configure your local settings:
 ```bash
 cd backend
 cp .env.example .env
+```
+4. Configure required `.env` keys, notably `DATABASE_URL` and `JWT_SECRET`.
+5. Run the application:
+```bash
 dotnet run --project Valora.Api
 ```
 
-Required `.env` keys:
+## API Reference
 
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_ISSUER`
-- `JWT_AUDIENCE`
-- `SENTRY_DSN` (optional, for error logging and performance monitoring)
-- `SENTRY_TRACES_SAMPLE_RATE` (optional, default 1.0, set lower in production)
-- `SENTRY_PROFILES_SAMPLE_RATE` (optional, default 0.0, set lower in production)
-- `SENTRY_RELEASE` (optional, manually specify the release version)
+The backend exposes a RESTful API:
+- `POST /api/auth/login`: Authenticate users.
+- `POST /api/context/report`: Generate a context report by fanning out requests to multiple external APIs concurrently.
+- `GET /api/map/cities`: Retrieve city-level insights and map data.
+- `POST /api/workspaces`: Manage user workspaces.
 
-Optional keys:
-
-- `OPENROUTER_API_KEY` (only for AI chat)
-- `OPENROUTESERVICE_API_KEY`, `KNMI_API_KEY`, `DUO_API_KEY` (future/optional connectors)
+For complete documentation on all endpoints, please refer to the main `docs/api-reference.md`.
 
 ## Test
 

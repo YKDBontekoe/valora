@@ -118,6 +118,7 @@ C4Container
     System_Ext(cbs, "CBS Open Data", "Demographics and Stats")
     System_Ext(osm, "OpenStreetMap / Overpass", "Amenities and POIs")
     System_Ext(lucht, "Luchtmeetnet", "Air Quality Data")
+    System_Ext(ai, "OpenAI / LLM", "AI Summaries and Chat")
 
     Rel(user, app, "Uses")
     Rel(admin, web, "Uses")
@@ -129,6 +130,7 @@ C4Container
     Rel(api, cbs, "HTTPS", "Fetch Stats")
     Rel(api, osm, "HTTPS", "Fetch Amenities")
     Rel(api, lucht, "HTTPS", "Fetch Air Quality")
+    Rel(api, ai, "HTTPS", "Generates Insights")
 ```
 
 For a deeper dive into *why* we built it this way, see **[Architecture Decisions](docs/architecture-decisions.md)**.
@@ -285,6 +287,8 @@ The API provides core functionalities to access and manage Valora's context data
     - Explains background processing (City Ingestion).
 - **[Data Flow: AI Chat](docs/onboarding-ai-chat-flow.md)**:
     - Traces the request path for the AI Chat feature, including profile resolution and prompt construction.
+- **[Frontend Architecture](docs/onboarding-frontend-architecture.md)** (Includes Mermaid Diagram):
+    - Explains the frontend architecture of the Valora Flutter application and Admin Dashboard.
 
 ### ⚙️ Developer Reference
 *Technical details for contributors.*

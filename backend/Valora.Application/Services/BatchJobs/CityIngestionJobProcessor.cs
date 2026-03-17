@@ -47,6 +47,11 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
     /// <item>Upsert the entities in batches to keep memory usage low and provide incremental progress updates.</item>
     /// </list>
     /// </para>
+    /// <para>
+    /// <strong>Why Batch Operations?</strong> Processing hundreds of neighborhoods individually would result in hundreds of
+    /// separate database transactions, significantly degrading database performance. Grouping inserts/updates into batches of 10
+    /// (<c>batchSize</c>) drastically reduces connection overhead while still allowing for frequent progress updates to the UI.
+    /// </para>
     /// </remarks>
     public async Task ProcessAsync(BatchJob job, CancellationToken cancellationToken)
     {
