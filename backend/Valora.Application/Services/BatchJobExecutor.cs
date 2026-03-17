@@ -94,6 +94,16 @@ public class BatchJobExecutor : IBatchJobExecutor
         await processor.ProcessAsync(job, cancellationToken);
     }
 
+    /// <summary>
+    /// Updates the job status and dispatches corresponding domain events.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why hide raw exception messages?</strong> Exposing stack traces or raw SQL exception messages
+    /// in <c>job.Error</c> would leak internal system details to end users viewing the Admin dashboard. We log the
+    /// full exception internally via <see cref="ILogger"/> but set a generic user-friendly error message for the UI.
+    /// </para>
+    /// </remarks>
     private async Task UpdateJobStatusAsync(BatchJob job, BatchJobStatus newStatus, string? message = null, Exception? ex = null, CancellationToken cancellationToken = default)
     {
         job.Status = newStatus;

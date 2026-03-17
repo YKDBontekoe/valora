@@ -34,6 +34,18 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why concurrent fetching (Fan-Out)?</strong> Fetching data sequentially from 4+ external APIs would result in a cumulative latency
+    /// of several seconds, making the API unacceptably slow for real-time mobile users. By utilizing <see cref="Task.WhenAll"/>, the total
+    /// wait time is reduced to the latency of the single slowest external call.
+    /// </para>
+    /// <para>
+    /// <strong>Resilience Strategy:</strong> Each external request is wrapped in <see cref="TryGetSourceAsync{T}"/>. If one source (e.g., Luchtmeetnet)
+    /// experiences an outage or rate-limits our IP, it returns a null result and adds a warning rather than throwing an exception.
+    /// This ensures Valora remains operational and can still deliver partial context reports instead of returning 500 Internal Server Errors.
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
@@ -66,6 +78,15 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Wraps an external API call in a try-catch block to ensure partial success.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why Catching Exceptions is Safe Here:</strong> We catch general exceptions (<see cref="Exception"/>)
+    /// intentionally here to ensure the Fan-Out orchestrator (<see cref="Task.WhenAll"/>) is never aborted
+    /// completely due to a single failure (e.g. timeout on <see cref="HttpClient"/>).
+    /// We rethrow <see cref="OperationCanceledException"/> only when the top-level <paramref name="cancellationToken"/>
+    /// from the original HTTP Request is cancelled, ensuring that we abandon work if the user closes their app.
+    /// </para>
+    /// </remarks>
     private async Task<T?> TryGetSourceAsync<T>(
         string sourceName,
         Func<CancellationToken, Task<T?>> sourceCall,
