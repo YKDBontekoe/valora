@@ -26,6 +26,7 @@ public class WorkspaceRepository : IWorkspaceRepository
     {
         return await _context.Workspaces
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(w => w.Members)
             .Include(w => w.SavedProperties)
             .Where(w => w.Members.Any(m => m.UserId == userId))

@@ -173,105 +173,112 @@ class ContextReportView extends StatelessWidget {
     // Categories
     if (report.socialMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Social', defaultValue: true),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Social',
             icon: Icons.people_rounded,
             metrics: report.socialMetrics,
             score: report.categoryScores['Social'],
             accentColor: const Color(0xFF3B82F6),
-            isExpanded: provider.isExpanded('Social', defaultValue: true),
-            onToggle: (v) => provider.setExpanded('Social', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Social', v),
           ),
         );
       }
     }
     if (report.crimeMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Safety'),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Safety',
             icon: Icons.shield_rounded,
             metrics: report.crimeMetrics,
             score: report.categoryScores['Safety'],
             accentColor: const Color(0xFF10B981),
-            isExpanded: provider.isExpanded('Safety'),
-            onToggle: (v) => provider.setExpanded('Safety', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Safety', v),
           ),
         );
       }
     }
     if (report.demographicsMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Demographics'),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Demographics',
             icon: Icons.family_restroom_rounded,
             metrics: report.demographicsMetrics,
             score: report.categoryScores['Demographics'],
             accentColor: const Color(0xFF8B5CF6),
-            isExpanded: provider.isExpanded('Demographics'),
-            onToggle: (v) => provider.setExpanded('Demographics', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Demographics', v),
           ),
         );
       }
     }
     if (report.housingMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Housing'),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Housing',
             icon: Icons.home_work_rounded,
             metrics: report.housingMetrics,
             score: report.categoryScores['Housing'],
             accentColor: const Color(0xFFEC4899),
-            isExpanded: provider.isExpanded('Housing'),
-            onToggle: (v) => provider.setExpanded('Housing', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Housing', v),
           ),
         );
       }
     }
     if (report.mobilityMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Mobility'),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Mobility',
             icon: Icons.directions_car_rounded,
             metrics: report.mobilityMetrics,
             score: report.categoryScores['Mobility'],
             accentColor: const Color(0xFF0EA5E9),
-            isExpanded: provider.isExpanded('Mobility'),
-            onToggle: (v) => provider.setExpanded('Mobility', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Mobility', v),
           ),
         );
       }
     }
     if (report.amenityMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Amenities'),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Amenities',
             icon: Icons.store_rounded,
             metrics: report.amenityMetrics,
             score: report.categoryScores['Amenities'],
             accentColor: const Color(0xFFF59E0B),
-            isExpanded: provider.isExpanded('Amenities'),
-            onToggle: (v) => provider.setExpanded('Amenities', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Amenities', v),
           ),
         );
       }
     }
     if (report.environmentMetrics.isNotEmpty) {
       if (index == currentIndex++) {
-        return Consumer<ContextReportProvider>(
-          builder: (context, provider, _) => MetricCategoryCard(
+        return Selector<ContextReportProvider, bool>(
+          selector: (context, provider) => provider.isExpanded('Environment'),
+          builder: (context, isExpanded, _) => MetricCategoryCard(
             title: 'Environment',
             icon: Icons.eco_rounded,
             metrics: report.environmentMetrics,
             score: report.categoryScores['Environment'],
             accentColor: const Color(0xFF22C55E),
-            isExpanded: provider.isExpanded('Environment'),
-            onToggle: (v) => provider.setExpanded('Environment', v),
+            isExpanded: isExpanded,
+            onToggle: (v) => context.read<ContextReportProvider>().setExpanded('Environment', v),
           ),
         );
       }

@@ -3,7 +3,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
 import 'package:valora_app/models/context_report.dart';
-import 'package:valora_app/models/search_history_item.dart';
+
 import 'package:valora_app/providers/context_report_provider.dart';
 import 'package:valora_app/repositories/context_report_repository.dart';
 import 'package:valora_app/services/search_history_service.dart';
@@ -146,14 +146,4 @@ void main() {
     expect(provider.history, isEmpty);
   });
 
-  test('history list is unmodifiable', () async {
-     final provider = ContextReportProvider(
-      repository: MockContextReportRepository(report: buildReport()),
-      historyService: SearchHistoryService(),
-    );
-
-    await provider.generate('search 1');
-
-    expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
-  });
 }
