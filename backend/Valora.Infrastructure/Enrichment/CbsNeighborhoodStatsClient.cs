@@ -82,6 +82,10 @@ public sealed class CbsNeighborhoodStatsClient : ICbsNeighborhoodStatsClient
             _logger.LogWarning(ex, "CBS lookup returned invalid JSON for region {RegionCode}", regionCode.Trim());
             return null;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "CBS lookup failed for region {RegionCode}", regionCode.Trim());

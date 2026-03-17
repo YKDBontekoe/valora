@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -81,6 +82,20 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             _cache.Set(cacheKey, snapshot, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
             return snapshot;
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed due to network error for station {StationId}", station.Value.Id);
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed due to invalid JSON for station {StationId}", station.Value.Id);
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed for station {StationId}", station.Value.Id);
@@ -98,6 +113,20 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         {
             var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
             return response?.Data ?? new List<LuchtmeetnetMeasurement>();
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogDebug(ex, "Luchtmeetnet measurements lookup network error for station {StationId}", stationId);
+            return new List<LuchtmeetnetMeasurement>();
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogDebug(ex, "Luchtmeetnet measurements lookup invalid JSON for station {StationId}", stationId);
+            return new List<LuchtmeetnetMeasurement>();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -194,6 +223,20 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                     break;
                 }
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning(ex, "Luchtmeetnet station list lookup network error for page {Page}", page);
+                continue;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Luchtmeetnet station list lookup invalid JSON for page {Page}", page);
+                continue;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Luchtmeetnet station list lookup failed for page {Page}", page);
@@ -230,6 +273,20 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             _cache.Set(cacheKey, result, TimeSpan.FromHours(48));
 
             return result;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Network error fetching details for station {StationId}", stationId);
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Invalid JSON fetching details for station {StationId}", stationId);
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
