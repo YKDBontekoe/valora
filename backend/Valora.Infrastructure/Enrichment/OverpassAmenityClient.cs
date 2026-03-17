@@ -117,6 +117,10 @@ public sealed class OverpassAmenityClient : IAmenityClient
             _logger.LogWarning(ex, "Overpass lookup returned invalid JSON");
             return default;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Overpass lookup failed");

@@ -29,11 +29,6 @@ public static class AiEndpoints
             {
                 return Results.Problem(detail: "Request was cancelled", statusCode: 499);
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing AI chat request.");
-                return Results.Problem(detail: "An unexpected error occurred while processing your request.", statusCode: 500);
-            }
         })
         .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AiChatRequest>>();
 
@@ -52,11 +47,6 @@ public static class AiEndpoints
             {
                 return Results.Problem(detail: "Request was cancelled", statusCode: 499);
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error generating AI analysis report.");
-                return Results.Problem(detail: "An unexpected error occurred while generating the report summary.", statusCode: 500);
-            }
         })
         .AddEndpointFilter<Valora.Api.Filters.ValidationFilter<AiAnalysisRequest>>();
 
@@ -68,15 +58,8 @@ public static class AiEndpoints
             IAiService aiService,
             CancellationToken ct) =>
         {
-            try
-            {
-                var models = await aiService.GetAvailableModelsAsync(ct);
-                return Results.Ok(models);
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem(detail: ex.Message, statusCode: 500);
-            }
+            var models = await aiService.GetAvailableModelsAsync(ct);
+            return Results.Ok(models);
         });
 
         configGroup.MapGet("/", async (

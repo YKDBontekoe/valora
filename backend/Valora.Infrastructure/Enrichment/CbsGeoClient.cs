@@ -101,7 +101,15 @@ public sealed class CbsGeoClient : ICbsGeoClient
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response.");
             return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
         }
-
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "PDOK WFS feature extraction failed.");
+            return HandleEmptyResultAndCache<MapOverlayDto>(cacheKey);
+        }
     }
 
     private List<T> HandleEmptyResultAndCache<T>(string cacheKey)
@@ -225,6 +233,15 @@ public sealed class CbsGeoClient : ICbsGeoClient
             _logger.LogWarning(ex, "Failed to parse PDOK WFS JSON response for municipality {Municipality}.", municipalityName);
             return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to process PDOK WFS features for municipality {Municipality}.", municipalityName);
+            return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
+        }
     }
 
     private static string BuildMunicipalityFilter(string municipalityName)
@@ -296,6 +313,16 @@ public sealed class CbsGeoClient : ICbsGeoClient
             catch (System.Xml.XmlException ex)
             {
                 _logger.LogWarning(ex, "Failed to parse PDOK WFS XML response for municipalities.");
+                _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
+                return emptyResult;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get all municipalities from PDOK WFS.");
                 _cache.Set(cacheKey, emptyResult, TimeSpan.FromMinutes(2));
                 return emptyResult;
             }
