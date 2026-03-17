@@ -107,4 +107,88 @@ describe('AiModels', () => {
         expect(aiService.getConfigs).toHaveBeenCalledTimes(2); // Initial load + reload
     });
   });
+
+  it('filters configurations by search query', async () => {
+    (aiService.getConfigs as Mock).mockResolvedValue([
+      { id: '1', feature: 'apple-feature', modelId: 'model-1', description: '', isEnabled: true },
+      { id: '2', feature: 'banana-feature', modelId: 'model-2', description: '', isEnabled: true }
+    ]);
+    (aiService.getAvailableModels as Mock).mockResolvedValue([]);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+      expect(screen.getByText('apple-feature')).toBeInTheDocument();
+      expect(screen.getByText('banana-feature')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText('Search by feature or model name...');
+    fireEvent.change(searchInput, { target: { value: 'apple' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('apple-feature')).toBeInTheDocument();
+      expect(screen.queryByText('banana-feature')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters configurations by status dropdown', async () => {
+    (aiService.getConfigs as Mock).mockResolvedValue([
+      { id: '1', feature: 'active-feature', modelId: 'model-1', description: '', isEnabled: true },
+      { id: '2', feature: 'offline-feature', modelId: 'model-2', description: '', isEnabled: false }
+    ]);
+    (aiService.getAvailableModels as Mock).mockResolvedValue([]);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+      expect(screen.getByText('active-feature')).toBeInTheDocument();
+      expect(screen.getByText('offline-feature')).toBeInTheDocument();
+    });
+
+    const statusSelect = screen.getByDisplayValue('All Statuses');
+    fireEvent.change(statusSelect, { target: { value: 'Active' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('active-feature')).toBeInTheDocument();
+      expect(screen.queryByText('offline-feature')).not.toBeInTheDocument();
+    });
+
+    fireEvent.change(statusSelect, { target: { value: 'Offline' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText('active-feature')).not.toBeInTheDocument();
+      expect(screen.getByText('offline-feature')).toBeInTheDocument();
+    });
+  });
+
+  it('renders pagination controls and updates current page', async () => {
+    const configs = Array.from({ length: 15 }, (_, i) => ({
+      id: `${i}`, feature: `feature-${i}`, modelId: `model-${i}`, description: '', isEnabled: true
+    }));
+
+    (aiService.getConfigs as Mock).mockResolvedValue(configs);
+    (aiService.getAvailableModels as Mock).mockResolvedValue([]);
+
+    render(<AiModels />);
+
+    await waitFor(() => {
+      expect(screen.getByText('feature-0')).toBeInTheDocument();
+    });
+
+    // Page 1 assertions
+    expect(screen.getByText('feature-9')).toBeInTheDocument();
+    expect(screen.queryByText('feature-10')).not.toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument(); // current page
+    expect(screen.getByText('2')).toBeInTheDocument(); // total pages
+
+    // Click next page
+    const nextBtn = screen.getByRole('button', { name: 'Next' });
+    fireEvent.click(nextBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText('feature-9')).not.toBeInTheDocument();
+      expect(screen.getByText('feature-10')).toBeInTheDocument();
+      expect(screen.getByText('feature-14')).toBeInTheDocument();
+    });
+  });
 });
