@@ -7,6 +7,7 @@ import '../valora_widgets.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_shadows.dart';
 
 class CommentThreadWidget extends StatefulWidget {
   final String savedListingId;
@@ -81,13 +82,7 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
       ),
       decoration: BoxDecoration(
         color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
+        boxShadow: isDark ? ValoraShadows.mdDark : ValoraShadows.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_shadows.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 
@@ -66,13 +67,8 @@ class ValoraAvatar extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: effectiveBackgroundColor,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-              ),
-            ],
+            border: Border.all(color: isDark ? ValoraColors.surfaceDark : Colors.white, width: 2),
+            boxShadow: isDark ? ValoraShadows.smDark : ValoraShadows.sm,
             image: imageUrl != null
                 ? DecorationImage(
                     image: CachedNetworkImageProvider(imageUrl!),
