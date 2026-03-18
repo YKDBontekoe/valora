@@ -28,6 +28,7 @@ public class WorkspaceRepository : IWorkspaceRepository
             .AsNoTracking()
             .Include(w => w.Members)
             .Include(w => w.SavedProperties)
+            .AsSplitQuery()
             .Where(w => w.Members.Any(m => m.UserId == userId))
             .OrderByDescending(w => w.CreatedAt)
             .ToListAsync(ct);
@@ -86,6 +87,7 @@ public class WorkspaceRepository : IWorkspaceRepository
         return await _context.Workspaces
             .Include(w => w.Members)
             .Include(w => w.SavedProperties)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(w => w.Id == id, ct);
     }
 
