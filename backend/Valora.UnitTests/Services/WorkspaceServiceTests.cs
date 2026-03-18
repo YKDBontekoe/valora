@@ -9,7 +9,8 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
-using Valora.Application.Services;
+using Valora.Application.Common.Interfaces;
+using Valora.Infrastructure.Services.AppServices;
 using Valora.Infrastructure.Persistence.Repositories;
 using Xunit;
 

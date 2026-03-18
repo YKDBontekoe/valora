@@ -7,13 +7,16 @@ using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
-using Valora.Application.Services;
+using Valora.Application.Common.Interfaces;
+using Valora.Infrastructure.Services.AppServices;
 using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
 using Valora.Infrastructure.Services;
 using Valora.Application.Common.Interfaces.External;
 using Valora.Infrastructure.Services.External;
+using Valora.Infrastructure.Services.AppServices;
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using System.Net;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
@@ -84,6 +87,26 @@ public static class DependencyInjection
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IExternalAuthService, ExternalAuthService>();
         services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+
+        // Application Services (Moved from Valora.Application)
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IContextReportService, ContextReportService>();
+        services.AddScoped<IContextAnalysisService, ContextAnalysisService>();
+        services.AddScoped<IUserAiProfileService, UserAiProfileService>();
+        services.AddScoped<IContextDataProvider, ContextDataProvider>();
+        services.AddScoped<IMapService, MapService>();
+        services.AddScoped<IBatchJobService, BatchJobService>();
+        services.AddScoped<IBatchJobExecutor, BatchJobExecutor>();
+        services.AddScoped<IWorkspaceService, WorkspaceService>();
+        services.AddScoped<IWorkspaceMemberService, WorkspaceMemberService>();
+        services.AddScoped<IWorkspacePropertyService, WorkspacePropertyService>();
+
+        // Batch Job Processors
+        services.AddScoped<IBatchJobProcessor, CityIngestionJobProcessor>();
+        services.AddScoped<IBatchJobProcessor, MapGenerationJobProcessor>();
+        services.AddScoped<IBatchJobProcessor, AllCitiesIngestionJobProcessor>();
 
         // Configuration
         services.Configure<JwtOptions>(options => BindJwtOptions(options, configuration));

@@ -3,7 +3,7 @@ using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs.Map;
 using Valora.Domain.Entities;
 
-namespace Valora.Application.Services.Utilities;
+namespace Valora.Infrastructure.Services.AppServices.Utilities;
 
 /// <summary>
 /// Provides utility methods for combining real estate price data with geographical map overlays.

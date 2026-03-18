@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Services.BatchJobs;
+using Valora.Application.Common.Interfaces;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
 using Valora.Application.Common.Events;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class BatchJobExecutor : IBatchJobExecutor
 {

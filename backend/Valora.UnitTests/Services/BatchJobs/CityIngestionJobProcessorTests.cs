@@ -3,7 +3,8 @@ using Moq;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
 using Valora.Application.DTOs.Map;
-using Valora.Application.Services.BatchJobs;
+using Valora.Application.Common.Interfaces;
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Domain.Entities;
 
 namespace Valora.UnitTests.Services.BatchJobs;
