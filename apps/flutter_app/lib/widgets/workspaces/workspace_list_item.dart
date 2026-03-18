@@ -5,7 +5,6 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../models/workspace.dart';
-import '../common/valora_badge.dart';
 import '../../providers/workspace_provider.dart';
 import '../../widgets/valora_widgets.dart';
 import '../../screens/workspace_detail_screen.dart';
