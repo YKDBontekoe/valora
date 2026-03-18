@@ -110,7 +110,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                   <div>
                       <h2 className="text-2xl font-black text-brand-900 tracking-tightest">Pipeline Diagnostics</h2>
                       <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Descriptor:</span>
+                          <span className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide">Descriptor:</span>
                           <span className="text-[10px] font-black text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md uppercase tracking-wider">
                               {jobId}
                           </span>
@@ -137,11 +137,11 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                   {/* Status Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="p-6 rounded-[1.5rem] border border-brand-100 bg-brand-50/30 flex flex-col gap-1">
-                          <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Deployment Target</span>
+                          <span className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide">Deployment Target</span>
                           <div className="font-black text-brand-900 text-2xl tracking-tight">{job.target}</div>
                       </div>
                       <div className={`p-6 rounded-[1.5rem] border flex flex-col gap-1 transition-colors duration-500 ${getStatusColor(job.status)}`}>
-                          <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">Operational Status</span>
+                          <span className="text-[10px] font-black opacity-60 uppercase tracking-ultra-wide">Operational Status</span>
                           <div className="font-black text-2xl tracking-tight flex items-center gap-3">
                               {job.status === 'Completed' && <CheckCircle2 size={24} />}
                               {job.status === 'Failed' && <AlertCircle size={24} />}
@@ -158,7 +158,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                               <Clock size={18} className="text-brand-400 group-hover:text-primary-500" />
                           </div>
                           <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Initiated</span>
+                              <span className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide">Initiated</span>
                               <span className="text-xs font-black text-brand-800 font-mono">{new Date(job.createdAt).toLocaleString()}</span>
                           </div>
                       </div>
@@ -167,7 +167,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                               <Activity size={18} className="text-brand-400 group-hover:text-primary-500" />
                           </div>
                           <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Processing</span>
+                              <span className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide">Processing</span>
                               <span className="text-xs font-black text-brand-800 font-mono">{job.startedAt ? new Date(job.startedAt).toLocaleString() : 'N/A'}</span>
                           </div>
                       </div>
@@ -176,7 +176,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                               <CheckCircle2 size={18} className="text-brand-400 group-hover:text-primary-500" />
                           </div>
                           <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-brand-300 uppercase tracking-widest">Termination</span>
+                              <span className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide">Termination</span>
                               <span className="text-xs font-black text-brand-800 font-mono">{job.completedAt ? new Date(job.completedAt).toLocaleString() : 'N/A'}</span>
                           </div>
                       </div>
@@ -185,7 +185,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                   {/* Progress Visualization */}
                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                          <h3 className="text-[10px] font-black text-brand-900 uppercase tracking-widest">Cluster Throughput</h3>
+                          <h3 className="text-[10px] font-black text-brand-900 uppercase tracking-ultra-wide">Cluster Throughput</h3>
                           <span className="text-xl font-black text-primary-600">{job.progress}%</span>
                       </div>
                       <div className="h-4 w-full bg-brand-50 rounded-full overflow-hidden border border-brand-100 p-1">
@@ -209,7 +209,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                               <div className="p-2 bg-white rounded-xl shadow-sm">
                                   <AlertCircle size={20} className="text-error-500" />
                               </div>
-                              <span className="font-black text-sm uppercase tracking-widest">Pipeline Fault Exception</span>
+                              <span className="font-black text-sm uppercase tracking-ultra-wide">Pipeline Fault Exception</span>
                           </div>
                           <p className="font-bold text-sm leading-relaxed bg-white/40 p-4 rounded-xl border border-error-100/50">{job.error}</p>
                       </motion.div>
@@ -219,7 +219,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                   <div className="space-y-4">
                       <div className="flex items-center gap-3">
                           <div className="w-1.5 h-6 bg-brand-900 rounded-full" />
-                          <h3 className="text-[10px] font-black text-brand-900 uppercase tracking-widest">Telemetry Trace</h3>
+                          <h3 className="text-[10px] font-black text-brand-900 uppercase tracking-ultra-wide">Telemetry Trace</h3>
                       </div>
                       <div className="bg-brand-900 rounded-3xl p-8 overflow-hidden shadow-premium-xl group relative">
                           <div className="absolute top-4 right-4 text-brand-700/50 text-[10px] font-mono group-hover:text-brand-300 transition-colors uppercase">Console Output</div>
@@ -238,7 +238,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
             <div className="px-10 py-8 border-t border-brand-100 bg-brand-50/20 flex flex-col sm:flex-row justify-between items-center gap-6">
               <div className="flex items-center gap-3 text-brand-300">
                   <Activity size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Encrypted diagnostic session</span>
+                  <span className="text-[10px] font-black uppercase tracking-ultra-wide">Encrypted diagnostic session</span>
               </div>
               <div className="flex gap-4 w-full sm:w-auto">
                   <Button variant="ghost" onClick={onClose} disabled={processingAction} className="font-black text-brand-400">
