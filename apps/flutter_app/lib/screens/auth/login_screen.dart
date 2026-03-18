@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_shadows.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/valora_text_field.dart';
 import '../../widgets/auth/social_login_button.dart';
@@ -114,18 +115,11 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               color: isDark ? ValoraColors.surfaceDark : Colors.white,
               borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 50,
-                  offset: const Offset(0, 25),
-                  spreadRadius: -12,
-                ),
-              ],
+                boxShadow: isDark ? ValoraShadows.xlDark : ValoraShadows.xl,
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.5),
+                      ? ValoraColors.neutral700.withValues(alpha: 0.5)
+                      : ValoraColors.neutral200.withValues(alpha: 0.7),
                 width: 1,
               ),
             ),

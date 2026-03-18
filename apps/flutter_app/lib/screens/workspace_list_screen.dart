@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
@@ -72,7 +73,7 @@ class _WorkspaceListScreenState extends State<WorkspaceListScreen> {
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Workspace'),
-      ),
+      ).animate().scale(delay: 200.ms, curve: Curves.easeOutBack),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(

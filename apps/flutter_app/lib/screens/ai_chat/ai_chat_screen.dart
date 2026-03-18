@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/valora_shadows.dart';
 import '../../providers/ai_chat_provider.dart';
 import '../../widgets/ai_chat/ai_chat_message_bubble.dart';
 
@@ -127,13 +128,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
           Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  offset: const Offset(0, -2),
-                  blurRadius: 4,
-                  color: Colors.black.withValues(alpha: 0.05),
-                ),
-              ],
+              boxShadow: theme.brightness == Brightness.dark
+                  ? ValoraShadows.smDark
+                  : ValoraShadows.sm,
             ),
             child: SafeArea(
               child: Padding(

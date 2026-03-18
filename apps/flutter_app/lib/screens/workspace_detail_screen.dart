@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/valora_colors.dart';
 import '../core/theme/valora_typography.dart';
 import '../core/theme/valora_spacing.dart';
@@ -233,7 +234,9 @@ class _SavedPropertiesTab extends StatelessWidget {
                           : ValoraColors.neutral400),
                 ],
               ),
-            );
+            ).animate(delay: (50 * index).ms)
+             .fadeIn(duration: 300.ms, curve: Curves.easeOut)
+             .slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut);
           },
         );
       },

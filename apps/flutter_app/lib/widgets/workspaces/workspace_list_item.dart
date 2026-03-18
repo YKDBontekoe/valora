@@ -5,6 +5,7 @@ import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_spacing.dart';
 import '../../models/workspace.dart';
+import '../common/valora_badge.dart';
 import '../../providers/workspace_provider.dart';
 import '../../widgets/valora_widgets.dart';
 import '../../screens/workspace_detail_screen.dart';
@@ -56,34 +57,16 @@ class WorkspaceListItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.people_alt_rounded,
-                        size: 14,
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${workspace.memberCount} members',
-                      style: ValoraTypography.labelSmall.copyWith(
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500,
-                      ),
+                    ValoraBadge(
+                      label: '${workspace.memberCount} members',
+                      color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+                      icon: Icons.people_alt_rounded,
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.bookmark_rounded,
-                        size: 14,
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${workspace.savedListingCount} saved',
-                      style: ValoraTypography.labelSmall.copyWith(
-                        color: isDark
-                            ? ValoraColors.neutral400
-                            : ValoraColors.neutral500,
-                      ),
+                    const SizedBox(width: ValoraSpacing.sm),
+                    ValoraBadge(
+                      label: '${workspace.savedListingCount} saved',
+                      color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
+                      icon: Icons.bookmark_rounded,
                     ),
                   ],
                 ),
