@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import '../models/map_city_insight.dart';
 import '../models/map_amenity.dart';
@@ -60,7 +61,7 @@ class MapRepository {
       (body) => body,
     );
     final result = await compute(_parseCityInsights, body);
-    _cachedCityInsights = List.unmodifiable(result);
+    _cachedCityInsights = UnmodifiableListView(result);
     return _cachedCityInsights!;
   }
 

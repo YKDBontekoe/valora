@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:collection';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/exceptions/app_exceptions.dart';
@@ -68,11 +69,11 @@ class ContextReportProvider extends ChangeNotifier {
         .toList();
   }
 
-  Set<String> get comparisonIds => Set.unmodifiable(_comparisonIds);
+  Set<String> get comparisonIds => UnmodifiableSetView(_comparisonIds);
 
   int get radiusMeters => _radiusMeters;
-  List<SearchHistoryItem> get history => List.unmodifiable(_history);
-  List<SavedSearch> get savedSearches => List.unmodifiable(_savedSearches);
+  List<SearchHistoryItem> get history => UnmodifiableListView(_history);
+  List<SavedSearch> get savedSearches => UnmodifiableListView(_savedSearches);
 
   @override
   void dispose() {
