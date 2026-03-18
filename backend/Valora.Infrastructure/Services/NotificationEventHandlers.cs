@@ -1,10 +1,10 @@
-using Valora.Application.Services;
+using Valora.Application.Common.Interfaces;
+using Valora.Infrastructure.Services.AppServices;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Events;
-using Valora.Application.Common.Interfaces;
 using Valora.Domain.Enums;
 using Valora.Domain.Entities;
 using System.Linq;
