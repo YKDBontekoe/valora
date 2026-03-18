@@ -22,15 +22,18 @@ public class NotificationEventHandlers :
 {
     private readonly INotificationService _notificationService;
     private readonly IWorkspaceRepository _workspaceRepository;
+    private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
     private readonly ILogger<NotificationEventHandlers> _logger;
 
     public NotificationEventHandlers(
         INotificationService notificationService,
         IWorkspaceRepository workspaceRepository,
+        IWorkspaceMemberRepository workspaceMemberRepository,
         ILogger<NotificationEventHandlers> logger)
     {
         _notificationService = notificationService;
         _workspaceRepository = workspaceRepository;
+        _workspaceMemberRepository = workspaceMemberRepository;
         _logger = logger;
     }
 
@@ -64,7 +67,7 @@ public class NotificationEventHandlers :
     public async Task HandleAsync(CommentAddedEvent domainEvent, CancellationToken cancellationToken)
     {
         // Notify all workspace members except the one who added the comment
-        var members = await _workspaceRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
+        var members = await _workspaceMemberRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
         var workspace = await _workspaceRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
 
         foreach (var member in members)
@@ -84,7 +87,7 @@ public class NotificationEventHandlers :
 
     public async Task HandleAsync(ReportSavedToWorkspaceEvent domainEvent, CancellationToken cancellationToken)
     {
-        var members = await _workspaceRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
+        var members = await _workspaceMemberRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
         var workspace = await _workspaceRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
 
         foreach (var member in members)

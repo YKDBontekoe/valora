@@ -29,7 +29,11 @@ public class WorkspaceServiceTests
 
         _context = new ValoraDbContext(options);
         _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceService(_repository);
+
+        var memberRepo = new WorkspaceMemberRepository(_context);
+        var logRepo = new ActivityLogRepository(_context);
+
+        _service = new WorkspaceService(_repository, memberRepo, logRepo);
     }
 
     [Fact]

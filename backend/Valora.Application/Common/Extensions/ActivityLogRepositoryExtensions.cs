@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Valora.Application.Common.Extensions;
 
-public static class WorkspaceRepositoryExtensions
+public static class ActivityLogRepositoryExtensions
 {
     public static async Task LogActivityEventAsync(
-        this IWorkspaceRepository repository,
+        this IActivityLogRepository repository,
         Guid? workspaceId,
         string actorId,
         ActivityLogType type,
@@ -28,7 +28,7 @@ public static class WorkspaceRepositoryExtensions
     }
 
     public static async Task LogActivityEventAsync(
-        this IWorkspaceRepository repository,
+        this IActivityLogRepository repository,
         Workspace workspace,
         string actorId,
         ActivityLogType type,

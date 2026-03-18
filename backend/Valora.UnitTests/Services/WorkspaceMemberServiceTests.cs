@@ -28,7 +28,11 @@ public class WorkspaceMemberServiceTests
         _context = new ValoraDbContext(options);
         _identityServiceMock = new Mock<IIdentityService>();
         _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceMemberService(_repository, _identityServiceMock.Object, _eventDispatcherMock.Object);
+
+        var memberRepo = new WorkspaceMemberRepository(_context);
+        var logRepo = new ActivityLogRepository(_context);
+
+        _service = new WorkspaceMemberService(_repository, memberRepo, logRepo, _identityServiceMock.Object, _eventDispatcherMock.Object);
     }
 
     [Fact]
