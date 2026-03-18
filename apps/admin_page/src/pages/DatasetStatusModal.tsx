@@ -96,7 +96,7 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
                 <h2 id="modal-title" className="text-3xl font-black text-brand-900 tracking-tightest uppercase">Dataset Catalog</h2>
                 <div className="flex items-center gap-2 mt-1">
                     <Sparkles size={12} className="text-primary-400" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-400">Inventory of ingested clusters</span>
+                    <span className="text-[10px] font-black uppercase tracking-ultra-wide text-brand-400">Inventory of ingested clusters</span>
                 </div>
               </div>
             </div>
@@ -179,12 +179,12 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
                                     <MapPin size={24} className="text-brand-300 group-hover:text-primary-500 transition-colors" />
                                 </div>
                                 {isStale(item.lastUpdated) ? (
-                                    <span className="px-4 py-1.5 rounded-full bg-warning-50 text-warning-700 text-[10px] font-black uppercase tracking-widest border border-warning-100 shadow-sm flex items-center gap-2">
+                                    <span className="px-4 py-1.5 rounded-full bg-warning-50 text-warning-700 text-[10px] font-black uppercase tracking-ultra-wide border border-warning-100 shadow-sm flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-warning-500 animate-pulse" />
                                         Stale
                                     </span>
                                 ) : (
-                                    <span className="px-4 py-1.5 rounded-full bg-success-50 text-success-700 text-[10px] font-black uppercase tracking-widest border border-success-100 shadow-sm flex items-center gap-2">
+                                    <span className="px-4 py-1.5 rounded-full bg-success-50 text-success-700 text-[10px] font-black uppercase tracking-ultra-wide border border-success-100 shadow-sm flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                                         Fresh
                                     </span>
@@ -197,14 +197,14 @@ const DatasetStatusModal: React.FC<DatasetStatusModalProps> = ({ isOpen, onClose
                                 <div className="flex items-center justify-between p-4 bg-brand-50/50 rounded-2xl border border-brand-100 shadow-inner group-hover:bg-white transition-colors">
                                     <div className="flex items-center gap-3 text-brand-400">
                                         <Layers size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Neighborhoods</span>
+                                        <span className="text-[10px] font-black uppercase tracking-ultra-wide">Neighborhoods</span>
                                     </div>
                                     <span className="text-lg font-black text-brand-900 font-mono tracking-tighter">{item.neighborhoodCount}</span>
                                 </div>
                                 <div className="flex items-center justify-between p-4 bg-brand-50/50 rounded-2xl border border-brand-100 shadow-inner group-hover:bg-white transition-colors">
                                     <div className="flex items-center gap-3 text-brand-400">
                                         <Calendar size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Last Sync</span>
+                                        <span className="text-[10px] font-black uppercase tracking-ultra-wide">Last Sync</span>
                                     </div>
                                     <span className="text-xs font-black text-brand-700">
                                         {item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : 'NEVER'}

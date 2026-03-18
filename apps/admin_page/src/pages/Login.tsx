@@ -108,7 +108,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-7">
             <motion.div variants={itemVariants}>
-              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-[0.25em]">Email Address</label>
+              <label htmlFor="email" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-ultra-wide">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Mail className="h-5 w-5" />
@@ -126,7 +126,7 @@ const Login = () => {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-[0.25em]">Secure Password</label>
+              <label htmlFor="password" className="block text-[10px] font-black text-brand-400 mb-2.5 ml-1 uppercase tracking-ultra-wide">Secure Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-brand-300 group-focus-within:text-primary-500 transition-colors">
                   <Lock className="h-5 w-5" />

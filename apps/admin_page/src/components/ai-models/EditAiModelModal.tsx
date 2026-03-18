@@ -56,7 +56,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
           initial={{ opacity: 0, scale: 0.9, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 40 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={{ type: "spring", stiffness: 400, damping: 28 }}
           className="relative w-full max-w-3xl bg-white rounded-5xl shadow-premium-xl overflow-hidden border border-white/20 flex flex-col max-h-[90vh]"
           role="dialog"
           aria-modal="true"
@@ -88,7 +88,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-8">
                 <div>
-                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Feature Key</label>
+                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Feature Key</label>
                   <input
                     type="text"
                     className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 disabled:opacity-50"
@@ -101,7 +101,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
 
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] ml-1">Model</label>
+                    <label className="text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide ml-1">Model</label>
                     <select
                       aria-label="Sort models"
                       value={modelSort}
@@ -132,7 +132,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
               <div className="space-y-8">
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Temperature</label>
+                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Temperature</label>
                     <input
                       type="number"
                       step="0.1"
@@ -145,7 +145,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Max Tokens</label>
+                    <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Max Tokens</label>
                     <input
                       type="number"
                       step="1"
@@ -159,7 +159,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Operational State</label>
+                  <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Operational State</label>
                   <button
                     onClick={() => onChange({ ...editingConfig, isEnabled: !editingConfig.isEnabled })}
                     className={`w-full flex items-center justify-between px-8 py-5 rounded-2xl border transition-all duration-500 group/toggle ${
@@ -178,7 +178,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             </div>
 
             <div className="mt-10">
-              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">System Prompt Override</label>
+              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">System Prompt Override</label>
               <textarea
                 className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[160px] font-mono text-sm placeholder:text-brand-200"
                 value={editingConfig.systemPrompt || ''}
@@ -188,7 +188,7 @@ const EditAiModelModal: React.FC<EditAiModelModalProps> = ({
             </div>
 
             <div className="mt-10">
-              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-3 ml-1">Configuration Justification</label>
+              <label className="block text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-3 ml-1">Configuration Justification</label>
               <textarea
                 className="w-full px-6 py-5 bg-brand-50/50 border border-brand-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all font-black text-brand-900 min-h-[120px] placeholder:text-brand-200"
                 value={editingConfig.description}
