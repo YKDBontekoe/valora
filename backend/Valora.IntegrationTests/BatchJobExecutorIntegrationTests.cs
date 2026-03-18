@@ -9,7 +9,6 @@ using Moq;
 using Shouldly;
 using Valora.Application.Common.Events;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Common.Interfaces;
 using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;

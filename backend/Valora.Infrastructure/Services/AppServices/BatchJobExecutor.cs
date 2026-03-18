@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Common.Interfaces;
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Domain.Entities;
 using Valora.Domain.Enums;
 using Valora.Application.Common.Events;
