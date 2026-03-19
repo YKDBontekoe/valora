@@ -15,6 +15,16 @@ public class WorkspaceService : IWorkspaceService
         _repository = repository;
     }
 
+    /// <summary>
+    /// Creates a new workspace for the specified user and assigns them as the Owner.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Workspace Limits</strong><br/>
+    /// Users are currently restricted to owning a maximum of 10 workspaces to prevent abuse and database bloating.
+    /// If the limit is reached, an activity log is still written to record the failed attempt for auditing/support purposes.
+    /// </para>
+    /// </remarks>
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
         var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
@@ -65,6 +75,18 @@ public class WorkspaceService : IWorkspaceService
         return result.Dto;
     }
 
+    /// <summary>
+    /// Deletes a workspace and its associated records.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Audit Logging before Deletion</strong><br/>
+    /// Deleting a workspace triggers a cascade delete in the database for all related entities (properties, comments).
+    /// Before calling <c>DeleteAsync</c>, an explicit <see cref="ActivityLogType.WorkspaceDeleted"/> event is logged.
+    /// Because the workspace itself is deleted, this log entry must rely on the user ID and name rather than foreign key constraints
+    /// if the audit log outlives the workspace (or if it's sent to an external service).
+    /// </para>
+    /// </remarks>
     public async Task DeleteWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
         var workspace = await _repository.GetByIdAsync(workspaceId, ct);

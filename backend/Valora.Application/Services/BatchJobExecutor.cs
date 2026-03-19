@@ -82,6 +82,17 @@ public class BatchJobExecutor : IBatchJobExecutor
         }
     }
 
+    /// <summary>
+    /// Locates and executes the appropriate processor for the given job type.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Strategy Pattern Resolution</strong><br/>
+    /// By injecting an <c>IEnumerable&lt;IBatchJobProcessor&gt;</c>, the <see cref="BatchJobExecutor"/> adheres to the Open/Closed Principle.
+    /// New background job types (like exporting PDFs or syncing external users) can be added simply by creating a new processor class
+    /// without modifying this central executor logic.
+    /// </para>
+    /// </remarks>
     private async Task ExecuteProcessorAsync(BatchJob job, CancellationToken cancellationToken)
     {
         var processor = _processors.SingleOrDefault(p => p.JobType == job.Type);
@@ -94,6 +105,17 @@ public class BatchJobExecutor : IBatchJobExecutor
         await processor.ProcessAsync(job, cancellationToken);
     }
 
+    /// <summary>
+    /// Centralized state management for a BatchJob's status and logging.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Exception Masking</strong><br/>
+    /// If an exception occurs, the raw details (like stack traces or SQL connection strings) are logged securely to standard out
+    /// via <c>_logger</c>, but the user-facing job record <c>job.Error</c> receives a sanitized "internal error" message.
+    /// This prevents sensitive backend structure leaks to the admin panel.
+    /// </para>
+    /// </remarks>
     private async Task UpdateJobStatusAsync(BatchJob job, BatchJobStatus newStatus, string? message = null, Exception? ex = null, CancellationToken cancellationToken = default)
     {
         job.Status = newStatus;
