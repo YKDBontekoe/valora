@@ -8,12 +8,23 @@ namespace Valora.Application.Services;
 
 public class WorkspacePropertyService : IWorkspacePropertyService
 {
-    private readonly IWorkspaceRepository _repository;
+    private readonly IWorkspaceMemberRepository _memberRepository;
+    private readonly ISavedPropertyRepository _savedPropertyRepository;
+    private readonly IPropertyRepository _propertyRepository;
+    private readonly IActivityLogRepository _activityLogRepository;
     private readonly IEventDispatcher _eventDispatcher;
 
-    public WorkspacePropertyService(IWorkspaceRepository repository, IEventDispatcher eventDispatcher)
+    public WorkspacePropertyService(
+        IWorkspaceMemberRepository memberRepository,
+        ISavedPropertyRepository savedPropertyRepository,
+        IPropertyRepository propertyRepository,
+        IActivityLogRepository activityLogRepository,
+        IEventDispatcher eventDispatcher)
     {
-        _repository = repository;
+        _memberRepository = memberRepository;
+        _savedPropertyRepository = savedPropertyRepository;
+        _propertyRepository = propertyRepository;
+        _activityLogRepository = activityLogRepository;
         _eventDispatcher = eventDispatcher;
     }
 
@@ -22,10 +33,10 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         var role = await GetUserRole(userId, workspaceId, ct);
         if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
 
-        var existing = await _repository.GetSavedPropertyAsync(workspaceId, propertyId, ct);
+        var existing = await _savedPropertyRepository.GetSavedPropertyAsync(workspaceId, propertyId, ct);
         if (existing != null) return MapToSavedPropertyDto(existing);
 
-        var property = await _repository.GetPropertyAsync(propertyId, ct);
+        var property = await _propertyRepository.GetPropertyAsync(propertyId, ct);
         if (property == null) throw new NotFoundException(nameof(Property), propertyId);
 
         var savedProperty = new SavedProperty
@@ -37,10 +48,10 @@ public class WorkspacePropertyService : IWorkspacePropertyService
             CreatedAt = DateTime.UtcNow
         };
 
-        await _repository.AddSavedPropertyAsync(savedProperty, ct);
-        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.PropertySaved, $"Saved property {property.Address}", ct);
+        await _savedPropertyRepository.AddSavedPropertyAsync(savedProperty, ct);
+        await _activityLogRepository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.PropertySaved, $"Saved property {property.Address}", ct);
 
-        await _repository.SaveChangesAsync(ct);
+        await _savedPropertyRepository.SaveChangesAsync(ct);
         await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.ReportSavedToWorkspaceEvent(workspaceId, propertyId, userId), ct);
 
         return MapToSavedPropertyDto(savedProperty, property);
@@ -54,7 +65,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         // Check if property exists by Address/BAG ID
         // The ContextReportDto doesn't currently expose BagId, so we use Address as a fallback or if we can extract it.
         // For now, let's try Address.
-        var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
+        var property = await _propertyRepository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
         
         if (property == null) {
             property = new Property {
@@ -69,7 +80,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
                 ContextAmenitiesScore = report.CategoryScores.TryGetValue("Amenities", out var amenities) ? amenities : null,
                 ContextEnvironmentScore = report.CategoryScores.TryGetValue("Environment", out var environment) ? environment : null,
             };
-            await _repository.AddPropertyAsync(property, ct);
+            await _propertyRepository.AddPropertyAsync(property, ct);
         }
 
         return await SavePropertyAsync(userId, workspaceId, property.Id, notes, ct);
@@ -79,7 +90,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        return await _repository.GetSavedPropertyDtosAsync(workspaceId, ct);
+        return await _savedPropertyRepository.GetSavedPropertyDtosAsync(workspaceId, ct);
     }
 
     public async Task RemoveSavedPropertyAsync(string userId, Guid workspaceId, Guid savedPropertyId, CancellationToken ct = default)
@@ -87,27 +98,27 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         var role = await GetUserRole(userId, workspaceId, ct);
         if (role == WorkspaceRole.Viewer) throw new ForbiddenAccessException();
 
-        var savedProperty = await _repository.GetSavedPropertyByIdAsync(savedPropertyId, ct);
+        var savedProperty = await _savedPropertyRepository.GetSavedPropertyByIdAsync(savedPropertyId, ct);
 
         if (savedProperty == null || savedProperty.WorkspaceId != workspaceId)
             throw new NotFoundException(nameof(SavedProperty), savedPropertyId);
 
-        await _repository.RemoveSavedPropertyAsync(savedProperty, ct);
-        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.PropertyRemoved, $"Removed property {savedProperty.Property?.Address ?? "Unknown"}", ct);
-        await _repository.SaveChangesAsync(ct);
+        await _savedPropertyRepository.RemoveSavedPropertyAsync(savedProperty, ct);
+        await _activityLogRepository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.PropertyRemoved, $"Removed property {savedProperty.Property?.Address ?? "Unknown"}", ct);
+        await _savedPropertyRepository.SaveChangesAsync(ct);
     }
 
     public async Task<CommentDto> AddCommentAsync(string userId, Guid workspaceId, Guid savedPropertyId, AddCommentDto dto, CancellationToken ct = default)
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var savedProperty = await _repository.GetSavedPropertyByIdAsync(savedPropertyId, ct);
+        var savedProperty = await _savedPropertyRepository.GetSavedPropertyByIdAsync(savedPropertyId, ct);
         if (savedProperty == null || savedProperty.WorkspaceId != workspaceId)
             throw new NotFoundException(nameof(SavedProperty), savedPropertyId);
 
         if (dto.ParentId.HasValue)
         {
-            var parent = await _repository.GetCommentAsync(dto.ParentId.Value, ct);
+            var parent = await _savedPropertyRepository.GetCommentAsync(dto.ParentId.Value, ct);
             if (parent == null || parent.SavedPropertyId != savedPropertyId)
                 throw new InvalidOperationException("Parent comment must belong to the same property.");
         }
@@ -121,10 +132,10 @@ public class WorkspacePropertyService : IWorkspacePropertyService
             CreatedAt = DateTime.UtcNow
         };
 
-        await _repository.AddCommentAsync(comment, ct);
-        await _repository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.CommentAdded, "Added a comment", ct);
+        await _savedPropertyRepository.AddCommentAsync(comment, ct);
+        await _activityLogRepository.LogActivityEventAsync(workspaceId, userId, ActivityLogType.CommentAdded, "Added a comment", ct);
 
-        await _repository.SaveChangesAsync(ct);
+        await _savedPropertyRepository.SaveChangesAsync(ct);
         await _eventDispatcher.DispatchAsync(new Valora.Application.Common.Events.CommentAddedEvent(workspaceId, savedPropertyId, comment.Id, userId, comment.Content, comment.ParentCommentId), ct);
 
         return new CommentDto(
@@ -142,7 +153,7 @@ public class WorkspacePropertyService : IWorkspacePropertyService
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        var comments = await _repository.GetCommentsAsync(savedPropertyId, ct);
+        var comments = await _savedPropertyRepository.GetCommentsAsync(savedPropertyId, ct);
 
         var dtos = comments.Select(c => new CommentDto(
             c.Id,
@@ -175,13 +186,13 @@ public class WorkspacePropertyService : IWorkspacePropertyService
     // Helpers
     private async Task ValidateMemberAccess(string userId, Guid workspaceId, CancellationToken ct)
     {
-        var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
+        var isMember = await _memberRepository.IsMemberAsync(workspaceId, userId, ct);
         if (!isMember) throw new ForbiddenAccessException();
     }
 
     private async Task<WorkspaceRole> GetUserRole(string userId, Guid workspaceId, CancellationToken ct)
     {
-        return await _repository.GetUserRoleAsync(workspaceId, userId, ct);
+        return await _memberRepository.GetUserRoleAsync(workspaceId, userId, ct);
     }
 
     private SavedPropertyDto MapToSavedPropertyDto(SavedProperty sp, Property? p = null)

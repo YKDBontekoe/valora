@@ -8,20 +8,27 @@ namespace Valora.Application.Services;
 
 public class WorkspaceService : IWorkspaceService
 {
-    private readonly IWorkspaceRepository _repository;
+    private readonly IWorkspaceManagementRepository _managementRepository;
+    private readonly IWorkspaceMemberRepository _memberRepository;
+    private readonly IActivityLogRepository _activityLogRepository;
 
-    public WorkspaceService(IWorkspaceRepository repository)
+    public WorkspaceService(
+        IWorkspaceManagementRepository managementRepository,
+        IWorkspaceMemberRepository memberRepository,
+        IActivityLogRepository activityLogRepository)
     {
-        _repository = repository;
+        _managementRepository = managementRepository;
+        _memberRepository = memberRepository;
+        _activityLogRepository = activityLogRepository;
     }
 
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
-        var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
+        var existingCount = await _managementRepository.GetUserOwnedWorkspacesCountAsync(userId, ct);
         if (existingCount >= 10)
         {
-            await _repository.LogActivityEventAsync((Guid?)null, userId, ActivityLogType.WorkspaceCreated, "Workspace creation failed: limit reached", ct);
-            await _repository.SaveChangesAsync(ct);
+            await _activityLogRepository.LogActivityEventAsync((Guid?)null, userId, ActivityLogType.WorkspaceCreated, "Workspace creation failed: limit reached", ct);
+            await _activityLogRepository.SaveChangesAsync(ct);
             throw new InvalidOperationException("You have reached the maximum number of workspaces (10).");
         }
 
@@ -41,23 +48,23 @@ public class WorkspaceService : IWorkspaceService
             }
         };
 
-        await _repository.AddAsync(workspace, ct);
+        await _managementRepository.AddAsync(workspace, ct);
 
-        await _repository.LogActivityEventAsync(workspace, userId, ActivityLogType.WorkspaceCreated, $"Workspace '{dto.Name}' created", ct);
+        await _activityLogRepository.LogActivityEventAsync(workspace, userId, ActivityLogType.WorkspaceCreated, $"Workspace '{dto.Name}' created", ct);
 
-        await _repository.SaveChangesAsync(ct);
+        await _managementRepository.SaveChangesAsync(ct);
 
         return MapToDto(workspace);
     }
 
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(string userId, CancellationToken ct = default)
     {
-        return await _repository.GetUserWorkspaceDtosAsync(userId, ct);
+        return await _managementRepository.GetUserWorkspaceDtosAsync(userId, ct);
     }
 
     public async Task<WorkspaceDto> GetWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
-        var result = await _repository.GetWorkspaceDtoAndMemberStatusAsync(workspaceId, userId, ct);
+        var result = await _managementRepository.GetWorkspaceDtoAndMemberStatusAsync(workspaceId, userId, ct);
 
         if (result.Dto == null) throw new NotFoundException(nameof(Workspace), workspaceId);
         if (!result.IsMember) throw new ForbiddenAccessException();
@@ -67,7 +74,7 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task DeleteWorkspaceAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
-        var workspace = await _repository.GetByIdAsync(workspaceId, ct);
+        var workspace = await _managementRepository.GetByIdAsync(workspaceId, ct);
         if (workspace == null) throw new NotFoundException(nameof(Workspace), workspaceId);
 
         if (workspace.OwnerId != userId)
@@ -75,23 +82,23 @@ public class WorkspaceService : IWorkspaceService
 
         // Log audit trail for deletion - even if it cascades, having it in the log stream before commit is better than nothing.
         // In a real system we'd log this to a non-cascade table or external audit service.
-        await _repository.LogActivityEventAsync(workspace, userId, ActivityLogType.WorkspaceDeleted, $"Workspace '{workspace.Name}' deleted", ct);
+        await _activityLogRepository.LogActivityEventAsync(workspace, userId, ActivityLogType.WorkspaceDeleted, $"Workspace '{workspace.Name}' deleted", ct);
 
-        await _repository.DeleteAsync(workspace, ct);
-        await _repository.SaveChangesAsync(ct);
+        await _managementRepository.DeleteAsync(workspace, ct);
+        await _managementRepository.SaveChangesAsync(ct);
     }
 
     public async Task<List<ActivityLogDto>> GetActivityLogsAsync(string userId, Guid workspaceId, CancellationToken ct = default)
     {
         await ValidateMemberAccess(userId, workspaceId, ct);
 
-        return await _repository.GetActivityLogDtosAsync(workspaceId, ct);
+        return await _activityLogRepository.GetActivityLogDtosAsync(workspaceId, ct);
     }
 
     // Helpers
     private async Task ValidateMemberAccess(string userId, Guid workspaceId, CancellationToken ct)
     {
-        var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
+        var isMember = await _memberRepository.IsMemberAsync(workspaceId, userId, ct);
         if (!isMember) throw new ForbiddenAccessException();
     }
 

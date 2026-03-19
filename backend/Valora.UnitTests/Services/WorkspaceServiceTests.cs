@@ -19,7 +19,9 @@ public class WorkspaceServiceTests
 {
     private readonly ValoraDbContext _context;
     private readonly WorkspaceService _service;
-    private readonly WorkspaceRepository _repository;
+    private readonly WorkspaceManagementRepository _managementRepository;
+    private readonly WorkspaceMemberRepository _memberRepository;
+    private readonly ActivityLogRepository _activityLogRepository;
 
     public WorkspaceServiceTests()
     {
@@ -28,8 +30,14 @@ public class WorkspaceServiceTests
             .Options;
 
         _context = new ValoraDbContext(options);
-        _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceService(_repository);
+        _managementRepository = new WorkspaceManagementRepository(_context);
+        _memberRepository = new WorkspaceMemberRepository(_context);
+        _activityLogRepository = new ActivityLogRepository(_context);
+
+        _service = new WorkspaceService(
+            _managementRepository,
+            _memberRepository,
+            _activityLogRepository);
     }
 
     [Fact]
