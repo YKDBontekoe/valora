@@ -28,7 +28,7 @@ const item = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring' as const, stiffness: 260, damping: 25 }
+    transition: { type: 'spring' as const, stiffness: 260, damping: 20 }
   }
 } as const;
 
@@ -105,7 +105,7 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
             whileHover={{
               y: -15,
               scale: 1.02,
-              transition: { type: 'spring', stiffness: 350, damping: 25 }
+              transition: { type: 'spring', stiffness: 260, damping: 20 }
             }}
             className={`bg-linear-to-br ${card.gradient} overflow-hidden shadow-premium-xl hover:shadow-2xl rounded-[3rem] transition-all duration-500 border border-brand-100/60 group cursor-default relative hover-border-gradient backdrop-blur-sm`}
           >
@@ -121,11 +121,11 @@ const StatsOverview = ({ stats, loading, error }: StatsOverviewProps) => {
                     </div>
                     <div className={`flex items-center gap-2 px-4 py-2 bg-brand-50 rounded-full border border-brand-100/50 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0`}>
                         <TrendingUp size={14} className={card.color} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${card.color}`}>Live</span>
+                        <span className={`text-[10px] font-black uppercase tracking-ultra-wide ${card.color}`}>Live</span>
                     </div>
                 </div>
                 <div className="flex flex-col gap-3">
-                    <dt className="text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] ml-1">{card.title}</dt>
+                    <dt className="text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide ml-1">{card.title}</dt>
                     <dd className="text-7xl font-black text-brand-900 leading-none tracking-tightest flex items-baseline gap-2">
                       <CountUp value={card.value} />
                     </dd>

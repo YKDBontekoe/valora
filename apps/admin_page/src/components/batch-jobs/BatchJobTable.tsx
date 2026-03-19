@@ -91,76 +91,80 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
           <thead className="bg-brand-50/50 backdrop-blur-md">
             <tr>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('type')}
-                onKeyDown={(e) => handleKeyDown(e, 'type')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100 p-0"
+                role="columnheader"
                 aria-sort={getAriaSort('type')}
-                aria-label="Sort by Definition"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  className="w-full h-full px-12 py-8 flex items-center gap-3 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all cursor-pointer"
+                  onClick={() => toggleSort('type')}
+                  onKeyDown={(e) => handleKeyDown(e, 'type')}
+                  aria-label="Sort by Definition"
+                >
                   Definition
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'type_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'type_desc' ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('target')}
-                onKeyDown={(e) => handleKeyDown(e, 'target')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100 p-0"
+                role="columnheader"
                 aria-sort={getAriaSort('target')}
-                aria-label="Sort by Target"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  className="w-full h-full px-12 py-8 flex items-center gap-3 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all cursor-pointer"
+                  onClick={() => toggleSort('target')}
+                  onKeyDown={(e) => handleKeyDown(e, 'target')}
+                  aria-label="Sort by Target"
+                >
                   Target
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'target_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'target_desc' ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('status')}
-                onKeyDown={(e) => handleKeyDown(e, 'status')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100 p-0"
+                role="columnheader"
                 aria-sort={getAriaSort('status')}
-                aria-label="Sort by Status"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  className="w-full h-full px-12 py-8 flex items-center gap-3 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all cursor-pointer"
+                  onClick={() => toggleSort('status')}
+                  onKeyDown={(e) => handleKeyDown(e, 'status')}
+                  aria-label="Sort by Status"
+                >
                   Status
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'status_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'status_desc' ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
-              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Progress</th>
-              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Context</th>
+              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Progress</th>
+              <th className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Context</th>
               <th
-                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] cursor-pointer group hover:bg-brand-100/50 transition-all duration-500 select-none focus:outline-none focus:ring-4 focus:ring-primary-500/10 border-b border-brand-100"
-                onClick={() => toggleSort('createdAt')}
-                onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
-                tabIndex={0}
-                role="button"
+                className="px-12 py-8 text-left text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide group hover:bg-brand-100/50 transition-all duration-500 select-none border-b border-brand-100 p-0"
+                role="columnheader"
                 aria-sort={getAriaSort('createdAt')}
-                aria-label="Sort by Timestamp"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  className="w-full h-full px-12 py-8 flex items-center gap-3 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all cursor-pointer"
+                  onClick={() => toggleSort('createdAt')}
+                  onKeyDown={(e) => handleKeyDown(e, 'createdAt')}
+                  aria-label="Sort by Timestamp"
+                >
                   Timestamp
                   <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     <ArrowUp className={`w-3.5 h-3.5 transition-colors ${sortBy === 'createdAt_asc' ? 'text-primary-600' : 'text-brand-200'}`} />
                     <ArrowDown className={`w-3.5 h-3.5 transition-colors ${sortBy === 'createdAt_desc' || (!sortBy) ? 'text-primary-600' : 'text-brand-200'}`} />
                   </div>
-                </div>
+                </button>
               </th>
-              <th className="px-12 py-8 text-right text-[11px] font-black text-brand-400 uppercase tracking-[0.3em] border-b border-brand-100">Action</th>
+              <th className="px-12 py-8 text-right text-[11px] font-black text-brand-400 uppercase tracking-ultra-wide border-b border-brand-100">Action</th>
             </tr>
           </thead>
           <motion.tbody
@@ -221,7 +225,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                     <motion.tr
                       key={job.id}
                       variants={rowVariants}
-                      whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { duration: 0.3 } }}
+                      whileHover={{ x: 12, backgroundColor: 'var(--color-brand-50)', transition: { type: 'spring', stiffness: 260, damping: 20 } }}
                       className="group cursor-pointer relative transition-colors duration-500"
                       onClick={() => openDetails(job.id)}
                     >
@@ -233,7 +237,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                                 <Activity size={12} className="text-primary-500" />
                             </div>
                           </div>
-                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-[0.2em]">ID: {job.id.slice(0, 12)}</span>
+                          <span className="text-[10px] text-brand-300 font-black uppercase tracking-ultra-wide">ID: {job.id.slice(0, 12)}</span>
                         </div>
                       </td>
                       <td className="px-12 py-10 whitespace-nowrap">
@@ -266,7 +270,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
                             </motion.div>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-brand-400 font-black tracking-[0.25em]">{clampedProgress}% SYNCED</span>
+                            <span className="text-[10px] text-brand-400 font-black tracking-ultra-wide">{clampedProgress}% SYNCED</span>
                             {job.status === 'Processing' && (
                                 <div className="flex gap-1">
                                     {[1, 2, 3].map(i => (
@@ -325,7 +329,7 @@ export const BatchJobTable: React.FC<BatchJobTableProps> = ({
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-brand-100 shadow-sm">
                 <Sparkles size={18} className="text-primary-500" />
             </div>
-            <div className="text-[12px] font-black text-brand-400 uppercase tracking-[0.3em]">
+            <div className="text-[12px] font-black text-brand-400 uppercase tracking-ultra-wide">
                 Registry Page <span className="text-brand-900">{page}</span> <span className="mx-4 text-brand-200">/</span> <span className="text-brand-900">{safeTotalPages}</span>
             </div>
         </div>
