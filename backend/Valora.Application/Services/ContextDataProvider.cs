@@ -34,6 +34,19 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Fan-Out Performance & Parallelism</strong><br/>
+    /// Instead of querying sources sequentially, which would result in cumulative latency (e.g., 500ms + 400ms + 600ms = 1500ms),
+    /// we dispatch all network requests simultaneously via <c>Task.WhenAll</c>.
+    /// This "Fan-Out" pattern ensures the total response time is constrained by the slowest single external dependency rather than their sum.
+    /// </para>
+    /// <para>
+    /// <strong>Design Decision: Defensive Programming via Safe Wrappers</strong><br/>
+    /// Each external client call is wrapped in <see cref="TryGetSourceAsync{T}"/>.
+    /// If an API (like Luchtmeetnet) undergoes maintenance, the other data sources will still succeed.
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
@@ -66,6 +79,14 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Wraps an external API call in a try-catch block to ensure partial success.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision: Resilience vs. Correctness</strong><br/>
+    /// To implement the "Partial Failure" standard for the report, exceptions from HTTP APIs are swallowed here
+    /// and converted into warnings. However, <see cref="OperationCanceledException"/> (usually triggered by client disconnect)
+    /// is explicitly re-thrown. This ensures that if the user navigates away, we don't waste backend resources continuing processing.
+    /// </para>
+    /// </remarks>
     private async Task<T?> TryGetSourceAsync<T>(
         string sourceName,
         Func<CancellationToken, Task<T?>> sourceCall,

@@ -58,7 +58,17 @@ export JWT_SECRET="YourStrongSecretKeyHere_MustBeAtLeast32CharsLong!"
 # Run the API
 dotnet run --project Valora.Api
 ```
+
 *Verify: Open `http://localhost:5253/api/health` in your browser. You should see `{"status":"healthy", "timestamp": "..."}`.*
+
+**Exploring the API:**
+When running locally, an interactive Swagger/OpenAPI UI is available at `http://localhost:5253/swagger` for exploring and testing endpoints.
+
+**Running Tests:**
+To verify your local environment, run the backend test suite:
+```bash
+dotnet test backend/Valora.slnx
+```
 
 ### 3. Configure & Run Mobile App
 The Flutter app is the primary interface for users.
@@ -94,7 +104,9 @@ npm run dev
 Valora's architecture is specifically designed to act as an aggregation layer for public data, rather than a scraping pipeline. It is built on two primary structural pillars:
 
 1.  **Strict Clean Architecture**: The backend strictly segregates concerns. External integrations (EF Core, HTTP clients) live in `Infrastructure`, HTTP routing lives in `Api`, and pure business logic lives in `Domain` and `Application`.
-2.  **Fan-Out / Fan-In Fetching Pattern**: Instead of persisting millions of real estate listings, the system queries external providers in parallel only when a user requests a report.
+    *   *Constraint:* The Domain layer must never depend on Infrastructure. The API layer is restricted to routing and validation.
+    *   *Design Principle:* Strict adherence to the Interface Segregation Principle (ISP) and Single Responsibility Principle (SRP) to avoid monolithic 'god' repositories.
+2.  **Fan-Out / Fan-In Fetching Pattern**: Instead of persisting millions of real estate listings, the system queries external providers in parallel only when a user requests a report. This ensures high performance, resilience (tolerating partial failures), and real-time data freshness without storing stale listing data.
 
 ### System Context & Data Flow
 
@@ -233,13 +245,28 @@ sequenceDiagram
 
 ## 📖 API Reference
 
-The API provides core functionalities to access and manage Valora's context data. Below is a brief summary of key endpoints. For complete details, see the **[API Reference](docs/api-reference.md)**.
+The API provides core functionalities to access and manage Valora's context data. Below is a detailed summary of key endpoints and their expected payloads. For complete details, see the **[API Reference](docs/api-reference.md)**.
 
-- **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
-- **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
-- **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
-- **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
-- **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
+### Authentication Endpoints
+- **`POST /api/auth/login`**: Authenticates a user.
+  - **Request**: `{ "email": "...", "password": "..." }`
+  - **Response**: Returns a JWT access token and refresh token upon success.
+- **`POST /api/auth/register`**: Registers a new user account.
+
+### Context Report Endpoints
+- **`POST /api/context/report`**: Generates a real-time context report using the Fan-Out pattern.
+  - **Request**: `{ "input": "Amsterdam", "radiusMeters": 1000 }`
+  - **Response**: Returns a comprehensive `ContextReportDto` containing metrics (demographics, air quality, amenities) and normalized scores.
+
+### Workspace & Property Endpoints
+- **`GET /api/workspaces`**: Retrieves all workspaces for the authenticated user.
+- **`POST /api/workspaces`**: Creates a new workspace.
+- **`POST /api/workspaces/{id}/properties`**: Saves a property to the workspace.
+
+### Admin & Batch Job Endpoints
+- **`GET /api/admin/users`**: Lists all registered users (Admin only).
+- **`POST /api/admin/jobs`**: Triggers a background batch job (e.g., City Ingestion).
+  - **Request**: `{ "type": "CityIngestion", "target": "Amsterdam" }`
 
 ---
 
@@ -277,6 +304,8 @@ The API provides core functionalities to access and manage Valora's context data
     - Explains the API request lifecycle from Flutter -> API -> PDOK/CBS/OSM -> Report.
 - **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)** (Includes Mermaid Diagram):
     - Walkthrough of the data flow from API request down to database persistence (e.g., User Registration).
+- **[Data Flow: Authentication](docs/onboarding-auth-flow.md)** (Includes Mermaid Diagram):
+    - Walkthrough of the data flow from API login request down to database persistence, explaining how Valora issues and validates JWT tokens.
 - **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-guide.md)** (Includes Mermaid Diagram):
     - Comprehensive guide tracing the exact path a write request takes in Valora, passing through Clean Architecture to PostgreSQL.
 - **[Data Flow: Map & Rasterization](docs/onboarding-map-flow.md)** (Includes Mermaid Diagram):
