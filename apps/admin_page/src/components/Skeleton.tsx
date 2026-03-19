@@ -30,7 +30,7 @@ const Skeleton = ({
           x: ['-100%', '100%']
         }}
         transition={{
-          duration: 2.5,
+          duration: 3,
           repeat: Infinity,
           ease: "easeInOut"
         }}
