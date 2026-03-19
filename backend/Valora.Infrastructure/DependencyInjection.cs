@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Application.Enrichment;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services.AppServices;
 using Valora.Infrastructure.Enrichment;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;
@@ -34,6 +34,26 @@ public static class DependencyInjection
     {
         // Ensure Logging is available for infrastructure services even in non-web contexts
         services.AddLogging();
+
+        // App Services
+        services.AddScoped<IAuthService, Valora.Infrastructure.Services.AppServices.AuthService>();
+        services.AddScoped<IAdminService, Valora.Infrastructure.Services.AppServices.AdminService>();
+        services.AddScoped<INotificationService, Valora.Infrastructure.Services.AppServices.NotificationService>();
+        services.AddScoped<IContextReportService, Valora.Infrastructure.Services.AppServices.ContextReportService>();
+        services.AddScoped<IContextAnalysisService, Valora.Infrastructure.Services.AppServices.ContextAnalysisService>();
+        services.AddScoped<IUserAiProfileService, Valora.Infrastructure.Services.AppServices.UserAiProfileService>();
+        services.AddScoped<IContextDataProvider, Valora.Infrastructure.Services.AppServices.ContextDataProvider>();
+        services.AddScoped<IMapService, Valora.Infrastructure.Services.AppServices.MapService>();
+        services.AddScoped<IBatchJobService, Valora.Infrastructure.Services.AppServices.BatchJobService>();
+        services.AddScoped<IBatchJobExecutor, Valora.Infrastructure.Services.AppServices.BatchJobExecutor>();
+        services.AddScoped<IWorkspaceService, Valora.Infrastructure.Services.AppServices.WorkspaceService>();
+        services.AddScoped<IWorkspaceMemberService, Valora.Infrastructure.Services.AppServices.WorkspaceMemberService>();
+        services.AddScoped<IWorkspacePropertyService, Valora.Infrastructure.Services.AppServices.WorkspacePropertyService>();
+
+        // Batch Job Processors
+        services.AddScoped<IBatchJobProcessor, Valora.Infrastructure.Services.AppServices.BatchJobs.CityIngestionJobProcessor>();
+        services.AddScoped<IBatchJobProcessor, Valora.Infrastructure.Services.AppServices.BatchJobs.MapGenerationJobProcessor>();
+        services.AddScoped<IBatchJobProcessor, Valora.Infrastructure.Services.AppServices.BatchJobs.AllCitiesIngestionJobProcessor>();
 
         var rawConnectionString = configuration["DATABASE_URL"] ?? configuration.GetConnectionString("DefaultConnection");
         var connectionString = ConnectionStringParser.BuildConnectionString(rawConnectionString);
