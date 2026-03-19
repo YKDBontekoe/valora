@@ -21,16 +21,19 @@ public class NotificationEventHandlers :
     IEventHandler<AiAnalysisCompletedEvent>
 {
     private readonly INotificationService _notificationService;
-    private readonly IWorkspaceRepository _workspaceRepository;
+    private readonly IWorkspaceMemberRepository _memberRepository;
+    private readonly IWorkspaceManagementRepository _managementRepository;
     private readonly ILogger<NotificationEventHandlers> _logger;
 
     public NotificationEventHandlers(
         INotificationService notificationService,
-        IWorkspaceRepository workspaceRepository,
+        IWorkspaceMemberRepository memberRepository,
+        IWorkspaceManagementRepository managementRepository,
         ILogger<NotificationEventHandlers> logger)
     {
         _notificationService = notificationService;
-        _workspaceRepository = workspaceRepository;
+        _memberRepository = memberRepository;
+        _managementRepository = managementRepository;
         _logger = logger;
     }
 
@@ -64,8 +67,8 @@ public class NotificationEventHandlers :
     public async Task HandleAsync(CommentAddedEvent domainEvent, CancellationToken cancellationToken)
     {
         // Notify all workspace members except the one who added the comment
-        var members = await _workspaceRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
-        var workspace = await _workspaceRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
+        var members = await _memberRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
+        var workspace = await _managementRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
 
         foreach (var member in members)
         {
@@ -84,8 +87,8 @@ public class NotificationEventHandlers :
 
     public async Task HandleAsync(ReportSavedToWorkspaceEvent domainEvent, CancellationToken cancellationToken)
     {
-        var members = await _workspaceRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
-        var workspace = await _workspaceRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
+        var members = await _memberRepository.GetMembersAsync(domainEvent.WorkspaceId, cancellationToken);
+        var workspace = await _managementRepository.GetByIdAsync(domainEvent.WorkspaceId, cancellationToken);
 
         foreach (var member in members)
         {

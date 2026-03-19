@@ -57,7 +57,11 @@ public static class DependencyInjection
         services.AddScoped<IBatchJobRepository, BatchJobRepository>();
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
         services.AddScoped<IUserAiProfileRepository, UserAiProfileRepository>();
-        services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
+        services.AddScoped<IWorkspaceManagementRepository, WorkspaceManagementRepository>();
+        services.AddScoped<IWorkspaceMemberRepository, WorkspaceMemberRepository>();
+        services.AddScoped<ISavedPropertyRepository, SavedPropertyRepository>();
+        services.AddScoped<IPropertyRepository, PropertyRepository>();
+        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 
         // Event Dispatcher and Handlers
         services.AddScoped<IEventDispatcher, EventDispatcher>();

@@ -17,7 +17,9 @@ public class WorkspaceMemberServiceTests
     private readonly ValoraDbContext _context;
     private readonly Mock<IIdentityService> _identityServiceMock;
     private readonly WorkspaceMemberService _service;
-    private readonly WorkspaceRepository _repository;
+    private readonly WorkspaceManagementRepository _managementRepository;
+    private readonly WorkspaceMemberRepository _memberRepository;
+    private readonly ActivityLogRepository _activityLogRepository;
 
     public WorkspaceMemberServiceTests()
     {
@@ -27,8 +29,15 @@ public class WorkspaceMemberServiceTests
 
         _context = new ValoraDbContext(options);
         _identityServiceMock = new Mock<IIdentityService>();
-        _repository = new WorkspaceRepository(_context);
-        _service = new WorkspaceMemberService(_repository, _identityServiceMock.Object, _eventDispatcherMock.Object);
+        _managementRepository = new WorkspaceManagementRepository(_context);
+        _memberRepository = new WorkspaceMemberRepository(_context);
+        _activityLogRepository = new ActivityLogRepository(_context);
+        _service = new WorkspaceMemberService(
+            _managementRepository,
+            _memberRepository,
+            _activityLogRepository,
+            _identityServiceMock.Object,
+            _eventDispatcherMock.Object);
     }
 
     [Fact]
