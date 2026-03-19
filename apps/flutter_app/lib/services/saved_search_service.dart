@@ -13,16 +13,12 @@ class SavedSearchService {
   }
 
   Future<SavedSearch> saveSearch(String query, int radiusMeters) async {
-    // Check if already exists to update timestamp or prevent dupes?
-    // Let's prevent duplicates for same query+radius
-    final current = await _repository.getSavedSearches();
-    final existingIndex = current.indexWhere(
-        (s) => s.query.toLowerCase() == query.toLowerCase() && s.radiusMeters == radiusMeters);
+    final savedSearches = await _repository.getSavedSearches();
+    final duplicateSearchIndex = savedSearches.indexWhere(
+        (search) => search.query.toLowerCase() == query.toLowerCase() && search.radiusMeters == radiusMeters);
 
-    if (existingIndex != -1) {
-      final existing = current[existingIndex];
-      // Update createdAt to bump to top? Or just return existing?
-      // Let's return existing for now, maybe user wants to toggle alert on it.
+    if (duplicateSearchIndex != -1) {
+      final existing = savedSearches[duplicateSearchIndex];
       return existing;
     }
 
@@ -44,7 +40,7 @@ class SavedSearchService {
 
   Future<void> toggleAlert(String id) async {
     final searches = await _repository.getSavedSearches();
-    final index = searches.indexWhere((s) => s.id == id);
+    final index = searches.indexWhere((search) => search.id == id);
     if (index != -1) {
       final search = searches[index];
       final updated = search.copyWith(isAlertEnabled: !search.isAlertEnabled);

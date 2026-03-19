@@ -38,10 +38,7 @@ class SearchHistoryService {
       history.removeRange(_maxHistory, history.length);
     }
 
-    await prefs.setString(
-      _key,
-      json.encode(history.map((e) => e.toJson()).toList()),
-    );
+    await _saveHistory(prefs, history);
   }
 
   Future<void> removeFromHistory(String query) async {
@@ -50,6 +47,10 @@ class SearchHistoryService {
 
     history.removeWhere((item) => item.query == query);
 
+    await _saveHistory(prefs, history);
+  }
+
+  Future<void> _saveHistory(SharedPreferences prefs, List<SearchHistoryItem> history) async {
     await prefs.setString(
       _key,
       json.encode(history.map((e) => e.toJson()).toList()),

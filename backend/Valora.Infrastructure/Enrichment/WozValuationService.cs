@@ -37,46 +37,9 @@ public class WozValuationService : IWozValuationService
 
         try
         {
-            // 0. Initialize Session (Cookies)
-            // WOZ-waardeloket requires a session cookie which is set on the main page
-            var homeRequest = new HttpRequestMessage(HttpMethod.Get, "https://www.wozwaardeloket.nl/");
-            AddWozHeaders(homeRequest);
+            await InitializeSessionAsync(cancellationToken);
 
-            using var homeResponse = await _httpClient.SendAsync(homeRequest, cancellationToken);
-            if (!homeResponse.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Failed to initialize WOZ session. Status: {Status}, Reason: {Reason}",
-                    homeResponse.StatusCode, homeResponse.ReasonPhrase);
-            }
-
-            long? targetId = null;
-
-            // 1. Get Target ID (either from parameter or suggest API)
-            if (!string.IsNullOrEmpty(nummeraanduidingId) && long.TryParse(nummeraanduidingId, out var parsedId))
-            {
-                targetId = parsedId;
-            }
-            else
-            {
-                // Fallback to Suggest API
-                // Format: "{City} {Street} {Number}" seems more reliable than "{Street} {Number} {City}"
-                var query = $"{city} {street} {number}{suffix}".Trim();
-                var suggestUrl = $"https://api.kadaster.nl/lvwoz/wozwaardeloket-api/v1/suggest?q={Uri.EscapeDataString(query)}";
-
-                var suggestRequest = new HttpRequestMessage(HttpMethod.Get, suggestUrl);
-                AddWozHeaders(suggestRequest);
-
-                using var suggestResponse = await _httpClient.SendAsync(suggestRequest, cancellationToken);
-                suggestResponse.EnsureSuccessStatusCode();
-
-                var suggestResult = await suggestResponse.Content.ReadFromJsonAsync<WozSuggestResponse>(cancellationToken: cancellationToken);
-                var match = suggestResult?.Docs?.FirstOrDefault();
-
-                if (match?.AdresseerbaarObjectId != null)
-                {
-                    targetId = match.AdresseerbaarObjectId;
-                }
-            }
+            var targetId = await GetTargetIdAsync(street, number, suffix, city, nummeraanduidingId, cancellationToken);
 
             if (targetId == null)
             {
@@ -84,35 +47,13 @@ public class WozValuationService : IWozValuationService
                 return null;
             }
 
-            // 2. Fetch the WOZ value using the Object Number
-            // Note: The API endpoint says 'nummeraanduiding', but observation shows it uses the nummeraanduiding_id (BAG)
-            var detailsUrl = $"https://api.kadaster.nl/lvwoz/wozwaardeloket-api/v1/wozwaarde/nummeraanduiding/{targetId}";
-            var detailsRequest = new HttpRequestMessage(HttpMethod.Get, detailsUrl);
-            AddWozHeaders(detailsRequest);
+            var result = await FetchWozValuationByTargetIdAsync(targetId.Value, cancellationToken);
 
-            using var detailsResponse = await _httpClient.SendAsync(detailsRequest, cancellationToken);
-            detailsResponse.EnsureSuccessStatusCode();
-
-            var detailsResult = await detailsResponse.Content.ReadFromJsonAsync<WozValuationResponse>(cancellationToken: cancellationToken);
-
-            // Get the latest valuation
-            var latestValuation = detailsResult?.WozWaarden
-                ?.MaxBy(w => w.Peildatum);
-
-            if (latestValuation == null)
+            if (result != null)
             {
-                _logger.LogWarning("No valuation found for WOZ object {TargetId}", targetId);
-                return null;
+                _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
             }
 
-            var result = new WozValuationDto(
-                Value: latestValuation.VastgesteldeWaarde,
-                ReferenceDate: latestValuation.Peildatum,
-                Source: "WOZ-waardeloket"
-            );
-
-            // Cache - be polite to the source
-            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(_options.CbsCacheMinutes));
             return result;
         }
         catch (HttpRequestException ex)
@@ -134,6 +75,67 @@ public class WozValuationService : IWozValuationService
             _logger.LogError(ex, "Failed to scrape WOZ value for property (Hash: {CacheKey})", cacheKey);
             return null;
         }
+    }
+
+    private async Task InitializeSessionAsync(CancellationToken cancellationToken)
+    {
+        var homeRequest = new HttpRequestMessage(HttpMethod.Get, "https://www.wozwaardeloket.nl/");
+        AddWozHeaders(homeRequest);
+
+        using var homeResponse = await _httpClient.SendAsync(homeRequest, cancellationToken);
+        if (!homeResponse.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Failed to initialize WOZ session. Status: {Status}, Reason: {Reason}",
+                homeResponse.StatusCode, homeResponse.ReasonPhrase);
+        }
+    }
+
+    private async Task<long?> GetTargetIdAsync(string street, int number, string? suffix, string city, string? nummeraanduidingId, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(nummeraanduidingId) && long.TryParse(nummeraanduidingId, out var parsedId))
+        {
+            return parsedId;
+        }
+
+        var query = $"{city} {street} {number}{suffix}".Trim();
+        var suggestUrl = $"https://api.kadaster.nl/lvwoz/wozwaardeloket-api/v1/suggest?q={Uri.EscapeDataString(query)}";
+
+        var suggestRequest = new HttpRequestMessage(HttpMethod.Get, suggestUrl);
+        AddWozHeaders(suggestRequest);
+
+        using var suggestResponse = await _httpClient.SendAsync(suggestRequest, cancellationToken);
+        suggestResponse.EnsureSuccessStatusCode();
+
+        var suggestResult = await suggestResponse.Content.ReadFromJsonAsync<WozSuggestResponse>(cancellationToken: cancellationToken);
+        var match = suggestResult?.Docs?.FirstOrDefault();
+
+        return match?.AdresseerbaarObjectId;
+    }
+
+    private async Task<WozValuationDto?> FetchWozValuationByTargetIdAsync(long targetId, CancellationToken cancellationToken)
+    {
+        var detailsUrl = $"https://api.kadaster.nl/lvwoz/wozwaardeloket-api/v1/wozwaarde/nummeraanduiding/{targetId}";
+        var detailsRequest = new HttpRequestMessage(HttpMethod.Get, detailsUrl);
+        AddWozHeaders(detailsRequest);
+
+        using var detailsResponse = await _httpClient.SendAsync(detailsRequest, cancellationToken);
+        detailsResponse.EnsureSuccessStatusCode();
+
+        var detailsResult = await detailsResponse.Content.ReadFromJsonAsync<WozValuationResponse>(cancellationToken: cancellationToken);
+
+        var latestValuation = detailsResult?.WozWaarden?.MaxBy(w => w.Peildatum);
+
+        if (latestValuation == null)
+        {
+            _logger.LogWarning("No valuation found for WOZ object {TargetId}", targetId);
+            return null;
+        }
+
+        return new WozValuationDto(
+            Value: latestValuation.VastgesteldeWaarde,
+            ReferenceDate: latestValuation.Peildatum,
+            Source: "WOZ-waardeloket"
+        );
     }
 
     private static void AddWozHeaders(HttpRequestMessage request)
