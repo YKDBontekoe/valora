@@ -4,6 +4,7 @@ import { adminService } from '../../services/api';
 import { showToast } from '../../services/toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ConfirmationDialog from '../ConfirmationDialog';
 
 interface QuickActionsProps {
   onRefreshStats: () => void;
@@ -11,9 +12,25 @@ interface QuickActionsProps {
 
 const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
   const [retrying, setRetrying] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
 
+  const handleRefreshClick = async () => {
+    setRefreshing(true);
+    try {
+      await onRefreshStats();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const confirmRetry = () => {
+    setShowConfirmation(true);
+  };
+
   const handleRetryFailedJobs = async () => {
+    setShowConfirmation(false);
     setRetrying(true);
     try {
       const response = await adminService.getJobs(1, 100, 'Failed');
@@ -25,15 +42,17 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         return;
       }
 
-      let successCount = 0;
-      for (const job of failedJobs) {
-        try {
-          await adminService.retryJob(job.id);
-          successCount++;
-        } catch (e) {
-          console.error(`Failed to retry job ${job.id}`, e);
+      const results = await Promise.allSettled(
+        failedJobs.map(job => adminService.retryJob(job.id))
+      );
+
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to retry job ${failedJobs[index].id}`, result.reason);
         }
-      }
+      });
 
       showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
       onRefreshStats();
@@ -50,7 +69,8 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
           title: 'Sync Cluster',
           description: 'Force a full refresh of system metrics.',
           icon: RefreshCw,
-          onClick: onRefreshStats,
+          onClick: handleRefreshClick,
+          isLoading: refreshing,
           color: 'text-primary-600',
           bg: 'bg-primary-50',
           accent: 'bg-primary-500'
@@ -59,7 +79,7 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
           title: 'Retry Pipeline',
           description: 'Re-queue all currently failed batch jobs.',
           icon: PlayCircle,
-          onClick: handleRetryFailedJobs,
+          onClick: confirmRetry,
           isLoading: retrying,
           color: 'text-warning-600',
           bg: 'bg-warning-50',
@@ -121,6 +141,16 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                 </motion.button>
             ))}
         </div>
+
+        <ConfirmationDialog
+            isOpen={showConfirmation}
+            onClose={() => setShowConfirmation(false)}
+            onConfirm={handleRetryFailedJobs}
+            title="Retry Failed Jobs"
+            message="Are you sure you want to re-queue all failed jobs? This may impact system performance."
+            confirmLabel="Retry Jobs"
+            isDestructive={false}
+        />
     </div>
   );
 };
