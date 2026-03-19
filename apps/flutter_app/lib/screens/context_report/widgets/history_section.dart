@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../providers/context_report_provider.dart';
 
 class HistorySection extends StatelessWidget {
@@ -25,7 +26,7 @@ class HistorySection extends StatelessWidget {
       builder: (context, history, _) {
         if (history.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+          padding: const EdgeInsets.fromLTRB(ValoraSpacing.lg, ValoraSpacing.xl, ValoraSpacing.lg, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -57,7 +58,7 @@ class HistorySection extends StatelessWidget {
                             provider.generate(item.query);
                           },
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                        horizontal: ValoraSpacing.lg, vertical: ValoraSpacing.md),
                     child: Row(
                       children: [
                         Container(

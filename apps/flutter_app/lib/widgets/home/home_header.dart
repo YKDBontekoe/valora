@@ -134,20 +134,21 @@ class _HomeHeaderState extends State<HomeHeader> {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: ValoraColors.primary.withValues(alpha: 0.1),
+                      color: isDark ? ValoraColors.surfaceDark : ValoraColors.surfaceLight,
                       borderRadius: BorderRadius.circular(
                         ValoraSpacing.radiusLg,
                       ),
+                      boxShadow: isDark ? ValoraShadows.smDark : ValoraShadows.sm,
                       border: Border.all(
-                        color: ValoraColors.primary.withValues(alpha: 0.2),
+                        color: isDark ? ValoraColors.neutral700 : ValoraColors.neutral200,
                       ),
                     ),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.tune_rounded,
-                          color: ValoraColors.primary,
+                          color: isDark ? ValoraColors.neutral300 : ValoraColors.neutral700,
                         ),
                         if (widget.activeFilterCount > 0)
                           Positioned(

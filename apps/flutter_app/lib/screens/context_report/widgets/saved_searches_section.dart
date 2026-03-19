@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/context_report_provider.dart';
 import '../../../models/saved_search.dart';
@@ -26,7 +27,7 @@ class SavedSearchesSection extends StatelessWidget {
       builder: (context, savedSearches, _) {
         if (savedSearches.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0), // Adjust padding as needed
+          padding: const EdgeInsets.fromLTRB(ValoraSpacing.lg, 0, ValoraSpacing.lg, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -46,7 +47,7 @@ class SavedSearchesSection extends StatelessWidget {
                             provider.generate(item.query);
                           },
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                        horizontal: ValoraSpacing.lg, vertical: ValoraSpacing.md),
                     child: Row(
                       children: [
                         Container(
