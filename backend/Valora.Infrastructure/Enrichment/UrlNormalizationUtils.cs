@@ -27,33 +27,46 @@ public static class UrlNormalizationUtils
                 return queryHint;
             }
 
-            var segment = uri.Segments
-                .Select(s => s.Trim('/'))
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .LastOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(segment))
+            if (TryExtractAddressFromPath(uri, out var pathHint))
             {
-                var normalizedSegment = Uri.UnescapeDataString(segment)
-                    .Replace('-', ' ')
-                    .Replace('_', ' ')
-                    .Trim();
-
-                // Funda slugs usually contain address text and are high-signal inputs.
-                if (uri.Host.Contains("funda.nl", StringComparison.OrdinalIgnoreCase))
-                {
-                    return normalizedSegment;
-                }
-
-                // For non-Funda URLs, prefer a textual slug over passing the raw URL to PDOK.
-                if (normalizedSegment.Any(char.IsLetter))
-                {
-                    return normalizedSegment;
-                }
+                return pathHint;
             }
         }
 
         return input.Trim();
+    }
+
+    private static bool TryExtractAddressFromPath(Uri uri, out string value)
+    {
+        value = string.Empty;
+        var segment = uri.Segments
+            .Select(s => s.Trim('/'))
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .LastOrDefault();
+
+        if (string.IsNullOrWhiteSpace(segment))
+        {
+            return false;
+        }
+
+        var normalizedSegment = Uri.UnescapeDataString(segment)
+            .Replace('-', ' ')
+            .Replace('_', ' ')
+            .Trim();
+
+        if (uri.Host.Contains("funda.nl", StringComparison.OrdinalIgnoreCase))
+        {
+            value = normalizedSegment;
+            return true;
+        }
+
+        if (normalizedSegment.Any(char.IsLetter))
+        {
+            value = normalizedSegment;
+            return true;
+        }
+
+        return false;
     }
 
     private static bool TryExtractAddressFromQuery(Uri uri, out string value)
@@ -72,22 +85,22 @@ public static class UrlNormalizationUtils
 
         foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
-            var kv = pair.Split('=', 2);
-            if (kv.Length != 2)
+            var keyValuePair = pair.Split('=', 2);
+            if (keyValuePair.Length != 2)
             {
                 continue;
             }
 
-            var key = Uri.UnescapeDataString(kv[0]);
+            var key = Uri.UnescapeDataString(keyValuePair[0]);
             if (!candidateKeys.Contains(key))
             {
                 continue;
             }
 
-            var decoded = Uri.UnescapeDataString(kv[1]).Replace('+', ' ').Trim();
-            if (decoded.Any(char.IsLetterOrDigit))
+            var decodedValue = Uri.UnescapeDataString(keyValuePair[1]).Replace('+', ' ').Trim();
+            if (decodedValue.Any(char.IsLetterOrDigit))
             {
-                value = decoded;
+                value = decodedValue;
                 return true;
             }
         }
