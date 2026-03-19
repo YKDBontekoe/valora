@@ -92,6 +92,100 @@ public class AdminEndpointTests : BaseIntegrationTest
         zetaIndex.ShouldBeLessThan(alphaIndex);
     }
 
+    [Fact]
+    public async Task DeleteUser_ReturnsNoContent_WhenValidAdmin()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        string victimId;
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var victim = new ApplicationUser { UserName = "victim", Email = "victim@test.com" };
+            await userManager.CreateAsync(victim, "Password123!");
+            victimId = victim.Id;
+        }
+
+        // Act
+        var response = await Client.DeleteAsync($"/api/admin/users/{victimId}");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        // Verify user deleted in DB
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var user = await userManager.FindByIdAsync(victimId);
+            user.ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task DeleteUser_ReturnsForbidden_WhenDeletingSelf()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+        string adminId;
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+            adminId = adminUser!.Id;
+        }
+
+        // Act
+        var response = await Client.DeleteAsync($"/api/admin/users/{adminId}");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task DeleteUser_ReturnsNotFound_WhenUserDoesNotExist()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        // Act
+        var response = await Client.DeleteAsync($"/api/admin/users/{Guid.NewGuid()}");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetStats_ReturnsStats_WhenAdmin()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/stats");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var stats = await response.Content.ReadFromJsonAsync<AdminStatsDto>();
+        stats.ShouldNotBeNull();
+        stats!.TotalUsers.ShouldBeGreaterThanOrEqualTo(1);
+    }
+
+    [Fact]
+    public async Task GetDatasetStatus_ReturnsStatus_WhenAdmin()
+    {
+        // Arrange
+        await AuthenticateAsAdminAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/admin/dataset/status");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var status = await response.Content.ReadFromJsonAsync<List<DatasetStatusDto>>();
+        status.ShouldNotBeNull();
+    }
+
     private class UsersResponse
     {
         public List<AdminUserDto> Items { get; set; } = new();
