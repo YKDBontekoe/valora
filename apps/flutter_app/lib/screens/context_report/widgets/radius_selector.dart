@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../providers/context_report_provider.dart';
 
 class RadiusSelector extends StatelessWidget {
@@ -12,8 +13,8 @@ class RadiusSelector extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ValoraCard(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      onTap: null, // Keep card interactive setup
+      padding: const EdgeInsets.fromLTRB(ValoraSpacing.lg, ValoraSpacing.md, ValoraSpacing.lg, ValoraSpacing.sm),
+      onTap: () {}, // Enable hover/press animations
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/valora_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_typography.dart';
 import 'home_header.dart';
 
@@ -42,7 +43,7 @@ class HomeSliverAppBar extends StatelessWidget {
         children: [
           Text(
             'Valora',
-            style: ValoraTypography.headlineMedium.copyWith(
+            style: ValoraTypography.displaySmall.copyWith(
               color: ValoraColors.primary,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
@@ -109,17 +110,16 @@ class HomeSliverAppBar extends StatelessWidget {
                         child: Center(
                           child: Text(
                             userInitials ?? '?',
-                            style: const TextStyle(
+                            style: ValoraTypography.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-              ),
+              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
             ],
           ),
         ],
