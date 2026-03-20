@@ -62,7 +62,7 @@ const Layout = () => {
                 <h1 className="text-2xl font-black text-brand-900 tracking-tight leading-none">Valora</h1>
                 <div className="flex items-center gap-2 mt-1.5">
                     <Sparkles size={10} className="text-primary-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.25em]">Admin Console</span>
+                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-ultra-wide">Admin Console</span>
                 </div>
             </div>
           </Link>
@@ -72,7 +72,7 @@ const Layout = () => {
           {navGroups.map((group) => (
             hasAccess(group.requiredRoles) && (
               <div key={group.title} className="space-y-4">
-                <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mb-4">
+                <h3 className="px-4 text-[10px] font-black text-brand-300 uppercase tracking-ultra-wide mb-4">
                   {group.title}
                 </h3>
                 <div className="space-y-2">
