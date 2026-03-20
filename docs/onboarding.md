@@ -89,6 +89,33 @@ curl http://localhost:5001/api/health
 
 To understand how your request was processed, read the **[Data Flow Deep Dive](onboarding-data-flow.md)**.
 
+### Data Flow: API Request to Database Persistence
+When a user writes data (like creating a new workspace), Valora enforces strict Clean Architecture layers. Here is the visual flow of a persistence request:
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App (Flutter/Web)
+    participant API as Valora.Api (Endpoints)
+    participant App as Valora.Application (Service)
+    participant Domain as Valora.Domain (Entity)
+    participant Repo as Valora.Infrastructure (Repository)
+    participant DB as PostgreSQL
+
+    Client->>API: POST /api/workspaces
+    API->>API: Validate Request
+    API->>App: IWorkspaceService.CreateWorkspaceAsync
+    App->>Domain: Create Workspace Entity
+    Domain-->>App: Workspace Instance
+    App->>Repo: AddAsync(Workspace) & SaveChangesAsync()
+    Repo->>DB: INSERT INTO "Workspaces"
+    DB-->>Repo: Acknowledge Insert
+    Repo-->>App: Completed
+    App-->>API: Map to WorkspaceDto
+    API-->>Client: 201 Created
+```
+
+For more in-depth tracing, please see the complete **[API to DB Lifecycle Guide](onboarding-api-to-db-persistence.md)**.
+
 ### Product Mental Model
 - **Valora is not a scraper.** It does not copy listing photos or descriptions.
 - **Input is a location hint.** A URL is parsed only to find the address.

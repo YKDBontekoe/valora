@@ -6,6 +6,8 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 
 > **Valora is NOT a scraper.** It does not copy listing photos or descriptions. It enriches location data with public context.
 
+Welcome to the repository! Our goal is to ensure you understand exactly how Valora works within 10 minutes. This README provides a clear architecture overview, quick-start setup instructions, and an API reference to get you up to speed immediately.
+
 ---
 
 ## Table of Contents
@@ -158,7 +160,31 @@ graph TD
     API -->|5. Response| User
 
     API -.->|Async Cache| RAM[(In-Memory Cache)]
-    API -.->|"Persist (Optional)"| DB[(PostgreSQL)]
+```
+
+### The "Persistence" Writing Pattern
+When a user writes data (like creating a new workspace), Valora enforces strict Clean Architecture layers. Here is the visual flow of a persistence request from API to Database:
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App (Flutter/Web)
+    participant API as Valora.Api (Endpoints)
+    participant App as Valora.Application (Service)
+    participant Domain as Valora.Domain (Entity)
+    participant Repo as Valora.Infrastructure (Repository)
+    participant DB as PostgreSQL
+
+    Client->>API: POST /api/workspaces
+    API->>API: Validate Request
+    API->>App: IWorkspaceService.CreateWorkspaceAsync
+    App->>Domain: Create Workspace Entity
+    Domain-->>App: Workspace Instance
+    App->>Repo: AddAsync(Workspace) & SaveChangesAsync()
+    Repo->>DB: INSERT INTO "Workspaces"
+    DB-->>Repo: Acknowledge Insert
+    Repo-->>App: Completed
+    App-->>API: Map to WorkspaceDto
+    API-->>Client: 201 Created
 ```
 
 ### Key Components
@@ -233,13 +259,43 @@ sequenceDiagram
 
 ## 📖 API Reference
 
-The API provides core functionalities to access and manage Valora's context data. Below is a brief summary of key endpoints. For complete details, see the **[API Reference](docs/api-reference.md)**.
+The API provides core functionalities to access and manage Valora's context data. Below is a detailed summary of key endpoints to get you started quickly. For complete details, see the **[API Reference](docs/api-reference.md)**.
 
-- **Authentication:** `POST /api/auth/login`, `POST /api/auth/register` (JWT-based)
-- **Context Reports:** `POST /api/context/report` (Generates reports via Fan-Out)
-- **Map Visualizations:** `GET /api/map/cities`, `GET /api/map/overlays`
-- **AI Features:** `POST /api/ai/chat`, `POST /api/ai/analyze-report`
-- **Admin & Jobs:** `GET /api/admin/users`, `POST /api/admin/jobs`
+### Authentication
+- `POST /api/auth/login` - Authenticate and receive a JWT.
+- `POST /api/auth/register` - Register a new user account.
+
+### Context Reports
+`POST /api/context/report` - Generates a comprehensive context report for a location using the Fan-Out pattern.
+
+**Request:**
+```json
+{
+  "input": "Damrak 1, Amsterdam",
+  "radiusMeters": 1000
+}
+```
+
+**Response Summary:**
+```json
+{
+  "location": { "address": "Damrak 1, Amsterdam" },
+  "compositeScore": 8.5,
+  "categoryScores": { "social": 8.0, "safety": 9.0 }
+}
+```
+
+### Map Visualizations
+- `GET /api/map/cities` - Get aggregated scores for major cities.
+- `GET /api/map/overlays` - Get heat map data (e.g., crime rate) for a bounding box.
+
+### AI Features
+- `POST /api/ai/chat` - Chat with the Valora AI assistant.
+- `POST /api/ai/analyze-report` - Generate a textual summary of a context report.
+
+### Admin & Jobs
+- `GET /api/admin/users` - Get a list of users.
+- `POST /api/admin/jobs` - Trigger a background job (e.g., City Ingestion).
 
 ---
 
@@ -277,7 +333,7 @@ The API provides core functionalities to access and manage Valora's context data
     - Explains the API request lifecycle from Flutter -> API -> PDOK/CBS/OSM -> Report.
 - **[Data Flow: Writing (Persistence)](docs/onboarding-persistence-flow.md)** (Includes Mermaid Diagram):
     - Walkthrough of the data flow from API request down to database persistence (e.g., User Registration).
-- **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-guide.md)** (Includes Mermaid Diagram):
+- **[Data Flow: API to DB Lifecycle](docs/onboarding-api-to-db-persistence.md)** (Includes Mermaid Diagram):
     - Comprehensive guide tracing the exact path a write request takes in Valora, passing through Clean Architecture to PostgreSQL.
 - **[Data Flow: Map & Rasterization](docs/onboarding-map-flow.md)** (Includes Mermaid Diagram):
     - Details the server-side spatial indexing and map overlay tile generation, explaining why data is clustered instead of sent as raw vectors.

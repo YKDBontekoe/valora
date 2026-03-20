@@ -15,6 +15,23 @@ public class WorkspaceService : IWorkspaceService
         _repository = repository;
     }
 
+    /// <summary>
+    /// Creates a new workspace and automatically assigns the creator as the Owner.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why this logic exists here:</strong><br/>
+    /// We validate the user's workspace limit (max 10) before attempting creation to enforce business rules.
+    /// If the limit is reached, an activity log is still written to audit the failed attempt.
+    /// </para>
+    /// <para>
+    /// <strong>Transaction Boundary:</strong><br/>
+    /// The <see cref="Workspace"/> entity is instantiated alongside its initial <see cref="WorkspaceMember"/> (the creator).
+    /// By calling <c>_repository.AddAsync</c> on the aggregate root and a single <c>_repository.SaveChangesAsync</c>,
+    /// Entity Framework automatically handles the insert of the workspace, its owner member, and the creation log
+    /// within a single atomic database transaction.
+    /// </para>
+    /// </remarks>
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
         var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
