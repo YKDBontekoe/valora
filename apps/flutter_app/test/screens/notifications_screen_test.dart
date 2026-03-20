@@ -94,7 +94,7 @@ void main() {
     when(mockNotificationService.unreadCount).thenReturn(1);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100)); // Start animation
 
     expect(find.text('Test Title 1'), findsOneWidget);
     expect(find.text('Test Body 1'), findsOneWidget);
@@ -108,7 +108,7 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pump();
     verify(mockNotificationService.fetchNotifications()).called(1);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
   });
 
   testWidgets('NotificationsScreen calls markAllAsRead', (WidgetTester tester) async {
@@ -118,16 +118,18 @@ void main() {
     when(mockNotificationService.unreadCount).thenReturn(1);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
 
     await tester.tap(find.text('Read all'));
-    await tester.pumpAndSettle(); // Show dialog
+    await tester.pump(const Duration(milliseconds: 100)); // Show dialog
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Mark all as read?'), findsOneWidget);
     expect(find.text('Confirm'), findsOneWidget);
 
     await tester.tap(find.text('Confirm'));
-    await tester.pumpAndSettle(); // Close dialog
+    await tester.pump(const Duration(milliseconds: 100)); // Close dialog
+    await tester.pump(const Duration(milliseconds: 100));
 
     verify(mockNotificationService.markAllAsRead()).called(1);
   });
@@ -144,7 +146,7 @@ void main() {
     when(mockNotificationService.notifications).thenReturn([notification]);
 
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
 
     await tester.tap(find.text('Title'));
     verify(mockNotificationService.markAsRead('1')).called(1);

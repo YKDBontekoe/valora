@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/valora_colors.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../models/notification.dart';
@@ -75,7 +76,9 @@ class NotificationItem extends StatelessWidget {
                   color: ValoraColors.primary,
                   shape: BoxShape.circle,
                 ),
-              ),
+              )
+                  .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                  .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 1.seconds),
           ],
         ),
       ),
