@@ -25,15 +25,18 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
         return;
       }
 
+      const results = await Promise.allSettled(
+        failedJobs.map(job => adminService.retryJob(job.id))
+      );
+
       let successCount = 0;
-      for (const job of failedJobs) {
-        try {
-          await adminService.retryJob(job.id);
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
           successCount++;
-        } catch (e) {
-          console.error(`Failed to retry job ${job.id}`, e);
+        } else {
+          console.error(`Failed to retry job ${failedJobs[index].id}`, result.reason);
         }
-      }
+      });
 
       showToast(`Successfully re-queued ${successCount} failed ${successCount === 1 ? 'job' : 'jobs'}.`, 'success');
       onRefreshStats();
