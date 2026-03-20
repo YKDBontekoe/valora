@@ -69,10 +69,14 @@ void main() {
     mockService.setError(null);
 
     await tester.pumpWidget(createWidget());
+    await tester.pump(const Duration(milliseconds: 100)); // allow animations to start
 
     expect(find.text('Note 1'), findsOneWidget);
     expect(find.text('Note 2'), findsOneWidget);
     expect(find.text('Mark all as read'), findsOneWidget);
+
+    // Stop animations to avoid pending timers
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('NotificationSheet calls markAllAsRead', (tester) async {
@@ -92,6 +96,7 @@ void main() {
     mockService.setError(null);
 
     await tester.pumpWidget(createWidget());
+    await tester.pump(const Duration(milliseconds: 100)); // allow animations to start
 
     // We can't verify calls on a fake easily without spying, but we can check if UI behaves as expected
     // or just assume it works if no exception.
@@ -99,5 +104,8 @@ void main() {
 
     // Let's rely on button being enabled and tappable.
     await tester.tap(find.text('Mark all as read'));
+
+    // Stop animations to avoid pending timers
+    await tester.pump(const Duration(seconds: 2));
   });
 }

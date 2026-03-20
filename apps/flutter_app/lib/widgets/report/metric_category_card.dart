@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/context_report.dart';
 import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_animations.dart';
 import '../common/valora_card.dart';
 import '../common/valora_badge.dart';
 import 'charts/context_bar_chart.dart';
@@ -46,7 +48,7 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
     );
     _expandAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.fastOutSlowIn,
+      curve: ValoraAnimations.smooth,
     );
     if (widget.isExpanded) _controller.value = 1.0;
   }
@@ -387,9 +389,9 @@ class _MetricRow extends StatelessWidget {
   }
 
   Color _getColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981);
-    if (score >= 60) return const Color(0xFF3B82F6);
-    if (score >= 40) return const Color(0xFFF59E0B);
-    return const Color(0xFFEF4444);
+    if (score >= 80) return ValoraColors.success;
+    if (score >= 60) return ValoraColors.primary;
+    if (score >= 40) return ValoraColors.warning;
+    return ValoraColors.error;
   }
 }

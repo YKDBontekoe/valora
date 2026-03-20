@@ -23,6 +23,7 @@ void main() {
     );
 
     await tester.pumpWidget(createWidget(NotificationItem(notification: notification)));
+    await tester.pump(const Duration(milliseconds: 100)); // allow animation start
 
     expect(find.text('Test Notification'), findsOneWidget);
     expect(find.text('This is a test body'), findsOneWidget);
@@ -31,6 +32,9 @@ void main() {
     // Check for unread indicator (circle container)
     // Container with 8x8 size and ValoraColors.primary (approximate check by size)
     expect(find.byType(Container), findsWidgets);
+
+    // Stop animations
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('NotificationItem handles tap', (tester) async {

@@ -63,7 +63,7 @@ class AiInsightCard extends StatelessWidget {
             ),
           ],
         ),
-      ).animate().fadeIn().scale(alignment: Alignment.topCenter);
+      ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOut).slideY(begin: 0.05, end: 0, curve: Curves.easeOut);
     }
 
     if (isLoading) {
