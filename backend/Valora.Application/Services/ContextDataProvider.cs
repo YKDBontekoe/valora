@@ -34,6 +34,20 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Architecture Pattern: Fan-Out</strong><br/>
+    /// This method is responsible for executing the parallel "Fan-Out" phase. Instead of querying sources sequentially
+    /// (which would compound latency to an unacceptable degree), it fires off requests to all providers simultaneously
+    /// using <see cref="Task.WhenAll"/>. The total response time is roughly equal to the slowest dependency.
+    /// </para>
+    /// <para>
+    /// <strong>Partial Failure Tolerance:</strong><br/>
+    /// Every source call is wrapped in <c>TryGetSourceAsync</c>. This ensures that if a non-critical provider
+    /// (e.g., Luchtmeetnet) times out or throws an error, the overall report generation does not fail.
+    /// Instead, it returns partial data and appends the failure to a thread-safe <see cref="ConcurrentBag{T}"/> of warnings.
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
