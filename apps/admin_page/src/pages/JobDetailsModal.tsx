@@ -5,6 +5,7 @@ import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -17,6 +18,21 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
   const [job, setJob] = useState<BatchJob | null>(null);
   const [loading, setLoading] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
+
+  const [confirmation, setConfirmation] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => Promise<void>;
+    isDestructive?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmLabel: '',
+    onConfirm: async () => {},
+  });
 
   const fetchJobDetails = useCallback(async (id: string) => {
     setLoading(true);
@@ -39,7 +55,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
     }
   }, [isOpen, jobId, fetchJobDetails]);
 
-  const handleRetry = async () => {
+  const executeRetry = async () => {
     if (!job) return;
     setProcessingAction(true);
     try {
@@ -52,10 +68,22 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       showToast("System failed to re-queue the pipeline.", "error");
     } finally {
         setProcessingAction(false);
+        setConfirmation(prev => ({ ...prev, isOpen: false }));
     }
   };
 
-  const handleCancel = async () => {
+  const handleRetry = () => {
+    setConfirmation({
+      isOpen: true,
+      title: 'Restart Pipeline?',
+      message: 'Are you sure you want to retry this job? It will be re-queued and processed again.',
+      confirmLabel: 'Restart Pipeline',
+      isDestructive: false,
+      onConfirm: executeRetry,
+    });
+  };
+
+  const executeCancel = async () => {
     if (!job) return;
     setProcessingAction(true);
     try {
@@ -68,7 +96,19 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       showToast("System failed to terminate the process.", "error");
     } finally {
         setProcessingAction(false);
+        setConfirmation(prev => ({ ...prev, isOpen: false }));
     }
+  };
+
+  const handleCancel = () => {
+    setConfirmation({
+      isOpen: true,
+      title: 'Terminate Process?',
+      message: 'Are you sure you want to cancel this job? Any in-progress data ingestion for this job will be stopped.',
+      confirmLabel: 'Terminate Process',
+      isDestructive: true,
+      onConfirm: executeCancel,
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -275,6 +315,15 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
           </motion.div>
         </div>
       )}
+      <ConfirmationDialog
+        isOpen={confirmation.isOpen}
+        onClose={() => setConfirmation(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmation.onConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        confirmLabel={confirmation.confirmLabel}
+        isDestructive={confirmation.isDestructive}
+      />
     </AnimatePresence>
   );
 };
