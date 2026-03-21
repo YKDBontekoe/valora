@@ -140,6 +140,15 @@ describe('BatchJobs Page', () => {
       fireEvent.click(screen.getByText('Restart Pipeline'));
 
       await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+          expect(screen.getByText('Are you sure you want to retry this job? It will be re-queued and processed again.')).toBeInTheDocument();
+      });
+
+      const dialogConfirmButton = screen.getAllByText('Restart Pipeline').find(el => el.closest('div[role="dialog"]'));
+
+      fireEvent.click(dialogConfirmButton!);
+
+      await waitFor(() => {
           expect(adminService.retryJob).toHaveBeenCalledWith('2');
       });
   });
