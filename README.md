@@ -12,6 +12,7 @@ It helps users understand the "vibe" and statistics of a neighborhood by aggrega
 <!-- markdownlint-disable MD051 -->
 - [Setup Instructions (Quick Start)](#setup-instructions-quick-start)
 - [Architecture](#architecture)
+- [API Reference (Core)](#api-reference-core)
 - [Key Concepts](#key-concepts)
 - [Project Structure](#project-structure)
 - [Documentation Index](#documentation-index)
@@ -89,6 +90,20 @@ npm run dev
 
 ---
 
+## 📖 API Reference (Core)
+
+Below is a quick reference for the most commonly used endpoints. For the full specification, including WebSockets and Admin features, see **[docs/api-reference.md](docs/api-reference.md)**.
+
+| HTTP Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/auth/login` | Authenticate and receive a JWT. | No |
+| `POST` | `/api/context/report` | Generate a real-time context report using the Fan-Out pattern. | Yes |
+| `GET` | `/api/map/cities` | Fetch aggregated city insights for map overlays. | Yes |
+| `POST` | `/api/ai/chat` | Chat with the Valora AI assistant about real estate. | Yes |
+| `GET` | `/api/workspaces` | List the current user's saved workspaces. | Yes |
+
+---
+
 ## 🏗️ Architecture Overview
 
 Valora's architecture is specifically designed to act as an aggregation layer for public data, rather than a scraping pipeline. It is built on two primary structural pillars:
@@ -132,6 +147,13 @@ C4Container
 ```
 
 For a deeper dive into *why* we built it this way, see **[Architecture Decisions](docs/architecture-decisions.md)**.
+
+### Database Schema & Extensibility
+While Valora primarily relies on external APIs for reading data (Fan-Out), it uses a robust PostgreSQL database (via Entity Framework Core) for persistence. The database stores user accounts, saved reports (Workspaces), application settings, and background job states.
+
+The schema is designed for extensibility:
+- **Event-Driven:** Key actions (e.g., job completion, workspace sharing) trigger domain events that are persisted to an `ActivityLogs` table for auditing and notifications.
+- **Strong Typing:** EF Core `ValueConverters` are heavily used to store complex JSON structures (like `CategoryScores`) efficiently while maintaining a strongly-typed domain model.
 
 ### The "Fan-Out" Aggregation Pattern
 When a user requests a context report, the system queries multiple external sources in parallel ("Fan-Out") and then aggregates the results ("Fan-In") into a unified score.

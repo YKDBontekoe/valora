@@ -82,6 +82,17 @@ public class BatchJobExecutor : IBatchJobExecutor
         }
     }
 
+    /// <summary>
+    /// Locates and executes the appropriate processor for the given job.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why dynamic lookup?</strong> We resolve processors via <c>IEnumerable&lt;IBatchJobProcessor&gt;</c>
+    /// rather than hardcoding a switch statement. This adheres to the Open/Closed Principle:
+    /// new job types can be added simply by registering a new implementation of <see cref="IBatchJobProcessor"/>
+    /// in the Dependency Injection container, without ever modifying this executor class.
+    /// </para>
+    /// </remarks>
     private async Task ExecuteProcessorAsync(BatchJob job, CancellationToken cancellationToken)
     {
         var processor = _processors.SingleOrDefault(p => p.JobType == job.Type);
@@ -94,6 +105,18 @@ public class BatchJobExecutor : IBatchJobExecutor
         await processor.ProcessAsync(job, cancellationToken);
     }
 
+    /// <summary>
+    /// Updates the job status, persists progress to the database, and dispatches completion events.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why sanitize exceptions?</strong> When a job fails, the raw exception (which may contain
+    /// sensitive stack traces or database connection details) is intentionally <em>not</em> assigned to
+    /// <see cref="BatchJob.Error"/>. Instead, it is logged securely using <see cref="ILogger"/>, and a generic
+    /// error message is persisted to the database. This prevents sensitive infrastructure details from
+    /// leaking out to the Admin UI.
+    /// </para>
+    /// </remarks>
     private async Task UpdateJobStatusAsync(BatchJob job, BatchJobStatus newStatus, string? message = null, Exception? ex = null, CancellationToken cancellationToken = default)
     {
         job.Status = newStatus;
