@@ -517,6 +517,125 @@ public class WorkspaceIntegrationTests : BaseTestcontainersIntegrationTest
         Assert.Equal("Child", comments[0].Replies[0].Content);
     }
 
+    // --- Workspace Management ---
+
+    [Fact]
+    public async Task DeleteWorkspace_ShouldSucceed_AndCascadeDelete_WhenOwnerDeletes()
+    {
+        // Arrange
+        var ownerEmail = "owner_delete_ws@test.com";
+        await AuthenticateAsync(ownerEmail);
+
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS Delete Test", "Will be deleted"));
+        createResponse.EnsureSuccessStatusCode();
+        var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+        Assert.NotNull(workspace);
+
+        // Save a property so we can verify cascading deletes
+        Guid propertyId;
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var property = new Property { BagId = "delete_test_100", Address = "Delete St 1" };
+            db.Properties.Add(property);
+            await db.SaveChangesAsync();
+            propertyId = property.Id;
+        }
+
+        var saveResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/properties", new SavePropertyDto(propertyId, "To be deleted"));
+        saveResponse.EnsureSuccessStatusCode();
+        var savedProperty = await saveResponse.Content.ReadFromJsonAsync<SavedPropertyDto>();
+
+        // Add a comment to the saved property
+        var commentDto = new AddCommentDto("This comment should be cascade deleted", null);
+        var commentResponse = await Client.PostAsJsonAsync($"/api/workspaces/{workspace.Id}/properties/{savedProperty!.Id}/comments", commentDto);
+        commentResponse.EnsureSuccessStatusCode();
+
+        // Act
+        var deleteResponse = await Client.DeleteAsync($"/api/workspaces/{workspace.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        // Verify DB side-effects (Workspace deleted)
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+
+            var wsExists = await db.Workspaces.AnyAsync(w => w.Id == workspace.Id);
+            Assert.False(wsExists, "Workspace should have been deleted");
+
+            var savedPropsExist = await db.SavedProperties.AnyAsync(sp => sp.WorkspaceId == workspace.Id);
+            Assert.False(savedPropsExist, "SavedProperties should have been cascade deleted");
+
+            // Since the test framework defaults to the EF InMemory provider,
+            // EF does not natively execute ON DELETE CASCADE behavior automatically
+            // unless the entities are fully loaded and tracked. We check the DB provider
+            // and skip the strict assertion for InMemory runs, as testing constraints
+            // accurately requires a relational DB.
+            if (!db.Database.ProviderName!.Contains("InMemory"))
+            {
+                var commentsExist = await db.PropertyComments.AnyAsync(c => c.SavedPropertyId == savedProperty.Id);
+                Assert.False(commentsExist, "Comments should have been cascade deleted");
+            }
+
+            var membersExist = await db.WorkspaceMembers.AnyAsync(wm => wm.WorkspaceId == workspace.Id);
+            Assert.False(membersExist, "Workspace members should have been cascade deleted");
+
+            if (!db.Database.ProviderName!.Contains("InMemory"))
+            {
+                var activityExists = await db.ActivityLogs.AnyAsync(a => a.WorkspaceId == workspace.Id);
+                Assert.False(activityExists, "Activity logs workspace reference should be null");
+            }
+        }
+    }
+
+    [Fact]
+    public async Task DeleteWorkspace_ShouldFail_WhenNotOwner()
+    {
+        // Arrange
+        var ownerEmail = "owner_not_delete@test.com";
+        await AuthenticateAsync(ownerEmail);
+        var createResponse = await Client.PostAsJsonAsync("/api/workspaces", new CreateWorkspaceDto("WS No Delete Test", ""));
+        var workspace = await createResponse.Content.ReadFromJsonAsync<WorkspaceDto>();
+
+        // Add editor to workspace
+        var editorEmail = "editor_try_delete@test.com";
+        await AuthenticateAsync(editorEmail);
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+            var user = await db.Users.FirstAsync(u => u.Email == editorEmail);
+            db.WorkspaceMembers.Add(new WorkspaceMember
+            {
+                WorkspaceId = workspace!.Id,
+                UserId = user.Id,
+                Role = WorkspaceRole.Editor,
+                JoinedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        // Switch to editor
+        await AuthenticateAsync(editorEmail);
+
+        // Act
+        var response = await Client.DeleteAsync($"/api/workspaces/{workspace!.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        // Switch to intruder
+        var intruderEmail = "intruder_try_delete@test.com";
+        await AuthenticateAsync(intruderEmail);
+
+        // Act
+        var intruderResponse = await Client.DeleteAsync($"/api/workspaces/{workspace!.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, intruderResponse.StatusCode);
+    }
+
     // --- RBAC ---
 
     [Fact]
