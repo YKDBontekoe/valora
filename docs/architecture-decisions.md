@@ -32,6 +32,30 @@ This document captures the key architectural decisions (ADRs) that shape Valora'
 -   **Performance (Reads):** Read methods (e.g., `GetContextReport`) use `.AsNoTracking()` and project directly to DTOs using `.Select()`. This bypasses the EF Core Change Tracker, reducing memory overhead and execution time.
 -   **Consistency (Writes):** Write methods use standard tracked entities to ensure domain invariants are enforced before `SaveChangesAsync`.
 
+```mermaid
+graph TD
+    Client((Client))
+
+    subgraph "Application Layer"
+        Service[Service]
+    end
+
+    subgraph "Infrastructure (Repository)"
+        direction LR
+        Read[Read Methods]
+        Write[Write Methods]
+    end
+
+    Client -->|1. GET /api| Service
+    Service -->|"2. Query (.AsNoTracking)"| Read
+    Read -.->|"Return DTO (Fast)"| Service
+
+    Client -->|1. POST /api| Service
+    Service -->|"2. Track & Mutate"| Write
+    Write -.->|"3. SaveChangesAsync"| DB[(Database)]
+    Read -.->|SQL SELECT| DB
+```
+
 **Trade-offs:**
 -   **Boilerplate:** Requires separate DTOs for reading vs. Domain Entities for writing.
 

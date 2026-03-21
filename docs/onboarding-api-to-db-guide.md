@@ -63,8 +63,9 @@ sequenceDiagram
 
 ### 4. Database Persistence (Infrastructure Layer)
 * **Location:** `Valora.Infrastructure/Persistence/Repositories/WorkspaceRepository.cs`
-* The Application layer calls `_repository.AddAsync(workspace)` to track the entity, and then explicitly calls `_repository.SaveChangesAsync()`.
-* Entity Framework Core translates the tracked entity state into an SQL `INSERT` statement and executes it against PostgreSQL.
+* The Application layer calls `_repository.AddAsync(workspace)` to begin tracking the entity in EF Core's Change Tracker.
+* It then explicitly calls `_repository.SaveChangesAsync()`. This triggers EF Core to group all pending tracked changes into a single database transaction.
+* Entity Framework Core translates the tracked entity state into an optimized SQL `INSERT` statement and executes it against PostgreSQL, rolling back if any constraints fail.
 
 ### 5. Returning the Response
 * Once `SaveChangesAsync` is complete, the repository returns control to the Application service.

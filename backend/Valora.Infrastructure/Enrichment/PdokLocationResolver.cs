@@ -152,6 +152,18 @@ public sealed class PdokLocationResolver : ILocationResolver
         }
     }
 
+    /// <summary>
+    /// Ensures that an administrative code starts with the expected CBS prefix.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why prefix codes?</strong> The PDOK API often returns raw numeric strings for municipality or neighborhood codes
+    /// (e.g., "0363" for Amsterdam). However, the downstream CBS (Statistics Netherlands) OData APIs strictly require
+    /// prefixed values (e.g., "GM0363" for Gemeente, "BU03630000" for Buurt) when making localized queries.
+    /// Standardizing the prefix immediately during location resolution prevents confusing "Code Not Found"
+    /// 400 errors during the Fan-Out phase.
+    /// </para>
+    /// </remarks>
     private static string? PrefixCode(string? code, string prefix)
     {
         if (string.IsNullOrWhiteSpace(code))
