@@ -18,19 +18,18 @@ public class TestcontainersDatabaseFixture : IAsyncLifetime
         {
             try
             {
-                // NOTE: If using real testcontainers, we should spin up a real docker container here.
-                // E.g., via `new PostgreSqlBuilder().Build()`.
-                // However, since we don't have that fully implemented in the current setup, and passing "Testcontainers"
-                // creates an invalid connection string, we will fall back to InMemory for demonstration,
-                // BUT throw explicitly if `USE_TESTCONTAINERS=true` was set to prevent silent masking.
-                // We'll simulate that "Testcontainers" isn't fully configured yet, so we throw explicitly.
-                throw new InvalidOperationException("True Testcontainers initialization is requested but no Docker container is currently spun up by the fixture.");
+                // We construct the factory with the Testcontainers connection string to trigger
+                // Testcontainers usage instead of falling back to InMemory.
+                Factory = new IntegrationTestWebAppFactory("Testcontainers");
+
+                using var scope = Factory.Services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
+                await context.Database.EnsureCreatedAsync();
             }
             catch (Exception ex)
             {
                 InitializationException = ex;
-                // Do not silently fall back to InMemory if Testcontainers was explicitly requested but failed.
-                throw new Exception("Failed to initialize Testcontainers database.", ex);
+                throw new Exception("Failed to initialize Testcontainers database. Ensure Docker is running and accessible.", ex);
             }
         }
         else
