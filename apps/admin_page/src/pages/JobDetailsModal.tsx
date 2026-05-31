@@ -5,6 +5,7 @@ import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -17,6 +18,13 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
   const [job, setJob] = useState<BatchJob | null>(null);
   const [loading, setLoading] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    isOpen: boolean;
+    action: 'retry' | 'cancel' | null;
+  }>({
+    isOpen: false,
+    action: null
+  });
 
   const fetchJobDetails = useCallback(async (id: string) => {
     setLoading(true);
@@ -36,12 +44,14 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
       fetchJobDetails(jobId);
     } else {
       setJob(null);
+      setConfirmation({ isOpen: false, action: null });
     }
   }, [isOpen, jobId, fetchJobDetails]);
 
   const handleRetry = async () => {
     if (!job) return;
     setProcessingAction(true);
+    setConfirmation({ isOpen: false, action: null });
     try {
       await adminService.retryJob(job.id);
       showToast('Pipeline reset to Pending.', 'success');
@@ -58,6 +68,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
   const handleCancel = async () => {
     if (!job) return;
     setProcessingAction(true);
+    setConfirmation({ isOpen: false, action: null });
     try {
       await adminService.cancelJob(job.id);
       showToast('Pipeline termination successful.', 'success');
@@ -249,7 +260,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                       {(job.status === 'Failed' || job.status === 'Completed') && (
                         <Button
                           variant="secondary"
-                          onClick={handleRetry}
+                          onClick={() => setConfirmation({ isOpen: true, action: 'retry' })}
                           isLoading={processingAction}
                           leftIcon={!processingAction && <RefreshCw size={18} />}
                           className="px-8 shadow-premium shadow-brand-200/40"
@@ -260,7 +271,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                       {(job.status === 'Pending' || job.status === 'Processing') && (
                         <Button
                           variant="danger"
-                          onClick={handleCancel}
+                          onClick={() => setConfirmation({ isOpen: true, action: 'cancel' })}
                           isLoading={processingAction}
                           leftIcon={!processingAction && <StopCircle size={18} />}
                           className="px-8 shadow-premium shadow-error-200/40"
@@ -274,6 +285,19 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* Confirmation Dialog mapped outside the relative div to ensure it stays on top of modal */}
+      {isOpen && (
+        <ConfirmationDialog
+          isOpen={confirmation.isOpen}
+          onClose={() => setConfirmation({ isOpen: false, action: null })}
+          onConfirm={confirmation.action === 'retry' ? handleRetry : handleCancel}
+          title={confirmation.action === 'retry' ? "Restart Pipeline?" : "Terminate Process?"}
+          message={confirmation.action === 'retry' ? "Are you sure you want to restart this pipeline? It will reset to 'Pending' status." : "Are you sure you want to terminate this pipeline? In-progress execution will be interrupted."}
+          confirmLabel={confirmation.action === 'retry' ? "Restart" : "Terminate"}
+          isDestructive={confirmation.action === 'cancel'}
+        />
       )}
     </AnimatePresence>
   );

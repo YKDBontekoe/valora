@@ -91,4 +91,37 @@ describe('AiModelsTable', () => {
 
     expect(defaultProps.onDelete).toHaveBeenCalledWith(mockConfigs[0]);
   });
+
+  it('calls toggleSort when column headers are clicked', () => {
+    const toggleSort = vi.fn();
+    render(<AiModelsTable configs={mockConfigs} loading={false} onEdit={vi.fn()} onDelete={vi.fn()} toggleSort={toggleSort} />);
+
+    fireEvent.click(screen.getByText('Feature'));
+    expect(toggleSort).toHaveBeenCalledWith('feature');
+    fireEvent.click(screen.getByText('Model'));
+    expect(toggleSort).toHaveBeenCalledWith('modelId');
+    fireEvent.click(screen.getByText('Status'));
+    expect(toggleSort).toHaveBeenCalledWith('isEnabled');
+  });
+
+  it("calls toggleSort when column headers are focused and Enter/Space is pressed", () => {
+    const toggleSort = vi.fn();
+    render(<AiModelsTable configs={mockConfigs} loading={false} onEdit={vi.fn()} onDelete={vi.fn()} toggleSort={toggleSort} />);
+
+    const featureHeader = screen.getByRole("button", { name: "Sort by Feature" });
+
+    fireEvent.keyDown(featureHeader, { key: "Enter", code: "Enter" });
+    expect(toggleSort).toHaveBeenCalledWith("feature");
+
+    fireEvent.keyDown(featureHeader, { key: " ", code: "Space" });
+    expect(toggleSort).toHaveBeenCalledTimes(2);
+
+    const modelHeader = screen.getByRole("button", { name: "Sort by Model" });
+    fireEvent.keyDown(modelHeader, { key: "Enter", code: "Enter" });
+    expect(toggleSort).toHaveBeenCalledWith("modelId");
+
+    const statusHeader = screen.getByRole("button", { name: "Sort by Status" });
+    fireEvent.keyDown(statusHeader, { key: "Enter", code: "Enter" });
+    expect(toggleSort).toHaveBeenCalledWith("isEnabled");
+  });
 });

@@ -96,9 +96,6 @@ describe('BatchJobs Page', () => {
   });
 
   it('retries a failed job', async () => {
-      // Mock confirm
-      vi.spyOn(window, 'confirm').mockImplementation(() => true);
-
       const mockJobs = [
           {
               id: '2',
@@ -138,6 +135,12 @@ describe('BatchJobs Page', () => {
       });
 
       fireEvent.click(screen.getByText('Restart Pipeline'));
+
+      await waitFor(() => {
+          expect(screen.getByText('Restart')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Restart'));
 
       await waitFor(() => {
           expect(adminService.retryJob).toHaveBeenCalledWith('2');
