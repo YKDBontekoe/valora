@@ -4,7 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:valora_app/models/notification.dart';
-import 'package:valora_app/screens/notifications_screen.dart';
+import 'package:valora_app/screens/notifications/notifications_screen.dart';
 import 'package:valora_app/services/notification_service.dart';
 import 'package:valora_app/widgets/valora_widgets.dart';
 

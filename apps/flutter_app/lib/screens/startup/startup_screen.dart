@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import 'auth_wrapper.dart';
-import '../widgets/valora_error_state.dart';
+import '../../providers/auth_provider.dart';
+import '../auth/auth_wrapper.dart';
+import '../../widgets/common/valora_error_state.dart';
 
 class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});

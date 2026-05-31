@@ -7,7 +7,7 @@ import '../../core/theme/valora_spacing.dart';
 import '../../models/workspace.dart';
 import '../../providers/workspace_provider.dart';
 import '../../widgets/valora_widgets.dart';
-import '../../screens/workspace_detail_screen.dart';
+import '../../screens/workspaces/workspace_detail_screen.dart';
 
 class WorkspaceListItem extends StatelessWidget {
   final Workspace workspace;

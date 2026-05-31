@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:valora_app/widgets/global_error_widget.dart';
-import 'package:valora_app/screens/startup_screen.dart';
+import 'package:valora_app/widgets/common/global_error_widget.dart';
+import 'package:valora_app/screens/startup/startup_screen.dart';
 import 'package:valora_app/providers/auth_provider.dart';
 
 // Fake AuthProvider to satisfy StartupScreen dependency

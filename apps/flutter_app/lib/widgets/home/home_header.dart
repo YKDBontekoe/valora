@@ -6,7 +6,7 @@ import '../../core/theme/valora_spacing.dart';
 import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 import '../../core/theme/valora_shadows.dart';
-import '../valora_glass_container.dart';
+import '../common/valora_glass_container.dart';
 import '../common/valora_chip.dart';
 
 class HomeHeader extends StatefulWidget {
