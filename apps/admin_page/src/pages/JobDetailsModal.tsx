@@ -5,6 +5,7 @@ import { adminService } from '../services/api';
 import type { BatchJob } from '../types';
 import Button from '../components/Button';
 import { showToast } from '../services/toast';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
   const [job, setJob] = useState<BatchJob | null>(null);
   const [loading, setLoading] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
+  const [cancelConfirmation, setCancelConfirmation] = useState(false);
 
   const fetchJobDetails = useCallback(async (id: string) => {
     setLoading(true);
@@ -260,7 +262,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                       {(job.status === 'Pending' || job.status === 'Processing') && (
                         <Button
                           variant="danger"
-                          onClick={handleCancel}
+                          onClick={() => setCancelConfirmation(true)}
                           isLoading={processingAction}
                           leftIcon={!processingAction && <StopCircle size={18} />}
                           className="px-8 shadow-premium shadow-error-200/40"
@@ -272,6 +274,19 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, jobI
                   )}
               </div>
             </div>
+
+            <ConfirmationDialog
+              isOpen={cancelConfirmation}
+              onClose={() => setCancelConfirmation(false)}
+              onConfirm={() => {
+                setCancelConfirmation(false);
+                return handleCancel();
+              }}
+              title="Terminate Pipeline"
+              message={`Are you sure you want to permanently terminate pipeline ${job?.id}? This action cannot be safely reversed mid-flight.`}
+              confirmLabel="Terminate"
+              isDestructive
+            />
           </motion.div>
         </div>
       )}
