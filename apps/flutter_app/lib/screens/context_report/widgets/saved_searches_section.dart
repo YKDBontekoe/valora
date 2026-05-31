@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/context_report_provider.dart';
 import '../../../models/saved_search.dart';
@@ -26,18 +27,19 @@ class SavedSearchesSection extends StatelessWidget {
       builder: (context, savedSearches, _) {
         if (savedSearches.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0), // Adjust padding as needed
+          padding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const ValoraSectionHeader(title: 'Saved Searches'),
-              const SizedBox(height: 12),
+              const SizedBox(height: ValoraSpacing.sm),
               ...savedSearches.asMap().entries.map((entry) {
                 final index = entry.key;
                 final item = entry.value;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: ValoraSpacing.sm),
                   child: ValoraCard(
+                    elevation: ValoraSpacing.elevationSm,
                     onTap: provider.isLoading
                         ? null
                         : () {
@@ -45,12 +47,11 @@ class SavedSearchesSection extends StatelessWidget {
                             provider.setRadiusMeters(item.radiusMeters);
                             provider.generate(item.query);
                           },
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.all(ValoraSpacing.md),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(ValoraSpacing.sm),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary
                                 .withValues(alpha: 0.08),
@@ -58,11 +59,11 @@ class SavedSearchesSection extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.bookmark_rounded,
-                            size: 16,
+                            size: ValoraSpacing.iconSizeSm,
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: ValoraSpacing.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +76,7 @@ class SavedSearchesSection extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: ValoraSpacing.xs),
                               Text(
                                 '${item.radiusMeters}m radius • ${_formatDate(item.createdAt)}',
                                 style: ValoraTypography.labelSmall.copyWith(
@@ -92,7 +93,7 @@ class SavedSearchesSection extends StatelessWidget {
                             item.isAlertEnabled
                                 ? Icons.notifications_active_rounded
                                 : Icons.notifications_none_rounded,
-                            size: 20,
+                            size: ValoraSpacing.iconSizeMd,
                             color: item.isAlertEnabled
                                 ? theme.colorScheme.primary
                                 : theme.colorScheme.onSurfaceVariant,
@@ -104,7 +105,7 @@ class SavedSearchesSection extends StatelessWidget {
                           tooltip: 'Remove',
                           icon: Icon(
                             Icons.close_rounded,
-                            size: 18,
+                            size: ValoraSpacing.iconSizeMd,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           onPressed: () => _confirmRemove(context, provider, item),

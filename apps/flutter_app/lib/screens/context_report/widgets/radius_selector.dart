@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../providers/context_report_provider.dart';
 
 class RadiusSelector extends StatelessWidget {
@@ -12,7 +13,8 @@ class RadiusSelector extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ValoraCard(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      elevation: ValoraSpacing.elevationSm,
+      padding: const EdgeInsets.all(ValoraSpacing.md),
       onTap: null, // Keep card interactive setup
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,7 +29,7 @@ class RadiusSelector extends StatelessWidget {
                     size: 18,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: ValoraSpacing.sm),
                   Text(
                     'Analysis Radius',
                     style: ValoraTypography.labelLarge
@@ -47,7 +49,7 @@ class RadiusSelector extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: ValoraSpacing.sm),
           Selector<ContextReportProvider, int>(
             selector: (_, p) => p.radiusMeters,
             builder: (context, radiusMeters, _) {

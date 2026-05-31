@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../widgets/valora_widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
 import '../../../providers/context_report_provider.dart';
 
 class HistorySection extends StatelessWidget {
@@ -25,7 +26,7 @@ class HistorySection extends StatelessWidget {
       builder: (context, history, _) {
         if (history.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+          padding: const EdgeInsets.fromLTRB(ValoraSpacing.lg, ValoraSpacing.xl, ValoraSpacing.lg, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -43,25 +44,25 @@ class HistorySection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: ValoraSpacing.sm),
               ...history.take(5).toList().asMap().entries.map((entry) {
                 final index = entry.key;
                 final item = entry.value;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: ValoraSpacing.sm),
                   child: ValoraCard(
+                    elevation: ValoraSpacing.elevationSm,
                     onTap: provider.isLoading
                         ? null
                         : () {
                             controller.text = item.query;
                             provider.generate(item.query);
                           },
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.all(ValoraSpacing.md),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(ValoraSpacing.sm),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary
                                 .withValues(alpha: 0.08),
@@ -69,11 +70,11 @@ class HistorySection extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.history_rounded,
-                            size: 16,
+                            size: ValoraSpacing.iconSizeSm,
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: ValoraSpacing.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +87,7 @@ class HistorySection extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: ValoraSpacing.xs),
                               Text(
                                 _formatDate(item.timestamp),
                                 style: ValoraTypography.labelSmall.copyWith(
@@ -107,7 +108,7 @@ class HistorySection extends StatelessWidget {
                                     item.query, provider.radiusMeters)
                                 ? Icons.playlist_add_check_rounded
                                 : Icons.playlist_add_rounded,
-                            size: 20,
+                            size: ValoraSpacing.iconSizeMd,
                             color: provider.isComparing(
                                     item.query, provider.radiusMeters)
                                 ? theme.colorScheme.primary
@@ -125,7 +126,7 @@ class HistorySection extends StatelessWidget {
                                   backgroundColor: theme.colorScheme.error,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                      borderRadius: BorderRadius.circular(ValoraSpacing.radiusMd)),
                                 ),
                               );
                             }
@@ -133,7 +134,7 @@ class HistorySection extends StatelessWidget {
                         ),
                         Icon(
                           Icons.chevron_right_rounded,
-                          size: 20,
+                          size: ValoraSpacing.iconSizeMd,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ],
