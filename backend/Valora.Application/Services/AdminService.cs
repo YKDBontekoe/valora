@@ -31,7 +31,7 @@ public class AdminService : IAdminService
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
-            _logger.LogDebug("User listing search query: {Search}", searchQuery);
+            _logger.LogDebug("User listing search query: {Search}", searchQuery.Replace(Environment.NewLine, " ").Replace("\n", " ").Replace("\r", " "));
         }
 
         var paginatedUsers = await _identityService.GetUsersAsync(pageNumber, pageSize, searchQuery, sortBy);
