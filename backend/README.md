@@ -2,52 +2,69 @@
 
 .NET 10 backend for location context enrichment.
 
+## Architecture Overview
+
+The Valora backend strictly adheres to Clean Architecture to segregate concerns. External implementations (e.g., Database, APIs) are decoupled from the core business logic.
+
+```mermaid
+graph TD
+    API[Valora.Api] --> App[Valora.Application]
+    Infra[Valora.Infrastructure] -.->|Implements| App
+    App --> Domain[Valora.Domain]
+    Infra --> Domain
+
+    API -.->|DI Container| Infra
+```
+
+### Setup Instructions (Quick Start)
+
+To run the backend locally:
+
+1.  **Prerequisites:** Install .NET 10 SDK and ensure a PostgreSQL instance is running (e.g., via Docker).
+2.  **Configuration:**
+    Copy the `.env.example` file and configure your secrets.
+    ```bash
+    cp .env.example .env
+    ```
+    Required `.env` keys:
+    - `DATABASE_URL`
+    - `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`
+
+3.  **Run:**
+    ```bash
+    dotnet run --project Valora.Api
+    ```
+4.  **Test:**
+    ```bash
+    dotnet test Valora.slnx
+    ```
+    Integration tests use EF Core InMemory.
+
+## API Reference
+Here are the primary endpoints exposed by `Valora.Api`.
+
+*   **Auth**
+    *   `POST /api/auth/login` - Authenticates a user.
+    *   `POST /api/auth/register` - Registers a new user.
+*   **Context**
+    *   `POST /api/context/report` - Aggregates context data for a location (Fan-Out strategy).
+*   **AI Chat**
+    *   `POST /api/ai/chat` - Generates insights via OpenRouter.
+*   **Jobs (Admin)**
+    *   `POST /api/admin/jobs` - Queues background ingestion jobs.
+
 ## Responsibilities
 - Error tracking and performance monitoring (Sentry)
-
 - Authentication and authorization
 - Context report generation (`/api/context/report`)
 - Persistence layer (EF Core/PostgreSQL)
 - Public API connector orchestration
 
-## Run
-
-```bash
-cd backend
-cp .env.example .env
-dotnet run --project Valora.Api
-```
-
-Required `.env` keys:
-
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_ISSUER`
-- `JWT_AUDIENCE`
-- `SENTRY_DSN` (optional, for error logging and performance monitoring)
-- `SENTRY_TRACES_SAMPLE_RATE` (optional, default 1.0, set lower in production)
-- `SENTRY_PROFILES_SAMPLE_RATE` (optional, default 0.0, set lower in production)
-- `SENTRY_RELEASE` (optional, manually specify the release version)
-
-Optional keys:
-
-- `OPENROUTER_API_KEY` (only for AI chat)
-- `OPENROUTESERVICE_API_KEY`, `KNMI_API_KEY`, `DUO_API_KEY` (future/optional connectors)
-
-## Test
-
-```bash
-cd backend
-dotnet test
-```
-
-Integration tests are configured for EF Core InMemory in this environment.
-
 ## Projects
 
-- `Valora.Api`
-- `Valora.Application`
-- `Valora.Domain`
-- `Valora.Infrastructure`
+- `Valora.Api`: Minimal APIs and DI Registration.
+- `Valora.Application`: Core use cases, Fan-Out orchestration, DTOs.
+- `Valora.Domain`: Enterprise business rules, domain entities, value objects.
+- `Valora.Infrastructure`: Repositories (CQRS-lite), external API clients.
 - `Valora.UnitTests`
 - `Valora.IntegrationTests`

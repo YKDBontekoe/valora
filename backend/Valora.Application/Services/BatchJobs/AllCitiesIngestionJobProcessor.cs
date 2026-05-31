@@ -24,6 +24,36 @@ public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
 
     public BatchJobType JobType => BatchJobType.AllCitiesIngestion;
 
+    /// <summary>
+    /// Executes the ingestion process for all municipalities.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Strategy:</strong>
+    /// This method orchestrates the ingestion of all municipalities in the Netherlands by breaking down a massive
+    /// workload into smaller, manageable chunks. Instead of fetching and processing all neighborhoods for all
+    /// municipalities in a single execution (which would likely result in API timeouts and massive memory spikes),
+    /// it fetches the list of municipalities and queues a separate <see cref="BatchJobType.CityIngestion"/> job for each.
+    /// </para>
+    /// <para>
+    /// <strong>Flow:</strong>
+    /// <pre>
+    /// <code class="language-mermaid">
+    /// sequenceDiagram
+    ///     participant Processor as AllCitiesProcessor
+    ///     participant External as CBS / PDOK
+    ///     participant DB as PostgreSQL
+    ///
+    ///     Processor->>External: GetAllMunicipalitiesAsync()
+    ///     External-->>Processor: List of 300+ Municipalities
+    ///
+    ///     loop For Each Municipality
+    ///         Processor->>DB: AddAsync(new CityIngestion Job)
+    ///     end
+    /// </code>
+    /// </pre>
+    /// </para>
+    /// </remarks>
     public async Task ProcessAsync(BatchJob job, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing all cities ingestion.");
