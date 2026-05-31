@@ -29,7 +29,7 @@ class ContextReportProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _isDisposed = false;
-  String? _error;
+  Object? _error;
 
   // Multiple reports state
   final Map<String, ContextReport> _activeReports = {};
@@ -50,7 +50,7 @@ class ContextReportProvider extends ChangeNotifier {
   final Set<String> _loadingAiInsights = {};
 
   bool get isLoading => _isLoading;
-  String? get error => _error;
+  Object? get error => _error;
 
   ContextReport? getReportById(String id) => _activeReports[id];
 
@@ -131,7 +131,7 @@ class ContextReportProvider extends ChangeNotifier {
       _currentReportId = id;
       _expansionStates.clear();
     } catch (e) {
-      _error = e.toString();
+      _error = e;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -269,7 +269,7 @@ class ContextReportProvider extends ChangeNotifier {
 
     final String trimmed = input.trim();
     if (trimmed.isEmpty) {
-      _error = 'Enter an address or Funda URL.';
+      _error = ValidationException('Enter an address or Funda URL.');
       notifyListeners();
       return;
     }
@@ -305,8 +305,7 @@ class ContextReportProvider extends ChangeNotifier {
     } catch (e) {
       if (_isDisposed) return;
       _currentReportId = null;
-      _error =
-          e is AppException ? e.message : 'Failed to generate context report.';
+      _error = e;
     } finally {
       if (!_isDisposed) {
         _isLoading = false;

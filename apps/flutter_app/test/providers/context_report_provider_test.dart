@@ -90,7 +90,8 @@ void main() {
     await provider.generate('Damrak 1 Amsterdam');
 
     expect(provider.report, isNull);
-    expect(provider.error, 'boom');
+    expect(provider.error, isA<ServerException>());
+    expect((provider.error as ServerException).message, 'boom');
     expect(provider.isLoading, isFalse);
 
     // Check history
@@ -119,7 +120,8 @@ void main() {
 
     await provider.generate('   ');
 
-    expect(provider.error, 'Enter an address or Funda URL.');
+    expect(provider.error, isA<ValidationException>());
+    expect((provider.error as ValidationException).message, 'Enter an address or Funda URL.');
     expect(provider.report, isNull);
   });
 
