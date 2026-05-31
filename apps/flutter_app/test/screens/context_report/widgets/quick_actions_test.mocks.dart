@@ -188,6 +188,15 @@ class MockContextReportProvider extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> selectReport(String? query, {int? radius}) =>
+      (super.noSuchMethod(
+            Invocation.method(#selectReport, [query], {#radius: radius}),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> fetchReport(String? query, int? radius) =>
       (super.noSuchMethod(
             Invocation.method(#fetchReport, [query, radius]),

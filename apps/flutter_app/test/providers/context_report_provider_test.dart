@@ -146,14 +146,37 @@ void main() {
     expect(provider.history, isEmpty);
   });
 
-  test('history list is unmodifiable', () async {
+  test('history list is unmodifiable view that caches correctly', () async {
      final provider = ContextReportProvider(
       repository: MockContextReportRepository(report: buildReport()),
       historyService: SearchHistoryService(),
     );
 
     await provider.generate('search 1');
+    final firstView = provider.history;
 
-    expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
+    expect(() => firstView.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
+    expect(identical(firstView, provider.history), true);
+
+    await provider.generate('search 2');
+    final secondView = provider.history;
+    expect(identical(firstView, secondView), false);
+  });
+
+  test('savedSearches list is unmodifiable view that caches correctly', () async {
+     final provider = ContextReportProvider(
+      repository: MockContextReportRepository(report: buildReport()),
+      historyService: SearchHistoryService(),
+    );
+
+    await provider.saveSearch('search 1', 1000);
+    final firstView = provider.savedSearches;
+
+    expect(() => firstView.removeAt(0), throwsUnsupportedError);
+    expect(identical(firstView, provider.savedSearches), true);
+
+    await provider.saveSearch('search 2', 1000);
+    final secondView = provider.savedSearches;
+    expect(identical(firstView, secondView), false);
   });
 }
