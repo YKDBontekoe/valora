@@ -27,11 +27,14 @@ public class AdminService : IAdminService
 
     public async Task<PaginatedList<AdminUserDto>> GetUsersAsync(int pageNumber, int pageSize, string? searchQuery = null, string? sortBy = null, string? currentUserId = null)
     {
-        _logger.LogInformation("Admin user listing requested by {UserId}. Page: {Page}, PageSize: {PageSize}, Sort: {Sort}", currentUserId ?? "Unknown", pageNumber, pageSize, sortBy);
+        var safeSortBy = sortBy?.Replace("\r", "").Replace("\n", "");
+        var safeSearchQuery = searchQuery?.Replace("\r", "").Replace("\n", "");
 
-        if (!string.IsNullOrWhiteSpace(searchQuery))
+        _logger.LogInformation("Admin user listing requested by {UserId}. Page: {Page}, PageSize: {PageSize}, Sort: {Sort}", currentUserId ?? "Unknown", pageNumber, pageSize, safeSortBy);
+
+        if (!string.IsNullOrWhiteSpace(safeSearchQuery))
         {
-            _logger.LogDebug("User listing search query: {Search}", searchQuery);
+            _logger.LogDebug("User listing search query: {Search}", safeSearchQuery);
         }
 
         var paginatedUsers = await _identityService.GetUsersAsync(pageNumber, pageSize, searchQuery, sortBy);

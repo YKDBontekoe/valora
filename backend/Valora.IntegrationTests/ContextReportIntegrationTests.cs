@@ -316,7 +316,7 @@ public class ContextReportIntegrationTests : IClassFixture<TestDatabaseFixture>
 
         // Setup others as null/default or simple returns just to not break null checks if logic is robust
         _mockCrimeClient.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>())).ReturnsAsync((CrimeStatsDto?)null);
-                _mockAmenityClient.Setup(x => x.GetAmenitiesAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((AmenityStatsDto?)null);
+        _mockAmenityClient.Setup(x => x.GetAmenitiesAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((AmenityStatsDto?)null);
 
         var request = new ContextReportRequestDto(Input: input, RadiusMeters: 500);
 

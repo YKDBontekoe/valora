@@ -158,7 +158,7 @@ public class BatchJobIntegrationTests : BaseIntegrationTest
     [Fact]
     public async Task GetJobs_WithPageBeyondRange_ReturnsEmptyList()
     {
-         // Arrange
+        // Arrange
         await AuthenticateAsAdminAsync();
 
         // Ensure at least one job exists
