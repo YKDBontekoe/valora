@@ -11,6 +11,7 @@ namespace Valora.Infrastructure.Persistence.Repositories;
 public class BatchJobRepository : IBatchJobRepository
 {
     private readonly ValoraDbContext _context;
+    private static readonly SemaphoreSlim _inMemorySemaphore = new SemaphoreSlim(1, 1);
 
     public BatchJobRepository(ValoraDbContext context)
     {
@@ -125,18 +126,29 @@ public class BatchJobRepository : IBatchJobRepository
         // Check for InMemory provider (used in tests) which doesn't support ExecuteUpdateAsync
         if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
         {
-            var job = await _context.BatchJobs
-                .Where(j => j.Status == BatchJobStatus.Pending)
-                .OrderBy(j => j.CreatedAt)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (job != null)
+            // Lock to simulate atomic updates in memory, since EF InMemory does not handle true concurrency.
+            // Note: Since each request gets a different context instance, locking on a static object
+            // is required to simulate a database lock across threads/scopes.
+            await _inMemorySemaphore.WaitAsync(cancellationToken);
+            try
             {
-                job.Status = BatchJobStatus.Processing;
-                job.StartedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
+                var job = await _context.BatchJobs
+                    .Where(j => j.Status == BatchJobStatus.Pending)
+                    .OrderBy(j => j.CreatedAt)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (job != null)
+                {
+                    job.Status = BatchJobStatus.Processing;
+                    job.StartedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                return job;
             }
-            return job;
+            finally
+            {
+                _inMemorySemaphore.Release();
+            }
         }
 
         // 1. Fetch the ID of a potential job to process.
