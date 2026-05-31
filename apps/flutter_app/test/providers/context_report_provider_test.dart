@@ -156,4 +156,5 @@ void main() {
 
     expect(() => provider.history.add(SearchHistoryItem(query: 'test', timestamp: DateTime.now())), throwsUnsupportedError);
   });
+
 }

@@ -70,64 +70,16 @@ class _MetricCategoryCardState extends State<MetricCategoryCard>
   }
 
   Widget? _buildChart() {
-    if (widget.title == 'Demographics') {
-      final ageMetrics = widget.metrics.where((m) => m.key.startsWith('age_')).toList();
-      if (ageMetrics.isNotEmpty) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Age Distribution',
-              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ContextBarChart(metrics: ageMetrics, height: 120),
-            const SizedBox(height: 24),
-          ],
-        );
-      }
+    switch (widget.title) {
+      case 'Demographics':
+        return _DemographicsChartBuilder(metrics: widget.metrics);
+      case 'Housing':
+        return _HousingChartBuilder(metrics: widget.metrics);
+      case 'Amenities':
+        return _AmenitiesChartBuilder(metrics: widget.metrics);
+      default:
+        return null;
     }
-
-    if (widget.title == 'Housing') {
-      final housingTypeMetrics = widget.metrics.where((m) => m.key.startsWith('housing_')).toList();
-      if (housingTypeMetrics.isNotEmpty) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Housing Profile',
-              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ContextPieChart(metrics: housingTypeMetrics, size: 140),
-            const SizedBox(height: 24),
-          ],
-        );
-      }
-    }
-
-    if (widget.title == 'Amenities') {
-      final distMetrics = widget.metrics.where((m) => m.key.startsWith('dist_')).toList();
-      if (distMetrics.isNotEmpty) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Proximity to Amenities',
-              style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ProximityChart(metrics: distMetrics),
-            const SizedBox(height: 24),
-          ],
-        );
-      }
-    }
-
-    return null;
   }
 
   @override
@@ -391,5 +343,85 @@ class _MetricRow extends StatelessWidget {
     if (score >= 60) return const Color(0xFF3B82F6);
     if (score >= 40) return const Color(0xFFF59E0B);
     return const Color(0xFFEF4444);
+  }
+}
+
+class _DemographicsChartBuilder extends StatelessWidget {
+  const _DemographicsChartBuilder({required this.metrics});
+  final List<ContextMetric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final ageMetrics = metrics.where((m) => m.key.startsWith('age_')).toList();
+    if (ageMetrics.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Age Distribution',
+          style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ContextBarChart(metrics: ageMetrics, height: 120),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _HousingChartBuilder extends StatelessWidget {
+  const _HousingChartBuilder({required this.metrics});
+  final List<ContextMetric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    // Only include mutually exclusive tenure metrics to ensure pie chart is a valid partition
+    final housingTypeMetrics = metrics.where((m) =>
+        m.key == 'housing_owner' ||
+        m.key == 'housing_rental' ||
+        m.key == 'housing_social').toList();
+
+    if (housingTypeMetrics.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Housing Profile',
+          style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ContextPieChart(metrics: housingTypeMetrics, size: 140),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _AmenitiesChartBuilder extends StatelessWidget {
+  const _AmenitiesChartBuilder({required this.metrics});
+  final List<ContextMetric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final distMetrics = metrics.where((m) => m.key.startsWith('dist_')).toList();
+    if (distMetrics.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Proximity to Amenities',
+          style: ValoraTypography.labelLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ProximityChart(metrics: distMetrics),
+        const SizedBox(height: 24),
+      ],
+    );
   }
 }
