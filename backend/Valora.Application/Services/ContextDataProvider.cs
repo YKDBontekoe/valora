@@ -34,6 +34,21 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Architecture Pattern: Fan-Out / Fan-In</strong><br/>
+    /// This method is the core "Fan-Out" engine. It issues multiple parallel requests to external data providers (CBS, OSM, Luchtmeetnet)
+    /// to fetch context data simultaneously using <c>Task.WhenAll</c>. This ensures the total wait time is bounded by the slowest API,
+    /// rather than the sum of all APIs.
+    /// </para>
+    /// <para>
+    /// <strong>Partial Failure Handling:</strong><br/>
+    /// Each external API call is wrapped in <see cref="TryGetSourceAsync{T}"/>. If an external dependency is down,
+    /// times out, or returns a 500, it is caught and handled gracefully. The method returns whatever data *did* succeed,
+    /// appending a warning message. This prevents a failure in a secondary source (e.g., Luchtmeetnet) from failing
+    /// the entire user request.
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
@@ -66,6 +81,13 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Wraps an external API call in a try-catch block to ensure partial success.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Essential for the Fan-Out pattern. By catching generic exceptions and returning <c>default</c> (null),
+    /// we prevent a single failing <c>Task</c> from bringing down the entire <c>Task.WhenAll</c> operation in <see cref="GetSourceDataAsync"/>.
+    /// The failure is recorded in the concurrent <c>warnings</c> bag to inform the client that the report is degraded.
+    /// </para>
+    /// </remarks>
     private async Task<T?> TryGetSourceAsync<T>(
         string sourceName,
         Func<CancellationToken, Task<T?>> sourceCall,
