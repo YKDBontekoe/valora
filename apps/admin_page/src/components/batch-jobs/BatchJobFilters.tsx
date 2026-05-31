@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, X, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../Button';
@@ -26,6 +26,8 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
   clearFilters,
   setPage,
 }) => {
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   return (
     <div className="px-10 py-8 border-b border-brand-100 bg-brand-50/50 flex flex-col xl:flex-row xl:items-center justify-between gap-8">
       <div className="flex items-center gap-8 flex-1">
@@ -37,12 +39,18 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
               Pipeline History
             </h2>
         </div>
-        <div className="relative max-w-sm w-full group">
+        <motion.div
+            animate={{ scale: isSearchFocused ? 1.02 : 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="relative max-w-sm w-full group"
+        >
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-brand-300 group-focus-within:text-primary-500 transition-all duration-300 group-focus-within:scale-110" />
           <input
             type="text"
             placeholder="Search by target..."
             value={searchQuery}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-10 py-3.5 bg-white border border-brand-100 rounded-2xl text-sm font-black text-brand-900 outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:font-bold placeholder:text-brand-200 shadow-sm"
           />
@@ -54,7 +62,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
                   <X size={14} />
               </button>
           )}
-        </div>
+        </motion.div>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-6">
         <div className="flex items-center gap-4">
@@ -78,7 +86,10 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
             )}
           </AnimatePresence>
 
-          <div className="relative">
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="relative"
+          >
               <select
                 value={statusFilter}
                 onChange={(e) => {
@@ -96,9 +107,12 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-brand-300">
                   <Filter size={12} />
               </div>
-          </div>
+          </motion.div>
 
-          <div className="relative">
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="relative"
+          >
               <select
                 value={typeFilter}
                 onChange={(e) => {
@@ -115,7 +129,7 @@ export const BatchJobFilters: React.FC<BatchJobFiltersProps> = ({
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-brand-300">
                   <Filter size={12} />
               </div>
-          </div>
+          </motion.div>
         </div>
         <div className="flex items-center gap-3 bg-primary-50 px-4 py-2 rounded-2xl border border-primary-100/50 shadow-sm ml-2">
           <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse" />
