@@ -89,14 +89,14 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             actions: [
-              Consumer<ThemeProvider>(
-                builder: (context, themeProvider, _) {
-                  final isDarkMode = themeProvider.isDarkMode;
+              Selector<ThemeProvider, bool>(
+                selector: (_, p) => p.isDarkMode,
+                builder: (context, isDarkMode, _) {
                   return Padding(
                     padding: const EdgeInsets.only(right: ValoraSpacing.md),
                     child: IconButton(
                       onPressed: () {
-                        themeProvider.toggleTheme();
+                        context.read<ThemeProvider>().toggleTheme();
                       },
                       icon: Icon(
                         isDarkMode

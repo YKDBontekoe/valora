@@ -16,12 +16,15 @@ public class NeighborhoodRepository : INeighborhoodRepository
 
     public async Task<Neighborhood?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
-        return await _context.Neighborhoods.FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        return await _context.Neighborhoods
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
     }
 
     public async Task<List<Neighborhood>> GetByCityAsync(string city, CancellationToken cancellationToken = default)
     {
         return await _context.Neighborhoods
+            .AsNoTracking()
             .Where(x => x.City == city)
             .ToListAsync(cancellationToken);
     }

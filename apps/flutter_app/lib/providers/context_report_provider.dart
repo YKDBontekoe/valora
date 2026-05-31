@@ -68,11 +68,11 @@ class ContextReportProvider extends ChangeNotifier {
         .toList();
   }
 
-  Set<String> get comparisonIds => Set.unmodifiable(_comparisonIds);
+  Set<String> get comparisonIds => _comparisonIds;
 
   int get radiusMeters => _radiusMeters;
-  List<SearchHistoryItem> get history => List.unmodifiable(_history);
-  List<SavedSearch> get savedSearches => List.unmodifiable(_savedSearches);
+  List<SearchHistoryItem> get history => _history;
+  List<SavedSearch> get savedSearches => _savedSearches;
 
   @override
   void dispose() {
