@@ -11,17 +11,20 @@ public class AdminService : IAdminService
     private readonly IIdentityService _identityService;
     private readonly INotificationRepository _notificationRepository;
     private readonly INeighborhoodRepository _neighborhoodRepository;
+    private readonly IBatchJobRepository _batchJobRepository;
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
         IIdentityService identityService,
         INotificationRepository notificationRepository,
         INeighborhoodRepository neighborhoodRepository,
+        IBatchJobRepository batchJobRepository,
         ILogger<AdminService> logger)
     {
         _identityService = identityService;
         _notificationRepository = notificationRepository;
         _neighborhoodRepository = neighborhoodRepository;
+        _batchJobRepository = batchJobRepository;
         _logger = logger;
     }
 
@@ -89,8 +92,9 @@ public class AdminService : IAdminService
 
         var usersCount = await _identityService.CountAsync();
         var notificationsCount = await _notificationRepository.CountAsync();
+        var activeJobs = await _batchJobRepository.GetActiveJobCountAsync();
 
-        return new AdminStatsDto(usersCount, notificationsCount);
+        return new AdminStatsDto(usersCount, notificationsCount, activeJobs);
     }
 
     public async Task<List<DatasetStatusDto>> GetDatasetStatusAsync(CancellationToken cancellationToken = default)

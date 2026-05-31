@@ -11,7 +11,8 @@ public record AdminUserDto(
 
 public record AdminStatsDto(
     int TotalUsers,
-    int TotalNotifications
+    int TotalNotifications,
+    int ActiveJobs
 );
 
 public record BatchJobRequest(

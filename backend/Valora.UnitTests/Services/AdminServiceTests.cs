@@ -14,6 +14,7 @@ public class AdminServiceTests
     private readonly Mock<IIdentityService> _identityServiceMock = new();
     private readonly Mock<INotificationRepository> _notificationRepositoryMock = new();
     private readonly Mock<INeighborhoodRepository> _neighborhoodRepositoryMock = new();
+    private readonly Mock<IBatchJobRepository> _batchJobRepositoryMock = new();
     private readonly Mock<ILogger<AdminService>> _loggerMock = new();
 
     private AdminService CreateService()
@@ -22,6 +23,7 @@ public class AdminServiceTests
             _identityServiceMock.Object,
             _notificationRepositoryMock.Object,
             _neighborhoodRepositoryMock.Object,
+            _batchJobRepositoryMock.Object,
             _loggerMock.Object);
     }
 
@@ -124,6 +126,7 @@ public class AdminServiceTests
 
         _identityServiceMock.Setup(x => x.CountAsync()).ReturnsAsync(10);
         _notificationRepositoryMock.Setup(x => x.CountAsync()).ReturnsAsync(5);
+        _batchJobRepositoryMock.Setup(x => x.GetActiveJobCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
 
         // Act
         var result = await service.GetSystemStatsAsync();
@@ -131,6 +134,7 @@ public class AdminServiceTests
         // Assert
         Assert.Equal(10, result.TotalUsers);
         Assert.Equal(5, result.TotalNotifications);
+        Assert.Equal(2, result.ActiveJobs);
     }
 
     [Fact]
