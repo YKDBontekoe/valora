@@ -70,7 +70,7 @@ public static class MapEndpoints
     {
         var typeList = ParseTypes(types);
         var amenities = await mapService.GetMapAmenitiesAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, typeList, ct);
-        
+
         httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
         {
             Public = true,
@@ -90,7 +90,7 @@ public static class MapEndpoints
     {
         var typeList = ParseTypes(types);
         var clusters = await mapService.GetMapAmenityClustersAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, zoom, typeList, ct);
-        
+
         httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
         {
             Public = true,
@@ -108,7 +108,7 @@ public static class MapEndpoints
         CancellationToken ct)
     {
         var overlays = await mapService.GetMapOverlaysAsync(bounds.MinLat, bounds.MinLon, bounds.MaxLat, bounds.MaxLon, metric, ct);
-        
+
         httpContext.Response.Headers[HeaderNames.CacheControl] = new CacheControlHeaderValue
         {
             Public = true,

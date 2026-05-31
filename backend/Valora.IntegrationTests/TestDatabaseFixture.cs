@@ -25,11 +25,11 @@ public class TestDatabaseFixture : IAsyncLifetime
         // await DbContainer.StartAsync();
         // Use a marker string to signal InMemory usage
         Factory = new IntegrationTestWebAppFactory("InMemory");
-        
+
         // Ensure database is created once
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-        
+
         await context.Database.EnsureCreatedAsync();
     }
 

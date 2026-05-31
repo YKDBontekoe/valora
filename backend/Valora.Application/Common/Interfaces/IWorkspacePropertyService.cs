@@ -10,7 +10,7 @@ public interface IWorkspacePropertyService
 
     Task<CommentDto> AddCommentAsync(string userId, Guid workspaceId, Guid savedPropertyId, AddCommentDto dto, CancellationToken ct = default);
     Task<List<CommentDto>> GetCommentsAsync(string userId, Guid workspaceId, Guid savedPropertyId, CancellationToken ct = default);
-    
+
     // New: Save a context report result directly
     Task<SavedPropertyDto> SaveContextReportAsync(string userId, Guid workspaceId, ContextReportDto report, string? notes, CancellationToken ct = default);
 }
