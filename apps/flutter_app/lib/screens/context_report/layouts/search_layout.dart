@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../widgets/valora_widgets.dart';
 import '../../../core/theme/valora_typography.dart';
+import '../../../core/theme/valora_spacing.dart';
+import '../../../core/theme/valora_shadows.dart';
 import '../../../services/pdok_service.dart';
 import '../../../providers/context_report_provider.dart';
 import '../widgets/search_field.dart';
@@ -37,7 +39,7 @@ class SearchLayout extends StatelessWidget {
         // Hero section
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: ValoraSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -56,14 +58,7 @@ class SearchLayout extends StatelessWidget {
                           end: Alignment.topRight,
                         ),
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                            spreadRadius: 2,
-                          ),
-                        ],
+                        boxShadow: ValoraShadows.primary,
                       ),
                       child: Icon(
                         Icons.analytics_rounded,
