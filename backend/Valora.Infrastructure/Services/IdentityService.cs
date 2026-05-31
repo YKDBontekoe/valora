@@ -4,6 +4,7 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Models;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
+using Valora.Infrastructure.Utilities;
 
 namespace Valora.Infrastructure.Services;
 
@@ -134,51 +135,12 @@ public class IdentityService : IIdentityService
 
         // Manually clean up related entities because many are configured with NoAction delete behavior
         // to prevent cycles or accidental data loss.
-
         if (_context.Database.IsRelational())
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                await _context.Workspaces
-                    .Where(w => w.OwnerId == userId)
-                    .ExecuteDeleteAsync();
-
-                await _context.WorkspaceMembers
-                    .Where(wm => wm.UserId == userId)
-                    .ExecuteDeleteAsync();
-
-                await _context.SavedProperties
-                    .Where(sl => sl.AddedByUserId == userId)
-                    .ExecuteDeleteAsync();
-
-                var userCommentIds = _context.PropertyComments
-                    .Where(c => c.UserId == userId)
-                    .Select(c => c.Id);
-
-                await _context.PropertyComments
-                    .Where(c => c.ParentCommentId != null && userCommentIds.Contains(c.ParentCommentId.Value))
-                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.ParentCommentId, (Guid?)null));
-
-                await _context.PropertyComments
-                    .Where(c => c.UserId == userId)
-                    .ExecuteDeleteAsync();
-
-                await _context.ActivityLogs
-                    .Where(l => l.ActorId == userId)
-                    .ExecuteDeleteAsync();
-
-                await _context.UserAiProfiles
-                    .Where(p => p.UserId == userId)
-                    .ExecuteDeleteAsync();
-
-                await _context.RefreshTokens
-                    .Where(rt => rt.UserId == userId)
-                    .ExecuteDeleteAsync();
-
-                await _context.Notifications
-                    .Where(n => n.UserId == userId)
-                    .ExecuteDeleteAsync();
+                await UserCleanupUtility.CleanupUserDataAsync(_context, userId);
 
                 var deleteResult = await _userManager.DeleteAsync(user);
 
@@ -201,45 +163,7 @@ public class IdentityService : IIdentityService
         }
         else
         {
-            var ownedWorkspaces = _context.Workspaces.Where(w => w.OwnerId == userId);
-            _context.Workspaces.RemoveRange(ownedWorkspaces);
-
-            var memberships = _context.WorkspaceMembers.Where(wm => wm.UserId == userId);
-            _context.WorkspaceMembers.RemoveRange(memberships);
-
-            var savedProperties = _context.SavedProperties.Where(sl => sl.AddedByUserId == userId);
-            _context.SavedProperties.RemoveRange(savedProperties);
-
-            var userCommentIds = _context.PropertyComments
-                .Where(c => c.UserId == userId)
-                .Select(c => c.Id)
-                .ToList();
-
-            var childComments = _context.PropertyComments
-                .Where(c => c.ParentCommentId != null && userCommentIds.Contains(c.ParentCommentId.Value))
-                .ToList();
-
-            foreach (var child in childComments)
-            {
-                child.ParentCommentId = null;
-            }
-
-            var comments = _context.PropertyComments.Where(c => c.UserId == userId);
-            _context.PropertyComments.RemoveRange(comments);
-
-            var logs = _context.ActivityLogs.Where(l => l.ActorId == userId);
-            _context.ActivityLogs.RemoveRange(logs);
-
-            var profiles = _context.UserAiProfiles.Where(p => p.UserId == userId);
-            _context.UserAiProfiles.RemoveRange(profiles);
-
-            var tokens = _context.RefreshTokens.Where(rt => rt.UserId == userId);
-            _context.RefreshTokens.RemoveRange(tokens);
-
-            var notifications = _context.Notifications.Where(n => n.UserId == userId);
-            _context.Notifications.RemoveRange(notifications);
-
-            await _context.SaveChangesAsync();
+            await UserCleanupUtility.CleanupUserDataAsync(_context, userId);
 
             try
             {
