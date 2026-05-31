@@ -113,3 +113,6 @@ test_output.txt
 *.patch
 *.orig
 *.rej
+coveragereport_html/
+TestResults/
+combined.xml
