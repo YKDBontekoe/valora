@@ -73,6 +73,10 @@
   --font-display: "Plus Jakarta Sans", sans-serif;
   --font-body: "Inter", sans-serif;
 
+  --tracking-ultra-wide: 0.3em;
+  --tracking-tightest: -0.075em;
+  --tracking-tighter: -0.05em;
+
   --animate-shimmer: shimmer 2.5s infinite linear;
   --animate-float: float 6s ease-in-out infinite;
   --animate-pulse-slow: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -118,9 +122,14 @@ body {
   @apply antialiased text-brand-800 bg-brand-50;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3 {
   font-family: var(--font-display);
-  @apply tracking-tight;
+  @apply tracking-tightest;
+}
+
+h4, h5, h6 {
+  font-family: var(--font-display);
+  @apply tracking-tighter;
 }
 
 .login-page {

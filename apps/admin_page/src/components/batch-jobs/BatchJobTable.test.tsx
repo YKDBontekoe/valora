@@ -125,7 +125,7 @@ describe('BatchJobTable', () => {
 
   it('shows correct sort indicators', () => {
     const { rerender } = render(<BatchJobTable {...defaultProps} sortBy="target_asc" />);
-    const targetHeader = screen.getByRole('button', { name: /sort by target/i });
+    const targetHeader = screen.getByRole('columnheader', { name: /target/i });
     expect(targetHeader).toHaveAttribute('aria-sort', 'ascending');
 
     rerender(<BatchJobTable {...defaultProps} sortBy="target_desc" />);
