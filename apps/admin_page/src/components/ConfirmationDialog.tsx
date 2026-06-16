@@ -56,7 +56,7 @@ const ConfirmationDialog = ({
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
-            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            transition={{ type: "spring", stiffness: 400, damping: 28 }}
             className="relative w-full max-w-md bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-premium-2xl overflow-hidden border border-white/40"
           >
             {/* Top accent bar */}

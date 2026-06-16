@@ -129,7 +129,7 @@ const Users = () => {
           </div>
 
           <div className="flex items-center gap-2 px-4 py-2 bg-brand-100/50 rounded-2xl border border-brand-200/50">
-              <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Displaying</span>
+              <span className="text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Displaying</span>
               <span className="text-xs font-black text-brand-900">{users.length} Records</span>
           </div>
       </div>
@@ -140,7 +140,7 @@ const Users = () => {
             <thead className="bg-brand-50/50">
               <tr>
                 <th
-                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em] cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
+                    className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide cursor-pointer group hover:bg-brand-100/50 transition-colors select-none"
                     onClick={() => toggleSort('email')}
                 >
                     <div className="flex items-center gap-2">
@@ -151,8 +151,8 @@ const Users = () => {
                         </div>
                     </div>
                 </th>
-                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Authorized Roles</th>
-                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-[0.25em]">Management</th>
+                <th className="px-10 py-6 text-left text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Authorized Roles</th>
+                <th className="px-10 py-6 text-right text-[10px] font-black text-brand-400 uppercase tracking-ultra-wide">Management</th>
               </tr>
             </thead>
             <motion.tbody
