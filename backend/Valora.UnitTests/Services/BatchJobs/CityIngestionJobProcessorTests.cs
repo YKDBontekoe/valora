@@ -164,4 +164,50 @@ public class CityIngestionJobProcessorTests
         Assert.Equal("No neighborhoods found for city.", job.ResultSummary);
         _neighborhoodRepositoryMock.Verify(x => x.AddRange(It.IsAny<IEnumerable<Neighborhood>>()), Times.Never);
     }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldThrowOperationCanceledException_WhenGetNeighborhoodsIsCanceled()
+    {
+        var processor = CreateProcessor();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
+
+        using var cts = new CancellationTokenSource();
+
+        _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .Returns(async (string city, CancellationToken token) => {
+                cts.Cancel();
+                token.ThrowIfCancellationRequested();
+                return await Task.FromResult(new List<NeighborhoodGeometryDto>());
+            });
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync(job, cts.Token));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldThrowOperationCanceledException_WhenEnrichNeighborhoodIsCanceled()
+    {
+        var processor = CreateProcessor();
+        var job = new BatchJob { Type = BatchJobType.CityIngestion, Target = "Amsterdam", Status = BatchJobStatus.Processing };
+
+        var neighborhoods = new List<NeighborhoodGeometryDto>
+        {
+            new NeighborhoodGeometryDto("BU001", "Buurt 1", "Buurt", 52.0, 4.0)
+        };
+
+        _geoClientMock.Setup(x => x.GetNeighborhoodsByMunicipalityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(neighborhoods);
+        _neighborhoodRepositoryMock.Setup(x => x.GetByCityAsync("Amsterdam", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Neighborhood>());
+
+        using var cts = new CancellationTokenSource();
+
+        _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
+            .Returns(async (ResolvedLocationDto loc, CancellationToken token) => {
+                cts.Cancel();
+                token.ThrowIfCancellationRequested();
+                return await Task.FromResult<NeighborhoodStatsDto?>(null);
+            });
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync(job, cts.Token));
+    }
 }

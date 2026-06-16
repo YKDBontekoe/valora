@@ -91,6 +91,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
             _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
             return results;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "HTTP request to PDOK WFS failed.");
@@ -127,6 +131,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
                     metricDisplayValue,
                     featureClone);
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -215,6 +223,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
             _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
             return results;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "HTTP request to PDOK WFS failed for municipality {Municipality}.", municipalityName);
@@ -286,6 +298,10 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 var sortedResults = results.OrderBy(x => x).ToList();
                 _cache.Set(cacheKey, sortedResults, TimeSpan.FromHours(24));
                 return sortedResults;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (HttpRequestException ex)
             {

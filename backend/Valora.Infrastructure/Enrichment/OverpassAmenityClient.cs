@@ -107,6 +107,10 @@ public sealed class OverpassAmenityClient : IAmenityClient
 
             return processor(overpassResponse.Elements);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "Overpass lookup network error");

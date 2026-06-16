@@ -458,4 +458,42 @@ public class CbsGeoClientTests
            });
         return handlerMock;
     }
+
+    [Fact]
+    public async Task ProcessFeatureAsync_ThrowsOperationCanceledException_WhenCanceled()
+    {
+        var features = new[]
+        {
+            new
+            {
+                type = "Feature",
+                properties = new { buurtcode = "BU03630000", buurtnaam = "TestBuurt" },
+                geometry = new { type = "Polygon", coordinates = new[] { new[] { new[] { 4.9, 52.3 }, new[] { 4.91, 52.31 }, new[] { 4.9, 52.3 } } } }
+            }
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(new { type = "FeatureCollection", features });
+        var handlerMock = CreateHandlerMock(HttpStatusCode.OK, jsonResponse);
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var client = new CbsGeoClient(
+            httpClient,
+            _cache,
+            _statsClientMock.Object,
+            _crimeClientMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        using var cts = new CancellationTokenSource();
+
+        _statsClientMock.Setup(x => x.GetStatsAsync(It.IsAny<ResolvedLocationDto>(), It.IsAny<CancellationToken>()))
+            .Returns(async (ResolvedLocationDto loc, CancellationToken token) => {
+                cts.Cancel(); // Simulate cancellation during the internal call
+                token.ThrowIfCancellationRequested(); // Throw to trigger the OperationCanceledException catch
+                return null;
+            });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.GetNeighborhoodOverlaysAsync(52.3, 4.9, 52.31, 4.91, MapOverlayMetric.PopulationDensity, cts.Token));
+    }
 }

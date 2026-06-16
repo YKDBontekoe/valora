@@ -81,6 +81,10 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             _cache.Set(cacheKey, snapshot, TimeSpan.FromMinutes(_options.AirQualityCacheMinutes));
             return snapshot;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Luchtmeetnet measurement lookup failed for station {StationId}", station.Value.Id);
@@ -98,6 +102,10 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
         {
             var response = await _httpClient.GetFromJsonAsync<LuchtmeetnetMeasurementResponse>(measurementUrl, cancellationToken);
             return response?.Data ?? new List<LuchtmeetnetMeasurement>();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -194,6 +202,10 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
                     break;
                 }
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Luchtmeetnet station list lookup failed for page {Page}", page);
@@ -230,6 +242,10 @@ public sealed class LuchtmeetnetAirQualityClient : IAirQualityClient
             _cache.Set(cacheKey, result, TimeSpan.FromHours(48));
 
             return result;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {

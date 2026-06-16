@@ -58,6 +58,10 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         {
             neighborhoods = await _geoClient.GetNeighborhoodsByMunicipalityAsync(job.Target, cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new ApplicationException($"Failed to fetch neighborhoods for city '{job.Target}': {ex.Message}", ex);
@@ -188,6 +192,10 @@ public class CityIngestionJobProcessor : IBatchJobProcessor
         try
         {
             await Task.WhenAll(statsTask, crimeTask);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
