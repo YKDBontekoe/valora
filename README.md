@@ -285,6 +285,8 @@ The API provides core functionalities to access and manage Valora's context data
     - Explains background processing (City Ingestion).
 - **[Data Flow: AI Chat](docs/onboarding-ai-chat-flow.md)**:
     - Traces the request path for the AI Chat feature, including profile resolution and prompt construction.
+- **[Data Flow: Notifications](docs/onboarding-notification-flow.md)** (Includes Mermaid Diagram):
+    - Traces the event-driven data flow for generating and persisting in-app notifications using Domain Events.
 
 ### ⚙️ Developer Reference
 *Technical details for contributors.*

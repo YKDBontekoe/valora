@@ -15,6 +15,23 @@ public class WorkspaceService : IWorkspaceService
         _repository = repository;
     }
 
+    /// <summary>
+    /// Creates a new workspace for the specified user.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Why a 10-workspace limit?</strong> This is an artificial constraint to prevent abuse and manage database size,
+    /// ensuring users don't create an unbounded number of workspaces which could impact system performance during cross-workspace queries.
+    /// </para>
+    /// <para>
+    /// <strong>Activity Logging:</strong> Both successful creations and limit-reached failures are logged via <see cref="IWorkspaceRepository.LogActivityEventAsync"/>.
+    /// This provides a transparent audit trail for the user and system administrators.
+    /// </para>
+    /// </remarks>
+    /// <param name="userId">The ID of the user creating the workspace.</param>
+    /// <param name="dto">The workspace creation data.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created workspace DTO.</returns>
     public async Task<WorkspaceDto> CreateWorkspaceAsync(string userId, CreateWorkspaceDto dto, CancellationToken ct = default)
     {
         var existingCount = await _repository.GetUserOwnedWorkspacesCountAsync(userId, ct);
