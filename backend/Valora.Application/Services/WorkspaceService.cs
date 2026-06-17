@@ -73,8 +73,6 @@ public class WorkspaceService : IWorkspaceService
         if (workspace.OwnerId != userId)
             throw new ForbiddenAccessException();
 
-        // Log audit trail for deletion - even if it cascades, having it in the log stream before commit is better than nothing.
-        // In a real system we'd log this to a non-cascade table or external audit service.
         await _repository.LogActivityEventAsync(workspace, userId, ActivityLogType.WorkspaceDeleted, $"Workspace '{workspace.Name}' deleted", ct);
 
         await _repository.DeleteAsync(workspace, ct);
@@ -88,7 +86,6 @@ public class WorkspaceService : IWorkspaceService
         return await _repository.GetActivityLogDtosAsync(workspaceId, ct);
     }
 
-    // Helpers
     private async Task ValidateMemberAccess(string userId, Guid workspaceId, CancellationToken ct)
     {
         var isMember = await _repository.IsMemberAsync(workspaceId, userId, ct);
