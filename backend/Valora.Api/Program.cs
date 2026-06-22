@@ -134,6 +134,9 @@ app.MapMapEndpoints();
 app.MapAdminEndpoints();
 app.MapUserProfileEndpoints();
 app.MapWorkspaceEndpoints();
+app.MapWorkspaceMemberEndpoints();
+app.MapWorkspacePropertyEndpoints();
+app.MapWorkspaceActivityEndpoints();
 app.MapContextReportEndpoints();
 
 // API Endpoints

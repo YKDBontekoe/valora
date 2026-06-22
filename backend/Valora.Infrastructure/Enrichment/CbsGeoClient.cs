@@ -195,22 +195,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 return HandleEmptyResultAndCache<NeighborhoodGeometryDto>(cacheKey);
             }
 
-            var results = new List<NeighborhoodGeometryDto>();
-            foreach (var feature in features.EnumerateArray())
-            {
-                if (!feature.TryGetProperty("properties", out var props)) continue;
-
-                var code = props.GetStringSafe("buurtcode");
-                if (string.IsNullOrEmpty(code)) continue;
-
-                var name = props.GetStringSafe("buurtnaam") ?? "Unknown";
-
-                // For latitude/longitude, we try to extract from geometry if possible, or just use 0,0 for now
-                // Simplification: We don't parse complex geometries here, but in a real app we would use NetTopologySuite
-                double lat = 0, lon = 0;
-
-                results.Add(new NeighborhoodGeometryDto(code, name, "Buurt", lat, lon));
-            }
+            var results = Valora.Infrastructure.Utilities.CbsGeoParserUtility.ParseNeighborhoodsFromJson(features);
 
             _cache.Set(cacheKey, results, TimeSpan.FromHours(24));
             return results;
@@ -271,19 +256,7 @@ public sealed class CbsGeoClient : ICbsGeoClient
                 using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
                 var xdoc = await System.Xml.Linq.XDocument.LoadAsync(content, System.Xml.Linq.LoadOptions.None, cancellationToken);
 
-                var wijkenbuurten = System.Xml.Linq.XNamespace.Get("http://wijkenbuurten.geonovum.nl");
-                var elements = xdoc.Descendants(wijkenbuurten + "gemeentenaam");
-
-                var results = new HashSet<string>();
-                foreach (var element in elements)
-                {
-                    if (!string.IsNullOrWhiteSpace(element.Value))
-                    {
-                        results.Add(element.Value);
-                    }
-                }
-
-                var sortedResults = results.OrderBy(x => x).ToList();
+                var sortedResults = Valora.Infrastructure.Utilities.CbsGeoParserUtility.ParseMunicipalitiesFromXml(xdoc);
                 _cache.Set(cacheKey, sortedResults, TimeSpan.FromHours(24));
                 return sortedResults;
             }
