@@ -52,9 +52,31 @@ public sealed class ContextReportService : IContextReportService
     /// <item><strong>Resolve:</strong> Converts the input string (address or URL) into precise coordinates.</item>
     /// <item><strong>Check Cache:</strong> Uses a 5-decimal precision key (~1.1m resolution) to check for recent reports.</item>
     /// <item><strong>Fan-Out:</strong> If not cached, it delegates to <see cref="IContextDataProvider.GetSourceDataAsync"/>.
-    /// This provider fires multiple tasks in parallel (Task.WhenAll) to fetch data from CBS, PDOK, and OSM simultaneously.</item>
+    /// This provider fires multiple tasks in parallel (Task.WhenAll) to fetch data from CBS / CBS Crime, Overpass, and Luchtmeetnet simultaneously.</item>
     /// <item><strong>Fan-In:</strong> The results are normalized and scored by <see cref="ContextReportBuilder"/>.</item>
     /// </list>
+    ///
+    /// ```mermaid
+    /// graph TD
+    ///     A[User Request] --> D[Resolve Location]
+    ///     D --> B{Cache Hit?}
+    ///     B -- Yes --> C[Return Cached Report]
+    ///     B -- No --> E[IContextDataProvider.GetSourceDataAsync]
+    ///
+    ///     E -->|Fan-Out| F[CBS]
+    ///     E -->|Fan-Out| G[CBS Crime]
+    ///     E -->|Fan-Out| H[Overpass]
+    ///     E -->|Fan-Out| I[Luchtmeetnet]
+    ///
+    ///     F -->|Fan-In| J[ContextReportBuilder]
+    ///     G -->|Fan-In| J
+    ///     H -->|Fan-In| J
+    ///     I -->|Fan-In| J
+    ///
+    ///     J --> K[Score & Normalize]
+    ///     K --> L[Save to Cache]
+    ///     L --> M[Return Report]
+    /// ```
     /// </para>
     /// <para>
     /// <strong>Key Design Decisions:</strong>

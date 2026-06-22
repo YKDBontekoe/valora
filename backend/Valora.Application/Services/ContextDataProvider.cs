@@ -34,6 +34,25 @@ public sealed class ContextDataProvider : IContextDataProvider
     /// <summary>
     /// Fetches data from CBS, PDOK, Overpass, etc., concurrently.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Data Flow (Fan-Out):</strong>
+    /// ```mermaid
+    /// graph TD
+    ///     Start[GetSourceDataAsync] -->|Spawn Task| CBS[CBS Stats API]
+    ///     Start -->|Spawn Task| Crime[CBS Crime API]
+    ///     Start -->|Spawn Task| OSM[Overpass API]
+    ///     Start -->|Spawn Task| Air[Luchtmeetnet API]
+    ///
+    ///     CBS -->|Wait All| FanIn[Task.WhenAll]
+    ///     Crime -->|Wait All| FanIn
+    ///     OSM -->|Wait All| FanIn
+    ///     Air -->|Wait All| FanIn
+    ///
+    ///     FanIn --> Return[ContextSourceData]
+    /// ```
+    /// </para>
+    /// </remarks>
     public async Task<ContextSourceData> GetSourceDataAsync(ResolvedLocationDto location, int radiusMeters, CancellationToken cancellationToken)
     {
         var warnings = new ConcurrentBag<string>();
