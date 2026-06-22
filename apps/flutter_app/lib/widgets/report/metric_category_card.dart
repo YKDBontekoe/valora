@@ -6,6 +6,7 @@ import '../common/valora_badge.dart';
 import 'charts/context_bar_chart.dart';
 import 'charts/context_pie_chart.dart';
 import 'charts/proximity_chart.dart';
+import '../../core/theme/valora_colors.dart';
 
 /// A collapsible card displaying metrics for a category with premium styling and charts.
 class MetricCategoryCard extends StatefulWidget {
@@ -387,9 +388,9 @@ class _MetricRow extends StatelessWidget {
   }
 
   Color _getColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981);
-    if (score >= 60) return const Color(0xFF3B82F6);
-    if (score >= 40) return const Color(0xFFF59E0B);
-    return const Color(0xFFEF4444);
+    if (score >= 80) return ValoraColors.scoreExcellent;
+    if (score >= 60) return ValoraColors.scoreGood;
+    if (score >= 40) return ValoraColors.scoreAverage;
+    return ValoraColors.scorePoor;
   }
 }

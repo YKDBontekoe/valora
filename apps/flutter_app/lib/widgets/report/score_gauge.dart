@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/theme/valora_colors.dart';
 
 /// An animated circular gauge displaying a score from 0-100
 /// with gradient coloring and smooth animation.
@@ -20,10 +21,10 @@ class ScoreGauge extends StatelessWidget {
   final Duration animationDuration;
 
   Color _getScoreColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981); // Emerald
-    if (score >= 60) return const Color(0xFF3B82F6); // Blue
-    if (score >= 40) return const Color(0xFFF59E0B); // Amber
-    return const Color(0xFFEF4444); // Red
+    if (score >= 80) return ValoraColors.scoreExcellent; // Emerald
+    if (score >= 60) return ValoraColors.scoreGood; // Blue
+    if (score >= 40) return ValoraColors.scoreAverage; // Amber
+    return ValoraColors.scorePoor; // Red
   }
 
   @override
