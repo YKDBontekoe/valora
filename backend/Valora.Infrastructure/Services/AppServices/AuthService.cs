@@ -7,7 +7,7 @@ using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class AuthService : IAuthService
 {

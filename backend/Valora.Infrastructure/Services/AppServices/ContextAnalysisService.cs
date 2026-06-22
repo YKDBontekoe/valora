@@ -3,11 +3,11 @@ using Valora.Application.Common.Interfaces;
 using Valora.Application.Common.Events;
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
-using Valora.Application.Services.Utilities;
+using Valora.Infrastructure.Services.AppServices.Utilities;
 using Valora.Domain.Services;
 using System;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class ContextAnalysisService : IContextAnalysisService
 {

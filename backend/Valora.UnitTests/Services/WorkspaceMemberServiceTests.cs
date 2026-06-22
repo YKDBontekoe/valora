@@ -3,7 +3,7 @@ using Moq;
 using Valora.Application.Common.Exceptions;
 using Valora.Application.Common.Interfaces;
 using Valora.Application.DTOs;
-using Valora.Application.Services;
+using Valora.Infrastructure.Services.AppServices;
 using Valora.Domain.Entities;
 using Valora.Infrastructure.Persistence;
 using Valora.Infrastructure.Persistence.Repositories;

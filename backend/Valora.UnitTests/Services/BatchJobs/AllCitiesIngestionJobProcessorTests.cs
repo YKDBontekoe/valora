@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Valora.Application.Common.Interfaces;
-using Valora.Application.Services.BatchJobs;
+using Valora.Infrastructure.Services.AppServices.BatchJobs;
 using Valora.Domain.Entities;
 using Xunit;
 

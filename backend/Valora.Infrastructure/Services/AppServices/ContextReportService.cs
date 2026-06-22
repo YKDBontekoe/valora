@@ -10,7 +10,7 @@ using Valora.Application.Enrichment.Builders;
 using Valora.Domain.Models;
 using Valora.Domain.Services;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 /// <summary>
 /// Orchestrates the generation of context reports by aggregating data from multiple external sources.

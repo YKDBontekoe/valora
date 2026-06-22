@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Valora.Domain.Entities;
+using Valora.Application.Common.Interfaces;
 using Valora.Domain.Enums;
 
-namespace Valora.Application.Services.BatchJobs;
+namespace Valora.Infrastructure.Services.AppServices.BatchJobs;
 
 public class MapGenerationJobProcessor : IBatchJobProcessor
 {

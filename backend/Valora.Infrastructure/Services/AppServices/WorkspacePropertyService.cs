@@ -4,7 +4,7 @@ using Valora.Application.DTOs;
 using Valora.Domain.Entities;
 using Valora.Application.Common.Extensions;
 
-namespace Valora.Application.Services;
+namespace Valora.Infrastructure.Services.AppServices;
 
 public class WorkspacePropertyService : IWorkspacePropertyService
 {

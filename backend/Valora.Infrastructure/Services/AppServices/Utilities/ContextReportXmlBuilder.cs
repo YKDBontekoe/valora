@@ -3,7 +3,7 @@ using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs;
 using Valora.Domain.Services;
 
-namespace Valora.Application.Services.Utilities;
+namespace Valora.Infrastructure.Services.AppServices.Utilities;
 
 internal sealed class ContextReportXmlBuilder
 {

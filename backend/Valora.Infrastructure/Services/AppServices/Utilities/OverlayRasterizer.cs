@@ -1,7 +1,7 @@
 using Valora.Application.Common.Utilities;
 using Valora.Application.DTOs.Map;
 
-namespace Valora.Application.Services.Utilities;
+namespace Valora.Infrastructure.Services.AppServices.Utilities;
 
 /// <summary>
 /// Provides high-performance spatial rasterization of vector geometries (GeoJSON) into discrete map tiles.
