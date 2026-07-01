@@ -28,6 +28,9 @@ public class PropertyCommentConfiguration : IEntityTypeConfiguration<PropertyCom
 
         builder.Property(e => e.Content).IsRequired().HasMaxLength(2000);
 
+        // Add index on SavedPropertyId to speed up GetCommentsAsync queries
+        builder.HasIndex(e => e.SavedPropertyId);
+
         builder.Property(e => e.Reactions)
             .HasConversion(
                 v => JsonHelper.Serialize(v),

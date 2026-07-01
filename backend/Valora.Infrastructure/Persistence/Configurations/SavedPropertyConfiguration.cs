@@ -27,6 +27,9 @@ public class SavedPropertyConfiguration : IEntityTypeConfiguration<SavedProperty
 
         builder.HasIndex(e => new { e.WorkspaceId, e.PropertyId }).IsUnique();
         
+        // Add index on WorkspaceId to speed up GetSavedPropertyDtosAsync and GetSavedPropertiesAsync queries
+        builder.HasIndex(e => e.WorkspaceId);
+
         builder.Property(e => e.Notes).HasMaxLength(2000);
     }
 }
