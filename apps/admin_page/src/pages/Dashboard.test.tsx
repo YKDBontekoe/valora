@@ -80,12 +80,50 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
+    // Click confirm in dialog
+    const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(adminService.getJobs).toHaveBeenCalled();
       expect(adminService.retryJob).toHaveBeenCalledTimes(2); // Should retry both failed jobs
       expect(adminService.retryJob).toHaveBeenCalledWith('1');
       expect(adminService.retryJob).toHaveBeenCalledWith('3');
       expect(showToast).toHaveBeenCalledWith('Successfully re-queued 2 failed jobs.', 'success');
+    });
+  });
+
+  it('cancels retry failed jobs from confirmation dialog', async () => {
+    (adminService.getStats as Mock).mockResolvedValue({ totalUsers: 1, totalNotifications: 1 });
+
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
+
+    // Wait for initial render
+    await waitFor(() => expect(screen.getByText('System Infrastructure')).toBeInTheDocument());
+
+    const retryButton = screen.getByText('Retry Pipeline');
+    fireEvent.click(retryButton);
+
+    // Assert dialog appears
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
+    // Click cancel in dialog
+    const cancelButton = await screen.findByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Retry Failed Jobs')).not.toBeInTheDocument();
+      expect(adminService.getJobs).not.toHaveBeenCalled();
+      expect(adminService.retryJob).not.toHaveBeenCalled();
     });
   });
 
@@ -109,6 +147,16 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
+    // Click confirm in dialog
+    const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(adminService.retryJob).toHaveBeenCalledTimes(2);
       // Only 1 succeeded
@@ -128,6 +176,16 @@ describe('Dashboard Page', () => {
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
 
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
+    // Click confirm in dialog
+    const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(adminService.retryJob).not.toHaveBeenCalled();
       expect(showToast).toHaveBeenCalledWith('No failed jobs found in the cluster.', 'info');
@@ -143,6 +201,16 @@ describe('Dashboard Page', () => {
 
     const retryButton = screen.getByText('Retry Pipeline');
     fireEvent.click(retryButton);
+
+    // Assert dialog appears and API is not called yet
+    const dialogTitle = await screen.findByText('Retry Failed Jobs');
+    expect(dialogTitle).toBeInTheDocument();
+    expect(adminService.getJobs).not.toHaveBeenCalled();
+    expect(adminService.retryJob).not.toHaveBeenCalled();
+
+    // Click confirm in dialog
+    const confirmButton = await screen.findByRole('button', { name: 'Retry Jobs' });
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(showToast).toHaveBeenCalledWith('System failed to re-queue jobs.', 'error');
