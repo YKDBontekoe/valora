@@ -35,14 +35,23 @@ class WorkspaceProvider extends ChangeNotifier {
   WorkspaceProvider(this._repository);
 
   Future<void> fetchWorkspaces() async {
-    _isWorkspacesLoading = true;
+    // Implement frontend caching: don't show full loading state if we already have data
+    if (_workspaces.isEmpty || _error != null) {
+      _isWorkspacesLoading = true;
+    }
+
+    // Always clear error when starting a new fetch
     _error = null;
     notifyListeners();
 
     try {
-      _workspaces = await _repository.fetchWorkspaces();
+      final fetchedWorkspaces = await _repository.fetchWorkspaces();
+      _workspaces = fetchedWorkspaces;
     } catch (e) {
-      _error = e.toString();
+      // Only show full-screen error if we don't have cached data to display
+      if (_workspaces.isEmpty) {
+        _error = e.toString();
+      }
     } finally {
       _isWorkspacesLoading = false;
       notifyListeners();
@@ -77,9 +86,15 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> selectWorkspace(String id) async {
-    _isWorkspaceDetailLoading = true;
+    // Implement frontend caching: if already selected, don't show full loading
+    if (_selectedWorkspace?.id != id || _error != null) {
+      _isWorkspaceDetailLoading = true;
+    }
+
+    // Always clear error when starting a new fetch
     _error = null;
     notifyListeners();
+
     try {
       final workspaceFuture = _repository.getWorkspace(id);
       final membersFuture = _repository.getWorkspaceMembers(id);
@@ -97,9 +112,11 @@ class WorkspaceProvider extends ChangeNotifier {
       _members = results[1] as List<WorkspaceMember>;
       _savedProperties = results[2] as List<SavedProperty>;
       _activityLogs = results[3] as List<ActivityLog>;
-
     } catch (e) {
-      _error = e.toString();
+      // Only show full-screen error if we don't have cached data to display
+      if (_selectedWorkspace?.id != id) {
+        _error = e.toString();
+      }
     } finally {
       _isWorkspaceDetailLoading = false;
       notifyListeners();
