@@ -25,6 +25,15 @@ public class AdminService : IAdminService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of users for the admin dashboard.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Design Decision:</strong> We map the <see cref="ApplicationUser"/> (Domain Entity) to an <see cref="AdminUserDto"/>
+    /// and fetch the roles separately to keep the presentation layer decoupled from the Identity framework specifics.
+    /// </para>
+    /// </remarks>
     public async Task<PaginatedList<AdminUserDto>> GetUsersAsync(int pageNumber, int pageSize, string? searchQuery = null, string? sortBy = null, string? currentUserId = null)
     {
         _logger.LogInformation("Admin user listing requested by {UserId}. Page: {Page}, PageSize: {PageSize}, Sort: {Sort}", currentUserId ?? "Unknown", pageNumber, pageSize, sortBy);
@@ -54,6 +63,15 @@ public class AdminService : IAdminService
         );
     }
 
+    /// <summary>
+    /// Deletes a specific user from the system.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Security Note:</strong> Admins are explicitly blocked from deleting their own accounts to prevent
+    /// accidental self-lockouts that would leave the system without a valid administrative user.
+    /// </para>
+    /// </remarks>
     public async Task<Result> DeleteUserAsync(string targetUserId, string currentUserId)
     {
         if (targetUserId == currentUserId)
