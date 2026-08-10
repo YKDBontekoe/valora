@@ -29,7 +29,7 @@ public class RequestMetricsMiddleware
             // Exclude the health check endpoint itself from metrics to avoid skewing data with very fast checks
             if (!context.Request.Path.StartsWithSegments("/health") && !context.Request.Path.StartsWithSegments("/api/health"))
             {
-                 _metricsService.RecordRequestDuration(sw.ElapsedMilliseconds);
+                _metricsService.RecordRequestDuration(sw.ElapsedMilliseconds);
             }
         }
     }

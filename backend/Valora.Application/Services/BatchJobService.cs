@@ -102,7 +102,7 @@ public class BatchJobService : IBatchJobService
 
         if (job.Status != BatchJobStatus.Failed && job.Status != BatchJobStatus.Completed)
         {
-             throw new InvalidOperationException("Only failed or completed jobs can be retried.");
+            throw new InvalidOperationException("Only failed or completed jobs can be retried.");
         }
 
         job.Status = BatchJobStatus.Pending;
