@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_typography.dart';
-import '../core/theme/valora_spacing.dart';
-import '../models/notification.dart';
-import '../services/notification_service.dart';
-import '../widgets/valora_widgets.dart';
-import '../widgets/notifications/notification_card.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../models/notification.dart';
+import '../../services/notification_service.dart';
+import '../../widgets/valora_widgets.dart';
+import '../../widgets/notifications/notification_card.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});

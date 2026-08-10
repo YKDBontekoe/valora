@@ -12,7 +12,7 @@ import 'providers/theme_provider.dart';
 import 'providers/insights_provider.dart';
 import 'providers/ai_chat_provider.dart';
 import 'services/ai_service.dart';
-import 'screens/startup_screen.dart';
+import 'screens/startup/startup_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
@@ -22,7 +22,7 @@ import 'repositories/map_repository.dart';
 import 'repositories/notification_repository.dart';
 import 'repositories/context_report_repository.dart';
 import 'repositories/workspace_repository.dart';
-import 'widgets/global_error_widget.dart';
+import 'widgets/common/global_error_widget.dart';
 
 // coverage:ignore-start
 Future<void> main() async {

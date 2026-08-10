@@ -7,7 +7,7 @@ import '../../core/theme/valora_spacing.dart';
 import '../../models/notification.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/valora_widgets.dart';
-import '../../screens/workspace_detail_screen.dart';
+import '../../screens/workspaces/workspace_detail_screen.dart';
 import '../../screens/context_report/context_report_screen.dart';
 
 class NotificationCard extends StatelessWidget {

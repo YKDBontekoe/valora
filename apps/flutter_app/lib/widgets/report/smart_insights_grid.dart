@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/context_report.dart';
-import '../valora_glass_container.dart';
+import '../common/valora_glass_container.dart';
 
 class SmartInsightsGrid extends StatelessWidget {
   const SmartInsightsGrid({super.key, required this.report});

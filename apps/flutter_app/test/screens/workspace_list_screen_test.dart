@@ -6,7 +6,7 @@ import 'package:valora_app/models/saved_property.dart';
 import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/models/comment.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
-import 'package:valora_app/screens/workspace_list_screen.dart';
+import 'package:valora_app/screens/workspaces/workspace_list_screen.dart';
 
 class FakeWorkspaceProvider extends ChangeNotifier implements WorkspaceProvider {
   bool _isWorkspacesLoading = false;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:valora_app/core/exceptions/app_exceptions.dart';
-import 'package:valora_app/widgets/valora_error_state.dart';
+import 'package:valora_app/widgets/common/valora_error_state.dart';
 
 void main() {
   group('ValoraErrorState', () {
