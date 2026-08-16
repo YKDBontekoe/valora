@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Valora.Application.DTOs;
 using Valora.Domain.Enums;
 
-namespace Valora.Application.Services;
+namespace Valora.Application.Common.Interfaces;
 
 public interface INotificationService
 {
