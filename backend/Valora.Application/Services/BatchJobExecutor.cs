@@ -7,6 +7,28 @@ using Valora.Application.Common.Events;
 
 namespace Valora.Application.Services;
 
+/// <summary>
+/// Executes background jobs (e.g., City Ingestion, Cache Warming) asynchronously.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Background Worker Architecture:</strong><br/>
+/// This executor is designed to be called continuously by a hosted background worker service (`BatchJobWorker`).
+/// It acts as the orchestrator for long-running operations that would otherwise time out a standard HTTP request.
+/// </para>
+/// <para>
+/// <strong>Concurrency Control &amp; Atomic Locking:</strong><br/>
+/// The system supports horizontal scaling (multiple worker nodes). To prevent multiple workers from
+/// executing the same job concurrently, <see cref="IBatchJobRepository.GetNextPendingJobAsync"/> uses
+/// an atomic lock in the database (e.g., <c>SELECT ... FOR UPDATE SKIP LOCKED</c> in PostgreSQL) to claim
+/// a pending job safely.
+/// </para>
+/// <para>
+/// <strong>Isolation:</strong><br/>
+/// By offloading heavy processing tasks here, API threads are kept free to serve synchronous user requests.
+/// The executor runs within its own scoped dependency injection container provided by the hosted service.
+/// </para>
+/// </remarks>
 public class BatchJobExecutor : IBatchJobExecutor
 {
     private readonly IBatchJobRepository _jobRepository;
