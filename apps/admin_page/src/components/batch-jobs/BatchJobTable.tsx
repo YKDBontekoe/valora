@@ -9,7 +9,7 @@ import { logger } from '../../services/logger';
 const listVariants = {
   visible: {
     transition: {
-      staggerChildren: 0.05
+      staggerChildren: 0.03
     }
   }
 };

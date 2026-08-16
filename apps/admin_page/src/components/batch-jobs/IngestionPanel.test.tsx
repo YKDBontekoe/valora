@@ -55,8 +55,8 @@ describe('IngestionPanel', () => {
     render(<IngestionPanel {...defaultProps} isStarting={true} />);
 
     expect(screen.getByPlaceholderText(/Target Municipality/)).toBeDisabled();
-    // The text 'Execute Sync' is not present when isLoading is true in Button component
-    expect(screen.queryByText('Execute Sync')).not.toBeInTheDocument();
+    // The text 'Execute Sync' is present but visually hidden (sr-only) when isLoading is true in Button component
+    expect(screen.getByText('Execute Sync')).toHaveClass('sr-only');
     expect(screen.getByText('Provision All Cities').closest('button')).toBeDisabled();
   });
 });

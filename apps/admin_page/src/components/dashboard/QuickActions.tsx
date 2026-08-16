@@ -97,13 +97,14 @@ const QuickActions = ({ onRefreshStats }: QuickActionsProps) => {
                     key={action.title}
                     whileHover={{
                       x: 12,
+                      y: -8,
                       scale: 1.02,
-                      transition: { type: 'spring', stiffness: 260, damping: 20 }
+                      transition: { type: 'spring', stiffness: 300, damping: 15 }
                     }}
                     whileTap={{ scale: 0.98 }}
                     onClick={action.onClick}
                     disabled={action.isLoading}
-                    className="flex items-center gap-8 p-10 bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-brand-100 shadow-premium hover:shadow-premium-xl transition-all duration-500 text-left group cursor-pointer relative overflow-hidden hover-border-gradient"
+                    className="flex items-center gap-8 p-10 glass-premium rounded-[2.5rem] border border-brand-100 shadow-premium hover:shadow-premium-xl transition-all duration-500 text-left group cursor-pointer relative overflow-hidden hover-border-gradient"
                 >
                     {/* Active highlight line */}
                     <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2/3 ${action.accent} rounded-r-full opacity-0 group-hover:opacity-100 transition-all duration-700 scale-y-0 group-hover:scale-y-100 shadow-glow shadow-current`} style={{ color: `var(--color-${action.accent.split('-')[1]}-500)` }} />
