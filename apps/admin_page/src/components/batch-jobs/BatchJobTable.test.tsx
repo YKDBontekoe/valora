@@ -70,7 +70,7 @@ describe('BatchJobTable', () => {
   it('handles keyboard navigation for sorting', () => {
     render(<BatchJobTable {...defaultProps} />);
 
-    const header = screen.getByRole('button', { name: /sort by definition/i });
+    const header = screen.getByRole('columnheader', { name: /sort by definition/i });
     fireEvent.keyDown(header, { key: 'Enter' });
     expect(defaultProps.toggleSort).toHaveBeenCalledWith('type');
 
@@ -105,10 +105,9 @@ describe('BatchJobTable', () => {
   it('calls openDetails when clicking a row', () => {
     render(<BatchJobTable {...defaultProps} />);
 
-    const amsterdamRow = screen.getByText('Amsterdam').closest('tr');
-    if (!amsterdamRow) throw new Error('Row not found');
+    const detailsButton = screen.getByRole('button', { name: /open details for job 1/i });
+    fireEvent.click(detailsButton);
 
-    fireEvent.click(amsterdamRow);
     expect(defaultProps.openDetails).toHaveBeenCalledWith('1');
   });
 
@@ -125,7 +124,7 @@ describe('BatchJobTable', () => {
 
   it('shows correct sort indicators', () => {
     const { rerender } = render(<BatchJobTable {...defaultProps} sortBy="target_asc" />);
-    const targetHeader = screen.getByRole('button', { name: /sort by target/i });
+    const targetHeader = screen.getByRole('columnheader', { name: /sort by target/i });
     expect(targetHeader).toHaveAttribute('aria-sort', 'ascending');
 
     rerender(<BatchJobTable {...defaultProps} sortBy="target_desc" />);
