@@ -55,8 +55,6 @@ class _CommentThreadWidgetState extends State<CommentThreadWidget> {
                 comment: widget.comments[index],
                 onReply: _handleReply,
                 onViewMoreReplies: (id) {
-                  // TODO: Implement viewing deeper threads or expanding.
-                  // For now, this placeholder handles the callback structurally.
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Viewing more replies for comment $id is not yet implemented.')),
                   );

@@ -20,11 +20,11 @@ public static class AdminEndpoints
             IAdminService adminService,
             ClaimsPrincipal user,
             [AsParameters] PaginationRequest pagination,
-            [FromQuery] string? q = null,
+            [FromQuery(Name = "q")] string? search = null,
             [FromQuery] string? sort = null) =>
         {
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            var paginatedUsers = await adminService.GetUsersAsync(pagination.Page, pagination.PageSize, q, sort, currentUserId);
+            var paginatedUsers = await adminService.GetUsersAsync(pagination.Page, pagination.PageSize, search, sort, currentUserId);
 
             return Results.Ok(new {
                 paginatedUsers.Items,
@@ -100,10 +100,10 @@ public static class AdminEndpoints
             [AsParameters] PaginationRequest pagination,
             [FromQuery] string? status = null,
             [FromQuery] string? type = null,
-            [FromQuery] string? q = null,
+            [FromQuery(Name = "q")] string? search = null,
             [FromQuery] string? sort = null) =>
         {
-            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, q, sort, ct);
+            var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, search, sort, ct);
             return Results.Ok(new {
                 jobs.Items,
                 jobs.PageIndex,
