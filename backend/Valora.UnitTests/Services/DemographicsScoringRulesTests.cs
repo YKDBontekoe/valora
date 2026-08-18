@@ -105,9 +105,9 @@ public class DemographicsScoringRulesTests
     [InlineData(null, 10, 20, null)]
     [InlineData(10, null, 20, null)]
     [InlineData(0, 0, 0, null)]
-    public void ToPercent_CalculatesCorrectly(int? target, int? one, int? two, double? expected)
+    public void CalculateTargetPercentage_CalculatesCorrectly(int? target, int? one, int? two, double? expected)
     {
-        var result = DemographicsScoringRules.ToPercent(target, one, two);
+        var result = DemographicsScoringRules.CalculateTargetPercentage(target, one, two);
         Assert.Equal(expected, result);
     }
 }

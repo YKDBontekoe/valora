@@ -50,7 +50,7 @@ public static class DemographicsScoringRules
 
     public static double? ScoreEducation(int? low, int? medium, int? high)
     {
-        var share = ToPercent(high, low, medium);
+        var share = CalculateTargetPercentage(high, low, medium);
         if (!share.HasValue) return null;
         return Math.Clamp(share.Value * 1.4, 0, 100);
     }
@@ -91,11 +91,11 @@ public static class DemographicsScoringRules
         };
     }
 
-    public static double? ToPercent(int? target, int? one, int? two)
+    public static double? CalculateTargetPercentage(int? targetGroup, int? groupOne, int? groupTwo)
     {
-        if (!target.HasValue || !one.HasValue || !two.HasValue) return null;
-        var total = target.Value + one.Value + two.Value;
+        if (!targetGroup.HasValue || !groupOne.HasValue || !groupTwo.HasValue) return null;
+        var total = targetGroup.Value + groupOne.Value + groupTwo.Value;
         if (total <= 0) return null;
-        return Math.Round((double)target.Value / total * 100, 1);
+        return Math.Round((double)targetGroup.Value / total * 100, 1);
     }
 }

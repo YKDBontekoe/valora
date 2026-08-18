@@ -55,9 +55,11 @@ public class WorkspacePropertyService : IWorkspacePropertyService
         // The ContextReportDto doesn't currently expose BagId, so we use Address as a fallback or if we can extract it.
         // For now, let's try Address.
         var property = await _repository.GetPropertyByBagIdAsync(report.Location.PostalCode + report.Location.DisplayAddress, ct); // Hypothetical unique key if no BagId
-        
-        if (property == null) {
-            property = new Property {
+
+        if (property == null)
+        {
+            property = new Property
+            {
                 Address = report.Location.DisplayAddress,
                 City = report.Location.MunicipalityName,
                 PostalCode = report.Location.PostalCode,

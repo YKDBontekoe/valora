@@ -105,7 +105,7 @@ public class ValoraDbContextTests
             ?.GetForeignKeys()
             .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(ApplicationUser));
         Assert.Equal(DeleteBehavior.Restrict, commentToUser?.DeleteBehavior);
-        
+
         // 5. PropertyComment -> ParentComment (Restrict - self-referencing)
         var commentToParent = model.FindEntityType(typeof(PropertyComment))
             ?.GetForeignKeys()
