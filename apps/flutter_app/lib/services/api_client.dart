@@ -111,17 +111,22 @@ class ApiClient {
     return _retryOptions.retry(
       () async {
         final response = await requestFn();
-        if (response.statusCode >= 500 || response.statusCode == 429) {
+        if (response.statusCode >= 500 || response.statusCode == 429 || response.statusCode == 408) {
           throw TransientHttpException(
             'Service temporarily unavailable (Status: ${response.statusCode})',
           );
         }
         return response;
       },
-      retryIf: (e) =>
-          e is SocketException ||
+      retryIf: (e) {
+        developer.log('Evaluating retry for error: ${e.runtimeType}', name: 'ApiClient');
+        return e is SocketException ||
           e is TimeoutException ||
-          e is TransientHttpException,
+          e is http.ClientException ||
+          e is HandshakeException ||
+          e is HttpException ||
+          e is TransientHttpException;
+      },
     );
   }
 
@@ -183,6 +188,8 @@ class ApiClient {
       return JsonParsingException('Failed to process server response. Please try again later.');
     } else if (error is HandshakeException) {
         return NetworkException('Secure connection failed. Please check your network.');
+    } else if (error is HttpException) {
+        return NetworkException('A network error occurred. Please try again.');
     }
 
     return UnknownException('An unexpected error occurred. Please try again.');
