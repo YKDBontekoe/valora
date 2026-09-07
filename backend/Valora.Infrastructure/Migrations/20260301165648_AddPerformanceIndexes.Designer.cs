@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Valora.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Valora.Infrastructure.Persistence;
 namespace Valora.Infrastructure.Migrations
 {
     [DbContext(typeof(ValoraDbContext))]
-    partial class ValoraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260301165648_AddPerformanceIndexes")]
+    partial class AddPerformanceIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -212,7 +215,11 @@ namespace Valora.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("Feature")
+                    b.Property<string>("FallbackModels")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Intent")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -220,7 +227,7 @@ namespace Valora.Infrastructure.Migrations
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
 
-                    b.Property<string>("ModelId")
+                    b.Property<string>("PrimaryModel")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -234,12 +241,12 @@ namespace Valora.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Feature")
+                    b.HasIndex("Intent")
                         .IsUnique();
 
                     b.ToTable("AiModelConfigs", t =>
                         {
-                            t.HasCheckConstraint("CK_AiModelConfig_Feature", "[Feature] NOT LIKE '%[^a-zA-Z0-9_]%'");
+                            t.HasCheckConstraint("CK_AiModelConfig_Intent", "[Intent] NOT LIKE '%[^a-zA-Z0-9_]%'");
                         });
                 });
 
