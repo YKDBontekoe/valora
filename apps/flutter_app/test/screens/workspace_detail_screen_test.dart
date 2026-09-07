@@ -6,7 +6,7 @@ import 'package:valora_app/models/workspace.dart';
 import 'package:valora_app/models/saved_property.dart';
 import 'package:valora_app/models/activity_log.dart';
 import 'package:valora_app/providers/workspace_provider.dart';
-import 'package:valora_app/screens/workspace_detail_screen.dart';
+import 'package:valora_app/screens/workspaces/workspace_detail_screen.dart';
 
 // Mock Provider
 class MockWorkspaceProvider extends Mock implements WorkspaceProvider {

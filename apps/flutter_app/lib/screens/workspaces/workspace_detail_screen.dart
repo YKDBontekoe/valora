@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/valora_colors.dart';
-import '../core/theme/valora_typography.dart';
-import '../core/theme/valora_spacing.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/context_report_provider.dart';
-import '../screens/context_report/context_report_screen.dart';
-import '../widgets/valora_widgets.dart';
-import '../widgets/workspaces/activity_feed_widget.dart';
-import '../models/activity_log.dart';
-import '../models/workspace.dart';
-import '../models/saved_property.dart';
-import '../widgets/workspaces/member_management_widget.dart';
+import '../../core/theme/valora_colors.dart';
+import '../../core/theme/valora_typography.dart';
+import '../../core/theme/valora_spacing.dart';
+import '../../providers/workspace_provider.dart';
+import '../../providers/context_report_provider.dart';
+import '../../screens/context_report/context_report_screen.dart';
+import '../../widgets/valora_widgets.dart';
+import '../../widgets/workspaces/activity_feed_widget.dart';
+import '../../models/activity_log.dart';
+import '../../models/workspace.dart';
+import '../../models/saved_property.dart';
+import '../../widgets/workspaces/member_management_widget.dart';
 
 class WorkspaceDetailScreen extends StatefulWidget {
   final String workspaceId;

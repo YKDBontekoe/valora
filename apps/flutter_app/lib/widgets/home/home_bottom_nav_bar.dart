@@ -8,7 +8,7 @@ import '../../core/theme/valora_typography.dart';
 import '../../core/theme/valora_animations.dart';
 import '../../core/theme/valora_shadows.dart';
 import '../../services/notification_service.dart';
-import '../valora_glass_container.dart';
+import '../common/valora_glass_container.dart';
 
 class HomeBottomNavBar extends StatelessWidget {
   final int currentIndex;

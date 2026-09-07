@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/workspace_provider.dart';
-import '../repositories/workspace_repository.dart';
-import '../services/notification_service.dart';
-import '../widgets/home/home_bottom_nav_bar.dart';
-import 'context_report/context_report_screen.dart';
-import 'insights/insights_screen.dart';
-import 'notifications_screen.dart';
-import 'settings_screen.dart';
+import '../../providers/workspace_provider.dart';
+import '../../repositories/workspace_repository.dart';
+import '../../services/notification_service.dart';
+import '../../widgets/home/home_bottom_nav_bar.dart';
+import '../context_report/context_report_screen.dart';
+import '../insights/insights_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
