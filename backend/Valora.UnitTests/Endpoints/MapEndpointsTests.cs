@@ -45,7 +45,7 @@ public class MapEndpointsTests
         List<string>? capturedTypes = null;
         var amenities = new List<MapAmenityDto> { new MapAmenityDto("id", "type", "name", 0, 0, null) };
         var bounds = new BoundsRequest(52, 4, 53, 5);
-        
+
         _mapServiceMock.Setup(x => x.GetMapAmenitiesAsync(
             It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(),
             It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))

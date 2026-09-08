@@ -26,7 +26,7 @@ public class SavedPropertyConfiguration : IEntityTypeConfiguration<SavedProperty
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => new { e.WorkspaceId, e.PropertyId }).IsUnique();
-        
+
         builder.Property(e => e.Notes).HasMaxLength(2000);
     }
 }

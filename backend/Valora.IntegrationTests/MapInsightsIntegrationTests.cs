@@ -17,7 +17,7 @@ public class MapInsightsIntegrationTests : BaseIntegrationTest
     {
         // Arrange
         await AuthenticateAsync();
-        
+
         // Clear cache
         using (var scope = Factory.Services.CreateScope())
         {
@@ -26,7 +26,7 @@ public class MapInsightsIntegrationTests : BaseIntegrationTest
             {
                 mc.Clear();
             }
-            
+
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
             db.Properties.AddRange(
                 new Property { BagId = "I1", Address = "A1", City = "Utrecht", Latitude = 52.09, Longitude = 5.12, ContextCompositeScore = 100 },

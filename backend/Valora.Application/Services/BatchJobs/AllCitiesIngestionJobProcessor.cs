@@ -43,29 +43,29 @@ public class AllCitiesIngestionJobProcessor : IBatchJobProcessor
         int count = 0;
         foreach (var city in cities)
         {
-             cancellationToken.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
-             // Check for cancellation every 10 iterations
-             if (count % 10 == 0)
-             {
-                 var status = await _jobRepository.GetStatusAsync(job.Id, cancellationToken);
-                 if (status == BatchJobStatus.Failed)
-                 {
-                     _logger.LogInformation("Job {JobId} was cancelled during execution", job.Id);
-                     throw new OperationCanceledException("Job cancelled by user.");
-                 }
+            // Check for cancellation every 10 iterations
+            if (count % 10 == 0)
+            {
+                var status = await _jobRepository.GetStatusAsync(job.Id, cancellationToken);
+                if (status == BatchJobStatus.Failed)
+                {
+                    _logger.LogInformation("Job {JobId} was cancelled during execution", job.Id);
+                    throw new OperationCanceledException("Job cancelled by user.");
+                }
 
-                 job.Progress = (int)((double)count / cities.Count * 100);
-                 await _jobRepository.UpdateAsync(job, cancellationToken);
-             }
+                job.Progress = (int)((double)count / cities.Count * 100);
+                await _jobRepository.UpdateAsync(job, cancellationToken);
+            }
 
-             var newJob = new BatchJob
-             {
-                 Type = BatchJobType.CityIngestion,
-                 Target = city,
-                 Status = BatchJobStatus.Pending,
-                 Progress = 0
-             };
+            var newJob = new BatchJob
+            {
+                Type = BatchJobType.CityIngestion,
+                Target = city,
+                Status = BatchJobStatus.Pending,
+                Progress = 0
+            };
 
             await _jobRepository.AddAsync(newJob, cancellationToken);
             count++;

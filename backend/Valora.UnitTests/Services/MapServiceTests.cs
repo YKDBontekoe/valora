@@ -67,7 +67,8 @@ public class MapServiceTests
         _repositoryMock.Setup(x => x.GetListingsPriceDataAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ListingPriceData>());
 
-        var geoJson = JsonSerializer.SerializeToElement(new {
+        var geoJson = JsonSerializer.SerializeToElement(new
+        {
             type = "Polygon",
             coordinates = new[] { new[] {
                 new[] { 5.0000, 52.0000 },
