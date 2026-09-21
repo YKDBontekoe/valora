@@ -27,7 +27,7 @@ public class WorkspacePropertyServiceTests
         var userId = "user1";
         var wsId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        
+
         _repoMock.Setup(r => r.GetUserRoleAsync(wsId, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(WorkspaceRole.Owner);
         _repoMock.Setup(r => r.GetSavedPropertyAsync(wsId, propertyId, It.IsAny<CancellationToken>()))

@@ -37,7 +37,7 @@ public class MapRepositoryTests
 
         // Assert
         Assert.Equal(2, result.Count);
-        
+
         var amsterdam = result.First(r => r.City == "Amsterdam");
         Assert.Equal(2, amsterdam.Count);
         Assert.Equal(85, amsterdam.CompositeScore);
