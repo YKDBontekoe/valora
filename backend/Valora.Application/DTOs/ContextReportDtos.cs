@@ -51,7 +51,7 @@ public sealed record NeighborhoodStatsDto(
     int? EducationLow, // BasisonderwijsVmboMbo1
     int? EducationMedium, // HavoVwoMbo24
     int? EducationHigh, // HboWo
-    // Phase 2: Housing
+                        // Phase 2: Housing
     int? PercentageOwnerOccupied, // Koopwoningen_41
     int? PercentageRental, // HuurwoningenTotaal_42
     int? PercentageSocialHousing, // InBezitWoningcorporatie_43
@@ -59,11 +59,11 @@ public sealed record NeighborhoodStatsDto(
     int? PercentagePre2000, // BouwjaarVoor2000_46
     int? PercentagePost2000, // BouwjaarVanaf2000_47
     int? PercentageMultiFamily, // PercentageMeergezinswoning_38
-    // Phase 2: Mobility
+                                // Phase 2: Mobility
     double? CarsPerHousehold, // PersonenautoSPerHuishouden_112
     int? CarDensity, // PersonenautoSNaarOppervlakte_113
     int? TotalCars, // PersonenautoSTotaal_109
-    // Phase 2: Proximity
+                    // Phase 2: Proximity
     double? DistanceToGp, // AfstandTotHuisartsenpraktijk_115
     double? DistanceToSupermarket, // AfstandTotGroteSupermarkt_116
     double? DistanceToDaycare, // AfstandTotKinderdagverblijf_117
@@ -104,8 +104,8 @@ public sealed record AirQualitySnapshotDto(
     double? O3 = null);
 
 public sealed record ContextMetricDto(
-    [property: Required] [property: StringLength(100)] string Key,
-    [property: Required] [property: StringLength(200)] string Label,
+    [property: Required][property: StringLength(100)] string Key,
+    [property: Required][property: StringLength(200)] string Label,
     double? Value,
     [property: StringLength(50)] string? Unit,
     double? Score,

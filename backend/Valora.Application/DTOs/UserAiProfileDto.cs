@@ -27,10 +27,10 @@ public class UserAiProfileDto : IValidatableObject
         {
             if (suggestion == null)
             {
-                 yield return new ValidationResult(
-                    "Disallowed suggestions cannot contain null values.",
-                    new[] { nameof(DisallowedSuggestions) });
-                 continue;
+                yield return new ValidationResult(
+                   "Disallowed suggestions cannot contain null values.",
+                   new[] { nameof(DisallowedSuggestions) });
+                continue;
             }
 
             if (suggestion.Length > 100)
@@ -44,9 +44,9 @@ public class UserAiProfileDto : IValidatableObject
         var json = System.Text.Json.JsonSerializer.Serialize(DisallowedSuggestions);
         if (json.Length > 4000)
         {
-             yield return new ValidationResult(
-                    "Total size of disallowed suggestions exceeds the limit.",
-                    new[] { nameof(DisallowedSuggestions) });
+            yield return new ValidationResult(
+                   "Total size of disallowed suggestions exceeds the limit.",
+                   new[] { nameof(DisallowedSuggestions) });
         }
     }
 }

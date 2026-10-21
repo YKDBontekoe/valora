@@ -24,7 +24,7 @@ public class IdentityServiceIntegrationTests : BaseIntegrationTest
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ValoraDbContext>();
-            
+
             var property = new Property { BagId = $"D-{Guid.NewGuid()}", Address = "Del St 1" };
             db.Properties.Add(property);
             await db.SaveChangesAsync();

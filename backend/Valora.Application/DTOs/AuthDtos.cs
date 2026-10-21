@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace Valora.Application.DTOs;
 
 public record LoginDto(
-    [property: Required] [property: EmailAddress] [property: StringLength(254)] string Email,
-    [property: Required] [property: StringLength(100)] string Password
+    [property: Required][property: EmailAddress][property: StringLength(254)] string Email,
+    [property: Required][property: StringLength(100)] string Password
 );
 
 public record RegisterDto
@@ -35,12 +35,12 @@ public record AuthResponseDto(
 );
 
 public record RefreshTokenRequestDto(
-    [property: Required] [property: StringLength(500)] string RefreshToken
+    [property: Required][property: StringLength(500)] string RefreshToken
 );
 
 public record ExternalLoginRequestDto(
-    [property: Required] [property: StringLength(50)] string Provider,
-    [property: Required] [property: StringLength(5000)] string IdToken
+    [property: Required][property: StringLength(50)] string Provider,
+    [property: Required][property: StringLength(5000)] string IdToken
 );
 
 public record GoogleTokenPayloadDto

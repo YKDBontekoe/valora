@@ -37,7 +37,7 @@ public class LuchtmeetnetAirQualityClientTests
 
             if (path == "/open_api/stations/S1")
             {
-                 return JsonResponse("""
+                return JsonResponse("""
                 {
                   "data": {
                     "number": "S1",
@@ -104,7 +104,7 @@ public class LuchtmeetnetAirQualityClientTests
 
             if (path == "/open_api/stations/S1")
             {
-                 return JsonResponse("""
+                return JsonResponse("""
                 {
                   "data": {
                     "number": "S1",
@@ -174,7 +174,7 @@ public class LuchtmeetnetAirQualityClientTests
             // S2 detail success
             if (path == "/open_api/stations/S2")
             {
-                 return JsonResponse("""
+                return JsonResponse("""
                 {
                   "data": {
                     "number": "S2",
@@ -224,7 +224,7 @@ public class LuchtmeetnetAirQualityClientTests
 
             if (path == "/open_api/stations/S1")
             {
-                 return JsonResponse("""
+                return JsonResponse("""
                 {
                   "data": {
                     "number": "S1",
@@ -275,7 +275,7 @@ public class LuchtmeetnetAirQualityClientTests
 
             if (path == "/open_api/stations/S2")
             {
-                 return JsonResponse("""
+                return JsonResponse("""
                 {
                   "data": {
                     "number": "S2",
@@ -324,7 +324,7 @@ public class LuchtmeetnetAirQualityClientTests
 
             if (path == "/open_api/stations/S1")
             {
-                 return JsonResponse("""
+                return JsonResponse("""
                 {
                   "data": {
                     "number": "S1",
@@ -357,24 +357,24 @@ public class LuchtmeetnetAirQualityClientTests
     [Fact]
     public async Task GetStationDetailAsync_WithInvalidGeometry_ReturnsNull()
     {
-         var handler = new RecordingHandler(request =>
-        {
-            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+        var handler = new RecordingHandler(request =>
+       {
+           var path = request.RequestUri?.AbsolutePath ?? string.Empty;
 
-            if (path == "/open_api/stations" && request.RequestUri?.Query == "?page=1")
-            {
-                return JsonResponse("""
+           if (path == "/open_api/stations" && request.RequestUri?.Query == "?page=1")
+           {
+               return JsonResponse("""
                 {
                   "pagination": { "last_page": 1 },
                   "data": [ { "number": "S1", "location": "Station One" } ]
                 }
                 """);
-            }
+           }
 
-            if (path == "/open_api/stations/S1")
-            {
-                 // Invalid geometry: less than 2 coordinates
-                 return JsonResponse("""
+           if (path == "/open_api/stations/S1")
+           {
+               // Invalid geometry: less than 2 coordinates
+               return JsonResponse("""
                 {
                   "data": {
                     "number": "S1",
@@ -383,10 +383,10 @@ public class LuchtmeetnetAirQualityClientTests
                   }
                 }
                 """);
-            }
+           }
 
-            return new HttpResponseMessage(HttpStatusCode.NotFound);
-        });
+           return new HttpResponseMessage(HttpStatusCode.NotFound);
+       });
 
         var client = CreateClient(handler);
         var result = await client.GetSnapshotAsync(CreateLocation());
@@ -397,35 +397,35 @@ public class LuchtmeetnetAirQualityClientTests
     [Fact]
     public async Task FetchAllStationIdsAsync_HandlesNullDataAndEmptyIds()
     {
-         var handler = new RecordingHandler(request =>
-        {
-            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-            var query = request.RequestUri?.Query ?? string.Empty;
+        var handler = new RecordingHandler(request =>
+       {
+           var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+           var query = request.RequestUri?.Query ?? string.Empty;
 
-            if (path == "/open_api/stations" && query == "?page=1")
-            {
-                // Page 1: Empty data
-                return JsonResponse("""
+           if (path == "/open_api/stations" && query == "?page=1")
+           {
+               // Page 1: Empty data
+               return JsonResponse("""
                 {
                   "pagination": { "last_page": 2 },
                   "data": []
                 }
                 """);
-            }
+           }
 
-            if (path == "/open_api/stations" && query == "?page=2")
-            {
-                // Page 2: Station with null/whitespace ID
-                return JsonResponse("""
+           if (path == "/open_api/stations" && query == "?page=2")
+           {
+               // Page 2: Station with null/whitespace ID
+               return JsonResponse("""
                 {
                   "pagination": { "last_page": 2 },
                   "data": [ { "number": "", "location": "Invalid" }, { "number": null, "location": "Invalid" } ]
                 }
                 """);
-            }
+           }
 
-            return new HttpResponseMessage(HttpStatusCode.NotFound);
-        });
+           return new HttpResponseMessage(HttpStatusCode.NotFound);
+       });
 
         var client = CreateClient(handler);
         var result = await client.GetSnapshotAsync(CreateLocation());

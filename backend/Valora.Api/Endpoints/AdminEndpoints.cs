@@ -26,7 +26,8 @@ public static class AdminEndpoints
             var currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var paginatedUsers = await adminService.GetUsersAsync(pagination.Page, pagination.PageSize, q, sort, currentUserId);
 
-            return Results.Ok(new {
+            return Results.Ok(new
+            {
                 paginatedUsers.Items,
                 paginatedUsers.PageIndex,
                 paginatedUsers.TotalPages,
@@ -46,7 +47,7 @@ public static class AdminEndpoints
 
             if (string.IsNullOrEmpty(currentUserId))
             {
-                 return Results.Problem(detail: "Unauthorized.", statusCode: 401);
+                return Results.Problem(detail: "Unauthorized.", statusCode: 401);
             }
 
             var result = await adminService.DeleteUserAsync(id, currentUserId);
@@ -104,7 +105,8 @@ public static class AdminEndpoints
             [FromQuery] string? sort = null) =>
         {
             var jobs = await jobService.GetJobsAsync(pagination.Page, pagination.PageSize, status, type, q, sort, ct);
-            return Results.Ok(new {
+            return Results.Ok(new
+            {
                 jobs.Items,
                 jobs.PageIndex,
                 jobs.TotalPages,

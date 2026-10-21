@@ -4,7 +4,7 @@ using Valora.Application.Common.Validation;
 namespace Valora.Application.DTOs;
 
 public sealed record AiAnalysisRequest(
-    [property: Required] [property: ValidateObject] ContextReportDto Report
+    [property: Required][property: ValidateObject] ContextReportDto Report
 );
 
 public sealed record AiAnalysisResponse(string Summary);
